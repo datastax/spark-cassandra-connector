@@ -1,4 +1,4 @@
-name := "spark-cassandra-driver"
+name := "cassandra-driver-spark"
 
 organization := "com.datastax.cassandra"
 
