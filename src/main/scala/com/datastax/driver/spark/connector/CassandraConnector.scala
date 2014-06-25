@@ -15,35 +15,54 @@ import scala.util.Random
 
 /** Provides and manages connections to Cassandra.
   *
-  * {{{CassandraConnector}}} can be safely sent over network,
+  * A `CassandraConnector` instance is serializable and
+  * can be safely sent over network,
   * because it automatically reestablishes the connection
-  * to the same cluster after deserialization.
+  * to the same cluster after deserialization. Internally it saves
+  * a list of all nodes in the cluster, so a connection can be established
+  * even if the host given in the initial config is down.
   *
-  * Multiple {{{CassandraConnector}}}s in the same JVM connected to the same
-  * Cassandra cluster will share a single underlying {{{Cluster}}} object.
-  * {{{CassandraConnector}}} will close the {{{Cluster}}} object automatically
-  * whenever it is not used i.e. no {{{Session}}} is open for longer
-  * than {{{KeepAliveMillis}}}. */
-class CassandraConnector(_config: CassandraConnectionConfig)
+  * Multiple `CassandraConnector`s in the same JVM connected to the same
+  * Cassandra cluster will share a single underlying `Cluster` object.
+  * `CassandraConnector` will close the underlying `Cluster` object automatically
+  * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
+  * than `cassandra.connection.keep_alive_ms` property value.
+  *
+  * This object uses the following System properties:
+  *   - `cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
+  *   - `cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
+  *   - `cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
+  *   - `cassandra.query.retry.count`: how many times to reattempt a failed query
+  */
+class CassandraConnector(config: CassandraConnectionConfig)
   extends Serializable {
 
   import com.datastax.driver.spark.connector.CassandraConnector._
 
-  private[this] var config = _config
-  
-  def hosts = config.hosts
-  def nativePort = config.nativePort
-  def rpcPort = config.rpcPort
-  def credentials = config.authConfig.credentials
-  def kerberosEnabled = config.authConfig.kerberosEnabled
+  private[this] var _config = config
 
+  /** Known cluster hosts. This is going to return all cluster hosts after at least one successful connection has been made */
+  def hosts = _config.hosts
+
+  /** Configured native port */
+  def nativePort = _config.nativePort
+
+  /** Configured thrift client port */
+  def rpcPort = _config.rpcPort
+
+  /** User and password for password authentication */
+  def credentials = _config.authConfig.credentials
+
+  /** Allows to use Cassandra `Cluster` in a safe way without
+    * risk of forgetting to close it. Multiple, concurrent calls might share the same
+    * `Cluster`. The `Cluster` will be closed when not in use for some time. */
   def withClusterDo[T](code: Cluster => T): T = {
     var cluster: Cluster = null
     try {
-      cluster = clusterCache.acquire(config)
+      cluster = clusterCache.acquire(_config)
       val allNodes = cluster.getMetadata.getAllHosts.toSet
-      val myNodes = nodesInTheSameDC(config.hosts, allNodes).map(_.getAddress)
-      config = config.copy(hosts = myNodes)
+      val myNodes = nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
+      _config = _config.copy(hosts = myNodes)
       code(cluster)
     }
     finally {
@@ -52,7 +71,7 @@ class CassandraConnector(_config: CassandraConnectionConfig)
     }
   }
 
-  /** Allows to use Cassandra {{{Session}}} in a safe way without
+  /** Allows to use Cassandra `Session` in a safe way without
     * risk of forgetting to close it. */
   def withSessionDo[T](code: Session => T): T = {
     withClusterDo { cluster =>
@@ -63,12 +82,12 @@ class CassandraConnector(_config: CassandraConnectionConfig)
   }
 
   /** Opens a new session to Cassandra.
-    * Remember to close it after use. */
+    * It does not close it automatically, so please remember to close it after use. */
   def openSession() = {
     var cluster: Cluster = null
     var session: Session = null
     try {
-      cluster = clusterCache.acquire(config)
+      cluster = clusterCache.acquire(_config)
       session = cluster.connect()
       SessionProxy.withCloseAction(session) { _ =>
         clusterCache.release(cluster)
@@ -84,6 +103,7 @@ class CassandraConnector(_config: CassandraConnectionConfig)
     }
   }
 
+  /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp)
@@ -95,6 +115,7 @@ class CassandraConnector(_config: CassandraConnectionConfig)
   private def authenticationRequest(username: String, password: String): AuthenticationRequest =
     new AuthenticationRequest(Map("username" -> username, "password" -> password))  
 
+  /** Opens a Thrift client to the given host. Don't use it unless you really know what you are doing. */
   def createThriftClient(host: InetAddress): CassandraClientProxy = {
     val transportFactory = new TFramedTransportFactory
     val transport = transportFactory.openTransport(host.getHostAddress, rpcPort)
@@ -138,7 +159,7 @@ object CassandraConnector {
       .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(config.hosts))
       .withAuthProvider(
         config.authConfig match {
-          case AuthConfig(Some((username, password)), _) => new PlainTextAuthProvider(username, password)
+          case AuthConfig(Some((username, password))) => new PlainTextAuthProvider(username, password)
           case _ => AuthProvider.NONE
         })
       .build()
@@ -154,7 +175,7 @@ object CassandraConnector {
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
 
-  /** Finds the DCs of the contact points and returns hosts in those DC(s) from {{{allHosts}}} */
+  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts` */
   def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
     val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
     val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
@@ -167,15 +188,17 @@ object CassandraConnector {
     }
   }))
 
+  /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
   def apply(conf: SparkConf): CassandraConnector = {
     new CassandraConnector(CassandraConnectionConfig.apply(conf))
   }
 
-
+  /** Returns a CassandraConnector created from explicitly given connection configuration. */
   def apply(host: InetAddress,
             nativePort: Int = CassandraConnectionConfig.DefaultNativePort,
             rpcPort: Int = CassandraConnectionConfig.DefaultRpcPort,
-            authConfig: AuthConfig = AuthConfig(None, kerberosEnabled = false)) = {
+            authConfig: AuthConfig = AuthConfig(None)) = {
+
     val config = CassandraConnectionConfig.apply(host, nativePort, rpcPort, authConfig)
     new CassandraConnector(config)
   }

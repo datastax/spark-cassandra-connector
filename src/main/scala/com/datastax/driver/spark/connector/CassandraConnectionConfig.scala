@@ -3,7 +3,7 @@ package com.datastax.driver.spark.connector
 import java.net.InetAddress
 import org.apache.spark.SparkConf
 
-case class AuthConfig(credentials: Option[(String, String)], kerberosEnabled: Boolean)
+case class AuthConfig(credentials: Option[(String, String)])
 
 object AuthConfig {
 
@@ -15,8 +15,7 @@ object AuthConfig {
     val credentials =
       for (username <- conf.getOption(CassandraUserNameProperty);
            password <- conf.getOption(CassandraPasswordProperty)) yield (username, password)
-    val kerberos = conf.getOption(HadoopAuthenticationProperty).exists(_ == "kerberos")
-    AuthConfig(credentials, kerberos)
+    AuthConfig(credentials)
   }
 }
 
@@ -35,7 +34,7 @@ object CassandraConnectionConfig {
   def apply(host: InetAddress,
             nativePort: Int = DefaultNativePort,
             rpcPort: Int = DefaultRpcPort,
-            authConfig: AuthConfig = AuthConfig(None, kerberosEnabled = false)): CassandraConnectionConfig = {
+            authConfig: AuthConfig = AuthConfig(None)): CassandraConnectionConfig = {
     CassandraConnectionConfig(Set(host), nativePort, rpcPort, authConfig)
   }
 
