@@ -6,7 +6,7 @@ import com.datastax.driver.spark.rdd.CassandraRow
 
 import scala.reflect.runtime.universe._
 
-/** Transforms a {{{Row}}} into an object of a user provided class, calling the class constructor */
+/** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
 class ClassBasedRowTransformer[R : TypeTag : ColumnMapper](tableDef: TableDef) extends RowTransformer[R] {
 
   private val factory = new AnyObjectFactory[R]

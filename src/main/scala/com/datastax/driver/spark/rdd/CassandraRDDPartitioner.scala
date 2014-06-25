@@ -23,7 +23,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   type Token = dht.Token[T]
   type TokenRange = dht.TokenRange[V, T]
 
-  /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in {{{getPartitions}}}.
+  /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
     * Does not affect how many Spark threads fetch data from Cassandra. */
   private val MaxParallelism = 256
 

@@ -44,9 +44,9 @@ class RefCountMap[T] {
     }
   }
 
-  /** Atomically decreases reference count by {{{n}}}.
+  /** Atomically decreases reference count by `n`.
     * @return reference count after decrease
-    * @throws IllegalStateException if the reference count before decrease is less than {{{n}}} */
+    * @throws IllegalStateException if the reference count before decrease is less than `n` */
   @tailrec
   final def release(key: T, n: Int = 1): Int = {
     refCounts.get(key) match {

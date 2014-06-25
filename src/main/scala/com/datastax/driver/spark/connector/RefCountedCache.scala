@@ -46,9 +46,9 @@ final class RefCountedCache[K, V](create: K => V,
 
   /** Acquires a value associated with key.
     * If the value was acquired by another thread and is present in the cache, it will be returned from cache.
-    * If the value was not found in cache, a new value will be created by invoking {{{create}}} function
-    * and will be saved to the cache and associated with {{{key}}} and other keys returned by invoking the
-    * {{{keys}}} function on the value. */
+    * If the value was not found in cache, a new value will be created by invoking `create` function
+    * and will be saved to the cache and associated with `key` and other keys returned by invoking the
+    * `keys` function on the value. */
   @tailrec
   def acquire(key: K): V = {
     cache.get(key) match {
@@ -105,7 +105,7 @@ final class RefCountedCache[K, V](create: K => V,
   }
 
   /** Releases previously acquired value. Once the value is released by all threads and
-    * the {{{releaseDelayMillis}}} timeout passes, the value is destroyed by calling {{{destroy}}} function and
+    * the `releaseDelayMillis` timeout passes, the value is destroyed by calling `destroy` function and
     * removed from the cache. */
   def release(value: V) {
     if (releaseDelayMillis == 0 || scheduledExecutorService.isShutdown)
@@ -114,7 +114,7 @@ final class RefCountedCache[K, V](create: K => V,
       releaseDeferred(value)
   }
 
-  /** Shuts down the background deferred {{{release}}} scheduler and forces all pending release tasks to be executed */
+  /** Shuts down the background deferred `release` scheduler and forces all pending release tasks to be executed */
   def shutdown() {
     scheduledExecutorService.shutdown()
     while (deferredReleases.nonEmpty)
@@ -129,7 +129,7 @@ final class RefCountedCache[K, V](create: K => V,
     value.isDefined && refCounter.get(value.get) > 0
   }
 
-  /** Called periodically by {{{scheduledExecutorService}}}*/
+  /** Called periodically by `scheduledExecutorService`*/
   private def processPendingReleases() {
     val now = System.currentTimeMillis()
     for ((value, task) <- deferredReleases)

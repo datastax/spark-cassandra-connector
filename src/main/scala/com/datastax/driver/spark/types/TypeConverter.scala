@@ -15,7 +15,7 @@ import org.joda.time.DateTime
 class TypeConversionException(val message: String) extends Exception(message)
 
 /** Machinery for converting objects of any type received from Cassandra into objects of Scala types.
-  * Every converter knows how to convert object to one type. See {{{TypeConverter}}}
+  * Every converter knows how to convert object to one type. See `TypeConverter`
   * companion object for a list of available converters. */
 trait TypeConverter[T] extends Serializable {
   /** Publishes the type of the converter */
@@ -27,7 +27,7 @@ trait TypeConverter[T] extends Serializable {
 
 /** Defines a set of converters and implicit functions used to look up an appropriate converter for
   * a desired type. Thanks to implicit method lookup, it is possible to implement a generic
-  * method {{{CassandraRow#get}}}, which picks up the right converter basing solely on its type argument. */
+  * method `CassandraRow#get`, which picks up the right converter basing solely on its type argument. */
 object TypeConverter {
 
   implicit object AnyConverter extends TypeConverter[Any] {

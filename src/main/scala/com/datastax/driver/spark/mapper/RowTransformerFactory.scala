@@ -25,7 +25,7 @@ trait LowPriorityRowTransformerFactoryImplicits {
 
 object RowTransformerFactory extends LowPriorityRowTransformerFactoryImplicits {
 
-  /** Default row transformer: transforms a {{{Row}}} into serializable {{{CassandraRow}}} */
+  /** Default row transformer: transforms a `Row` into serializable [[com.datastax.driver.spark.rdd.CassandraRow]] */
   implicit object GenericRowTransformer
     extends RowTransformer[CassandraRow] with ThisRowTransformerAsFactory[CassandraRow] {
 

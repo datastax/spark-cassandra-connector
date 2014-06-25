@@ -18,7 +18,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
   private val semaphore = new Semaphore(maxConcurrentTasks)
   private val pendingFutures = new TrieMap[Future[R], Boolean]
 
-  /** Executes task asynchronously or blocks if more than {{{maxConcurrentTasks}}} limit is reached */
+  /** Executes task asynchronously or blocks if more than `maxConcurrentTasks` limit is reached */
   def executeAsync(task: T): ListenableFuture[R] = {
     semaphore.acquire()
     val future = asyncAction(task)
@@ -38,7 +38,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
 
   /** Waits until the tasks being currently executed get completed.     
     * It will not wait for tasks scheduled for execution during this method call,
-    * nor tasks for which the {{{executeAsync}}} method did not complete. */
+    * nor tasks for which the [[executeAsync]] method did not complete. */
   def waitForCurrentlyExecutingTasks() {
     for ((future, _) <- pendingFutures.snapshot())
       Try(future.get())

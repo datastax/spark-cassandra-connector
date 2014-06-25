@@ -126,7 +126,7 @@ class CassandraWriter[T : ClassTag] private (
     batchStmt
   }
 
-  /** Writes {{{MeasuredInsertsCount}}} rows to Cassandra and returns the maximum size of the row */
+  /** Writes `MeasuredInsertsCount` rows to Cassandra and returns the maximum size of the row */
   private def measureMaxInsertSize(data: Iterator[T], insert: InsertBuffer, queryExecutor: QueryExecutor): Int = {
     logger.info(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
     var maxInsertSize = 1
