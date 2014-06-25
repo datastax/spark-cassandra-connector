@@ -27,7 +27,7 @@ class RefCountMap[T] {
   }
 
   /** Atomically increases reference count by one.
-    * @returns reference count after increase */
+    * @return reference count after increase */
   @tailrec
   final def acquire(key: T): Int = {
     refCounts.get(key) match {

@@ -46,6 +46,10 @@ case class TableDef(keyspaceName: String,
 
 case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef])
 
+/** Fetches database schema from Cassandra. Provides access to keyspace, table and column definitions.
+  * @param keyspaceName if defined, fetches only metadata of the given keyspace
+  * @param tableName if defined, fetches only metadata of the given table
+  */
 class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None) {
 
   private val logger = Logger.getLogger(classOf[Schema])

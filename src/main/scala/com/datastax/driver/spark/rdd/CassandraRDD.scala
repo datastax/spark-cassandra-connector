@@ -16,14 +16,17 @@ import scala.language.existentials
 import scala.reflect._
 
 /** RDD representing a Cassandra table.
-  * Options should be passed in SparkContext configuration object:
+  * This class is the main entry point for analyzing data in Cassandra database with Spark.
+  * Obtain objects of this class by calling [[com.datastax.driver.spark.SparkContextFunctions#cassandraTable]].
+  *
+  * Options should be passed in the `SparkConf` configuration of `SparkContext`:
   *   - cassandra.connection.host:         contact point to connect to the Cassandra cluster, defaults to spark master host
   *   - cassandra.connection.rpc.port:     Cassandra thrift port, defaults to 9160
   *   - cassandra.connection.native.port:  Cassandra native port, defaults to 9042
   *   - cassandra.input.split.size:        approx number of rows to be fetched per Spark partition, default 100000
   *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip
   */
-class CassandraRDD[R] (
+class CassandraRDD[R] private[spark] (
     @transient sc: SparkContext,
     val keyspaceName: String,
     val tableName: String,
@@ -36,15 +39,18 @@ class CassandraRDD[R] (
   /** How many rows are fetched at once from server */
   val fetchSize = sc.getConf.getInt("cassandra.input.page.row.size", 1000)
 
-  /** How many rows to fetch in a single Spark Task */
+  /** How many rows to fetch in a single Spark Task. */
   val splitSize = sc.getConf.getInt("cassandra.input.split.size", 100000)
 
-  val connector = CassandraConnector(sc.getConf)
+  private val connector = CassandraConnector(sc.getConf)
 
   private def copy(columnNames: ColumnSelector = columnNames, where: CqlWhereClause = where): CassandraRDD[R] =
     new CassandraRDD(sc, keyspaceName, tableName, columnNames, where)
 
-  /** Adds a CQL WHERE predicate(s) to the query. Useful for leveraging secondary indexes in Cassandra. */
+  /** Adds a CQL `WHERE` predicate(s) to the query.
+    * Useful for leveraging secondary indexes in Cassandra.
+    * Implicitly adds an `ALLOW FILTERING` clause to the WHERE clause, however beware that some predicates
+    * might be rejected by Cassandra, particularly in cases when they filter on an unindexed column.*/
   def where(cql: String, values: Any*): CassandraRDD[R] = {
     copy(where = where + CqlWhereClause(Seq(cql), values))
   }
@@ -72,10 +78,13 @@ class CassandraRDD[R] (
     }
   }
 
-  /** Narrows down the selected set of columns */
+  /** Narrows down the selected set of columns.
+    * Use this for better performance, when you don't need all the columns in the result RDD.
+    * When called multiple times, it selects the subset of the already selected columns, so
+    * after a column was removed by the previous `select` call, it is not possible to
+    * add it back.  */
   def select(columns: String*): CassandraRDD[R] = {
-    val columnsToSelect = narrowColumnSelection(columns)
-    copy(columnNames = SomeColumns(columns: _*))
+    copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
   }
 
   /** Maps each row into object of a different type using provided function taking column value(s) as argument(s).
@@ -171,14 +180,27 @@ class CassandraRDD[R] (
 
   // Table metadata should be fetched only once to guarantee all tasks use the same metadata.
   // TableDef is serializable, so there is no problem:
-  lazy val tableDef = {
+  private lazy val tableDef = {
     new Schema(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
       case None => throw new IOException(s"Table not found: $keyspaceName.$tableName")
     }
   }
 
-  lazy val selectedColumnNames = {
+  private val rowTransformer = implicitly[RowTransformerFactory[R]].rowTransformer(tableDef)
+
+  private def checkColumnsExistence(columnNames: Seq[String]): Seq[String] = {
+    val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
+    def columnNotFound(c: String) = !allColumnNames.contains(c)
+    columnNames.find(columnNotFound) match {
+      case Some(c) => throw new IOException(s"Column $c not found in table $keyspaceName.$tableName")
+      case None => columnNames
+    }
+  }
+
+
+  /** Returns the names of columns to be selected from the table.*/
+  lazy val selectedColumnNames: Seq[String] = {
     val providedColumnNames =
       columnNames match {
         case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
@@ -191,20 +213,10 @@ class CassandraRDD[R] (
     }
   }
 
-  def checkColumnsExistence(columnNames: Seq[String]): Seq[String] = {
-    val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
-    def columnNotFound(c: String) = !allColumnNames.contains(c)
-    columnNames.find(columnNotFound) match {
-      case Some(c) => throw new IOException(s"Column $c not found in table $keyspaceName.$tableName")
-      case None => columnNames
-    }
-  }
-
-  val rowTransformer = implicitly[RowTransformerFactory[R]].rowTransformer(tableDef)
 
   /** Checks for existence of keyspace, table, columns and whether the number of selected columns corresponds to
     * the number of the columns expected by the target type constructor.
-    * If successful, does nothing, otherwise throws appropriate IOException or AssertionError.*/
+    * If successful, does nothing, otherwise throws appropriate `IOException` or `AssertionError`.*/
   lazy val verify = {
     val targetType = implicitly[ClassTag[R]]
 
@@ -225,7 +237,7 @@ class CassandraRDD[R] (
     }
   }
 
-  lazy val cassandraPartitionerClassName =
+  private lazy val cassandraPartitionerClassName =
     connector.withSessionDo {
       session =>
         session.execute("SELECT partitioner FROM system.local").one().getString(0)

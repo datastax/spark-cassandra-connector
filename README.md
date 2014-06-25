@@ -48,7 +48,7 @@ Create the `SparkContext` as usual:
 
 To enable Cassandra-specific functions:
      
-    import com.datastax.driver.spark.CassandraImplicits._
+    import com.datastax.driver.spark._
 
 ### Loading and analyzing data from Cassandra
 Assume, there is a Cassandra table in keyspace `keyspace` named `table`.
