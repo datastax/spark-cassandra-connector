@@ -102,6 +102,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
+  /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
   def partitions: Array[Partition] = {
     connector.withCassandraClientDo {
       client =>

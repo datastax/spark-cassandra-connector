@@ -2,11 +2,11 @@ package com.datastax.driver.spark.writer
 
 import java.io.{OutputStream, ObjectOutputStream}
 
-
+/** Estimates amount of memory required to serialize Java/Scala objects */
 object ObjectSizeEstimator {
 
   /** Records only how many bytes were written but the actual data is discarded */
-  class CountingOutputStream extends OutputStream {
+  private class CountingOutputStream extends OutputStream {
     private var _length = 0
     override def write(b: Int) = _length += 1
     override def write(b: Array[Byte]) = _length += b.length

@@ -3,6 +3,7 @@ package com.datastax.driver.spark.connector
 import java.lang.reflect.{Proxy, Method, InvocationHandler}
 import com.datastax.driver.core.Session
 
+/** Wraps a `Session` and intercepts `close` method to invoke `afterClose` handler. */
 class SessionProxy(session: Session, afterClose: Session => Any) extends InvocationHandler {
 
   private var closed = false
@@ -20,8 +21,11 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
   }
 }
 
-object SessionProxy {  
-  def withCloseAction(session: Session)(afterClose: Session => Any) =
+object SessionProxy {
+
+  /** Registers a callback on `Session#close` method.
+    * @param afterClose code to be invoked after the session has been closed */
+  def withCloseAction(session: Session)(afterClose: Session => Any): Session =
     Proxy.newProxyInstance(
       session.getClass.getClassLoader,
       Array(classOf[Session]),

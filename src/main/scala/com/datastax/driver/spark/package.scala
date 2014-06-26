@@ -14,33 +14,40 @@ import scala.reflect.ClassTag
  * The root package of Cassandra driver for Apache Spark.
  * Offers handy implicit conversions that add Cassandra-specific methods to `SparkContext` and `RDD`.
  *
- * Call `cassandraTable` method on the `SparkContext` object
- * to create a [[com.datastax.driver.spark.rdd.CassandraRDD]] exposing Cassandra tables as Spark RDDs.
+ * Call [[spark.SparkContextFunctions#cassandraTable cassandraTable]] method on the `SparkContext` object
+ * to create a [[com.datastax.driver.spark.rdd.CassandraRDD CassandraRDD]] exposing Cassandra tables as Spark RDDs.
  *
- * Call `saveToCassandra` method on any `RDD` to save distributed collection to a Cassandra table.
+ * Call [[spark.RDDFunctions#saveToCassandra saveToCassandra]]
+ * method on any `RDD` to save distributed collection to a Cassandra table.
  *
- * Example program:
+ * Example:
+ * {{{
+ *   CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+ *   CREATE TABLE test.words (word text PRIMARY KEY, count int);
+ *   INSERT INTO test.words(word, count) VALUES ("and", 50);
+ * }}}
+ *
  * {{{
  *   import com.datastax.driver.spark._
  *
  *   val sparkMasterHost = "127.0.0.1"
  *   val cassandraHost = "127.0.0.1"
  *   val keyspace = "test"
- *   val table = "kv"
+ *   val table = "words"
  *
  *   // Tell Spark the address of one Cassandra node:
  *   val conf = new SparkConf(true).set("cassandra.connection.host", cassandraHost)
  *
  *   // Connect to the Spark cluster:
- *   val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "demo-program", conf)
+ *   val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "example", conf)
  *
- *   // Read table test.kv and print its contents:
- *   val rdd = sc.cassandraTable("test", "kv").select("key", "value")
+ *   // Read the table and print its contents:
+ *   val rdd = sc.cassandraTable(keyspace, table)
  *   rdd.toArray().foreach(println)
  *
- *   // Write two rows to the test.kv table:
- *   val col = sc.parallelize(Seq((1, "value 1"), (2, "value 2")))
- *   col.saveToCassandra("test", "kv", Seq("key", "value"))
+ *   // Write two rows to the table:
+ *   val col = sc.parallelize(Seq(("of", 1200), ("the", "863")))
+ *   col.saveToCassandra(keyspace, table)
  *
  *   sc.stop()
  * }}}
@@ -55,11 +62,12 @@ package object spark {
       *
       * Depending on the type parameter passed to `cassandraTable`, every row is converted to one of the following:
       *   - a [[com.datastax.driver.spark.rdd.CassandraRow]] object (default, if no type given)
-      *   - a tuple containing column values in the same order as columns selected by [[com.datastax.driver.spark.rdd.CassandraRDD#select]]
-      *   - object of a user defined class, populated by appropriate [[com.datastax.driver.spark.mapper.ColumnMapper]]
+      *   - a tuple containing column values in the same order as columns selected by [[spark.rdd.CassandraRDD#select CassandraRDD#select]]
+      *   - object of a user defined class, populated by appropriate [[spark.mapper.ColumnMapper ColumnMapper]]
       *
       * Example:
       * {{{
+      *   CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
       *   CREATE TABLE test.words (word text PRIMARY KEY, count int);
       *   INSERT INTO test.words (word, count) VALUES ('foo', 20);
       *   INSERT INTO test.words (word, count) VALUES ('bar', 20);
@@ -117,6 +125,7 @@ package object spark {
       *
       * Example:
       * {{{
+      *   CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
       *   CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
       * }}}
       * {{{
@@ -140,6 +149,7 @@ package object spark {
       *
       * Example:
       * {{{
+      *   CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
       *   CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
       * }}}
       * {{{
@@ -159,10 +169,13 @@ package object spark {
       rdd.sparkContext.runJob(rdd, writer.write _)
     }
 
-    /** Saves the data from RDD to a Cassandra table.
-      * Additionally allows to specify batch size in rows.
-      * Use this overload only if you find automatically
-      * tuned batch size doesn't result in optimal performance. */
+    /** Saves the data from RDD to a Cassandra table in batches of given size.
+      * Use this overload only if you find automatically tuned batch size doesn't result in optimal performance.
+      *
+      * Larger batches raise memory use by temporary buffers and may incur
+      * larger GC pressure on the server. Small batches would result in more roundtrips
+      * and worse throughput. Typically sending a few kilobytes of data per every batch
+      * is enough to achieve good performance. */
     def saveToCassandra(keyspaceName: String,
                         tableName: String,
                         columnNames: Seq[String],

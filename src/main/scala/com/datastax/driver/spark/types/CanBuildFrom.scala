@@ -3,7 +3,7 @@ package com.datastax.driver.spark.types
 import scala.collection.mutable
 import scala.collection.immutable.{TreeMap, TreeSet}
 
-/** Serves the same purpose as standard Scala CanBuildFrom, however this one is Serializable. */
+/** Serves the same purpose as standard Scala `CanBuildFrom`, however this one is `Serializable`. */
 trait CanBuildFrom[-Elem, To] extends Serializable {
 
   def apply(): mutable.Builder[Elem, To]

@@ -127,7 +127,7 @@ class CassandraConnector(config: CassandraConnectionConfig)
       case _ =>
     }
 
-    ClientProxy.wrap(client, transport)
+    CassandraClientProxy.wrap(client, transport)
   }
 
   def createThriftClient(): CassandraClientProxy =

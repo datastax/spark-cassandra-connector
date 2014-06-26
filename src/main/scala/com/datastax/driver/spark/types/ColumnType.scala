@@ -3,9 +3,16 @@ package com.datastax.driver.spark.types
 import com.datastax.driver.core.DataType
 import scala.collection.JavaConversions._
 
+/** Serializable representation of column data type */
 trait ColumnType[T] extends Serializable {
+
+  /** Returns a converter that converts values to the type of this column expected by the
+    * Cassandra Java driver when saving the row.*/
   def converterToCassandra: TypeConverter[_]
+
+  /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String
+
   def isCollection: Boolean
 }
 

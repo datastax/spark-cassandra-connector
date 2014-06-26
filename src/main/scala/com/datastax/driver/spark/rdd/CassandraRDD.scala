@@ -24,7 +24,11 @@ import scala.reflect._
   *   - cassandra.connection.rpc.port:     Cassandra thrift port, defaults to 9160
   *   - cassandra.connection.native.port:  Cassandra native port, defaults to 9042
   *   - cassandra.input.split.size:        approx number of rows to be fetched per Spark partition, default 100000
-  *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip
+  *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
+  *
+  * This object gets serialized and sent to every Spark executor.
+  * Reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+  * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
   */
 class CassandraRDD[R] private[spark] (
     @transient sc: SparkContext,
@@ -52,7 +56,7 @@ class CassandraRDD[R] private[spark] (
     * Implicitly adds an `ALLOW FILTERING` clause to the WHERE clause, however beware that some predicates
     * might be rejected by Cassandra, particularly in cases when they filter on an unindexed column.*/
   def where(cql: String, values: Any*): CassandraRDD[R] = {
-    copy(where = where + CqlWhereClause(Seq(cql), values))
+    copy(where = where and CqlWhereClause(Seq(cql), values))
   }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */

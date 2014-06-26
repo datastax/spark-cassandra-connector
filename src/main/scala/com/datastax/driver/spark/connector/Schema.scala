@@ -8,13 +8,13 @@ import org.apache.log4j.Logger
 import scala.collection.JavaConversions._
 import scala.language.existentials
 
-
 sealed trait ColumnRole
 case object PartitionKeyColumn extends ColumnRole
 case class ClusteringColumn(index: Int) extends ColumnRole
 case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
+/** A Cassandra column metadata that can be serialized. */
 case class ColumnDef(keyspaceName: String,
                      tableName: String,
                      columnName: String,
@@ -33,6 +33,7 @@ case class ColumnDef(keyspaceName: String,
   }
 }
 
+/** A Cassandra table metadata that can be serialized. */
 case class TableDef(keyspaceName: String,
                     tableName: String,
                     partitionKey: Iterable[ColumnDef], 
@@ -44,9 +45,10 @@ case class TableDef(keyspaceName: String,
   lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
 }
 
+/** A Cassandra keyspace metadata that can be serialized. */
 case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef])
 
-/** Fetches database schema from Cassandra. Provides access to keyspace, table and column definitions.
+/** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
   * @param keyspaceName if defined, fetches only metadata of the given keyspace
   * @param tableName if defined, fetches only metadata of the given table
   */
@@ -106,6 +108,7 @@ class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None,
       KeyspaceDef(keyspace.getName, fetchTables(keyspace))
 
 
+  /** All keyspaces in this database, incuding the system keyspaces */
   lazy val keyspaces: Seq[KeyspaceDef] = {
     logger.debug("Retrieving schema from Cassandra...")
     connector.withClusterDo { cluster =>
@@ -114,17 +117,18 @@ class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None,
     }
   }
 
+  /** All tables from all keyspaces */
   lazy val tables: Seq[TableDef] =
     for (keyspace <- keyspaces; table <- keyspace.tables) yield table
 
+  /** List of keyspaces created by the user, i.e. non-system keyspaces */
   lazy val userKeyspaces: Seq[KeyspaceDef] =
     keyspaces.filterNot(ks => isSystemKeyspace(ks.keyspaceName))
 
+  /** List of tables created by the user, i.e. non-system tables */
   lazy val userTables: Seq[TableDef] =
     tables.filterNot(tableDef => isSystemKeyspace(tableDef.keyspaceName))
 
   def isSystemKeyspace(ksName: String) =
     systemKeyspaces.contains(ksName)
-
-  lazy val userKeyspacesAsMap = userKeyspaces.map(k => (k.keyspaceName, (k, k.tables.map(t => (t.tableName, t)).toMap))).toMap
 }

@@ -2,7 +2,7 @@ package com.datastax.driver.spark.rdd
 
 import com.datastax.driver.spark.rdd.dht.{Token, TokenRange}
 
-/** TokenRangeSplitters are used to split a token range into smaller sub-ranges,
+/** Splits a token range into smaller sub-ranges,
   * each with the desired approximate number of rows. */
 trait TokenRangeSplitter[V, T <: Token[V]] {
 

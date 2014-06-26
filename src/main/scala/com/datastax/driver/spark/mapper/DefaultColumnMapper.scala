@@ -6,6 +6,27 @@ import com.datastax.driver.spark.connector.TableDef
 
 import scala.reflect.ClassTag
 
+/** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor names
+  * and underscore naming convention for column names.
+  *
+  * Example mapping:
+  * {{{
+  *   case class User(
+  *     login: String,         // mapped to "login" column
+  *     emailAddress: String   // mapped to "email_address" column
+  *     emailAddress2: String  // mapped to "email_address_2" column
+  *   )
+  * }}}
+  *
+  * Additionally, it is possible to name columns exactly the same as property names (case-sensitive):
+  * {{{
+  *   case class TaxPayer(
+  *     TIN: String            // mapped to "TIN" column
+  *   )
+  * }}}
+  *
+  * @param columnNameOverride maps property names to column names; use it to override default mapping for some properties
+  */
 class DefaultColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty) extends ReflectionColumnMapper[T] {
 
   import com.datastax.driver.spark.mapper.DefaultColumnMapper._
@@ -37,5 +58,5 @@ class DefaultColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] 
 }
 
 object DefaultColumnMapper {
-  val SetterSuffix: String = "_$eq"
+  private val SetterSuffix: String = "_$eq"
 }

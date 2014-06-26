@@ -8,6 +8,8 @@ class RefCountMap[T] {
 
   private val refCounts = new TrieMap[T, Int]
 
+  /** Returns current reference count for the given key.
+    * This value may be constantly changing, so do not use it for synchronization purposes. */
   final def get(key: T): Int =
     refCounts.getOrElse(key, 0)
 
