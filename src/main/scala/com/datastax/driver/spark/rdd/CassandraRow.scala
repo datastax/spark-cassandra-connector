@@ -12,6 +12,9 @@ import com.datastax.driver.spark.types.TypeConverter.StringConverter
 
 import org.apache.cassandra.utils.ByteBufferUtil
 
+/** Thrown when the requested column does not exist in the result set. */
+class ColumnNotFoundException(message: String) extends Exception(message)
+
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
   * The getters try to convert value to desired type, whenever possible.
@@ -85,10 +88,23 @@ import org.apache.cassandra.utils.ByteBufferUtil
 class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Serializable {
 
   @transient
-  private lazy val indexOf = columnNames.zipWithIndex.toMap
+  private lazy val indexOf =
+    columnNames.zipWithIndex.toMap.withDefault { name =>
+      throw new ColumnNotFoundException(
+        s"Column not found: $name. " +
+        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
+    }
 
   /** Total number of columns in this row. Includes columns with null values. */
   def size = data.size
+
+  /** Returns true if column value is Cassandra null */
+  def isNull(index: Int): Boolean =
+    data(index) == null
+
+  /** Returns true if column value is Cassandra null */
+  def isNull(name: String): Boolean =
+    data(indexOf(name)) == null
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
