@@ -4,10 +4,13 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
+import scala.collection.JavaConversions._
+
 import com.datastax.driver.core.Row
 import com.datastax.driver.spark.types.TypeConverter
-import org.apache.cassandra.utils.ByteBufferUtil
+import com.datastax.driver.spark.types.TypeConverter.StringConverter
 
+import org.apache.cassandra.utils.ByteBufferUtil
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -265,12 +268,27 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
     get[Map[K, V]](name)
 
   /** Displays the row in human readable form, including the names and values of the columns */
-  override def toString = "CassandraRow" +
-    columnNames.zip(data).map({ case (c, v) => c + ": " + v }).mkString("[", ", ", "]")
+  override def toString =
+    "CassandraRow" + columnNames
+      .zip(data)
+      .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
+      .mkString("{", ", ", "}")
 }
 
 
 object CassandraRow {
+
+  /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
+     Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
+  private def convert(obj: Any): AnyRef = {
+    obj match {
+      case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
+      case list: java.util.List[_] => list.view.map(convert).toList
+      case set: java.util.Set[_] => set.view.map(convert).toSet
+      case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v)) }.toMap
+      case other => other.asInstanceOf[AnyRef]
+    }
+  }
 
   /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
    *  If the field is null, returns null (not Scala Option). */
@@ -278,13 +296,8 @@ object CassandraRow {
     val columnDefinitions = row.getColumnDefinitions
     val columnType = columnDefinitions.getType(index)
     val columnValue = row.getBytesUnsafe(index)
-    if (columnValue != null) {
-      columnType.deserialize(columnValue) match {
-        // ByteBuffers are not serializable, so we need to convert them to serializable arrays
-        case buffer: ByteBuffer => ByteBufferUtil.getArray(buffer)
-        case other => other
-      }
-    }
+    if (columnValue != null)
+      convert(columnType.deserialize(columnValue))
     else
       null
   }

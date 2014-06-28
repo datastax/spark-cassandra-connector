@@ -85,6 +85,10 @@ object TypeConverter {
   implicit object StringConverter extends TypeConverter[String] {
     def convert(obj: Any) = obj match {
       case x: Date => TimestampFormatter.format(x)
+      case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
+      case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
+      case x: Set[_] => x.map(convert).mkString("{", ",", "}")
+      case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x => x.toString
     }
   }
