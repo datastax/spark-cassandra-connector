@@ -2,7 +2,7 @@ name := "cassandra-driver-spark"
 
 organization := "com.datastax.cassandra"
 
-version := "0.9.1"
+version := "1.0.0"
 
 scalaVersion := "2.10.4"
 
