@@ -19,18 +19,9 @@ class SerializableFactoryTest {
   }
 
   @Test
-  def testObjectCreationWithConversion() {
-    val factory = new AnyObjectFactory[TopLevel]
-    val obj = factory.newInstance("test", "1")
-    assertNotNull(obj)
-    assertEquals("test", obj.arg1)
-    assertEquals(1, obj.arg2)
-  }
-
-  @Test
   def testSerialize() {
     val factory = SerializationUtil.serializeAndDeserialize(new AnyObjectFactory[TopLevel])
-    val obj = factory.newInstance("test", "1")
+    val obj = factory.newInstance("test", 1.asInstanceOf[AnyRef])
     assertNotNull(obj)
     assertEquals("test", obj.arg1)
     assertEquals(1, obj.arg2)

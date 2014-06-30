@@ -2,8 +2,6 @@ package com.datastax.driver.spark.rdd.reader
 
 import java.lang.reflect.Constructor
 
-import com.datastax.driver.spark.types.TypeConverter
-
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
@@ -15,11 +13,9 @@ class AnyObjectFactory[T : TypeTag] extends Serializable {
   @transient
   private val tpe = implicitly[TypeTag[T]].tpe
 
-  @transient
-  private val paramTypes: Array[Type] = {
+  val argCount: Int = {
     val ctorSymbol = tpe.declaration(nme.CONSTRUCTOR).asMethod
-    val ctorType = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
-    ctorType.params.map(_.asTerm.typeSignature).toArray
+    ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType].params.size
   }
 
   @transient
@@ -30,36 +26,31 @@ class AnyObjectFactory[T : TypeTag] extends Serializable {
   val javaClass: Class[T] =
     rm.runtimeClass(tpe).asInstanceOf[Class[T]]
 
-  // This must be also serialized:
-  val argConverters: Array[TypeConverter[_]] =
-    paramTypes.map(t => TypeConverter.forType(t))
-
-  val argCount: Int = argConverters.size
-
   @transient
   private lazy val javaConstructor: Constructor[T] =
     javaClass.getConstructors()(0).asInstanceOf[Constructor[T]]
 
-  // 1 if it is an inner class, 0 otherwise
-  @transient
-  private lazy val offset = if (javaConstructor.getParameterTypes.length > argCount) 1 else 0
+  private def isInnerClass =
+    javaConstructor.getParameterTypes.length > argCount
+
+  private def argOffset =
+    if (isInnerClass) 1 else 0
 
   @transient
-  private lazy val convertedArgs = {
-    val args = Array.ofDim[AnyRef](offset + argCount)
-    if (offset > 0) {
+  private lazy val argBuffer = {
+    val buffer = Array.ofDim[AnyRef](argOffset + argCount)
+    if (isInnerClass) {
       val root = extractRoot(javaClass)
       val rootInstance = root.newInstance().asInstanceOf[AnyRef]
-      args(0) = dive(rootInstance.asInstanceOf[AnyRef])
+      buffer(0) = dive(rootInstance.asInstanceOf[AnyRef])
     }
-    args
+    buffer
   }
 
   def newInstance(args: AnyRef*): T = {
     for (i <- 0 until argCount)
-      convertedArgs(i + offset) = argConverters(i).convert(args(i)).asInstanceOf[AnyRef]
-
-    javaConstructor.newInstance(convertedArgs: _*)
+      argBuffer(i + argOffset) = args(i)
+    javaConstructor.newInstance(argBuffer: _*)
   }
 
   private def extractRoot(c: Class[_]): Class[_] = {
