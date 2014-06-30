@@ -3,7 +3,7 @@ package com.datastax.driver.spark.demo
 
 import org.apache.spark.{SparkConf, SparkContext}
 
-object WordCountDemo extends App {
+object BasicReadWriteDemo extends App {
 
   import com.datastax.driver.spark._
 
