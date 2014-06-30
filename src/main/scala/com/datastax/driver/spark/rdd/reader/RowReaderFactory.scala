@@ -6,15 +6,15 @@ import com.datastax.driver.spark.mapper.ColumnMapper
 
 import scala.reflect.runtime.universe._
 
-/** The main reason behind this class is to provide a way to pass TableDef to RowTransformer */ 
+/** Creates [[RowReader]] objects prepared for reading rows from the given Cassandra table. */
 trait RowReaderFactory[T] {
-  def rowReader(tableDef: TableDef): RowReader[T]
+  def rowReader(table: TableDef): RowReader[T]
 }
 
-/** Helper for implementing RowTransformers that can be used as RowTransformerFactories */
+/** Helper for implementing `RowReader` objects that can be used as `RowReaderFactory` objects. */
 trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
   this: RowReader[T] =>
-  def rowReader(tableDef: TableDef): RowReader[T] = this
+  def rowReader(table: TableDef): RowReader[T] = this
 }
 
 trait LowPriorityRowReaderFactoryImplicits {
@@ -25,7 +25,7 @@ trait LowPriorityRowReaderFactoryImplicits {
 
 object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
 
-  /** Default row transformer: transforms a `Row` into serializable [[CassandraRow]] */
+  /** Default `RowReader`: reads a `Row` into serializable [[CassandraRow]] */
   implicit object GenericRowReader$
     extends RowReader[CassandraRow] with ThisRowReaderAsFactory[CassandraRow] {
 

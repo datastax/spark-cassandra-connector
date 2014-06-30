@@ -4,7 +4,7 @@ import com.datastax.driver.spark.connector.CassandraConnector
 import com.datastax.driver.spark.mapper.ColumnMapper
 import com.datastax.driver.spark.rdd.CassandraRDD
 import com.datastax.driver.spark.rdd.reader.{CassandraRow, RowReaderFactory}
-import com.datastax.driver.spark.writer.CassandraWriter
+import com.datastax.driver.spark.writer.{RowWriterFactory, TableWriter}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -102,7 +102,7 @@ package object spark {
       "cassandra.output.batch.size.rows", "auto")
 
     private lazy val batchSizeInBytes = rdd.sparkContext.getConf.getInt(
-      "cassandra.output.batch.size.bytes", CassandraWriter.DefaultBatchSizeInBytes)
+      "cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
 
     private lazy val batchSizeInRows = {
       val Number = "([0-9]+)".r
@@ -116,7 +116,7 @@ package object spark {
     }
 
     private lazy val writeParallelismLevel = rdd.sparkContext.getConf.getInt(
-      "cassandra.output.concurrent.writes", CassandraWriter.DefaultParallelismLevel)
+      "cassandra.output.concurrent.writes", TableWriter.DefaultParallelismLevel)
 
     private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
 
@@ -134,8 +134,8 @@ package object spark {
       *   val rdd = sc.parallelize(Seq(WordCount("foo", 5, "bar")))
       *   rdd.saveToCassandra("test", "words")
       * }}} */
-    def saveToCassandra(keyspaceName: String, tableName: String)(implicit ccm: ColumnMapper[T]) {
-      val writer = CassandraWriter[T](
+    def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]) {
+      val writer = TableWriter[T](
         connector, keyspaceName, tableName,
         batchSizeInBytes = batchSizeInBytes,
         batchSizeInRows = batchSizeInRows,
@@ -160,9 +160,9 @@ package object spark {
       * }}} */
     def saveToCassandra(keyspaceName: String,
                         tableName: String,
-                        columnNames: Seq[String])(implicit ccm: ColumnMapper[T]) {
+                        columnNames: Seq[String])(implicit rwf: RowWriterFactory[T]) {
 
-      val writer = CassandraWriter[T](
+      val writer = TableWriter[T](
         connector, keyspaceName, tableName, columnNames = Some(columnNames),
         batchSizeInBytes = batchSizeInBytes,
         batchSizeInRows = batchSizeInRows,
@@ -180,9 +180,9 @@ package object spark {
     def saveToCassandra(keyspaceName: String,
                         tableName: String,
                         columnNames: Seq[String],
-                        batchSize: Int)(implicit ccm: ColumnMapper[T]) {
+                        batchSize: Int)(implicit rwf: RowWriterFactory[T]) {
 
-      val writer = CassandraWriter[T](
+      val writer = TableWriter[T](
         connector, keyspaceName, tableName, columnNames = Some(columnNames),
         batchSizeInBytes = batchSizeInBytes,
         batchSizeInRows = Some(batchSize),
