@@ -1,6 +1,6 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
-import com.datastax.driver.spark.rdd.dht.{TokenFactory, LongToken, TokenRange}
+import com.datastax.driver.spark.rdd.partitioner.dht.{LongToken, TokenFactory, TokenRange}
 
 import scala.math.BigDecimal.RoundingMode
 

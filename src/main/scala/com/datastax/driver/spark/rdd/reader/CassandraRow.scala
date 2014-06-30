@@ -1,16 +1,15 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.reader
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import scala.collection.JavaConversions._
-
 import com.datastax.driver.core.Row
 import com.datastax.driver.spark.types.TypeConverter
 import com.datastax.driver.spark.types.TypeConverter.StringConverter
-
 import org.apache.cassandra.utils.ByteBufferUtil
+
+import scala.collection.JavaConversions._
 
 /** Thrown when the requested column does not exist in the result set. */
 class ColumnNotFoundException(message: String) extends Exception(message)

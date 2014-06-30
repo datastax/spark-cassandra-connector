@@ -1,6 +1,6 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
-import com.datastax.driver.spark.rdd.dht.{Token, TokenRange}
+import com.datastax.driver.spark.rdd.partitioner.dht.{Token, TokenRange}
 
 /** Splits a token range into smaller sub-ranges,
   * each with the desired approximate number of rows. */

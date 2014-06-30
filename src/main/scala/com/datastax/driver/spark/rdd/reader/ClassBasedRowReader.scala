@@ -1,13 +1,13 @@
-package com.datastax.driver.spark.mapper
+package com.datastax.driver.spark.rdd.reader
 
 import com.datastax.driver.core.Row
 import com.datastax.driver.spark.connector.TableDef
-import com.datastax.driver.spark.rdd.CassandraRow
+import com.datastax.driver.spark.mapper._
 
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-class ClassBasedRowTransformer[R : TypeTag : ColumnMapper](tableDef: TableDef) extends RowTransformer[R] {
+class ClassBasedRowReader[R : TypeTag : ColumnMapper](tableDef: TableDef) extends RowReader[R] {
 
   private val factory = new AnyObjectFactory[R]
 
@@ -50,7 +50,7 @@ class ClassBasedRowTransformer[R : TypeTag : ColumnMapper](tableDef: TableDef) e
     obj
   }
 
-  override def transform(row: Row, columnNames: Array[String]) = {
+  override def read(row: Row, columnNames: Array[String]) = {
     fillArgs(row)
     invokeSetters(row, factory.newInstance(args: _*))
   }
@@ -72,6 +72,6 @@ class ClassBasedRowTransformer[R : TypeTag : ColumnMapper](tableDef: TableDef) e
 }
 
 
-class ClassBasedRowTransformerFactory[R : TypeTag : ColumnMapper] extends RowTransformerFactory[R] {
-  override def rowTransformer(tableDef: TableDef) = new ClassBasedRowTransformer[R](tableDef)
+class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
+  override def rowReader(tableDef: TableDef) = new ClassBasedRowReader[R](tableDef)
 }

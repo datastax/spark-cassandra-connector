@@ -1,4 +1,4 @@
-package com.datastax.driver.spark.rdd.dht
+package com.datastax.driver.spark.rdd.partitioner.dht
 
 import scala.language.existentials
 

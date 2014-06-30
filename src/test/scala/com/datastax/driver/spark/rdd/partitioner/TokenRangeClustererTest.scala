@@ -1,14 +1,14 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.driver.spark.rdd.dht.LongToken
+import com.datastax.driver.spark.rdd.partitioner.dht.LongToken
 import org.junit.Assert._
 import org.junit.Test
 
 class TokenRangeClustererTest {
 
-  type TokenRange = dht.TokenRange[Long, LongToken]
+  type TokenRange = com.datastax.driver.spark.rdd.partitioner.dht.TokenRange[Long, LongToken]
 
   val addr1 = InetAddress.getByName("192.168.123.1")
   val addr2 = InetAddress.getByName("192.168.123.2")
@@ -16,7 +16,7 @@ class TokenRangeClustererTest {
   val addr4 = InetAddress.getByName("192.168.123.4")
   val addr5 = InetAddress.getByName("192.168.123.5")
 
-  private def token(x: Long) = new dht.LongToken(x)
+  private def token(x: Long) = new com.datastax.driver.spark.rdd.partitioner.dht.LongToken(x)
 
   @Test
   def testEmpty() {

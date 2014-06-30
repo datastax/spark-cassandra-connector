@@ -1,4 +1,4 @@
-package com.datastax.driver.spark.rdd.dht
+package com.datastax.driver.spark.rdd.partitioner.dht
 
 trait Token[T] extends Ordered[Token[T]] {
   def value: T

@@ -1,13 +1,13 @@
-package com.datastax.driver.spark.mapper
+package com.datastax.driver.spark.rdd.reader
 
 import java.lang.reflect.Constructor
 
 import com.datastax.driver.spark.types.TypeConverter
 
 import scala.reflect.runtime.universe._
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
-/** Factory for creating objects of any type by invoking their primary constructor and then setters.
+/** Factory for creating objects of any type by invoking their primary constructor.
   * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
   * and can be safely passed along with Spark tasks. */
 class AnyObjectFactory[T : TypeTag] extends Serializable {

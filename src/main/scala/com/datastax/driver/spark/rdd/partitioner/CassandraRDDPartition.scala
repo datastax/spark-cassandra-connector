@@ -1,4 +1,4 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
 import java.net.InetAddress
 

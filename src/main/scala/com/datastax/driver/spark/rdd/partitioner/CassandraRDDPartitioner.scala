@@ -1,16 +1,16 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.driver.spark.connector.{TableDef, CassandraConnector}
-import com.datastax.driver.spark.rdd.dht.{LongToken, Token, TokenFactory}
+import com.datastax.driver.spark.connector.{CassandraConnector, TableDef}
+import com.datastax.driver.spark.rdd._
+import com.datastax.driver.spark.rdd.partitioner.dht.{Token, TokenFactory}
+import org.apache.cassandra.thrift
 import org.apache.spark.Partition
 
 import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
-
-import org.apache.cassandra.thrift
 
 /** Creates CassandraPartitions for given Cassandra table */
 class CassandraRDDPartitioner[V, T <: Token[V]](
@@ -20,8 +20,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   implicit
     tokenFactory: TokenFactory[V, T]) {
 
-  type Token = dht.Token[T]
-  type TokenRange = dht.TokenRange[V, T]
+  type Token = com.datastax.driver.spark.rdd.partitioner.dht.Token[T]
+  type TokenRange = com.datastax.driver.spark.rdd.partitioner.dht.TokenRange[V, T]
 
   /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
     * Does not affect how many Spark threads fetch data from Cassandra. */

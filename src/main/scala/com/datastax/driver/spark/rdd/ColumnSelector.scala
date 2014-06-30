@@ -1,4 +1,4 @@
-package com.datastax.driver.spark.connector
+package com.datastax.driver.spark.rdd
 
 sealed trait ColumnSelector
 case object AllColumns extends ColumnSelector

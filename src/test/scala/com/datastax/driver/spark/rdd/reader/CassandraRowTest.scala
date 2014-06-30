@@ -1,8 +1,7 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.reader
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.text.SimpleDateFormat
-import java.util.NoSuchElementException
 
 import org.junit.Assert._
 import org.junit.Test
@@ -27,7 +26,7 @@ class CassandraRowTest {
     assertEquals(1, row.size)
   }
 
-  @Test(expected = classOf[NoSuchElementException])
+  @Test(expected = classOf[ColumnNotFoundException])
   def nonExistentColumnAccessTest() {
     val row = new CassandraRow(Array(null), Array("value"))
     row.getString("wring-column")

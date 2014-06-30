@@ -1,10 +1,10 @@
-package com.datastax.driver.spark.rdd
+package com.datastax.driver.spark.rdd.partitioner
 
 import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.driver.spark.connector.CassandraConnector
-import com.datastax.driver.spark.rdd.dht.{Token, TokenFactory, TokenRange}
+import com.datastax.driver.spark.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
 import org.apache.cassandra.thrift.CfSplit
 import org.apache.spark.Logging
 

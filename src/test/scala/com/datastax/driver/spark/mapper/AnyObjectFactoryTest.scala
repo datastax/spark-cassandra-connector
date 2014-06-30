@@ -1,5 +1,6 @@
 package com.datastax.driver.spark.mapper
 
+import com.datastax.driver.spark.rdd.reader.AnyObjectFactory
 import com.datastax.driver.spark.util.SerializationUtil
 import org.junit.Assert._
 import org.junit.Test

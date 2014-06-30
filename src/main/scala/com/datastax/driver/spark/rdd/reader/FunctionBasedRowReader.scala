@@ -1,30 +1,29 @@
-package com.datastax.driver.spark.mapper
+package com.datastax.driver.spark.rdd.reader
 
 import com.datastax.driver.core.Row
-import com.datastax.driver.spark.rdd.CassandraRow
 import com.datastax.driver.spark.types.TypeConverter
 
 // The below fragment may look very repetitive and copy-pasted,
 // however there is no other way to code this for functions of different arity
 // while preserving good type-safety.
 
-class FunctionBasedRowTransformer1[R, A0](f: A0 => R)(
-  implicit a0c: TypeConverter[A0]) extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+class FunctionBasedRowReader1[R, A0](f: A0 => R)(
+  implicit a0c: TypeConverter[A0]) extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(a0c.convert(CassandraRow.get(row, 0)))
 
   override def columnCount = Some(1)
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer2[R, A0, A1](f: (A0, A1) => R)(
+class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1))
@@ -34,14 +33,14 @@ class FunctionBasedRowTransformer2[R, A0, A1](f: (A0, A1) => R)(
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
+class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1],
   a2c: TypeConverter[A2])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -51,15 +50,15 @@ class FunctionBasedRowTransformer3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
+class FunctionBasedRowReader4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1],
   a2c: TypeConverter[A2],
   a3c: TypeConverter[A3])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -71,16 +70,16 @@ class FunctionBasedRowTransformer4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => R)(
+class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1],
   a2c: TypeConverter[A2],
   a3c: TypeConverter[A3],
   a4c: TypeConverter[A4])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -93,7 +92,7 @@ class FunctionBasedRowTransformer5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4, A5) => R)(
+class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4, A5) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1],
@@ -101,9 +100,9 @@ class FunctionBasedRowTransformer6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3
   a3c: TypeConverter[A3],
   a4c: TypeConverter[A4],
   a5c: TypeConverter[A5])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -117,7 +116,7 @@ class FunctionBasedRowTransformer6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3, A4, A5, A6) => R)(
+class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3, A4, A5, A6) => R)(
   implicit
   a0c: TypeConverter[A0],
   a1c: TypeConverter[A1],
@@ -126,9 +125,9 @@ class FunctionBasedRowTransformer7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2
   a4c: TypeConverter[A4],
   a5c: TypeConverter[A5],
   a6c: TypeConverter[A6])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -143,7 +142,7 @@ class FunctionBasedRowTransformer7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer8[R, A0, A1, A2, A3, A4, A5, A6, A7]
+class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
 (f: (A0, A1, A2, A3, A4, A5, A6, A7) => R)(
   implicit
   a0c: TypeConverter[A0],
@@ -154,9 +153,9 @@ class FunctionBasedRowTransformer8[R, A0, A1, A2, A3, A4, A5, A6, A7]
   a5c: TypeConverter[A5],
   a6c: TypeConverter[A6],
   a7c: TypeConverter[A7])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -172,7 +171,7 @@ class FunctionBasedRowTransformer8[R, A0, A1, A2, A3, A4, A5, A6, A7]
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
+class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
 (f: (A0, A1, A2, A3, A4, A5, A6, A7, A8) => R)(
   implicit
   a0c: TypeConverter[A0],
@@ -184,9 +183,9 @@ class FunctionBasedRowTransformer9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
   a6c: TypeConverter[A6],
   a7c: TypeConverter[A7],
   a8c: TypeConverter[A8])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -203,7 +202,7 @@ class FunctionBasedRowTransformer9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
+class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
 (f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) => R)(
   implicit
   a0c: TypeConverter[A0],
@@ -216,9 +215,9 @@ class FunctionBasedRowTransformer10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
   a7c: TypeConverter[A7],
   a8c: TypeConverter[A8],
   a9c: TypeConverter[A9])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -236,7 +235,7 @@ class FunctionBasedRowTransformer10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
+class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
 (f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => R)(
   implicit
   a0c: TypeConverter[A0],
@@ -250,9 +249,9 @@ class FunctionBasedRowTransformer11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A
   a8c: TypeConverter[A8],
   a9c: TypeConverter[A9],
   a10c: TypeConverter[A10])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
@@ -271,7 +270,7 @@ class FunctionBasedRowTransformer11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A
   override def columnNames = None
 }
 
-class FunctionBasedRowTransformer12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]
+class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]
 (f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => R)(
   implicit
   a0c: TypeConverter[A0],
@@ -286,9 +285,9 @@ class FunctionBasedRowTransformer12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A
   a9c: TypeConverter[A9],
   a10c: TypeConverter[A10],
   a11c: TypeConverter[A11])
-  extends RowTransformer[R] with ThisRowTransformerAsFactory[R] {
+  extends RowReader[R] with ThisRowReaderAsFactory[R] {
 
-  override def transform(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(CassandraRow.get(row, 0)),
       a1c.convert(CassandraRow.get(row, 1)),
