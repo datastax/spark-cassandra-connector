@@ -2,6 +2,16 @@
 
 This library allows creating Spark applications that read/write data from/to Cassandra.
 
+Features:
+ - Exposes Cassandra tables as Spark RDDs 
+ - Map table rows to CassandraRow objects or tuples
+ - Customizable object mapper for mapping rows to objects of user-defined classes
+ - Save RDDs back to Cassandra by implicit `saveToCassandra` call
+ - Data type conversions between Cassandra and Scala
+ - Support for all Cassandra data types including collections
+ - Server-side row filtering via CQL `WHERE` clause 
+ - Optimizations for Cassandra Virtual Nodes    
+
 ## Building
 You need to install SBT version 0.13 or newer to build spark-cassandra-driver.
 In the project root directory run:
@@ -51,7 +61,7 @@ To enable Cassandra-specific functions:
     import com.datastax.driver.spark._
 
 ### Loading and analyzing data from Cassandra
-Assume, there is a Cassandra table in keyspace `keyspace` named `table`.
+Assume there is a Cassandra table in keyspace `keyspace` named `table`.
 Use `sc.cassandraTable` method to view this table as Spark `RDD`:
 
     val rdd = sc.cassandraTable("keyspace", "table")
@@ -60,7 +70,7 @@ Use `sc.cassandraTable` method to view this table as Spark `RDD`:
 
 ### Saving data from RDD to Cassandra
 
-Assume, there is a Cassandra table in keyspace `keyspace` named `table` with 
+Assume there is a Cassandra table in keyspace `keyspace` named `table` with 
 at least two columns named `column1` and `column2` of type `text`. 
 To save a collection of String pairs to this table:
                                      
