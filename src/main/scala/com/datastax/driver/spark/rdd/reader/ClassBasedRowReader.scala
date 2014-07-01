@@ -83,7 +83,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
       case e: Exception =>
         throw new TypeConversionException(
           s"Failed to convert column $columnName of table ${table.keyspaceName}.${table.keyspaceName} " +
-          s"to ${converter.targetTypeString}: $columnValue")
+          s"to ${converter.targetTypeString}: $columnValue", e)
     }
   }
 

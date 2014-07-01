@@ -12,7 +12,7 @@ import org.apache.cassandra.utils.ByteBufferUtil
 import org.joda.time.DateTime
 
 
-class TypeConversionException(val message: String) extends Exception(message)
+class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
 /** Machinery for converting objects of any type received from Cassandra into objects of Scala types.
   * Every converter knows how to convert object to one type. See `TypeConverter`
