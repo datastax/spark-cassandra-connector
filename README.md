@@ -4,6 +4,7 @@ This library allows creating Spark applications that read/write data from/to Cas
 
 Features:
 
+ - Compatible with vanilla Apache Cassandra 2.x and DataStax Enterprise 4.5 
  - Exposes Cassandra tables as Spark RDDs 
  - Map table rows to CassandraRow objects or tuples
  - Customizable object mapper for mapping rows to objects of user-defined classes
@@ -18,21 +19,15 @@ You need to install SBT version 0.13 or newer to build spark-cassandra-driver.
 In the project root directory run:
 
     sbt package
+    sbt doc
     
-The library package jar will be placed in `target/scala-2.10/`    
-
-## Setting up IntelliJ IDEA project
-Make sure you have installed and enabled 
-the Scala Plugin from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+IntelliJ+IDEA).
-
-To download the required dependencies and setup project files, in the project root directory, run: 
-
-    sbt gen-idea        
+The library package jar will be placed in `target/scala-2.10/`
+The documentation will be generated to `target/scala-2.10/api/`    
      
 ## 5-minutes quick start guide
 In this tutorial, you'll learn how to setup a very simple Spark application reading and writing data from/to Cassandra.
 Before you start, you need to have basic knowledge of Apache Cassandra and Apache Spark.
-See [Cassandra documentation](http://www.datastax.com/documentation/cassandra/2.0/cassandra/gettingStartedCassandraIntro.html) 
+Refer to [Cassandra documentation](http://www.datastax.com/documentation/cassandra/2.0/cassandra/gettingStartedCassandraIntro.html) 
 and [Spark documentation](https://spark.apache.org/docs/0.9.1/). 
 
 ### Prerequisites
@@ -52,7 +47,8 @@ Put the spark-cassandra-driver jar and its dependency jars:
  - on the classpath of your project.
  - on the classpath of your Spark cluster nodes or use `sc.addJar`
  
-This driver is also compatible with Spark distribution provided in DataStax Enterprise 4.5.
+This driver is also compatible with Spark distribution provided in 
+[DataStax Enterprise 4.5](http://www.datastax.com/documentation/datastax_enterprise/4.5/datastax_enterprise/newFeatures.html).
  
 ### Preparing example Cassandra schema
 Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
@@ -96,4 +92,20 @@ Add two more rows to the table:
                                      
     val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4))
     collection.saveToCassandra("test", "kv", Seq("key", "value"))        
+
+## Reporting Bugs
+Please use GitHub to report feature requests or bugs.  
+
+## Contributing
+To contribute back to this project, please open a pull-request on GitHub.   
+
+To develop this project, we recommend using IntelliJ IDEA. 
+Make sure you have installed and enabled the Scala Plugin from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+IntelliJ+IDEA).
+
+To download the required dependencies and setup project files, in the project root directory, run: 
+
+    sbt gen-idea        
     
+Note: The new versions of the Scala plugin automatically import SBT projects, 
+so this step might not be required for you.
+   
