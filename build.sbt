@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.3",
   "org.apache.cassandra" % "cassandra-thrift" % "2.0.8",
   "org.apache.cassandra" % "cassandra-clientutil" % "2.0.8",
-  "org.apache.spark" %% "spark-core" % "0.9.1",
+  "org.apache.spark" %% "spark-core" % "0.9.1" % "provided",
   "org.joda" % "joda-convert" % "1.2",
   "org.scala-lang" % "scala-reflect" % "2.10.4"
 )
