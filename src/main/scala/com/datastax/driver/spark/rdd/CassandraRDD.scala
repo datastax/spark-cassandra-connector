@@ -21,14 +21,20 @@ import scala.reflect._
   * This class is the main entry point for analyzing data in Cassandra database with Spark.
   * Obtain objects of this class by calling [[com.datastax.driver.spark.SparkContextFunctions#cassandraTable cassandraTable]].
   *
-  * Options should be passed in the `SparkConf` configuration of `SparkContext`:
-  *   - cassandra.connection.host:         contact point to connect to the Cassandra cluster, defaults to spark master host
-  *   - cassandra.connection.rpc.port:     Cassandra thrift port, defaults to 9160
-  *   - cassandra.connection.native.port:  Cassandra native port, defaults to 9042
-  *   - cassandra.input.split.size:        approx number of rows to be fetched per Spark partition, default 100000
+  * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
+  * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate connection property values
+  * to be present in `SparkConf`. For the list of required and available properties, see
+  * [[com.datastax.driver.spark.connector.CassandraConnector CassandraConnector]].
+  *
+  * `CassandraRDD` divides the dataset into smaller partitions, processed locally on every cluster node.
+  * A data partition consists of one or more contiguous token ranges.
+  * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
+  * properties control the number of partitions and the fetch size:
+  *
+  *   - cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
   *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
   *
-  * This object gets serialized and sent to every Spark executor.
+  * A `CassandraRDD` object gets serialized and sent to every Spark executor.
   * Reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
   * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
   */
@@ -56,7 +62,7 @@ class CassandraRDD[R] private[spark] (
   /** Adds a CQL `WHERE` predicate(s) to the query.
     * Useful for leveraging secondary indexes in Cassandra.
     * Implicitly adds an `ALLOW FILTERING` clause to the WHERE clause, however beware that some predicates
-    * might be rejected by Cassandra, particularly in cases when they filter on an unindexed column.*/
+    * might be rejected by Cassandra, particularly in cases when they filter on an unindexed, non-clustering column.*/
   def where(cql: String, values: Any*): CassandraRDD[R] = {
     copy(where = where and CqlWhereClause(Seq(cql), values))
   }

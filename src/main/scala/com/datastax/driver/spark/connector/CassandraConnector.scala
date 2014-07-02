@@ -5,7 +5,7 @@ import java.net.InetAddress
 import com.datastax.driver.core._
 import com.datastax.driver.core.policies._
 import com.datastax.driver.spark.util.IOUtils
-import org.apache.cassandra.thrift.{AuthenticationRequest, TFramedTransportFactory, Cassandra}
+import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 
@@ -28,18 +28,28 @@ import scala.util.Random
   * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
   * than `cassandra.connection.keep_alive_ms` property value.
   *
-  * This object uses the following System properties:
+  * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
+  * can be either given explicitly or automatically configured from `SparkConf`.
+  * The connection options are:
+  *   - `cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
+  *   - `cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
+  *   - `cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
+  *   - `cassandra.username`:                login for password authentication
+  *   - `cassandra.password`:                password for password authentication
+  *   - `cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
+  *
+  * Additionally this object uses the following global System properties:
   *   - `cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
   *   - `cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
   *   - `cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
-  *   - `cassandra.query.retry.count`: how many times to reattempt a failed query
+  *   - `cassandra.query.retry.count`: how many times to reattempt a failed query 
   */
-class CassandraConnector(config: CassandraConnectionConfig)
+class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable {
 
   import com.datastax.driver.spark.connector.CassandraConnector._
 
-  private[this] var _config = config
+  private[this] var _config = conf
 
   /** Known cluster hosts. This is going to return all cluster hosts after at least one successful connection has been made */
   def hosts = _config.hosts
@@ -50,8 +60,8 @@ class CassandraConnector(config: CassandraConnectionConfig)
   /** Configured thrift client port */
   def rpcPort = _config.rpcPort
 
-  /** User and password for password authentication */
-  def credentials = _config.authConfig.credentials
+  /** Authentication configuration */
+  def authConf = _config.authConf
 
   /** Allows to use Cassandra `Cluster` in a safe way without
     * risk of forgetting to close it. Multiple, concurrent calls might share the same
@@ -112,21 +122,12 @@ class CassandraConnector(config: CassandraConnectionConfig)
     }
   }
 
-  private def authenticationRequest(username: String, password: String): AuthenticationRequest =
-    new AuthenticationRequest(Map("username" -> username, "password" -> password))  
-
   /** Opens a Thrift client to the given host. Don't use it unless you really know what you are doing. */
   def createThriftClient(host: InetAddress): CassandraClientProxy = {
-    val transportFactory = new TFramedTransportFactory
+    val transportFactory = conf.authConf.transportFactory
     val transport = transportFactory.openTransport(host.getHostAddress, rpcPort)
     val client = new Cassandra.Client(new TBinaryProtocol.Factory().getProtocol(transport))
-
-    credentials match {
-      case Some((username, password)) =>
-        client.login(authenticationRequest(username, password))
-      case _ =>
-    }
-
+    conf.authConf.configureThriftClient(client)
     CassandraClientProxy.wrap(client, transport)
   }
 
@@ -147,21 +148,17 @@ object CassandraConnector {
   val maxReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("cassandra.query.retry.count", "10").toInt
 
-  private val clusterCache = new RefCountedCache[CassandraConnectionConfig, Cluster](
+  private val clusterCache = new RefCountedCache[CassandraConnectorConf, Cluster](
     createCluster, destroyCluster, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
-  private def createCluster(config: CassandraConnectionConfig): Cluster = {
+  private def createCluster(conf: CassandraConnectorConf): Cluster = {
     Cluster.builder()
-      .addContactPoints(config.hosts.toSeq: _*)
-      .withPort(config.nativePort)
+      .addContactPoints(conf.hosts.toSeq: _*)
+      .withPort(conf.nativePort)
       .withRetryPolicy(new MultipleRetryPolicy(retryCount))
       .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
-      .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(config.hosts))
-      .withAuthProvider(
-        config.authConfig match {
-          case AuthConfig(Some((username, password))) => new PlainTextAuthProvider(username, password)
-          case _ => AuthProvider.NONE
-        })
+      .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
+      .withAuthProvider(conf.authConf.authProvider)
       .build()
   }
 
@@ -170,7 +167,7 @@ object CassandraConnector {
   }
 
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
-  private def alternativeConnectionConfigs(conf: CassandraConnectionConfig, cluster: Cluster): Set[CassandraConnectionConfig] = {
+  private def alternativeConnectionConfigs(conf: CassandraConnectorConf, cluster: Cluster): Set[CassandraConnectorConf] = {
     val hosts = nodesInTheSameDC(conf.hosts, cluster.getMetadata.getAllHosts.toSet)
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
@@ -190,16 +187,16 @@ object CassandraConnector {
 
   /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
   def apply(conf: SparkConf): CassandraConnector = {
-    new CassandraConnector(CassandraConnectionConfig.apply(conf))
+    new CassandraConnector(CassandraConnectorConf.apply(conf))
   }
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */
   def apply(host: InetAddress,
-            nativePort: Int = CassandraConnectionConfig.DefaultNativePort,
-            rpcPort: Int = CassandraConnectionConfig.DefaultRpcPort,
-            authConfig: AuthConfig = AuthConfig(None)) = {
+            nativePort: Int = CassandraConnectorConf.DefaultNativePort,
+            rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
+            authConfig: AuthConf = NoAuthConf) = {
 
-    val config = CassandraConnectionConfig.apply(host, nativePort, rpcPort, authConfig)
+    val config = CassandraConnectorConf.apply(host, nativePort, rpcPort, authConfig)
     new CassandraConnector(config)
   }
 
