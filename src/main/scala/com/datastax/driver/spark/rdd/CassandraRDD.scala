@@ -4,14 +4,14 @@ import java.io.IOException
 
 import com.datastax.driver.core.{ConsistencyLevel, Session, SimpleStatement, Statement}
 import com.datastax.driver.spark.connector._
-import com.datastax.driver.spark.mapper._
 import com.datastax.driver.spark.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
 import com.datastax.driver.spark.rdd.partitioner.dht.TokenFactory
 import com.datastax.driver.spark.rdd.reader._
 import com.datastax.driver.spark.types.TypeConverter
+import com.datastax.driver.spark.util.CountingIterator
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
@@ -46,7 +46,7 @@ class CassandraRDD[R] private[spark] (
     val where: CqlWhereClause = CqlWhereClause.empty)(
   implicit
     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
-  extends RDD[R](sc, Seq.empty) {
+  extends RDD[R](sc, Seq.empty) with Logging {
 
   /** How many rows are fetched at once from server */
   val fetchSize = sc.getConf.getInt("cassandra.input.page.row.size", 1000)
@@ -260,7 +260,10 @@ class CassandraRDD[R] private[spark] (
   override def getPartitions: Array[Partition] = {
     verify // let's fail fast
     val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions
+    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions
+    logInfo(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
+    logDebug("Partitions: \n" + partitions.mkString("\n"))
+    partitions
   }
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
@@ -280,10 +283,13 @@ class CassandraRDD[R] private[spark] (
 
   private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
     val (cql, values) = tokenRangeToCqlQuery(range)
+    logInfo(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(cql, values: _*)
     val columnNamesArray = selectedColumnNames.toArray
     try {
-      session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
+      val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
+      logInfo(s"Row iterator for range ${range.cql} obtained successfully.")
+      result
     } catch {
       case t: Throwable => throw new IOException("Exception during query execution: " + cql, t)
     }
@@ -291,14 +297,22 @@ class CassandraRDD[R] private[spark] (
 
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
     val session = connector.openSession()
-    context.addOnCompleteCallback(session.close)
-
     val partition = split.asInstanceOf[CassandraPartition]
     val tokenRanges = partition.tokenRanges
+    val startTime = System.currentTimeMillis()
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
+    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
+    val countingIterator = new CountingIterator(rowIterator)
+
+    context.addOnCompleteCallback { () =>
+      val endTime = System.currentTimeMillis()
+      val duration = (endTime - startTime) / 1000.0
+      logInfo(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")
+      session.close()
+    }
+    countingIterator
   }
 }

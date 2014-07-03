@@ -6,7 +6,7 @@ import com.datastax.driver.core._
 import com.datastax.driver.core.policies._
 import com.datastax.driver.spark.util.IOUtils
 import org.apache.cassandra.thrift.Cassandra
-import org.apache.spark.SparkConf
+import org.apache.spark.{Logging, SparkConf}
 import org.apache.thrift.protocol.TBinaryProtocol
 
 import scala.collection.JavaConversions._
@@ -45,7 +45,7 @@ import scala.util.Random
   *   - `cassandra.query.retry.count`: how many times to reattempt a failed query 
   */
 class CassandraConnector(conf: CassandraConnectorConf)
-  extends Serializable {
+  extends Serializable with Logging {
 
   import com.datastax.driver.spark.connector.CassandraConnector._
 
@@ -142,8 +142,8 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
 }
 
-object CassandraConnector {
-  val keepAliveMillis = System.getProperty("cassandra.connection.keep_alive_ms", "100").toInt
+object CassandraConnector extends Logging {
+  val keepAliveMillis = System.getProperty("cassandra.connection.keep_alive_ms", "250").toInt
   val minReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.min", "1000").toInt
   val maxReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("cassandra.query.retry.count", "10").toInt
@@ -152,18 +152,25 @@ object CassandraConnector {
     createCluster, destroyCluster, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
   private def createCluster(conf: CassandraConnectorConf): Cluster = {
-    Cluster.builder()
-      .addContactPoints(conf.hosts.toSeq: _*)
-      .withPort(conf.nativePort)
-      .withRetryPolicy(new MultipleRetryPolicy(retryCount))
-      .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
-      .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
-      .withAuthProvider(conf.authConf.authProvider)
-      .build()
+    logDebug(s"Connecting to cluster: ${conf.hosts.mkString("{", ",", "}")}:${conf.nativePort}")
+    val cluster =
+      Cluster.builder()
+        .addContactPoints(conf.hosts.toSeq: _*)
+        .withPort(conf.nativePort)
+        .withRetryPolicy(new MultipleRetryPolicy(retryCount))
+        .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
+        .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
+        .withAuthProvider(conf.authConf.authProvider)
+        .build()
+    val clusterName = cluster.getMetadata.getClusterName
+    logInfo(s"Connected to Cassandra cluster: $clusterName")
+    cluster
   }
 
   private def destroyCluster(cluster: Cluster) {
+    val clusterName = cluster.getMetadata.getClusterName
     cluster.close()
+    logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
