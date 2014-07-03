@@ -65,9 +65,8 @@ object Settings extends Build {
   val tests = inConfig(Test)(Defaults.testTasks)
 
   val testOptionSettings = Seq(
-    Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-    Tests.Argument(TestFrameworks.JUnit, "-oDF"),
-    Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
+    // commented out for now until migrated to: Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+    Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a") 
   )
 
   lazy val testSettings = tests ++ Seq(

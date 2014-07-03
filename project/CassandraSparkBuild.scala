@@ -41,7 +41,7 @@ object Dependencies {
     val cassandraThrift   = "org.apache.cassandra"        % "cassandra-thrift"           % Cassandra
     val cassandraClient   = "org.apache.cassandra"        % "cassandra-clientutil"       % Cassandra
     val config            = "com.typesafe"                % "config"                     % Config                       // ApacheV2
-    val datastax          = "com.datastax.cassandra"      % "cassandra-driver-core"      % DataStax      withSources () // ApacheV2
+    val cassandraDriver   = "com.datastax.cassandra"      % "cassandra-driver-core"      % DataStax      withSources () // ApacheV2
     val guava             = "com.google.guava"            % "guava"                      % Guava
     val jodaC             = "org.joda"                    % "joda-convert"               % JodaC
     val jodaT             = "joda-time"                   % "joda-time"                  % JodaT
@@ -57,6 +57,7 @@ object Dependencies {
     object Test {
         // Eventually migrate junit out in favor of the scala test APIs
         val junit         = "junit"                       % "junit"                      % "4.11"         % "test"      // for now
+        val junitInterface = "com.novocode" % "junit-interface" % "0.10" % "test"
         val logback       = "ch.qos.logback"              % "logback-classic"            % Logback        % "test"      // EPL 1.0 / LGPL 2.1
         val scalatest     = "org.scalatest"               %% "scalatest"                 % ScalaTest      % "test"      // ApacheV2
     }
@@ -69,11 +70,11 @@ object Dependencies {
     // Consider: Metrics.metricsJvm, Metrics.latencyUtils, Metrics.hdrHistogram
     val metrics = Seq(Metrics.metricsJson)
 
-    val testKit = Seq(Test.junit, Test.scalatest)
+    val testKit = Seq(Test.junit, Test.junitInterface, Test.scalatest)
 
     val spark = testKit ++ metrics ++ logging ++ Seq(
       akkaActor, akkaRemote, akkaSlf4j, cassandraThrift, cassandraClient,
-      config, datastax, guava, jodaC, jodaT, lzf, reflect, sparkCore
+      config, cassandraDriver, guava, jodaC, jodaT, lzf, reflect, sparkCore
     )
 
 }

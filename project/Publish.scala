@@ -49,6 +49,11 @@ object Publish extends Build {
             <url>http://github.com/pkolaczk</url>
           </developer>
           <developer>
+            <id>jacek-lewandowski</id>
+            <name>Jacek Lewandowski</name>
+            <url>http://github.com/jacek-lewandowski</url>
+          </developer>
+          <developer>
             <id>helena</id>
             <name>Helena Edelson</name>
             <url>http://github.com/helena</url>
