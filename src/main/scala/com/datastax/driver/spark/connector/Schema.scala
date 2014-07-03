@@ -3,7 +3,7 @@ package com.datastax.driver.spark.connector
 import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
 import com.datastax.driver.spark.types.ColumnType
 
-import org.apache.log4j.Logger
+import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
@@ -52,9 +52,7 @@ case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef])
   * @param keyspaceName if defined, fetches only metadata of the given keyspace
   * @param tableName if defined, fetches only metadata of the given table
   */
-class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None) {
-
-  private val logger = Logger.getLogger(classOf[Schema])
+class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None) extends Logging {
 
   private val systemKeyspaces = Set("system", "system_traces", "dse_system", "dse_security", "cfs", "cfs_archive", "system_auth")
 
@@ -108,12 +106,15 @@ class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None,
       KeyspaceDef(keyspace.getName, fetchTables(keyspace))
 
 
-  /** All keyspaces in this database, incuding the system keyspaces */
+  /** All keyspaces in this database, including the system keyspaces */
   lazy val keyspaces: Seq[KeyspaceDef] = {
-    logger.debug("Retrieving schema from Cassandra...")
     connector.withClusterDo { cluster =>
-      logger.debug(s"Connected to cluster ${cluster.getClusterName}")
-      fetchKeyspaces(cluster.getMetadata)
+      val clusterName = cluster.getMetadata.getClusterName
+      logDebug(s"Retrieving database schema from cluster $clusterName...")
+      val keyspaces = fetchKeyspaces(cluster.getMetadata)
+      logDebug(s"${keyspaces.size} keyspaces fetched from cluster $clusterName: " +
+        s"${keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
+      keyspaces
     }
   }
 

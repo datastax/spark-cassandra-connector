@@ -4,9 +4,10 @@ import java.io.IOException
 
 import com.datastax.driver.core.{BatchStatement, PreparedStatement}
 import com.datastax.driver.spark.connector.{Schema, TableDef, CassandraConnector}
+import com.datastax.driver.spark.util.CountingIterator
 
 import org.apache.log4j.Logger
-import org.apache.spark.TaskContext
+import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
 import scala.reflect.ClassTag
@@ -21,10 +22,9 @@ class TableWriter[T] private (
     rowWriter: RowWriter[T],
     maxBatchSizeInBytes: Int,
     maxBatchSizeInRows: Option[Int],
-    parallelismLevel: Int) extends Serializable {
+    parallelismLevel: Int) extends Serializable with Logging {
 
   import com.datastax.driver.spark.writer.TableWriter._
-
 
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
@@ -48,7 +48,7 @@ class TableWriter[T] private (
 
   /** Writes `MeasuredInsertsCount` rows to Cassandra and returns the maximum size of the row */
   private def measureMaxInsertSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    logger.info(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
+    logInfo(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
     var maxInsertSize = 1
     for (row <- data.take(MeasuredInsertsCount)) {
       val insert = rowWriter.bind(row, stmt)
@@ -57,7 +57,7 @@ class TableWriter[T] private (
       if (size > maxInsertSize)
         maxInsertSize = size
     }
-    logger.info(s"Maximum serialized row size: " + maxInsertSize + " B")
+    logInfo(s"Maximum serialized row size: " + maxInsertSize + " B")
     maxInsertSize
   }
 
@@ -87,21 +87,17 @@ class TableWriter[T] private (
 
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
-    var rowCount = 0
-    val countedData = data.map { item => rowCount += 1; item }
-
-
     connector.withSessionDo { session =>
-      logger.info(s"Connected to Cassandra cluster ${session.getCluster.getClusterName}")
+      val rowIterator = new CountingIterator(data)
       val startTime = System.currentTimeMillis()
       val stmt = session.prepare(queryStr)
       val queryExecutor = new QueryExecutor(session, parallelismLevel)
-      val batchSize = optimumBatchSize(countedData, stmt, queryExecutor)
+      val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 
-      logger.info(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
+      logInfo(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
       batchSize match {
-        case 1 => writeUnbatched(countedData, stmt, queryExecutor)
-        case _ => writeBatched(countedData, stmt, queryExecutor, batchSize)
+        case 1 => writeUnbatched(rowIterator, stmt, queryExecutor)
+        case _ => writeBatched(rowIterator, stmt, queryExecutor, batchSize)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()
@@ -111,15 +107,13 @@ class TableWriter[T] private (
 
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
-      logger.info(f"Successfully wrote $rowCount rows in ${queryExecutor.successCount} batches to $keyspaceName.$tableName in $duration%.3f s.")
+      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} batches to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
 
 }
 
 object TableWriter {
-
-  val logger = Logger.getLogger(classOf[TableWriter[_]])
 
   val DefaultParallelismLevel = 5
   val MeasuredInsertsCount = 128
