@@ -2,7 +2,7 @@ package com.datastax.driver.spark.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ConsistencyLevel, Session, SimpleStatement, Statement}
+import com.datastax.driver.core.{ConsistencyLevel, PreparedStatement, Session, SimpleStatement, Statement}
 import com.datastax.driver.spark.connector._
 import com.datastax.driver.spark.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
 import com.datastax.driver.spark.rdd.partitioner.dht.TokenFactory
@@ -275,10 +275,11 @@ class CassandraRDD[R] private[spark] (
   }
 
   private def createStatement(cql: String, values: Any*): Statement = {
-    val stmt = new SimpleStatement(cql, values.map(_.asInstanceOf[AnyRef]): _*)
+    val stmt = connector.withSessionDo(_.prepare(cql))
     stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
-    stmt.setFetchSize(fetchSize)
-    stmt
+    val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
+    bstm.setFetchSize(fetchSize)
+    bstm
   }
 
   private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
