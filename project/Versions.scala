@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cassandra
 
 object Versions {
 
   val Akka            = "2.2.3"
   val Cassandra       = "2.0.8"
+  val CassandraDriver = "2.0.2"
   val Config          = "1.2.1"
-  val DataStax        = "2.0.2"
   val Guava           = "16.0.1"
   val JDK             = "1.6" // spark specifies this version for its target jvm :(
   val JodaC           = "1.2"
@@ -28,7 +27,7 @@ object Versions {
   val Logback         = "1.1.2"
   val Lzf             = "1.0.1"
   val MetricsJson     = "3.0.2"
-  val Scala           = "2.10.4"//2.11.1"
+  val Scala           = "2.10.4"
   val ScalaTest       = "2.1.4"
   val Slf4j           = "1.7.7"
   val Spark           = "0.9.1"

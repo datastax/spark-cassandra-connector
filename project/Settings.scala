@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cassandra
 
 import sbt._
 import sbt.Keys._
+import sbt.plugins.{JvmPlugin, IvyPlugin}
 import sbtrelease.ReleasePlugin._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
+
+import scala.language.postfixOps
 
 object Settings extends Build {
 
@@ -42,7 +44,7 @@ object Settings extends Build {
   */
   override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 
-  lazy val baseSettings = Defaults.defaultSettings //++ Publish.settings
+  lazy val baseSettings = Defaults.coreDefaultSettings ++ IvyPlugin.projectSettings ++ JvmPlugin.projectSettings //++ Publish.settings
 
   lazy val parentSettings = baseSettings ++ Seq(
     publishArtifact := false,
@@ -52,7 +54,7 @@ object Settings extends Build {
   // add ++ formatSettings
   lazy val defaultSettings = baseSettings ++ testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
-    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlog-reflective-calls", "-Xlint"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
     // tbd: crossVersion := CrossVersion.binary,
@@ -97,7 +99,7 @@ object Settings extends Build {
  */
 object ShellPrompt {
 
-  def gitBranches = "git branch" lines_! devnull mkString
+  def gitBranches = ("git branch" lines_! devnull).mkString
 
   def current: String = """\*\s+([\.\w-]+)""".r findFirstMatchIn gitBranches map (_ group 1) getOrElse "-"
 

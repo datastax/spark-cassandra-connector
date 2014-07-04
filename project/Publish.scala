@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cassandra
 
 import sbt._
 import sbt.Keys._
@@ -36,29 +35,28 @@ object Publish extends Build {
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
-    pomExtra := (
+    pomExtra :=
       <url>http://github.com/datastax/cassandra-driver-spark</url>
-        <scm>
-          <url>git@github.com:datastax/cassandra-driver-spark.git</url>
-          <connection>scm:git:git@github.com:datastax/cassandra-driver-spark.git</connection>
-        </scm>
-        <developers>
-          <developer>
-            <id>pkolaczk</id>
-            <name>Piotr Kołaczkowski</name>
-            <url>http://github.com/pkolaczk</url>
-          </developer>
-          <developer>
-            <id>jacek-lewandowski</id>
-            <name>Jacek Lewandowski</name>
-            <url>http://github.com/jacek-lewandowski</url>
-          </developer>
-          <developer>
-            <id>helena</id>
-            <name>Helena Edelson</name>
-            <url>http://github.com/helena</url>
-          </developer>
-        </developers>
-      )
+      <scm>
+        <url>git@github.com:datastax/cassandra-driver-spark.git</url>
+        <connection>scm:git:git@github.com:datastax/cassandra-driver-spark.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>pkolaczk</id>
+          <name>Piotr Kołaczkowski</name>
+          <url>http://github.com/pkolaczk</url>
+        </developer>
+        <developer>
+          <id>jacek-lewandowski</id>
+          <name>Jacek Lewandowski</name>
+          <url>http://github.com/jacek-lewandowski</url>
+        </developer>
+        <developer>
+          <id>helena</id>
+          <name>Helena Edelson</name>
+          <url>http://github.com/helena</url>
+        </developer>
+      </developers>
   )
 }
