@@ -1,4 +1,4 @@
-package com.datastax.driver.spark.rdd.reader
+package com.datastax.driver.spark
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
@@ -334,4 +334,12 @@ object CassandraRow {
         data(i) = get(row, i)
     new CassandraRow(data, columnNames)
   }
+
+  /** Creates a CassandraRow object from a map with keys denoting column names and
+    * values denoting column values. */
+  def fromMap(map: Map[String, Any]): CassandraRow = {
+    val (columnNames, values) = map.unzip
+    new CassandraRow(values.map(_.asInstanceOf[AnyRef]).toArray, columnNames.toArray)
+  }
+
 }

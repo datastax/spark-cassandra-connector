@@ -3,6 +3,7 @@ package com.datastax.driver.spark.rdd.reader
 import java.lang.reflect.Method
 
 import com.datastax.driver.core.Row
+import com.datastax.driver.spark.CassandraRow
 import com.datastax.driver.spark.connector.TableDef
 import com.datastax.driver.spark.mapper._
 import com.datastax.driver.spark.types.{TypeConversionException, TypeConverter}
