@@ -1,21 +1,22 @@
 # Lightning-fast cluster computing with Spark and Cassandra
 
-This library allows creating Spark applications that read/write data from/to Cassandra.
+This library allows creation of Spark applications that read/write data from/to Cassandra.
 
-Features:
+## Features
 
- - Compatible with vanilla Apache Cassandra 2.x and DataStax Enterprise 4.5 
+ - Compatible with vanilla Apache Cassandra 2.x and DataStax Enterprise 4.5
+ - Compatible with Apache Spark 0.9 and 1.0
  - Exposes Cassandra tables as Spark RDDs 
- - Map table rows to CassandraRow objects or tuples
- - Customizable object mapper for mapping rows to objects of user-defined classes
- - Save RDDs back to Cassandra by implicit `saveToCassandra` call
- - Data type conversions between Cassandra and Scala
- - Support for all Cassandra data types including collections
- - Server-side row filtering via CQL `WHERE` clause 
- - Optimizations for Cassandra Virtual Nodes    
+ - Maps table rows to CassandraRow objects or tuples
+ - Offers customizable object mapper for mapping rows to objects of user-defined classes
+ - Saves RDDs back to Cassandra by implicit `saveToCassandra` call
+ - Converts data types between Cassandra and Scala
+ - Supports all Cassandra data types including collections
+ - Filters rows on the server side via the CQL `WHERE` clause 
+ - Plays nice with Cassandra Virtual Nodes    
 
 ## Building
-You need to install SBT version 0.13 or newer to build spark-cassandra-driver.
+You need to install SBT version 0.13 or newer to build this project.
 In the project root directory run:
 
     sbt package
@@ -24,74 +25,15 @@ In the project root directory run:
 The library package jar will be placed in `target/scala-2.10/`
 The documentation will be generated to `target/scala-2.10/api/`    
      
-## 5-minutes quick start guide
-In this tutorial, you'll learn how to setup a very simple Spark application reading and writing data from/to Cassandra.
-Before you start, you need to have basic knowledge of Apache Cassandra and Apache Spark.
-Refer to [Cassandra documentation](http://www.datastax.com/documentation/cassandra/2.0/cassandra/gettingStartedCassandraIntro.html) 
-and [Spark documentation](https://spark.apache.org/docs/0.9.1/). 
+## Documentation
 
-### Prerequisites
-Install and launch a Cassandra 2.0 cluster and a Spark cluster.   
-
-Configure a new Scala project with the following dependencies: 
-
- - Apache Spark 0.9.1 and its dependencies
- - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
- - DataStax Cassandra java driver for your Cassandra version 
- 
-This driver does not require full cassandra-all.jar nor any dependencies of the Cassandra server. 
-For a detailed dependency list, see project dependencies in the `build.sbt` file.
-
-Put the spark-cassandra-driver jar and its dependency jars:
-
- - on the classpath of your project.
- - on the classpath of your Spark cluster nodes or use `sc.addJar`
- 
-This driver is also compatible with Spark distribution provided in 
-[DataStax Enterprise 4.5](http://www.datastax.com/documentation/datastax_enterprise/4.5/datastax_enterprise/newFeatures.html).
- 
-### Preparing example Cassandra schema
-Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
-    
-    CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-    CREATE TABLE test.kv(key text PRIMARY KEY, value int);
-      
-Then insert some example data:
-
-    INSERT INTO test.kv(key, value) VALUES ('key1', 1)
-    INSERT INTO test.kv(key, value) VALUES ('key2', 2)        
- 
-Now you're ready to write your first Spark program using Cassandra.
-
-### Setting up `SparkContext`   
-Before creating the `SparkContext`, set the `cassandra.connection.host` property to the address of one 
-of the Cassandra nodes:
-   
-    val conf = new SparkConf(true)
-       .set("cassandra.connection.host", "127.0.0.1")
-       
-Create a `SparkContext`. Substitute `127.0.0.1` with the actual address of your Spark Master
-(or use `"local"` to run in local mode): 
-     
-    val sc = new SparkContext("spark://127.0.0.1:7077", "test", conf)
-
-Enable Cassandra-specific functions on `SparkContext` and `RDD`:
-     
-    import com.datastax.driver.spark._
-
-### Loading and analyzing data from Cassandra
-Use `sc.cassandraTable` method to view this table as Spark `RDD`:
-
-    val rdd = sc.cassandraTable("test", "kv")
-    println(rdd.count)
-    println(rdd.first)
-    println(rdd.map(_.getInt("value")).sum)        
-
-### Saving data from RDD to Cassandra  
-Add two more rows to the table:
-                                     
-    val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4))
-    collection.saveToCassandra("test", "kv", Seq("key", "value"))        
+  - [Quick-start guide](doc/0_quick_start.md)
+  - [Connecting to Cassandra](doc/1_connecting.md)
+  - [Loading datasets from Cassandra](doc/2_loading.md)
+  - [Server-side data selection and filtering](doc/3_selection.md)   
+  - [Working with user-defined case classes and tuples](doc/4_mapper.md)
+  - [Saving datasets to Cassandra](doc/5_saving.md)
+  - [Customizing the object mapping](doc/6_advanced_mapper.md)     
 
 ## Reporting Bugs
 Please use GitHub to report feature requests or bugs.  
@@ -100,12 +42,6 @@ Please use GitHub to report feature requests or bugs.
 To contribute back to this project, please open a pull-request on GitHub.   
 
 To develop this project, we recommend using IntelliJ IDEA. 
-Make sure you have installed and enabled the Scala Plugin from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+IntelliJ+IDEA).
-
-To download the required dependencies and setup project files, in the project root directory, run: 
-
-    sbt gen-idea        
-    
-Note: The new versions of the Scala plugin automatically import SBT projects, 
-so this step might not be required for you.
+Make sure you have installed and enabled the Scala Plugin 
+from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+IntelliJ+IDEA).
    
