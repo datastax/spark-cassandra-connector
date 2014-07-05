@@ -57,7 +57,10 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
         (methods(setterName), columnRef)
     }
 
-  private val args = Array.ofDim[AnyRef](factory.argCount)
+  @transient
+  private lazy val buffer = new ThreadLocal[Array[AnyRef]] {
+    override def initialValue() = Array.ofDim[AnyRef](factory.argCount)
+  }
 
   private def getColumnValue(row: Row, columnRef: ColumnRef) = {
     columnRef match {
@@ -87,13 +90,13 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
     }
   }
 
-  private def fillArgs(row: Row) {
-    for (i <- 0 until args.length) {
+  private def fillBuffer(row: Row, buf: Array[AnyRef]) {
+    for (i <- 0 until buf.length) {
       val columnRef = constructorColumnRefs(i)
       val columnName = getColumnName(row, columnRef)
       val columnValue = getColumnValue(row, columnRef)
       val converter = constructorArgConverters(i)
-      args(i) = convert(columnValue, columnName, converter)
+      buf(i) = convert(columnValue, columnName, converter)
     }
   }
 
@@ -109,8 +112,9 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
   }
 
   override def read(row: Row, columnNames: Array[String]) = {
-    fillArgs(row)
-    invokeSetters(row, factory.newInstance(args: _*))
+    val buf = buffer.get
+    fillBuffer(row, buf)
+    invokeSetters(row, factory.newInstance(buf: _*))
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
