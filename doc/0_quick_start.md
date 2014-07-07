@@ -36,8 +36,8 @@ Create a simple keyspace and table in Cassandra. Run the following statements in
       
 Then insert some example data:
 
-    INSERT INTO test.kv(key, value) VALUES ('key1', 1)
-    INSERT INTO test.kv(key, value) VALUES ('key2', 2)        
+    INSERT INTO test.kv(key, value) VALUES ('key1', 1);
+    INSERT INTO test.kv(key, value) VALUES ('key2', 2);
  
 Now you're ready to write your first Spark program using Cassandra.
 
