@@ -23,10 +23,6 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   type Token = com.datastax.driver.spark.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.driver.spark.rdd.partitioner.dht.TokenRange[V, T]
 
-  /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
-    * Does not affect how many Spark threads fetch data from Cassandra. */
-  private val MaxParallelism = 256
-
   /** How many token ranges to sample in order to estimate average number of rows per token */
   private val TokenRangeSampleSize = 16
 
@@ -43,9 +39,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def quote(name: String) = "\"" + name + "\""
 
   private def splitsOf(tokenRanges: Iterable[TokenRange], splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
-    val parallelism = math.min(MaxParallelism, tokenRanges.size)
     val parTokenRanges = tokenRanges.par
-    parTokenRanges.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(parallelism))
+    parTokenRanges.tasksupport = new ForkJoinTaskSupport(CassandraRDDPartitioner.pool)
     (for (tokenRange <- parTokenRanges;
           split <- splitter.split(tokenRange, splitSize)) yield split).seq
   }
@@ -123,4 +118,12 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
+}
+
+object CassandraRDDPartitioner {
+  /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
+    * Does not affect how many Spark threads fetch data from Cassandra. */
+  val MaxParallelism = 256
+
+  private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
 }
