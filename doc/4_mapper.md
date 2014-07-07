@@ -54,4 +54,4 @@ Property values might be also set by Scala-style setters. The following class is
     }
        
        
-[Next - Saving data](5_saving.md)  
+[Next - Saving data](5_saving.md)
