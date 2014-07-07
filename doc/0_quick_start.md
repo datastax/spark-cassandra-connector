@@ -68,8 +68,8 @@ Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
 ### Saving data from RDD to Cassandra  
 Add two more rows to the table:
                                      
-    val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4))
-    collection.saveToCassandra("test", "kv", Seq("key", "value"))        
+    val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
+    collection.saveToCassandra("test", "kv", Seq("key", "value"))       
 
 
 [Next - Connecting to Cassandra](1_connecting.md)
