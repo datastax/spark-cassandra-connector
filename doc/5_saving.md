@@ -56,4 +56,4 @@ The following properties set in `SparkConf` can be used to fine-tune the saving 
   - `cassandra.output.batch.size.bytes`: maximum total size of the batch in bytes; defaults to 64 kB.
   - `cassandra.output.concurrent.writes`: maximum number of batches executed in parallel by a single Spark task; defaults to 5
 
-[Next - Customizing the object mapping](6_advanced_mapper.md)  
+[Next - Customizing the object mapping](6_advanced_mapper.md)

@@ -16,7 +16,7 @@ implementations are included.
 To work with Java classes, use `JavaBeanColumnMapper`. 
 Make sure your objects are `Serializable`, otherwise Spark won't be able to send them over the network.
 
-    import com.datastax.bdp.spark.mapper.JavaBeanColumnMapper
+    import com.datastax.driver.spark.mapper.JavaBeanColumnMapper
     class WordCount extends Serializable { 
         private var _word: String = ""
         private var _count: Int = 0
@@ -67,4 +67,4 @@ this Spark driver uses a `RowReader` instance. An appropriate `RowReader` is obt
 In the same way, when writing an `RDD` back to Cassandra, an appropriate implicit `RowWriterFactory` and 
 `RowWriter` are used to extract column values from every RDD item and bind them to an INSERT `PreparedStatement`.
      
-Please refer to the ScalaDoc for more details.     
+Please refer to the ScalaDoc for more details.
