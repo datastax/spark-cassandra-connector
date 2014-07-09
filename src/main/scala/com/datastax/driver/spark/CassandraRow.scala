@@ -87,12 +87,14 @@ class ColumnNotFoundException(message: String) extends Exception(message)
 class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Serializable {
 
   @transient
-  private lazy val indexOf =
-    columnNames.zipWithIndex.toMap.withDefault { name =>
-      throw new ColumnNotFoundException(
-        s"Column not found: $name. " +
+  private lazy val _indexOf =
+    columnNames.zipWithIndex.toMap.withDefaultValue(-1)
+
+  private lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
+    throw new ColumnNotFoundException(
+      s"Column not found: $name. " +
         s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-    }
+  }
 
   /** Total number of columns in this row. Includes columns with null values. */
   def size = data.size
@@ -102,8 +104,19 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
     data(index) == null
 
   /** Returns true if column value is Cassandra null */
-  def isNull(name: String): Boolean =
-    data(indexOf(name)) == null
+  def isNull(name: String): Boolean = {
+    data(_indexOfOrThrow(name)) == null
+  }
+
+  /** Returns index of column with given name or -1 if column not found */
+  def indexOf(name: String): Int =
+    _indexOf(name)
+
+  /** Returns true if column with given name is defined and has an
+    * entry in the underlying value array, i.e. was requested in the result set.
+    * For columns having null value, returns true.*/
+  def contains(name: String): Boolean =
+    _indexOf(name) != -1
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
@@ -113,7 +126,7 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
-    get[T](indexOf(name))
+    get[T](_indexOfOrThrow(name))
 
   /** Returns a column value without applying any conversion.
     * The underlying type is the same as the type returned by the low-level Cassandra driver.*/

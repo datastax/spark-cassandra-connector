@@ -11,9 +11,14 @@ class GenericRowWriter(table: TableDef, selectedColumns: Seq[String]) extends Ro
     selectedColumns.toIndexedSeq
 
   private def getColumnValue(data: CassandraRow, columnName: String): AnyRef = {
-    val converter = table.columnByName(columnName).columnType.converterToCassandra
-    val value = data.get[AnyRef](columnName)
-    converter.convert(value).asInstanceOf[AnyRef]
+    val index = data.indexOf(columnName)
+    if (index >= 0) {
+      val converter = table.columnByName(columnName).columnType.converterToCassandra
+      val value = data.get[AnyRef](index)
+      converter.convert(value).asInstanceOf[AnyRef]
+    }
+    else
+      null
   }
 
   @transient
