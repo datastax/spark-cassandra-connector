@@ -104,7 +104,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
     for ((setter, columnRef) <- setters) {
       val columnValue = getColumnValue(row, columnRef)
       val columnName = getColumnName(row, columnRef)
-      val converter = setterConverters(columnName)
+      val converter = setterConverters(setter.getName)
       val convertedValue = convert(columnValue, columnName, converter)
       setter.invoke(obj, convertedValue)
     }

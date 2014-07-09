@@ -17,5 +17,5 @@ trait RowWriterFactory[T] {
 }
 
 object RowWriterFactory {
-  implicit def defaultRowWriterFactory[T : ClassTag : ColumnMapper] = DefaultRowWriter.factory
+  implicit def defaultRowWriterFactory[T : ClassTag : ColumnMapper]: RowWriterFactory[T] = DefaultRowWriter.factory
 }
