@@ -17,15 +17,15 @@
 object Versions {
 
   val Akka            = "2.2.3"
-  val Cassandra       = "2.0.8"
+  val Cassandra       = "2.0.9"
   val CassandraDriver = "2.0.2"
   val Config          = "1.2.1"
-  val Guava           = "16.0.1"
+  val Guava           = "15.0"
   val JDK             = "1.6" // spark specifies this version for its target jvm :(
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val Logback         = "1.1.2"
-  val Lzf             = "1.0.1"
+  val Lzf             = "0.8.4"
   val MetricsJson     = "3.0.2"
   val Scala           = "2.10.4"
   val ScalaTest       = "2.1.4"

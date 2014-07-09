@@ -66,4 +66,8 @@ class RefCountMap[T] {
         throw new IllegalStateException("Release without acquire for key: " + key)
     }
   }
+
+  /** Resets state of all counters to 0 */
+  def clear(): Unit = refCounts.clear()
+
 }

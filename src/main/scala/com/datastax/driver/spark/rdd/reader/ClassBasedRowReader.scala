@@ -53,7 +53,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
 
   @transient
   private lazy val setters: Array[(Method, ColumnRef)] =
-    columnMap.setters.toArray.map {
+    columnMap.setters.toArray.collect {
       case (setterName, columnRef) if !constructorColumnRefs.contains(columnRef) =>
         (methods(setterName), columnRef)
     }
@@ -105,7 +105,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
     for ((setter, columnRef) <- setters) {
       val columnValue = getColumnValue(row, columnRef)
       val columnName = getColumnName(row, columnRef)
-      val converter = setterConverters(columnName)
+      val converter = setterConverters(setter.getName)
       val convertedValue = convert(columnValue, columnName, converter)
       setter.invoke(obj, convertedValue)
     }
