@@ -368,10 +368,15 @@ object TypeConverter {
     if      (tpe =:= typeOf[Any]) AnyConverter
     else if (tpe =:= typeOf[AnyRef]) AnyRefConverter
     else if (tpe =:= typeOf[Boolean]) BooleanConverter
+    else if (tpe =:= typeOf[java.lang.Boolean]) BooleanConverter
     else if (tpe =:= typeOf[Int]) IntConverter
+    else if (tpe =:= typeOf[java.lang.Integer]) IntConverter
     else if (tpe =:= typeOf[Long]) LongConverter
+    else if (tpe =:= typeOf[java.lang.Long]) LongConverter
     else if (tpe =:= typeOf[Float]) FloatConverter
+    else if (tpe =:= typeOf[java.lang.Float]) FloatConverter
     else if (tpe =:= typeOf[Double]) DoubleConverter
+    else if (tpe =:= typeOf[java.lang.Double]) DoubleConverter
     else if (tpe =:= typeOf[String]) StringConverter
     else if (tpe =:= typeOf[BigInt]) BigIntConverter
     else if (tpe =:= typeOf[BigDecimal]) BigDecimalConverter
