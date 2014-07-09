@@ -86,7 +86,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
   def withSessionDo[T](code: Session => T): T = {
     withClusterDo { cluster =>
       IOUtils.closeAfterUse(cluster.connect) { session =>
-        code(session)
+        code(SessionProxy.wrap(session))
       }
     }
   }
@@ -99,7 +99,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
     try {
       cluster = clusterCache.acquire(_config)
       session = cluster.connect()
-      SessionProxy.withCloseAction(session) { _ =>
+      SessionProxy.wrapWithCloseAction(session) { _ =>
         clusterCache.release(cluster)
       }
     }
@@ -170,6 +170,7 @@ object CassandraConnector extends Logging {
   private def destroyCluster(cluster: Cluster) {
     val clusterName = cluster.getMetadata.getClusterName
     cluster.close()
+    PreparedStatementCache.remove(cluster)
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
