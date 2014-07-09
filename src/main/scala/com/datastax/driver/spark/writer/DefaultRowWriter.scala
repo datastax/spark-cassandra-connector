@@ -75,16 +75,15 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
     override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
   }
 
+  private def fillBuffer(data: T): Array[AnyRef] =
+    extractor.extract(data, buffer.get)
+
   override def bind(data: T, stmt: PreparedStatement) = {
-    val buf = buffer.get
-    extractor.extract(data, buf)
-    stmt.bind(buf: _*)
+    stmt.bind(fillBuffer(data): _*)
   }
 
   override def estimateSizeInBytes(data: T) = {
-    val buf = buffer.get
-    extractor.extract(data, buf)
-    ObjectSizeEstimator.measureSerializedSize(buf)
+    ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
   }
 }
 

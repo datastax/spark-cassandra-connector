@@ -16,6 +16,13 @@ trait RowWriterFactory[T] {
   def rowWriter(table: TableDef, columnNames: Seq[String]): RowWriter[T]
 }
 
-object RowWriterFactory {
+/** Provides a low-priority implicit `RowWriterFactory` able to write objects of any class for which
+  * a [[com.datastax.driver.spark.mapper.ColumnMapper ColumnMapper]] is defined.*/
+trait LowPriorityRowWriterFactoryImplicits {
   implicit def defaultRowWriterFactory[T : ClassTag : ColumnMapper] = DefaultRowWriter.factory
+}
+
+/** Provides an implicit `RowWriterFactory` for saving [[com.datastax.driver.spark.CassandraRow CassandraRow]] objects.*/
+object RowWriterFactory extends LowPriorityRowWriterFactoryImplicits {
+  implicit val genericRowWriterFactory = GenericRowWriter.Factory
 }

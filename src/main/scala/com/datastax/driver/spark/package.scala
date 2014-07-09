@@ -1,9 +1,10 @@
 package com.datastax.driver
 
+import com.datastax.driver.spark.CassandraRow
 import com.datastax.driver.spark.connector.CassandraConnector
 import com.datastax.driver.spark.mapper.ColumnMapper
 import com.datastax.driver.spark.rdd.CassandraRDD
-import com.datastax.driver.spark.rdd.reader.{CassandraRow, RowReaderFactory}
+import com.datastax.driver.spark.rdd.reader.RowReaderFactory
 import com.datastax.driver.spark.writer.{RowWriterFactory, TableWriter}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkContext
@@ -62,7 +63,7 @@ package object spark {
       * This method is made available on `SparkContext` by importing `com.datastax.driver.spark._`
       *
       * Depending on the type parameter passed to `cassandraTable`, every row is converted to one of the following:
-      *   - an [[rdd.reader.CassandraRow]] object (default, if no type given)
+      *   - an [[CassandraRow]] object (default, if no type given)
       *   - a tuple containing column values in the same order as columns selected by [[spark.rdd.CassandraRDD#select CassandraRDD#select]]
       *   - object of a user defined class, populated by appropriate [[spark.mapper.ColumnMapper ColumnMapper]]
       *
