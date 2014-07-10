@@ -44,7 +44,9 @@ object Settings extends Build {
   */
   override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 
-  lazy val baseSettings = Defaults.coreDefaultSettings ++ IvyPlugin.projectSettings ++ JvmPlugin.projectSettings //++ Publish.settings
+  lazy val baseSettings =
+    Defaults.coreDefaultSettings ++ Defaults.itSettings ++
+    IvyPlugin.projectSettings ++ JvmPlugin.projectSettings //++ Publish.settings
 
   lazy val parentSettings = baseSettings ++ Seq(
     publishArtifact := false,
@@ -64,19 +66,29 @@ object Settings extends Build {
     previousArtifact := None
   )
 
-  val tests = inConfig(Test)(Defaults.testTasks)
+  val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.testTasks)
 
   val testOptionSettings = Seq(
     // commented out for now until migrated to: Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-    Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a") 
+    Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
+
+  val javaAgent = TaskKey[Seq[String]]("javaagent")
+  val javaAgentTask = javaAgent <<= (fullClasspath in IntegrationTest).map { cp =>
+    val fileNames = cp.map(_.data.getPath)
+    val jamm = fileNames.find(_.matches("^.*jamm-.*\\.jar$"))
+    jamm.map("-javaagent:" + _).toSeq
+  }
 
   lazy val testSettings = tests ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
-    fork in Test := true
+    fork in Test := true,
+    fork in IntegrationTest := true,
+    javaAgentTask,
+    javaOptions in IntegrationTest ++= Seq("-Xmx2g") ++ javaAgent.value
   )
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(

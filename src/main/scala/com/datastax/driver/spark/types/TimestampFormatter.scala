@@ -3,11 +3,14 @@ package com.datastax.driver.spark.types
 import java.util.Date
 
 import org.apache.cassandra.serializers.TimestampSerializer
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 /** Formats timestamps and dates using CQL timestamp format `yyyy-MM-dd HH:mm:ssZ` */
 object TimestampFormatter {
-      
-  private val serializer = TimestampSerializer.instance
 
-  def format(date: Date): String = serializer.toString(date)
+  private val TimestampPattern = "yyyy-MM-dd HH:mm:ssZ"
+
+  def format(date: Date): String =
+    DateTimeFormat.forPattern(TimestampPattern).print(new DateTime(date.getTime))
 }
