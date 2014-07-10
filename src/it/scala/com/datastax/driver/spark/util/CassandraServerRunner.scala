@@ -5,6 +5,7 @@ import java.net.InetAddress
 
 import com.datastax.driver.spark.connector.CassandraConnectorConf
 import com.google.common.io.Files
+import org.apache.cassandra.io.util.FileUtils
 
 class CassandraServerRunner(val configTemplate: String) {
 
@@ -45,6 +46,8 @@ class CassandraServerRunner(val configTemplate: String) {
   def destroy() {
     process.destroy()
     process.waitFor()
+    FileUtils.deleteRecursive(tempDir)
+    tempDir.delete()
   }
 }
 

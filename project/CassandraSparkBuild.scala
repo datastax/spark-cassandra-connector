@@ -52,6 +52,7 @@ object Dependencies {
 
     object Test {
       val cassandraServer = "org.apache.cassandra"    % "cassandra-all"         % Cassandra      % "test,it"                 // ApacheV2
+      val commonsIO       = "commons-io"              % "commons-io"            % CommonsIO      % "test,it"                 // ApacheV2
       // Eventually migrate junit out in favor of the scala test APIs
       val junit           = "junit"                   % "junit"                 % "4.11"         % "test,it"                 // for now
       val junitInterface  = "com.novocode"            % "junit-interface"       % "0.10"         % "test,it"
@@ -66,7 +67,7 @@ object Dependencies {
   // Consider: Metrics.metricsJvm, Metrics.latencyUtils, Metrics.hdrHistogram
   val metrics = Seq(Metrics.metricsJson)
 
-  val testKit = Seq(Test.cassandraServer, Test.junit, Test.junitInterface, Test.scalatest)
+  val testKit = Seq(Test.cassandraServer, Test.commonsIO, Test.junit, Test.junitInterface, Test.scalatest)
 
   val spark = testKit ++ metrics ++ logging ++ Seq(
     akkaActor, akkaRemote, akkaSlf4j, cassandraThrift, cassandraClient, cassandraDriver,
