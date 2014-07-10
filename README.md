@@ -4,7 +4,7 @@ This library allows creation of Spark applications that read/write data from/to 
 
 ## Features
 
- - Compatible with vanilla Apache Cassandra 2.x and DataStax Enterprise 4.5
+ - Compatible with Apache Cassandra version 2.0.5 or higher and DataStax Enterprise 4.5
  - Compatible with Apache Spark 0.9 and 1.0
  - Exposes Cassandra tables as Spark RDDs 
  - Maps table rows to CassandraRow objects or tuples
