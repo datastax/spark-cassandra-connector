@@ -14,7 +14,7 @@ class SparkContextFunctions(sc: SparkContext) {
     * This method is made available on `SparkContext` by importing `com.datastax.driver.spark._`
     *
     * Depending on the type parameter passed to `cassandraTable`, every row is converted to one of the following:
-    *   - an [[rdd.reader.CassandraRow]] object (default, if no type given)
+    *   - an [[CassandraRow]] object (default, if no type given)
     *   - a tuple containing column values in the same order as columns selected by [[spark.rdd.CassandraRDD#select CassandraRDD#select]]
     *   - object of a user defined class, populated by appropriate [[spark.mapper.ColumnMapper ColumnMapper]]
     *

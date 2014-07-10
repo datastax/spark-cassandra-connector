@@ -1,17 +1,13 @@
 package com.datastax.driver.spark.demo
 
-
+import com.datastax.driver.spark._
 import org.apache.spark.{SparkConf, SparkContext}
 
 object BasicReadWriteDemo extends App {
 
-  import com.datastax.driver.spark._
-
   val sparkMasterHost = "127.0.0.1"
   val cassandraHost = "127.0.0.1"
-  val keyspace = "test"
-  val table = "kv"
-  
+
   // Tell Spark the address of one Cassandra node:
   val conf = new SparkConf(true).set("cassandra.connection.host", cassandraHost)
 

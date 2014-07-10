@@ -274,8 +274,8 @@ class CassandraRDD[R] private[spark] (
     (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", where.values)
   }
 
-  private def createStatement(cql: String, values: Any*): Statement = {
-    val stmt = connector.withSessionDo(_.prepare(cql))
+  private def createStatement(session: Session, cql: String, values: Any*): Statement = {
+    val stmt = session.prepare(cql)
     stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
     val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
     bstm.setFetchSize(fetchSize)
@@ -285,7 +285,7 @@ class CassandraRDD[R] private[spark] (
   private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
     val (cql, values) = tokenRangeToCqlQuery(range)
     logInfo(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
-    val stmt = createStatement(cql, values: _*)
+    val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.toArray
     try {
       val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))

@@ -3,7 +3,6 @@ package com.datastax.driver.spark;
 import com.datastax.driver.spark.mapper.ColumnMapper;
 import com.datastax.driver.spark.mapper.JavaBeanColumnMapper;
 import com.datastax.driver.spark.rdd.CassandraRDD;
-import com.datastax.driver.spark.rdd.reader.CassandraRow;
 import com.datastax.driver.spark.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.driver.spark.rdd.reader.RowReaderFactory;
 import com.datastax.driver.spark.util.JavaApiHelper;
@@ -26,7 +25,7 @@ import java.util.Map;
 @SuppressWarnings("UnusedDeclaration")
 public class SparkDriverJavaUtil {
 
-    public final static Map<String, String> NO_OVERRIDE = new java.util.HashMap<String, String>();
+    public final static Map<String, String> NO_OVERRIDE = new java.util.HashMap<>();
 
     private SparkDriverJavaUtil() {
         assert false;
@@ -41,11 +40,11 @@ public class SparkDriverJavaUtil {
     }
 
     public static <T> RDDJavaFunctions javaFunctions(RDD<T> rdd, Class<T> targetClass) {
-        return new RDDJavaFunctions<T>(rdd, targetClass);
+        return new RDDJavaFunctions<>(rdd, targetClass);
     }
 
     public static <T> RDDJavaFunctions javaFunctions(JavaRDD<T> rdd, Class<T> targetClass) {
-        return new RDDJavaFunctions<T>(JavaRDD.toRDD(rdd), targetClass);
+        return new RDDJavaFunctions<>(JavaRDD.toRDD(rdd), targetClass);
     }
 
     private static <K, V> scala.collection.immutable.Map<K, V> toScalaMap(Map<K, V> map) {
@@ -53,7 +52,7 @@ public class SparkDriverJavaUtil {
     }
 
     private static <T> ColumnMapper<T> javaColumnMapper(Map<String, String> columnNameOverride, ClassTag<T> ct) {
-        return new JavaBeanColumnMapper<T>(toScalaMap(columnNameOverride), ct);
+        return new JavaBeanColumnMapper<>(toScalaMap(columnNameOverride), ct);
     }
 
     public static class RDDJavaFunctions<T> {
@@ -64,7 +63,7 @@ public class SparkDriverJavaUtil {
         private RDDJavaFunctions(RDD<T> rdd, Class<T> targetClass) {
             this.rdd = rdd;
             this.ct = ClassTag$.MODULE$.apply(targetClass);
-            this.rddf = new RDDFunctions<T>(rdd, ct);
+            this.rddf = new RDDFunctions<>(rdd, ct);
         }
 
         public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
@@ -130,21 +129,21 @@ public class SparkDriverJavaUtil {
 
         public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, ColumnMapper<T> columnMapper, Class<T> targetClass) {
             TypeTags.TypeTag<T> tt = JavaApiHelper.getTypeTag(targetClass);
-            RowReaderFactory<T> rtf = new ClassBasedRowReaderFactory<T>(tt, columnMapper);
+            RowReaderFactory<T> rtf = new ClassBasedRowReaderFactory<>(tt, columnMapper);
 
             return cassandraTable(keyspace, table, rtf, targetClass);
         }
 
         public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass) {
             ClassTag<T> ct = ClassTag$.MODULE$.apply(targetClass);
-            ColumnMapper<T> cm = new JavaBeanColumnMapper<T>(new HashMap<String, String>(), ct);
+            ColumnMapper<T> cm = new JavaBeanColumnMapper<>(new HashMap<String, String>(), ct);
 
             return cassandraTable(keyspace, table, cm, targetClass);
         }
 
         public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass, Map<String, String> columnNameOverride) {
             ClassTag<T> ct = ClassTag$.MODULE$.apply(targetClass);
-            ColumnMapper<T> cm = new JavaBeanColumnMapper<T>(toScalaMap(columnNameOverride), ct);
+            ColumnMapper<T> cm = new JavaBeanColumnMapper<>(toScalaMap(columnNameOverride), ct);
 
             return cassandraTable(keyspace, table, cm, targetClass);
         }
