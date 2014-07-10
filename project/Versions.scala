@@ -21,7 +21,7 @@ object Versions {
   val CassandraDriver = "2.0.2"
   val Config          = "1.2.1"
   val Guava           = "15.0"
-  val JDK             = "1.6" // spark specifies this version for its target jvm :(
+  val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val Logback         = "1.1.2"

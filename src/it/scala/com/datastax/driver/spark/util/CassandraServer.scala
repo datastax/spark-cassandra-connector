@@ -24,8 +24,13 @@ object CassandraServer {
   private var cassandra: CassandraServerRunner = null
   private var currentConfigTemplate: String = null
 
-  def useCassandraConfig(configTemplate: String) {
-    if (currentConfigTemplate != configTemplate) {
+  /** Switches the Cassandra server to use the new configuration if the requested configuration is different
+    * than the currently used configuration. When the configuration is switched, all the state (including data) of
+    * the previously running cassandra cluster is lost.
+    * @param configTemplate name of the cassandra.yaml template resource
+    * @param forceReload if set to true, the server will be reloaded fresh even if the configuration didn't change */
+  def useCassandraConfig(configTemplate: String, forceReload: Boolean = false) {
+    if (currentConfigTemplate != configTemplate || forceReload) {
       if (cassandra != null)
         cassandra.destroy()
 

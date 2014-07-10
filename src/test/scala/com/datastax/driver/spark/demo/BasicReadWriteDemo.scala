@@ -1,7 +1,7 @@
 package com.datastax.driver.spark.demo
 
 import com.datastax.driver.spark._
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 
 object BasicReadWriteDemo extends App {
 
