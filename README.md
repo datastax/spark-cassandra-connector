@@ -33,7 +33,10 @@ The documentation will be generated to `target/scala-2.10/api/`
   - [Server-side data selection and filtering](doc/3_selection.md)   
   - [Working with user-defined case classes and tuples](doc/4_mapper.md)
   - [Saving datasets to Cassandra](doc/5_saving.md)
-  - [Customizing the object mapping](doc/6_advanced_mapper.md)     
+  - [Customizing the object mapping](doc/6_advanced_mapper.md)
+    
+## License
+This software is available under the [Apache License, Version 2.0](LICENSE).    
 
 ## Reporting Bugs
 Please use GitHub to report feature requests or bugs.  
