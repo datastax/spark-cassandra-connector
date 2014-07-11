@@ -17,6 +17,13 @@ execute arbitrary CQL queries in your Spark applications.
  - Allows for execution of arbitrary CQL statements
  - Plays nice with Cassandra Virtual Nodes
 
+## Download
+This project has been published in Maven Central repository.
+For SBT to download the connector binaries, sources and javadoc, put this into your project 
+SBT config:
+                                                                                                                           
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-beta1" withSources() withJavadoc()
+
 ## Building
 You need to install SBT version 0.13 or newer to build this project.
 In the project root directory run:
