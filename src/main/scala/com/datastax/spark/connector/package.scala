@@ -36,7 +36,7 @@ import scala.reflect.ClassTag
  *   val table = "words"
  *
  *   // Tell Spark the address of one Cassandra node:
- *   val conf = new SparkConf(true).set("cassandra.connection.host", cassandraHost)
+ *   val conf = new SparkConf(true).set("spark.cassandra.connection.host", cassandraHost)
  *
  *   // Connect to the Spark cluster:
  *   val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "example", conf)

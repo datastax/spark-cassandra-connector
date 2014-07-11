@@ -7,23 +7,25 @@ how to execute CQL statements from Spark applications.
 ### Preparing `SparkContext` to work with Cassandra
 
 To connect your Spark application to Cassandra, set connection options in the 
-`SparkConf` object. The following options are available:
+`SparkConf` object. These are prefixed with `spark.` so that they can be recognized
+from the spark-shell and set within the $SPARK_HOME/conf/spark-default.conf.
+The following options are available:
 
-Property name                      | Description                                       | Default value
------------------------------------|---------------------------------------------------|--------------------
-cassandra.connection.host          | contact point to connect to the Cassandra cluster | address of the Spark master host
-cassandra.connection.rpc.port      | Cassandra thrift port                             | 9160
-cassandra.connection.native.port   | Cassandra native port                             | 9042
-cassandra.username                 | login name for password authentication            |
-cassandra.password                 | password for password authentication              |
-cassandra.auth.conf.factory.class  | name of the class implementing `AuthConfFactory` providing custom authentication | `DefaultAuthConfFactory`
+Property name                            | Description                                       | Default value
+-----------------------------------------|---------------------------------------------------|--------------------
+spark.cassandra.connection.host          | contact point to connect to the Cassandra cluster | address of the Spark master host
+spark.cassandra.connection.rpc.port      | Cassandra thrift port                             | 9160
+spark.cassandra.connection.native.port   | Cassandra native port                             | 9042
+spark.cassandra.username                 | login name for password authentication            |
+spark.cassandra.password                 | password for password authentication              |
+spark.cassandra.auth.conf.factory.class  | name of the class implementing `AuthConfFactory` providing custom authentication | `DefaultAuthConfFactory`
   
 Example:
 
     val conf = new SparkConf(true)
-            .set("cassandra.connection.host", "192.168.123.10")
-            .set("cassandra.username", "cassandra")            
-            .set("cassandra.password", "cassandra") 
+            .set("spark.cassandra.connection.host", "192.168.123.10")
+            .set("spark.cassandra.username", "cassandra")            
+            .set("spark.cassandra.password", "cassandra") 
                          
     val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 
@@ -42,7 +44,7 @@ the contact node and will always try to connect to the closest node in the same 
 connections are established to the same node the task is running on. Consequently, good locality of data can be achieved and the amount 
 of data sent across the network is minimized. 
 
-Connections are never made to data centers other than the data center of `cassandra.connection.host`.
+Connections are never made to data centers other than the data center of `spark.cassandra.connection.host`.
 If some nodes in the local data center are down and a read or write operation fails, the operation won't be retried on nodes in
 a different data center. This technique guarantees proper workload isolation so that a huge analytics job won't disturb
 the realtime part of the system.
