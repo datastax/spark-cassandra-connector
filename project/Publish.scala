@@ -33,15 +33,15 @@ object Publish extends Build {
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
     pomExtra :=
-      <url>http://github.com/datastax/cassandra-driver-spark</url>
+      <url>http://github.com/datastax/spark-cassandra-connector</url>
       <scm>
-        <url>git@github.com:datastax/cassandra-driver-spark.git</url>
-        <connection>scm:git:git@github.com:datastax/cassandra-driver-spark.git</connection>
+        <url>git@github.com:datastax/spark-cassandra-connector.git</url>
+        <connection>scm:git:git@github.com:datastax/spark-cassandra-connector.git</connection>
       </scm>
       <developers>
         <developer>
           <id>pkolaczk</id>
-          <name>Piotr Kołaczkowski</name>
+          <name>Piotr Kolaczkowski</name>
           <url>http://github.com/pkolaczk</url>
           <organization>DataStax</organization>
           <organizationUrl>http://www.datastax.com/</organizationUrl>
