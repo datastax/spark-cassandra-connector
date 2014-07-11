@@ -1,13 +1,12 @@
 package com.datastax.driver.spark.writer
 
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Future, Semaphore}
 
-import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
+import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
-
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
 class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int) {
@@ -16,24 +15,35 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
   private val _failureCount = new AtomicInteger(0)
 
   private val semaphore = new Semaphore(maxConcurrentTasks)
-  private val pendingFutures = new TrieMap[Future[R], Boolean]
+  private val pendingFutures = new TrieMap[ListenableFuture[R], Boolean]
 
   /** Executes task asynchronously or blocks if more than `maxConcurrentTasks` limit is reached */
   def executeAsync(task: T): ListenableFuture[R] = {
     semaphore.acquire()
+
+    val settable = SettableFuture.create[R]()
+    Futures.addCallback(settable, new FutureCallback[R] {
+      override def onSuccess(result: R): Unit = pendingFutures.remove(settable)
+      override def onFailure(t: Throwable): Unit = pendingFutures.remove(settable)
+    })
+    pendingFutures.put(settable, true)
+
     val future = asyncAction(task)
-    pendingFutures.put(future, true)
 
     Futures.addCallback(future, new FutureCallback[R] {
-      def release() {
+      def onSuccess(result: R) {
+        _successCount.incrementAndGet()
         semaphore.release()
-        pendingFutures.remove(future)
+        settable.set(result)
       }
-      def onSuccess(p1: R) { _successCount.incrementAndGet(); release() }
-      def onFailure(p1: Throwable) { _failureCount.incrementAndGet(); release() }
+      def onFailure(throwable: Throwable) {
+        _failureCount.incrementAndGet()
+        semaphore.release()
+        settable.setException(throwable)
+      }
     })
 
-    future
+    settable
   }
 
   /** Waits until the tasks being currently executed get completed.     
