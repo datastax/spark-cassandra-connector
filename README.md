@@ -18,8 +18,8 @@ execute arbitrary CQL queries in your Spark applications.
  - Plays nice with Cassandra Virtual Nodes
 
 ## Download
-This project has been published in Maven Central repository.
-For SBT to download the connector binaries, sources and javadoc, put this into your project 
+This project has been published to the Maven Central Repository.
+For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-beta1" withSources() withJavadoc()
