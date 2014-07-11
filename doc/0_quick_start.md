@@ -55,7 +55,7 @@ Create a `SparkContext`. Substitute `127.0.0.1` with the actual address of your 
 
 Enable Cassandra-specific functions on the `SparkContext` and `RDD`:
      
-    import com.datastax.driver.spark._
+    import com.datastax.spark.connector._
 
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:

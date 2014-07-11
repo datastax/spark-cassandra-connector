@@ -1,2 +1,2 @@
 Cassandra driver for Apache Spark.
-See documentation of package [[com.datastax.driver.spark]].
+See documentation of package [[com.datastax.spark.connector]].

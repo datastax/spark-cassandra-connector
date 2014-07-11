@@ -18,13 +18,10 @@ import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
 
-/**
- * NOTE: not using yet.
- * TODO add sbt release
- */
 object Publish extends Build {
 
-  lazy val publishSettings = Seq(
+  override lazy val settings = Seq(
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     publishTo <<= version { v: String =>
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
@@ -46,17 +43,30 @@ object Publish extends Build {
           <id>pkolaczk</id>
           <name>Piotr Kołaczkowski</name>
           <url>http://github.com/pkolaczk</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
         <developer>
           <id>jacek-lewandowski</id>
           <name>Jacek Lewandowski</name>
           <url>http://github.com/jacek-lewandowski</url>
-        </developer>
-        <developer>
-          <id>helena</id>
-          <name>Helena Edelson</name>
-          <url>http://github.com/helena</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
       </developers>
+      <contributors>
+        <contributor>
+          <name>Andrew Ash</name>
+          <url>http://github.com/ash211</url>
+        </contributor>
+        <contributor>
+          <name>Helena Edelson</name>
+          <url>http://github.com/helena</url>
+        </contributor>
+        <contributor>
+          <name>Luis Angel Vicente Sanchez</name>
+          <url>http://github.com/lvicentesanchez</url>
+        </contributor>
+      </contributors>
   )
 }

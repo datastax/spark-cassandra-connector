@@ -20,7 +20,7 @@ import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
 
-  lazy val root = Project(id = "cassandra-driver-spark", base = file("."))
+  lazy val root = Project(id = "spark-cassandra-connector", base = file("."))
     .settings(Settings.defaultSettings: _*)
     .settings(libraryDependencies ++= Dependencies.spark)
     .configs(IntegrationTest)

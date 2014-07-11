@@ -28,11 +28,14 @@ import scala.language.postfixOps
 object Settings extends Build {
 
   lazy val buildSettings = Seq(
-    name := "cassandra-driver-spark",
-    organization := "com.datastax.cassandra",
-    version in ThisBuild := "1.0.0-SNAPSHOT",
+    name := "Apache Spark connector for Apache Cassandra from DataStax",
+    description := "A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to Cassandra tables, " +
+      "and executes CQL queries in Spark applications.",
+    organization := "com.datastax.spark",
+    organizationHomepage := Some(url("http://www.datastax.com/")),
+    version in ThisBuild := "1.0.0-beta1",
     scalaVersion := Versions.Scala,
-    homepage := Some(url("https://github.com/datastax/cassandra-driver-spark")),
+    homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
@@ -46,7 +49,7 @@ object Settings extends Build {
 
   lazy val baseSettings =
     Defaults.coreDefaultSettings ++ Defaults.itSettings ++
-    IvyPlugin.projectSettings ++ JvmPlugin.projectSettings //++ Publish.settings
+    IvyPlugin.projectSettings ++ JvmPlugin.projectSettings ++ Publish.settings
 
   lazy val parentSettings = baseSettings ++ Seq(
     publishArtifact := false,

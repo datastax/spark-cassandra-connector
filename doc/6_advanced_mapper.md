@@ -16,7 +16,7 @@ implementations are included.
 To work with Java classes, use `JavaBeanColumnMapper`. 
 Make sure your objects are `Serializable`, otherwise Spark won't be able to send them over the network.
 
-    import com.datastax.driver.spark.mapper.JavaBeanColumnMapper
+    import com.datastax.spark.connector.mapper.JavaBeanColumnMapper
     class WordCount extends Serializable { 
         private var _word: String = ""
         private var _count: Int = 0

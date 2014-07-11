@@ -5,7 +5,7 @@ It is possible to save any `RDD` to Cassandra, not just `CassandraRDD`.
 The only requirement is that the object class of `RDD` is a tuple or has property names 
 corresponding to Cassandra column names. 
 
-To save an `RDD`, import `com.datastax.driver.spark._` and call the `saveToCassandra` method with the
+To save an `RDD`, import `com.datastax.spark.connector._` and call the `saveToCassandra` method with the
 keyspace name, table name and a list of columns. Make sure to include at least all primary key columns.
  
 ## Saving a collection of tuples

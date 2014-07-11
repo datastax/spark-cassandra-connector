@@ -29,7 +29,7 @@ Example:
 
 To import Cassandra-specific functions on `SparkContext` and `RDD` objects, call:
 
-    import com.datastax.driver.spark._                                    
+    import com.datastax.spark.connector._                                    
 
 
 ### Connection management
@@ -66,7 +66,7 @@ and therefore can be safely used in lambdas passed to Spark transformations.
 Assuming an appropriately configured `SparkConf` object is stored in the `conf` variable, the following
 code creates a keyspace and a table:
 
-    import com.datastax.driver.spark.connector.CassandraConnector
+    import com.datastax.spark.connector.cql.CassandraConnector
 
     CassandraConnector(conf).withSessionDo { session =>
       session.execute("CREATE KEYSPACE test2 WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
