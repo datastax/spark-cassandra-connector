@@ -28,7 +28,8 @@ import scala.language.postfixOps
 object Settings extends Build {
 
   lazy val buildSettings = Seq(
-    name := "Apache Spark connector for Apache Cassandra from DataStax",
+    name := "DataStax Apache Cassandra connector for Apache Spark",
+    normalizedName := "spark-cassandra-connector",
     description := "A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to Cassandra tables, " +
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
@@ -39,25 +40,8 @@ object Settings extends Build {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
-  /*
-   ToDo: with release plugin: publishTo settings would handle generating versions published from the snapshot,
-   so that any users of these artifacts NEVER use a SNAPSHOT via typical build code such as:
-   if (version endsWith "-SNAPSHOT") ("snapshots" at nexus + "content/repositories/snapshots")
-   else ("releases" at nexus + "service/local/staging/deploy/maven2")
-  */
-  override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
-
-  lazy val baseSettings =
-    Defaults.coreDefaultSettings ++ Defaults.itSettings ++
-    IvyPlugin.projectSettings ++ JvmPlugin.projectSettings ++ Publish.settings
-
-  lazy val parentSettings = baseSettings ++ Seq(
-    publishArtifact := false,
-    reportBinaryIssues := () // disable bin comp check
-  )
-
   // add ++ formatSettings
-  lazy val defaultSettings = baseSettings ++ testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -76,22 +60,13 @@ object Settings extends Build {
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  val javaAgent = TaskKey[Seq[String]]("javaagent")
-  val javaAgentTask = javaAgent <<= (fullClasspath in IntegrationTest).map { cp =>
-    val fileNames = cp.map(_.data.getPath)
-    val jamm = fileNames.find(_.matches("^.*jamm-.*\\.jar$"))
-    jamm.map("-javaagent:" + _).toSeq
-  }
-
-  lazy val testSettings = tests ++ Seq(
+  lazy val testSettings = tests ++ Defaults.itSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
     fork in Test := true,
-    fork in IntegrationTest := true,
-    javaAgentTask,
-    javaOptions in IntegrationTest ++= Seq("-Xmx2g") ++ javaAgent.value
+    fork in IntegrationTest := true
   )
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
@@ -106,6 +81,8 @@ object Settings extends Build {
       .setPreference(AlignParameters, true)
       .setPreference(AlignSingleLineCaseStatements, true)
   }
+
+  override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 }
 
 /**

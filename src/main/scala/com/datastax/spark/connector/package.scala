@@ -11,7 +11,7 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 
 /**
- * The root package of Cassandra driver for Apache Spark.
+ * The root package of Cassandra connector for Apache Spark.
  * Offers handy implicit conversions that add Cassandra-specific methods to `SparkContext` and `RDD`.
  *
  * Call [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]] method on the `SparkContext` object

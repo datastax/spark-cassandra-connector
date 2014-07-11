@@ -22,6 +22,7 @@ object CassandraSparkBuild extends Build {
 
   lazy val root = Project(id = "spark-cassandra-connector", base = file("."))
     .settings(Settings.defaultSettings: _*)
+    .settings(Settings.buildSettings: _*)
     .settings(libraryDependencies ++= Dependencies.spark)
     .configs(IntegrationTest)
 }
