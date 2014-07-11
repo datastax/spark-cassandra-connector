@@ -33,7 +33,6 @@ object Publish extends Build {
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
     pomExtra :=
-      <url>http://github.com/datastax/spark-cassandra-connector</url>
       <scm>
         <url>git@github.com:datastax/spark-cassandra-connector.git</url>
         <connection>scm:git:git@github.com:datastax/spark-cassandra-connector.git</connection>
