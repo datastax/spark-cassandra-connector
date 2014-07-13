@@ -6,7 +6,9 @@ import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import org.apache.cassandra.thrift
+import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
+import org.apache.thrift.TApplicationException
 
 import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
@@ -34,6 +36,18 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     val endToken = tokenFactory.fromString(tr.end_token)
     val endpoints = tr.endpoints.map(InetAddress.getByName).toSet
     new TokenRange(startToken, endToken, endpoints, None)
+  }
+
+  private def describeRing(client: Cassandra.Iface): Seq[TokenRange] = {
+    val ring =
+      try {
+        client.describe_local_ring(keyspaceName)
+      }
+      catch {
+        case e: TApplicationException if e.getType == TApplicationException.UNKNOWN_METHOD =>
+          client.describe_ring(keyspaceName)
+      }
+    ring.map(unthriftify)
   }
 
   private def quote(name: String) = "\"" + name + "\""
@@ -101,7 +115,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   def partitions: Array[Partition] = {
     connector.withCassandraClientDo {
       client =>
-        val tokenRanges = client.describe_local_ring(keyspaceName).map(unthriftify)
+        val tokenRanges = describeRing(client)
         val endpointCount = tokenRanges.map(_.endpoints).reduce(_ ++ _).size
         val splitter = createSplitterFor(tokenRanges)
         val splits = splitsOf(tokenRanges, splitter).toSeq

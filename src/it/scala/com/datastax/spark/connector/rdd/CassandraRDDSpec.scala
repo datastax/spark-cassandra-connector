@@ -29,20 +29,20 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS read_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    session.execute("CREATE TABLE read_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (1, 100, '0001')")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (2, 100, '0002')")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (3, 300, '0003')")
 
-    session.execute("CREATE TABLE read_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (2, null, null, null)")
 
-    session.execute("CREATE TABLE read_test.blobs (key INT PRIMARY KEY, b blob)")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.blobs (key INT PRIMARY KEY, b blob)")
     session.execute("INSERT INTO read_test.blobs (key, b) VALUES (1, 0x0102030405060708090a0b0c)")
     session.execute("INSERT INTO read_test.blobs (key, b) VALUES (2, null)")
 
-    session.execute("CREATE TABLE read_test.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 1, 'value1')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 2, 'value2')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')")
