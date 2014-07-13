@@ -34,8 +34,8 @@ import scala.util.Random
   *   - `spark.cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
   *   - `spark.cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
-  *   - `spark.cassandra.username`:                login for password authentication
-  *   - `spark.cassandra.password`:                password for password authentication
+  *   - `spark.cassandra.auth.username`:           login for password authentication
+  *   - `spark.cassandra.auth.password`:           password for password authentication
   *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
   *
   * Additionally this object uses the following global System properties:

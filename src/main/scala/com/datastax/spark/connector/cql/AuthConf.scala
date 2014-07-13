@@ -56,12 +56,12 @@ trait AuthConfFactory {
 }
 
 /** Default `AuthConfFactory` that supports no authentication or password authentication.
-  * Password authentication is enabled when both `spark.cassandra.username` and `spark.cassandra.password`
+  * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
   * options are present in `SparkConf`.*/
 class DefaultAuthConfFactory extends AuthConfFactory {
 
-  val CassandraUserNameProperty = "spark.cassandra.username"
-  val CassandraPasswordProperty = "spark.cassandra.password"
+  val CassandraUserNameProperty = "spark.cassandra.auth.username"
+  val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
   def authConf(conf: SparkConf): AuthConf = {
     val credentials = 
