@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 import java.net.InetAddress
+import java.util.Date
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -47,6 +48,11 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 2, 'value2')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (2, 2, 4, 'value4')")
+
+    session.execute("CREATE TABLE read_test.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')")
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
@@ -164,7 +170,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
   }
 
   it should "allow for reading tables with composite partitioning key" in {
-    val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key").where("group >= ?", 3).toArray()
+    val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key")
+      .where("group >= ?", 3).toArray()
+    result should have length 2
+  }
+
+  it should "convert values passed to where to correct types" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time >= ?", "2014-07-12 20:00:02").toArray()
     result should have length 2
   }
 
