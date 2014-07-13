@@ -26,7 +26,7 @@ import scala.util.Random
   * Cassandra cluster will share a single underlying `Cluster` object.
   * `CassandraConnector` will close the underlying `Cluster` object automatically
   * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
-  * than `cassandra.connection.keep_alive_ms` property value.
+  * than `spark.cassandra.connection.keep_alive_ms` property value.
   *
   * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
   * can be either given explicitly or automatically configured from `SparkConf`.
@@ -39,10 +39,10 @@ import scala.util.Random
   *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
   *
   * Additionally this object uses the following global System properties:
-  *   - `cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
-  *   - `cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
-  *   - `cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
-  *   - `cassandra.query.retry.count`: how many times to reattempt a failed query 
+  *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
+  *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
+  *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
+  *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query 
   */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
@@ -143,10 +143,10 @@ class CassandraConnector(conf: CassandraConnectorConf)
 }
 
 object CassandraConnector extends Logging {
-  val keepAliveMillis = System.getProperty("cassandra.connection.keep_alive_ms", "250").toInt
-  val minReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.min", "1000").toInt
-  val maxReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.max", "60000").toInt
-  val retryCount = System.getProperty("cassandra.query.retry.count", "10").toInt
+  val keepAliveMillis = System.getProperty("spark.cassandra.connection.keep_alive_ms", "250").toInt
+  val minReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.min", "1000").toInt
+  val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
+  val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
 
   private val clusterCache = new RefCountedCache[CassandraConnectorConf, Cluster](
     createCluster, destroyCluster, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
