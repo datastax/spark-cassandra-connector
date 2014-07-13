@@ -275,11 +275,17 @@ class CassandraRDD[R] private[connector] (
   }
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
-    val stmt = session.prepare(cql)
-    stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
-    val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
-    bstm.setFetchSize(fetchSize)
-    bstm
+    try {
+      val stmt = session.prepare(cql)
+      stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
+      val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
+      bstm.setFetchSize(fetchSize)
+      bstm
+    }
+    catch {
+      case t: Throwable =>
+        throw new IOException(s"Exception during preparation of $cql: ${t.getMessage}", t)
+    }
   }
 
   private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
@@ -292,7 +298,8 @@ class CassandraRDD[R] private[connector] (
       logInfo(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {
-      case t: Throwable => throw new IOException("Exception during query execution: " + cql, t)
+      case t: Throwable =>
+        throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
     }
   }
 
