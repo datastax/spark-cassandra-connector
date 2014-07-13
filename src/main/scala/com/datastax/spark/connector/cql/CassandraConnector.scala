@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import com.datastax.driver.core._
+import com.datastax.driver.core.{Session, Host, Cluster}
 import com.datastax.driver.core.policies._
 import com.datastax.spark.connector.util.IOUtils
 import org.apache.cassandra.thrift.Cassandra
@@ -63,57 +63,44 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Authentication configuration */
   def authConf = _config.authConf
 
-  /** Allows to use Cassandra `Cluster` in a safe way without
-    * risk of forgetting to close it. Multiple, concurrent calls might share the same
-    * `Cluster`. The `Cluster` will be closed when not in use for some time. */
-  def withClusterDo[T](code: Cluster => T): T = {
-    var cluster: Cluster = null
+  /** Returns a shared session to Cassandra and increases the internal open
+    * reference counter. It does not release the session automatically,
+    * so please remember to close it after use. Closing a shared session
+    * decreases the session reference counter. If the reference count drops to zero,
+    * the session may be physically closed. */
+  def openSession() = {
+    val session = sessionCache.acquire(_config)
     try {
-      cluster = clusterCache.acquire(_config)
-      val allNodes = cluster.getMetadata.getAllHosts.toSet
+      val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
       val myNodes = nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
-      code(cluster)
-    }
-    finally {
-      if (cluster != null)
-        clusterCache.release(cluster)
+      SessionProxy.wrapWithCloseAction(session)(sessionCache.release)
+    } catch {
+      case e: Throwable =>
+        sessionCache.release(session)
+        throw e
     }
   }
 
   /** Allows to use Cassandra `Session` in a safe way without
     * risk of forgetting to close it. */
   def withSessionDo[T](code: Session => T): T = {
-    withClusterDo { cluster =>
-      IOUtils.closeAfterUse(cluster.connect) { session =>
-        code(SessionProxy.wrap(session))
-      }
+    IOUtils.closeAfterUse(openSession()) { session =>
+      code(SessionProxy.wrap(session))
     }
   }
 
-  /** Opens a new session to Cassandra.
-    * It does not close it automatically, so please remember to close it after use. */
-  def openSession() = {
-    var cluster: Cluster = null
-    var session: Session = null
-    try {
-      cluster = clusterCache.acquire(_config)
-      session = cluster.connect()
-      SessionProxy.wrapWithCloseAction(session) { _ =>
-        clusterCache.release(cluster)
-      }
-    }
-    catch {
-      case e: Throwable =>
-        if (session != null)
-          session.close()
-        if (cluster != null)
-          clusterCache.release(cluster)
-        throw e
+
+  /** Allows to use Cassandra `Cluster` in a safe way without
+    * risk of forgetting to close it. Multiple, concurrent calls might share the same
+    * `Cluster`. The `Cluster` will be closed when not in use for some time. */
+  def withClusterDo[T](code: Cluster => T): T = {
+    withSessionDo { session =>
+      code(session.getCluster)
     }
   }
 
-  /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
+    /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp)
@@ -148,10 +135,10 @@ object CassandraConnector extends Logging {
   val maxReconnectionDelay = System.getProperty("cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("cassandra.query.retry.count", "10").toInt
 
-  private val clusterCache = new RefCountedCache[CassandraConnectorConf, Cluster](
-    createCluster, destroyCluster, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
+  private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
+    createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
-  private def createCluster(conf: CassandraConnectorConf): Cluster = {
+  private def createSession(conf: CassandraConnectorConf): Session = {
     logDebug(s"Connecting to cluster: ${conf.hosts.mkString("{", ",", "}")}:${conf.nativePort}")
     val cluster =
       Cluster.builder()
@@ -164,18 +151,21 @@ object CassandraConnector extends Logging {
         .build()
     val clusterName = cluster.getMetadata.getClusterName
     logInfo(s"Connected to Cassandra cluster: $clusterName")
-    cluster
+    cluster.connect()
   }
 
-  private def destroyCluster(cluster: Cluster) {
+  private def destroySession(session: Session) {
+    val cluster = session.getCluster
     val clusterName = cluster.getMetadata.getClusterName
+    session.close()
     cluster.close()
-    PreparedStatementCache.remove(cluster)
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
+
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
-  private def alternativeConnectionConfigs(conf: CassandraConnectorConf, cluster: Cluster): Set[CassandraConnectorConf] = {
+  private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: Session): Set[CassandraConnectorConf] = {
+    val cluster = session.getCluster
     val hosts = nodesInTheSameDC(conf.hosts, cluster.getMetadata.getAllHosts.toSet)
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
@@ -189,7 +179,7 @@ object CassandraConnector extends Logging {
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
     def run() {
-      clusterCache.shutdown()
+      sessionCache.shutdown()
     }
   }))
 
@@ -209,7 +199,7 @@ object CassandraConnector extends Logging {
   }
 
   def evictCache() {
-    clusterCache.evict()
+    sessionCache.evict()
   }
 
 }

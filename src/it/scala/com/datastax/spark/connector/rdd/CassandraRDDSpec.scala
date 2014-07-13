@@ -5,6 +5,7 @@ import java.net.InetAddress
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -172,4 +173,10 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
     intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").toArray() }
   }
 
+  it should "not create excessive number of threads" in {
+    for (i <- 1 to 128)
+      sc.cassandraTable("read_test", "key_value").toArray()
+
+    Thread.activeCount() should be < (CassandraRDDPartitioner.MaxParallelism + 200)
+  }
 }
