@@ -31,12 +31,12 @@ import scala.util.Random
   * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
   * can be either given explicitly or automatically configured from `SparkConf`.
   * The connection options are:
-  *   - `cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
-  *   - `cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
-  *   - `cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
-  *   - `cassandra.username`:                login for password authentication
-  *   - `cassandra.password`:                password for password authentication
-  *   - `cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
+  *   - `spark.cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
+  *   - `spark.cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
+  *   - `spark.cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
+  *   - `spark.cassandra.auth.username`:           login for password authentication
+  *   - `spark.cassandra.auth.password`:           password for password authentication
+  *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
   *
   * Additionally this object uses the following global System properties:
   *   - `cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
