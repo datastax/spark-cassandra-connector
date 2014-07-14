@@ -22,23 +22,23 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
     semaphore.acquire()
 
     val settable = SettableFuture.create[R]()
-    Futures.addCallback(settable, new FutureCallback[R] {
-      override def onSuccess(result: R): Unit = pendingFutures.remove(settable)
-      override def onFailure(t: Throwable): Unit = pendingFutures.remove(settable)
-    })
     pendingFutures.put(settable, true)
 
     val future = asyncAction(task)
 
     Futures.addCallback(future, new FutureCallback[R] {
+      def release() {
+        semaphore.release()
+        pendingFutures.remove(settable)
+      }
       def onSuccess(result: R) {
         _successCount.incrementAndGet()
-        semaphore.release()
+        release()
         settable.set(result)
       }
       def onFailure(throwable: Throwable) {
         _failureCount.incrementAndGet()
-        semaphore.release()
+        release()
         settable.setException(throwable)
       }
     })
