@@ -91,6 +91,7 @@ class TableWriter[T] private (
       val rowIterator = new CountingIterator(data)
       val startTime = System.currentTimeMillis()
       val stmt = session.prepare(queryStr)
+      stmt.setConsistencyLevel(connector.outputConsistencyLevel)
       val queryExecutor = new QueryExecutor(session, parallelismLevel)
       val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 

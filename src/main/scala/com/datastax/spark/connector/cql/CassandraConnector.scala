@@ -37,6 +37,8 @@ import scala.util.Random
   *   - `cassandra.username`:                login for password authentication
   *   - `cassandra.password`:                password for password authentication
   *   - `cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
+  *   - `cassandra.input.consistency.level`: consistency level for reads
+  *   - `cassandra.output.consistency.level`: consistency level for writes
   *
   * Additionally this object uses the following global System properties:
   *   - `cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
@@ -62,6 +64,12 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
   /** Authentication configuration */
   def authConf = _config.authConf
+
+  /** Consistency level for reads */
+  def inputConsistencyLevel = _config.inputConsistencyLevel
+
+  /** Consistency level for writes */
+  def outputConsistencyLevel = _config.outputConsistencyLevel
 
   /** Allows to use Cassandra `Cluster` in a safe way without
     * risk of forgetting to close it. Multiple, concurrent calls might share the same

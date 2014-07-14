@@ -35,7 +35,7 @@ import scala.reflect._
   *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark executor.
-  * Reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+  * By default, reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
   * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
   */
 class CassandraRDD[R] private[connector] (
@@ -277,7 +277,7 @@ class CassandraRDD[R] private[connector] (
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
     try {
       val stmt = session.prepare(cql)
-      stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
+      stmt.setConsistencyLevel(connector.inputConsistencyLevel)
       val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
       bstm.setFetchSize(fetchSize)
       bstm
