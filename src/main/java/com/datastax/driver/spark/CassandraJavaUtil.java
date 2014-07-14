@@ -1,11 +1,14 @@
 package com.datastax.driver.spark;
 
-import com.datastax.driver.spark.mapper.ColumnMapper;
-import com.datastax.driver.spark.rdd.CassandraRDD;
-import com.datastax.driver.spark.rdd.reader.ClassBasedRowReaderFactory;
-import com.datastax.driver.spark.rdd.reader.RowReaderFactory;
-import com.datastax.driver.spark.util.JavaApiHelper;
-import com.datastax.driver.spark.writer.RowWriterFactory;
+import com.datastax.spark.connector.CassandraRow;
+import com.datastax.spark.connector.RDDFunctions;
+import com.datastax.spark.connector.SparkContextFunctions;
+import com.datastax.spark.connector.mapper.ColumnMapper;
+import com.datastax.spark.connector.rdd.CassandraRDD;
+import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
+import com.datastax.spark.connector.util.JavaApiHelper;
+import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -17,7 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.datastax.driver.spark.util.JavaApiHelper.*;
+import static com.datastax.spark.connector.util.JavaApiHelper.*;
 
 @SuppressWarnings("UnusedDeclaration")
 public class CassandraJavaUtil {
