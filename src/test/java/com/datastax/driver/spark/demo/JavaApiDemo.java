@@ -12,8 +12,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static com.datastax.driver.spark.SparkDriverJavaUtil.NO_OVERRIDE;
-import static com.datastax.driver.spark.SparkDriverJavaUtil.javaFunctions;
+import static com.datastax.driver.spark.CassandraJavaUtil.NO_OVERRIDE;
+import static com.datastax.driver.spark.CassandraJavaUtil.javaFunctions;
 
 public class JavaApiDemo implements Serializable {
 
@@ -65,7 +65,7 @@ public class JavaApiDemo implements Serializable {
     }
 
     public JavaApiDemo() {
-        DemoApp demoApp = new DemoApp();
+        DemoApp demoApp = DemoApp$.MODULE$.apply();
         JavaSparkContext sc = new JavaSparkContext(demoApp.sc());
 
         // Here we are going to save some data to Cassandra...
@@ -75,7 +75,7 @@ public class JavaApiDemo implements Serializable {
                 Person.newInstance(3, "Andrew", new Date())
         );
         JavaRDD<Person> rdd = sc.parallelize(people);
-        javaFunctions(rdd, Person.class).saveToCassandra("test", "people", NO_OVERRIDE);
+        javaFunctions(rdd, Person.class).saveToCassandra("test", "people");
 
         // then, we want to read that data as an RDD of CassandraRows and convert them to strings...
         JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people").toJavaRDD()

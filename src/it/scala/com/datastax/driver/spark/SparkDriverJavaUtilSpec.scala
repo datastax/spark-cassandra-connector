@@ -28,8 +28,8 @@ class SparkDriverJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter
       SampleJavaBean.newInstance(3, "three")
     ))
 
-    SparkDriverJavaUtil.javaFunctions(beansRdd, classOf[SampleJavaBean])
-      .saveToCassandra("java_api_test", "test_table", SparkDriverJavaUtil.NO_OVERRIDE)
+    CassandraJavaUtil.javaFunctions(beansRdd, classOf[SampleJavaBean])
+      .saveToCassandra("java_api_test", "test_table", CassandraJavaUtil.NO_OVERRIDE)
 
     val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table"))
 
@@ -47,7 +47,7 @@ class SparkDriverJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter
       session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (3, 'three')")
     }
 
-    val rows = SparkDriverJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table").toArray()
+    val rows = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table").toArray()
     assert(rows.size == 3)
     assert(rows.exists(row => row.getString("value") == "one" && row.getInt("key") == 1))
     assert(rows.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
@@ -61,7 +61,7 @@ class SparkDriverJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter
       session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (3, 'three')")
     }
 
-    val beans = SparkDriverJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table", classOf[SampleJavaBean]).toArray()
+    val beans = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table", classOf[SampleJavaBean]).toArray()
     assert(beans.size == 3)
     assert(beans.exists(bean => bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean => bean.getValue == "two" && bean.getKey == 2))
