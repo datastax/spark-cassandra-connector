@@ -210,9 +210,11 @@ object CassandraConnector extends Logging {
   def apply(host: InetAddress,
             nativePort: Int = CassandraConnectorConf.DefaultNativePort,
             rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
-            authConf: AuthConf = NoAuthConf) = {
+            authConf: AuthConf = NoAuthConf,
+            inputConsistencyLevel: ConsistencyLevel = CassandraConnectorConf.DefaultInputConsistencyLevel,
+            outputConsistencyLevel: ConsistencyLevel = CassandraConnectorConf.DefaultOutputConsistencyLevel) = {
 
-    val config = CassandraConnectorConf.apply(host, nativePort, rpcPort, authConf)
+    val config = CassandraConnectorConf.apply(host, nativePort, rpcPort, authConf, inputConsistencyLevel, outputConsistencyLevel)
     new CassandraConnector(config)
   }
 
