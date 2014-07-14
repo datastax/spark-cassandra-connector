@@ -63,7 +63,37 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with CassandraServer
     assert(cluster.isClosed === true)
   }
 
+  it should "share internal Cluster and Session object between multiple logical sessions" in {
+    val session1 = conn.openSession()
+    val threadCount1 = Thread.activeCount()
+    val session2 = conn.openSession()
+    val threadCount2 = Thread.activeCount()
+    session1.getCluster should be theSameInstanceAs session2.getCluster
+    // Unfortunately we don't have a way to obtain an internal Session object; all we got here are proxies.
+    // Instead, we try to figure out whether a new Session was opened by counting active threads.
+    // Opening internal Session creates new threads, so if none was created, the thread count would not change.
+    threadCount1 shouldEqual threadCount2
+    session1.close()
+    session1.isClosed shouldEqual true
+    session2.isClosed shouldEqual false
+    session2.close()
+    session2.isClosed shouldEqual true
+  }
 
+  it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
+    val conn2 = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+    val session1 = conn.openSession()
+    val threadCount1 = Thread.activeCount()
+    val session2 = conn2.openSession()
+    val threadCount2 = Thread.activeCount()
+    session1.getCluster should be theSameInstanceAs session2.getCluster
+    threadCount1 shouldEqual threadCount2
+    session1.close()
+    session1.isClosed shouldEqual true
+    session2.isClosed shouldEqual false
+    session2.close()
+    session2.isClosed shouldEqual true
+  }
 }
 
 
