@@ -74,6 +74,12 @@ class CassandraConnector(conf: CassandraConnectorConf)
       val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
       val myNodes = nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
+
+      // We need a separate SessionProxy here to protect against double closing the session.
+      // Closing SessionProxy is not really closing the session, because sessions are shared.
+      // Instead, refcount is decreased. But double closing the same Session reference must not
+      // decrease refcount twice. There is a guard in SessionProxy
+      // so any subsequent close calls on the same SessionProxy are a no-ops.
       SessionProxy.wrapWithCloseAction(session)(sessionCache.release)
     } catch {
       case e: Throwable =>
@@ -83,17 +89,21 @@ class CassandraConnector(conf: CassandraConnectorConf)
   }
 
   /** Allows to use Cassandra `Session` in a safe way without
-    * risk of forgetting to close it. */
+    * risk of forgetting to close it. The `Session` object obtained through this method
+    * is a proxy to a shared, single `Session` associated with the cluster.
+    * Internally, the shared underlying `Session` will be closed shortly after all the proxies
+    * are closed. */
   def withSessionDo[T](code: Session => T): T = {
     IOUtils.closeAfterUse(openSession()) { session =>
       code(SessionProxy.wrap(session))
     }
   }
 
-
   /** Allows to use Cassandra `Cluster` in a safe way without
     * risk of forgetting to close it. Multiple, concurrent calls might share the same
-    * `Cluster`. The `Cluster` will be closed when not in use for some time. */
+    * `Cluster`. The `Cluster` will be closed when not in use for some time.
+    * It is not recommended to obtain sessions from this method. Use [[withSessionDo]]
+    * instead which allows for proper session sharing. */
   def withClusterDo[T](code: Cluster => T): T = {
     withSessionDo { session =>
       code(session.getCluster)
