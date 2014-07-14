@@ -5,7 +5,7 @@ execute arbitrary CQL queries in your Spark applications.
 
 ## Features
 
- - Compatible with Apache Cassandra version 2.0.5 or higher and DataStax Enterprise 4.5
+ - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5
  - Compatible with Apache Spark 0.9 and 1.0
  - Exposes Cassandra tables as Spark RDDs 
  - Maps table rows to CassandraRow objects or tuples

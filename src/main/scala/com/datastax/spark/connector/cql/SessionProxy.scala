@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.cql
 
-import java.lang.reflect.{Proxy, Method, InvocationHandler}
+import java.lang.reflect.{InvocationTargetException, Proxy, Method, InvocationHandler}
 import com.datastax.driver.core.{RegularStatement, SimpleStatement, Session}
 import org.apache.avro.generic.GenericData.StringType
 
@@ -21,7 +21,14 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
           PreparedStatementCache.prepareStatement(session, new SimpleStatement(args(0).asInstanceOf[String]))
         case ("prepare", Array(RegularStatementClass)) =>
           PreparedStatementCache.prepareStatement(session, args(0).asInstanceOf[RegularStatement])
-        case _ => method.invoke(session, args: _*)
+        case _ =>
+          try {
+            method.invoke(session, args: _*)
+          }
+          catch {
+            case e: InvocationTargetException =>
+              throw e.getCause
+          }
       }
     }
     finally {
