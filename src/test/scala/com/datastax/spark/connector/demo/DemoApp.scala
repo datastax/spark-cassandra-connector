@@ -13,3 +13,7 @@ trait DemoApp {
   // Connect to the Spark cluster:
   val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "demo-program", conf)
 }
+
+object DemoApp {
+  def apply(): DemoApp = new DemoApp {}
+}
