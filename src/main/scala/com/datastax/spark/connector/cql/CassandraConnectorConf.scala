@@ -21,9 +21,9 @@ object CassandraConnectorConf {
   val DefaultRpcPort = 9160
   val DefaultNativePort = 9042
   
-  val CassandraConnectionHostProperty = "cassandra.connection.host"
-  val CassandraConnectionRpcPortProperty = "cassandra.connection.rpc.port"
-  val CassandraConnectionNativePortProperty = "cassandra.connection.native.port"
+  val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
+  val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
+  val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
 
 
   def apply(host: InetAddress,

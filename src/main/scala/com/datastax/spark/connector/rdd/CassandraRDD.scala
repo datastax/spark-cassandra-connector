@@ -31,8 +31,8 @@ import scala.reflect._
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
   * properties control the number of partitions and the fetch size:
   *
-  *   - cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
-  *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
+  *   - spark.cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
+  *   - spark.cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark executor.
   * Reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
@@ -49,10 +49,10 @@ class CassandraRDD[R] private[connector] (
   extends RDD[R](sc, Seq.empty) with Logging {
 
   /** How many rows are fetched at once from server */
-  val fetchSize = sc.getConf.getInt("cassandra.input.page.row.size", 1000)
+  val fetchSize = sc.getConf.getInt("spark.cassandra.input.page.row.size", 1000)
 
   /** How many rows to fetch in a single Spark Task. */
-  val splitSize = sc.getConf.getInt("cassandra.input.split.size", 100000)
+  val splitSize = sc.getConf.getInt("spark.cassandra.input.split.size", 100000)
 
   private val connector = CassandraConnector(sc.getConf)
 

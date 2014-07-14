@@ -36,7 +36,7 @@ import scala.reflect.ClassTag
  *   val table = "words"
  *
  *   // Tell Spark the address of one Cassandra node:
- *   val conf = new SparkConf(true).set("cassandra.connection.host", cassandraHost)
+ *   val conf = new SparkConf(true).set("spark.cassandra.connection.host", cassandraHost)
  *
  *   // Connect to the Spark cluster:
  *   val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "example", conf)
@@ -98,10 +98,10 @@ package object connector {
   implicit class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
 
     private lazy val batchSizeInRowsStr = rdd.sparkContext.getConf.get(
-      "cassandra.output.batch.size.rows", "auto")
+      "spark.cassandra.output.batch.size.rows", "auto")
 
     private lazy val batchSizeInBytes = rdd.sparkContext.getConf.getInt(
-      "cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
+      "spark.cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
 
     private lazy val batchSizeInRows = {
       val Number = "([0-9]+)".r
@@ -110,12 +110,12 @@ package object connector {
         case Number(x) => Some(x.toInt)
         case other =>
           throw new ConfigurationException(
-            s"Invalid value of cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
+            s"Invalid value of spark.cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
       }
     }
 
     private lazy val writeParallelismLevel = rdd.sparkContext.getConf.getInt(
-      "cassandra.output.concurrent.writes", TableWriter.DefaultParallelismLevel)
+      "spark.cassandra.output.concurrent.writes", TableWriter.DefaultParallelismLevel)
 
     private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
 
