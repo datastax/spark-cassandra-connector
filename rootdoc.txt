@@ -1,2 +1,2 @@
-Cassandra driver for Apache Spark.
-See documentation of package [[com.datastax.driver.spark]].
+Cassandra connector for Apache Spark.
+See documentation of package [[com.datastax.spark.connector]].
