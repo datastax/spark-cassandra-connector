@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 import java.net.InetAddress
+import java.util.Date
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -30,24 +31,29 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS read_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    session.execute("CREATE TABLE read_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (1, 100, '0001')")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (2, 100, '0002')")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (3, 300, '0003')")
 
-    session.execute("CREATE TABLE read_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (2, null, null, null)")
 
-    session.execute("CREATE TABLE read_test.blobs (key INT PRIMARY KEY, b blob)")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.blobs (key INT PRIMARY KEY, b blob)")
     session.execute("INSERT INTO read_test.blobs (key, b) VALUES (1, 0x0102030405060708090a0b0c)")
     session.execute("INSERT INTO read_test.blobs (key, b) VALUES (2, null)")
 
-    session.execute("CREATE TABLE read_test.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 1, 'value1')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 2, 'value2')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (2, 2, 4, 'value4')")
+
+    session.execute("CREATE TABLE read_test.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')")
+    session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')")
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
@@ -165,7 +171,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
   }
 
   it should "allow for reading tables with composite partitioning key" in {
-    val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key").where("group >= ?", 3).toArray()
+    val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key")
+      .where("group >= ?", 3).toArray()
+    result should have length 2
+  }
+
+  it should "convert values passed to where to correct types" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time >= ?", "2014-07-12 20:00:02").toArray()
     result should have length 2
   }
 
