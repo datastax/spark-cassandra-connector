@@ -1,13 +1,8 @@
 package com.datastax.spark.connector.cql
 
-<<<<<<< HEAD
-import java.lang.reflect.{Proxy, Method, InvocationHandler}
-import com.datastax.driver.core.{Session, RegularStatement, SimpleStatement}
-=======
-import java.lang.reflect.{InvocationTargetException, Proxy, Method, InvocationHandler}
-import com.datastax.driver.core.{RegularStatement, SimpleStatement, Session}
-import org.apache.avro.generic.GenericData.StringType
->>>>>>> origin/master
+import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, Proxy}
+
+import com.datastax.driver.core.{RegularStatement, Session, SimpleStatement}
 
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
@@ -34,9 +29,6 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
         case ("prepare", Array(RegularStatementClass)) =>
           PreparedStatementCache.prepareStatement(session, args(0).asInstanceOf[RegularStatement])
         case _ =>
-<<<<<<< HEAD
-          method.invoke(session, args: _*)
-=======
           try {
             method.invoke(session, args: _*)
           }
@@ -44,7 +36,6 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
             case e: InvocationTargetException =>
               throw e.getCause
           }
->>>>>>> origin/master
       }
     }
     finally {
