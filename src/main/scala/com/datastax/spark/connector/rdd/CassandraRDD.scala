@@ -2,12 +2,12 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ConsistencyLevel, PreparedStatement, Session, SimpleStatement, Statement}
+import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
 import com.datastax.spark.connector.util.CountingIterator
 
 import org.apache.spark.rdd.RDD
@@ -278,7 +278,16 @@ class CassandraRDD[R] private[connector] (
     try {
       val stmt = session.prepare(cql)
       stmt.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE)
-      val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
+      val converters = stmt.getVariables
+        .view
+        .map(_.getType)
+        .map(ColumnType.fromDriverType)
+        .map(_.converterToCassandra)
+        .toArray
+      val convertedValues =
+        for ((value, converter) <- values zip converters)
+        yield converter.convert(value).asInstanceOf[AnyRef]
+      val bstm = stmt.bind(convertedValues: _*)
       bstm.setFetchSize(fetchSize)
       bstm
     }
