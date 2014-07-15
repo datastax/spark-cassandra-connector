@@ -25,6 +25,9 @@ object CassandraSparkBuild extends Build {
     .settings(Settings.buildSettings: _*)
     .settings(libraryDependencies ++= Dependencies.spark)
     .configs(IntegrationTest)
+
+  lazy val IntegrationTest = config("it") extend Test
+
 }
 
 object Dependencies {
