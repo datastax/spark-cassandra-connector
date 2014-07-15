@@ -193,7 +193,7 @@ class CassandraRDD[R] private[connector] (
   // Table metadata should be fetched only once to guarantee all tasks use the same metadata.
   // TableDef is serializable, so there is no problem:
   lazy val tableDef = {
-    new Schema(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
       case None => throw new IOException(s"Table not found: $keyspaceName.$tableName")
     }

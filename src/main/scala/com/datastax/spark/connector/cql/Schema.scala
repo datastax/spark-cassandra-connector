@@ -36,9 +36,9 @@ case class ColumnDef(keyspaceName: String,
 /** A Cassandra table metadata that can be serialized. */
 case class TableDef(keyspaceName: String,
                     tableName: String,
-                    partitionKey: Iterable[ColumnDef], 
-                    clusteringColumns: Iterable[ColumnDef],
-                    regularColumns: Iterable[ColumnDef]) {
+                    partitionKey: Seq[ColumnDef],
+                    clusteringColumns: Seq[ColumnDef],
+                    regularColumns: Seq[ColumnDef]) {
   
   lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
@@ -46,29 +46,38 @@ case class TableDef(keyspaceName: String,
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
-case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef]) {
+case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef]) {
   lazy val tableByName = tables.map(t => (t.tableName, t)).toMap
 }
 
-/** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
-  * @param keyspaceName if defined, fetches only metadata of the given keyspace
-  * @param tableName if defined, fetches only metadata of the given table
-  */
-class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None) extends Logging {
+case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
 
-  private val systemKeyspaces = Set("system", "system_traces", "dse_system", "dse_security", "cfs", "cfs_archive", "system_auth")
+  /** Returns a map from keyspace name to keyspace metadata */
+  lazy val keyspaceByName: Map[String, KeyspaceDef] =
+    keyspaces.map(k => (k.keyspaceName, k)).toMap
 
-  private def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
-    keyspaceName match {
-      case None => true
-      case Some(name) => keyspace.getName == name
-    }
+  /** List of keyspaces created by the user, i.e. non-system keyspaces */
+  lazy val userKeyspaces: Set[KeyspaceDef] =
+    keyspaces.filterNot(ks => Schema.isSystemKeyspace(ks.keyspaceName))
 
-  private def isTableSelected(table: TableMetadata): Boolean =
-    tableName match {
-      case None => true
-      case Some(name) => table.getName == name
-    }
+  /** Returns a map from keyspace name to keyspace metadata, only for user keyspaces */
+  lazy val userKeyspaceByName: Map[String, KeyspaceDef] =
+    userKeyspaces.map(k => (k.keyspaceName, k)).toMap
+
+  /** All tables from all keyspaces */
+  lazy val tables: Set[TableDef] =
+    for (keyspace <- keyspaces; table <- keyspace.tables) yield table
+
+  /** List of tables created by the user, i.e. non-system tables */
+  lazy val userTables: Set[TableDef] =
+    tables.filterNot(tableDef => Schema.isSystemKeyspace(tableDef.keyspaceName))
+
+}
+
+object Schema extends Logging {
+
+  private val systemKeyspaces =
+    Set("system", "system_traces", "dse_system", "dse_security", "cfs", "cfs_archive", "system_auth")
 
   private def toColumnDef(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
     val table = column.getTable
@@ -95,50 +104,45 @@ class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None,
         toColumnDef(column, RegularColumn)
   }
 
-  private def fetchTables(keyspace: KeyspaceMetadata): Seq[TableDef] =
-    for (table <- keyspace.getTables.toSeq if isTableSelected(table)) yield {
-      val partitionKey = fetchPartitionKey(table)
-      val clusteringColumns = fetchClusteringColumns(table)
-      val regularColumns = fetchRegularColumns(table)
-      TableDef(keyspace.getName, table.getName, partitionKey, clusteringColumns, regularColumns)
-    }
+  /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
+    * @param keyspaceName if defined, fetches only metadata of the given keyspace
+    * @param tableName if defined, fetches only metadata of the given table
+    */
+  def fromCassandra(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None): Schema = {
 
-  private def fetchKeyspaces(metadata: Metadata): Seq[KeyspaceDef] =
-    for (keyspace <- metadata.getKeyspaces if isKeyspaceSelected(keyspace)) yield
-      KeyspaceDef(keyspace.getName, fetchTables(keyspace))
+    def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
+      keyspaceName match {
+        case None => true
+        case Some(name) => keyspace.getName == name
+      }
 
+    def isTableSelected(table: TableMetadata): Boolean =
+      tableName match {
+        case None => true
+        case Some(name) => table.getName == name
+      }
 
-  /** All keyspaces in this database, including the system keyspaces */
-  lazy val keyspaces: Seq[KeyspaceDef] = {
+    def fetchTables(keyspace: KeyspaceMetadata): Set[TableDef] =
+      for (table <- keyspace.getTables.toSet if isTableSelected(table)) yield {
+        val partitionKey = fetchPartitionKey(table)
+        val clusteringColumns = fetchClusteringColumns(table)
+        val regularColumns = fetchRegularColumns(table)
+        TableDef(keyspace.getName, table.getName, partitionKey, clusteringColumns, regularColumns)
+      }
+
+    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
+      for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield
+        KeyspaceDef(keyspace.getName, fetchTables(keyspace))
+
     connector.withClusterDo { cluster =>
       val clusterName = cluster.getMetadata.getClusterName
       logDebug(s"Retrieving database schema from cluster $clusterName...")
       val keyspaces = fetchKeyspaces(cluster.getMetadata)
       logDebug(s"${keyspaces.size} keyspaces fetched from cluster $clusterName: " +
         s"${keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-      keyspaces
+      Schema(clusterName, keyspaces)
     }
   }
-
-  /** Returns a map from keyspace name to keyspace metadata */
-  lazy val keyspaceByName: Map[String, KeyspaceDef] =
-    keyspaces.map(k => (k.keyspaceName, k)).toMap
-
-  /** List of keyspaces created by the user, i.e. non-system keyspaces */
-  lazy val userKeyspaces: Seq[KeyspaceDef] =
-    keyspaces.filterNot(ks => isSystemKeyspace(ks.keyspaceName))
-
-  /** Returns a map from keyspace name to keyspace metadata, only for user keyspaces */
-  lazy val userKeyspaceByName: Map[String, KeyspaceDef] =
-    userKeyspaces.map(k => (k.keyspaceName, k)).toMap
-
-  /** All tables from all keyspaces */
-  lazy val tables: Seq[TableDef] =
-    for (keyspace <- keyspaces; table <- keyspace.tables) yield table
-
-  /** List of tables created by the user, i.e. non-system tables */
-  lazy val userTables: Seq[TableDef] =
-    tables.filterNot(tableDef => isSystemKeyspace(tableDef.keyspaceName))
 
   def isSystemKeyspace(ksName: String) =
     systemKeyspaces.contains(ksName)
