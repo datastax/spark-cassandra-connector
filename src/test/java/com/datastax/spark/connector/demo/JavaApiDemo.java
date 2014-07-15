@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static com.datastax.driver.spark.CassandraJavaUtil.javaFunctions;
+import static com.datastax.spark.connector.CassandraJavaUtil.javaFunctions;
 
 public class JavaApiDemo implements Serializable {
 

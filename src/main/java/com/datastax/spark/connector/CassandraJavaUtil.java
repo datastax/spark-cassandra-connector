@@ -1,4 +1,4 @@
-package com.datastax.driver.spark;
+package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.CassandraRow;
 import com.datastax.spark.connector.RDDFunctions;

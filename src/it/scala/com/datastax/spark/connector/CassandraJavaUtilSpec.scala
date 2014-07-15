@@ -2,7 +2,6 @@ package com.datastax.spark.connector
 
 import java.net.InetAddress
 
-import com.datastax.driver.spark.{CassandraJavaUtil, SampleJavaBean}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
@@ -22,7 +21,7 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
     }
   }
 
-  "A SparkDriverJavaUtil" should "allow to save beans to Cassandra" in {
+  "A CassandraJavaUtil" should "allow to save beans to Cassandra" in {
     val beansRdd = sc.parallelize(Seq(
       SampleJavaBean.newInstance(1, "one"),
       SampleJavaBean.newInstance(2, "two"),
