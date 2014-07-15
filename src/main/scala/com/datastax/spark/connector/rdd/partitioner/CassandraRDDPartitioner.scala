@@ -41,7 +41,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         client.describe_local_ring(keyspaceName)
       }
       catch {
-        case e: TApplicationException if e.getType == TApplicationException.UNKNOWN_METHOD =>
+        case e: java.lang.NoSuchMethodError =>
           client.describe_ring(keyspaceName)
       }
     ring.map(unthriftify)
