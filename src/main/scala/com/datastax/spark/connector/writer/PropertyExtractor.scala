@@ -14,6 +14,10 @@ class PropertyExtractor[T](val cls: Class[T], val propertyNames: Seq[String]) ex
   private lazy val methods: Array[Method] =
     propertyNames.map(getter).toArray
 
+  @transient
+  private lazy val methodByName =
+    methods.map(m => (m.getName, m)).toMap
+
   def extract(obj: T): Array[AnyRef] =
     extract(obj, Array.ofDim(methods.length))
 
@@ -23,6 +27,10 @@ class PropertyExtractor[T](val cls: Class[T], val propertyNames: Seq[String]) ex
     target
   }
 
+  def extractProperty(obj: T, propertyName: String): AnyRef = {
+    val m = methodByName(propertyName)
+    m.invoke(obj)
+  }
 }
 
 object PropertyExtractor {

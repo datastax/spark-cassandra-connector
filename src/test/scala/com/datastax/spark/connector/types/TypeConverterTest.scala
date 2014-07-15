@@ -25,8 +25,24 @@ class TypeConverterTest {
   }
 
   @Test
+  def testJavaBoolean() {
+    val c = TypeConverter.forType[java.lang.Boolean]
+    assertEquals(true, c.convert("true"))
+    assertEquals(false, c.convert("false"))
+    assertEquals(true, c.convert(1))
+    assertEquals(false, c.convert(0))
+  }
+
+  @Test
   def testInt() {
     val c = TypeConverter.forType[Int]
+    assertEquals(12345, c.convert("12345"))
+    assertEquals(12345, c.convert(12345))
+  }
+
+  @Test
+  def testJavaInteger() {
+    val c = TypeConverter.forType[java.lang.Integer]
     assertEquals(12345, c.convert("12345"))
     assertEquals(12345, c.convert(12345))
   }
@@ -40,6 +56,14 @@ class TypeConverterTest {
   }
 
   @Test
+  def testJavaLong() {
+    val c = TypeConverter.forType[java.lang.Long]
+    assertEquals(12345L, c.convert("12345"))
+    assertEquals(12345L, c.convert(12345))
+    assertEquals(12345L, c.convert(12345L))
+  }
+
+  @Test
   def testFloat() {
     val c = TypeConverter.forType[Float]
     assertEquals(1.0f, c.convert("1.0"), 0.0001f)
@@ -47,8 +71,22 @@ class TypeConverterTest {
   }
 
   @Test
+  def testJavaFloat() {
+    val c = TypeConverter.forType[java.lang.Float]
+    assertEquals(1.0f, c.convert("1.0"), 0.0001f)
+    assertEquals(1.0f, c.convert(1.0f), 0.0001f)
+  }
+
+  @Test
   def testDouble() {
     val c = TypeConverter.forType[Double]
+    assertEquals(1.0, c.convert("1.0"), 0.0001)
+    assertEquals(1.0, c.convert(1.0), 0.0001)
+  }
+
+  @Test
+  def testJavaDouble() {
+    val c = TypeConverter.forType[java.lang.Double]
     assertEquals(1.0, c.convert("1.0"), 0.0001)
     assertEquals(1.0, c.convert(1.0), 0.0001)
   }

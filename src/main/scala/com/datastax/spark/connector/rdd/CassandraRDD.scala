@@ -2,12 +2,12 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ConsistencyLevel, PreparedStatement, Session, SimpleStatement, Statement}
+import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
 import com.datastax.spark.connector.util.CountingIterator
 
 import org.apache.spark.rdd.RDD
@@ -31,8 +31,8 @@ import scala.reflect._
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
   * properties control the number of partitions and the fetch size:
   *
-  *   - cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
-  *   - cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
+  *   - spark.cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
+  *   - spark.cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark executor.
   * By default, reads are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
@@ -49,10 +49,10 @@ class CassandraRDD[R] private[connector] (
   extends RDD[R](sc, Seq.empty) with Logging {
 
   /** How many rows are fetched at once from server */
-  val fetchSize = sc.getConf.getInt("cassandra.input.page.row.size", 1000)
+  val fetchSize = sc.getConf.getInt("spark.cassandra.input.page.row.size", 1000)
 
   /** How many rows to fetch in a single Spark Task. */
-  val splitSize = sc.getConf.getInt("cassandra.input.split.size", 100000)
+  val splitSize = sc.getConf.getInt("spark.cassandra.input.split.size", 100000)
 
   private val connector = CassandraConnector(sc.getConf)
 
@@ -278,7 +278,16 @@ class CassandraRDD[R] private[connector] (
     try {
       val stmt = session.prepare(cql)
       stmt.setConsistencyLevel(connector.inputConsistencyLevel)
-      val bstm = stmt.bind(values.map(_.asInstanceOf[AnyRef]): _*)
+      val converters = stmt.getVariables
+        .view
+        .map(_.getType)
+        .map(ColumnType.fromDriverType)
+        .map(_.converterToCassandra)
+        .toArray
+      val convertedValues =
+        for ((value, converter) <- values zip converters)
+        yield converter.convert(value).asInstanceOf[AnyRef]
+      val bstm = stmt.bind(convertedValues: _*)
       bstm.setFetchSize(fetchSize)
       bstm
     }

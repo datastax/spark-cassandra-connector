@@ -6,7 +6,9 @@ import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import org.apache.cassandra.thrift
+import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
+import org.apache.thrift.TApplicationException
 
 import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
@@ -23,9 +25,6 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
-  /** How many token ranges to sample in order to estimate average number of rows per token */
-  private val TokenRangeSampleSize = 16
-
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
@@ -34,6 +33,20 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     val endToken = tokenFactory.fromString(tr.end_token)
     val endpoints = tr.endpoints.map(InetAddress.getByName).toSet
     new TokenRange(startToken, endToken, endpoints, None)
+  }
+
+  private def describeRing(client: Cassandra.Iface): Seq[TokenRange] = {
+    val ring =
+      try {
+        client.describe_local_ring(keyspaceName)
+      }
+      catch {
+        case e: TApplicationException if e.getType == TApplicationException.UNKNOWN_METHOD =>
+          client.describe_ring(keyspaceName)
+        case e: java.lang.NoSuchMethodError =>
+          client.describe_ring(keyspaceName)
+      }
+    ring.map(unthriftify)
   }
 
   private def quote(name: String) = "\"" + name + "\""
@@ -76,7 +89,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     * Used only for Murmur3Partitioner and RandomPartitioner.  */
   private def estimateRowsPerToken(tokenRanges: Seq[TokenRange]): Double = {
     val random = new scala.util.Random(0)
-    val tokenRangeSample = random.shuffle(tokenRanges).take(TokenRangeSampleSize)
+    val tokenRangeSample = random.shuffle(tokenRanges).take(CassandraRDDPartitioner.TokenRangeSampleSize)
     val splitter = new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
     val splits = splitsOf(tokenRangeSample, splitter)
     val tokenCountSum = splits.map(tokenCount).sum
@@ -101,7 +114,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   def partitions: Array[Partition] = {
     connector.withCassandraClientDo {
       client =>
-        val tokenRanges = client.describe_local_ring(keyspaceName).map(unthriftify)
+        val tokenRanges = describeRing(client)
         val endpointCount = tokenRanges.map(_.endpoints).reduce(_ ++ _).size
         val splitter = createSplitterFor(tokenRanges)
         val splits = splitsOf(tokenRanges, splitter).toSeq
@@ -123,7 +136,10 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 object CassandraRDDPartitioner {
   /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
     * Does not affect how many Spark threads fetch data from Cassandra. */
-  val MaxParallelism = 256
+  val MaxParallelism = 16
+
+  /** How many token ranges to sample in order to estimate average number of rows per token */
+  val TokenRangeSampleSize = 16
 
   private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
 }

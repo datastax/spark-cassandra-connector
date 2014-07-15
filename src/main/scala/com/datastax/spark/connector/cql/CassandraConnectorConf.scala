@@ -27,11 +27,11 @@ object CassandraConnectorConf {
   val DefaultInputConsistencyLevel = ConsistencyLevel.LOCAL_ONE
   val DefaultOutputConsistencyLevel = ConsistencyLevel.ONE
   
-  val CassandraConnectionHostProperty = "cassandra.connection.host"
-  val CassandraConnectionRpcPortProperty = "cassandra.connection.rpc.port"
-  val CassandraConnectionNativePortProperty = "cassandra.connection.native.port"
-  val CassandraInputConsistencyLevelProperty = "cassandra.input.consistency.level"
-  val CassandraOutputConsistencyLevelProperty = "cassandra.output.consistency.level"
+  val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
+  val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
+  val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
+  val CassandraInputConsistencyLevelProperty = "spark.cassandra.input.consistency.level"
+  val CassandraOutputConsistencyLevelProperty = "spark.cassandra.output.consistency.level"
 
 
   def apply(host: InetAddress,

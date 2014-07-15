@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.cql
 
-import java.lang.reflect.{Proxy, Method, InvocationHandler}
+import java.lang.reflect.{InvocationTargetException, Proxy, Method, InvocationHandler}
 
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.thrift.transport.TTransport
@@ -18,7 +18,13 @@ private class ClientProxyHandler(client: Cassandra.Iface, transport: TTransport)
       null
     }
     else
-      method.invoke(client, args: _*)
+      try {
+        method.invoke(client, args: _*)
+      }
+      catch {
+        case e: InvocationTargetException =>
+          throw e.getCause
+      }
   }
 }
 
