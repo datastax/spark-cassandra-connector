@@ -25,9 +25,6 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
-  /** How many token ranges to sample in order to estimate average number of rows per token */
-  private val TokenRangeSampleSize = 16
-
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
@@ -90,7 +87,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     * Used only for Murmur3Partitioner and RandomPartitioner.  */
   private def estimateRowsPerToken(tokenRanges: Seq[TokenRange]): Double = {
     val random = new scala.util.Random(0)
-    val tokenRangeSample = random.shuffle(tokenRanges).take(TokenRangeSampleSize)
+    val tokenRangeSample = random.shuffle(tokenRanges).take(CassandraRDDPartitioner.TokenRangeSampleSize)
     val splitter = new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
     val splits = splitsOf(tokenRangeSample, splitter)
     val tokenCountSum = splits.map(tokenCount).sum
@@ -137,7 +134,10 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 object CassandraRDDPartitioner {
   /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
     * Does not affect how many Spark threads fetch data from Cassandra. */
-  val MaxParallelism = 256
+  val MaxParallelism = 16
+
+  /** How many token ranges to sample in order to estimate average number of rows per token */
+  val TokenRangeSampleSize = 16
 
   private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
 }

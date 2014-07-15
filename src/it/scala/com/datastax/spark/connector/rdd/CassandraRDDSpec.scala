@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -185,4 +186,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
     intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").toArray() }
   }
 
+  it should "not leak threads" in {
+    sc.cassandraTable("read_test", "key_value").toArray()
+    // subsequent computaitons of RDD should reuse alrady created thread pools,
+    // not instantiate new ones
+    val startThreadCount = Thread.activeCount()
+    for (i <- 1 to 128)
+      sc.cassandraTable("read_test", "key_value").toArray()
+    val endThreadCount = Thread.activeCount()
+    endThreadCount shouldEqual startThreadCount
+  }
 }

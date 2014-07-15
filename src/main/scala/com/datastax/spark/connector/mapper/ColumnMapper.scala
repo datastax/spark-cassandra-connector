@@ -1,8 +1,10 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.rdd.reader.{ObjectFactory, AnyObjectFactory}
 
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 
 /** Produces [[ColumnMap]] objects that map class `T` properties to columns
@@ -24,6 +26,8 @@ import scala.reflect.ClassTag
   */
 trait ColumnMapper[T] extends Serializable {
   def columnMap(tableDef: TableDef): ColumnMap
+
+  def objectFactory[R <: T : TypeTag]: ObjectFactory[R]
 }
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */

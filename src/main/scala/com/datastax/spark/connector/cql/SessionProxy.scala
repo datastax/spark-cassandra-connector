@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.cql
 
-import java.lang.reflect.{InvocationTargetException, Proxy, Method, InvocationHandler}
-import com.datastax.driver.core.{RegularStatement, SimpleStatement, Session}
-import org.apache.avro.generic.GenericData.StringType
+import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, Proxy}
+
+import com.datastax.driver.core.{RegularStatement, Session, SimpleStatement}
 
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
@@ -17,6 +17,13 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
       val RegularStatementClass = classOf[String]
 
       (method.getName, method.getParameterTypes) match {
+        case ("close", Array()) =>
+          null
+        case ("closeUnderlying", Array()) =>
+          session.close()
+          null
+        case ("isClosed", Array()) =>
+          closed.asInstanceOf[AnyRef]
         case ("prepare", Array(StringClass)) =>
           PreparedStatementCache.prepareStatement(session, new SimpleStatement(args(0).asInstanceOf[String]))
         case ("prepare", Array(RegularStatementClass)) =>

@@ -3,7 +3,7 @@ package com.datastax.spark.connector.mapper
 import java.lang.reflect.{Constructor, Method}
 
 import com.datastax.spark.connector.cql.TableDef
-import com.thoughtworks.paranamer.AdaptiveParanamer
+import com.thoughtworks.paranamer.{ParameterNamesNotFoundException, AdaptiveParanamer}
 import org.apache.commons.lang.StringUtils
 
 import scala.reflect.ClassTag
@@ -26,18 +26,13 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
     columnRef.fold(underscoreName)(_.columnName)
   }
 
-  override def columnMap(tableDef: TableDef): ColumnMap = {
+  def columnsOf(ctor: Constructor[_], tableDef: TableDef): Seq[ColumnRef]
 
+  override def columnMap(tableDef: TableDef): ColumnMap = {
     val cls = implicitly[ClassTag[T]].runtimeClass
 
-    def columnsOf(ctor: Constructor[_]): Seq[ColumnRef] = {
-      val paramNames = ReflectionColumnMapper.paranamer.lookupParameterNames(ctor)
-      val columnNames = paramNames.filterNot(_ == "$outer").map(constructorParamToColumnName(_, tableDef))
-      columnNames.map(NamedColumnRef)
-    }
-
     val constructor =
-      columnsOf(cls.getConstructors()(0))
+      columnsOf(cls.getConstructors()(0), tableDef)
 
     val getters: Map[String, ColumnRef] = {
       for (method <- cls.getMethods if isGetter(method)) yield {
@@ -57,8 +52,4 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
     new SimpleColumnMap(constructor, getters, setters)
   }
-}
-
-object ReflectionColumnMapper {
-  private val paranamer = new AdaptiveParanamer
 }
