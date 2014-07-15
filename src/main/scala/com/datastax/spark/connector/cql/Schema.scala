@@ -37,16 +37,18 @@ case class ColumnDef(keyspaceName: String,
 case class TableDef(keyspaceName: String,
                     tableName: String,
                     partitionKey: Iterable[ColumnDef], 
-                    clusteringKey: Iterable[ColumnDef], 
+                    clusteringColumns: Iterable[ColumnDef],
                     regularColumns: Iterable[ColumnDef]) {
   
-  lazy val primaryKey = partitionKey ++ clusteringKey 
+  lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
   lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
-case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef])
+case class KeyspaceDef(keyspaceName: String, tables: Iterable[TableDef]) {
+  lazy val tableByName = tables.map(t => (t.tableName, t)).toMap
+}
 
 /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
   * @param keyspaceName if defined, fetches only metadata of the given keyspace
@@ -118,13 +120,21 @@ class Schema(connector: CassandraConnector, keyspaceName: Option[String] = None,
     }
   }
 
-  /** All tables from all keyspaces */
-  lazy val tables: Seq[TableDef] =
-    for (keyspace <- keyspaces; table <- keyspace.tables) yield table
+  /** Returns a map from keyspace name to keyspace metadata */
+  lazy val keyspaceByName: Map[String, KeyspaceDef] =
+    keyspaces.map(k => (k.keyspaceName, k)).toMap
 
   /** List of keyspaces created by the user, i.e. non-system keyspaces */
   lazy val userKeyspaces: Seq[KeyspaceDef] =
     keyspaces.filterNot(ks => isSystemKeyspace(ks.keyspaceName))
+
+  /** Returns a map from keyspace name to keyspace metadata, only for user keyspaces */
+  lazy val userKeyspaceByName: Map[String, KeyspaceDef] =
+    userKeyspaces.map(k => (k.keyspaceName, k)).toMap
+
+  /** All tables from all keyspaces */
+  lazy val tables: Seq[TableDef] =
+    for (keyspace <- keyspaces; table <- keyspace.tables) yield table
 
   /** List of tables created by the user, i.e. non-system tables */
   lazy val userTables: Seq[TableDef] =

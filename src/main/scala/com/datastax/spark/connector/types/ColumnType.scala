@@ -2,16 +2,25 @@ package com.datastax.spark.connector.types
 
 import com.datastax.driver.core.DataType
 import scala.collection.JavaConversions._
+import scala.reflect.runtime.universe._
 
-/** Serializable representation of column data type */
+/** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
 
   /** Returns a converter that converts values to the type of this column expected by the
     * Cassandra Java driver when saving the row.*/
   def converterToCassandra: TypeConverter[_]
 
+  /** Returns a converter that converts values to the Scala type associated with this column. */
+  lazy val converterToScala: TypeConverter[T] =
+    TypeConverter.forType(scalaTypeTag)
+
+  /** Returns the TypeTag of the Scala type recommended to represent values of this column. */
+  def scalaTypeTag: TypeTag[T]
+
   /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String
+    = scalaTypeTag.tpe.toString
 
   def isCollection: Boolean
 }
