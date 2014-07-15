@@ -24,9 +24,11 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
+      session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
       session.execute("TRUNCATE write_test.key_value")
       session.execute("TRUNCATE write_test.collections")
       session.execute("TRUNCATE write_test.blobs")
+      session.execute("TRUNCATE write_test.counters")
     }
   }
 
@@ -90,6 +92,19 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     verifyKeyValueTable()
   }
 
+  it should "write empty values" in {
+    val col = Seq((1, 1L, None))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", Seq("key", "group", "value"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      result should have size 1
+      for (row <- result) {
+        row.getString(2) should be (null)
+      }
+    }
+
+  }
+
   it should "write collections" in {
     val col = Seq(
       (1, Vector("item1", "item2"), Set("item1", "item2"), Map("key1" -> "value1", "key2" -> "value2")),
@@ -124,6 +139,24 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       row1.isNull("b") shouldEqual true
     }
   }
+
+  it should "increment and decrement counters" in {
+    val col1 = Seq((0, 0, 1, 1))
+    sc.parallelize(col1).saveToCassandra("write_test", "counters", Seq("pkey", "ckey", "c1", "c2"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.counters").one()
+      result.getLong("c1") shouldEqual 1L
+      result.getLong("c2") shouldEqual 1L
+    }
+    val col2 = Seq((0, 0, 1))
+    sc.parallelize(col1).saveToCassandra("write_test", "counters", Seq("pkey", "ckey", "c2"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.counters").one()
+      result.getLong("c1") shouldEqual 1L
+      result.getLong("c2") shouldEqual 2L
+    }
+  }
+
 
   it should "throw IOException if table is not found" in {
     val col = Seq(("1", "1", "value1"), ("2", "2", "value2"), ("3", "3", "value3"))

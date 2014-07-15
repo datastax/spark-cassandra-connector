@@ -8,6 +8,8 @@ import com.datastax.spark.connector.types.TypeConverter
 import scala.collection.{Map, Seq}
 import scala.reflect.ClassTag
 
+import scala.collection.JavaConversions._
+
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
   * Can save case class objects, java beans and tuples. */
 class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedColumns: Seq[String])
@@ -51,7 +53,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
     }
   }
 
-  private val columnTypesByName: Map[String, TypeConverter[_]] =
+  private val columnNameToType: Map[String, TypeConverter[_]] =
     table.allColumns.map(c => (c.columnName, c.columnType.converterToCassandra)).toMap
 
   val (propertyNames, columnNames) = {
@@ -62,12 +64,13 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
     selectedPropertyColumnPairs.unzip
   }
 
+  private val columnNameToPropertyName = (columnNames zip propertyNames).toMap
+
   checkMissingProperties(propertyNames)
   checkMissingColumns(columnNames)
   checkMissingPrimaryKeyColumns(columnNames)
 
-  private val propertyTypes = columnNames.map(columnTypesByName)
-
+  private val propertyTypes = columnNames.map(columnNameToType)
   private val extractor = new ConvertingPropertyExtractor(cls, propertyNames zip propertyTypes)
 
   @transient
@@ -75,12 +78,24 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
     override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
   }
 
+  override def bind(data: T, stmt: PreparedStatement) = {
+    val boundStmt = stmt.bind()
+    for (variable <- stmt.getVariables) {
+      val columnName = variable.getName
+      val propertyName = columnNameToPropertyName(columnName)
+      val value = extractor.extractProperty(data, propertyName)
+      val serializedValue =
+        if (value != null)
+          variable.getType.serialize(value)
+        else
+          null
+      boundStmt.setBytesUnsafe(columnName, serializedValue)
+    }
+    boundStmt
+  }
+
   private def fillBuffer(data: T): Array[AnyRef] =
     extractor.extract(data, buffer.get)
-
-  override def bind(data: T, stmt: PreparedStatement) = {
-    stmt.bind(fillBuffer(data): _*)
-  }
 
   override def estimateSizeInBytes(data: T) = {
     ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
