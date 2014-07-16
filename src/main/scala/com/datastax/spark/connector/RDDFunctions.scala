@@ -18,7 +18,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     "spark.cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
 
   private lazy val outputConsistencyLevel = ConsistencyLevel.valueOf(
-    rdd.sparkContext.getConf.get("spark.cassandra.output.consistency.level", ConsistencyLevel.ONE.name))
+    rdd.sparkContext.getConf.get("spark.cassandra.output.consistency.level", ConsistencyLevel.LOCAL_ONE.name))
 
   private lazy val batchSizeInRows = {
     val Number = "([0-9]+)".r
