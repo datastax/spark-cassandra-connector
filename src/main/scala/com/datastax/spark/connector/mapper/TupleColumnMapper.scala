@@ -1,10 +1,8 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.rdd.reader.{AnyObjectFactory, ObjectFactory}
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
 
 class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
 
@@ -30,5 +28,4 @@ class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
     SimpleColumnMap(constructor, getters, setters)
   }
 
-  override def objectFactory[R <: T : TypeTag]: ObjectFactory[R] = new AnyObjectFactory[R]()
 }

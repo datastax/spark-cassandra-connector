@@ -14,7 +14,17 @@ class SampleScalaClassWithMultipleCtors(val key: Int, val value: String) {
 
 class SampleWithNestedScalaCaseClass {
 
-  case class SampleNestedScalaCaseClass(key: Int, value: String)
+  case class InnerClass(key: Int, value: String)
+
+}
+
+class SampleWithDeeplyNestedScalaCaseClass {
+
+  class IntermediateClass {
+
+    case class InnerClass(key: Int, value: String)
+
+  }
 
 }
 

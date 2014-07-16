@@ -1,13 +1,10 @@
 package com.datastax.spark.connector.mapper
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
 
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.rdd.reader.{AnyObjectFactory, ObjectFactory}
-import com.thoughtworks.paranamer.{AdaptiveParanamer, ParameterNamesNotFoundException}
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
 
 /** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor names
   * and underscore naming convention for column names.
@@ -58,23 +55,8 @@ class DefaultColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] 
     val propertyName = setterNameToPropertyName(setterName)
     columnNameOverride.getOrElse(propertyName, columnNameForProperty(propertyName, tableDef))
   }
-
-  override def objectFactory[R <: T : TypeTag]: ObjectFactory[R] = new AnyObjectFactory[R]
-
-  override def columnsOf(ctor: Constructor[_], tableDef: TableDef): Seq[ColumnRef] = {
-    val paramNames = try {
-      DefaultColumnMapper.paranamer.lookupParameterNames(ctor)
-    } catch {
-      case ex: ParameterNamesNotFoundException => Array.empty[String]
-    }
-    val columnNames = paramNames.filterNot(_ == "$outer").map(constructorParamToColumnName(_, tableDef))
-    columnNames.map(NamedColumnRef)
-  }
-
 }
 
 object DefaultColumnMapper {
   private val SetterSuffix: String = "_$eq"
-
-  private val paranamer = new AdaptiveParanamer
 }

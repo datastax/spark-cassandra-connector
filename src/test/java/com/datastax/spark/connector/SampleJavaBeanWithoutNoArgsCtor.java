@@ -10,7 +10,7 @@ public class SampleJavaBeanWithoutNoArgsCtor implements Serializable {
     private Integer key;
     private String value;
 
-    public SampleJavaBeanWithoutNoArgsCtor(Integer key, String value) {
+    private SampleJavaBeanWithoutNoArgsCtor(Integer key, String value) {
         this.key = key;
         this.value = value;
     }

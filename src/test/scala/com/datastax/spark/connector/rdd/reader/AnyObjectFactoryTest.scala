@@ -1,16 +1,17 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.spark.connector.util.JavaApiHelper
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.util.JavaApiHelper
 import org.scalatest.{Matchers, WordSpec}
+
 import scala.reflect.runtime.universe._
 
-class ObjectFactoryTest extends WordSpec with Matchers {
+class AnyObjectFactoryTest extends WordSpec with Matchers {
 
-  "JavaObjectFactory" when {
+  "AnyObjectFactory" when {
     "instantiated for a bean class with a single, no-args constructor" should {
 
-      val factory = new JavaObjectFactory[SampleJavaBean]
+      val factory = new AnyObjectFactory[SampleJavaBean]
 
       "create an instance of that class with newInstance" in {
         val instance = factory.newInstance()
@@ -31,20 +32,11 @@ class ObjectFactoryTest extends WordSpec with Matchers {
     }
 
     "instantiated for a bean class with multiple constructors which include no-args constructor" should {
-
-      val factory = new JavaObjectFactory[SampleJavaBeanWithMultipleCtors]
+      val factory = new AnyObjectFactory[SampleJavaBeanWithMultipleCtors]
 
       "create an instance of that class with newInstance" in {
         val instance = factory.newInstance()
         instance shouldBe a[SampleJavaBeanWithMultipleCtors]
-      }
-
-      "return 0 with argCount" in {
-        factory.argCount should be(0)
-      }
-
-      "return empty collection with constructorParamTypes" in {
-        factory.constructorParamTypes should have size 0
       }
 
       "return that class with javaClass" in {
@@ -52,25 +44,43 @@ class ObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
+    "instantiated for an inner Java class" should {
+      implicit val tt = JavaApiHelper.getTypeTag(classOf[SampleWithNestedJavaBean#InnerClass])
+      val factory = new AnyObjectFactory[SampleWithNestedJavaBean#InnerClass]
+
+      "create an instance of that class with newInstance" in {
+        val instance = factory.newInstance()
+        instance shouldBe a[SampleWithNestedJavaBean#InnerClass]
+      }
+
+      "return that class with javaClass" in {
+        factory.javaClass should be(classOf[SampleWithNestedJavaBean#InnerClass])
+      }
+    }
+
+    "instantiated for a deeply nested inner Java class" should {
+      implicit val tt = JavaApiHelper.getTypeTag(classOf[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass])
+      val factory = new AnyObjectFactory[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass]
+
+      "create an instance of that class with newInstance" in {
+        val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
+        instance shouldBe a[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass]
+      }
+
+      "return that class with javaClass" in {
+        factory.javaClass should be(classOf[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass])
+      }
+    }
+
     "tried to be instantiated for an unsupported bean class" should {
 
-      "throw NoSuchMethodException if class does not have no-args constructor" in {
+      "throw NoSuchMethodException if class does not have suitable constructor" in {
         intercept[NoSuchMethodException] {
-          val factory = new JavaObjectFactory[SampleJavaBeanWithoutNoArgsCtor]
+          new AnyObjectFactory[SampleJavaBeanWithoutNoArgsCtor]
         }
       }
-
-      "throw IllegalArgumentException if class is a member class" in {
-        implicit val tt = JavaApiHelper.getTypeTag(classOf[SampleWithNestedJavaBean#SampleNestedJavaBean])
-        intercept[IllegalArgumentException] {
-          val factory = new JavaObjectFactory[SampleWithNestedJavaBean#SampleNestedJavaBean]
-        }
-      }
-
     }
-  }
 
-  "AnyObjectFactory" when {
     "instantiated for a Scala case class" should {
       val factory = new AnyObjectFactory[SampleScalaCaseClass]
 
@@ -144,12 +154,25 @@ class ObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
-    "instantiated for a nested Scala class" should {
-      val factory = new AnyObjectFactory[SampleWithNestedScalaCaseClass#SampleNestedScalaCaseClass]
+    "instantiated for a Scala class with multiple constructors" should {
+      val factory = new AnyObjectFactory[SampleScalaClassWithMultipleCtors]
 
       "create an instance of that class with newInstance" in {
         val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
-        instance shouldBe a[SampleWithNestedScalaCaseClass#SampleNestedScalaCaseClass]
+        instance shouldBe a[SampleScalaClassWithMultipleCtors]
+      }
+
+      "return that class with javaClass" in {
+        factory.javaClass should be(classOf[SampleScalaClassWithMultipleCtors])
+      }
+    }
+
+    "instantiated for an inner Scala class" should {
+      val factory = new AnyObjectFactory[SampleWithNestedScalaCaseClass#InnerClass]
+
+      "create an instance of that class with newInstance" in {
+        val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
+        instance shouldBe a[SampleWithNestedScalaCaseClass#InnerClass]
         instance.key should be(1)
         instance.value should be("one")
       }
@@ -165,18 +188,23 @@ class ObjectFactoryTest extends WordSpec with Matchers {
       }
 
       "return that class with javaClass" in {
-        factory.javaClass should be(classOf[SampleWithNestedScalaCaseClass#SampleNestedScalaCaseClass])
+        factory.javaClass should be(classOf[SampleWithNestedScalaCaseClass#InnerClass])
       }
     }
 
-    "tried to be instantiated for an unsupported class" should {
+    "instantiated for a deeply nested inner Scala class" should {
+      val factory = new AnyObjectFactory[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]
 
-      "throw ScalaReflectionException if class has mutiple constructors" in {
-        intercept[ScalaReflectionException] {
-          val factory = new AnyObjectFactory[SampleScalaClassWithMultipleCtors]
-        }
+      "create an instance of that class with newInstance" in {
+        val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
+        instance shouldBe a[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]
+      }
+
+      "return that class with javaClass" in {
+        factory.javaClass should be(classOf[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass])
       }
     }
+
   }
 
 }

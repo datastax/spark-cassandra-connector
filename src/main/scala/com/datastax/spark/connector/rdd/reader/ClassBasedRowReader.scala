@@ -13,7 +13,7 @@ import scala.reflect.runtime.universe._
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
 class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends RowReader[R] {
 
-  private val factory = implicitly[ColumnMapper[R]].objectFactory[R]
+  private val factory = new AnyObjectFactory[R]
 
   private val columnMap = implicitly[ColumnMapper[R]].columnMap(table)
 

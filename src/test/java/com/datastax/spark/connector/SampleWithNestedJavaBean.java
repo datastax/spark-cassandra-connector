@@ -7,18 +7,18 @@ import java.io.Serializable;
  * Scala adds some additional accessors and mutators.
  */
 public class SampleWithNestedJavaBean implements Serializable {
-    public class SampleNestedJavaBean implements Serializable {
+    public class InnerClass implements Serializable {
         private Integer key;
         private String value;
 
-        public SampleNestedJavaBean(Integer key) {
+        public InnerClass(Integer key) {
             this.key = key;
         }
 
-        public SampleNestedJavaBean() {
+        public InnerClass() {
         }
 
-        public SampleNestedJavaBean(Integer key, String value) {
+        public InnerClass(Integer key, String value) {
             this.key = key;
             this.value = value;
         }
