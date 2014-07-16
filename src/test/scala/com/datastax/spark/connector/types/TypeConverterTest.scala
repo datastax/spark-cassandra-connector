@@ -12,6 +12,7 @@ import org.junit.Assert._
 import org.junit.Test
 
 import scala.collection.immutable.{TreeMap, TreeSet}
+import scala.reflect.runtime.universe._
 
 class TypeConverterTest {
 
@@ -334,8 +335,6 @@ class TypeConverterTest {
     assertEquals("Map[Int,Int]", c2.targetTypeName)
   }
 
-
-
   type StringAlias = String
 
   @Test
@@ -350,4 +349,55 @@ class TypeConverterTest {
     assertNotNull(TypeConverter.forType[Map[StringAlias, StringAlias]])
     assertNotNull(TypeConverter.forType[TreeMap[StringAlias, StringAlias]])
   }
+
+  @Test
+  def testChainedConverters() {
+    val standardConverter = TypeConverter.forType[Int]
+    val extendedConverter = new TypeConverter[Int] {
+      def targetTypeTag = typeTag[Int]
+      def convertPF = {
+        case Some(x: Int) => x
+        case None => 0
+      }
+    }
+
+    val chainedConverter = new ChainedTypeConverter(standardConverter, extendedConverter)
+    assertEquals(1, chainedConverter.convert(1))
+    assertEquals(2, chainedConverter.convert("2"))
+    assertEquals(3, chainedConverter.convert(Some(3)))
+    assertEquals(0, chainedConverter.convert(None))
+  }
+
+  case class EMail(email: String)
+
+  @Test
+  def testRegisterCustomConverter() {
+    val converter = new TypeConverter[EMail] {
+      def targetTypeTag = typeTag[EMail]
+      def convertPF = { case x: String => EMail(x) }
+    }
+    TypeConverter.registerConverter(converter)
+    assertSame(converter, TypeConverter.forType[EMail])
+  }
+
+  @Test
+  def testRegisterCustomConverterExtension() {
+    val converter = new TypeConverter[Int] {
+      def targetTypeTag = typeTag[Int]
+      def convertPF = {
+        case Some(x: Int) => x
+        case None => 0
+      }
+    }
+    TypeConverter.registerConverter(converter)
+
+    val chainedConverter = TypeConverter.forType[Int]
+    assertTrue(chainedConverter.isInstanceOf[ChainedTypeConverter[_]])
+    assertEquals(1, chainedConverter.convert(1))
+    assertEquals(2, chainedConverter.convert("2"))
+    assertEquals(3, chainedConverter.convert(Some(3)))
+    assertEquals(0, chainedConverter.convert(None))
+  }
+
+
 }

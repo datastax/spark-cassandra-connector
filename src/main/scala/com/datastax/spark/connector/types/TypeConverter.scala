@@ -28,8 +28,21 @@ trait TypeConverter[T] extends Serializable {
   def targetTypeName: String =
     targetTypeTag.tpe.toString
 
-  /** Converts an object into `T`. */
-  def convert(obj: Any): T
+  /** Returns a function converting an object into `T`. */
+  def convertPF: PartialFunction[Any, T]
+
+  /** Converts and object or throws TypeConversionException if the object can't be converted. */
+  def convert(obj: Any): T = {
+    convertPF.applyOrElse(obj, (_: Any) =>
+      throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName."))
+  }
+}
+
+/** Chains together several converters converting to the same type.
+  * This way you can extend functionality of any converter to support new input types. */
+class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends TypeConverter[T] {
+  def targetTypeTag = converters.head.targetTypeTag
+  def convertPF = converters.map(_.convertPF).reduceLeft(_ orElse _)
 }
 
 /** Defines a set of converters and implicit functions used to look up an appropriate converter for
@@ -39,66 +52,91 @@ object TypeConverter {
 
   implicit object AnyConverter extends TypeConverter[Any] {
     def targetTypeTag = implicitly[TypeTag[Any]]
-    def convert(obj: Any) = obj
+    def convertPF = {
+      case obj => obj
+    }
   }
 
   implicit object AnyRefConverter extends TypeConverter[AnyRef] {
     def targetTypeTag = implicitly[TypeTag[AnyRef]]
-    def convert(obj: Any) = obj.asInstanceOf[AnyRef]
+    def convertPF = {
+      case obj => obj.asInstanceOf[AnyRef]
+    }
   }
 
   implicit object BooleanConverter extends TypeConverter[Boolean] {
     def targetTypeTag = implicitly[TypeTag[Boolean]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: java.lang.Boolean => x
       case x: java.lang.Integer => x != 0
       case x: java.lang.Long => x != 0L
       case x: java.math.BigInteger => x != java.math.BigInteger.ZERO
       case x: String => x.toBoolean
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
+  }
+
+  implicit object JavaBooleanConverter extends TypeConverter[java.lang.Boolean] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Boolean]]
+    def convertPF = BooleanConverter.convertPF.andThen(_.asInstanceOf[java.lang.Boolean])
   }
 
   implicit object IntConverter extends TypeConverter[Int] {
     def targetTypeTag = implicitly[TypeTag[Int]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => x.intValue
       case x: String => x.toInt
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
+  }
+
+  implicit object JavaIntConverter extends TypeConverter[java.lang.Integer] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Integer]]
+    def convertPF = IntConverter.convertPF.andThen(_.asInstanceOf[java.lang.Integer])
   }
 
   implicit object LongConverter extends TypeConverter[Long] {
     def targetTypeTag = implicitly[TypeTag[Long]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => x.longValue
       case x: Date => x.getTime
       case x: String => x.toLong
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
+  }
+
+  implicit object JavaLongConverter extends TypeConverter[java.lang.Long] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Long]]
+    def convertPF = LongConverter.convertPF.andThen(_.asInstanceOf[java.lang.Long])
   }
 
   implicit object FloatConverter extends TypeConverter[Float] {
     def targetTypeTag = implicitly[TypeTag[Float]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => x.floatValue
       case x: String => x.toFloat
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
+  implicit object JavaFloatConverter extends TypeConverter[java.lang.Float] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Float]]
+    def convertPF = FloatConverter.convertPF.andThen(_.asInstanceOf[java.lang.Float])
+  }
+
+
   implicit object DoubleConverter extends TypeConverter[Double] {
     def targetTypeTag = implicitly[TypeTag[Double]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => x.doubleValue
       case x: String => x.toDouble
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
+  }
+
+  implicit object JavaDoubleConverter extends TypeConverter[java.lang.Double] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Double]]
+    def convertPF = DoubleConverter.convertPF.andThen(_.asInstanceOf[java.lang.Double])
   }
 
   implicit object StringConverter extends TypeConverter[String] {
     def targetTypeTag = implicitly[TypeTag[String]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Date => TimestampFormatter.format(x)
       case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
       case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
@@ -110,96 +148,87 @@ object TypeConverter {
 
   implicit object ByteBufferConverter extends TypeConverter[ByteBuffer] {
     def targetTypeTag = implicitly[TypeTag[ByteBuffer]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: ByteBuffer => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object ByteArrayConverter extends TypeConverter[Array[Byte]] {
     def targetTypeTag = implicitly[TypeTag[Array[Byte]]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Array[Byte] => x
       case x: ByteBuffer => ByteBufferUtil.getArray(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object DateConverter extends TypeConverter[Date] {
     def targetTypeTag = implicitly[TypeTag[Date]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Date => x
       case x: DateTime => x.toDate
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: String => TimestampParser.parse(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-
   }
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
     def targetTypeTag = implicitly[TypeTag[java.sql.Date]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: java.sql.Date => x
       case x: Date => new java.sql.Date(x.getTime)
       case x: DateTime => new java.sql.Date(x.toDate.getTime)
       case x: Long => new java.sql.Date(x)
       case x: UUID if x.version() == 1 => new java.sql.Date(x.timestamp())
       case x: String => new java.sql.Date(TimestampParser.parse(x).getTime)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
     def targetTypeTag = implicitly[TypeTag[DateTime]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: DateTime => x
       case x: Date => new DateTime(x)
       case x: Long => new DateTime(x)
       case x: UUID if x.version() == 1 => new DateTime(x.timestamp())
       case x: String => new DateTime(TimestampParser.parse(x))
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object BigIntConverter extends TypeConverter[BigInt] {
     def targetTypeTag = implicitly[TypeTag[BigInt]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: BigInt => x
       case x: java.math.BigInteger => x
       case x: java.lang.Integer => BigInt(x)
       case x: java.lang.Long => BigInt(x)
       case x: String => BigInt(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object JavaBigIntegerConverter extends TypeConverter[java.math.BigInteger] {
     def targetTypeTag = implicitly[TypeTag[java.math.BigInteger]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: BigInt => x.bigInteger
       case x: java.math.BigInteger => x
       case x: java.lang.Integer => new java.math.BigInteger(x.toString)
       case x: java.lang.Long => new java.math.BigInteger(x.toString)
       case x: String => new java.math.BigInteger(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object BigDecimalConverter extends TypeConverter[BigDecimal] {
     def targetTypeTag = implicitly[TypeTag[BigDecimal]]
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => BigDecimal(x.toString)
       case x: String => BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object JavaBigDecimalConverter extends TypeConverter[java.math.BigDecimal] {
     def targetTypeTag = implicitly[TypeTag[java.math.BigDecimal]]
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
       case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
@@ -208,19 +237,17 @@ object TypeConverter {
 
   implicit object UUIDConverter extends TypeConverter[UUID] {
     def targetTypeTag = implicitly[TypeTag[UUID]]
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: UUID => x
       case x: String => UUID.fromString(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object InetAddressConverter extends TypeConverter[InetAddress] {
     def targetTypeTag = implicitly[TypeTag[InetAddress]]
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
@@ -234,9 +261,8 @@ object TypeConverter {
       implicitly[TypeTag[(K, V)]]
     }
     
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case (k, v) => (kc.convert(k), vc.convert(v))
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
@@ -245,9 +271,9 @@ object TypeConverter {
       implicit val itemTypeTag = c.targetTypeTag
       implicitly[TypeTag[Option[T]]]
     }
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case null => None
-      case other => Some(c.convert(obj))
+      case other => Some(c.convert(other))
     }
   }
 
@@ -263,13 +289,12 @@ object TypeConverter {
       builder.result()
     }
 
-    override def convert(obj: Any) = obj match {
+    def convertPF = {
       case null => bf.apply().result()
       case x: java.util.List[_] => newCollection(x)
       case x: java.util.Set[_] => newCollection(x)
       case x: java.util.Map[_, _] => newCollection(x)
       case x: Iterable[_] => newCollection(x)
-      case x => throw new TypeConversionException(s"Cannot convert $x to $targetTypeName.")
     }
   }
 
@@ -413,7 +438,7 @@ object TypeConverter {
 
     def targetTypeTag = implicitly[TypeTag[AnyRef]]
 
-    def convert(obj: Any) = obj match {
+    def convertPF = {
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
       case None => null
       case null => null
@@ -457,33 +482,35 @@ object TypeConverter {
     else None
   }
 
-  /** Useful for getting converter based on a type received from Scala reflection */
-  def forType(tpe: Type): TypeConverter[_] = {
-    if      (tpe =:= typeOf[Any]) AnyConverter
-    else if (tpe =:= typeOf[AnyRef]) AnyRefConverter
-    else if (tpe =:= typeOf[Boolean]) BooleanConverter
-    else if (tpe =:= typeOf[java.lang.Boolean]) BooleanConverter
-    else if (tpe =:= typeOf[Int]) IntConverter
-    else if (tpe =:= typeOf[java.lang.Integer]) IntConverter
-    else if (tpe =:= typeOf[Long]) LongConverter
-    else if (tpe =:= typeOf[java.lang.Long]) LongConverter
-    else if (tpe =:= typeOf[Float]) FloatConverter
-    else if (tpe =:= typeOf[java.lang.Float]) FloatConverter
-    else if (tpe =:= typeOf[Double]) DoubleConverter
-    else if (tpe =:= typeOf[java.lang.Double]) DoubleConverter
-    else if (tpe =:= typeOf[String]) StringConverter
-    else if (tpe =:= typeOf[BigInt]) BigIntConverter
-    else if (tpe =:= typeOf[BigDecimal]) BigDecimalConverter
-    else if (tpe =:= typeOf[java.math.BigInteger]) JavaBigIntegerConverter
-    else if (tpe =:= typeOf[java.math.BigDecimal]) JavaBigDecimalConverter
-    else if (tpe =:= typeOf[java.util.Date]) DateConverter
-    else if (tpe =:= typeOf[java.sql.Date]) SqlDateConverter
-    else if (tpe =:= typeOf[org.joda.time.DateTime]) JodaDateConverter
-    else if (tpe =:= typeOf[InetAddress]) InetAddressConverter
-    else if (tpe =:= typeOf[UUID]) UUIDConverter
-    else if (tpe =:= typeOf[ByteBuffer]) ByteBufferConverter
-    else if (tpe =:= typeOf[Array[Byte]]) ByteArrayConverter
-    else tpe match {
+  private var converters = Seq[TypeConverter[_]](
+    AnyConverter,
+    AnyRefConverter,
+    BooleanConverter,
+    JavaBooleanConverter,
+    IntConverter,
+    JavaIntConverter,
+    LongConverter,
+    JavaLongConverter,
+    FloatConverter,
+    JavaFloatConverter,
+    DoubleConverter,
+    JavaDoubleConverter,
+    StringConverter,
+    BigIntConverter,
+    BigDecimalConverter,
+    JavaBigIntegerConverter,
+    JavaBigDecimalConverter,
+    DateConverter,
+    SqlDateConverter,
+    JodaDateConverter,
+    InetAddressConverter,
+    UUIDConverter,
+    ByteBufferConverter,
+    ByteArrayConverter
+  )
+
+  private def forCollectionType(tpe: Type): TypeConverter[_] = {
+    tpe match {
       case TypeRef(_, symbol, List(arg)) =>
         val untypedItemConverter = forType(arg)
         type T = untypedItemConverter.targetType
@@ -525,7 +552,27 @@ object TypeConverter {
     }
   }
 
+  /** Useful for getting converter based on a type received from Scala reflection */
+  def forType(tpe: Type): TypeConverter[_] = {
+    type T = TypeConverter[_]
+    val selectedConverters =
+      converters.collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
+
+    selectedConverters match {
+      case Seq() => forCollectionType(tpe)
+      case Seq(c) => c
+      case Seq(cs @ _*) => new ChainedTypeConverter(cs : _*)
+   }
+  }
+
   /** Useful when implicit converters are not in scope, but a TypeTag is */
   def forType[T : TypeTag]: TypeConverter[T] =
     forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
+
+  /** Registers a custom converter */
+  def registerConverter(c: TypeConverter[_]) {
+    synchronized {
+      converters = c +: converters
+    }
+  }
 }
