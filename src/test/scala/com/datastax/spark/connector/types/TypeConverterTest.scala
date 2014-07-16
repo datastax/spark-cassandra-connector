@@ -315,7 +315,26 @@ class TypeConverterTest {
 
     val out = c2.convert(arrayList)
     assertEquals(Vector(1, 2), out)
+    assertNotNull(c2.targetTypeTag)
+    assertEquals("Vector[Int]", c2.targetTypeName)
   }
+
+  @Test
+  def testSerializeMapConverter() {
+    val c1 = TypeConverter.forType[Map[Int, Int]]
+    val c2 = SerializationUtil.serializeAndDeserialize(c1)
+
+    val hashMap = new java.util.HashMap[String, String]()
+    hashMap.put("1", "10")
+    hashMap.put("2", "20")
+
+    val out = c2.convert(hashMap)
+    assertEquals(Map(1 -> 10, 2 -> 20), out)
+    assertNotNull(c2.targetTypeTag)
+    assertEquals("Map[Int,Int]", c2.targetTypeName)
+  }
+
+
 
   type StringAlias = String
 
