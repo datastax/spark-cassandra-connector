@@ -1,7 +1,5 @@
 package com.datastax.spark.connector
 
-import java.net.InetAddress
-
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
@@ -11,7 +9,7 @@ import scala.collection.JavaConversions._
 class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+  val conn = CassandraConnector(cassandraHost)
 
   before {
     conn.withSessionDo { session =>

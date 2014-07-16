@@ -63,4 +63,10 @@ pass:
     sbt test
     sbt it:test
 
-Finally open a pull-request on GitHub and await review. 
+It is possible to run integration tests with your own Cassandra and/or Spark cluster.
+
+    export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
+    export IT_TEST_SPARK_MASTER=<Spark Master URL>
+    sbt it:test    
+
+Finally open a pull-request on GitHub and await review.

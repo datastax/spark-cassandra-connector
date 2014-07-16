@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{SparkContext, SparkConf}
 
 trait SparkServer {
@@ -9,6 +8,7 @@ trait SparkServer {
 }
 
 object SparkServer {
-  val conf = new SparkConf(true).set("spark.cassandra.connection.host", "127.0.0.1")
-  val sc = new SparkContext("local", "Integration Test", conf)
+  val conf = new SparkConf(true).set("spark.cassandra.connection.host", CassandraServer.cassandraHost.getHostAddress)
+  val sparkMasterUrl = Option(System.getenv("IT_TEST_SPARK_MASTER")).getOrElse("local")
+  val sc = new SparkContext(sparkMasterUrl, "Integration Test", conf)
 }
