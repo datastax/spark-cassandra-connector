@@ -56,28 +56,13 @@ case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
   lazy val keyspaceByName: Map[String, KeyspaceDef] =
     keyspaces.map(k => (k.keyspaceName, k)).toMap
 
-  /** List of keyspaces created by the user, i.e. non-system keyspaces */
-  lazy val userKeyspaces: Set[KeyspaceDef] =
-    keyspaces.filterNot(ks => Schema.isSystemKeyspace(ks.keyspaceName))
-
-  /** Returns a map from keyspace name to keyspace metadata, only for user keyspaces */
-  lazy val userKeyspaceByName: Map[String, KeyspaceDef] =
-    userKeyspaces.map(k => (k.keyspaceName, k)).toMap
-
   /** All tables from all keyspaces */
   lazy val tables: Set[TableDef] =
     for (keyspace <- keyspaces; table <- keyspace.tables) yield table
 
-  /** List of tables created by the user, i.e. non-system tables */
-  lazy val userTables: Set[TableDef] =
-    tables.filterNot(tableDef => Schema.isSystemKeyspace(tableDef.keyspaceName))
-
 }
 
 object Schema extends Logging {
-
-  private val systemKeyspaces =
-    Set("system", "system_traces", "dse_system", "dse_security", "cfs", "cfs_archive", "system_auth")
 
   private def toColumnDef(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
     val table = column.getTable
@@ -143,7 +128,4 @@ object Schema extends Logging {
       Schema(clusterName, keyspaces)
     }
   }
-
-  def isSystemKeyspace(ksName: String) =
-    systemKeyspaces.contains(ksName)
 }
