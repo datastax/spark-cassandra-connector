@@ -26,12 +26,12 @@ import org.apache.spark.streaming.{StreamingContext, Seconds}
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.demo.DemoApp.WordCount
 
 object BasicReadWriteStreamingDemo extends App with SparkContextFixture with AbstractSpec {
 
   import com.datastax.spark.connector.streaming._
 
-  case class WordCount(word: String, count: Int)
 
   private val next = new AtomicInteger(0)
 
@@ -73,7 +73,7 @@ object BasicReadWriteStreamingDemo extends App with SparkContextFixture with Abs
 
   awaitCond(next.get == events, duration) // a random test point to stop at and do assertions
 
-  // Now read the table streaming_test.kv:
+  // Now read the table streaming_test.words:
   private val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
   rdd.first.word should be ("words")
   rdd.first.count should be > (3)
