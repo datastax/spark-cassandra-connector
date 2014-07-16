@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import com.datastax.driver.core.{Session, Host, Cluster, ConsistencyLevel}
+import com.datastax.driver.core.{Session, Host, Cluster}
 import com.datastax.driver.core.policies._
 import com.datastax.spark.connector.util.IOUtils
 import org.apache.cassandra.thrift.Cassandra
@@ -37,8 +37,6 @@ import scala.util.Random
   *   - `spark.cassandra.auth.username`:           login for password authentication
   *   - `spark.cassandra.auth.password`:           password for password authentication
   *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
-  *   - `spark.cassandra.input.consistency.level`: consistency level for reads
-  *   - `spark.cassandra.output.consistency.level`: consistency level for writes
   *
   * Additionally this object uses the following global System properties:
   *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
@@ -64,12 +62,6 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
   /** Authentication configuration */
   def authConf = _config.authConf
-
-  /** Consistency level for reads */
-  def inputConsistencyLevel = _config.inputConsistencyLevel
-
-  /** Consistency level for writes */
-  def outputConsistencyLevel = _config.outputConsistencyLevel
 
   /** Returns a shared session to Cassandra and increases the internal open
     * reference counter. It does not release the session automatically,
@@ -210,11 +202,9 @@ object CassandraConnector extends Logging {
   def apply(host: InetAddress,
             nativePort: Int = CassandraConnectorConf.DefaultNativePort,
             rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
-            authConf: AuthConf = NoAuthConf,
-            inputConsistencyLevel: ConsistencyLevel = CassandraConnectorConf.DefaultInputConsistencyLevel,
-            outputConsistencyLevel: ConsistencyLevel = CassandraConnectorConf.DefaultOutputConsistencyLevel) = {
+            authConf: AuthConf = NoAuthConf) = {
 
-    val config = CassandraConnectorConf.apply(host, nativePort, rpcPort, authConf, inputConsistencyLevel, outputConsistencyLevel)
+    val config = CassandraConnectorConf.apply(host, nativePort, rpcPort, authConf)
     new CassandraConnector(config)
   }
 

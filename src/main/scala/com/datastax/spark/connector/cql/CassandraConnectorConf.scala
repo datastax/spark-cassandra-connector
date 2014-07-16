@@ -4,17 +4,13 @@ import java.net.InetAddress
 
 import org.apache.spark.SparkConf
 
-import com.datastax.driver.core.ConsistencyLevel
-
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
 case class CassandraConnectorConf(
   hosts: Set[InetAddress],
   nativePort: Int,
   rpcPort: Int,
-  authConf: AuthConf,
-  inputConsistencyLevel: ConsistencyLevel,
-  outputConsistencyLevel: ConsistencyLevel)
+  authConf: AuthConf)
 
 /** A factory for `CassandraConnectorConf` objects.
   * Allows for manually setting connection properties or reading them from `SparkConf` object.
@@ -24,23 +20,17 @@ object CassandraConnectorConf {
 
   val DefaultRpcPort = 9160
   val DefaultNativePort = 9042
-  val DefaultInputConsistencyLevel = ConsistencyLevel.LOCAL_ONE
-  val DefaultOutputConsistencyLevel = ConsistencyLevel.ONE
   
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
   val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
-  val CassandraInputConsistencyLevelProperty = "spark.cassandra.input.consistency.level"
-  val CassandraOutputConsistencyLevelProperty = "spark.cassandra.output.consistency.level"
 
 
   def apply(host: InetAddress,
             nativePort: Int = DefaultNativePort,
             rpcPort: Int = DefaultRpcPort,
-            authConf: AuthConf = NoAuthConf,
-            inputConsistencyLevel: ConsistencyLevel = DefaultInputConsistencyLevel,
-            outputConsistencyLevel: ConsistencyLevel = DefaultOutputConsistencyLevel): CassandraConnectorConf = {
-    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf, inputConsistencyLevel, outputConsistencyLevel)
+            authConf: AuthConf = NoAuthConf): CassandraConnectorConf = {
+    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf)
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
@@ -48,9 +38,7 @@ object CassandraConnectorConf {
     val rpcPort = conf.getInt(CassandraConnectionRpcPortProperty, DefaultRpcPort)
     val nativePort = conf.getInt(CassandraConnectionNativePortProperty, DefaultNativePort)
     val authConf = AuthConf.fromSparkConf(conf)
-    val inputConsistencyLevel = ConsistencyLevel.valueOf(conf.get(CassandraInputConsistencyLevelProperty, DefaultInputConsistencyLevel.name))
-    val outputConsistencyLevel = ConsistencyLevel.valueOf(conf.get(CassandraOutputConsistencyLevelProperty, DefaultOutputConsistencyLevel.name))
-    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf, inputConsistencyLevel, outputConsistencyLevel)
+    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf)
   }
   
 }

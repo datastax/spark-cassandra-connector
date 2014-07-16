@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement}
+import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
 import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
 import com.datastax.spark.connector.util.CountingIterator
 
@@ -21,7 +21,8 @@ class TableWriter[T] private (
     rowWriter: RowWriter[T],
     maxBatchSizeInBytes: Int,
     maxBatchSizeInRows: Option[Int],
-    parallelismLevel: Int) extends Serializable with Logging {
+    parallelismLevel: Int,
+    consistencyLevel: ConsistencyLevel) extends Serializable with Logging {
 
   import com.datastax.spark.connector.writer.TableWriter._
 
@@ -121,7 +122,7 @@ class TableWriter[T] private (
       val rowIterator = new CountingIterator(data)
       val startTime = System.currentTimeMillis()
       val stmt = prepareStatement(session)
-      stmt.setConsistencyLevel(connector.outputConsistencyLevel)
+      stmt.setConsistencyLevel(consistencyLevel)
       val queryExecutor = new QueryExecutor(session, parallelismLevel)
       val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 
@@ -153,6 +154,7 @@ object TableWriter {
       connector: CassandraConnector,
       keyspaceName: String,
       tableName: String,
+      consistencyLevel: ConsistencyLevel,
       columnNames: Option[Seq[String]] = None,
       batchSizeInBytes: Int = DefaultBatchSizeInBytes,
       batchSizeInRows: Option[Int] = None, 
@@ -163,6 +165,6 @@ object TableWriter {
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames.getOrElse(tableDef.allColumns.map(_.columnName).toSeq)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
-    new TableWriter[T](connector, tableDef, rowWriter, batchSizeInBytes, batchSizeInRows, parallelismLevel)
+    new TableWriter[T](connector, tableDef, rowWriter, batchSizeInBytes, batchSizeInRows, parallelismLevel, consistencyLevel)
   }
 }

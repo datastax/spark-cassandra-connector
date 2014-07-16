@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.writer.{RowWriterFactory, TableWriter}
+import com.datastax.driver.core.ConsistencyLevel
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
 
@@ -15,6 +16,9 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
 
   private lazy val batchSizeInBytes = rdd.sparkContext.getConf.getInt(
     "spark.cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
+
+  private lazy val outputConsistencyLevel = ConsistencyLevel.valueOf(
+    rdd.sparkContext.getConf.get("spark.cassandra.output.consistency.level", ConsistencyLevel.ONE.name))
 
   private lazy val batchSizeInRows = {
     val Number = "([0-9]+)".r
@@ -45,13 +49,21 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     *   case class WordCount(word: String, count: Int, other: String)
     *   val rdd = sc.parallelize(Seq(WordCount("foo", 5, "bar")))
     *   rdd.saveToCassandra("test", "words")
-    * }}} */
+    * }}}
+    *
+    * By default, writes are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+    * This write consistency level is controlled by the following property:
+    *   - spark.cassandra.output.consistency.level: consistency level for RDD writes, string matching the ConsistencyLevel enum name.
+    *
+    */
   def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]) {
     val writer = TableWriter[T](
       connector, keyspaceName, tableName,
       batchSizeInBytes = batchSizeInBytes,
       batchSizeInRows = batchSizeInRows,
-      parallelismLevel = writeParallelismLevel)
+      parallelismLevel = writeParallelismLevel,
+      consistencyLevel = outputConsistencyLevel
+    )
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
@@ -69,7 +81,13 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     *   case class WordCount(word: String, count: Int, other: String)
     *   val rdd = sc.parallelize(Seq(WordCount("foo", 5, "bar")))
     *   rdd.saveToCassandra("test", "words", Seq("word", "count"))   // will not save the "other" column
-    * }}} */
+    * }}}
+    *
+    * By default, writes are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+    * This write consistency level is controlled by the following property:
+    *   - spark.cassandra.output.consistency.level: consistency level for RDD writes, string matching the ConsistencyLevel enum name.
+    *
+    */
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
                       columnNames: Seq[String])(implicit rwf: RowWriterFactory[T]) {
@@ -78,7 +96,9 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
       connector, keyspaceName, tableName, columnNames = Some(columnNames),
       batchSizeInBytes = batchSizeInBytes,
       batchSizeInRows = batchSizeInRows,
-      parallelismLevel = writeParallelismLevel)
+      parallelismLevel = writeParallelismLevel,
+      consistencyLevel = outputConsistencyLevel
+    )
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
@@ -88,7 +108,13 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     * Larger batches raise memory use by temporary buffers and may incur
     * larger GC pressure on the server. Small batches would result in more roundtrips
     * and worse throughput. Typically sending a few kilobytes of data per every batch
-    * is enough to achieve good performance. */
+    * is enough to achieve good performance.
+    *
+    * By default, writes are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+    * This write consistency level is controlled by the following property:
+    *   - spark.cassandra.output.consistency.level: consistency level for RDD writes, string matching the ConsistencyLevel enum name.
+    *
+    */
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
                       columnNames: Seq[String],
@@ -98,7 +124,9 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
       connector, keyspaceName, tableName, columnNames = Some(columnNames),
       batchSizeInBytes = batchSizeInBytes,
       batchSizeInRows = Some(batchSize),
-      parallelismLevel = writeParallelismLevel)
+      parallelismLevel = writeParallelismLevel,
+      consistencyLevel = outputConsistencyLevel
+    )
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 }
