@@ -86,7 +86,13 @@ Enable Cassandra-specific functions on the `SparkContext` and `RDD`:
 Create any of the available or custom Spark streams, for example:
 
     val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
- 
+
+Writing to Cassandra from a Stream:
+
+    val wc = stream.flatMap(_.split("\\s+"))
+        .map(x => (x, 1))
+        .reduceByKey(_ + _)
+        .foreachRDD(rdd => rdd.saveToCassandra("streaming_test", "words", Seq("word", "count")))
 
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
