@@ -160,7 +160,7 @@ object TableWriter {
       batchSizeInRows: Option[Int] = None, 
       parallelismLevel: Int = DefaultParallelismLevel) =
   {
-    val schema = new Schema(connector, Some(keyspaceName), Some(tableName))
+    val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames.getOrElse(tableDef.allColumns.map(_.columnName).toSeq)

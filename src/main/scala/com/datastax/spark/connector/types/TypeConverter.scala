@@ -20,9 +20,13 @@ class TypeConversionException(val message: String, cause: Exception = null) exte
 trait TypeConverter[T] extends Serializable {
   /** Compile time type of the converter target */
   type targetType = T
-  
-  /** String representation of the converter target type */
-  def targetTypeString: String
+
+  /** TypeTag for the target type. */
+  def targetTypeTag: TypeTag[T]
+
+  /** String representation of the converter target type.*/
+  def targetTypeName: String =
+    targetTypeTag.tpe.toString
 
   /** Converts an object into `T`. */
   def convert(obj: Any): T
@@ -34,65 +38,66 @@ trait TypeConverter[T] extends Serializable {
 object TypeConverter {
 
   implicit object AnyConverter extends TypeConverter[Any] {
+    def targetTypeTag = implicitly[TypeTag[Any]]
     def convert(obj: Any) = obj
-    def targetTypeString = "Any"
   }
 
   implicit object AnyRefConverter extends TypeConverter[AnyRef] {
+    def targetTypeTag = implicitly[TypeTag[AnyRef]]
     def convert(obj: Any) = obj.asInstanceOf[AnyRef]
-    def targetTypeString = "AnyRef"
   }
 
   implicit object BooleanConverter extends TypeConverter[Boolean] {
+    def targetTypeTag = implicitly[TypeTag[Boolean]]
     def convert(obj: Any) = obj match {
       case x: java.lang.Boolean => x
       case x: java.lang.Integer => x != 0
       case x: java.lang.Long => x != 0L
       case x: java.math.BigInteger => x != java.math.BigInteger.ZERO
       case x: String => x.toBoolean
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Boolean"
   }
 
   implicit object IntConverter extends TypeConverter[Int] {
+    def targetTypeTag = implicitly[TypeTag[Int]]
     def convert(obj: Any) = obj match {
       case x: Number => x.intValue
       case x: String => x.toInt
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Int"
   }
 
   implicit object LongConverter extends TypeConverter[Long] {
+    def targetTypeTag = implicitly[TypeTag[Long]]
     def convert(obj: Any) = obj match {
       case x: Number => x.longValue
       case x: Date => x.getTime
       case x: String => x.toLong
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Long"
   }
 
   implicit object FloatConverter extends TypeConverter[Float] {
+    def targetTypeTag = implicitly[TypeTag[Float]]
     def convert(obj: Any) = obj match {
       case x: Number => x.floatValue
       case x: String => x.toFloat
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Float"
   }
 
   implicit object DoubleConverter extends TypeConverter[Double] {
+    def targetTypeTag = implicitly[TypeTag[Double]]
     def convert(obj: Any) = obj match {
       case x: Number => x.doubleValue
       case x: String => x.toDouble
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Double"
   }
 
   implicit object StringConverter extends TypeConverter[String] {
+    def targetTypeTag = implicitly[TypeTag[String]]
     def convert(obj: Any) = obj match {
       case x: Date => TimestampFormatter.format(x)
       case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
@@ -101,40 +106,41 @@ object TypeConverter {
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x => x.toString
     }
-    def targetTypeString = "String"
   }
 
   implicit object ByteBufferConverter extends TypeConverter[ByteBuffer] {
+    def targetTypeTag = implicitly[TypeTag[ByteBuffer]]
     def convert(obj: Any) = obj match {
       case x: ByteBuffer => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "ByteBuffer"
   }
 
   implicit object ByteArrayConverter extends TypeConverter[Array[Byte]] {
+    def targetTypeTag = implicitly[TypeTag[Array[Byte]]]
     def convert(obj: Any) = obj match {
       case x: Array[Byte] => x
       case x: ByteBuffer => ByteBufferUtil.getArray(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "Array[Byte]"
   }
 
   implicit object DateConverter extends TypeConverter[Date] {
+    def targetTypeTag = implicitly[TypeTag[Date]]
     def convert(obj: Any) = obj match {
       case x: Date => x
       case x: DateTime => x.toDate
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: String => TimestampParser.parse(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.util.Date"
+
   }
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
+    def targetTypeTag = implicitly[TypeTag[java.sql.Date]]
     def convert(obj: Any) = obj match {
       case x: java.sql.Date => x
       case x: Date => new java.sql.Date(x.getTime)
@@ -142,98 +148,113 @@ object TypeConverter {
       case x: Long => new java.sql.Date(x)
       case x: UUID if x.version() == 1 => new java.sql.Date(x.timestamp())
       case x: String => new java.sql.Date(TimestampParser.parse(x).getTime)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.sql.Date"
   }
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
+    def targetTypeTag = implicitly[TypeTag[DateTime]]
     def convert(obj: Any) = obj match {
       case x: DateTime => x
       case x: Date => new DateTime(x)
       case x: Long => new DateTime(x)
       case x: UUID if x.version() == 1 => new DateTime(x.timestamp())
       case x: String => new DateTime(TimestampParser.parse(x))
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "org.joda.time.DateTime"
   }
 
   implicit object BigIntConverter extends TypeConverter[BigInt] {
+    def targetTypeTag = implicitly[TypeTag[BigInt]]
     def convert(obj: Any) = obj match {
       case x: BigInt => x
       case x: java.math.BigInteger => x
       case x: java.lang.Integer => BigInt(x)
       case x: java.lang.Long => BigInt(x)
       case x: String => BigInt(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "BigInt"
   }
 
   implicit object JavaBigIntegerConverter extends TypeConverter[java.math.BigInteger] {
+    def targetTypeTag = implicitly[TypeTag[java.math.BigInteger]]
     def convert(obj: Any) = obj match {
       case x: BigInt => x.bigInteger
       case x: java.math.BigInteger => x
       case x: java.lang.Integer => new java.math.BigInteger(x.toString)
       case x: java.lang.Long => new java.math.BigInteger(x.toString)
       case x: String => new java.math.BigInteger(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.math.BigInteger"
   }
 
   implicit object BigDecimalConverter extends TypeConverter[BigDecimal] {
+    def targetTypeTag = implicitly[TypeTag[BigDecimal]]
     override def convert(obj: Any) = obj match {
       case x: Number => BigDecimal(x.toString)
       case x: String => BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "BigDecimal"
   }
 
   implicit object JavaBigDecimalConverter extends TypeConverter[java.math.BigDecimal] {
+    def targetTypeTag = implicitly[TypeTag[java.math.BigDecimal]]
     def convert(obj: Any) = obj match {
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.math.BigDecimal"
   }
 
   implicit object UUIDConverter extends TypeConverter[UUID] {
+    def targetTypeTag = implicitly[TypeTag[UUID]]
     override def convert(obj: Any) = obj match {
       case x: UUID => x
       case x: String => UUID.fromString(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.util.UUID"
-
   }
 
   implicit object InetAddressConverter extends TypeConverter[InetAddress] {
+    def targetTypeTag = implicitly[TypeTag[InetAddress]]
     override def convert(obj: Any) = obj match {
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
-    def targetTypeString = "java.net.InetAddress"
   }
 
-  class TupleConverter[K, V](implicit kc: TypeConverter[K], kv: TypeConverter[V])
+  class TupleConverter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
-    override def convert(obj: Any) = obj match {
-      case (k, v) => (kc.convert(k), kv.convert(v))
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeString.")
+    @transient
+    lazy val targetTypeTag = {
+      implicit val kTag = kc.targetTypeTag
+      implicit val vTag = vc.targetTypeTag
+      implicitly[TypeTag[(K, V)]]
     }
+    
+    override def convert(obj: Any) = obj match {
+      case (k, v) => (kc.convert(k), vc.convert(v))
+      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
+    }
+  }
 
-    def targetTypeString = s"(${kc.targetTypeString}, ${kv.targetTypeString})"
-
+  class OptionConverter[T](implicit c: TypeConverter[T]) extends TypeConverter[Option[T]] {
+    def targetTypeTag = {
+      implicit val itemTypeTag = c.targetTypeTag
+      implicitly[TypeTag[Option[T]]]
+    }
+    override def convert(obj: Any) = obj match {
+      case null => None
+      case other => Some(c.convert(obj))
+    }
   }
 
   abstract class CollectionConverter[CC, T](implicit c: TypeConverter[T], bf: CanBuildFrom[T, CC])
     extends TypeConverter[CC] {
+
+    protected implicit def itemTypeTag = c.targetTypeTag
 
     private def newCollection(items: Iterable[Any]) = {
       val builder = bf()
@@ -248,19 +269,91 @@ object TypeConverter {
       case x: java.util.Set[_] => newCollection(x)
       case x: java.util.Map[_, _] => newCollection(x)
       case x: Iterable[_] => newCollection(x)
-      case x => throw new TypeConversionException(s"Cannot convert $x to $targetTypeString.")
+      case x => throw new TypeConversionException(s"Cannot convert $x to $targetTypeName.")
     }
-
-    def collectionTypeString: String
-    def targetTypeString = s"$collectionTypeString[${c.targetTypeString}]"
   }
 
-  class OptionConverter[T](implicit c: TypeConverter[T]) extends TypeConverter[Option[T]] {
-    override def convert(obj: Any) = obj match {
-      case null => None
-      case other => Some(c.convert(obj))
-    }
-    def targetTypeString = s"Option[${c.targetTypeString}]"
+  abstract class AbstractMapConverter[CC, K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V], bf: CanBuildFrom[(K, V), CC])
+    extends CollectionConverter[CC, (K, V)] {
+
+    protected implicit def keyTypeTag = kc.targetTypeTag
+    protected implicit def valueTypeTag = vc.targetTypeTag
+  }
+
+
+  class ListConverter[T : TypeConverter] extends CollectionConverter[List[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[List[T]]]
+  }
+
+  class VectorConverter[T : TypeConverter] extends CollectionConverter[Vector[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[Vector[T]]]
+  }
+
+  class SetConverter[T : TypeConverter] extends CollectionConverter[Set[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[Set[T]]]
+  }
+
+  class TreeSetConverter[T : TypeConverter : Ordering] extends CollectionConverter[TreeSet[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[TreeSet[T]]]
+  }
+
+  class SeqConverter[T : TypeConverter] extends CollectionConverter[Seq[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[Seq[T]]]
+  }
+
+  class IndexedSeqConverter[T : TypeConverter] extends CollectionConverter[IndexedSeq[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[IndexedSeq[T]]]
+  }
+
+  class IterableConverter[T : TypeConverter] extends CollectionConverter[Iterable[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[Iterable[T]]]
+  }
+
+  class JavaListConverter[T : TypeConverter] extends CollectionConverter[java.util.List[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.List[T]]]
+  }
+
+  class JavaArrayListConverter[T : TypeConverter] extends CollectionConverter[java.util.ArrayList[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.ArrayList[T]]]
+  }
+
+  class JavaSetConverter[T : TypeConverter] extends CollectionConverter[java.util.Set[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.Set[T]]]
+  }
+
+  class JavaHashSetConverter[T : TypeConverter] extends CollectionConverter[java.util.HashSet[T], T] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.HashSet[T]]]
+  }
+
+  class MapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[Map[K, V], K, V] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[Map[K, V]]]
+  }
+
+  class TreeMapConverter[K : TypeConverter : Ordering, V : TypeConverter] extends AbstractMapConverter[TreeMap[K, V], K, V] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[TreeMap[K, V]]]
+  }
+
+  class JavaMapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[java.util.Map[K, V], K, V] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.Map[K, V]]]
+  }
+
+  class JavaHashMapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[java.util.HashMap[K, V], K, V] {
+    @transient
+    lazy val targetTypeTag = implicitly[TypeTag[java.util.HashMap[K, V]]]
   }
 
   implicit def optionConverter[T : TypeConverter] =
@@ -270,62 +363,63 @@ object TypeConverter {
     new TupleConverter[K, V]
 
   implicit def listConverter[T : TypeConverter] =
-    new CollectionConverter[List[T], T] { def collectionTypeString = "List" }
+    new ListConverter[T]
 
   implicit def vectorConverter[T : TypeConverter] =
-    new CollectionConverter[Vector[T], T] { def collectionTypeString = "Vector" }
+    new VectorConverter[T]
 
   implicit def setConverter[T : TypeConverter] =
-    new CollectionConverter[Set[T], T] { def collectionTypeString = "Set" }
+    new SetConverter[T]
 
   implicit def treeSetConverter[T : TypeConverter : Ordering] =
-    new CollectionConverter[TreeSet[T], T] { def collectionTypeString = "TreeSet" }
+    new TreeSetConverter[T]
 
   implicit def seqConverter[T : TypeConverter] =
-    new CollectionConverter[Seq[T], T] { def collectionTypeString = "Seq" }
+    new SeqConverter[T]
 
   implicit def indexedSeqConverter[T : TypeConverter] =
-    new CollectionConverter[IndexedSeq[T], T] { def collectionTypeString = "IndexedSeq" }
+    new IndexedSeqConverter[T]
 
   implicit def iterableConverter[T : TypeConverter] =
-    new CollectionConverter[Iterable[T], T] { def collectionTypeString = "Iterable" }
+    new IterableConverter[T]
 
   implicit def mapConverter[K : TypeConverter, V : TypeConverter] =
-    new CollectionConverter[Map[K, V], (K, V)] { def collectionTypeString = "Map" }
+    new MapConverter[K, V]
 
   implicit def treeMapConverter[K: TypeConverter : Ordering, V : TypeConverter] =
-    new CollectionConverter[TreeMap[K, V], (K, V)] { def collectionTypeString = "TreeMap" }
+    new TreeMapConverter[K, V]
+
+  // Support for Java collections:
+  implicit def javaListConverter[T : TypeConverter] =
+    new JavaListConverter[T]
+
+  implicit def javaArrayListConverter[T : TypeConverter] =
+    new JavaArrayListConverter[T]
+
+  implicit def javaSetConverter[T : TypeConverter] =
+    new JavaSetConverter[T]
+
+  implicit def javaHashSetConverter[T : TypeConverter] =
+    new JavaHashSetConverter[T]
+
+  implicit def javaMapConverter[K : TypeConverter, V : TypeConverter] =
+    new JavaMapConverter[K, V]
+
+  implicit def javaHashMapConverter[K : TypeConverter, V : TypeConverter] =
+    new JavaHashMapConverter[K, V]
 
   /** Converts Scala Options to Java nullable references. Used when saving data to Cassandra. */
   class OptionToNullConverter(nestedConverter: TypeConverter[_]) extends TypeConverter[AnyRef] {
-    override def convert(obj: Any) = obj match {
+
+    def targetTypeTag = implicitly[TypeTag[AnyRef]]
+
+    def convert(obj: Any) = obj match {
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
       case None => null
       case null => null
       case x => nestedConverter.convert(x).asInstanceOf[AnyRef]
     }
-
-    def targetTypeString = nestedConverter.targetTypeString
   }
-
-  // Support for Java collections:
-  implicit def javaListConverter[T : TypeConverter] =
-    new CollectionConverter[java.util.List[T], T] { def collectionTypeString = "java.util.List" }
-
-  implicit def javaArrayListConverter[T : TypeConverter] =
-    new CollectionConverter[java.util.ArrayList[T], T] { def collectionTypeString = "java.util.ArrayList" }
-
-  implicit def javaSetConverter[T : TypeConverter] =
-    new CollectionConverter[java.util.Set[T], T] { def collectionTypeString = "java.util.Set" }
-
-  implicit def javaHashSetConverter[T : TypeConverter] =
-    new CollectionConverter[java.util.HashSet[T], T] { def collectionTypeString = "java.util.HashSet" }
-
-  implicit def javaMapConverter[K : TypeConverter, V : TypeConverter] =
-    new CollectionConverter[java.util.Map[K, V], (K, V)] { def collectionTypeString = "java.util.Map" }
-
-  implicit def javaHashMapConverter[K : TypeConverter, V : TypeConverter] =
-    new CollectionConverter[java.util.HashMap[K, V], (K, V)] { def collectionTypeString = "java.util.HashMap" }
 
   private val OptionSymbol = typeOf[Option[Any]].asInstanceOf[TypeRef].sym
   private val ListSymbol = typeOf[List[Any]].asInstanceOf[TypeRef].sym
