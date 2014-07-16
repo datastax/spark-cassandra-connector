@@ -31,7 +31,8 @@ import com.datastax.spark.connector.demo.DemoApp.WordCount
 object BasicReadWriteStreamingDemo extends App with SparkContextFixture with AbstractSpec {
 
   import com.datastax.spark.connector.streaming._
-
+  import SparkContextFixture._
+  import settings._
 
   private val next = new AtomicInteger(0)
 
@@ -41,7 +42,7 @@ object BasicReadWriteStreamingDemo extends App with SparkContextFixture with Abs
 
   private val duration = 30.seconds
 
-  private val ssc = new StreamingContext(SparkContextFixture.conf, Seconds(1))
+  private val ssc = new StreamingContext(SparkContextFixture.conf, SparkStreamingBatchDuration)
 
   private val testkit = new TestKit(SparkEnv.get.actorSystem)
   import testkit._

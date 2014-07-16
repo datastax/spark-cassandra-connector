@@ -18,6 +18,7 @@ package com.datastax.spark.connector
 
 import com.typesafe.config.{ConfigFactory, Config}
 import org.apache.commons.configuration.ConfigurationException
+import org.apache.spark.streaming.{Seconds, Duration}
 
 /** Companion */
 object SparkConnectorSettings {
@@ -37,13 +38,14 @@ private[connector] final class SparkConnectorSettings(val config: Config) {
 
   lazy val SparkMaster: String = spark.getString("master")
 
-  lazy val SparkMasterHost: String = spark.getString("driver-host")
-
-  lazy val SparkDriverPort: Int = spark.getInt("driver-port")
+  lazy val SparkPort: Int = spark.getInt("port")
 
   lazy val SparkAppName: String = spark.getString("app-name")
 
-  lazy val CassandraHost: String = cassandra.getString("host")
+  /* Something odd with Config version conflicts: config.getDuration using `1s` etc. For now: */
+  lazy val SparkStreamingBatchDuration: Duration = Seconds(spark.getInt("streaming.batch-duration"))
+
+  lazy val CassandraHost: String = cassandra.getString("connection.host")
 
   lazy val CassandraBatchSizeInRows: Option[Int] = {
     val Number = "([0-9]+)".r

@@ -45,11 +45,8 @@ object SparkContextFixture {
     """
       |spark-connector {
       |  spark {
-      |    master = "local[3]"
+      |    master = "local[12]"
       |    app-name = "Streaming Demo"
-      |    cassandra {
-      |      host = "127.0.0.1"
-      |    }
       |  }
       |}
       |
@@ -76,17 +73,17 @@ object SparkContextFixture {
       |    }
       |  }
       |}
-    """.stripMargin)
+    """.stripMargin).withFallback(ConfigFactory.load)
 
 
-  /* Not using yet, WIP */
-  val s = SparkConnectorSettings(SparkContextFixture.akkaConfig)
-  import s._
+  /* WIP */
+  val settings = SparkConnectorSettings(SparkContextFixture.akkaConfig)
+  import settings._
 
   val conf = new SparkConf(true)
     .set("spark.cassandra.connection.host", CassandraHost)
-    .setAppName("Streaming Demo")
-    .setMaster("local[12]")
+    .setAppName(SparkAppName)
+    .setMaster(SparkMaster)
 
 }
 
