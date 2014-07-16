@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
-import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.types.{CounterType, ColumnType}
 
 import org.apache.spark.Logging
 
@@ -26,6 +26,7 @@ case class ColumnDef(keyspaceName: String,
   def isPartitionKeyColumn = columnRole == PartitionKeyColumn
   def isClusteringColumn = columnRole.isInstanceOf[ClusteringColumn]
   def isPrimaryKeyColumn = isClusteringColumn || isPartitionKeyColumn
+  def isCounterColumn = columnType == CounterType
 
   def componentIndex = columnRole match {
     case ClusteringColumn(i) => Some(i)

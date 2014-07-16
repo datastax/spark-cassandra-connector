@@ -2,11 +2,10 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.{BatchStatement, PreparedStatement}
-import com.datastax.spark.connector.cql.{Schema, TableDef, CassandraConnector}
+import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement}
+import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
 import com.datastax.spark.connector.util.CountingIterator
 
-import org.apache.log4j.Logger
 import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
@@ -29,15 +28,46 @@ class TableWriter[T] private (
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
+  val columns = columnNames.map(tableDef.columnByName)
 
-  val queryStr: String = {
+  private def quote(name: String): String =
+    "\"" + name + "\""
+
+  private lazy val queryTemplateUsingInsert: String = {
     val columnSpec = columnNames.map(quote).mkString(", ")
-    val valueSpec = columnNames.map(_ => "?").mkString(", ")
+    val valueSpec = columnNames.map(":" + _).mkString(", ")
     s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec)"
   }
 
-  private def quote(name: String) =
-    "\"" + name + "\""
+  private lazy val queryTemplateUsingUpdate: String = {
+    val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
+    val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
+
+    val setNonCounterColumnsClause = nonCounterColumns.map(_.columnName).map(c => s"${quote(c)} = :$c")
+    val setCounterColumnsClause = counterColumns.map(_.columnName).map(c => s"${quote(c)} = ${quote(c)} + :$c")
+    val setClause = (setNonCounterColumnsClause ++ setCounterColumnsClause).mkString(", ")
+    val whereClause = primaryKey.map(_.columnName).map(c => s"${quote(c)} = :$c").mkString(" AND ")
+
+    s"UPDATE ${quote(keyspaceName)}.${quote(tableName)} SET $setClause WHERE $whereClause"
+  }
+
+  val queryTemplate: String = {
+    val columns = columnNames.map(tableDef.columnByName)
+    if (columns.exists(_.isCounterColumn))
+      queryTemplateUsingUpdate
+    else
+      queryTemplateUsingInsert
+  }
+
+  private def prepareStatement(session: Session): PreparedStatement = {
+    try {
+      session.prepare(queryTemplate)
+    }
+    catch {
+      case t: Throwable =>
+        throw new IOException(s"Failed to prepare statement $queryTemplate: " + t.getMessage, t)
+    }
+  }
 
   private def createBatch(data: Seq[T], stmt: PreparedStatement): BatchStatement = {
     val batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED)
@@ -90,7 +120,7 @@ class TableWriter[T] private (
     connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val startTime = System.currentTimeMillis()
-      val stmt = session.prepare(queryStr)
+      val stmt = prepareStatement(session)
       val queryExecutor = new QueryExecutor(session, parallelismLevel)
       val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 
@@ -110,7 +140,6 @@ class TableWriter[T] private (
       logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} batches to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
-
 }
 
 object TableWriter {
