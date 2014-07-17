@@ -43,11 +43,9 @@ object SparkContextFixture {
 
   val akkaConfig: Config = ConfigFactory.parseString(
     """
-      |spark-connector {
-      |  spark {
-      |    master = "local[12]"
-      |    app-name = "Streaming Demo"
-      |  }
+      |spark {
+      |  master = "local[12]"
+      |  app.name = "Streaming Demo"
       |}
       |
       |akka {

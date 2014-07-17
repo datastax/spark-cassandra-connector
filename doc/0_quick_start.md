@@ -71,10 +71,11 @@ Create the settings:
 
 Create a SparkConf and StreamingContext:
 
-   import settings._
-   val conf = new SparkConf(true)
-       .set("spark.cassandra.connection.host", CassandraHost)
-       .setAppName(SparkAppName)
+    import settings._
+
+    val conf = new SparkConf(true)
+        .set("spark.cassandra.connection.host", CassandraHost)
+        .setAppName(SparkAppName)
        .setMaster(SparkMaster)
 
     val ssc = new StreamingContext(conf, SparkStreamingBatchDuration)
