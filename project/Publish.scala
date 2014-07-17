@@ -52,15 +52,17 @@ object Publish extends Build {
           <organization>DataStax</organization>
           <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
+        <developer>
+          <name>Helena Edelson</name>
+          <url>http://github.com/helena</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
       </developers>
       <contributors>
         <contributor>
           <name>Andrew Ash</name>
           <url>http://github.com/ash211</url>
-        </contributor>
-        <contributor>
-          <name>Helena Edelson</name>
-          <url>http://github.com/helena</url>
         </contributor>
         <contributor>
           <name>Luis Angel Vicente Sanchez</name>
