@@ -37,9 +37,11 @@ private[connector] final class SparkConnectorSettings(val config: Config) {
   private lazy val spark = config.getConfig("spark")
   private lazy val cassandra = spark.getConfig("cassandra")
 
-  lazy val SparkMaster: String = Option(spark.getString("master")) getOrElse withFallbacks("spark.master", "127.0.0.1")
+  lazy val SparkMaster: String = Try(spark.getString("master"))
+    .toOption getOrElse withFallbacks("spark.master", "127.0.0.1")
 
-  lazy val SparkPort: Int = Option(spark.getInt("driver.port")) getOrElse withFallbacks("spark.driver.port", 7777)
+  lazy val SparkPort: Int = Try(spark.getInt("driver.port"))
+    .toOption getOrElse withFallbacks("spark.driver.port", 7777)
 
   lazy val SparkAppName: String = Option(spark.getString("app.name")) getOrElse withFallbacks("spark.app.name", "")
 
@@ -50,18 +52,18 @@ private[connector] final class SparkConnectorSettings(val config: Config) {
       case Some(n) => Seconds(n)
     }
 
-  lazy val CassandraHost: String = Try(cassandra.getString("connection.host"))
+  lazy val CassandraHost: String = Try(spark.getString("cassandra.connection.host"))
     .toOption getOrElse withFallbacks("spark.cassandra.connection.host", "127.0.0.1")
 
-  lazy val CassandraUserName: String = Try(cassandra.getString("username"))
+  lazy val CassandraUserName: String = Try(spark.getString("cassandra.username"))
     .toOption getOrElse withFallbacks("spark.cassandra.username", "cassandra")
 
-  lazy val CassandraPassword: String = Try(cassandra.getString("password"))
+  lazy val CassandraPassword: String = Try(spark.getString("cassandra.password"))
     .toOption getOrElse withFallbacks("spark.cassandra.password", "cassandra")
 
   lazy val CassandraBatchSizeInRows: Option[Int] = {
     val Number = "([0-9]+)".r
-    cassandra.getAnyRef("output.batch.size.rows") match {
+    spark.getAnyRef("cassandra.output.batch.size.rows") match {
       case "auto" => None
       case Number(x) => Some(x.toInt)
       case other =>
@@ -70,9 +72,9 @@ private[connector] final class SparkConnectorSettings(val config: Config) {
     }
   }
 
-  lazy val CassandraBatchSizeInBytes: Long = cassandra.getBytes("output.batch.size.bytes")
+  lazy val CassandraBatchSizeInBytes: Long = spark.getBytes("cassandra.output.batch.size.bytes")
 
-  lazy val CassandraWriteParallelismLevel: Int = cassandra.getInt("output.concurrent.writes")
+  lazy val CassandraWriteParallelismLevel: Int = spark.getInt("cassandra.output.concurrent.writes")
 
   def withFallbacks[T](javaProperty: String, default: T): T =
     Option(System.getProperty(javaProperty).asInstanceOf[T]) getOrElse default

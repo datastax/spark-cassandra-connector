@@ -79,10 +79,13 @@ object SparkContextFixture {
   import settings._
 
   val conf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", CassandraHost)
-    .setAppName(SparkAppName)
     .setMaster(SparkMaster)
-
+    .setAppName(SparkAppName)
+    .set("spark.driver.port", SparkPort.toString)
+    .set("spark.cassandra.connection.host", CassandraHost)
+    .set("spark.cassandra.username", CassandraUserName)
+    .set("spark.cassandra.password", CassandraPassword)
+ 
 }
 
 class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor {
