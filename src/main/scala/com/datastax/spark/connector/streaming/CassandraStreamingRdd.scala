@@ -19,7 +19,6 @@ package com.datastax.spark.connector.streaming
 import org.apache.spark.streaming.StreamingContext
 
 import scala.reflect.ClassTag
-import org.apache.spark.{Partition, TaskContext}
 import com.datastax.spark.connector.rdd.{CassandraRDD, CqlWhereClause, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.rdd.reader._
 
@@ -34,9 +33,4 @@ class CassandraStreamingRDD[R] private[connector] (
                                                     where: CqlWhereClause = CqlWhereClause.empty)(
                                                     implicit
                                                     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
-  extends CassandraRDD[R](sctx.sparkContext, keyspace, table, columns, where) {
-
-  override def compute(split: Partition, context: TaskContext): Iterator[R] = super.compute(split, context)
-
-  override def getPartitions: Array[Partition] = super.getPartitions
-}
+  extends CassandraRDD[R](sctx.sparkContext, keyspace, table, columns, where)

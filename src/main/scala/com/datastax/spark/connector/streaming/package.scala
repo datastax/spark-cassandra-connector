@@ -17,20 +17,10 @@
 package com.datastax.spark.connector
 
 import org.apache.spark.streaming.StreamingContext
-import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-
-import scala.reflect.ClassTag
-
+ 
 package object streaming {
 
-  /** Provides Cassandra-specific methods on [[StreamingContext]].
-    * @param ssc the Spark Streaming context
-    */
-  implicit class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunctions(ssc.sparkContext) {
-    import java.io.{ Serializable => JSerializable }
+  implicit def toStreamingContextFunctions(ssc: StreamingContext): SparkContextFunctions =
+    new StreamingContextFunctions(ssc)
 
-    override def cassandraTable[T <: JSerializable : ClassTag : RowReaderFactory](keyspace: String, table: String): CassandraStreamingRDD[T] =
-      new CassandraStreamingRDD[T](ssc, keyspace, table)
-
-  }
 }
