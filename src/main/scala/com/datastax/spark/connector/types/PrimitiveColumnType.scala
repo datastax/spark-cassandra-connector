@@ -4,6 +4,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
+import scala.reflect.runtime.universe._
+
 import TypeConverter._
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
@@ -11,76 +13,92 @@ trait PrimitiveColumnType[T] extends ColumnType[T] {
 }
 
 case object TextType extends PrimitiveColumnType[String] {
-  def converterToCassandra = new OptionToNullConverter(StringConverter)
-  def scalaTypeName = "String"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(StringConverter)
+  def scalaTypeTag = implicitly[TypeTag[String]]
 }
 
 case object AsciiType extends PrimitiveColumnType[String] {
-  def converterToCassandra = new OptionToNullConverter(StringConverter)
-  def scalaTypeName = "String"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(StringConverter)
+  def scalaTypeTag = implicitly[TypeTag[String]]
 }
 
 case object IntType extends PrimitiveColumnType[Int] {
-  def converterToCassandra = new OptionToNullConverter(IntConverter)
-  def scalaTypeName = "Int"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(IntConverter)
+  def scalaTypeTag = implicitly[TypeTag[Int]]
 }
 
 case object BigIntType extends PrimitiveColumnType[Long] {
-  def converterToCassandra = new OptionToNullConverter(LongConverter)
-  def scalaTypeName = "Long"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(LongConverter)
+  def scalaTypeTag = implicitly[TypeTag[Long]]
 }
 
 case object FloatType extends PrimitiveColumnType[Float] {
-  def converterToCassandra = new OptionToNullConverter(FloatConverter)
-  def scalaTypeName = "Float"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(FloatConverter)
+  def scalaTypeTag = implicitly[TypeTag[Float]]
 }
 
 case object DoubleType extends PrimitiveColumnType[Double] {
-  def converterToCassandra = new OptionToNullConverter(DoubleConverter)
-  def scalaTypeName = "Double"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(DoubleConverter)
+  def scalaTypeTag = implicitly[TypeTag[Double]]
 }
 
 case object BooleanType extends PrimitiveColumnType[Boolean] {
-  def converterToCassandra = new OptionToNullConverter(BooleanConverter)
-  def scalaTypeName = "Boolean"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(BooleanConverter)
+  def scalaTypeTag = implicitly[TypeTag[Boolean]]
 }
 
 case object VarIntType extends PrimitiveColumnType[BigInt] {
-  def converterToCassandra = new OptionToNullConverter(JavaBigIntegerConverter)
-  def scalaTypeName = "BigInt"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(JavaBigIntegerConverter)
+  def scalaTypeTag = implicitly[TypeTag[BigInt]]
 }
 
 case object DecimalType extends PrimitiveColumnType[BigDecimal] {
-  def converterToCassandra = new OptionToNullConverter(JavaBigDecimalConverter)
-  def scalaTypeName = "BigDecimal"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(JavaBigDecimalConverter)
+  def scalaTypeTag = implicitly[TypeTag[BigDecimal]]
 }
 
 case object TimestampType extends PrimitiveColumnType[Date] {
-  def converterToCassandra = new OptionToNullConverter(DateConverter)
-  def scalaTypeName = "java.util.Date"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(DateConverter)
+  def scalaTypeTag = implicitly[TypeTag[Date]]
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {
-  def converterToCassandra = new OptionToNullConverter(InetAddressConverter)
-  def scalaTypeName = "java.net.InetAddress"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(InetAddressConverter)
+  def scalaTypeTag = implicitly[TypeTag[InetAddress]]
 }
+
 case object UUIDType extends PrimitiveColumnType[UUID] {
-  def converterToCassandra = new OptionToNullConverter(UUIDConverter)
-  def scalaTypeName = "java.util.UUID"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(UUIDConverter)
+  def scalaTypeTag = implicitly[TypeTag[UUID]]
 }
 
 case object TimeUUIDType extends PrimitiveColumnType[UUID] {
-  def converterToCassandra = new OptionToNullConverter(UUIDConverter)
-  def scalaTypeName = "java.util.UUID"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(UUIDConverter)
+  def scalaTypeTag = implicitly[TypeTag[UUID]]
 }
 
 case object CounterType extends PrimitiveColumnType[Long] {
-  def converterToCassandra = new OptionToNullConverter(LongConverter)
-  def scalaTypeName = "Long"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(LongConverter)
+  def scalaTypeTag = implicitly[TypeTag[Long]]
 }
 
 case object BlobType extends PrimitiveColumnType[ByteBuffer] {
-  def converterToCassandra = new OptionToNullConverter(ByteBufferConverter)
-  def scalaTypeName = "java.nio.ByteBuffer"
+  @transient
+  lazy val converterToCassandra = new OptionToNullConverter(ByteBufferConverter)
+  def scalaTypeTag = implicitly[TypeTag[ByteBuffer]]
 }
 
