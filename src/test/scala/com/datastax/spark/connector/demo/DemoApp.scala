@@ -16,4 +16,6 @@ trait DemoApp {
 
 object DemoApp {
   def apply(): DemoApp = new DemoApp {}
+
+  case class WordCount(word: String, count: Int)
 }
