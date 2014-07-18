@@ -158,12 +158,22 @@ object AnyObjectFactory extends Logging {
       case Failure(ex) => throw ex;
     }
   }
-  
+
+  /**
+   * This method checks if the class is a member class which requires providing a reference to the enclosing in its
+   * constructors. We cannot just check it by invoking [[java.lang.Class#isMemberClass isMemberClass]] because it
+   * will return `true` for classes enclosed in Scala objects. They do not accept reference to enclosing
+   * class in their constructors, and therefore they need to be treated as normal, top level classes.
+   */
   def isRealMemberClass[T](clazz: Class[T]) = {
     clazz.isMemberClass && 
       clazz.getConstructors.headOption.exists(_.getParameterTypes.headOption.exists(_ == clazz.getEnclosingClass))
   }
-  
+
+  /**
+   * Returns an enclosing class wrapped by [[scala.Option Option]]. It returns `Some` if [[isRealMemberClass()]]
+   * returns `true`.
+   */
   def getRealEnclosingClass[T](clazz: Class[T]) = if (isRealMemberClass(clazz)) Some(clazz.getEnclosingClass) else None
 
 }
