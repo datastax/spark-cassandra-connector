@@ -399,5 +399,13 @@ class TypeConverterTest {
     assertEquals(0, chainedConverter.convert(None))
   }
 
+  @Test
+  def testChainedConverterSerializability() {
+    val chainedConverter = new ChainedTypeConverter(TypeConverter.forType[Int])
+    val chainedConverter2 = SerializationUtil.serializeAndDeserialize(chainedConverter)
+    assertEquals(1, chainedConverter2.convert(1))
+    assertEquals(2, chainedConverter2.convert("2"))
+  }
+
 
 }
