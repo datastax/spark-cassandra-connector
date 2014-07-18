@@ -322,7 +322,7 @@ class TypeConverterTest {
   @Test
   def testSerializeMapConverter() {
     val c1 = TypeConverter.forType[Map[Int, Int]]
-    val c2 = SerializationUtil.serializeAndDeserialize(c1)
+    val c2 = SerializationUtils.roundtrip(c1)
 
     val hashMap = new java.util.HashMap[String, String]()
     hashMap.put("1", "10")
@@ -401,7 +401,7 @@ class TypeConverterTest {
   @Test
   def testChainedConverterSerializability() {
     val chainedConverter = new ChainedTypeConverter(TypeConverter.forType[Int])
-    val chainedConverter2 = SerializationUtil.serializeAndDeserialize(chainedConverter)
+    val chainedConverter2 = SerializationUtils.roundtrip(chainedConverter)
     assertEquals(1, chainedConverter2.convert(1))
     assertEquals(2, chainedConverter2.convert("2"))
   }
