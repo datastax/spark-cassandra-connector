@@ -34,7 +34,11 @@ trait TypeConverter[T] extends Serializable {
   /** Converts and object or throws TypeConversionException if the object can't be converted. */
   def convert(obj: Any): T = {
     convertPF.applyOrElse(obj, (_: Any) =>
-      throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName."))
+      if (obj != null)
+        throw new TypeConversionException(s"Cannot convert object $obj of type ${obj.getClass} to $targetTypeName.")
+      else
+        throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName.")
+    )
   }
 }
 
