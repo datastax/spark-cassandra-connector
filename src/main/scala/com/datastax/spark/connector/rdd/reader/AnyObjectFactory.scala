@@ -32,7 +32,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   // the right constructor exists or not, before the job is started
   val argCount: Int = constructorParamTypes.length
 
-  private val argOffset = isMemberClassAsInt(javaClass)
+  private val argOffset = oneIfMemberClass(javaClass)
 
   @transient
   private lazy val javaConstructor: Constructor[T] =
@@ -41,7 +41,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   @transient
   lazy val constructorParamTypes: Array[Type] = {
     val requiredParamClasses = javaConstructor.getParameterTypes
-      .drop(AnyObjectFactory.isMemberClassAsInt(javaClass))
+      .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
     tpe.declaration(nme.CONSTRUCTOR).asTerm.alternatives.map { term =>
       val ctorSymbol = term.asMethod
@@ -134,11 +134,11 @@ object AnyObjectFactory extends Logging {
       throw new NoSuchMethodException(s"Cannot resolve any suitable constructor for class ${clazz.getName}"))
   }
 
-  def isMemberClassAsInt(clazz: Class[_]) =
+  def oneIfMemberClass(clazz: Class[_]) =
     if (clazz.isMemberClass) 1 else 0
 
   def isNoArgsConstructor(ctor: Constructor[_]) =
-    ctor.getParameterTypes.length == isMemberClassAsInt(ctor.getDeclaringClass)
+    ctor.getParameterTypes.length == oneIfMemberClass(ctor.getDeclaringClass)
 
   private[connector] def extractOuterClasses(c: Class[_]): List[Class[_]] = {
     Option(c.getEnclosingClass) match {

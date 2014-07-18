@@ -2,7 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.cql.{TableDef, RegularColumn, ColumnDef}
 import com.datastax.spark.connector.types.IntType
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
 
@@ -31,7 +31,7 @@ class TupleColumnMapperTest {
   @Test
   def testSerialize() {
     val columnMap = new TupleColumnMapper[(Int, String, Boolean)].columnMap(tableDef)
-    SerializationUtil.serializeAndDeserialize(columnMap)
+    SerializationUtils.roundtrip(columnMap)
   }
 
   @Test

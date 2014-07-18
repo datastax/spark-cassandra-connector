@@ -81,7 +81,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
-    "instantiated for a Scala case class" should {
+    "instantiated for a Scala case class with 2 args constructor" should {
       val factory = new AnyObjectFactory[SampleScalaCaseClass]
 
       "create an instance of that class with newInstance" in {
@@ -91,7 +91,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
         instance.value should be("one")
       }
 
-      "return 2 with argCount" in {
+      "return 2 with argCount because the only constructor of this case class has two args" in {
         factory.argCount should be(2)
       }
 
@@ -106,7 +106,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
-    "instantiated for a Scala class" should {
+    "instantiated for a Scala class with 2 args constructor" should {
       val factory = new AnyObjectFactory[SampleScalaClass]
 
       "create an instance of that class with newInstance" in {
@@ -116,7 +116,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
         instance.value should be("one")
       }
 
-      "return 2 with argCount" in {
+      "return 2 with argCount because the only constructor of this class has 2 args" in {
         factory.argCount should be(2)
       }
 
@@ -131,7 +131,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
-    "instantiated for a Scala class without fields" should {
+    "instantiated for a Scala class with 2 args constructor and without fields" should {
       val factory = new AnyObjectFactory[SampleScalaClassWithNoFields]
 
       "create an instance of that class with newInstance" in {
@@ -139,7 +139,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
         instance shouldBe a[SampleScalaClassWithNoFields]
       }
 
-      "return 2 with argCount" in {
+      "return 2 with argCount because the only constructor of this class has 2 args" in {
         factory.argCount should be(2)
       }
 
@@ -167,7 +167,7 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
-    "instantiated for an inner Scala class" should {
+    "instantiated for an inner Scala class with 2 args constructor" should {
       val factory = new AnyObjectFactory[SampleWithNestedScalaCaseClass#InnerClass]
 
       "create an instance of that class with newInstance" in {

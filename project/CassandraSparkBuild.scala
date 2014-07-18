@@ -26,6 +26,8 @@ object CassandraSparkBuild extends Build {
     .settings(libraryDependencies ++= Dependencies.spark)
     .configs(IntegrationTest)
 
+  // Make the integration tests inherit class path + classes from the unit tests.
+  // It is needed because we want to use some classes from unit tests in integration tests without duplicating them.
   lazy val IntegrationTest = config("it") extend Test
 
 }
@@ -49,6 +51,7 @@ object Dependencies {
     val reflect           = "org.scala-lang"          % "scala-reflect"         % Scala
     val slf4jApi          = "org.slf4j"               % "slf4j-api"             % Slf4j          % "provided"                 // MIT
     val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark          % "provided"  exclude("com.google.guava", "guava") // ApacheV2
+    val commonsLang3      = "org.apache.commons"      % "commons-lang3"         % CommonsLang3                                // ApacheV2
 
     object Metrics {
       val metricsJson     = "com.codahale.metrics"    % "metrics-json"          % MetricsJson    % "provided"
@@ -75,7 +78,7 @@ object Dependencies {
 
   val spark = testKit ++ metrics ++ logging ++ Seq(
     akkaActor, akkaRemote, akkaSlf4j, cassandraThrift, cassandraClient, cassandraDriver,
-    config, guava, jodaC, jodaT, lzf, reflect, sparkCore
+    config, guava, jodaC, jodaT, lzf, reflect, sparkCore, commonsLang3
   )
 
 }

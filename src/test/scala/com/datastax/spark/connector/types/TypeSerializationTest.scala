@@ -1,13 +1,13 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
 
 class TypeSerializationTest {
 
   private def testSerialization(t: ColumnType[_]) {
-    assertEquals(t, SerializationUtil.serializeAndDeserialize(t))
+    assertEquals(t, SerializationUtils.roundtrip(t))
   }
 
   @Test
