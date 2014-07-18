@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.junit.Test
 
 case class TestClass(a: String, b: Int, c: Option[Long])
@@ -13,7 +13,7 @@ class ClassBasedRowReaderTest {
   @Test
   def testSerialize() {
     val reader = new ClassBasedRowReader[TestClass](tableDef)
-    SerializationUtil.serializeAndDeserialize(reader)
+    SerializationUtils.roundtrip(reader)
   }
 
 }

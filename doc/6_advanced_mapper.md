@@ -55,6 +55,38 @@ you may pass a column translation `Map` to a `DefaultColumnMapper` or `JavaBeanC
 To define column mappings for your classes, create an appropriate implicit object implementing 
 `ColumnMapper[YourClass]` trait. This API is subject to future changes, so please refer to the current ScalaDoc.
  
+### Using custom field types
+To map a Cassandra column to a field of user-defined type, register custom `TypeConverter` implementations.
+For example, imagine you want emails to be stored in custom `Email` class, wrapping a string:
+
+    case class EMail(email: String)
+    
+To tell the connector how to read and write fields of type `EMail`, you need to define two 
+type converters - from `String` to `Email` and from `Email` to `String`:
+
+    import com.datastax.spark.connector.types._
+    import scala.reflect.runtime.universe._
+
+    object StringToEMailConverter extends TypeConverter[EMail] {
+      def targetTypeTag = typeTag[EMail]
+      def convertPF = { case str: String => EMail(str) }
+    }
+    
+    object EMailToStringConverter extends TypeConverter[String] {
+      def targetTypeTag = typeTag[String]
+      def convertPF = { case EMail(str) => str }
+    }
+        
+    TypeConverter.registerConverter(StringToEMailConverter)
+    TypeConverter.registerConverter(EMailToStringConverter)            
+ 
+Now you can map any Cassandra text or ascii column to `EMail` instance.
+The registration step must be performed before creating any RDDs you wish to
+use the new converter for.
+
+Additionally, defining the `StringToEMailConverter` as an implicit object 
+allows to use generic `CassandraRow#get` with your custom `EMail` field type.
+ 
 ### Low-level control over mapping
 The `ColumnMapper` API cannot be used to express every possible mapping, e.g., for classes that do not expose
 separate accessors for reading/writing every column. 

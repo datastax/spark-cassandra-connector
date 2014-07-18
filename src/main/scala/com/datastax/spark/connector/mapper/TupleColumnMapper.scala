@@ -27,4 +27,5 @@ class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
 
     SimpleColumnMap(constructor, getters, setters)
   }
+
 }

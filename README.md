@@ -63,4 +63,5 @@ pass:
     sbt test
     sbt it:test
 
+Don't forget to an appropriate entry at the top of CHANGES.txt.
 Finally open a pull-request on GitHub and await review. 
