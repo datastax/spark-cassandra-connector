@@ -14,29 +14,22 @@
  * limitations under the License.
  */
 
-package com.datastax.spark.connector
+package com.datastax.spark.connector.streaming
 
-import com.datastax.spark.connector.streaming.SparkStreamingActor
+import akka.actor.{Actor, ActorRef}
+import akka.util.Timeout
+import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.collection.immutable
-import scala.util.Random
 import scala.concurrent.duration._
-import akka.util.Timeout
-import akka.actor.{Actor, ActorRef}
-import org.apache.spark.SparkConf
-import org.scalatest.{WordSpecLike, Matchers}
+import scala.util.Random
 
 trait AbstractSpec extends WordSpecLike with Matchers
 
 /** Extend (and augment) this fixture for the other input stream types by adding abstract class specs */
-trait SparkContextFixture {
+trait SparkStreamingSpecFixture {
 
   implicit val DefaultTimeout = Timeout(5.seconds)
-
-  val conf = new SparkConf(true)
-    .set("spark.master", "local[12]")
-    .set("spark.app.name", "Streaming Demo")
-    .set("spark.cassandra.connection.host", "127.0.0.1")
 
   val actorName = "my-actor"
 
