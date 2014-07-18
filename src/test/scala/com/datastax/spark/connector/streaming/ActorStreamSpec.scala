@@ -22,7 +22,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkEnv}
-import org.apache.spark.streaming.{StreamingContext, Seconds}
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector._
@@ -34,7 +34,7 @@ trait ActorStreamWriter extends AbstractSpec with SparkContextFixture {
 
   /* Keep in proportion with the above event num - not too long for CI without
   * long-running sbt task exclusion.  */
-  val events = 20
+  val events = 100
 
   val duration = 30.seconds
 
@@ -46,17 +46,13 @@ trait ActorStreamWriter extends AbstractSpec with SparkContextFixture {
   }
 }
 
-object ActorSpec {
-  /** Needed for the [[ActorSpec]] constructor */
-  val conf = new SparkConf(true)
+class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with ActorStreamWriter {
+  def this() = this (
+    new StreamingContext(new SparkConf(true)
     .set("spark.master", "local[12]")
     .set("spark.app.name", "Streaming Demo")
-    .set("spark.cassandra.connection.host", "127.0.0.1")
-}
-
-class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with ActorStreamWriter {
-
-  def this() = this (new StreamingContext(ActorSpec.conf, Seconds(1)), SparkEnv.get.actorSystem)
+    .set("spark.cassandra.connection.host", "127.0.0.1"), Milliseconds(200)),
+    SparkEnv.get.actorSystem)
 
   def shutdown(): Unit = {
     ssc.stop(true)

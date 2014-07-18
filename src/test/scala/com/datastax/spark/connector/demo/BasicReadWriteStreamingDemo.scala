@@ -21,7 +21,7 @@ import akka.actor._
 import akka.testkit.TestKit
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.SparkEnv
-import org.apache.spark.streaming.{StreamingContext, Seconds}
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.demo.DemoApp.WordCount
@@ -31,7 +31,7 @@ object BasicReadWriteStreamingDemo extends App with SparkContextFixture
 
   import com.datastax.spark.connector.streaming._
 
-  private val ssc = new StreamingContext(conf, Seconds(1))
+  private val ssc = new StreamingContext(conf, Milliseconds(500))
 
   private val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
