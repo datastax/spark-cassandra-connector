@@ -23,7 +23,6 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.SparkEnv
 import org.apache.spark.streaming.{StreamingContext, Seconds}
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
-import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.demo.DemoApp.WordCount
 
@@ -33,16 +32,6 @@ object BasicReadWriteStreamingDemo extends App with SparkContextFixture
   import com.datastax.spark.connector.streaming._
 
   private val ssc = new StreamingContext(conf, Seconds(1))
-
-  private val testkit = new TestKit(SparkEnv.get.actorSystem)
-  import testkit._
-
-  /* Initializations */
-  CassandraConnector(conf).withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count INT)")
-    session.execute("TRUNCATE streaming_test.words")
-  }
 
   private val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
@@ -57,7 +46,10 @@ object BasicReadWriteStreamingDemo extends App with SparkContextFixture
   /** Start Spark streaming */
   ssc.start()
 
+  private val testkit = new TestKit(SparkEnv.get.actorSystem)
+  import testkit._
   import system.dispatcher
+
   private val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
   awaitCond(future.isCompleted)
   for (actor <- future) system.actorOf(Props(new TestProducer(data.toArray, actor, events)))

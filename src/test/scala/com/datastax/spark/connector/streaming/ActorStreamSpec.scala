@@ -47,6 +47,7 @@ trait ActorStreamWriter extends AbstractSpec with SparkContextFixture {
 }
 
 object ActorSpec {
+  /** Needed for the [[ActorSpec]] constructor */
   val conf = new SparkConf(true)
     .set("spark.master", "local[12]")
     .set("spark.app.name", "Streaming Demo")
