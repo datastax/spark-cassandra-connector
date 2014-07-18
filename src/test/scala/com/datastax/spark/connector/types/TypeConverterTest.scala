@@ -5,8 +5,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
-
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
 import org.junit.Test
@@ -308,7 +307,7 @@ class TypeConverterTest {
   @Test
   def testSerializeCollectionConverter() {
     val c1 = TypeConverter.forType[Vector[Int]]
-    val c2 = SerializationUtil.serializeAndDeserialize(c1)
+    val c2 = SerializationUtils.roundtrip(c1)
 
     val arrayList = new java.util.ArrayList[String]()
     arrayList.add("1")

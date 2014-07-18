@@ -20,16 +20,9 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
   @transient
   private val tpe = implicitly[TypeTag[R]].tpe
 
-  @transient
-  private val constructorParamTypes: Array[Type] = {
-    val ctorSymbol = tpe.declaration(nme.CONSTRUCTOR).asMethod
-    val ctorType = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
-    ctorType.params.map(_.asTerm.typeSignature).toArray
-  }
-
   // This must be  serialized:
   val constructorArgConverters: Array[TypeConverter[_]] =
-    constructorParamTypes.map(t => TypeConverter.forType(t))
+    factory.constructorParamTypes.map(t => TypeConverter.forType(t))
 
   @transient
   private val setterTypes: Map[String, Type] = {

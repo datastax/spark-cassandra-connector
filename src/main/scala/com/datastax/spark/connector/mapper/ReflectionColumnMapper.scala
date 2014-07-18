@@ -3,12 +3,14 @@ package com.datastax.spark.connector.mapper
 import java.lang.reflect.{Constructor, Method}
 
 import com.datastax.spark.connector.cql.TableDef
-import com.thoughtworks.paranamer.AdaptiveParanamer
+import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
 import org.apache.commons.lang.StringUtils
 
 import scala.reflect.ClassTag
 
 abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
+
+  import AnyObjectFactory._
 
   protected def isSetter(method: Method): Boolean
   protected def isGetter(method: Method): Boolean
@@ -31,13 +33,18 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
     val cls = implicitly[ClassTag[T]].runtimeClass
 
     def columnsOf(ctor: Constructor[_]): Seq[ColumnRef] = {
-      val paramNames = ReflectionColumnMapper.paranamer.lookupParameterNames(ctor)
-      val columnNames = paramNames.filterNot(_ == "$outer").map(constructorParamToColumnName(_, tableDef))
-      columnNames.map(NamedColumnRef)
+      if (isNoArgsConstructor(ctor))
+        Nil
+      else {
+        val paramNames = paranamer.lookupParameterNames(ctor)
+        val columnNames = paramNames
+          .drop(oneIfMemberClass(ctor.getDeclaringClass))
+          .map(constructorParamToColumnName(_, tableDef))
+        columnNames.map(NamedColumnRef)
+      }
     }
 
-    val constructor =
-      columnsOf(cls.getConstructors()(0))
+    val constructor = columnsOf(resolveConstructor(cls))
 
     val getters: Map[String, ColumnRef] = {
       for (method <- cls.getMethods if isGetter(method)) yield {
@@ -57,8 +64,4 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
     new SimpleColumnMap(constructor, getters, setters)
   }
-}
-
-object ReflectionColumnMapper {
-  private val paranamer = new AdaptiveParanamer
 }

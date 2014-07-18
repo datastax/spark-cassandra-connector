@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
 
@@ -20,7 +20,7 @@ class SerializableFactoryTest {
 
   @Test
   def testSerialize() {
-    val factory = SerializationUtil.serializeAndDeserialize(new AnyObjectFactory[TopLevel])
+    val factory = SerializationUtils.roundtrip(new AnyObjectFactory[TopLevel])
     val obj = factory.newInstance("test", 1.asInstanceOf[AnyRef])
     assertNotNull(obj)
     assertEquals("test", obj.arg1)

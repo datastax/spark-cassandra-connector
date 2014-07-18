@@ -38,6 +38,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
   override protected def constructorParamToColumnName(paramName: String, tableDef: TableDef) = {
     columnNameOverride.getOrElse(paramName, columnNameForProperty(paramName, tableDef))
   }
+
 }
 
 object JavaBeanColumnMapper {
