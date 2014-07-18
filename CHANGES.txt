@@ -1,0 +1,70 @@
+ * Handle null values in StringConverter. (#79)
+ * Improved error message when there are no replicas in the local DC. (#69)
+
+
+1.0.0 beta 2
+ * DSE compatibility improvements. (#64)
+    - Column types and type converters use TypeTags instead of Strings to
+      announce their types.
+    - CassandraRDD#tableDef is public now.
+    - Added methods for getting keyspaces and tables by name from the Schema.
+    - Refactored Schema class - loading schema from Cassandra moved
+      from the constructor to a factory method.
+    - Remove unused methods for returning system keyspaces from Schema.
+ * Improved JavaDoc explaining CassandraConnector withClusterDo
+   and withSessionDo semantics.
+ * Support for updating counter columns. (#27)
+ * Configure consistency level for reads/writes. Set default consistency
+   levels to LOCAL_ONE for reads and writes. (#42)
+ * Values passed as arguments to `where` are converted to proper types
+   expected by the java-driver. (#26)
+ * Include more information in the exception message when query in
+   CassandraRDD fails. (#69)
+ * Fallback to describe_ring in case describe_local_ring does not exist to
+   improve compatibility with earlier Cassandra versions. (#47)
+ * Session object sharing in CassandraConnector. (#41 and #53)
+ * Modify cassandra.* configuration settings to prefix with "spark." so they
+   can be used from spark-shell and set via conf/spark-default.conf (#51)
+ * Fixed race condition in AsyncExecutor causing inaccuracy of success/failure
+   counters. (#40)
+ * Added Java API. Fixed a bug in ClassBasedRowReader which caused
+   problems when data were read into Java beans. Added type converters
+   for boxed Java primitive types. (#11)
+
+
+1.0.0 beta 1
+ * CassandraRDD#createStatement doesn't obtain a new session, but reuses
+   the task's Session.
+ * Integration tests. (#12)
+ * Added contains and indexOf methods to CassandraRow. Missing value from
+   CassandraRow does not break writing - null is written instead.
+ * Caching of PreparedStatements. Subsequent preparations of the same
+   PreparedStatement are returned from the cache and don't cause
+   a warning. (#3)
+ * Move partitioner ForkJoinPool to companion object to share it between RDD's.
+   (#24)
+ * Fixed thread-safety of ClassBasedRowReader.
+ * Detailed user guide with code examples, reviewed by Kris Hahn. (#15)
+ * Support for saving RDD[CassandraRow]. New demo program copying data from one
+   table to another. (#16)
+ * Using a PreparedStatement make createStatement method compatible with
+   Cassandra 1.2.x. (#17)
+ * More and better logging. Using org.apache.spark.Logging instead of log4j.
+   (#13)
+ * Better error message when attempting to write to a table that doesn't exist.
+   (#1)
+ * Added more robust scala build to allow for future clean releases, and
+   publish settings for later integration. (#8)
+ * Refactored classes and objects used for authentication to support pluggable
+   authentication.
+ * Record cause of TypeConversionException.
+ * Improved error messages informing about failure to convert column value.
+   Fixed missing conversion for setters.
+ * Split CassandraWriter into RowWriter and TableWriter.
+ * Refactored package structure. Moved classes from rdd to rdd.reader
+   and rdd.partitioner packages. Renamed RowTransformers to RowReaders.
+ * Fix writing ByteBuffers to Cassandra.
+ * Throw meaningful exception when non-existing column is requested by name.
+ * Add isNull method on CassandraRow.
+ * Fix converting blobs to arrays of bytes in CassandraRow. Fix printing blobs
+   and collections.
