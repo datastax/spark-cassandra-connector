@@ -27,6 +27,12 @@ class CassandraRowTest {
     assertEquals(1, row.size)
   }
 
+  @Test
+  def nullToStringTest() {
+    val row = new CassandraRow(Array(null), Array("value"))
+    assertEquals("CassandraRow{value: null}", row.toString)
+  }
+
   @Test(expected = classOf[ColumnNotFoundException])
   def nonExistentColumnAccessTest() {
     val row = new CassandraRow(Array(null), Array("value"))

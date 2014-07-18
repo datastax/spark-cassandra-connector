@@ -5,13 +5,16 @@ import java.net.InetAddress
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions._
+import scala.reflect.runtime.universe._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
+case class CustomerId(id: String)
 
 class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
 
@@ -157,6 +160,22 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     }
   }
 
+  it should "write values of user-defined types" in {
+    TypeConverter.registerConverter(new TypeConverter[String] {
+      def targetTypeTag = typeTag[String]
+      def convertPF = { case CustomerId(id) => id }
+    })
+
+    val col = Seq((1, 1L, CustomerId("foo")))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", Seq("key", "group", "value"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      result should have size 1
+      for (row <- result)
+        row.getString(2) shouldEqual "foo"
+    }
+  }
 
   it should "throw IOException if table is not found" in {
     val col = Seq(("1", "1", "value1"), ("2", "2", "value2"), ("3", "3", "value3"))

@@ -5,13 +5,13 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
-
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
 import org.junit.Test
 
 import scala.collection.immutable.{TreeMap, TreeSet}
+import scala.reflect.runtime.universe._
 
 class TypeConverterTest {
 
@@ -307,7 +307,7 @@ class TypeConverterTest {
   @Test
   def testSerializeCollectionConverter() {
     val c1 = TypeConverter.forType[Vector[Int]]
-    val c2 = SerializationUtil.serializeAndDeserialize(c1)
+    val c2 = SerializationUtils.roundtrip(c1)
 
     val arrayList = new java.util.ArrayList[String]()
     arrayList.add("1")
@@ -322,7 +322,7 @@ class TypeConverterTest {
   @Test
   def testSerializeMapConverter() {
     val c1 = TypeConverter.forType[Map[Int, Int]]
-    val c2 = SerializationUtil.serializeAndDeserialize(c1)
+    val c2 = SerializationUtils.roundtrip(c1)
 
     val hashMap = new java.util.HashMap[String, String]()
     hashMap.put("1", "10")
@@ -333,8 +333,6 @@ class TypeConverterTest {
     assertNotNull(c2.targetTypeTag)
     assertEquals("Map[Int,Int]", c2.targetTypeName)
   }
-
-
 
   type StringAlias = String
 
@@ -350,4 +348,63 @@ class TypeConverterTest {
     assertNotNull(TypeConverter.forType[Map[StringAlias, StringAlias]])
     assertNotNull(TypeConverter.forType[TreeMap[StringAlias, StringAlias]])
   }
+
+  @Test
+  def testChainedConverters() {
+    val standardConverter = TypeConverter.forType[Int]
+    val extendedConverter = new TypeConverter[Int] {
+      def targetTypeTag = typeTag[Int]
+      def convertPF = {
+        case Some(x: Int) => x
+        case None => 0
+      }
+    }
+
+    val chainedConverter = new ChainedTypeConverter(standardConverter, extendedConverter)
+    assertEquals(1, chainedConverter.convert(1))
+    assertEquals(2, chainedConverter.convert("2"))
+    assertEquals(3, chainedConverter.convert(Some(3)))
+    assertEquals(0, chainedConverter.convert(None))
+  }
+
+  case class EMail(email: String)
+
+  @Test
+  def testRegisterCustomConverter() {
+    val converter = new TypeConverter[EMail] {
+      def targetTypeTag = typeTag[EMail]
+      def convertPF = { case x: String => EMail(x) }
+    }
+    TypeConverter.registerConverter(converter)
+    assertSame(converter, TypeConverter.forType[EMail])
+  }
+
+  @Test
+  def testRegisterCustomConverterExtension() {
+    val converter = new TypeConverter[Int] {
+      def targetTypeTag = typeTag[Int]
+      def convertPF = {
+        case Some(x: Int) => x
+        case None => 0
+      }
+    }
+    TypeConverter.registerConverter(converter)
+
+    val chainedConverter = TypeConverter.forType[Int]
+    assertTrue(chainedConverter.isInstanceOf[ChainedTypeConverter[_]])
+    assertEquals(1, chainedConverter.convert(1))
+    assertEquals(2, chainedConverter.convert("2"))
+    assertEquals(3, chainedConverter.convert(Some(3)))
+    assertEquals(0, chainedConverter.convert(None))
+  }
+
+  @Test
+  def testChainedConverterSerializability() {
+    val chainedConverter = new ChainedTypeConverter(TypeConverter.forType[Int])
+    val chainedConverter2 = SerializationUtils.roundtrip(chainedConverter)
+    assertEquals(1, chainedConverter2.convert(1))
+    assertEquals(2, chainedConverter2.convert("2"))
+  }
+
+
 }
