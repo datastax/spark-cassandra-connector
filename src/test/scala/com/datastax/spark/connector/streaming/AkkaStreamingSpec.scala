@@ -15,58 +15,20 @@
  */
 package com.datastax.spark.connector.streaming
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import scala.concurrent.duration._
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
-import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.demo.DemoApp.WordCount
 
-trait ActorStreamWriter extends AbstractSpec with SparkContextFixture {
-
-  val next = new AtomicInteger(0)
-
-  /* Keep in proportion with the above event num - not too long for CI without
-  * long-running sbt task exclusion.  */
-  val events = 100
-
-  val duration = 30.seconds
-
-  /* Initializations */
-  CassandraConnector(conf).withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count INT)")
-    session.execute("TRUNCATE streaming_test.words")
-  }
-}
-
-class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with ActorStreamWriter {
-  def this() = this (
-    new StreamingContext(new SparkConf(true)
-    .set("spark.master", "local[12]")
-    .set("spark.app.name", "Streaming Demo")
-    .set("spark.cassandra.connection.host", "127.0.0.1"), Milliseconds(200)),
-    SparkEnv.get.actorSystem)
-
-  def shutdown(): Unit = {
-    ssc.stop(true)
-    system.shutdown()
-  }
-}
-
-class ActorStreamWriteReadSpec extends ActorSpec with AbstractSpec {
-  import system.dispatcher
-
-  val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
-
+class ActorStreamingSpec extends ActorSpec {
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
+      val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
@@ -77,6 +39,7 @@ class ActorStreamWriteReadSpec extends ActorSpec with AbstractSpec {
 
       ssc.start()
 
+      import system.dispatcher
       val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
       awaitCond(future.isCompleted)
       for (actor <- future) system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
@@ -92,6 +55,20 @@ class ActorStreamWriteReadSpec extends ActorSpec with AbstractSpec {
       shutdown()
     }
   }
-
 }
+
+abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with StreamingSpec {
+  def this() = this (
+    new StreamingContext(new SparkConf(true)
+      .set("spark.master", "local[12]")
+      .set("spark.app.name", "Streaming Demo")
+      .set("spark.cassandra.connection.host", "127.0.0.1"), Milliseconds(300)),
+    SparkEnv.get.actorSystem)
+
+  def shutdown(): Unit = {
+    ssc.stop(true)
+    system.shutdown()
+  }
+}
+
 
