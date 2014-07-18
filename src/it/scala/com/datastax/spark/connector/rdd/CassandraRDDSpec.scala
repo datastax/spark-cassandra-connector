@@ -202,13 +202,23 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
   }
 
   it should "not leak threads" in {
-    sc.cassandraTable("read_test", "key_value").toArray()
-    // subsequent computaitons of RDD should reuse alrady created thread pools,
+    // compute a few RDDs so the thread pools get initialized
+    // using parallel range, to initialize parallel collections fork-join-pools
+    for (i <- (1 to 4).par)
+      sc.cassandraTable("read_test", "key_value").toArray()
+
+    // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
+    val iterationCount = 128
     val startThreadCount = Thread.activeCount()
-    for (i <- 1 to 128)
+    for (i <- (1 to iterationCount).par)
       sc.cassandraTable("read_test", "key_value").toArray()
     val endThreadCount = Thread.activeCount()
-    endThreadCount shouldEqual startThreadCount
+
+    // This is not very precise, but if there was a thread leak and we leaked even only
+    // 1-thread per rdd, this test would not pass. Typically we observed the endThreadCount = startThreadCount +/- 3
+    // We divide iterationCount here, in order to detect thread leaks that would not happen every time and to account
+    // for a few threads exiting during the test.
+    endThreadCount should be < startThreadCount + iterationCount / 2
   }
 }

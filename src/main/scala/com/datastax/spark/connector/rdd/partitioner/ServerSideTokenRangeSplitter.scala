@@ -48,9 +48,10 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
       .getOrElse {
         for (Failure(e) <- fetchResults)
           logError("Failure while fetching splits from Cassandra", e)
-        throw new IOException(
-          "Failed to fetch splits of %s from all endpoints: %s"
-          .format(range, range.endpoints.mkString(", ")))
+        if (range.endpoints.isEmpty)
+          throw new IOException(s"Failed to fetch splits of $range because there are no replicas for the keyspace in the current datacenter.")
+        else
+          throw new IOException(s"Failed to fetch splits of $range from all endpoints: ${range.endpoints.mkString(", ")}")
       }
   }
 }
