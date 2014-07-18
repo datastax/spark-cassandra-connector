@@ -53,6 +53,7 @@ object Publish extends Build {
           <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
         <developer>
+          <id>helena</id>
           <name>Helena Edelson</name>
           <url>http://github.com/helena</url>
           <organization>DataStax</organization>

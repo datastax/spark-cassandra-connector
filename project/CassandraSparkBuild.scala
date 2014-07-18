@@ -46,7 +46,7 @@ object Dependencies {
     val reflect           = "org.scala-lang"          % "scala-reflect"         % Scala
     val slf4jApi          = "org.slf4j"               % "slf4j-api"             % Slf4j          % "provided"                 // MIT
     val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark          % "provided"  exclude("com.google.guava", "guava") // ApacheV2
-    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark                                       // ApacheV2
+    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark          % "provided"  exclude("com.google.guava", "guava") // ApacheV2
 
     object Metrics {
       val metricsJson     = "com.codahale.metrics"    % "metrics-json"          % MetricsJson    % "provided"
