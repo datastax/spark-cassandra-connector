@@ -36,11 +36,4 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
 /** Simple [[Actor]] mixin to implement further with Spark 1.0.1 upgrade. */
 trait SparkStreamingActor extends Actor with Receiver
 
-/** A very basic Akka actor which streams String event data to spark.
-  * TODO implement further. */
-private [connector] class SimpleActor extends SparkStreamingActor {
-  def receive: Actor.Receive = {
-    case e: String => pushBlock(e)
-  }
-}
 

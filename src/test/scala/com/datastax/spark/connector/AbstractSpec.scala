@@ -16,6 +16,8 @@
 
 package com.datastax.spark.connector
 
+import com.datastax.spark.connector.streaming.SparkStreamingActor
+
 import scala.collection.immutable
 import scala.util.Random
 import scala.concurrent.duration._
@@ -64,5 +66,13 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
   def makeMessage(): String = {
     val x = rand.nextInt(3)
     data(x) + data(2 - x)
+  }
+}
+
+/** A very basic Akka actor which streams String event data to spark.
+  * TODO implement further. */
+private [connector] class SimpleActor extends SparkStreamingActor {
+  def receive: Actor.Receive = {
+    case e: String => pushBlock(e)
   }
 }
