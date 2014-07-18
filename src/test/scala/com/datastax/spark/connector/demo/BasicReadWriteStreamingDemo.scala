@@ -15,9 +15,8 @@
  */
 package com.datastax.spark.connector.demo
 
-import java.util.concurrent.atomic.AtomicInteger
+import com.datastax.spark.connector.streaming.ActorStreamWriter
 
-import scala.concurrent.duration._
 import akka.actor._
 import akka.testkit.TestKit
 import org.apache.spark.storage.StorageLevel
@@ -28,17 +27,10 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.demo.DemoApp.WordCount
 
-object BasicReadWriteStreamingDemo extends App with SparkContextFixture with AbstractSpec {
+object BasicReadWriteStreamingDemo extends App with SparkContextFixture
+  with AbstractSpec with ActorStreamWriter {
 
   import com.datastax.spark.connector.streaming._
-
-  private val next = new AtomicInteger(0)
-
-  /* Keep in proportion with the above event num - not too long for CI without
-  * long-running sbt task exclusion.  */
-  private val events = 20
-
-  private val duration = 30.seconds
 
   private val ssc = new StreamingContext(conf, Seconds(1))
 
