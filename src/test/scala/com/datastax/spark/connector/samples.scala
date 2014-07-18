@@ -28,4 +28,10 @@ class SampleWithDeeplyNestedScalaCaseClass {
 
 }
 
+object SampleObject {
+
+  case class ClassInObject(key: Int, value: String)
+
+}
+
 }

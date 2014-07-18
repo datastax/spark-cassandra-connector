@@ -3,8 +3,6 @@ package com.datastax.spark.connector.streaming
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.duration._
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.{SparkContextFixture, AbstractSpec}
 
 /**
  * Usages: Create the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
@@ -35,20 +33,14 @@ import com.datastax.spark.connector.{SparkContextFixture, AbstractSpec}
  *
  * etc.
  */
-trait StreamingSpec extends AbstractSpec with SparkContextFixture {
+trait StreamingSpec extends AbstractSpec with SparkStreamingFixture {
 
   val next = new AtomicInteger(0)
 
   /* Keep in proportion with the above event num - not too long for CI without
 * long-running sbt task exclusion.  */
-  val events = 50
+  val events = 30
 
   val duration = 60.seconds
 
-  /* Initializations */
-  CassandraConnector(conf).withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count INT)")
-    session.execute("TRUNCATE streaming_test.words")
-  }
 }

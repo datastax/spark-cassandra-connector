@@ -15,16 +15,27 @@
  */
 package com.datastax.spark.connector.streaming
 
+import scala.util.Try
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkConf, SparkEnv}
-import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.demo.DemoApp.WordCount
+import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
+import org.apache.spark.SparkEnv
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 
 class ActorStreamingSpec extends ActorSpec {
+
+  /* Initializations - does not work in the actor test context in a static before() */
+  CassandraConnector(SparkServer.conf).withSessionDo { session =>
+    session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count INT)")
+    session.execute("TRUNCATE streaming_test.words")
+  }
+
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
       val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
@@ -33,8 +44,8 @@ class ActorStreamingSpec extends ActorSpec {
         .map(x => (x, 1))
         .reduceByKey(_ + _)
         .foreachRDD(rdd => {
-          next.getAndIncrement // just a test counter
-          rdd.saveToCassandra("streaming_test", "words", Seq("word", "count"))
+        next.getAndIncrement // just a test counter
+        rdd.saveToCassandra("streaming_test", "words", Seq("word", "count"))
       })
 
       ssc.start()
@@ -48,27 +59,25 @@ class ActorStreamingSpec extends ActorSpec {
     }
     "read the cassandra table: streaming_test.words" in {
       val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-      rdd.first.word should be ("words")
       rdd.first.count should be > (3)
       rdd.toArray.size should be (data.size)
-
-      shutdown()
     }
   }
 }
 
-abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with StreamingSpec {
-  def this() = this (
-    new StreamingContext(new SparkConf(true)
-      .set("spark.master", "local[12]")
-      .set("spark.app.name", "Streaming Demo")
-      .set("spark.cassandra.connection.host", "127.0.0.1"), Milliseconds(300)),
-    SparkEnv.get.actorSystem)
+abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with StreamingSpec
+  with CassandraServer {
+  def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
-  def shutdown(): Unit = {
-    ssc.stop(true)
-    system.shutdown()
+  /* Does not work for me, for now wrapped in a Try) */
+ Try(useCassandraConfig("cassandra-default.yaml.template"))
+
+  after {
+    // Spark Context is shared among all integration test so we don't want to stop it here
+    ssc.stop(stopSparkContext = false)
   }
 }
+
+
 
 

@@ -106,6 +106,31 @@ class AnyObjectFactoryTest extends WordSpec with Matchers {
       }
     }
 
+    "instantiated for a Scala case class with 2 args constructor which is defined inside an object" should {
+      val factory = new AnyObjectFactory[SampleObject.ClassInObject]
+
+      "create an instance of that class with newInstance" in {
+        val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
+        instance shouldBe a[SampleObject.ClassInObject]
+        instance.key should be(1)
+        instance.value should be("one")
+      }
+
+      "return 2 with argCount because the only constructor of this case class has two args" in {
+        factory.argCount should be(2)
+      }
+
+      "return collection of {Int, String} types with constructorParamTypes" in {
+        factory.constructorParamTypes.zip(Array(typeOf[Int], typeOf[String])).foreach {
+          case (t1, t2) => (t1 =:= t2) should be(true)
+        }
+      }
+
+      "return that class with javaClass" in {
+        factory.javaClass should be(classOf[SampleObject.ClassInObject])
+      }
+    }
+
     "instantiated for a Scala class with 2 args constructor" should {
       val factory = new AnyObjectFactory[SampleScalaClass]
 
