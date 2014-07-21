@@ -59,7 +59,7 @@ object Dependencies {
     }
 
     object Test {
-      val akkaTestKit     = "com.typesafe.akka"       %% "akka-testkit"         % Akka           % "test,it"
+      val akkaTestKit     = "com.typesafe.akka"       %% "akka-testkit"         % Akka           % "test,it"                 // ApacheV2
       val cassandraServer = "org.apache.cassandra"    % "cassandra-all"         % Cassandra      % "test,it"                 // ApacheV2
       val commonsIO       = "commons-io"              % "commons-io"            % CommonsIO      % "test,it"                 // ApacheV2
       // Eventually migrate junit out in favor of the scala test APIs
