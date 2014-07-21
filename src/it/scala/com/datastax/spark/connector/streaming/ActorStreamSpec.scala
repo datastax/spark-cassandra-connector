@@ -1,9 +1,7 @@
 package com.datastax.spark.connector.streaming
 
-import scala.util.Try
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
-import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.demo.DemoApp.WordCount
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
@@ -11,6 +9,8 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+
+import scala.util.Try
 
 class ActorStreamingSpec extends ActorSpec {
 
@@ -28,10 +28,7 @@ class ActorStreamingSpec extends ActorSpec {
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .foreachRDD(rdd => {
-        next.getAndIncrement // just a test counter
-        rdd.saveToCassandra("streaming_test", "words", Seq("word", "count"))
-      })
+        .saveToCassandra("streaming_test", "words", Seq("word", "count"))
 
       ssc.start()
 
@@ -39,10 +36,8 @@ class ActorStreamingSpec extends ActorSpec {
       val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
       awaitCond(future.isCompleted)
       for (actor <- future) system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
+      Thread.sleep(duration.toMillis)
 
-      awaitCond(next.get == events, duration) // a random test point to stop at and do assertions
-    }
-    "read the cassandra table: streaming_test.words" in {
       val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
       rdd.map(_.count).reduce(_ + _) should be (events * 2)
       rdd.toArray.size should be (data.size)

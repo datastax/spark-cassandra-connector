@@ -35,12 +35,10 @@ import scala.concurrent.duration._
  */
 trait StreamingSpec extends AbstractSpec with SparkStreamingFixture {
 
-  val next = new AtomicInteger(0)
-
   /* Keep in proportion with the above event num - not too long for CI without
 * long-running sbt task exclusion.  */
   val events = 30
 
-  val duration = 60.seconds
+  val duration = 15.seconds
 
 }
