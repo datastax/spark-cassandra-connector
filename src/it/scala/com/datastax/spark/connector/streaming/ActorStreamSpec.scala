@@ -32,7 +32,7 @@ class ActorStreamingSpec extends ActorSpec {
   /* Initializations - does not work in the actor test context in a static before() */
   CassandraConnector(SparkServer.conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count INT)")
+    session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("TRUNCATE streaming_test.words")
   }
 
@@ -59,7 +59,7 @@ class ActorStreamingSpec extends ActorSpec {
     }
     "read the cassandra table: streaming_test.words" in {
       val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-      rdd.first.count should be > (3)
+      rdd.map(_.count).reduce(_ + _) should be (events * 2)
       rdd.toArray.size should be (data.size)
     }
   }
