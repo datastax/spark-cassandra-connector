@@ -5,13 +5,16 @@ import java.util.Date
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
+
 import org.scalatest.{FlatSpec, Matchers}
+import scala.reflect.runtime.universe._
 
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
-
+case class CustomerId(id: String)
 
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
@@ -166,6 +169,19 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
     rowById(1).getBytes("b").limit() shouldEqual 12
     rowById(1).get[Array[Byte]]("b") shouldEqual Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
     rowById(2).getBytesOption("b") shouldEqual None
+  }
+
+  it should "allow for converting fields to custom types by user-defined TypeConverter" in {
+    TypeConverter.registerConverter(new TypeConverter[CustomerId] {
+      def targetTypeTag = typeTag[CustomerId]
+      def convertPF = { case x: String => CustomerId(x) }
+    })
+
+    val result = sc.cassandraTable[(Int, Long, CustomerId)]("read_test", "key_value").toArray()
+    result should have length 3
+    result(0)._3 shouldNot be(null)
+    result(1)._3 shouldNot be(null)
+    result(2)._3 shouldNot be(null)
   }
 
   it should "allow for reading tables with composite partitioning key" in {

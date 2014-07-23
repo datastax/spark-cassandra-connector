@@ -57,7 +57,8 @@ from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+Intell
 Open the project with IntelliJ IDEA and it will automatically create the project structure
 from the provided SBT configuration.
 
-To send us your contribution, please open a pull request on GitHub and await code review.
+Before contributing your changes to the project, please make sure that all unit tests and integration tests
+pass:
 
 ## Testing
 To run unit and integration tests:
@@ -77,3 +78,5 @@ Then copy the generated test jar to your Spark nodes and run:
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
     sbt it:test    
 
+Don't forget to add an appropriate entry at the top of CHANGES.txt.
+Finally open a pull-request on GitHub and await review. 

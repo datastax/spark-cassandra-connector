@@ -2,7 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.cql.{TableDef, RegularColumn, ColumnDef}
 import com.datastax.spark.connector.types.IntType
-import com.datastax.spark.connector.util.SerializationUtil
+import org.apache.commons.lang3.SerializationUtils
 
 import org.junit.Assert._
 import org.junit.Test
@@ -72,13 +72,13 @@ class JavaBeanColumnMapperTest {
   @Test
   def testSerializeColumnMapper() {
     val mapper = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass]
-    SerializationUtil.serializeAndDeserialize(mapper)
+    SerializationUtils.roundtrip(mapper)
   }
 
   @Test
   def testSerializeColumnMap() {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass].columnMap(tableDef)
-    SerializationUtil.serializeAndDeserialize(columnMap)
+    SerializationUtils.roundtrip(columnMap)
   }
 
   @Test
