@@ -50,7 +50,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
 
       // this is required because if javaClass is a Java style member class, ctorParams includes a param for
       // a reference to the outer class instance; this doesn't happen in case of Scala style member classes
-      if (ctorParams.headOption.exists(t => rm.runtimeClass(t) == javaClass.getEnclosingClass))
+      if (ctorParams.headOption.exists(t => Some(rm.runtimeClass(t)) == getRealEnclosingClass(javaClass)))
         ctorParams.drop(1) else ctorParams
     }.find(checkIfTypesApplyToClasses(requiredParamClasses)).get
   }
@@ -70,7 +70,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   @transient
   private lazy val argBuffer = {
     val buffer = Array.ofDim[AnyRef](argOffset + argCount)
-    if (javaClass.isMemberClass) {
+    if (isRealMemberClass(javaClass)) {
       buffer(0) = resolveDirectOuterInstance()
     }
     buffer
@@ -114,7 +114,7 @@ object AnyObjectFactory extends Logging {
   }
 
   private[connector] def getNoArgsConstructor[T](clazz: Class[T]): Constructor[T] = {
-    Option(clazz.getEnclosingClass).fold(clazz.getConstructor())(clazz.getConstructor(_))
+    getRealEnclosingClass(clazz).fold(clazz.getConstructor())(clazz.getConstructor(_))
   }
 
   private[connector] def resolveConstructor[T](clazz: Class[T]): Constructor[T] = {
@@ -135,13 +135,13 @@ object AnyObjectFactory extends Logging {
   }
 
   def oneIfMemberClass(clazz: Class[_]) =
-    if (clazz.isMemberClass) 1 else 0
+    if (isRealMemberClass(clazz)) 1 else 0
 
   def isNoArgsConstructor(ctor: Constructor[_]) =
     ctor.getParameterTypes.length == oneIfMemberClass(ctor.getDeclaringClass)
 
   private[connector] def extractOuterClasses(c: Class[_]): List[Class[_]] = {
-    Option(c.getEnclosingClass) match {
+    getRealEnclosingClass(c) match {
       case Some(enclosingClass) => enclosingClass :: extractOuterClasses(enclosingClass)
       case None => Nil
     }
@@ -158,6 +158,23 @@ object AnyObjectFactory extends Logging {
       case Failure(ex) => throw ex;
     }
   }
+
+  /**
+   * This method checks if the class is a member class which requires providing a reference to the enclosing in its
+   * constructors. We cannot just check it by invoking [[java.lang.Class#isMemberClass isMemberClass]] because it
+   * will return `true` for classes enclosed in Scala objects. They do not accept reference to enclosing
+   * class in their constructors, and therefore they need to be treated as normal, top level classes.
+   */
+  def isRealMemberClass[T](clazz: Class[T]) = {
+    clazz.isMemberClass && 
+      clazz.getConstructors.headOption.exists(_.getParameterTypes.headOption.exists(_ == clazz.getEnclosingClass))
+  }
+
+  /**
+   * Returns an enclosing class wrapped by [[scala.Option Option]]. It returns `Some` if [[isRealMemberClass()]]
+   * returns `true`.
+   */
+  def getRealEnclosingClass[T](clazz: Class[T]) = if (isRealMemberClass(clazz)) Some(clazz.getEnclosingClass) else None
 
 }
 

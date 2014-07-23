@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.writer
 
 import java.io.IOException
-import java.net.InetAddress
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -19,7 +18,7 @@ case class CustomerId(id: String)
 class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+  val conn = CassandraConnector(cassandraHost)
 
   before {
     conn.withSessionDo { session =>
