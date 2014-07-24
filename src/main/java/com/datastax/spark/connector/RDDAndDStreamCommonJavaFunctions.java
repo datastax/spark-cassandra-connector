@@ -9,11 +9,11 @@ import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFa
 import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
 
 abstract class RDDAndDStreamCommonJavaFunctions<T> {
+    private final Class<T> targetClass;
+
     RDDAndDStreamCommonJavaFunctions(Class<T> targetClass) {
         this.targetClass = targetClass;
     }
-
-    private final Class<T> targetClass;
 
     public abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory);
 
