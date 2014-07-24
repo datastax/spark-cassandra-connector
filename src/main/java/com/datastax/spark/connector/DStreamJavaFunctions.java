@@ -7,6 +7,7 @@ import org.apache.spark.streaming.dstream.DStream;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 
+@SuppressWarnings("UnusedDeclaration")
 public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final DStream<T> rdd;
     private final DStreamFunctions<T> dsf;

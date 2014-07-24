@@ -8,6 +8,7 @@ import java.util.Map;
 import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFactory;
 import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
 
+@SuppressWarnings("UnusedDeclaration")
 abstract class RDDAndDStreamCommonJavaFunctions<T> {
     private final Class<T> targetClass;
 

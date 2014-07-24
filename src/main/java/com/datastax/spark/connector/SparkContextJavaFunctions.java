@@ -14,6 +14,7 @@ import java.util.Map;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.*;
 
+@SuppressWarnings("UnusedDeclaration")
 public class SparkContextJavaFunctions {
     public final SparkContext sparkContext;
     private final SparkContextFunctions scf;

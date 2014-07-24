@@ -6,6 +6,7 @@ import org.apache.spark.rdd.RDD;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 
+@SuppressWarnings("UnusedDeclaration")
 public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final RDD<T> rdd;
     private final RDDFunctions<T> rddf;
