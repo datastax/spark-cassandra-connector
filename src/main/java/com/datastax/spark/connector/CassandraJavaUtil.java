@@ -9,6 +9,8 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.dstream.DStream;
 import scala.reflect.ClassTag;
 import scala.reflect.api.TypeTags;
 
@@ -41,6 +43,14 @@ public class CassandraJavaUtil {
 
     public static <T> RDDJavaFunctions javaFunctions(JavaRDD<T> rdd, Class<T> targetClass) {
         return new RDDJavaFunctions<>(JavaRDD.toRDD(rdd), targetClass);
+    }
+
+    public static <T> DStreamJavaFunctions javaFunctions(DStream<T> dStream, Class<T> targetClass) {
+        return new DStreamJavaFunctions<>(dStream, targetClass);
+    }
+
+    public static <T> DStreamJavaFunctions javaFunctions(JavaDStream<T> dStream, Class<T> targetClass) {
+        return new DStreamJavaFunctions<>(dStream.dstream(), targetClass);
     }
 
     public static class SparkContextJavaFunctions {
