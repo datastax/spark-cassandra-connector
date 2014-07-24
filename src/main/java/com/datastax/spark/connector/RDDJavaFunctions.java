@@ -17,11 +17,17 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         this.rddf = new RDDFunctions<>(rdd, getClassTag(targetClass));
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
         rddf.saveToCassandra(keyspace, table, rowWriterFactory);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, String[] columnNames, RowWriterFactory<T> rowWriterFactory) {
         // explicit type argument is intentional and required here
@@ -29,6 +35,9 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         rddf.saveToCassandra(keyspace, table, JavaApiHelper.<String>toScalaSeq(columnNames), rowWriterFactory);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, RowWriterFactory<T> rowWriterFactory) {
         // explicit type argument is intentional and required here

@@ -18,11 +18,17 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
         this.dsf = new DStreamFunctions<>(dStream, getClassTag(targetClass));
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
         dsf.saveToCassandra(keyspace, table, rowWriterFactory);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, String[] columnNames, RowWriterFactory<T> rowWriterFactory) {
         // explicit type argument is intentional and required here
@@ -30,6 +36,9 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
         dsf.saveToCassandra(keyspace, table, JavaApiHelper.<String>toScalaSeq(columnNames), rowWriterFactory);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, RowWriterFactory<T> rowWriterFactory) {
         // explicit type argument is intentional and required here
