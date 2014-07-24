@@ -11,7 +11,7 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 class CassandraConnectorSpec extends FlatSpec with Matchers with CassandraServer {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+  val conn = CassandraConnector(cassandraHost)
 
   val createKeyspaceCql = "CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"
 

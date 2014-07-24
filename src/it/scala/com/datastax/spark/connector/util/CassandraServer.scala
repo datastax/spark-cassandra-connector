@@ -1,13 +1,8 @@
 package com.datastax.spark.connector.util
 
-import java.io.{FileOutputStream, IOException, File}
 import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.google.common.io.Files
-import org.apache.cassandra.io.util.FileUtils
-import org.apache.cassandra.service.CassandraDaemon
-import org.apache.cassandra.thrift.Cassandra
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -17,12 +12,20 @@ trait CassandraServer {
   def useCassandraConfig(configTemplate: String) {
     CassandraServer.useCassandraConfig(configTemplate)
   }
+  def cassandraHost =
+    CassandraServer.cassandraHost
 }
 
 object CassandraServer {
+  private val HostProperty = "IT_TEST_CASSANDRA_HOST"
 
   private var cassandra: CassandraServerRunner = null
   private var currentConfigTemplate: String = null
+
+  val cassandraHost = {
+    val host = Option(System.getenv(CassandraServer.HostProperty)).getOrElse("127.0.0.1")
+    InetAddress.getByName(host)
+  }
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration is different
     * than the currently used configuration. When the configuration is switched, all the state (including data) of
@@ -30,14 +33,16 @@ object CassandraServer {
     * @param configTemplate name of the cassandra.yaml template resource
     * @param forceReload if set to true, the server will be reloaded fresh even if the configuration didn't change */
   def useCassandraConfig(configTemplate: String, forceReload: Boolean = false) {
-    if (currentConfigTemplate != configTemplate || forceReload) {
-      if (cassandra != null)
-        cassandra.destroy()
+    if (System.getenv(HostProperty) == null) {
+      if (currentConfigTemplate != configTemplate || forceReload) {
+        if (cassandra != null)
+          cassandra.destroy()
 
-      CassandraConnector.evictCache()
-      cassandra = new CassandraServerRunner(configTemplate)
-
-      currentConfigTemplate = currentConfigTemplate
+        CassandraConnector.evictCache()
+        cassandra = new CassandraServerRunner(configTemplate)
+        System.setProperty(HostProperty, "127.0.0.1")
+        currentConfigTemplate = currentConfigTemplate
+      }
     }
   }
 

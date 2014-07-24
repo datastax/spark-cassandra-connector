@@ -57,11 +57,24 @@ from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+Intell
 Open the project with IntelliJ IDEA and it will automatically create the project structure
 from the provided SBT configuration.
 
-Before contributing your changes to the project, please make sure that all unit tests and integration tests
-pass:
+Before contributing your changes to the project, please make sure that all unit tests and integration tests pass.
+Don't forget to add an appropriate entry at the top of CHANGES.txt.
+Finally open a pull-request on GitHub and await review. 
+
+## Testing
+To run unit and integration tests:
 
     sbt test
     sbt it:test
 
-Don't forget to an appropriate entry at the top of CHANGES.txt.
-Finally open a pull-request on GitHub and await review. 
+By default, integration tests start up a separate, single Cassandra instance and run Spark in local mode.
+It is possible to run integration tests with your own Cassandra and/or Spark cluster.
+First, prepare a jar with testing code:
+    
+    sbt test:package
+    
+Then copy the generated test jar to your Spark nodes and run:    
+
+    export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
+    export IT_TEST_SPARK_MASTER=<Spark Master URL>
+    sbt it:test    
