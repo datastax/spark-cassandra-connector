@@ -25,7 +25,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as {@code CassandraRDD}. With this method, a
+     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, a
      * {@link com.datastax.spark.connector.rdd.reader.RowReader} created by the provided
      * {@link com.datastax.spark.connector.rdd.reader.RowReaderFactory} is used to produce
      * object of {@code targetClass} for each fetched row.
@@ -39,7 +39,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
      * is converted to a {@code CassandraRow} object.
      * <p/>
      * Example:
@@ -63,7 +63,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
      * is converted into the instance of {@code targetClass} with use of the provided custom
      * {@link com.datastax.spark.connector.mapper.ColumnMapper}. By default,
      * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used to map object
@@ -79,7 +79,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
      * is converted into the instance of {@code targetClass}.
      * <p/>
      * Example:
@@ -130,10 +130,10 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
      * is converted into the instance of {@code targetClass}. It works just like
-     * {@link #cassandraTable(String, String, Class)} but it additionally allows to provide
-     * custom property to column name mappings.
+     * {@link #cassandraTable(String, String, Class)} but it additionally allows the specification of
+     * a custom property to column name mappings.
      *
      * @see #cassandraTable(String, String, Class, java.util.Map)
      */

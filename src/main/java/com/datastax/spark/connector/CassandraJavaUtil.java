@@ -22,7 +22,7 @@ public class CassandraJavaUtil {
 
     /**
      * A static factory method to create a {@link SparkContextJavaFunctions}
-     * basing on an existing {@link SparkContext}.
+     * based on an existing {@link SparkContext}.
      */
     public static SparkContextJavaFunctions javaFunctions(SparkContext sparkContext) {
         return new SparkContextJavaFunctions(sparkContext);
@@ -30,7 +30,7 @@ public class CassandraJavaUtil {
 
     /**
      * A static factory method to create a {@link SparkContextJavaFunctions}
-     * basing on an existing {@link JavaSparkContext}.
+     * based on an existing {@link JavaSparkContext}.
      */
     public static SparkContextJavaFunctions javaFunctions(JavaSparkContext sparkContext) {
         return new SparkContextJavaFunctions(JavaSparkContext.toSparkContext(sparkContext));
@@ -38,7 +38,7 @@ public class CassandraJavaUtil {
 
     /**
      * A static factory method to create a {@link StreamingContextJavaFunctions}
-     * basing on an existing {@link StreamingContext}.
+     * based on an existing {@link StreamingContext}.
      */
     public static StreamingContextJavaFunctions javaFunctions(StreamingContext streamingContext) {
         return new StreamingContextJavaFunctions(streamingContext);
@@ -46,14 +46,14 @@ public class CassandraJavaUtil {
 
     /**
      * A static factory method to create a {@link StreamingContextJavaFunctions}
-     * basing on an existing {@link JavaStreamingContext}.
+     * based on an existing {@link JavaStreamingContext}.
      */
     public static StreamingContextJavaFunctions javaFunctions(JavaStreamingContext streamingContext) {
         return new StreamingContextJavaFunctions(streamingContext.ssc());
     }
 
     /**
-     * A static factory method to create a {@link RDDJavaFunctions} basing on
+     * A static factory method to create a {@link RDDJavaFunctions} based on
      * an existing {@link RDD}.
      *
      * @param targetClass a class of elements in the provided <code>RDD</code>
@@ -63,7 +63,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * A static factory method to create a {@link RDDJavaFunctions} basing on
+     * A static factory method to create a {@link RDDJavaFunctions} based on
      * an existing {@link JavaRDD}.
      *
      * @param targetClass a class of elements in the provided <code>RDD</code>
@@ -73,7 +73,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * A static factory method to create a {@link DStreamJavaFunctions} basing
+     * A static factory method to create a {@link DStreamJavaFunctions} based
      * on an existing {@link DStream}.
      *
      * @param targetClass a class of elements in the provided <code>DStream</code>
@@ -83,7 +83,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * A static factory method to create a {@link DStreamJavaFunctions} basing
+     * A static factory method to create a {@link DStreamJavaFunctions} based
      * on an existing {@link JavaDStream}.
      *
      * @param targetClass a class of elements in the provided <code>DStream</code>
