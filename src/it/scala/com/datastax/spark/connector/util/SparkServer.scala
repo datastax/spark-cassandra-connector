@@ -9,8 +9,9 @@ trait SparkServer {
 
 object SparkServer {
   val conf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", "127.0.0.1")
+    .set("spark.cassandra.connection.host", CassandraServer.cassandraHost.getHostAddress)
     .set("spark.cleaner.ttl", "3600")   // required for Spark Streaming
-  val sc = new SparkContext("local[4]", "Integration Test", conf)
+  val sparkMasterUrl = Option(System.getenv("IT_TEST_SPARK_MASTER")).getOrElse("local[4]")
+  val sc = new SparkContext(sparkMasterUrl, "Integration Test", conf)
   val actorSystem = SparkEnv.get.actorSystem
 }

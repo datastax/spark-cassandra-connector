@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.rdd
 
 import java.io.IOException
-import java.net.InetAddress
 import java.util.Date
 
 import com.datastax.spark.connector._
@@ -25,10 +24,10 @@ class MutableKeyValueWithConversion(var key: String, var group: Int) extends Ser
   var value: Long = 0L
 }
 
-class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with SparkServer {
+class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with SparkServer {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+  val conn = CassandraConnector(cassandraHost)
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS read_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -52,7 +51,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer  with
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')")
     session.execute("INSERT INTO read_test.composite_key (key_c1, key_c2, group, value) VALUES (2, 2, 4, 'value4')")
 
-    session.execute("CREATE TABLE read_test.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')")
