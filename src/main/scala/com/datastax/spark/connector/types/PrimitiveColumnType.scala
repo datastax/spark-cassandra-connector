@@ -22,6 +22,11 @@ case object AsciiType extends PrimitiveColumnType[String] {
   def scalaTypeTag = implicitly[TypeTag[String]]
 }
 
+case object VarCharType extends PrimitiveColumnType[String] {
+  def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[String])
+  def scalaTypeTag = implicitly[TypeTag[String]]
+}
+
 case object IntType extends PrimitiveColumnType[Int] {
   def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[Int])
   def scalaTypeTag = implicitly[TypeTag[Int]]

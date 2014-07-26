@@ -10,8 +10,6 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 
-import scala.util.Try
-
 class ActorStreamingSpec extends ActorSpec {
 
   /* Initializations - does not work in the actor test context in a static before() */
@@ -49,8 +47,7 @@ abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extend
   with CassandraServer {
   def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
-  /* Does not work for me, for now wrapped in a Try) */
- Try(useCassandraConfig("cassandra-default.yaml.template"))
+ useCassandraConfig("cassandra-default.yaml.template")
 
   after {
     // Spark Context is shared among all integration test so we don't want to stop it here
