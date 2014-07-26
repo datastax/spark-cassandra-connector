@@ -340,4 +340,9 @@ class CassandraRDD[R] private[connector] (
     }
     countingIterator
   }
+
+  override def toJavaRDD(): CassandraJavaRDD[R] = {
+    new CassandraJavaRDD[R](this, classTag[R].runtimeClass.asInstanceOf[Class[R]])
+  }
+
 }

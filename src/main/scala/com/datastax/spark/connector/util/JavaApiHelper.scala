@@ -31,6 +31,8 @@ object JavaApiHelper {
 
   def toScalaSeq[T](array: Array[T]): Seq[T] = array
 
+  def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
+
   def defaultRowWriterFactory[T](clazz: Class[T], mapper: ColumnMapper[T]) = {
     RowWriterFactory.defaultRowWriterFactory(getClassTag(clazz), mapper)
   }
