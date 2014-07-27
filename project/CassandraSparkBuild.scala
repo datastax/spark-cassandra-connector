@@ -19,16 +19,13 @@ import sbt._
 import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
+  import Settings._
 
-  lazy val root = Project(id = "spark-cassandra-connector", base = file("."))
-    .settings(Settings.defaultSettings: _*)
-    .settings(Settings.buildSettings: _*)
-    .settings(libraryDependencies ++= Dependencies.spark)
-    .configs(IntegrationTest)
-
-  // Make the integration tests inherit class path + classes from the unit tests.
-  // It is needed because we want to use some classes from unit tests in integration tests without duplicating them.
-  lazy val IntegrationTest = config("it") extend Test
+  lazy val root = Project(
+    id = "cassandra-driver-spark",
+    base = file("."),
+    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
+  ) configs(IntegrationTest)
 
 }
 

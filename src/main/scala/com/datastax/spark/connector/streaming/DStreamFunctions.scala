@@ -8,23 +8,20 @@ import scala.reflect.ClassTag
 
 class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends Serializable {
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName)(rwf))
-  }
+  /** Performs [[com.datastax.spark.connector.RDDFunctions]] for each produced RDD. */
+  def saveToCassandra(keyspaceName: String, tableName: String,
+                      columnNames: Seq[String] = Seq.empty,
+                      batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String])(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName, columnNames)(rwf))
-  }
+    if (columnNames.isEmpty)
+      dstream.foreachRDD(_.saveToCassandra(keyspaceName, tableName)(rwf))
+    else
+      batchSize match {
+        case None =>
+          dstream.foreachRDD(_.saveToCassandra(keyspaceName, tableName, columnNames)(rwf))
+        case Some(size) =>
+          dstream.foreachRDD(_.saveToCassandra(keyspaceName, tableName, columnNames, size)(rwf))
+      }
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String],
-                      batchSize: Int)(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName, columnNames, batchSize)(rwf))
   }
 }
