@@ -41,8 +41,8 @@ object Settings extends Build {
   )
 
   // add ++ formatSettings
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
-    scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
+  lazy val defaultSettings = buildSettings ++ testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+    scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
@@ -52,6 +52,10 @@ object Settings extends Build {
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
     previousArtifact := None
   )
+
+  // Make the integration tests inherit class path + classes from the unit tests.
+  // It is needed because we want to use some classes from unit tests in integration tests without duplicating them.
+  lazy val IntegrationTest = config("it") extend Test
 
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.testTasks)
 

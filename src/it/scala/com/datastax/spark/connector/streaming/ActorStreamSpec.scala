@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.streaming
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Terminated, ActorSystem, Props}
 import akka.testkit.TestKit
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.demo.DemoApp.WordCount
@@ -20,25 +20,28 @@ class ActorStreamingSpec extends ActorSpec {
   }
 
   "actorStream" must {
-    "write from the actor stream to cassandra table: streaming_test.words" in {
+    "write from an actor stream to a cassandra table and read what was written from cassandra" in {
       val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", Seq("word", "count"))
+        .saveToCassandra("streaming_test", "words", Seq("word", "count"), Some(1))
 
       ssc.start()
 
       import system.dispatcher
       val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
       awaitCond(future.isCompleted)
-      for (actor <- future) system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
-      Thread.sleep(duration.toMillis)
+      for (actor <- future) {
+        watch(system.actorOf(Props(new TestProducer(data.toArray, actor, events))))
+      }
 
-      val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-      rdd.map(_.count).reduce(_ + _) should be (events * 2)
-      rdd.toArray.size should be (data.size)
+      expectMsgPF(duration) { case Terminated(ref) =>
+        val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
+        rdd.map(_.count).reduce(_ + _) should be (events * 2)
+        rdd.toArray.size should be (data.size)
+      }
     }
   }
 }
