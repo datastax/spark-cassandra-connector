@@ -16,21 +16,23 @@ implementations are included.
 To work with Java classes, use `JavaBeanColumnMapper`. 
 Make sure your objects are `Serializable`, otherwise Spark won't be able to send them over the network.
 
-    import com.datastax.spark.connector.mapper.JavaBeanColumnMapper
-    class WordCount extends Serializable { 
-        private var _word: String = ""
-        private var _count: Int = 0
-        def setWord(word: String) { _word = word }
-        def setCount(count: Int) { _count = count }
-        override def toString = _word + ":" + _count
-    }
+```scala
+import com.datastax.spark.connector.mapper.JavaBeanColumnMapper
+class WordCount extends Serializable { 
+    private var _word: String = ""
+    private var _count: Int = 0
+    def setWord(word: String) { _word = word }
+    def setCount(count: Int) { _count = count }
+    override def toString = _word + ":" + _count
+}
 
-    object WordCount {
-        implicit object Mapper extends JavaBeanColumnMapper[WordCount] 
-    }
+object WordCount {
+    implicit object Mapper extends JavaBeanColumnMapper[WordCount] 
+}
 
-    sc.cassandraTable[WordCount]("test", "words").toArray
-    // Array(bar:20, foo:10)
+sc.cassandraTable[WordCount]("test", "words").toArray
+// Array(bar:20, foo:10)
+```
 
 To save objects of class `WordCount`, you'll need to define getters.
 
@@ -38,18 +40,20 @@ To save objects of class `WordCount`, you'll need to define getters.
 If for some reason you wish to associate a column of a different name than the property, 
 you may pass a column translation `Map` to a `DefaultColumnMapper` or `JavaBeanColumnMapper`:
 
-    case class WordCount(w: String, c: Int)
-    
-    object WordCount { 
-        implicit object Mapper extends DefaultColumnMapper[WordCount](
-            Map("w" -> "word", "c" -> "count")) 
-    }
+```scala
+case class WordCount(w: String, c: Int)
 
-    sc.cassandraTable[WordCount]("test", "words").toArray
-    // Array(WordCount(bar,20), WordCount(foo,10))
+object WordCount { 
+    implicit object Mapper extends DefaultColumnMapper[WordCount](
+        Map("w" -> "word", "c" -> "count")) 
+}
 
-    sc.parallelize(Seq(WordCount("baz", 30), WordCount("foobar", 40)))
-      .saveToCassandra("test", "words", Seq("word", "count"))
+sc.cassandraTable[WordCount]("test", "words").toArray
+// Array(WordCount(bar,20), WordCount(foo,10))
+
+sc.parallelize(Seq(WordCount("baz", 30), WordCount("foobar", 40)))
+  .saveToCassandra("test", "words", Seq("word", "count"))
+```
 
 ### Writing custom `ColumnMapper` implementations
 To define column mappings for your classes, create an appropriate implicit object implementing 
@@ -59,26 +63,30 @@ To define column mappings for your classes, create an appropriate implicit objec
 To map a Cassandra column to a field of user-defined type, register custom `TypeConverter` implementations.
 For example, imagine you want emails to be stored in custom `Email` class, wrapping a string:
 
-    case class EMail(email: String)
+```scala
+case class EMail(email: String)
+```
     
 To tell the connector how to read and write fields of type `EMail`, you need to define two 
 type converters - from `String` to `Email` and from `Email` to `String`:
 
-    import com.datastax.spark.connector.types._
-    import scala.reflect.runtime.universe._
+```scala
+import com.datastax.spark.connector.types._
+import scala.reflect.runtime.universe._
 
-    object StringToEMailConverter extends TypeConverter[EMail] {
-      def targetTypeTag = typeTag[EMail]
-      def convertPF = { case str: String => EMail(str) }
-    }
+object StringToEMailConverter extends TypeConverter[EMail] {
+  def targetTypeTag = typeTag[EMail]
+  def convertPF = { case str: String => EMail(str) }
+}
+
+object EMailToStringConverter extends TypeConverter[String] {
+  def targetTypeTag = typeTag[String]
+  def convertPF = { case EMail(str) => str }
+}
     
-    object EMailToStringConverter extends TypeConverter[String] {
-      def targetTypeTag = typeTag[String]
-      def convertPF = { case EMail(str) => str }
-    }
-        
-    TypeConverter.registerConverter(StringToEMailConverter)
-    TypeConverter.registerConverter(EMailToStringConverter)            
+TypeConverter.registerConverter(StringToEMailConverter)
+TypeConverter.registerConverter(EMailToStringConverter)            
+```
  
 Now you can map any Cassandra text or ascii column to `EMail` instance.
 The registration step must be performed before creating any RDDs you wish to
@@ -100,3 +108,5 @@ In the same way, when writing an `RDD` back to Cassandra, an appropriate implici
 `RowWriter` are used to extract column values from every RDD item and bind them to an INSERT `PreparedStatement`.
      
 Please refer to the ScalaDoc for more details.
+
+[Next - Using Connector in Java](7_java_api.md)

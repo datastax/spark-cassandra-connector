@@ -43,6 +43,7 @@ The documentation will be generated to `target/scala-2.10/api/`
   - [Working with user-defined case classes and tuples](doc/4_mapper.md)
   - [Saving datasets to Cassandra](doc/5_saving.md)
   - [Customizing the object mapping](doc/6_advanced_mapper.md)
+  - [Using Connector in Java](doc/7_java_api.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    
@@ -52,14 +53,16 @@ Please use GitHub to report feature requests or bugs.
 
 ## Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
-Make sure you have installed and enabled the Scala Plugin 
-from [here] (http://confluence.jetbrains.com/display/SCA/Scala+Plugin+for+IntelliJ+IDEA).
+Make sure you have installed and enabled the Scala Plugin.
 Open the project with IntelliJ IDEA and it will automatically create the project structure
 from the provided SBT configuration.
 
 Before contributing your changes to the project, please make sure that all unit tests and integration tests pass.
 Don't forget to add an appropriate entry at the top of CHANGES.txt.
 Finally open a pull-request on GitHub and await review. 
+
+If your pull-request is going to resolve some opened issue, please add *Fixes \#xx* at the 
+end of each commit message (where *xx* is the number of the issue).
 
 ## Testing
 To run unit and integration tests:

@@ -30,55 +30,73 @@ This driver is also compatible with Spark distribution provided in
  
 ### Preparing example Cassandra schema
 Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
-    
-    CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-    CREATE TABLE test.kv(key text PRIMARY KEY, value int);
+
+```sql
+CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+CREATE TABLE test.kv(key text PRIMARY KEY, value int);
+```
       
 Then insert some example data:
 
-    INSERT INTO test.kv(key, value) VALUES ('key1', 1);
-    INSERT INTO test.kv(key, value) VALUES ('key2', 2);
+```sql
+INSERT INTO test.kv(key, value) VALUES ('key1', 1);
+INSERT INTO test.kv(key, value) VALUES ('key2', 2);
+```
  
 Now you're ready to write your first Spark program using Cassandra.
 
 ### Setting up `SparkContext`   
 Before creating the `SparkContext`, set the `spark.cassandra.connection.host` property to the address of one 
 of the Cassandra nodes:
-   
-    val conf = new SparkConf(true)
-       .set("spark.cassandra.connection.host", "127.0.0.1")
+
+```scala
+val conf = new SparkConf(true)
+   .set("spark.cassandra.connection.host", "127.0.0.1")
+```
        
 Create a `SparkContext`. Substitute `127.0.0.1` with the actual address of your Spark Master
 (or use `"local"` to run in local mode): 
-     
-    val sc = new SparkContext("spark://127.0.0.1:7077", "test", conf)
+
+```scala
+val sc = new SparkContext("spark://127.0.0.1:7077", "test", conf)
+```
 
 Enable Cassandra-specific functions on the `SparkContext` and `RDD`:
-     
-    import com.datastax.spark.connector._
+
+```scala
+import com.datastax.spark.connector._
+```
 
 ### Setting up `StreamingContext`
 Follow the directions above for creating a `SparkConf`
 
 Create a `StreamingContext`:
 
-    val ssc = new StreamingContext(conf, Seconds(n))
+```scala
+val ssc = new StreamingContext(conf, Seconds(n))
+```
 
 Enable Cassandra-specific functions on the `StreamingContext`, `DStream` and `RDD`:
-    
-    import com.datastax.spark.connector._
-    import com.datastax.spark.connector.streaming._
+
+```scala
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.streaming._
+```
 
 Create any of the available or custom Spark streams, for example an Akka Actor stream:
 
-    val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+```scala
+val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+```
 
 Writing to Cassandra from a Stream:
 
-    val wc = stream.flatMap(_.split("\\s+"))
-        .map(x => (x, 1))
-        .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", Seq("word", "count"))
+```scala
+val wc = stream.flatMap(_.split("\\s+"))
+    .map(x => (x, 1))
+    .reduceByKey(_ + _)
+    .saveToCassandra("streaming_test", "words", Seq("word", "count"))
+```
 
 Where `saveToCassandra` accepts
 
@@ -89,16 +107,20 @@ Where `saveToCassandra` accepts
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
 
-    val rdd = sc.cassandraTable("test", "kv")
-    println(rdd.count)
-    println(rdd.first)
-    println(rdd.map(_.getInt("value")).sum)        
+```scala
+val rdd = sc.cassandraTable("test", "kv")
+println(rdd.count)
+println(rdd.first)
+println(rdd.map(_.getInt("value")).sum)        
+```
 
 ### Saving data from RDD to Cassandra  
 Add two more rows to the table:
-                                     
-    val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
-    collection.saveToCassandra("test", "kv", Seq("key", "value"))       
+
+```scala
+val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
+collection.saveToCassandra("test", "kv", Seq("key", "value"))       
+```
 
 
 [Next - Connecting to Cassandra](1_connecting.md)
