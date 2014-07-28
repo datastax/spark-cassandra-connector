@@ -36,7 +36,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
 
   private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
 
-  /** Saves the data from RDD to a Cassandra table.
+  /** Saves the data from `RDD` to a Cassandra table.
     * Saves all properties that have corresponding Cassandra columns.
     * The underlying RDD class must provide data for all columns.
     *
