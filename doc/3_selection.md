@@ -8,9 +8,11 @@ to speed up processing.
 
 For performance reasons, you should not fetch columns you don't need. You can achieve this with the `select` method.
 
-    sc.cassandraTable("test", "users").select("username").toArray.foreach(println)
-    // CassandraRow{username: noemail} 
-    // CassandraRow{username: someone}
+```scala
+sc.cassandraTable("test", "users").select("username").toArray.foreach(println)
+// CassandraRow{username: noemail} 
+// CassandraRow{username: someone}
+```
 
 The `select` method can be chained. Every next call can be used to select a subset of columns already selected.
 Selecting a non-existing column would result in throwing an exception.
@@ -23,12 +25,14 @@ Also, some CPU cycles are wasted serializing and deserializing objects that woul
 included in the result. To avoid this overhead, `CassandraRDD` offers the `where` method, which lets you pass 
 arbitrary CQL condition(s) to filter the row set on the server.
 
-    sc.cassandraTable("test", "cars").select("id", "model").where("color = ?", "black").toArray.foreach(println)
-    // CassandraRow[id: KF-334L, model: Ford Mondeo]
-    // CassandraRow[id: MT-8787, model: Hyundai x35]
+```scala
+sc.cassandraTable("test", "cars").select("id", "model").where("color = ?", "black").toArray.foreach(println)
+// CassandraRow[id: KF-334L, model: Ford Mondeo]
+// CassandraRow[id: MT-8787, model: Hyundai x35]
 
-    sc.cassandraTable("test", "cars").select("id", "model").where("color = ?", "silver").toArray.foreach(println)
-    // CassandraRow[id: WX-2234, model: Toyota Yaris]
+sc.cassandraTable("test", "cars").select("id", "model").where("color = ?", "silver").toArray.foreach(println)
+// CassandraRow[id: WX-2234, model: Toyota Yaris]
+```
 
 Note: Although the `ALLOW FILTERING` clause is implicitly added to the generated CQL query, not all predicates 
 are currently allowed by the Cassandra engine. This limitation is going to be addressed in the future 

@@ -10,8 +10,10 @@ keyspace name, table name and a list of columns. Make sure to include at least a
  
 ## Saving a collection of tuples
 
-    collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
-    collection.saveToCassandra("test", "words", Seq("word", "count"))
+```scala
+collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
+collection.saveToCassandra("test", "words", Seq("word", "count"))
+```
     
     cqlsh:test> select * from words;
 
@@ -29,10 +31,11 @@ When saving a collection of objects of a user-defined class, the items to be sav
 must provide appropriately named public property accessors for getting every column
 to be saved. This example provides more information on property-column naming conventions is described [here](mapper.md).
 
-    case class WordCount(word: String, count: Long)
-    collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))    
-    collection.saveToCassandra("test", "words", Seq("word", "count"))
-
+```scala
+case class WordCount(word: String, count: Long)
+collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))    
+collection.saveToCassandra("test", "words", Seq("word", "count"))
+```
 
     cqlsh:test> select * from words;
 
