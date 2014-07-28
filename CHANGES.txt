@@ -6,6 +6,14 @@
     - Added implicit wrappers which simplify access to Cassandra related
       functionality from StreamingContext and DStream.
     - Added a stub for further Spark Streaming integration tests.
+ * Upgraded Java API. (#98)
+    - Refactored existing Java API
+    - Added CassandraJavaRDD as a JAVA counterpart of CassandraRDD
+    - Added Java helpers for accessing Spark Streaming related methods
+    - Added several integration tests
+    - Added a documentation page for JAVA API
+    - Extended Java API demo
+    - Added a lot of API docs
  * Ability to register custom TypeConverters. (#32)
  * Handle null values in StringConverter. (#79)
  * Improved error message when there are no replicas in the local DC. (#69)

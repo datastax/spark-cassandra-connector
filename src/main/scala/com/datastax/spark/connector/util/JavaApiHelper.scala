@@ -31,12 +31,14 @@ object JavaApiHelper {
 
   def toScalaSeq[T](array: Array[T]): Seq[T] = array
 
-  def defaultRowWriterFactory[T](clazz: Class[T], mapper: ColumnMapper[T]) = {
-    RowWriterFactory.defaultRowWriterFactory(getClassTag(clazz), mapper)
+  def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
+
+  def defaultRowWriterFactory[T](classTag: ClassTag[T], mapper: ColumnMapper[T]) = {
+    RowWriterFactory.defaultRowWriterFactory(classTag, mapper)
   }
 
-  def javaBeanColumnMapper[T](clazz: Class[T], columnNameOverride: JavaMap[String, String]): ColumnMapper[T] =
-    new JavaBeanColumnMapper[T](toScalaMap(columnNameOverride))(getClassTag(clazz))
+  def javaBeanColumnMapper[T](classTag: ClassTag[T], columnNameOverride: JavaMap[String, String]): ColumnMapper[T] =
+    new JavaBeanColumnMapper[T](toScalaMap(columnNameOverride))(classTag)
 
   def genericRowReaderFactory: RowReaderFactory[CassandraRow] = RowReaderFactory.GenericRowReader$
 
