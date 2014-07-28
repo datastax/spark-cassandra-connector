@@ -22,17 +22,20 @@ spark.cassandra.auth.conf.factory.class  | name of the class implementing `AuthC
   
 Example:
 
-    val conf = new SparkConf(true)
-            .set("spark.cassandra.connection.host", "192.168.123.10")
-            .set("spark.cassandra.username", "cassandra")            
-            .set("spark.cassandra.password", "cassandra") 
-                         
-    val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
+```scala
+val conf = new SparkConf(true)
+        .set("spark.cassandra.connection.host", "192.168.123.10")
+        .set("spark.cassandra.username", "cassandra")            
+        .set("spark.cassandra.password", "cassandra") 
+                     
+val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
+```
 
 To import Cassandra-specific functions on `SparkContext` and `RDD` objects, call:
 
-    import com.datastax.spark.connector._                                    
-
+```scala
+import com.datastax.spark.connector._                                    
+```
 
 ### Connection management
 
@@ -68,14 +71,13 @@ and therefore can be safely used in lambdas passed to Spark transformations.
 Assuming an appropriately configured `SparkConf` object is stored in the `conf` variable, the following
 code creates a keyspace and a table:
 
-    import com.datastax.spark.connector.cql.CassandraConnector
+```scala
+import com.datastax.spark.connector.cql.CassandraConnector
 
-    CassandraConnector(conf).withSessionDo { session =>
-      session.execute("CREATE KEYSPACE test2 WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-      session.execute("CREATE TABLE test2.words (word text PRIMARY KEY, count int)")
-    }
-
+CassandraConnector(conf).withSessionDo { session =>
+  session.execute("CREATE KEYSPACE test2 WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+  session.execute("CREATE TABLE test2.words (word text PRIMARY KEY, count int)")
+}
+```
 
 [Next - Accessing data](2_loading.md)                                        
-                                        
- 
