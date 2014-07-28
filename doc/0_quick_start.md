@@ -79,6 +79,12 @@ Writing to Cassandra from a Stream:
         .reduceByKey(_ + _)
         .saveToCassandra("streaming_test", "words", Seq("word", "count"))
 
+Where `saveToCassandra` accepts
+
+- keyspaceName: String, tableName: String
+- keyspaceName: String, tableName: String, columnNames: Seq[String]
+- keyspaceName: String, tableName: String, columnNames: Seq[String], batchSize: Option[Int]
+
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
 
