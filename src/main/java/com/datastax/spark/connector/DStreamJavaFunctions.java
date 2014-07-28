@@ -4,18 +4,17 @@ import com.datastax.spark.connector.streaming.DStreamFunctions;
 import com.datastax.spark.connector.util.JavaApiHelper;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.spark.streaming.dstream.DStream;
-
-import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
+import scala.reflect.ClassTag;
 
 @SuppressWarnings("UnusedDeclaration")
 public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final DStream<T> rdd;
     private final DStreamFunctions<T> dsf;
 
-    DStreamJavaFunctions(DStream<T> dStream, Class<T> targetClass) {
-        super(targetClass);
+    DStreamJavaFunctions(DStream<T> dStream, ClassTag<T> classTag) {
+        super(classTag);
         this.rdd = dStream;
-        this.dsf = new DStreamFunctions<>(dStream, getClassTag(targetClass));
+        this.dsf = new DStreamFunctions<>(dStream, classTag);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.datastax.spark.connector;
 
+import com.datastax.spark.connector.util.JavaApiHelper;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -59,17 +60,15 @@ public class CassandraJavaUtil {
      * @param targetClass a class of elements in the provided <code>RDD</code>
      */
     public static <T> RDDJavaFunctions javaFunctions(RDD<T> rdd, Class<T> targetClass) {
-        return new RDDJavaFunctions<>(rdd, targetClass);
+        return new RDDJavaFunctions<>(rdd, JavaApiHelper.getClassTag(targetClass));
     }
 
     /**
      * A static factory method to create a {@link RDDJavaFunctions} based on
      * an existing {@link JavaRDD}.
-     *
-     * @param targetClass a class of elements in the provided <code>RDD</code>
      */
     public static <T> RDDJavaFunctions javaFunctions(JavaRDD<T> rdd, Class<T> targetClass) {
-        return new RDDJavaFunctions<>(JavaRDD.toRDD(rdd), targetClass);
+        return new RDDJavaFunctions<>(rdd.rdd(), JavaApiHelper.getClassTag(targetClass));
     }
 
     /**
@@ -79,19 +78,15 @@ public class CassandraJavaUtil {
      * @param targetClass a class of elements in the provided <code>DStream</code>
      */
     public static <T> DStreamJavaFunctions javaFunctions(DStream<T> dStream, Class<T> targetClass) {
-        return new DStreamJavaFunctions<>(dStream, targetClass);
+        return new DStreamJavaFunctions<>(dStream, JavaApiHelper.getClassTag(targetClass));
     }
 
     /**
      * A static factory method to create a {@link DStreamJavaFunctions} based
      * on an existing {@link JavaDStream}.
-     *
-     * @param targetClass a class of elements in the provided <code>DStream</code>
      */
     public static <T> DStreamJavaFunctions javaFunctions(JavaDStream<T> dStream, Class<T> targetClass) {
-        return new DStreamJavaFunctions<>(dStream.dstream(), targetClass);
+        return new DStreamJavaFunctions<>(dStream.dstream(), JavaApiHelper.getClassTag(targetClass));
     }
-
-
 
 }

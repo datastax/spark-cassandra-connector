@@ -3,18 +3,17 @@ package com.datastax.spark.connector;
 import com.datastax.spark.connector.util.JavaApiHelper;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.spark.rdd.RDD;
-
-import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
+import scala.reflect.ClassTag;
 
 @SuppressWarnings("UnusedDeclaration")
 public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final RDD<T> rdd;
     private final RDDFunctions<T> rddf;
 
-    RDDJavaFunctions(RDD<T> rdd, Class<T> targetClass) {
-        super(targetClass);
+    RDDJavaFunctions(RDD<T> rdd, ClassTag<T> classTag) {
+        super(classTag);
         this.rdd = rdd;
-        this.rddf = new RDDFunctions<>(rdd, getClassTag(targetClass));
+        this.rddf = new RDDFunctions<>(rdd, classTag);
     }
 
     /**

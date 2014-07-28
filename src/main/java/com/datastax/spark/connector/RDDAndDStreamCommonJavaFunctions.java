@@ -2,6 +2,7 @@ package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.writer.RowWriterFactory;
+import scala.reflect.ClassTag;
 
 import java.util.Map;
 
@@ -13,10 +14,10 @@ import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapp
  */
 @SuppressWarnings("UnusedDeclaration")
 public abstract class RDDAndDStreamCommonJavaFunctions<T> {
-    private final Class<T> targetClass;
+    private final ClassTag<T> classTag;
 
-    RDDAndDStreamCommonJavaFunctions(Class<T> targetClass) {
-        this.targetClass = targetClass;
+    RDDAndDStreamCommonJavaFunctions(ClassTag<T> classTag) {
+        this.classTag = classTag;
     }
 
     /**
@@ -72,7 +73,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * to Cassandra as if this method was called on each of them.
      */
     public void saveToCassandra(String keyspace, String table, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(targetClass, columnMapper);
+        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
         saveToCassandra(keyspace, table, rwf);
     }
 
@@ -87,7 +88,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * to Cassandra as if this method was called on each of them.
      */
     public void saveToCassandra(String keyspace, String table, String[] columnNames, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(targetClass, columnMapper);
+        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
         saveToCassandra(keyspace, table, columnNames, rwf);
     }
 
@@ -102,7 +103,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * to Cassandra as if this method was called on each of them.
      */
     public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(targetClass, columnMapper);
+        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
         saveToCassandra(keyspace, table, columnNames, batchSize, rwf);
     }
 
@@ -152,7 +153,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * </pre>
      */
     public void saveToCassandra(String keyspace, String table, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, javaBeanColumnMapper(targetClass, columnNameOverride));
+        saveToCassandra(keyspace, table, javaBeanColumnMapper(classTag, columnNameOverride));
     }
 
     /**
@@ -166,7 +167,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * @see #saveToCassandra(String, String, java.util.Map)
      */
     public void saveToCassandra(String keyspace, String table, String[] columnNames, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, columnNames, javaBeanColumnMapper(targetClass, columnNameOverride));
+        saveToCassandra(keyspace, table, columnNames, javaBeanColumnMapper(classTag, columnNameOverride));
     }
 
     /**
@@ -180,7 +181,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * @see #saveToCassandra(String, String, java.util.Map)
      */
     public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, columnNames, batchSize, javaBeanColumnMapper(targetClass, columnNameOverride));
+        saveToCassandra(keyspace, table, columnNames, batchSize, javaBeanColumnMapper(classTag, columnNameOverride));
     }
 
     /**

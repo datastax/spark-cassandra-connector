@@ -127,7 +127,7 @@ public class SparkContextJavaFunctions {
      */
     public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
-        ColumnMapper<T> cm = javaBeanColumnMapper(targetClass, new HashMap<String, String>());
+        ColumnMapper<T> cm = javaBeanColumnMapper(ct, new HashMap<String, String>());
 
         return cassandraTable(keyspace, table, cm, targetClass);
     }
@@ -144,7 +144,7 @@ public class SparkContextJavaFunctions {
             Class<T> targetClass, Map<String, String> columnNameOverride) {
 
         ClassTag<T> ct = getClassTag(targetClass);
-        ColumnMapper<T> cm = javaBeanColumnMapper(targetClass, columnNameOverride);
+        ColumnMapper<T> cm = javaBeanColumnMapper(ct, columnNameOverride);
 
         return cassandraTable(keyspace, table, cm, targetClass);
     }
