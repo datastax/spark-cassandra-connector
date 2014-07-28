@@ -29,7 +29,7 @@ class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter wi
 
   "CassandraJavaRDD" should "allow to select a subset of columns" in {
     val rows = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .toJavaRDD().select("key").toArray()
+      .select("key").toArray()
     assert(rows.size == 3)
     assert(rows.exists(row => !row.contains("value") && row.getInt("key") == 1))
     assert(rows.exists(row => !row.contains("value") && row.getInt("key") == 2))
@@ -38,14 +38,14 @@ class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter wi
 
   "CassandraJavaRDD" should "return selected columns" in {
     val rdd = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .toJavaRDD().select("key")
+      .select("key")
     assert(rdd.selectedColumnNames().size == 1)
     assert(rdd.selectedColumnNames().contains("key"))
   }
 
   "CassandraJavaRDD" should "allow to use where clause to filter records" in {
     val rows = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .toJavaRDD().where("value = ?", "two").toArray()
+      .where("value = ?", "two").toArray()
     assert(rows.size == 1)
     assert(rows.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
   }

@@ -50,7 +50,7 @@ public class JavaApiDemo implements Serializable {
         javaFunctions(rdd, Person.class).saveToCassandra("test", "people");
 
         // use case: we want to read that data as an RDD of CassandraRows and convert them to strings...
-        JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people").toJavaRDD()
+        JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people")
                 .map(new Function<CassandraRow, String>() {
                     @Override
                     public String call(CassandraRow cassandraRow) throws Exception {
@@ -60,7 +60,7 @@ public class JavaApiDemo implements Serializable {
         System.out.println("Data as CassandraRows: \n" + StringUtils.join("\n", cassandraRowsRDD.toArray()));
 
         // use case: we want to read that data as an RDD of Person beans and also convert them to strings...
-        JavaRDD<String> rdd2 = javaFunctions(sc).cassandraTable("test", "people", Person.class).toJavaRDD()
+        JavaRDD<String> rdd2 = javaFunctions(sc).cassandraTable("test", "people", Person.class)
                 .map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
@@ -70,7 +70,7 @@ public class JavaApiDemo implements Serializable {
         System.out.println("Data as Person beans: \n" + StringUtils.join("\n", rdd2.toArray()));
 
         // use case: we want to filter rows on the database side with use of the where clause
-        JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", Person.class).toJavaRDD()
+        JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", Person.class)
                 .where("name=?", "Anna").map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
@@ -80,7 +80,7 @@ public class JavaApiDemo implements Serializable {
         System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join("\n", rdd3.toArray()));
 
         // use case: we want to explicitly set a projection on the column set
-        JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people").toJavaRDD()
+        JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people")
                 .select("id").map(new Function<CassandraRow, String>() {
                     @Override
                     public String call(CassandraRow cassandraRow) throws Exception {

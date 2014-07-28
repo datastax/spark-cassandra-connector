@@ -1,7 +1,7 @@
 package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.mapper.ColumnMapper;
-import com.datastax.spark.connector.rdd.CassandraRDD;
+import com.datastax.spark.connector.rdd.CassandraJavaRDD;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import org.apache.spark.SparkContext;
@@ -25,21 +25,22 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, a
+     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, a
      * {@link com.datastax.spark.connector.rdd.reader.RowReader} created by the provided
      * {@link com.datastax.spark.connector.rdd.reader.RowReaderFactory} is used to produce
      * object of {@code targetClass} for each fetched row.
      *
      * @see #cassandraTable(String, String)
      */
-    public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rowReaderFactory, Class<T> targetClass) {
+    public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table,
+            RowReaderFactory<T> rowReaderFactory, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
 
-        return scf.cassandraTable(keyspace, table, ct, rowReaderFactory);
+        return scf.cassandraTable(keyspace, table, ct, rowReaderFactory).toJavaRDD();
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, each row
      * is converted to a {@code CassandraRow} object.
      * <p/>
      * Example:
@@ -51,19 +52,19 @@ public class SparkContextJavaFunctions {
      * ...
      *
      * // Obtaining RDD of CassandraRow objects:
-     * CassandraRDD<CassandraRow> rdd = CassandraJavaUtil.javaFunctions(jsc).cassandraTable("test", "words");
+     * CassandraJavaRDD<CassandraRow> rdd = CassandraJavaUtil.javaFunctions(jsc).cassandraTable("test", "words");
      * rdd.first().getString("word");     // foo
      * rdd.first().getInt("count");       // 20
      * </pre>
      */
-    public CassandraRDD<CassandraRow> cassandraTable(String keyspace, String table) {
+    public CassandraJavaRDD<CassandraRow> cassandraTable(String keyspace, String table) {
         RowReaderFactory<CassandraRow> rtf = genericRowReaderFactory();
 
         return cassandraTable(keyspace, table, rtf, CassandraRow.class);
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, each row
      * is converted into the instance of {@code targetClass} with use of the provided custom
      * {@link com.datastax.spark.connector.mapper.ColumnMapper}. By default,
      * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used to map object
@@ -71,7 +72,9 @@ public class SparkContextJavaFunctions {
      *
      * @see #cassandraTable(String, String, Class)
      */
-    public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, ColumnMapper<T> columnMapper, Class<T> targetClass) {
+    public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table,
+            ColumnMapper<T> columnMapper, Class<T> targetClass) {
+
         TypeTags.TypeTag<T> tt = getTypeTag(targetClass);
         RowReaderFactory<T> rtf = new ClassBasedRowReaderFactory<>(tt, columnMapper);
 
@@ -79,7 +82,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, each row
      * is converted into the instance of {@code targetClass}.
      * <p/>
      * Example:
@@ -116,13 +119,13 @@ public class SparkContextJavaFunctions {
      * }
      *
      * // Obtaining RDD of {@code targetClass} objects:
-     * CassandraRDD<WordCount> rdd = CassandraJavaUtil.javaFunctions(jsc)
+     * CassandraJavaRDD<WordCount> rdd = CassandraJavaUtil.javaFunctions(jsc)
      *      .cassandraTable("test", "words", WordCount.class);
      * rdd.first().getWord();     // foo
      * rdd.first().getCount();    // 20
      * </pre>
      */
-    public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass) {
+    public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
         ColumnMapper<T> cm = javaBeanColumnMapper(targetClass, new HashMap<String, String>());
 
@@ -130,14 +133,16 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraRDD}. With this method, each row
+     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, each row
      * is converted into the instance of {@code targetClass}. It works just like
      * {@link #cassandraTable(String, String, Class)} but it additionally allows the specification of
      * a custom property to column name mappings.
      *
      * @see #cassandraTable(String, String, Class, java.util.Map)
      */
-    public <T extends Serializable> CassandraRDD<T> cassandraTable(String keyspace, String table, Class<T> targetClass, Map<String, String> columnNameOverride) {
+    public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table,
+            Class<T> targetClass, Map<String, String> columnNameOverride) {
+
         ClassTag<T> ct = getClassTag(targetClass);
         ColumnMapper<T> cm = javaBeanColumnMapper(targetClass, columnNameOverride);
 
