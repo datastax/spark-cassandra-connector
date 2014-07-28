@@ -9,8 +9,7 @@ import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFa
 import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
 
 /**
- * A bunch of methods which help to develop with Spark and Spark Cassandra Connector in Java.
- * They can be invoked for either {@code RDD} or {@code DStream}.
+ * Java API for either {@code RDD} or {@code DStream}.
  */
 @SuppressWarnings("UnusedDeclaration")
 public abstract class RDDAndDStreamCommonJavaFunctions<T> {
