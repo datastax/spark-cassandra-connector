@@ -34,7 +34,8 @@ class ActorStreamingSpec extends ActorSpec {
       val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
       awaitCond(future.isCompleted)
       for (actor <- future) {
-        watch(system.actorOf(Props(new TestProducer(data.toArray, actor, events))))
+        watch(actor)
+        system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
       }
 
       expectMsgPF(duration) { case Terminated(ref) =>

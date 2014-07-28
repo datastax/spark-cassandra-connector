@@ -20,6 +20,12 @@ trait SparkStreamingFixture {
 
 }
 
+private[streaming] object TestEvent {
+
+  case object Stop
+  case object Completed
+}
+
 class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor {
 
   import context.dispatcher
@@ -30,13 +36,16 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
   val task = context.system.scheduler.schedule(2.second, 1.millis) {
     to ! makeMessage()
     count += 1
-    if (count == scale) self ! "stop"
+    // sent all events we want to send
+    if (count == scale) self ! TestEvent.Stop
   }
 
   def receive: Actor.Receive = {
-    case "stop" =>
+    case TestEvent.Stop =>
+      // stop generating messages that go to the stream
       task.cancel()
-      self ! PoisonPill
+      // initiate stop streaming so we can test assertions on the data
+      to ! TestEvent.Completed
   }
 
   def makeMessage(): String = {
@@ -47,8 +56,9 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
 
 /** A very basic Akka actor which streams String event data to spark.
   * TODO implement further. */
-private [connector] class SimpleActor extends SparkStreamingActor {
+private [streaming] class SimpleActor extends SparkStreamingActor {
   def receive: Actor.Receive = {
-    case e: String => pushBlock(e)
+    case e: String           => pushBlock(e)
+    case TestEvent.Completed => self ! PoisonPill // to know when we can proceed with assertions via cassandra read
   }
 }
