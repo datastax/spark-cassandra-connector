@@ -98,28 +98,6 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
-  /** Internal API: JAVA */
-  private[connector] def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]) {
-    saveToCassandra(keyspaceName, tableName, Seq.empty, None)
-  }
-
-  /** Internal API: JAVA */
-  private[connector] def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String])(implicit rwf: RowWriterFactory[T]) {
-
-    saveToCassandra(keyspaceName, tableName, columnNames, None)
-  }
-
-  /** Internal API: JAVA */
-  private[connector] def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String],
-                      batchSize: Int)(implicit rwf: RowWriterFactory[T]) {
-
-    saveToCassandra(keyspaceName, tableName, columnNames, Some(batchSize))
-  }
-
   /**
     * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
     * Internal API

@@ -8,28 +8,36 @@ This section describes how to access data from Cassandra table with Spark.
 To get a Spark RDD that represents a Cassandra table, 
 call the `cassandraTable` method on the `SparkContext` object. 
 
-    sc.cassandraTable("keyspace name", "table name")
-    
+```scala
+sc.cassandraTable("keyspace name", "table name")
+```    
+
 If no explicit type is given to `cassandraTable`, the result of this expression is `CassandraRDD[CassandraRow]`. 
 
 Create this keyspace and table in Cassandra using cqlsh:
 
-    cqlsh> CREATE KEYSPACE test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-    cqlsh> CREATE TABLE test.words (word text PRIMARY KEY, count int);
+```sql
+CREATE KEYSPACE test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+```
     
 Load data into the table:
 
-    cqlsh> INSERT INTO test.words (word, count) VALUES ('foo', 20);
-    cqlsh> INSERT INTO test.words (word, count) VALUES ('bar', 20);
+```scala
+INSERT INTO test.words (word, count) VALUES ('foo', 20);
+INSERT INTO test.words (word, count) VALUES ('bar', 20);
+```
 
 Now you can read that table as `RDD`:
 
-    val rdd = sc.cassandraTable("test", "words")
-    // rdd: com.datastax.spark.connector.rdd.CassandraRDD[com.datastax.spark.connector.rdd.reader.CassandraRow] = CassandraRDD[0] at RDD at CassandraRDD.scala:41
+```scala
+val rdd = sc.cassandraTable("test", "words")
+// rdd: com.datastax.spark.connector.rdd.CassandraRDD[com.datastax.spark.connector.rdd.reader.CassandraRow] = CassandraRDD[0] at RDD at CassandraRDD.scala:41
 
-    rdd.toArray.foreach(println)
-    // CassandraRow{word: bar, count: 20}
-    // CassandraRow{word: foo, count: 20}   
+rdd.toArray.foreach(println)
+// CassandraRow{word: bar, count: 20}
+// CassandraRow{word: foo, count: 20}   
+```
 
 ### Reading primitive column values
 
@@ -39,33 +47,42 @@ Type conversions are applied on the fly. Use `getOption` variants when you expec
 
 Continuing with the previous example, follow these steps to access individual column values.
 Store the first item of the rdd in the firstRow value.
-    
-    val firstRow = rdd.first
-    // firstRow: com.datastax.spark.connector.rdd.reader.CassandraRow = CassandraRow{word: bar, count: 20}
-    
+
+```scala
+val firstRow = rdd.first
+// firstRow: com.datastax.spark.connector.rdd.reader.CassandraRow = CassandraRow{word: bar, count: 20}
+```
+
 Get the number of columns and column names:
 
-    rdd.columnNames    // Stream(word, count) 
-    rdd.size           // 2 
+```scala
+rdd.columnNames    // Stream(word, count) 
+rdd.size           // 2 
+```
 
-Use one of `getXXX` getters to obtain a column value converted to desired type:
- 
-    firstRow.getInt("count")       // 20       
-    firstRow.getLong("count")      // 20L  
+Use one of `getXXX` getters to obtain a column value converted to desired type: 
+```scala
+firstRow.getInt("count")       // 20       
+firstRow.getLong("count")      // 20L  
+```
 
 Or use a generic get to query the table by passing the return type directly:
 
-    firstRow.get[Int]("count")                   // 20       
-    firstRow.get[Long]("count")                  // 20L
-    firstRow.get[BigInt]("count")                // BigInt(20)
-    firstRow.get[java.math.BigInteger]("count")  // BigInteger(20)
+```scala
+firstRow.get[Int]("count")                   // 20       
+firstRow.get[Long]("count")                  // 20L
+firstRow.get[BigInt]("count")                // BigInt(20)
+firstRow.get[java.math.BigInteger]("count")  // BigInteger(20)
+```
 
 ### Working with nullable data
 
 When reading potentially `null` data, use the `Option` type on the Scala side to prevent getting a `NullPointerException`.
 
-    firstRow.getIntOption("count")        // Some(20)
-    firstRow.get[Option[Int]]("count")    // Some(20)    
+```scala
+firstRow.getIntOption("count")        // Some(20)
+firstRow.get[Option[Int]]("count")    // Some(20)    
+```
 
 ### Reading collections
 
@@ -78,26 +95,34 @@ Assuming you set up the test keyspace earlier, follow these steps to access a Ca
 
 In the test keyspace, set up a collection set using cqlsh:
 
-    cqlsh> CREATE TABLE test.users (username text PRIMARY KEY, emails SET<text>);
-    cqlsh> INSERT INTO test.users (username, emails) 
-         VALUES ('someone', {'someone@email.com', 's@email.com'});
+```sql
+CREATE TABLE test.users (username text PRIMARY KEY, emails SET<text>);
+INSERT INTO test.users (username, emails) 
+     VALUES ('someone', {'someone@email.com', 's@email.com'});
+```
 
 Then in your application, retrieve the first row: 
-         
-    val row = sc.cassandraTable("test", "users").first
-    // row: com.datastax.spark.connector.rdd.reader.CassandraRow = CassandraRow{username: someone, emails: [someone@email.com, s@email.com]}
+
+```scala
+val row = sc.cassandraTable("test", "users").first
+// row: com.datastax.spark.connector.rdd.reader.CassandraRow = CassandraRow{username: someone, emails: [someone@email.com, s@email.com]}
+```
 
 Query the collection set in Cassandra from Spark:
 
-    row.getList[String]("emails")            // Vector(someone@email.com, s@email.com)
-    row.get[List[String]]("emails")          // List(someone@email.com, s@email.com)    
-    row.get[Seq[String]]("emails")           // List(someone@email.com, s@email.com)   :Seq[String]
-    row.get[IndexedSeq[String]]("emails")    // Vector(someone@email.com, s@email.com) :IndexedSeq[String]
-    row.get[Set[String]]("emails")           // Set(someone@email.com, s@email.com)
+```scala
+row.getList[String]("emails")            // Vector(someone@email.com, s@email.com)
+row.get[List[String]]("emails")          // List(someone@email.com, s@email.com)    
+row.get[Seq[String]]("emails")           // List(someone@email.com, s@email.com)   :Seq[String]
+row.get[IndexedSeq[String]]("emails")    // Vector(someone@email.com, s@email.com) :IndexedSeq[String]
+row.get[Set[String]]("emails")           // Set(someone@email.com, s@email.com)
+```
 
 It is also possible to convert a collection to CQL `String` representation:
 
-    row.get[String]("emails")               // "[someone@email.com, s@email.com]"
+```scala
+row.get[String]("emails")               // "[someone@email.com, s@email.com]"
+```
 
 A `null` collection is equivalent to an empty collection, therefore you don't need to use `get[Option[...]]` 
 with collections.

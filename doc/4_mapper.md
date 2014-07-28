@@ -7,12 +7,13 @@ This section describes how to store Cassandra rows in Scala tuples or objects of
 Instead of mapping your Cassandra rows to objects of the `CassandraRow` class, you can directly 
 unwrap column values into tuples of desired type.
  
-    sc.cassandraTable[(String, Int)]("test", "words").select("word", "count").toArray
-    // Array((bar,20), (foo,10))
+```scala
+sc.cassandraTable[(String, Int)]("test", "words").select("word", "count").toArray
+// Array((bar,20), (foo,10))
 
-    sc.cassandraTable[(Int, String)]("test", "words").select("count", "word").toArray
-    // Array((20,bar), (10,foo))
-    
+sc.cassandraTable[(Int, String)]("test", "words").select("count", "word").toArray
+// Array((20,bar), (10,foo))
+```    
 
 ### Mapping rows to (case) objects
 Define a case class with properties named the same as the Cassandra columns. 
@@ -20,9 +21,11 @@ For multi-word column identifiers, separate each word by an underscore in Cassan
 and use the camel case convention on the Scala side. Then provide the explicit class name
 when invoking `cassandraTable`:
 
-    case class WordCount(word: String, count: Int)
-    sc.cassandraTable[WordCount]("test", "words").toArray
-    // Array(WordCount(bar,20), WordCount(foo,10))
+```scala
+case class WordCount(word: String, count: Int)
+sc.cassandraTable[WordCount]("test", "words").toArray
+// Array(WordCount(bar,20), WordCount(foo,10))
+```
 
 The column-property naming convention is:
 
@@ -48,10 +51,11 @@ The class doesn't necessarily need to be a case class. The only requirements are
 
 Property values might be also set by Scala-style setters. The following class is also compatible:
     
-    class WordCount extends Serializable {
-      var word: String = ""
-      var count: Int = 0    
-    }
-       
-       
+```scala
+class WordCount extends Serializable {
+  var word: String = ""
+  var count: Int = 0    
+}
+```       
+     
 [Next - Saving data](5_saving.md)

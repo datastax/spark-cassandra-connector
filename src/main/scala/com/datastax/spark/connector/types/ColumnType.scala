@@ -30,6 +30,7 @@ object ColumnType {
   private val primitiveTypeMap = Map[DataType, ColumnType[_]](
     DataType.text() -> TextType,
     DataType.ascii() -> AsciiType,
+    DataType.varchar() -> VarCharType,
     DataType.cint() -> IntType,
     DataType.bigint() -> BigIntType,
     DataType.cfloat() -> FloatType,
