@@ -3,7 +3,7 @@ package com.datastax.spark.connector.streaming
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.util.Random
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{PoisonPill, Actor, ActorRef}
 import akka.util.Timeout
 import org.scalatest.{BeforeAndAfter, Matchers, WordSpecLike}
 
@@ -36,7 +36,7 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
   def receive: Actor.Receive = {
     case "stop" =>
       task.cancel()
-      context stop self
+      self ! PoisonPill
   }
 
   def makeMessage(): String = {
