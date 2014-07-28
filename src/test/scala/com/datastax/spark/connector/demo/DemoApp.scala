@@ -11,7 +11,7 @@ trait DemoApp {
   val conf = new SparkConf(true).set("spark.cassandra.connection.host", cassandraHost)
 
   // Connect to the Spark cluster:
-  val sc = new SparkContext("local[4]", "demo-program", conf)
+  val sc = new SparkContext("spark://" + sparkMasterHost + ":7077", "demo-program", conf)
 }
 
 object DemoApp {
