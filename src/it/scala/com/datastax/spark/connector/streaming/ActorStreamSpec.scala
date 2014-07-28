@@ -39,7 +39,6 @@ class ActorStreamingSpec extends ActorSpec {
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-        // `<=` because we are in actor async land
         rdd.map(_.count).reduce(_ + _) should be <= (events * 2)
         rdd.toArray.size should be (data.size)
       }
