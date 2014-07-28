@@ -43,6 +43,7 @@ The documentation will be generated to `target/scala-2.10/api/`
   - [Working with user-defined case classes and tuples](doc/4_mapper.md)
   - [Saving datasets to Cassandra](doc/5_saving.md)
   - [Customizing the object mapping](doc/6_advanced_mapper.md)
+  - [Using Connector in Java](doc/7_java_api.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    
