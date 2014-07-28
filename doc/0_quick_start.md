@@ -65,6 +65,7 @@ Create a `StreamingContext`:
     val ssc = new StreamingContext(conf, Seconds(n))
 
 Enable Cassandra-specific functions on the `StreamingContext`, `DStream` and `RDD`:
+    
     import com.datastax.spark.connector._
     import com.datastax.spark.connector.streaming._
 
