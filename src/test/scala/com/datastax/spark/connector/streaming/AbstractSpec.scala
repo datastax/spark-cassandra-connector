@@ -34,10 +34,12 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
   var count = 0
 
   val task = context.system.scheduler.schedule(2.second, 1.millis) {
-    to ! makeMessage()
-    count += 1
-    // sent all events we want to send
-    if (count == scale) self ! TestEvent.Stop
+    if (count < scale) {  // we need this test to avoid generating more than 'scale' messages
+      to ! makeMessage()
+      count += 1
+    } else {
+      self ! TestEvent.Stop
+    }
   }
 
   def receive: Actor.Receive = {
@@ -58,7 +60,7 @@ class TestProducer(data: Array[String], to: ActorRef, scale: Int) extends Actor 
   * TODO implement further. */
 private [streaming] class SimpleActor extends SparkStreamingActor {
   def receive: Actor.Receive = {
-    case e: String           => pushBlock(e)
-    case TestEvent.Completed => self ! PoisonPill // to know when we can proceed with assertions via cassandra read
+    case e: String           ⇒ pushBlock(e)
+    case TestEvent.Completed ⇒ self ! PoisonPill // to know when we can proceed with assertions via cassandra read
   }
 }

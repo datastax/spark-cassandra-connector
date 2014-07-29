@@ -47,18 +47,15 @@ class ActorStreamingSpec extends ActorSpec {
   }
 }
 
-abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with StreamingSpec
-  with CassandraServer {
-  def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
+  extends TestKit(_system) with StreamingSpec with CassandraServer {
 
- useCassandraConfig("cassandra-default.yaml.template")
+  def this() = this(new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+
+  useCassandraConfig("cassandra-default.yaml.template")
 
   after {
     // Spark Context is shared among all integration test so we don't want to stop it here
     ssc.stop(stopSparkContext = false)
   }
 }
-
-
-
-
