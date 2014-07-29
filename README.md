@@ -22,7 +22,7 @@ This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-beta2" withSources() withJavadoc()
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-rc2" withSources() withJavadoc()
 
 ## Building
 You need to install SBT version 0.13 or newer to build this project.
