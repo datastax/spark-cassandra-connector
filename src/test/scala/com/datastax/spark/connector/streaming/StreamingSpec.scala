@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.streaming
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import scala.concurrent.duration._
+import com.datastax.spark.connector.AbstractSpec
 
 /**
  * Usages: Create the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.

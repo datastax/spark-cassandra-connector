@@ -5,9 +5,6 @@ import scala.concurrent.duration._
 import scala.util.Random
 import akka.actor.{Actor, ActorRef}
 import akka.util.Timeout
-import org.scalatest.{BeforeAndAfter, Matchers, WordSpecLike}
-
-trait AbstractSpec extends WordSpecLike with Matchers with BeforeAndAfter
 
 /** Extend (and augment) this fixture for the other input stream types by adding abstract class specs */
 trait SparkStreamingFixture {

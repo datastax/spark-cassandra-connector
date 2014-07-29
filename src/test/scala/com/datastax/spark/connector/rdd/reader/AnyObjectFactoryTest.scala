@@ -2,11 +2,10 @@ package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.util.JavaApiHelper
-import org.scalatest.{Matchers, WordSpec}
 
 import scala.reflect.runtime.universe._
 
-class AnyObjectFactoryTest extends WordSpec with Matchers {
+class AnyObjectFactoryTest extends AbstractSpec {
 
   "AnyObjectFactory" when {
     "instantiated for a bean class with a single, no-args constructor" should {
