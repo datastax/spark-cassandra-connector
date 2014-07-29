@@ -37,8 +37,8 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
   private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
 
   /** Saves the data from `RDD` to a Cassandra table.
-    * Saves all properties that have corresponding Cassandra columns.
-    * The underlying RDD class must provide data for all columns.
+    * By default, it saves all properties that have corresponding Cassandra columns.
+    * However, if you explicitly specify columns names, non-selected columns are left unchanged in Cassandra.
     *
     * Example:
     * {{{
@@ -49,16 +49,20 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     * {{{
     *   case class WordCount(word: String, count: Int, other: String)
     *   val rdd = sc.parallelize(Seq(WordCount("foo", 5, "bar")))
+    * }}}
+    *
+    * By default, the underlying RDD class must provide data for all columns:
+    * {{{
     *   rdd.saveToCassandra("test", "words")
     * }}}
     *
     * With explicit column names which allows for saving only those columns specified,
-    * i.e. this will not save the "other" column.
+    * i.e. this will not save the "other" column:
     * {{{
     *   rdd.saveToCassandra("test", "words", Seq("word", "count"))
     * }}}
     *
-    * With explicit column names and batch size
+    * With explicit column names and batch size:
     * {{{
     *   rdd.saveToCassandra("test", "words", Seq("word", "count"), Some(size)
     * }}}
@@ -67,18 +71,18 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     * This write consistency level is controlled by the following property:
     *   - spark.cassandra.output.consistency.level: consistency level for RDD writes, string matching the ConsistencyLevel enum name.
     *
-    * Scala API
+    * @param keyspaceName The keyspace to use.
     *
-    * @param keyspaceName the keyspace to use
+    * @param tableName The table name to use
     *
-    * @param tableName the table name to use
+    * @param columnNames The list of columns to save data to.
+    *                    Leave it empty to save data to all columns in Cassandra table. If you specify
+    *                    a non-empty seq of columns, non-selected property/column names are left unchanged
+    *                    in Cassandra. In that case, you must select at least all primary key columns.
     *
-    * @param columnNames Saves the data from RDD to a Cassandra table where the RDD object properties must
-    *                    match Cassandra table column names. Non-selected property/column names are left
-    *                    unchanged in Cassandra. All primary key columns must be selected.
-    *
-    * @param batchSize Saves the data from RDD to a Cassandra table in batches of given size. Use this only if
-    *                  you find automatically tuned batch size doesn't result in optimal performance.
+    * @param batchSize The batch size. By default, if the batch size is unspecified, the right amount
+    *                  is calculated automatically according the average row size. Specify explicit value
+    *                  here only if you find automatically tuned batch size doesn't result in optimal performance.
     *                  Larger batches raise memory use by temporary buffers and may incur larger GC pressure on the server.
     *                  Small batches would result in more roundtrips and worse throughput. Typically sending a few kilobytes
     *                  of data per every batch is enough to achieve good performance.
