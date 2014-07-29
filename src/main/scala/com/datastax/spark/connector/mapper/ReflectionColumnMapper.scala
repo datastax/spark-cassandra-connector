@@ -38,7 +38,6 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
       else {
         val paramNames = paranamer.lookupParameterNames(ctor)
         val columnNames = paramNames
-          .drop(oneIfMemberClass(ctor.getDeclaringClass))
           .map(constructorParamToColumnName(_, tableDef))
         columnNames.map(NamedColumnRef)
       }
