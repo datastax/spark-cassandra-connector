@@ -1,5 +1,6 @@
 language: scala
- scala:
-   - "2.10.4"
- jdk:
-   - oraclejdk7
+jdk: oraclejdk7
+sudo: false
+scala:
+  - 2.10.4
+before_install: umask 0022
