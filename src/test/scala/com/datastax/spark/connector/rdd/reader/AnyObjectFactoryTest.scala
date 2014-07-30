@@ -34,7 +34,7 @@ class AnyObjectFactoryTest extends AbstractSpec {
       val factory = new AnyObjectFactory[SampleJavaBeanWithMultipleCtors]
 
       "create an instance of that class with newInstance" in {
-        val instance = factory.newInstance()
+        val instance = newInstance(factory)
         instance shouldBe a[SampleJavaBeanWithMultipleCtors]
       }
 
@@ -48,7 +48,7 @@ class AnyObjectFactoryTest extends AbstractSpec {
       val factory = new AnyObjectFactory[SampleWithNestedJavaBean#InnerClass]
 
       "create an instance of that class with newInstance" in {
-        val instance = factory.newInstance()
+        val instance = newInstance(factory)
         instance shouldBe a[SampleWithNestedJavaBean#InnerClass]
       }
 
@@ -62,7 +62,7 @@ class AnyObjectFactoryTest extends AbstractSpec {
       val factory = new AnyObjectFactory[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass]
 
       "create an instance of that class with newInstance" in {
-        val instance = factory.newInstance(1.asInstanceOf[AnyRef], "one".asInstanceOf[AnyRef])
+        val instance = newInstance(factory)
         instance shouldBe a[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass]
       }
 
@@ -229,6 +229,12 @@ class AnyObjectFactoryTest extends AbstractSpec {
       }
     }
 
+  }
+
+  private def newInstance[T](factory: AnyObjectFactory[T]): T = factory.argCount match {
+    case 0 ⇒ factory.newInstance()
+    case 1 ⇒ factory.newInstance(1.asInstanceOf[AnyRef])
+    case 2 ⇒ factory.newInstance(1.asInstanceOf[AnyRef], "one")
   }
 
 }
