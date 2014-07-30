@@ -71,11 +71,7 @@ object Schema extends Logging {
     val table = column.getTable
     val keyspace = table.getKeyspace
     val columnType = ColumnType.fromDriverType(column.getType)
-    if (column.getIndex != null) {
-     ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, true)
-    } else {
-     ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType)
-    }
+    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, column.getIndex != null)
   }
 
   private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] =
