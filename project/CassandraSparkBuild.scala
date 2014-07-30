@@ -19,17 +19,26 @@ import sbt._
 import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
+  import Settings._
 
-  lazy val root = Project(id = "spark-cassandra-connector", base = file("."))
-    .settings(Settings.defaultSettings: _*)
-    .settings(Settings.buildSettings: _*)
-    .settings(libraryDependencies ++= Dependencies.spark)
-    .configs(IntegrationTest)
+  lazy val root = Project(
+    id = "root",
+    base = file("."),
+    settings = parentSettings,
+    aggregate = Seq(connector, connectorJava)
+  )
 
-  // Make the integration tests inherit class path + classes from the unit tests.
-  // It is needed because we want to use some classes from unit tests in integration tests without duplicating them.
-  lazy val IntegrationTest = config("it") extend Test
+  lazy val connector = LibraryProject("spark-cassandra-connector", Seq(libraryDependencies ++= Dependencies.spark))
 
+  lazy val connectorJava = LibraryProject("spark-cassandra-connector-java", Seq(libraryDependencies ++= Dependencies.spark), connectorCp)
+
+  def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
+    Project(name, file(name), settings = defaultSettings ++ dsettings, dependencies = cpd) configs (IntegrationTest)
+
+  /* Classpaths */
+
+  lazy val connectorCp: Seq[ClasspathDep[ProjectReference]] =
+    Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
 }
 
 object Dependencies {
