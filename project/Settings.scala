@@ -98,7 +98,7 @@ object ShellPrompt {
   def currBranch: String = ("git status -sb" lines_! devnull headOption) getOrElse "-" stripPrefix "## "
 
   lazy val prompt = (state: State) =>
-    "%s:%s:%s> ".format("strikeserver", Project.extract (state).currentProject.id, currBranch)
+    "%s:%s:%s> ".format("spark-cassandra-connector", Project.extract (state).currentProject.id, currBranch)
 
   object devnull extends ProcessLogger {
     def info(s: => String) {}
