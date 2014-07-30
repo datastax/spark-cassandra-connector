@@ -50,8 +50,7 @@ object Settings extends Build {
     scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-    compileOrder := CompileOrder.ScalaThenJava
+    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet 
     // tbd: crossVersion := CrossVersion.binary,
   )
 
