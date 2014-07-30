@@ -1,4 +1,7 @@
-# Lightning-fast cluster computing with Spark and Cassandra
+# Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
+
+ 
+## Lightning-fast cluster computing with Spark and Cassandra
 
 This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and 
 execute arbitrary CQL queries in your Spark applications.
