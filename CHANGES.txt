@@ -1,4 +1,4 @@
-
+ * Add indexedColumn to ColumnDef (#122)
 
 1.0.0 RC 2
  * Language specific highlighting in the documentation (#105)
