@@ -61,7 +61,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public String[] selectedColumnNames() {
         // explicit type cast is intentional and required here
         //noinspection RedundantCast
-        return (String []) rdd().selectedColumnNames().toArray(getClassTag(String.class));
+        return (String []) rdd().selectedColumnNames().<String>toArray(getClassTag(String.class));
     }
 
 }

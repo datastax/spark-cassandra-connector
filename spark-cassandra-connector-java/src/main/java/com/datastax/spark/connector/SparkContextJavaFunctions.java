@@ -2,6 +2,7 @@ package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.CassandraJavaRDD;
+import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import org.apache.spark.SparkContext;
@@ -25,6 +26,13 @@ public class SparkContextJavaFunctions {
     }
 
     /**
+     * Converts {@code CassandraRDD} into {@code CassandraJavaRDD}.
+     */
+    public <T extends Serializable> CassandraJavaRDD<T> toJavaRDD(CassandraRDD<T> rdd, Class<T> targetClass) {
+        return new CassandraJavaRDD<>(rdd, targetClass);
+    }
+
+    /**
      * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, a
      * {@link com.datastax.spark.connector.rdd.reader.RowReader} created by the provided
      * {@link com.datastax.spark.connector.rdd.reader.RowReaderFactory} is used to produce
@@ -36,7 +44,7 @@ public class SparkContextJavaFunctions {
             RowReaderFactory<T> rowReaderFactory, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
 
-        return scf.cassandraTable(keyspace, table, ct, rowReaderFactory).toJavaRDD();
+        return toJavaRDD(scf.cassandraTable(keyspace, table, ct, rowReaderFactory), targetClass);
     }
 
     /**
