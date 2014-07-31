@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 
 class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends WritableToCassandra[T] with Serializable {
 
-  /** Performs [[com.datastax.spark.connector.writer.WritableToCassandra.saveToCassandra()]] for each produced RDD. */
+  /** Performs [[com.datastax.spark.connector.writer.WritableToCassandra]] for each produced RDD. */
   def saveToCassandra(keyspaceName: String, tableName: String,
                       columnNames: Seq[String] = Fields.ALL,
                       batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
