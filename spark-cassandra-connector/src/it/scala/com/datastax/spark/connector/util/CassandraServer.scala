@@ -40,7 +40,6 @@ object CassandraServer {
 
         CassandraConnector.evictCache()
         cassandra = new CassandraServerRunner(configTemplate)
-        System.setProperty(HostProperty, "127.0.0.1")
         currentConfigTemplate = configTemplate
       }
     }

@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
-
 import com.datastax.spark.connector.util.CassandraServer
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -81,7 +79,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with CassandraServer
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(InetAddress.getByName("127.0.0.1"))
+    val conn2 = CassandraConnector(CassandraServer.cassandraHost)
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()
