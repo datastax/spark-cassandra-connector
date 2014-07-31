@@ -49,11 +49,13 @@ object Settings extends Build {
   lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
-    javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
+    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
-    parallelExecution in Global := false
+    parallelExecution in Global := false,
+    autoAPIMappings := true
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
