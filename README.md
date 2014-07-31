@@ -22,7 +22,11 @@ This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-rc2" withSources() withJavadoc()
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-rc3" withSources() withJavadoc()
+
+If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
+
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.0.0-rc3" withSources() withJavadoc()
 
 ## Building
 You need to install SBT version 0.13 or newer to build this project.
@@ -31,8 +35,13 @@ In the project root directory run:
     sbt package
     sbt doc
     
-The library package jar will be placed in `target/scala-2.10/`
-The documentation will be generated to `target/scala-2.10/api/`    
+The library package jars will be placed in:
+  - `spark-cassandra-connector/target/scala-2.10/`
+  - `spark-cassandra-connector-java/target/scala-2.10/`
+
+The documentation will be generated to: 
+  - `spark-cassandra-connector/target/scala-2.10/api/`    
+  - `spark-cassandra-connector-java/target/scala-2.10/api/`    
      
 ## Documentation
 

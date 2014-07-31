@@ -5,8 +5,19 @@ This section describes how to access the functionality of Connector when you wri
 It is assumed that you already familiarized yourself with the previous sections and you understand how 
 Connector works.
 
+### Prerequisites 
+On order to use Java API, you need to add the Java API module to the list of dependencies:
+
+```scala
+libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.0.0-rc3" withSources() withJavadoc()
+```
+
 The best way to use Connector Java API is to import statically all the methods in `CassandraJavaUtil`. 
 This utility class is the main entry point for Connector Java API.
+
+```java
+import static com.datastax.spark.connector.CassandraJavaUtil.*;
+```
 
 ### Accessing Cassandra tables in Java
 `CassandraJavaRDD` is a `CassandraRDD` counterpart in Java. It allows to invoke easily Connector specific methods
