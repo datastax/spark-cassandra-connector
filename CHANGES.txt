@@ -18,7 +18,7 @@
     - Added a documentation page for JAVA API
     - Extended Java API demo
     - Added a lot of API docs
-
+* Added Travis CI build yaml file
 
 1.0.0 RC 1
  * Ability to register custom TypeConverters. (#32)
