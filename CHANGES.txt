@@ -1,4 +1,4 @@
-
+ * Extracted Java API into a separate module (#99)
 
 1.0.0 RC 2
  * Language specific highlighting in the documentation (#105)
