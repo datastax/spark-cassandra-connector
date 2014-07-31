@@ -79,7 +79,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     *                    If specified, uses only the unique column names, and you must select at least all primary key
     *                    columns. All other fields are discarded. Non-selected property/column names are left unchanged.
     *                    If not specified, will save data to all columns in the Cassandra table.
-    *                    Defaults to all columns: `TableWriter.AllColumns`.
+    *                    Defaults to all columns: `Fields.ALL`.
     *
     * @param batchSize The batch size. By default, if the batch size is unspecified, the right amount
     *                  is calculated automatically according the average row size. Specify explicit value
@@ -92,7 +92,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
                       tableName: String,
                       columnNames: Seq[String] = Fields.ALL,
                       batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
-
+ 
     val writer = batchSize match {
       case None       => tableWriter(keyspaceName, tableName, columnNames, None)(rwf)
       case Some(size) => tableWriter(keyspaceName, tableName, columnNames, batchSize)(rwf)
