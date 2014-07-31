@@ -104,7 +104,31 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
         row.getString(2) should be (null)
       }
     }
+  }
 
+  it should "write all column data if Fields.ALL or empty collection is passed to 'columnNames'" in {
+    val col = Seq((1, 1L, None))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", Fields.ALL)
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) should be (1)
+        row.getInt(0) should be (1)
+        row.getString(2) should be (null)
+      }
+    }
+
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", Seq.empty)
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) should be (1)
+        row.getInt(0) should be (1)
+        row.getString(2) should be (null)
+      }
+    }
   }
 
   it should "write collections" in {

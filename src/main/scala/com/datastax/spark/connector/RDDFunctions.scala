@@ -1,7 +1,7 @@
 package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.writer.{RowWriterFactory, TableWriter}
+import com.datastax.spark.connector.writer.{Fields, RowWriterFactory, TableWriter}
 import com.datastax.driver.core.ConsistencyLevel
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
@@ -76,9 +76,10 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     * @param tableName The table name to use
     *
     * @param columnNames The list of columns to save data to.
-    *                    Leave it empty to save data to all columns in Cassandra table. If you specify
-    *                    a non-empty seq of columns, non-selected property/column names are left unchanged
-    *                    in Cassandra. In that case, you must select at least all primary key columns.
+    *                    If specified, uses only the unique column names, and you must select at least all primary key
+    *                    columns. All other fields are discarded. Non-selected property/column names are left unchanged.
+    *                    If not specified, will save data to all columns in the Cassandra table.
+    *                    Defaults to all columns: `Fields.ALL`.
     *
     * @param batchSize The batch size. By default, if the batch size is unspecified, the right amount
     *                  is calculated automatically according the average row size. Specify explicit value
@@ -89,15 +90,13 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     */
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
-                      columnNames: Seq[String] = Seq.empty,
+                      columnNames: Seq[String] = Fields.ALL,
                       batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
-
-    val writer =
-      if (columnNames.isEmpty) tableWriter(keyspaceName, tableName, None, None)(rwf) else
-        batchSize match {
-          case None       => tableWriter(keyspaceName, tableName, Some(columnNames), None)(rwf)
-          case Some(size) => tableWriter(keyspaceName, tableName, Some(columnNames), batchSize)(rwf)
-        }
+ 
+    val writer = batchSize match {
+      case None       => tableWriter(keyspaceName, tableName, columnNames, None)(rwf)
+      case Some(size) => tableWriter(keyspaceName, tableName, columnNames, batchSize)(rwf)
+    }
 
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
@@ -107,7 +106,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     * Internal API
     */
   private[connector] def tableWriter(keyspace: String, table: String,
-                                     columns: Option[Seq[String]],
+                                     columns: Seq[String],
                                      batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
     TableWriter[T](
       connector,
