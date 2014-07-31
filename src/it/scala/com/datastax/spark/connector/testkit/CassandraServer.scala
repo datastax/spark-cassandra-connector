@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.util
+package com.datastax.spark.connector.testkit
 
 import java.net.InetAddress
 
@@ -23,7 +23,7 @@ object CassandraServer {
   private var currentConfigTemplate: String = null
 
   val cassandraHost = {
-    val host = Option(System.getenv(CassandraServer.HostProperty)).getOrElse("127.0.0.1")
+    val host = Option(System.getenv(CassandraServer.HostProperty)).getOrElse(DefaultHost)
     InetAddress.getByName(host)
   }
 

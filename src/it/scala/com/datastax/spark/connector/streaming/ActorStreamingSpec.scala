@@ -2,15 +2,15 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{Terminated, ActorSystem, Props}
 import akka.testkit.TestKit
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.demo.DemoApp.WordCount
-import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.testkit._
 
-class ActorStreamingSpec extends ActorSpec {
+class ActorStreamingSpec extends ActorSpec with CounterFixture {
+  import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
   CassandraConnector(SparkServer.conf).withSessionDo { session =>
@@ -21,7 +21,8 @@ class ActorStreamingSpec extends ActorSpec {
 
   "actorStream" must {
     "write from an actor stream to a cassandra table and read what was written from cassandra" in {
-      val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+
+      val stream = ssc.actorStream[String](Props[SimpleStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
@@ -35,27 +36,22 @@ class ActorStreamingSpec extends ActorSpec {
       awaitCond(future.isCompleted)
       for (actor <- future) {
         watch(actor)
-        system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
+        system.actorOf(Props(new TestProducer(data.toArray, actor)))
       }
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-        rdd.map(_.count).reduce(_ + _) should be (events * 2)
-        rdd.toArray.size should be (data.size)
+        awaitCond(rdd.map(_.count).reduce(_ + _) == scale * 2)
+        rdd.toArray().length should be (data.size)
       }
     }
   }
 }
 
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
-  extends TestKit(_system) with StreamingSpec with CassandraServer {
+  extends TestKit(_system) with StreamingSpec {
 
   def this() = this(new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
-  useCassandraConfig("cassandra-default.yaml.template")
-
-  after {
-    // Spark Context is shared among all integration test so we don't want to stop it here
-    ssc.stop(stopSparkContext = false)
-  }
 }
+

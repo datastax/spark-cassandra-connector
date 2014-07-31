@@ -1,9 +1,10 @@
-package com.datastax.spark.connector.util
+package com.datastax.spark.connector.testkit
 
-import java.io.{IOException, FileOutputStream, File}
+import java.io.{File, FileOutputStream, IOException}
 import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnectorConf
+import com.datastax.spark.connector.util.IOUtils
 import com.google.common.io.Files
 import org.apache.cassandra.io.util.FileUtils
 
@@ -40,7 +41,7 @@ class CassandraServerRunner(val configTemplate: String) {
     .inheritIO()
     .start()
 
-  if (!IOUtils.waitForPortOpen(InetAddress.getByName("127.0.0.1"), CassandraConnectorConf.DefaultNativePort, 10000))
+  if (!IOUtils.waitForPortOpen(InetAddress.getByName(DefaultHost), CassandraConnectorConf.DefaultNativePort, 10000))
     throw new IOException("Failed to start Cassandra.")
 
   def destroy() {
