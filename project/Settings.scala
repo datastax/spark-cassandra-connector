@@ -46,7 +46,7 @@ object Settings extends Build {
   )
 
   // add ++ formatSettings
-  lazy val defaultSettings = buildSettings ++ testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
