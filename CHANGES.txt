@@ -57,6 +57,8 @@
  * Extracted out initial testkit for unit and integration tests, and future testkit module.
  * Added new WritableToCassandra trait which both RDDFunction and DStreamFunction both implement.
    Documentation moved to WritableToCassandra.
+ * Fixed broken links in API documentation.
+ * Refactored RDDFunctions and DStreamFunctions - merged saveToCassandra overloaded methods into a single method with defaults.
 
 1.0.0 beta 1
  * CassandraRDD#createStatement doesn't obtain a new session, but reuses
