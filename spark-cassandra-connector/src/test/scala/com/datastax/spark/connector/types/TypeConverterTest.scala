@@ -12,6 +12,7 @@ import org.junit.Test
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
+import com.datastax.spark.connector.testkit._
 
 class TypeConverterTest {
 
@@ -146,7 +147,7 @@ class TypeConverterTest {
   @Test
   def testInetAddress() {
     val c = TypeConverter.forType[InetAddress]
-    assertEquals(InetAddress.getByName("127.0.0.1"), c.convert("127.0.0.1"))
+    assertEquals(InetAddress.getByName(DefaultHost), c.convert(DefaultHost))
   }
 
   @Test

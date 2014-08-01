@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.util.CassandraServer
 import org.scalatest.{FlatSpec, Matchers}
+import com.datastax.spark.connector.testkit._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)

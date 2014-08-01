@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.util
+package com.datastax.spark.connector.testkit
 
 import org.apache.spark.{SparkEnv, SparkConf, SparkContext}
 

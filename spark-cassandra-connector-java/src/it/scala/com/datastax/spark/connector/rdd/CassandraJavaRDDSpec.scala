@@ -1,16 +1,26 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+<<<<<<< HEAD:spark-cassandra-connector-java/src/it/scala/com/datastax/spark/connector/rdd/CassandraJavaRDDSpec.scala
+=======
+import java.net.InetAddress
 
 import scala.collection.JavaConversions._
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+//>>>>>>> wip-remove-scaladoc-warnings:src/it/scala/com/datastax/spark/connector/rdd/CassandraJavaRDDSpec.scala
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.testkit._
 
 class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
 
   useCassandraConfig("cassandra-default.yaml.template")
+//<<<<<<< HEAD:spark-cassandra-connector-java/src/it/scala/com/datastax/spark/connector/rdd/CassandraJavaRDDSpec.scala
   val conn = CassandraConnector(CassandraServer.cassandraHost)
+/*
+=======
+  val conn = CassandraConnector(InetAddress.getByName(DefaultHost))
+>>>>>>> wip-remove-scaladoc-warnings:src/it/scala/com/datastax/spark/connector/rdd/CassandraJavaRDDSpec.scala
+*/
 
   before {
     conn.withSessionDo { session =>

@@ -46,8 +46,8 @@ object Settings extends Build {
   )
 
   // add ++ formatSettings
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
-    scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
+  lazy val defaultSettings = buildSettings ++ testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+    scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -61,7 +61,7 @@ object Settings extends Build {
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
     previousArtifact := None
   )
- 
+
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   val testOptionSettings = Seq(

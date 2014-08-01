@@ -1,12 +1,10 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
-import com.datastax.spark.connector.types.{CounterType, ColumnType}
-
-import org.apache.spark.Logging
-
 import scala.collection.JavaConversions._
 import scala.language.existentials
+import org.apache.spark.Logging
+import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
+import com.datastax.spark.connector.types.{CounterType, ColumnType}
 
 sealed trait ColumnRole
 case object PartitionKeyColumn extends ColumnRole
@@ -31,6 +29,16 @@ case class ColumnDef(keyspaceName: String,
   def componentIndex = columnRole match {
     case ClusteringColumn(i) => Some(i)
     case _ => None
+  }
+}
+
+private[connector] object ColumnDef {
+
+  def apply(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
+    val table = column.getTable
+    val keyspace = table.getKeyspace
+    val columnType = ColumnType.fromDriverType(column.getType)
+    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType)
   }
 }
 
@@ -85,9 +93,9 @@ object Schema extends Logging {
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
     for (column <- regularColumns) yield
       if (column.isStatic)
-        toColumnDef(column, StaticColumn)
+        ColumnDef(column, StaticColumn)
       else
-        toColumnDef(column, RegularColumn)
+        ColumnDef(column, RegularColumn)
   }
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.

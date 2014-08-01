@@ -54,7 +54,9 @@
  * Added Java API. Fixed a bug in ClassBasedRowReader which caused
    problems when data were read into Java beans. Added type converters
    for boxed Java primitive types. (#11)
-
+ * Extracted out initial testkit for unit and integration tests, and future testkit module.
+ * Added new WritableToCassandra trait which both RDDFunction and DStreamFunction both implement.
+   Documentation moved to WritableToCassandra.
 
 1.0.0 beta 1
  * CassandraRDD#createStatement doesn't obtain a new session, but reuses

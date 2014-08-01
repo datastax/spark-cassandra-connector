@@ -5,8 +5,8 @@ import java.util.Date
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.testkit.{SparkServer, CassandraServer}
 import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
 
 import org.scalatest.{FlatSpec, Matchers}
 import scala.reflect.runtime.universe._

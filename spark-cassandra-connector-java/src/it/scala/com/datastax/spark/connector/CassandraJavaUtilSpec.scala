@@ -1,7 +1,7 @@
 package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
+import com.datastax.spark.connector.testkit.{SparkServer, CassandraServer}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions._

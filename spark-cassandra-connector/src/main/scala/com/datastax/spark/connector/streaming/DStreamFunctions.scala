@@ -1,30 +1,19 @@
 package com.datastax.spark.connector.streaming
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.streaming.dstream.DStream
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.writer.{WritableToCassandra, Fields, RowWriterFactory}
 
 import scala.reflect.ClassTag
 
-class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends Serializable {
+class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends WritableToCassandra[T] with Serializable {
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName)(rwf))
-  }
+  /** Performs [[com.datastax.spark.connector.writer.WritableToCassandra]] for each produced RDD. */
+  def saveToCassandra(keyspaceName: String, tableName: String,
+                      columnNames: Seq[String] = Fields.ALL,
+                      batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String])(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName, columnNames)(rwf))
-  }
+    dstream.foreachRDD(_.saveToCassandra(keyspaceName, tableName, columnNames, batchSize)(rwf))
 
-  /** Performs [[RDDFunctions.saveToCassandra]] for each produced RDD. */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String],
-                      batchSize: Int)(implicit rwf: RowWriterFactory[T]) {
-    dstream.foreachRDD(rdd => rdd.saveToCassandra(keyspaceName, tableName, columnNames, batchSize)(rwf))
   }
 }

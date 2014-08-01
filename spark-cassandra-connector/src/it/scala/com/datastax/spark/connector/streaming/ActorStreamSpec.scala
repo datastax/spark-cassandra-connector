@@ -1,45 +1,16 @@
 package com.datastax.spark.connector.streaming
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Props, Terminated, ActorSystem}
 import akka.testkit.TestKit
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.util.{CassandraServer, SparkServer}
+import com.datastax.spark.connector.testkit._
 
-/**
- * Usages: Create the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
- *
- * val ssc = new StreamingContext(conf, Milliseconds(500))
- *
- * Akka
- * {{{
- *   val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
- * }}}
- *
- * On upgrade examples:
- * Kafka
- * {{{
- *   val stream: ReceiverInputDStream[(String, String)] =
- *     KafkaUtils.createStream(ssc, kafkaParams, topics, StorageLevel.MEMORY_AND_DISK_SER_2)
- * }}}
- *
- * ZeroMQ
- * {{{
- *   val stream: ReceiverInputDStream[String] = ZeroMQUtils.createStream(ssc, publishUrl, subscribe, bytesToObjects)
- * }}}
- *
- * Twitter
- * {{{
- *   val stream: ReceiverInputDStream[Status] = TwitterUtils.createStream(ssc, None)
- * }}}
- *
- * etc.
- */
-class ActorStreamingSpec extends ActorSpec {
-  import com.datastax.spark.connector.SparkFixture._
+class ActorStreamingSpec extends ActorSpec with CounterFixture {
+  import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
   CassandraConnector(SparkServer.conf).withSessionDo { session =>
@@ -50,38 +21,37 @@ class ActorStreamingSpec extends ActorSpec {
 
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
-      val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+      val stream = ssc.actorStream[String](Props[SimpleStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", Seq("word", "count"))
+        .saveToCassandra("streaming_test", "words", Seq("word", "count"), Some(1))
 
       ssc.start()
 
       import system.dispatcher
       val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
       awaitCond(future.isCompleted)
-      for (actor <- future) system.actorOf(Props(new TestProducer(data.toArray, actor, events)))
-      Thread.sleep(duration.toMillis)
+      for (actor <- future) {
+        watch(actor)
+        system.actorOf(Props(new TestProducer(data.toArray, actor)))
+      }
 
-      val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-      rdd.map(_.count).reduce(_ + _) should be (events * 2)
-      rdd.toArray.size should be (data.size)
+      expectMsgPF(duration) { case Terminated(ref) =>
+        val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
+        awaitCond(rdd.map(_.count).reduce(_ + _) == scale * 2)
+        rdd.toArray().length should be (data.size)
+      }
     }
   }
 }
 
-abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem) extends TestKit(_system) with StreamingSpec
-  with CassandraServer {
+abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
+  extends TestKit(_system) with StreamingSpec {
+
   def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
- useCassandraConfig("cassandra-default.yaml.template")
-
-  after {
-    // Spark Context is shared among all integration test so we don't want to stop it here
-    ssc.stop(stopSparkContext = false)
-  }
 }
 
 

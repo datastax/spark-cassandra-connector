@@ -161,7 +161,7 @@ object AnyObjectFactory extends Logging {
 
   /**
    * This method checks if the class is a member class which requires providing a reference to the enclosing in its
-   * constructors. We cannot just check it by invoking [[java.lang.Class#isMemberClass isMemberClass]] because it
+   * constructors. We cannot just check it by invoking `java.lang.Class#isMemberClass` because it
    * will return `true` for classes enclosed in Scala objects. They do not accept reference to enclosing
    * class in their constructors, and therefore they need to be treated as normal, top level classes.
    */
@@ -171,8 +171,8 @@ object AnyObjectFactory extends Logging {
   }
 
   /**
-   * Returns an enclosing class wrapped by [[scala.Option Option]]. It returns `Some` if [[isRealMemberClass()]]
-   * returns `true`.
+   * Returns an enclosing class wrapped by `Option`. It returns `Some` if
+   * [[com.datastax.spark.connector.rdd.reader.AnyObjectFactory#isRealMemberClass isRealMemberClass]] returns `true`.
    */
   def getRealEnclosingClass[T](clazz: Class[T]) = if (isRealMemberClass(clazz)) Some(clazz.getEnclosingClass) else None
 

@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
-
-import com.datastax.spark.connector.util.CassandraServer
+import com.datastax.spark.connector.testkit.CassandraServer
 import org.scalatest.{Matchers, FlatSpec}
 
 class CassandraAuthenticatedConnectorSpec  extends FlatSpec with Matchers with CassandraServer {
