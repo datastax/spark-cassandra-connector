@@ -40,7 +40,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-        awaitCond(rdd.map(_.count).reduce(_ + _) == scale * 2)
+        awaitCond(rdd.toArray().nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
         rdd.toArray().length should be (data.size)
       }
     }
