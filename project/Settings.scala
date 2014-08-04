@@ -34,39 +34,50 @@ object Settings extends Build {
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.0.0-rc2",
+    version in ThisBuild := "1.0.0-SNAPSHOT",
     scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
+  val parentSettings = buildSettings ++ Seq(
+    publishArtifact := false,
+    publish := {}
+  )
+
   // add ++ formatSettings
   lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
-    scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", "rootdoc.txt"),
+    scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
-    javacOptions ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
+    javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
+    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
+    parallelExecution in ThisBuild := false,
+    parallelExecution in Global := false,
+    autoAPIMappings := true
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
     previousArtifact := None
   )
 
-  val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.testTasks)
+  val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   val testOptionSettings = Seq(
     // commented out for now until migrated to: Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  lazy val testSettings = tests ++ Defaults.itSettings ++ Seq(
+  lazy val testSettings = tests ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
     fork in Test := true,
-    fork in IntegrationTest := true
+    fork in IntegrationTest := true,
+    (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
+    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(

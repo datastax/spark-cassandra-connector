@@ -1,4 +1,5 @@
  * Add indexedColumn to ColumnDef (#122)
+ * Extracted Java API into a separate module (#99)
 
 1.0.0 RC 2
  * Language specific highlighting in the documentation (#105)
@@ -24,7 +25,6 @@
  * Ability to register custom TypeConverters. (#32)
  * Handle null values in StringConverter. (#79)
  * Improved error message when there are no replicas in the local DC. (#69)
-
 
 1.0.0 beta 2
  * DSE compatibility improvements. (#64)
@@ -54,7 +54,11 @@
  * Added Java API. Fixed a bug in ClassBasedRowReader which caused
    problems when data were read into Java beans. Added type converters
    for boxed Java primitive types. (#11)
-
+ * Extracted out initial testkit for unit and integration tests, and future testkit module.
+ * Added new WritableToCassandra trait which both RDDFunction and DStreamFunction both implement.
+   Documentation moved to WritableToCassandra.
+ * Fixed broken links in API documentation.
+ * Refactored RDDFunctions and DStreamFunctions - merged saveToCassandra overloaded methods into a single method with defaults.
 
 1.0.0 beta 1
  * CassandraRDD#createStatement doesn't obtain a new session, but reuses
