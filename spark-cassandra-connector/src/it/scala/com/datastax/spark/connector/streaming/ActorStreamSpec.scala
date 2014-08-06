@@ -2,6 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{Props, Terminated, ActorSystem}
 import akka.testkit.TestKit
+import com.datastax.spark.connector.writer.WritableColumns
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
@@ -10,6 +11,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.testkit._
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture {
+  import WritableColumns._
   import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
@@ -26,7 +28,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", Seq("word", "count"), Some(1))
+        .saveToCassandra("streaming_test", "words", ColumnNames(Set("word", "count")), 1)
 
       ssc.start()
 
