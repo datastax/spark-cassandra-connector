@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+
+import java.lang.Boolean._
+
 import sbt._
 import sbt.Keys._
 import sbt.plugins.{JvmPlugin, IvyPlugin}
@@ -56,6 +59,15 @@ object Settings extends Build {
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
     autoAPIMappings := true
+  )
+
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
+    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
+    parallelExecution in ThisBuild := false,
+    parallelExecution in Global := false
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(

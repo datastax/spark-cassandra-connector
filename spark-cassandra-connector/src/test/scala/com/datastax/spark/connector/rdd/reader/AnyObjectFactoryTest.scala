@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.util.JavaApiHelper
 import org.apache.commons.lang3.SerializationUtils
+import com.datastax.spark.connector.testkit._
 import org.junit.Assert._
 
 import scala.reflect.runtime.universe._
