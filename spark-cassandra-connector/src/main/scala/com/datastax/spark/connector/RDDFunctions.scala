@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
+import com.datastax.spark.connector.rdd.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.writer._
 import com.datastax.driver.core.ConsistencyLevel
@@ -10,7 +11,6 @@ import scala.reflect.ClassTag
 
 /** Provides Cassandra-specific methods on `RDD` */
 class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
-  import WritableColumns._
 
   private lazy val batchSizeInRowsStr = rdd.sparkContext.getConf.get(
     "spark.cassandra.output.batch.size.rows", "auto")
@@ -53,7 +53,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
    * Saves the data from `RDD` to a Cassandra table. Uses the specified column names.
    * @see [[WritableToCassandra]]
    */
-  def saveToCassandra(keyspaceName: String, tableName: String, columns: ColumnNames)(implicit rwf: RowWriterFactory[T]): Unit = {
+  def saveToCassandra(keyspaceName: String, tableName: String, columns: SomeColumns)(implicit rwf: RowWriterFactory[T]): Unit = {
     val writer = tableWriter(keyspaceName, tableName, columns, None)(rwf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
@@ -62,7 +62,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
    * Saves the data from `RDD` to a Cassandra table. Uses the specified column names with an additional batch size.
    * @see [[WritableToCassandra]]
    */
-  def saveToCassandra(keyspaceName: String, tableName: String, columns: ColumnNames, batchSize: Int)(implicit rwf: RowWriterFactory[T]): Unit = {
+  def saveToCassandra(keyspaceName: String, tableName: String, columns: SomeColumns, batchSize: Int)(implicit rwf: RowWriterFactory[T]): Unit = {
     val writer = tableWriter(keyspaceName, tableName, columns, Some(batchSize))(rwf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
@@ -72,7 +72,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
     * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
     */
   private[connector] def tableWriter(keyspaceName: String, tableName: String,
-                                     columns: WritableColumns, batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
+                                     columns: ColumnSelector, batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
 
     TableWriter[T](
       connector,

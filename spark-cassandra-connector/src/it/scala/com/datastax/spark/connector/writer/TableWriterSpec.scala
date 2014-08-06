@@ -4,6 +4,7 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.SomeColumns
 import com.datastax.spark.connector.types.TypeConverter
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector.testkit._
@@ -16,7 +17,6 @@ case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class CustomerId(id: String)
 
 class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
-  import WritableColumns._
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)
@@ -49,7 +49,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   "A TableWriter" should "write RDD of tuples" in {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", ColumnNames(Set("key", "group", "value")))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
     verifyKeyValueTable()
   }
 
@@ -97,7 +97,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "write empty values" in {
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", ColumnNames(Set("key", "group", "value")))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.key_value").all()
       result should have size 1
@@ -109,7 +109,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "write only specific column data if ColumnNames is passed as 'columnNames'" in {
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", ColumnNames(Set("key", "group")))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.key_value").all()
       result should have size 1
@@ -124,7 +124,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     val col = Seq(
       (1, Vector("item1", "item2"), Set("item1", "item2"), Map("key1" -> "value1", "key2" -> "value2")),
       (2, Vector.empty[String], Set.empty[String], Map.empty[String, String]))
-    sc.parallelize(col).saveToCassandra("write_test", "collections", ColumnNames(Set("key", "l", "s", "m")))
+    sc.parallelize(col).saveToCassandra("write_test", "collections", SomeColumns("key", "l", "s", "m"))
 
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.collections").all()
@@ -143,7 +143,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "write blobs" in {
     val col = Seq((1, Some(Array[Byte](0, 1, 2, 3))), (2, None))
-    sc.parallelize(col).saveToCassandra("write_test", "blobs", ColumnNames(Set("key", "b")))
+    sc.parallelize(col).saveToCassandra("write_test", "blobs", SomeColumns("key", "b"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.blobs").all()
       result should have size 2
@@ -157,14 +157,14 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "increment and decrement counters" in {
     val col1 = Seq((0, 0, 1, 1))
-    sc.parallelize(col1).saveToCassandra("write_test", "counters", ColumnNames(Set("pkey", "ckey", "c1", "c2")))
+    sc.parallelize(col1).saveToCassandra("write_test", "counters", SomeColumns("pkey", "ckey", "c1", "c2"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.counters").one()
       result.getLong("c1") shouldEqual 1L
       result.getLong("c2") shouldEqual 1L
     }
     val col2 = Seq((0, 0, 1))
-    sc.parallelize(col1).saveToCassandra("write_test", "counters", ColumnNames(Set("pkey", "ckey", "c2")))
+    sc.parallelize(col1).saveToCassandra("write_test", "counters", SomeColumns("pkey", "ckey", "c2"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.counters").one()
       result.getLong("c1") shouldEqual 1L
@@ -179,7 +179,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     })
 
     val col = Seq((1, 1L, CustomerId("foo")))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", ColumnNames(Set("key", "group", "value")))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
 
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.key_value").all()

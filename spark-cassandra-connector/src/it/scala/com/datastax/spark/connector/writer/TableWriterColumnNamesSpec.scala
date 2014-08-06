@@ -2,8 +2,8 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector.writer.WritableColumns.{AllColumns, ColumnNames}
 
 class TableWriterColumnNamesSpec extends AbstractSpec with CassandraServer with SparkServer {
 
@@ -36,14 +36,14 @@ class TableWriterColumnNamesSpec extends AbstractSpec with CassandraServer with 
       writer.columnNames should be(all)
     }
     "distinguish and use only specified column names if provided" in {
-      val subset = Set("key", "group")
+      val subset = Seq("key", "group")
 
       val writer = TableWriter(
         conn,
         keyspaceName = "column_names_test",
         tableName = "key_value",
         consistencyLevel = ConsistencyLevel.LOCAL_ONE,
-        columnNames = ColumnNames(subset),
+        columnNames = SomeColumns(subset: _*),
         batchSizeInBytes = TableWriter.DefaultBatchSizeInBytes,
         batchSizeInRows = None,
         parallelismLevel = TableWriter.DefaultParallelismLevel)
@@ -55,7 +55,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with CassandraServer with 
       import com.datastax.spark.connector._
 
       intercept[IllegalArgumentException] {
-        sc.parallelize(Seq((1, 1L, None))).saveToCassandra("column_names_test", "key_value", ColumnNames(Set("key", "value")))
+        sc.parallelize(Seq((1, 1L, None))).saveToCassandra("column_names_test", "key_value", SomeColumns("key", "value"))
       }
     }
   }

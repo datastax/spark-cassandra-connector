@@ -4,6 +4,7 @@ import java.io.IOException
 
 import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
 import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
+import com.datastax.spark.connector.rdd.{SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.util.CountingIterator
 
 import org.apache.spark.{Logging, TaskContext}
@@ -145,7 +146,6 @@ class TableWriter[T] private (
 }
 
 object TableWriter {
-  import WritableColumns._
 
   val DefaultParallelismLevel = 5
   val MeasuredInsertsCount = 128
@@ -156,7 +156,7 @@ object TableWriter {
       keyspaceName: String,
       tableName: String,
       consistencyLevel: ConsistencyLevel,
-      columnNames: WritableColumns,
+      columnNames: ColumnSelector,
       batchSizeInBytes: Int = DefaultBatchSizeInBytes,
       batchSizeInRows: Option[Int] = None, 
       parallelismLevel: Int = DefaultParallelismLevel): TableWriter[T] = {
@@ -165,7 +165,7 @@ object TableWriter {
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames match {
-      case ColumnNames(names) => names.toSeq
+      case SomeColumns(names @ _*) => names
       case _ => tableDef.allColumns.map(_.columnName).toSeq
     }
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)

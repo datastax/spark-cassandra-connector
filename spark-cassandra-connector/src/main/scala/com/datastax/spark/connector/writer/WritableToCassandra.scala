@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.writer
 
-import scala.collection.immutable
+import com.datastax.spark.connector.rdd.SomeColumns
 
 trait WritableToCassandra[T] {
-  import WritableColumns._
 
   /**
    * Saves the data from `RDD` to a Cassandra table.
@@ -40,7 +39,7 @@ trait WritableToCassandra[T] {
    * Saves the data from `RDD` to a Cassandra table. Uses the specified column names.
    *
    * {{{
-   *   rdd.saveToCassandra("test", "words", ColumnNames(Set("word", "count")))
+   *   rdd.saveToCassandra("test", "words", SomeColumns("word", "count"))
    * }}}
    *
    * @param keyspaceName the name of the Keyspace to use
@@ -52,13 +51,13 @@ trait WritableToCassandra[T] {
    *                columns. All other fields are discarded. Non-selected property/column names are left unchanged.
    */
   def saveToCassandra(keyspaceName: String, tableName: String,
-                      columnNames: ColumnNames)(implicit rwf: RowWriterFactory[T])
+                      columnNames: SomeColumns)(implicit rwf: RowWriterFactory[T])
 
   /**
    * Saves the data from `RDD` to a Cassandra table. Uses the specified column names with an additional batch size.
    *
    * {{{
-   *   rdd.saveToCassandra("test", "words", ColumnNames(Set("word", "count")), size)
+   *   rdd.saveToCassandra("test", "words", SomeColumns("word", "count"), size)
    * }}}
    *
    *
@@ -78,26 +77,6 @@ trait WritableToCassandra[T] {
    *                  of data per every batch is enough to achieve good performance.
    */
   def saveToCassandra(keyspaceName: String, tableName: String,
-                      columnNames: ColumnNames, batchSize: Int)(implicit rwf: RowWriterFactory[T])
+                      columnNames: SomeColumns, batchSize: Int)(implicit rwf: RowWriterFactory[T])
 
-}
-
-object WritableColumns {
-
-  /** Base marker trait for columns to write to Cassandra. */
-  trait WritableColumns extends Serializable
-  
-  /** INTERNAL API.
-    * Command to write all columns to Cassandra.
-    */
-  private[connector] case object AllColumns extends WritableColumns
-  
-  /** Command to write only specified columns to Cassandra.
-    *
-    * @param names the column names subset to use. Uses only the unique column names,
-    *              and you must select at least all primary key columns.
-    */
-  case class ColumnNames(names: immutable.Set[String]) extends WritableColumns {
-    require(names.nonEmpty, "'names' must not be empty.")
-  }
 }

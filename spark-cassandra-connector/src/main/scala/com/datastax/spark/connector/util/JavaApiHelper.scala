@@ -2,8 +2,9 @@ package com.datastax.spark.connector.util
 
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
+import com.datastax.spark.connector.rdd.SomeColumns
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-import com.datastax.spark.connector.writer.{WritableColumns, RowWriterFactory}
+import com.datastax.spark.connector.writer.RowWriterFactory
 
 import scala.collection.JavaConversions._
 import scala.reflect._
@@ -15,7 +16,6 @@ import java.util.{Map => JavaMap}
 
 /** A helper class to make it possible to access components written in Scala from Java code. */
 object JavaApiHelper {
-  import WritableColumns.ColumnNames
 
   /** Returns a `TypeTag` for the given class. */
   def getTypeTag[T](clazz: Class[T]): TypeTag[T] = {
@@ -34,7 +34,7 @@ object JavaApiHelper {
 
   def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
 
-  def toColumns(array: Array[String]): ColumnNames = ColumnNames(array.toSet)
+  def toColumns(array: Array[String]): SomeColumns = SomeColumns(array: _*)
 
   def defaultRowWriterFactory[T](classTag: ClassTag[T], mapper: ColumnMapper[T]) = {
     RowWriterFactory.defaultRowWriterFactory(classTag, mapper)
