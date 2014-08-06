@@ -19,8 +19,7 @@
     - Extended Java API demo
     - Added a lot of API docs
 * Added Travis CI build yaml file
-* Added demos module
-* Added Akka Spark Streaming Demo
+* Added demos module 
 
 1.0.0 RC 1
  * Ability to register custom TypeConverters. (#32)
