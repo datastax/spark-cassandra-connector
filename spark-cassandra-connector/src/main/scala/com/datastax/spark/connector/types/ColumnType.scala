@@ -7,8 +7,10 @@ import scala.reflect.runtime.universe._
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
 
-  /** Returns a converter that converts values to the type of this column expected by the
-    * Cassandra Java driver when saving the row.*/
+  /**
+   * Returns a converter that converts values to the type of this column expected by the
+   * Cassandra Java driver when saving the row.
+   */
   def converterToCassandra: TypeConverter[_]
 
   /** Returns a converter that converts values to the Scala type associated with this column. */
@@ -19,8 +21,7 @@ trait ColumnType[T] extends Serializable {
   def scalaTypeTag: TypeTag[T]
 
   /** Name of the Scala type. Useful for source generation.*/
-  def scalaTypeName: String
-    = scalaTypeTag.tpe.toString
+  def scalaTypeName: String = scalaTypeTag.tpe.toString
 
   def isCollection: Boolean
 }
@@ -43,16 +44,15 @@ object ColumnType {
     DataType.uuid() -> UUIDType,
     DataType.blob() -> BlobType,
     DataType.counter() -> CounterType,
-    DataType.timeuuid() -> TimeUUIDType
-  )
+    DataType.timeuuid() -> TimeUUIDType)
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
     val typeArgs = dataType.getTypeArguments.map(fromDriverType)
     dataType.getName match {
       case DataType.Name.LIST => ListType(typeArgs(0))
-      case DataType.Name.SET => SetType(typeArgs(0))
-      case DataType.Name.MAP => MapType(typeArgs(0), typeArgs(1))
-      case _ => primitiveTypeMap(dataType)
+      case DataType.Name.SET  => SetType(typeArgs(0))
+      case DataType.Name.MAP  => MapType(typeArgs(0), typeArgs(1))
+      case _                  => primitiveTypeMap(dataType)
     }
   }
 }

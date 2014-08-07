@@ -3,8 +3,8 @@ package com.datastax.spark.connector.cql
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import org.apache.spark.Logging
-import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
-import com.datastax.spark.connector.types.{CounterType, ColumnType}
+import com.datastax.driver.core.{ ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata }
+import com.datastax.spark.connector.types.{ CounterType, ColumnType }
 
 sealed trait ColumnRole
 case object PartitionKeyColumn extends ColumnRole
@@ -28,7 +28,7 @@ case class ColumnDef(keyspaceName: String,
 
   def componentIndex = columnRole match {
     case ClusteringColumn(i) => Some(i)
-    case _ => None
+    case _                   => None
   }
 }
 
@@ -48,7 +48,7 @@ case class TableDef(keyspaceName: String,
                     partitionKey: Seq[ColumnDef],
                     clusteringColumns: Seq[ColumnDef],
                     regularColumns: Seq[ColumnDef]) {
-  
+
   lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
   lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
@@ -81,38 +81,36 @@ object Schema extends Logging {
   }
 
   private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] =
-    for (column <- table.getPartitionKey) yield
-      toColumnDef(column, PartitionKeyColumn)
+    for (column <- table.getPartitionKey) yield toColumnDef(column, PartitionKeyColumn)
 
   private def fetchClusteringColumns(table: TableMetadata): Seq[ColumnDef] =
-    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
-      toColumnDef(column, ClusteringColumn(index))
+    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield toColumnDef(column, ClusteringColumn(index))
 
   private def fetchRegularColumns(table: TableMetadata) = {
     val primaryKey = table.getPrimaryKey.toSet
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield
-      if (column.isStatic)
-        ColumnDef(column, StaticColumn)
-      else
-        ColumnDef(column, RegularColumn)
+    for (column <- regularColumns) yield if (column.isStatic)
+      ColumnDef(column, StaticColumn)
+    else
+      ColumnDef(column, RegularColumn)
   }
 
-  /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
-    * @param keyspaceName if defined, fetches only metadata of the given keyspace
-    * @param tableName if defined, fetches only metadata of the given table
-    */
+  /**
+   * Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
+   * @param keyspaceName if defined, fetches only metadata of the given keyspace
+   * @param tableName if defined, fetches only metadata of the given table
+   */
   def fromCassandra(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None): Schema = {
 
     def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
       keyspaceName match {
-        case None => true
+        case None       => true
         case Some(name) => keyspace.getName == name
       }
 
     def isTableSelected(table: TableMetadata): Boolean =
       tableName match {
-        case None => true
+        case None       => true
         case Some(name) => table.getName == name
       }
 
@@ -125,8 +123,7 @@ object Schema extends Logging {
       }
 
     def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
-      for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield
-        KeyspaceDef(keyspace.getName, fetchTables(keyspace))
+      for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield KeyspaceDef(keyspace.getName, fetchTables(keyspace))
 
     connector.withClusterDo { cluster =>
       val clusterName = cluster.getMetadata.getClusterName

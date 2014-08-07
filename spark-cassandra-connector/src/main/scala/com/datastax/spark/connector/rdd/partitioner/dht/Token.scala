@@ -14,4 +14,3 @@ case class BigIntToken(value: BigInt) extends Token[BigInt] {
   override def toString = value.toString()
 }
 
-

@@ -3,7 +3,7 @@ package com.datastax.spark
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.CassandraRDD
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-import com.datastax.spark.connector.writer.{RowWriterFactory, TableWriter}
+import com.datastax.spark.connector.writer.{ RowWriterFactory, TableWriter }
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -57,7 +57,7 @@ package object connector {
   implicit def toSparkContextFunctions(sc: SparkContext): SparkContextFunctions =
     new SparkContextFunctions(sc)
 
-  implicit def toRDDFunctions[T : ClassTag](rdd: RDD[T]): RDDFunctions[T] =
+  implicit def toRDDFunctions[T: ClassTag](rdd: RDD[T]): RDDFunctions[T] =
     new RDDFunctions[T](rdd)
 
 }

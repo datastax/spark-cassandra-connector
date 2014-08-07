@@ -1,18 +1,19 @@
 package com.datastax.spark.connector.cql
 
-import java.util.concurrent.{ThreadFactory, TimeUnit, Executors}
+import java.util.concurrent.{ ThreadFactory, TimeUnit, Executors }
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 
-
-/** A lockless cache that caches values for multiple users
-  * and destroys them once all users release them. One value can be associated with many keys.
-  * Useful for sharing a costly resource.
-  * @param create function to create new objects if not found in cache
-  * @param destroy function to be called once the value is not used any more
-  * @param keys function generating additional keys the value should be reachable by
-  * @param releaseDelayMillis number of milliseconds to keep unused values in cache, before they are removed. */
+/**
+ * A lockless cache that caches values for multiple users
+ * and destroys them once all users release them. One value can be associated with many keys.
+ * Useful for sharing a costly resource.
+ * @param create function to create new objects if not found in cache
+ * @param destroy function to be called once the value is not used any more
+ * @param keys function generating additional keys the value should be reachable by
+ * @param releaseDelayMillis number of milliseconds to keep unused values in cache, before they are removed.
+ */
 final class RefCountedCache[K, V](create: K => V,
                                   destroy: V => Any,
                                   keys: (K, V) => Set[K] = (_: K, _: V) => Set.empty[K],
@@ -36,19 +37,20 @@ final class RefCountedCache[K, V](create: K => V,
     val value = create(key)
     try {
       (value, keys(key, value) + key)
-    }
-    catch {
+    } catch {
       case t: Throwable =>
         destroy(value)
         throw t
     }
   }
 
-  /** Acquires a value associated with key.
-    * If the value was acquired by another thread and is present in the cache, it will be returned from cache.
-    * If the value was not found in cache, a new value will be created by invoking `create` function
-    * and will be saved to the cache and associated with `key` and other keys returned by invoking the
-    * `keys` function on the value. */
+  /**
+   * Acquires a value associated with key.
+   * If the value was acquired by another thread and is present in the cache, it will be returned from cache.
+   * If the value was not found in cache, a new value will be created by invoking `create` function
+   * and will be saved to the cache and associated with `key` and other keys returned by invoking the
+   * `keys` function on the value.
+   */
   @tailrec
   def acquire(key: K): V = {
     cache.get(key) match {
@@ -104,9 +106,11 @@ final class RefCountedCache[K, V](create: K => V,
     }
   }
 
-  /** Releases previously acquired value. Once the value is released by all threads and
-    * the `releaseDelayMillis` timeout passes, the value is destroyed by calling `destroy` function and
-    * removed from the cache. */
+  /**
+   * Releases previously acquired value. Once the value is released by all threads and
+   * the `releaseDelayMillis` timeout passes, the value is destroyed by calling `destroy` function and
+   * removed from the cache.
+   */
   def release(value: V) {
     if (releaseDelayMillis == 0 || scheduledExecutorService.isShutdown)
       releaseImmediately(value)
@@ -123,9 +127,11 @@ final class RefCountedCache[K, V](create: K => V,
           task.run()
   }
 
-  /** Removes all entries from the cache and destroys stored values by calling `destroy` on them.
-    * Warning - this is not thread-safe. You must not call this method if you know
-    * the cache is in use.*/
+  /**
+   * Removes all entries from the cache and destroys stored values by calling `destroy` on them.
+   * Warning - this is not thread-safe. You must not call this method if you know
+   * the cache is in use.
+   */
   def evict() {
     for ((key, value) <- cache)
       destroy(value)
@@ -148,8 +154,8 @@ final class RefCountedCache[K, V](create: K => V,
       if (task.scheduledTime <= now)
         if (deferredReleases.remove(value, task))
           task.run()
-        // if the task has been replaced in the meantime and remove fails, that's fine, because
-        // for sure it has scheduled time set in the future; we'll get to it on the next processPendingReleases call
+    // if the task has been replaced in the meantime and remove fails, that's fine, because
+    // for sure it has scheduled time set in the future; we'll get to it on the next processPendingReleases call
   }
 
   private val processPendingReleasesTask = new Runnable() {

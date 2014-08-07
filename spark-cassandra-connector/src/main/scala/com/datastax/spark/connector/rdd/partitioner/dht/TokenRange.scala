@@ -2,8 +2,8 @@ package com.datastax.spark.connector.rdd.partitioner.dht
 
 import java.net.InetAddress
 
-case class TokenRange[V, T <: Token[V]] (
-    start: T, end: T, endpoints: Set[InetAddress], rowCount: Option[Long]) {
+case class TokenRange[V, T <: Token[V]](
+  start: T, end: T, endpoints: Set[InetAddress], rowCount: Option[Long]) {
 
   def isWrapAround: Boolean =
     start >= end

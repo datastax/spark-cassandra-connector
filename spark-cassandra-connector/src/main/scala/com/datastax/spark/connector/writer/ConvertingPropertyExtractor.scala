@@ -15,7 +15,6 @@ class ConvertingPropertyExtractor[T](val cls: Class[T], properties: Seq[(String,
   def extract(obj: T): Array[AnyRef] =
     convert(simpleExtractor.extract(obj))
 
-
   def extract(obj: T, target: Array[AnyRef]): Array[AnyRef] =
     convert(simpleExtractor.extract(obj, target))
 

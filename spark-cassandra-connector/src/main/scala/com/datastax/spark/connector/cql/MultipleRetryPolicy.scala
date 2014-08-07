@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.policies.RetryPolicy
 import com.datastax.driver.core.policies.RetryPolicy.RetryDecision
-import com.datastax.driver.core.{ConsistencyLevel, Statement, WriteType}
+import com.datastax.driver.core.{ ConsistencyLevel, Statement, WriteType }
 
 /** Always retries with the same CL, constant number of times, regardless of circumstances */
 class MultipleRetryPolicy(maxRetryCount: Int) extends RetryPolicy {

@@ -7,7 +7,7 @@ import org.apache.spark.{ SparkConf, SparkContext }
 
 object BasicReadWriteDemo extends App with DemoApp {
 
-  CassandraConnector(conf).withSessionDo { session ⇒
+  CassandraConnector(conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS test.key_value (key INT PRIMARY KEY, value VARCHAR)")
     session.execute("TRUNCATE test.key_value")

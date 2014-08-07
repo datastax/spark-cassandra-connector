@@ -2,7 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{ UUID, Date }
 
 import scala.reflect.runtime.universe._
 
@@ -68,7 +68,7 @@ case object TimestampType extends PrimitiveColumnType[Date] {
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {
-  
+
   def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[InetAddress])
   def scalaTypeTag = implicitly[TypeTag[InetAddress]]
 }

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.{ Constructor, Method }
 
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
@@ -8,7 +8,7 @@ import org.apache.commons.lang.StringUtils
 
 import scala.reflect.ClassTag
 
-abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
+abstract class ReflectionColumnMapper[T: ClassTag] extends ColumnMapper[T] {
 
   import AnyObjectFactory._
 

@@ -4,12 +4,12 @@ import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
+import com.datastax.spark.connector.rdd.partitioner.dht.{ Token, TokenFactory, TokenRange }
 import org.apache.cassandra.thrift.CfSplit
 import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 /** Delegates token range splitting to Cassandra server. */
 class ServerSideTokenRangeSplitter[V, T <: Token[V]](
@@ -41,7 +41,7 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
   def split(range: TokenRange[V, T], splitSize: Long) = {
     val fetchResults =
       for (endpoint <- range.endpoints.toStream)
-      yield Try(fetchSplits(range, endpoint, splitSize))
+        yield Try(fetchSplits(range, endpoint, splitSize))
 
     fetchResults
       .collectFirst { case Success(splits) => splits }

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.types
 
 import scala.collection.mutable
-import scala.collection.immutable.{TreeMap, TreeSet}
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
 /** Serves the same purpose as standard Scala `CanBuildFrom`, however this one is `Serializable`. */
 trait CanBuildFrom[-Elem, To] extends Serializable {
@@ -40,7 +40,7 @@ object CanBuildFrom {
     override def apply() = Set.newBuilder[T]
   }
 
-  implicit def treeSetCanBuildFrom[T : Ordering] = new CanBuildFrom[T, TreeSet[T]] {
+  implicit def treeSetCanBuildFrom[T: Ordering] = new CanBuildFrom[T, TreeSet[T]] {
     override def apply() = TreeSet.newBuilder[T](implicitly[Ordering[T]])
   }
 
@@ -48,7 +48,7 @@ object CanBuildFrom {
     override def apply() = Map.newBuilder[K, V]
   }
 
-  implicit def treeMapCanBuildFrom[K : Ordering, V] = new CanBuildFrom[(K, V), TreeMap[K, V]] {
+  implicit def treeMapCanBuildFrom[K: Ordering, V] = new CanBuildFrom[(K, V), TreeMap[K, V]] {
     override def apply() = TreeMap.newBuilder[K, V]
   }
 

@@ -2,54 +2,54 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
+import com.datastax.driver.core.{ ConsistencyLevel, Session, Statement }
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{ CassandraRDDPartitioner, CassandraPartition, CqlTokenRange }
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
+import com.datastax.spark.connector.types.{ ColumnType, TypeConverter }
 import com.datastax.spark.connector.util.CountingIterator
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+import org.apache.spark.{ Logging, Partition, SparkContext, TaskContext }
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect._
 
-/** RDD representing a Cassandra table.
-  * This class is the main entry point for analyzing data in Cassandra database with Spark.
-  * Obtain objects of this class by calling [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]].
-  *
-  * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
-  * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate connection property values
-  * to be present in `SparkConf`. For the list of required and available properties, see
-  * [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
-  *
-  * `CassandraRDD` divides the dataset into smaller partitions, processed locally on every cluster node.
-  * A data partition consists of one or more contiguous token ranges.
-  * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
-  * properties control the number of partitions and the fetch size:
-  *
-  *   - spark.cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
-  *   - spark.cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
-  *   - spark.cassandra.input.consistency.level: consistency level to use when reading, default LOCAL_ONE
-  *
-  * A `CassandraRDD` object gets serialized and sent to every Spark executor.
-  * By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality and minimize network traffic.
-  * This read consistency level is controlled by the following property:
-  *   - spark.cassandra.input.consistency.level: consistency level for RDD reads, string matching the ConsistencyLevel enum name.
-  *
-  * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
-  */
+/**
+ * RDD representing a Cassandra table.
+ * This class is the main entry point for analyzing data in Cassandra database with Spark.
+ * Obtain objects of this class by calling [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]].
+ *
+ * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
+ * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate connection property values
+ * to be present in `SparkConf`. For the list of required and available properties, see
+ * [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
+ *
+ * `CassandraRDD` divides the dataset into smaller partitions, processed locally on every cluster node.
+ * A data partition consists of one or more contiguous token ranges.
+ * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
+ * properties control the number of partitions and the fetch size:
+ *
+ *   - spark.cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
+ *   - spark.cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
+ *   - spark.cassandra.input.consistency.level: consistency level to use when reading, default LOCAL_ONE
+ *
+ * A `CassandraRDD` object gets serialized and sent to every Spark executor.
+ * By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality and minimize network traffic.
+ * This read consistency level is controlled by the following property:
+ *   - spark.cassandra.input.consistency.level: consistency level for RDD reads, string matching the ConsistencyLevel enum name.
+ *
+ * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
+ */
 class CassandraRDD[R] private[connector] (
-    @transient sc: SparkContext,
-    val keyspaceName: String,
-    val tableName: String,
-    val columnNames: ColumnSelector = AllColumns,
-    val where: CqlWhereClause = CqlWhereClause.empty)(
-  implicit
-    ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
+  @transient sc: SparkContext,
+  val keyspaceName: String,
+  val tableName: String,
+  val columnNames: ColumnSelector = AllColumns,
+  val where: CqlWhereClause = CqlWhereClause.empty)(
+    implicit ct: ClassTag[R], @transient rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
 
   /** How many rows are fetched at once from server */
@@ -59,7 +59,7 @@ class CassandraRDD[R] private[connector] (
   val splitSize = sc.getConf.getInt("spark.cassandra.input.split.size", 100000)
 
   /** consistency level for reads */
-  val inputConsistencyLevel =  ConsistencyLevel.valueOf(
+  val inputConsistencyLevel = ConsistencyLevel.valueOf(
     sc.getConf.get("spark.cassandra.input.consistency.level", ConsistencyLevel.LOCAL_ONE.name))
 
   private val connector = CassandraConnector(sc.getConf)
@@ -67,10 +67,12 @@ class CassandraRDD[R] private[connector] (
   private def copy(columnNames: ColumnSelector = columnNames, where: CqlWhereClause = where): CassandraRDD[R] =
     new CassandraRDD(sc, keyspaceName, tableName, columnNames, where)
 
-  /** Adds a CQL `WHERE` predicate(s) to the query.
-    * Useful for leveraging secondary indexes in Cassandra.
-    * Implicitly adds an `ALLOW FILTERING` clause to the WHERE clause, however beware that some predicates
-    * might be rejected by Cassandra, particularly in cases when they filter on an unindexed, non-clustering column.*/
+  /**
+   * Adds a CQL `WHERE` predicate(s) to the query.
+   * Useful for leveraging secondary indexes in Cassandra.
+   * Implicitly adds an `ALLOW FILTERING` clause to the WHERE clause, however beware that some predicates
+   * might be rejected by Cassandra, particularly in cases when they filter on an unindexed, non-clustering column.
+   */
   def where(cql: String, values: Any*): CassandraRDD[R] = {
     copy(where = where and CqlWhereClause(Seq(cql), values))
   }
@@ -98,95 +100,85 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
-  /** Narrows down the selected set of columns.
-    * Use this for better performance, when you don't need all the columns in the result RDD.
-    * When called multiple times, it selects the subset of the already selected columns, so
-    * after a column was removed by the previous `select` call, it is not possible to
-    * add it back.  */
+  /**
+   * Narrows down the selected set of columns.
+   * Use this for better performance, when you don't need all the columns in the result RDD.
+   * When called multiple times, it selects the subset of the already selected columns, so
+   * after a column was removed by the previous `select` call, it is not possible to
+   * add it back.
+   */
   def select(columns: String*): CassandraRDD[R] = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
   }
 
-  /** Maps each row into object of a different type using provided function taking column value(s) as argument(s).
-    * Can be used to convert each row to a tuple or a case class object:
-    * {{{
-    * sc.cassandraTable("ks", "table").select("column1").as((s: String) => s)                 // yields CassandraRDD[String]
-    * sc.cassandraTable("ks", "table").select("column1", "column2").as((_: String, _: Long))  // yields CassandraRDD[(String, Long)]
-    *
-    * case class MyRow(key: String, value: Long)
-    * sc.cassandraTable("ks", "table").select("column1", "column2").as(MyRow)                 // yields CassandraRDD[MyRow]
-    * }}}*/
-  def as[B : ClassTag, A0 : TypeConverter](f: A0 => B): CassandraRDD[B] = {
+  /**
+   * Maps each row into object of a different type using provided function taking column value(s) as argument(s).
+   * Can be used to convert each row to a tuple or a case class object:
+   * {{{
+   * sc.cassandraTable("ks", "table").select("column1").as((s: String) => s)                 // yields CassandraRDD[String]
+   * sc.cassandraTable("ks", "table").select("column1", "column2").as((_: String, _: Long))  // yields CassandraRDD[(String, Long)]
+   *
+   * case class MyRow(key: String, value: Long)
+   * sc.cassandraTable("ks", "table").select("column1", "column2").as(MyRow)                 // yields CassandraRDD[MyRow]
+   * }}}
+   */
+  def as[B: ClassTag, A0: TypeConverter](f: A0 => B): CassandraRDD[B] = {
     implicit val ft = new FunctionBasedRowReader1(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter](f: (A0, A1) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter](f: (A0, A1) => B) = {
     implicit val ft = new FunctionBasedRowReader2(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter](f: (A0, A1, A2) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter](f: (A0, A1, A2) => B) = {
     implicit val ft = new FunctionBasedRowReader3(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter,
-  A3 : TypeConverter](f: (A0, A1, A2, A3) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter](f: (A0, A1, A2, A3) => B) = {
     implicit val ft = new FunctionBasedRowReader4(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter](f: (A0, A1, A2, A3, A4) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter](f: (A0, A1, A2, A3, A4) => B) = {
     implicit val ft = new FunctionBasedRowReader5(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter](f: (A0, A1, A2, A3, A4, A5) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter](f: (A0, A1, A2, A3, A4, A5) => B) = {
     implicit val ft = new FunctionBasedRowReader6(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6) => B) = {
     implicit val ft = new FunctionBasedRowReader7(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter,
-  A7 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter, A7: TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7) => B) = {
     implicit val ft = new FunctionBasedRowReader8(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
-  A8 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter, A7: TypeConverter, A8: TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8) => B) = {
     implicit val ft = new FunctionBasedRowReader9(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
-  A8 : TypeConverter, A9 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter, A7: TypeConverter, A8: TypeConverter, A9: TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) => B) = {
     implicit val ft = new FunctionBasedRowReader10(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter, A8: TypeConverter,
-  A9 : TypeConverter, A10 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter, A7: TypeConverter, A8: TypeConverter, A9: TypeConverter, A10: TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B) = {
     implicit val ft = new FunctionBasedRowReader11(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
 
-  def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
-  A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter, A8: TypeConverter,
-  A9 : TypeConverter, A10: TypeConverter, A11 : TypeConverter](
-  f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B) = {
+  def as[B: ClassTag, A0: TypeConverter, A1: TypeConverter, A2: TypeConverter, A3: TypeConverter, A4: TypeConverter, A5: TypeConverter, A6: TypeConverter, A7: TypeConverter, A8: TypeConverter, A9: TypeConverter, A10: TypeConverter, A11: TypeConverter](
+    f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B) = {
     implicit val ft = new FunctionBasedRowReader12(f)
     new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
   }
@@ -203,7 +195,7 @@ class CassandraRDD[R] private[connector] (
   lazy val tableDef = {
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
-      case None => throw new IOException(s"Table not found: $keyspaceName.$tableName")
+      case None    => throw new IOException(s"Table not found: $keyspaceName.$tableName")
     }
   }
 
@@ -214,33 +206,33 @@ class CassandraRDD[R] private[connector] (
     def columnNotFound(c: String) = !allColumnNames.contains(c)
     columnNames.find(columnNotFound) match {
       case Some(c) => throw new IOException(s"Column $c not found in table $keyspaceName.$tableName")
-      case None => columnNames
+      case None    => columnNames
     }
   }
-
 
   /** Returns the names of columns to be selected from the table.*/
   lazy val selectedColumnNames: Seq[String] = {
     val providedColumnNames =
       columnNames match {
-        case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
+        case AllColumns           => tableDef.allColumns.map(_.columnName).toSeq
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 
     (rowTransformer.columnNames, rowTransformer.columnCount) match {
       case (Some(cs), None) => providedColumnNames.filter(cs.toSet)
-      case (_, _) => providedColumnNames
+      case (_, _)           => providedColumnNames
     }
   }
 
-
-  /** Checks for existence of keyspace, table, columns and whether the number of selected columns corresponds to
-    * the number of the columns expected by the target type constructor.
-    * If successful, does nothing, otherwise throws appropriate `IOException` or `AssertionError`.*/
+  /**
+   * Checks for existence of keyspace, table, columns and whether the number of selected columns corresponds to
+   * the number of the columns expected by the target type constructor.
+   * If successful, does nothing, otherwise throws appropriate `IOException` or `AssertionError`.
+   */
   lazy val verify = {
     val targetType = implicitly[ClassTag[R]]
 
-    tableDef.allColumns  // will throw IOException if table does not exist
+    tableDef.allColumns // will throw IOException if table does not exist
 
     rowTransformer.columnNames match {
       case Some(names) =>
@@ -252,7 +244,7 @@ class CassandraRDD[R] private[connector] (
     rowTransformer.columnCount match {
       case Some(count) =>
         assert(selectedColumnNames.size >= count,
-        s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")
+          s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")
       case None =>
     }
   }
@@ -294,12 +286,11 @@ class CassandraRDD[R] private[connector] (
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
-        yield converter.convert(value).asInstanceOf[AnyRef]
+          yield converter.convert(value).asInstanceOf[AnyRef]
       val bstm = stmt.bind(convertedValues: _*)
       bstm.setFetchSize(fetchSize)
       bstm
-    }
-    catch {
+    } catch {
       case t: Throwable =>
         throw new IOException(s"Exception during preparation of $cql: ${t.getMessage}", t)
     }

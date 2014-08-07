@@ -18,8 +18,9 @@
     - Added a documentation page for JAVA API
     - Extended Java API demo
     - Added a lot of API docs
-* Added Travis CI build yaml file
-* Added demos module 
+* Added Travis CI build yaml file.
+* Added demos module (#84)
+* Added Scalariform formatting to all modules.
 
 1.0.0 RC 1
  * Ability to register custom TypeConverters. (#32)

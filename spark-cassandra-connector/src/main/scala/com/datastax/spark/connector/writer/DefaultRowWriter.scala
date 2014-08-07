@@ -2,17 +2,19 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core.PreparedStatement
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.mapper.{IndexedColumnRef, NamedColumnRef, ColumnRef, ColumnMapper}
+import com.datastax.spark.connector.mapper.{ IndexedColumnRef, NamedColumnRef, ColumnRef, ColumnMapper }
 import com.datastax.spark.connector.types.TypeConverter
 
-import scala.collection.{Map, Seq}
+import scala.collection.{ Map, Seq }
 import scala.reflect.ClassTag
 
 import scala.collection.JavaConversions._
 
-/** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
-  * Can save case class objects, java beans and tuples. */
-class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedColumns: Seq[String])
+/**
+ * A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
+ * Can save case class objects, java beans and tuples.
+ */
+class DefaultRowWriter[T: ClassTag: ColumnMapper](table: TableDef, selectedColumns: Seq[String])
   extends RowWriter[T] {
 
   private val columnMapper = implicitly[ColumnMapper[T]]
@@ -60,7 +62,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
     val propertyToColumnName = columnMap.getters.mapValues(columnNameByRef).toSeq
     val selectedPropertyColumnPairs =
       for ((propertyName, Some(columnName)) <- propertyToColumnName if selectedColumnsSet.contains(columnName))
-      yield (propertyName, columnName)
+        yield (propertyName, columnName)
     selectedPropertyColumnPairs.unzip
   }
 
@@ -104,7 +106,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
 
 object DefaultRowWriter {
 
-  def factory[T : ClassTag : ColumnMapper] = new RowWriterFactory[T] {
+  def factory[T: ClassTag: ColumnMapper] = new RowWriterFactory[T] {
     override def rowWriter(tableDef: TableDef, columnNames: Seq[String]) = {
       new DefaultRowWriter[T](tableDef, columnNames)
     }

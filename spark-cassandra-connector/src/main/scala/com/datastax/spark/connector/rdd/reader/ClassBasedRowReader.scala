@@ -6,12 +6,12 @@ import com.datastax.driver.core.Row
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
-import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
+import com.datastax.spark.connector.types.{ TypeConversionException, TypeConverter }
 
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends RowReader[R] {
+class ClassBasedRowReader[R: TypeTag: ColumnMapper](table: TableDef) extends RowReader[R] {
 
   private val factory = new AnyObjectFactory[R]
 
@@ -67,20 +67,19 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
 
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
     columnRef match {
-      case NamedColumnRef(name) => name        
-      case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index)        
+      case NamedColumnRef(name)    => name
+      case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index)
     }
   }
 
   private def convert(columnValue: AnyRef, columnName: String, converter: TypeConverter[_]): AnyRef = {
     try {
       converter.convert(columnValue).asInstanceOf[AnyRef]
-    }
-    catch {
+    } catch {
       case e: Exception =>
         throw new TypeConversionException(
           s"Failed to convert column $columnName of table ${table.keyspaceName}.${table.keyspaceName} " +
-          s"to ${converter.targetTypeName}: $columnValue", e)
+            s"to ${converter.targetTypeName}: $columnValue", e)
     }
   }
 
@@ -112,10 +111,10 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
-    columnRefs.collect{ case NamedColumnRef(name) => name }.toSeq
+    columnRefs.collect { case NamedColumnRef(name) => name }.toSeq
 
   private def extractColumnIndexes(columnRefs: Iterable[ColumnRef]): Seq[Int] =
-    columnRefs.collect{ case IndexedColumnRef(index) => index }.toSeq
+    columnRefs.collect { case IndexedColumnRef(index) => index }.toSeq
 
   private val allColumnRefs = columnMap.constructor ++ columnMap.setters.values
 
@@ -123,7 +122,6 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
   override def columnCount = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
 }
 
-
-class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
+class ClassBasedRowReaderFactory[R: TypeTag: ColumnMapper] extends RowReaderFactory[R] {
   override def rowReader(tableDef: TableDef) = new ClassBasedRowReader[R](tableDef)
 }

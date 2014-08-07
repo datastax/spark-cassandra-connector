@@ -2,48 +2,48 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import com.datastax.driver.core.{Session, Host, Cluster}
+import com.datastax.driver.core.{ Session, Host, Cluster }
 import com.datastax.driver.core.policies._
 import com.datastax.spark.connector.util.IOUtils
 import org.apache.cassandra.thrift.Cassandra
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.{ Logging, SparkConf }
 import org.apache.thrift.protocol.TBinaryProtocol
 
 import scala.collection.JavaConversions._
 import scala.util.Random
 
-
-/** Provides and manages connections to Cassandra.
-  *
-  * A `CassandraConnector` instance is serializable and
-  * can be safely sent over network,
-  * because it automatically reestablishes the connection
-  * to the same cluster after deserialization. Internally it saves
-  * a list of all nodes in the cluster, so a connection can be established
-  * even if the host given in the initial config is down.
-  *
-  * Multiple `CassandraConnector`s in the same JVM connected to the same
-  * Cassandra cluster will share a single underlying `Cluster` object.
-  * `CassandraConnector` will close the underlying `Cluster` object automatically
-  * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
-  * than `spark.cassandra.connection.keep_alive_ms` property value.
-  *
-  * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
-  * can be either given explicitly or automatically configured from `SparkConf`.
-  * The connection options are:
-  *   - `spark.cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
-  *   - `spark.cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
-  *   - `spark.cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
-  *   - `spark.cassandra.auth.username`:           login for password authentication
-  *   - `spark.cassandra.auth.password`:           password for password authentication
-  *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
-  *
-  * Additionally this object uses the following global System properties:
-  *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
-  *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query 
-  */
+/**
+ * Provides and manages connections to Cassandra.
+ *
+ * A `CassandraConnector` instance is serializable and
+ * can be safely sent over network,
+ * because it automatically reestablishes the connection
+ * to the same cluster after deserialization. Internally it saves
+ * a list of all nodes in the cluster, so a connection can be established
+ * even if the host given in the initial config is down.
+ *
+ * Multiple `CassandraConnector`s in the same JVM connected to the same
+ * Cassandra cluster will share a single underlying `Cluster` object.
+ * `CassandraConnector` will close the underlying `Cluster` object automatically
+ * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
+ * than `spark.cassandra.connection.keep_alive_ms` property value.
+ *
+ * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
+ * can be either given explicitly or automatically configured from `SparkConf`.
+ * The connection options are:
+ *   - `spark.cassandra.connection.host`:         contact point to connect to the Cassandra cluster, defaults to spark master host
+ *   - `spark.cassandra.connection.rpc.port`:     Cassandra thrift port, defaults to 9160
+ *   - `spark.cassandra.connection.native.port`:  Cassandra native port, defaults to 9042
+ *   - `spark.cassandra.auth.username`:           login for password authentication
+ *   - `spark.cassandra.auth.password`:           password for password authentication
+ *   - `spark.cassandra.auth.conf.factory.class`: name of the class implementing [[AuthConfFactory]] that allows to plugin custom authentication
+ *
+ * Additionally this object uses the following global System properties:
+ *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
+ *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
+ *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
+ *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query
+ */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
 
@@ -63,11 +63,13 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Authentication configuration */
   def authConf = _config.authConf
 
-  /** Returns a shared session to Cassandra and increases the internal open
-    * reference counter. It does not release the session automatically,
-    * so please remember to close it after use. Closing a shared session
-    * decreases the session reference counter. If the reference count drops to zero,
-    * the session may be physically closed. */
+  /**
+   * Returns a shared session to Cassandra and increases the internal open
+   * reference counter. It does not release the session automatically,
+   * so please remember to close it after use. Closing a shared session
+   * decreases the session reference counter. If the reference count drops to zero,
+   * the session may be physically closed.
+   */
   def openSession() = {
     val session = sessionCache.acquire(_config)
     try {
@@ -88,29 +90,33 @@ class CassandraConnector(conf: CassandraConnectorConf)
     }
   }
 
-  /** Allows to use Cassandra `Session` in a safe way without
-    * risk of forgetting to close it. The `Session` object obtained through this method
-    * is a proxy to a shared, single `Session` associated with the cluster.
-    * Internally, the shared underlying `Session` will be closed shortly after all the proxies
-    * are closed. */
+  /**
+   * Allows to use Cassandra `Session` in a safe way without
+   * risk of forgetting to close it. The `Session` object obtained through this method
+   * is a proxy to a shared, single `Session` associated with the cluster.
+   * Internally, the shared underlying `Session` will be closed shortly after all the proxies
+   * are closed.
+   */
   def withSessionDo[T](code: Session => T): T = {
     IOUtils.closeAfterUse(openSession()) { session =>
       code(SessionProxy.wrap(session))
     }
   }
 
-  /** Allows to use Cassandra `Cluster` in a safe way without
-    * risk of forgetting to close it. Multiple, concurrent calls might share the same
-    * `Cluster`. The `Cluster` will be closed when not in use for some time.
-    * It is not recommended to obtain sessions from this method. Use [[withSessionDo]]
-    * instead which allows for proper session sharing. */
+  /**
+   * Allows to use Cassandra `Cluster` in a safe way without
+   * risk of forgetting to close it. Multiple, concurrent calls might share the same
+   * `Cluster`. The `Cluster` will be closed when not in use for some time.
+   * It is not recommended to obtain sessions from this method. Use [[withSessionDo]]
+   * instead which allows for proper session sharing.
+   */
   def withClusterDo[T](code: Cluster => T): T = {
     withSessionDo { session =>
       code(session.getCluster)
     }
   }
 
-    /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
+  /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp)
@@ -172,7 +178,6 @@ object CassandraConnector extends Logging {
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
-
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: Session): Set[CassandraConnectorConf] = {
     val cluster = session.getCluster
@@ -183,7 +188,7 @@ object CassandraConnector extends Logging {
   /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts` */
   def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
     val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
-    val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
+    val contactDCs = contactNodes.map(_.getDatacenter).filter(_ != null).toSet
     allHosts.filter(h => h.getDatacenter == null || contactDCs.contains(h.getDatacenter))
   }
 

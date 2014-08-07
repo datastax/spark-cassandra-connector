@@ -2,21 +2,22 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{ UUID, Date }
 
 import scala.collection.JavaConversions._
-import scala.collection.immutable.{TreeMap, TreeSet}
+import scala.collection.immutable.{ TreeMap, TreeSet }
 import scala.reflect.runtime.universe._
 
 import org.apache.cassandra.utils.ByteBufferUtil
 import org.joda.time.DateTime
 
-
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
-/** Machinery for converting objects of any type received from Cassandra into objects of Scala types.
-  * Every converter knows how to convert object to one type. See `TypeConverter`
-  * companion object for a list of available converters. */
+/**
+ * Machinery for converting objects of any type received from Cassandra into objects of Scala types.
+ * Every converter knows how to convert object to one type. See `TypeConverter`
+ * companion object for a list of available converters.
+ */
 trait TypeConverter[T] extends Serializable {
   /** Compile time type of the converter target */
   type targetType = T
@@ -37,21 +38,24 @@ trait TypeConverter[T] extends Serializable {
       if (obj != null)
         throw new TypeConversionException(s"Cannot convert object $obj of type ${obj.getClass} to $targetTypeName.")
       else
-        throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName.")
-    )
+        throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName."))
   }
 }
 
-/** Chains together several converters converting to the same type.
-  * This way you can extend functionality of any converter to support new input types. */
+/**
+ * Chains together several converters converting to the same type.
+ * This way you can extend functionality of any converter to support new input types.
+ */
 class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends TypeConverter[T] {
   def targetTypeTag = converters.head.targetTypeTag
   def convertPF = converters.map(_.convertPF).reduceLeft(_ orElse _)
 }
 
-/** Defines a set of converters and implicit functions used to look up an appropriate converter for
-  * a desired type. Thanks to implicit method lookup, it is possible to implement a generic
-  * method `CassandraRow#get`, which picks up the right converter basing solely on its type argument. */
+/**
+ * Defines a set of converters and implicit functions used to look up an appropriate converter for
+ * a desired type. Thanks to implicit method lookup, it is possible to implement a generic
+ * method `CassandraRow#get`, which picks up the right converter basing solely on its type argument.
+ */
 object TypeConverter {
 
   implicit object AnyConverter extends TypeConverter[Any] {
@@ -71,11 +75,11 @@ object TypeConverter {
   implicit object BooleanConverter extends TypeConverter[Boolean] {
     def targetTypeTag = implicitly[TypeTag[Boolean]]
     def convertPF = {
-      case x: java.lang.Boolean => x
-      case x: java.lang.Integer => x != 0
-      case x: java.lang.Long => x != 0L
+      case x: java.lang.Boolean    => x
+      case x: java.lang.Integer    => x != 0
+      case x: java.lang.Long       => x != 0L
       case x: java.math.BigInteger => x != java.math.BigInteger.ZERO
-      case x: String => x.toBoolean
+      case x: String               => x.toBoolean
     }
   }
 
@@ -101,7 +105,7 @@ object TypeConverter {
     def targetTypeTag = implicitly[TypeTag[Long]]
     def convertPF = {
       case x: Number => x.longValue
-      case x: Date => x.getTime
+      case x: Date   => x.getTime
       case x: String => x.toLong
     }
   }
@@ -124,7 +128,6 @@ object TypeConverter {
     def convertPF = FloatConverter.convertPF.andThen(_.asInstanceOf[java.lang.Float])
   }
 
-
   implicit object DoubleConverter extends TypeConverter[Double] {
     def targetTypeTag = implicitly[TypeTag[Double]]
     def convertPF = {
@@ -141,20 +144,20 @@ object TypeConverter {
   implicit object StringConverter extends TypeConverter[String] {
     def targetTypeTag = implicitly[TypeTag[String]]
     def convertPF = {
-      case x: Date => TimestampFormatter.format(x)
+      case x: Date        => TimestampFormatter.format(x)
       case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
-      case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
-      case x: Set[_] => x.map(convert).mkString("{", ",", "}")
-      case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
-      case x: Any  => x.toString
-      case null => "null"
+      case x: Map[_, _]   => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
+      case x: Set[_]      => x.map(convert).mkString("{", ",", "}")
+      case x: Seq[_]      => x.map(convert).mkString("[", ",", "]")
+      case x: Any         => x.toString
+      case null           => "null"
     }
   }
 
   implicit object ByteBufferConverter extends TypeConverter[ByteBuffer] {
     def targetTypeTag = implicitly[TypeTag[ByteBuffer]]
     def convertPF = {
-      case x: ByteBuffer => x
+      case x: ByteBuffer  => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
     }
   }
@@ -163,63 +166,63 @@ object TypeConverter {
     def targetTypeTag = implicitly[TypeTag[Array[Byte]]]
     def convertPF = {
       case x: Array[Byte] => x
-      case x: ByteBuffer => ByteBufferUtil.getArray(x)
+      case x: ByteBuffer  => ByteBufferUtil.getArray(x)
     }
   }
 
   implicit object DateConverter extends TypeConverter[Date] {
     def targetTypeTag = implicitly[TypeTag[Date]]
     def convertPF = {
-      case x: Date => x
-      case x: DateTime => x.toDate
-      case x: Long => new Date(x)
+      case x: Date                     => x
+      case x: DateTime                 => x.toDate
+      case x: Long                     => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
-      case x: String => TimestampParser.parse(x)
+      case x: String                   => TimestampParser.parse(x)
     }
   }
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
     def targetTypeTag = implicitly[TypeTag[java.sql.Date]]
     def convertPF = {
-      case x: java.sql.Date => x
-      case x: Date => new java.sql.Date(x.getTime)
-      case x: DateTime => new java.sql.Date(x.toDate.getTime)
-      case x: Long => new java.sql.Date(x)
+      case x: java.sql.Date            => x
+      case x: Date                     => new java.sql.Date(x.getTime)
+      case x: DateTime                 => new java.sql.Date(x.toDate.getTime)
+      case x: Long                     => new java.sql.Date(x)
       case x: UUID if x.version() == 1 => new java.sql.Date(x.timestamp())
-      case x: String => new java.sql.Date(TimestampParser.parse(x).getTime)
+      case x: String                   => new java.sql.Date(TimestampParser.parse(x).getTime)
     }
   }
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
     def targetTypeTag = implicitly[TypeTag[DateTime]]
     def convertPF = {
-      case x: DateTime => x
-      case x: Date => new DateTime(x)
-      case x: Long => new DateTime(x)
+      case x: DateTime                 => x
+      case x: Date                     => new DateTime(x)
+      case x: Long                     => new DateTime(x)
       case x: UUID if x.version() == 1 => new DateTime(x.timestamp())
-      case x: String => new DateTime(TimestampParser.parse(x))
+      case x: String                   => new DateTime(TimestampParser.parse(x))
     }
   }
 
   implicit object BigIntConverter extends TypeConverter[BigInt] {
     def targetTypeTag = implicitly[TypeTag[BigInt]]
     def convertPF = {
-      case x: BigInt => x
+      case x: BigInt               => x
       case x: java.math.BigInteger => x
-      case x: java.lang.Integer => BigInt(x)
-      case x: java.lang.Long => BigInt(x)
-      case x: String => BigInt(x)
+      case x: java.lang.Integer    => BigInt(x)
+      case x: java.lang.Long       => BigInt(x)
+      case x: String               => BigInt(x)
     }
   }
 
   implicit object JavaBigIntegerConverter extends TypeConverter[java.math.BigInteger] {
     def targetTypeTag = implicitly[TypeTag[java.math.BigInteger]]
     def convertPF = {
-      case x: BigInt => x.bigInteger
+      case x: BigInt               => x.bigInteger
       case x: java.math.BigInteger => x
-      case x: java.lang.Integer => new java.math.BigInteger(x.toString)
-      case x: java.lang.Long => new java.math.BigInteger(x.toString)
-      case x: String => new java.math.BigInteger(x)
+      case x: java.lang.Integer    => new java.math.BigInteger(x.toString)
+      case x: java.lang.Long       => new java.math.BigInteger(x.toString)
+      case x: String               => new java.math.BigInteger(x)
     }
   }
 
@@ -236,14 +239,14 @@ object TypeConverter {
     def convertPF = {
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
+      case x         => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
   implicit object UUIDConverter extends TypeConverter[UUID] {
     def targetTypeTag = implicitly[TypeTag[UUID]]
     def convertPF = {
-      case x: UUID => x
+      case x: UUID   => x
       case x: String => UUID.fromString(x)
     }
   }
@@ -252,7 +255,7 @@ object TypeConverter {
     def targetTypeTag = implicitly[TypeTag[InetAddress]]
     def convertPF = {
       case x: InetAddress => x
-      case x: String => InetAddress.getByName(x)
+      case x: String      => InetAddress.getByName(x)
     }
   }
 
@@ -265,7 +268,7 @@ object TypeConverter {
       implicit val vTag = vc.targetTypeTag
       implicitly[TypeTag[(K, V)]]
     }
-    
+
     def convertPF = {
       case (k, v) => (kc.convert(k), vc.convert(v))
     }
@@ -277,7 +280,7 @@ object TypeConverter {
       implicitly[TypeTag[Option[T]]]
     }
     def convertPF = {
-      case null => None
+      case null  => None
       case other => Some(c.convert(other))
     }
   }
@@ -295,11 +298,11 @@ object TypeConverter {
     }
 
     def convertPF = {
-      case null => bf.apply().result()
-      case x: java.util.List[_] => newCollection(x)
-      case x: java.util.Set[_] => newCollection(x)
+      case null                   => bf.apply().result()
+      case x: java.util.List[_]   => newCollection(x)
+      case x: java.util.Set[_]    => newCollection(x)
       case x: java.util.Map[_, _] => newCollection(x)
-      case x: Iterable[_] => newCollection(x)
+      case x: Iterable[_]         => newCollection(x)
     }
   }
 
@@ -310,132 +313,131 @@ object TypeConverter {
     protected implicit def valueTypeTag = vc.targetTypeTag
   }
 
-
-  class ListConverter[T : TypeConverter] extends CollectionConverter[List[T], T] {
+  class ListConverter[T: TypeConverter] extends CollectionConverter[List[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[List[T]]]
   }
 
-  class VectorConverter[T : TypeConverter] extends CollectionConverter[Vector[T], T] {
+  class VectorConverter[T: TypeConverter] extends CollectionConverter[Vector[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[Vector[T]]]
   }
 
-  class SetConverter[T : TypeConverter] extends CollectionConverter[Set[T], T] {
+  class SetConverter[T: TypeConverter] extends CollectionConverter[Set[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[Set[T]]]
   }
 
-  class TreeSetConverter[T : TypeConverter : Ordering] extends CollectionConverter[TreeSet[T], T] {
+  class TreeSetConverter[T: TypeConverter: Ordering] extends CollectionConverter[TreeSet[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[TreeSet[T]]]
   }
 
-  class SeqConverter[T : TypeConverter] extends CollectionConverter[Seq[T], T] {
+  class SeqConverter[T: TypeConverter] extends CollectionConverter[Seq[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[Seq[T]]]
   }
 
-  class IndexedSeqConverter[T : TypeConverter] extends CollectionConverter[IndexedSeq[T], T] {
+  class IndexedSeqConverter[T: TypeConverter] extends CollectionConverter[IndexedSeq[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[IndexedSeq[T]]]
   }
 
-  class IterableConverter[T : TypeConverter] extends CollectionConverter[Iterable[T], T] {
+  class IterableConverter[T: TypeConverter] extends CollectionConverter[Iterable[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[Iterable[T]]]
   }
 
-  class JavaListConverter[T : TypeConverter] extends CollectionConverter[java.util.List[T], T] {
+  class JavaListConverter[T: TypeConverter] extends CollectionConverter[java.util.List[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.List[T]]]
   }
 
-  class JavaArrayListConverter[T : TypeConverter] extends CollectionConverter[java.util.ArrayList[T], T] {
+  class JavaArrayListConverter[T: TypeConverter] extends CollectionConverter[java.util.ArrayList[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.ArrayList[T]]]
   }
 
-  class JavaSetConverter[T : TypeConverter] extends CollectionConverter[java.util.Set[T], T] {
+  class JavaSetConverter[T: TypeConverter] extends CollectionConverter[java.util.Set[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.Set[T]]]
   }
 
-  class JavaHashSetConverter[T : TypeConverter] extends CollectionConverter[java.util.HashSet[T], T] {
+  class JavaHashSetConverter[T: TypeConverter] extends CollectionConverter[java.util.HashSet[T], T] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.HashSet[T]]]
   }
 
-  class MapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[Map[K, V], K, V] {
+  class MapConverter[K: TypeConverter, V: TypeConverter] extends AbstractMapConverter[Map[K, V], K, V] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[Map[K, V]]]
   }
 
-  class TreeMapConverter[K : TypeConverter : Ordering, V : TypeConverter] extends AbstractMapConverter[TreeMap[K, V], K, V] {
+  class TreeMapConverter[K: TypeConverter: Ordering, V: TypeConverter] extends AbstractMapConverter[TreeMap[K, V], K, V] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[TreeMap[K, V]]]
   }
 
-  class JavaMapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[java.util.Map[K, V], K, V] {
+  class JavaMapConverter[K: TypeConverter, V: TypeConverter] extends AbstractMapConverter[java.util.Map[K, V], K, V] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.Map[K, V]]]
   }
 
-  class JavaHashMapConverter[K : TypeConverter, V : TypeConverter] extends AbstractMapConverter[java.util.HashMap[K, V], K, V] {
+  class JavaHashMapConverter[K: TypeConverter, V: TypeConverter] extends AbstractMapConverter[java.util.HashMap[K, V], K, V] {
     @transient
     lazy val targetTypeTag = implicitly[TypeTag[java.util.HashMap[K, V]]]
   }
 
-  implicit def optionConverter[T : TypeConverter] =
+  implicit def optionConverter[T: TypeConverter] =
     new OptionConverter[T]
 
-  implicit def tupleConverter[K : TypeConverter, V : TypeConverter] =
+  implicit def tupleConverter[K: TypeConverter, V: TypeConverter] =
     new TupleConverter[K, V]
 
-  implicit def listConverter[T : TypeConverter] =
+  implicit def listConverter[T: TypeConverter] =
     new ListConverter[T]
 
-  implicit def vectorConverter[T : TypeConverter] =
+  implicit def vectorConverter[T: TypeConverter] =
     new VectorConverter[T]
 
-  implicit def setConverter[T : TypeConverter] =
+  implicit def setConverter[T: TypeConverter] =
     new SetConverter[T]
 
-  implicit def treeSetConverter[T : TypeConverter : Ordering] =
+  implicit def treeSetConverter[T: TypeConverter: Ordering] =
     new TreeSetConverter[T]
 
-  implicit def seqConverter[T : TypeConverter] =
+  implicit def seqConverter[T: TypeConverter] =
     new SeqConverter[T]
 
-  implicit def indexedSeqConverter[T : TypeConverter] =
+  implicit def indexedSeqConverter[T: TypeConverter] =
     new IndexedSeqConverter[T]
 
-  implicit def iterableConverter[T : TypeConverter] =
+  implicit def iterableConverter[T: TypeConverter] =
     new IterableConverter[T]
 
-  implicit def mapConverter[K : TypeConverter, V : TypeConverter] =
+  implicit def mapConverter[K: TypeConverter, V: TypeConverter] =
     new MapConverter[K, V]
 
-  implicit def treeMapConverter[K: TypeConverter : Ordering, V : TypeConverter] =
+  implicit def treeMapConverter[K: TypeConverter: Ordering, V: TypeConverter] =
     new TreeMapConverter[K, V]
 
   // Support for Java collections:
-  implicit def javaListConverter[T : TypeConverter] =
+  implicit def javaListConverter[T: TypeConverter] =
     new JavaListConverter[T]
 
-  implicit def javaArrayListConverter[T : TypeConverter] =
+  implicit def javaArrayListConverter[T: TypeConverter] =
     new JavaArrayListConverter[T]
 
-  implicit def javaSetConverter[T : TypeConverter] =
+  implicit def javaSetConverter[T: TypeConverter] =
     new JavaSetConverter[T]
 
-  implicit def javaHashSetConverter[T : TypeConverter] =
+  implicit def javaHashSetConverter[T: TypeConverter] =
     new JavaHashSetConverter[T]
 
-  implicit def javaMapConverter[K : TypeConverter, V : TypeConverter] =
+  implicit def javaMapConverter[K: TypeConverter, V: TypeConverter] =
     new JavaMapConverter[K, V]
 
-  implicit def javaHashMapConverter[K : TypeConverter, V : TypeConverter] =
+  implicit def javaHashMapConverter[K: TypeConverter, V: TypeConverter] =
     new JavaHashMapConverter[K, V]
 
   /** Converts Scala Options to Java nullable references. Used when saving data to Cassandra. */
@@ -445,9 +447,9 @@ object TypeConverter {
 
     def convertPF = {
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
-      case None => null
-      case null => null
-      case x => nestedConverter.convert(x).asInstanceOf[AnyRef]
+      case None    => null
+      case null    => null
+      case x       => nestedConverter.convert(x).asInstanceOf[AnyRef]
     }
   }
 
@@ -470,7 +472,7 @@ object TypeConverter {
   private val JavaHashMapSymbol = typeOf[java.util.HashMap[Any, Any]].asInstanceOf[TypeRef].sym
 
   private def orderingFor(tpe: Type): Option[Ordering[_]] = {
-    if      (tpe =:= typeOf[Boolean]) Some(implicitly[Ordering[Boolean]])
+    if (tpe =:= typeOf[Boolean]) Some(implicitly[Ordering[Boolean]])
     else if (tpe =:= typeOf[Int]) Some(implicitly[Ordering[Int]])
     else if (tpe =:= typeOf[Long]) Some(implicitly[Ordering[Long]])
     else if (tpe =:= typeOf[Float]) Some(implicitly[Ordering[Float]])
@@ -511,8 +513,7 @@ object TypeConverter {
     InetAddressConverter,
     UUIDConverter,
     ByteBufferConverter,
-    ByteArrayConverter
-  )
+    ByteArrayConverter)
 
   private def forCollectionType(tpe: Type): TypeConverter[_] = {
     tpe match {
@@ -522,19 +523,19 @@ object TypeConverter {
         implicit val itemConverter = untypedItemConverter.asInstanceOf[TypeConverter[T]]
         implicit val ordering = orderingFor(arg).map(_.asInstanceOf[Ordering[T]]).orNull
         symbol match {
-          case OptionSymbol => optionConverter[T]
-          case ListSymbol => listConverter[T]
-          case VectorSymbol => vectorConverter[T]
-          case SetSymbol => setConverter[T]
+          case OptionSymbol                      => optionConverter[T]
+          case ListSymbol                        => listConverter[T]
+          case VectorSymbol                      => vectorConverter[T]
+          case SetSymbol                         => setConverter[T]
           case TreeSetSymbol if ordering != null => treeSetConverter[T]
-          case SeqSymbol => seqConverter[T]
-          case IndexedSeqSymbol => indexedSeqConverter[T]
-          case IterableSymbol => iterableConverter[T]
-          case JavaListSymbol => javaListConverter[T]
-          case JavaArrayListSymbol => javaArrayListConverter[T]
-          case JavaSetSymbol => javaSetConverter[T]
-          case JavaHashSetSymbol => javaHashSetConverter[T]
-          case _ => throw new IllegalArgumentException(s"Unsupported type: $tpe")
+          case SeqSymbol                         => seqConverter[T]
+          case IndexedSeqSymbol                  => indexedSeqConverter[T]
+          case IterableSymbol                    => iterableConverter[T]
+          case JavaListSymbol                    => javaListConverter[T]
+          case JavaArrayListSymbol               => javaArrayListConverter[T]
+          case JavaSetSymbol                     => javaSetConverter[T]
+          case JavaHashSetSymbol                 => javaHashSetConverter[T]
+          case _                                 => throw new IllegalArgumentException(s"Unsupported type: $tpe")
         }
 
       case TypeRef(_, symbol, List(k, v)) =>
@@ -546,11 +547,11 @@ object TypeConverter {
         implicit val valueConverter = untypedValueConverter.asInstanceOf[TypeConverter[V]]
         implicit val ordering = orderingFor(k).map(_.asInstanceOf[Ordering[K]]).orNull
         symbol match {
-          case MapSymbol => mapConverter[K, V]
+          case MapSymbol                         => mapConverter[K, V]
           case TreeMapSymbol if ordering != null => treeMapConverter[K, V]
-          case JavaMapSymbol => javaMapConverter[K, V]
-          case JavaHashMapSymbol => javaHashMapConverter[K, V]
-          case _ => throw new IllegalArgumentException(s"Unsupported type: $tpe")
+          case JavaMapSymbol                     => javaMapConverter[K, V]
+          case JavaHashMapSymbol                 => javaHashMapConverter[K, V]
+          case _                                 => throw new IllegalArgumentException(s"Unsupported type: $tpe")
         }
 
       case _ => throw new IllegalArgumentException(s"Unsupported type: $tpe")
@@ -564,14 +565,14 @@ object TypeConverter {
       converters.collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
 
     selectedConverters match {
-      case Seq() => forCollectionType(tpe)
-      case Seq(c) => c
-      case Seq(cs @ _*) => new ChainedTypeConverter(cs : _*)
-   }
+      case Seq()        => forCollectionType(tpe)
+      case Seq(c)       => c
+      case Seq(cs @ _*) => new ChainedTypeConverter(cs: _*)
+    }
   }
 
   /** Useful when implicit converters are not in scope, but a TypeTag is */
-  def forType[T : TypeTag]: TypeConverter[T] =
+  def forType[T: TypeTag]: TypeConverter[T] =
     forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
 
   /** Registers a custom converter */

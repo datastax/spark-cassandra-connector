@@ -2,27 +2,29 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
-import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
+import com.datastax.driver.core.{ Session, BatchStatement, PreparedStatement, ConsistencyLevel }
+import com.datastax.spark.connector.cql.{ ColumnDef, Schema, TableDef, CassandraConnector }
 import com.datastax.spark.connector.util.CountingIterator
 
-import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.{ Logging, TaskContext }
 
 import scala.collection._
 import scala.reflect.ClassTag
 
-/** Writes RDD data into given Cassandra table.
-  * Individual column values are extracted from RDD objects using given [[RowWriter]]
-  * Then, data are inserted into Cassandra with batches of CQL INSERT statements.
-  * Each RDD partition is processed by a single thread. */
+/**
+ * Writes RDD data into given Cassandra table.
+ * Individual column values are extracted from RDD objects using given [[RowWriter]]
+ * Then, data are inserted into Cassandra with batches of CQL INSERT statements.
+ * Each RDD partition is processed by a single thread.
+ */
 class TableWriter[T] private (
-    connector: CassandraConnector,
-    tableDef: TableDef,
-    rowWriter: RowWriter[T],
-    maxBatchSizeInBytes: Int,
-    maxBatchSizeInRows: Option[Int],
-    parallelismLevel: Int,
-    consistencyLevel: ConsistencyLevel) extends Serializable with Logging {
+  connector: CassandraConnector,
+  tableDef: TableDef,
+  rowWriter: RowWriter[T],
+  maxBatchSizeInBytes: Int,
+  maxBatchSizeInRows: Option[Int],
+  parallelismLevel: Int,
+  consistencyLevel: ConsistencyLevel) extends Serializable with Logging {
 
   import com.datastax.spark.connector.writer.TableWriter._
 
@@ -63,8 +65,7 @@ class TableWriter[T] private (
   private def prepareStatement(session: Session): PreparedStatement = {
     try {
       session.prepare(queryTemplate)
-    }
-    catch {
+    } catch {
       case t: Throwable =>
         throw new IOException(s"Failed to prepare statement $queryTemplate: " + t.getMessage, t)
     }
@@ -92,15 +93,17 @@ class TableWriter[T] private (
     maxInsertSize
   }
 
-  /** Returns either configured batch size or, if not set, determines the optimal batch size by writing a
-    * small number of rows and estimating their size. */
+  /**
+   * Returns either configured batch size or, if not set, determines the optimal batch size by writing a
+   * small number of rows and estimating their size.
+   */
   private def optimumBatchSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
     maxBatchSizeInRows match {
       case Some(size) =>
         size
       case None =>
         val maxInsertSize = measureMaxInsertSize(data, stmt, queryExecutor)
-        math.max(1, maxBatchSizeInBytes / (maxInsertSize * 2))  // additional margin for data larger than usual
+        math.max(1, maxBatchSizeInBytes / (maxInsertSize * 2)) // additional margin for data larger than usual
     }
   }
 
@@ -159,19 +162,19 @@ object TableWriter {
   val MeasuredInsertsCount = 128
   val DefaultBatchSizeInBytes = 64 * 1024
 
-  def apply[T : ClassTag : RowWriterFactory](
-      connector: CassandraConnector,
-      keyspaceName: String,
-      tableName: String,
-      consistencyLevel: ConsistencyLevel,
-      columnNames: Seq[String] = Fields.ALL,
-      batchSizeInBytes: Int = DefaultBatchSizeInBytes,
-      batchSizeInRows: Option[Int] = None, 
-      parallelismLevel: Int = DefaultParallelismLevel): TableWriter[T] = {
+  def apply[T: ClassTag: RowWriterFactory](
+    connector: CassandraConnector,
+    keyspaceName: String,
+    tableName: String,
+    consistencyLevel: ConsistencyLevel,
+    columnNames: Seq[String] = Fields.ALL,
+    batchSizeInBytes: Int = DefaultBatchSizeInBytes,
+    batchSizeInRows: Option[Int] = None,
+    parallelismLevel: Int = DefaultParallelismLevel): TableWriter[T] = {
 
     def columnsToUse(table: TableDef): Seq[String] = columnNames match {
       case Fields.ALL => table.allColumns.map(_.columnName).toSeq
-      case subset => subset
+      case subset     => subset
     }
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption

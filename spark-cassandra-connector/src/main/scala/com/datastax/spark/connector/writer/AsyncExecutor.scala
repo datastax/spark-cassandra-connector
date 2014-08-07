@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
+import com.google.common.util.concurrent.{ FutureCallback, Futures, ListenableFuture, SettableFuture }
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
@@ -46,9 +46,11 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
     settable
   }
 
-  /** Waits until the tasks being currently executed get completed.     
-    * It will not wait for tasks scheduled for execution during this method call,
-    * nor tasks for which the [[executeAsync]] method did not complete. */
+  /**
+   * Waits until the tasks being currently executed get completed.
+   * It will not wait for tasks scheduled for execution during this method call,
+   * nor tasks for which the [[executeAsync]] method did not complete.
+   */
   def waitForCurrentlyExecutingTasks() {
     for ((future, _) <- pendingFutures.snapshot())
       Try(future.get())

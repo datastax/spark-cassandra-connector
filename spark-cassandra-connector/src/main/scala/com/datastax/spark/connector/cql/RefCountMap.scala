@@ -8,13 +8,17 @@ class RefCountMap[T] {
 
   private val refCounts = new TrieMap[T, Int]
 
-  /** Returns current reference count for the given key.
-    * This value may be constantly changing, so do not use it for synchronization purposes. */
+  /**
+   * Returns current reference count for the given key.
+   * This value may be constantly changing, so do not use it for synchronization purposes.
+   */
   final def get(key: T): Int =
     refCounts.getOrElse(key, 0)
 
-  /** Atomically increases reference count only if the reference counter is already greater than 0.
-    * @return true if reference counter was greater than zero and has been increased */
+  /**
+   * Atomically increases reference count only if the reference counter is already greater than 0.
+   * @return true if reference counter was greater than zero and has been increased
+   */
   @tailrec
   final def acquireIfNonZero(key: T): Int = {
     refCounts.get(key) match {
@@ -28,8 +32,10 @@ class RefCountMap[T] {
     }
   }
 
-  /** Atomically increases reference count by one.
-    * @return reference count after increase */
+  /**
+   * Atomically increases reference count by one.
+   * @return reference count after increase
+   */
   @tailrec
   final def acquire(key: T): Int = {
     refCounts.get(key) match {
@@ -46,9 +52,11 @@ class RefCountMap[T] {
     }
   }
 
-  /** Atomically decreases reference count by `n`.
-    * @return reference count after decrease
-    * @throws IllegalStateException if the reference count before decrease is less than `n` */
+  /**
+   * Atomically decreases reference count by `n`.
+   * @return reference count after decrease
+   * @throws IllegalStateException if the reference count before decrease is less than `n`
+   */
   @tailrec
   final def release(key: T, n: Int = 1): Int = {
     refCounts.get(key) match {

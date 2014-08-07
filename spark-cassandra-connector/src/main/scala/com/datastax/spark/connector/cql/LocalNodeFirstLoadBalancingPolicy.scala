@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.policies.LoadBalancingPolicy
-import com.datastax.driver.core.{Statement, Cluster, HostDistance, Host}
-import java.net.{InetAddress, NetworkInterface}
+import com.datastax.driver.core.{ Statement, Cluster, HostDistance, Host }
+import java.net.{ InetAddress, NetworkInterface }
 import scala.collection.JavaConversions._
 import scala.util.Random
 

@@ -2,7 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import org.apache.spark.streaming.dstream.DStream
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.writer.{WritableToCassandra, Fields, RowWriterFactory}
+import com.datastax.spark.connector.writer.{ WritableToCassandra, Fields, RowWriterFactory }
 
 import scala.reflect.ClassTag
 

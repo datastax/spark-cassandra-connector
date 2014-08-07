@@ -2,21 +2,23 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenRange}
+import com.datastax.spark.connector.rdd.partitioner.dht.{ Token, TokenRange }
 
 import scala.Ordering.Implicits._
 import scala.annotation.tailrec
 
-/** Divides a set of token ranges into groups containing not more than `maxRowCountPerGroup` rows
-  * and not more than `maxGroupSize` token ranges. Each group will form a single `CassandraRDDPartition`.
-  *
-  * The algorithm is as follows:
-  * 1. Sort token ranges by endpoints lexicographically.
-  * 2. Take the highest possible number of token ranges from the beginning of the list,
-  *    such that their sum of rowCounts does not exceed `maxRowCountPerGroup` and they all contain at
-  *    least one common endpoint. If it is not possible, take at least one item.
-  *    Those token ranges will make a group.
-  * 3. Repeat the previous step until no more token ranges left.*/
+/**
+ * Divides a set of token ranges into groups containing not more than `maxRowCountPerGroup` rows
+ * and not more than `maxGroupSize` token ranges. Each group will form a single `CassandraRDDPartition`.
+ *
+ * The algorithm is as follows:
+ * 1. Sort token ranges by endpoints lexicographically.
+ * 2. Take the highest possible number of token ranges from the beginning of the list,
+ *    such that their sum of rowCounts does not exceed `maxRowCountPerGroup` and they all contain at
+ *    least one common endpoint. If it is not possible, take at least one item.
+ *    Those token ranges will make a group.
+ * 3. Repeat the previous step until no more token ranges left.
+ */
 class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupSize: Int = Int.MaxValue) {
 
   private implicit object InetAddressOrdering extends Ordering[InetAddress] {
@@ -45,9 +47,11 @@ class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupS
     }
   }
 
-  /** Groups small token ranges on the same server(s) in order to reduce task scheduling overhead.
-    * Useful mostly with virtual nodes, which may create lots of small token range splits.
-    * Each group will make a single Spark task. */
+  /**
+   * Groups small token ranges on the same server(s) in order to reduce task scheduling overhead.
+   * Useful mostly with virtual nodes, which may create lots of small token range splits.
+   * Each group will make a single Spark task.
+   */
   def group(tokenRanges: Seq[TokenRange[V, T]]): Iterable[Seq[TokenRange[V, T]]] = {
     // sort by endpoints lexicographically
     // this way ranges on the same host are grouped together

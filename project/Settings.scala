@@ -49,7 +49,7 @@ object Settings extends Build {
   )
 
   // add ++ formatSettings
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ formatSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
@@ -61,7 +61,7 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ formatSettings ++ Seq(
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -100,7 +100,7 @@ object Settings extends Build {
   def formattingPreferences = {
     import scalariform.formatter.preferences._
     FormattingPreferences()
-      .setPreference(RewriteArrowSymbols, true)
+      .setPreference(RewriteArrowSymbols, false)
       .setPreference(AlignParameters, true)
       .setPreference(AlignSingleLineCaseStatements, true)
   }

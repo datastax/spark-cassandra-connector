@@ -6,7 +6,7 @@ import com.datastax.spark.connector.cql.TableDef
 
 import scala.reflect.ClassTag
 
-class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty) extends ReflectionColumnMapper[T] {
+class JavaBeanColumnMapper[T: ClassTag](columnNameOverride: Map[String, String] = Map.empty) extends ReflectionColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.JavaBeanColumnMapper._
 
@@ -17,13 +17,13 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
 
   override protected def isGetter(method: Method): Boolean =
     GetterRegex.findFirstMatchIn(method.getName).isDefined &&
-    method.getParameterTypes.size == 0 &&
-    method.getReturnType != Void.TYPE
+      method.getParameterTypes.size == 0 &&
+      method.getReturnType != Void.TYPE
 
   override protected def isSetter(method: Method): Boolean =
     SetterRegex.findFirstMatchIn(method.getName).isDefined &&
-    method.getParameterTypes.size == 1 &&
-    method.getReturnType == Void.TYPE
+      method.getParameterTypes.size == 1 &&
+      method.getReturnType == Void.TYPE
 
   override protected def getterToColumnName(getterName: String, tableDef: TableDef) = {
     val p = propertyName(getterName)

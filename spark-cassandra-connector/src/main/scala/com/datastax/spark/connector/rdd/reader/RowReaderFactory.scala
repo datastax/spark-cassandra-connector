@@ -20,7 +20,7 @@ trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
 
 trait LowPriorityRowReaderFactoryImplicits {
 
-  implicit def classBasedRowReaderFactory[R <: Serializable : TypeTag : ColumnMapper] =
+  implicit def classBasedRowReaderFactory[R <: Serializable: TypeTag: ColumnMapper] =
     new ClassBasedRowReaderFactory[R]
 }
 
@@ -41,5 +41,4 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
   }
 
 }
-
 

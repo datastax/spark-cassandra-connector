@@ -1,26 +1,25 @@
 package com.datastax.spark.connector.writer
 
-import java.io.{OutputStream, ObjectOutputStream}
+import java.io.{ OutputStream, ObjectOutputStream }
 import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
 import org.apache.cassandra.utils.ByteBufferUtil
 
-
 /** Estimates amount of memory required to serialize Java/Scala objects */
 object ObjectSizeEstimator {
 
   private def makeSerializable(obj: Any): AnyRef = {
     obj match {
-      case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
-      case list: java.util.List[_] => list.map(makeSerializable)
-      case list: List[_] => list.map(makeSerializable)
-      case set: java.util.Set[_] => set.map(makeSerializable)
-      case set: Set[_] => set.map(makeSerializable)
+      case bb: ByteBuffer           => ByteBufferUtil.getArray(bb)
+      case list: java.util.List[_]  => list.map(makeSerializable)
+      case list: List[_]            => list.map(makeSerializable)
+      case set: java.util.Set[_]    => set.map(makeSerializable)
+      case set: Set[_]              => set.map(makeSerializable)
       case map: java.util.Map[_, _] => map.map { case (k, v) => (makeSerializable(k), makeSerializable(v)) }
-      case map: Map[_, _] => map.map { case (k, v) => (makeSerializable(k), makeSerializable(v)) }
-      case other => other.asInstanceOf[AnyRef]
+      case map: Map[_, _]           => map.map { case (k, v) => (makeSerializable(k), makeSerializable(v)) }
+      case other                    => other.asInstanceOf[AnyRef]
     }
   }
 

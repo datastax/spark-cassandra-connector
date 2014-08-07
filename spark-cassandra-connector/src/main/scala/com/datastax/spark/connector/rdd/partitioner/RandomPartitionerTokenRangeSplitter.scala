@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFactory, TokenRange}
+import com.datastax.spark.connector.rdd.partitioner.dht.{ BigIntToken, TokenFactory, TokenRange }
 
 import scala.math.BigDecimal.RoundingMode
 
@@ -25,11 +25,10 @@ class RandomPartitionerTokenRangeSplitter(rowsPerToken: Double) extends TokenRan
     val n = math.max(1, (estimatedRows / splitSize).setScale(0, RoundingMode.HALF_UP).toInt)
     val splitPoints =
       (for (i <- 0 until n) yield wrap(left + (rangeSize * i.toDouble / n).toBigInt)) :+ right
-    for (Seq(l, r) <- splitPoints.sliding(2).toSeq) yield
-      new TokenRange[BigInt, BigIntToken](
-        new BigIntToken(l.bigInteger),
-        new BigIntToken(r.bigInteger),
-        range.endpoints,
-        Some((estimatedRows / n).toInt))
+    for (Seq(l, r) <- splitPoints.sliding(2).toSeq) yield new TokenRange[BigInt, BigIntToken](
+      new BigIntToken(l.bigInteger),
+      new BigIntToken(r.bigInteger),
+      range.endpoints,
+      Some((estimatedRows / n).toInt))
   }
 }

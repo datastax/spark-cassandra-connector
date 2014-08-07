@@ -1,31 +1,37 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider, Cluster}
+import com.datastax.driver.core.{ AuthProvider, PlainTextAuthProvider, Cluster }
 import com.datastax.driver.core.Cluster.Builder
-import org.apache.cassandra.thrift.{TFramedTransportFactory, ITransportFactory, AuthenticationRequest, Cassandra}
+import org.apache.cassandra.thrift.{ TFramedTransportFactory, ITransportFactory, AuthenticationRequest, Cassandra }
 import org.apache.cassandra.thrift.Cassandra.Iface
 import org.apache.spark.SparkConf
 
 import scala.collection.JavaConversions._
 
-/** Stores credentials used to authenticate to a Cassandra cluster and uses them
-  * to configure a Cassandra connection.
-  * This driver provides implementations [[NoAuthConf]] for no authentication
-  * and [[PasswordAuthConf]] for password authentication. Other authentication
-  * configurators can be plugged in by setting `cassandra.authentication.conf.factory.class`
-  * option. See [[AuthConfFactory]]. */
+/**
+ * Stores credentials used to authenticate to a Cassandra cluster and uses them
+ * to configure a Cassandra connection.
+ * This driver provides implementations [[NoAuthConf]] for no authentication
+ * and [[PasswordAuthConf]] for password authentication. Other authentication
+ * configurators can be plugged in by setting `cassandra.authentication.conf.factory.class`
+ * option. See [[AuthConfFactory]].
+ */
 trait AuthConf extends Serializable {
 
   /** Returns auth provider to be passed to the `Cluster.Builder` object. */
   def authProvider: AuthProvider
 
-  /** Returns the transport factory for creating thrift transports.
-    * Some authentication mechanisms like SASL require custom thrift transport.
-    * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
+  /**
+   * Returns the transport factory for creating thrift transports.
+   * Some authentication mechanisms like SASL require custom thrift transport.
+   * To be removed in the near future, when the dependency from Thrift will be completely dropped.
+   */
   def transportFactory: ITransportFactory
 
-  /** Sets appropriate authentication options for Thrift connection.
-    * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
+  /**
+   * Sets appropriate authentication options for Thrift connection.
+   * To be removed in the near future, when the dependency from Thrift will be completely dropped.
+   */
   def configureThriftClient(client: Cassandra.Iface)
 
 }
@@ -55,28 +61,34 @@ trait AuthConfFactory {
   def authConf(conf: SparkConf): AuthConf
 }
 
-/** Default `AuthConfFactory` that supports no authentication or password authentication.
-  * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
-  * options are present in `SparkConf`.*/
+/**
+ * Default `AuthConfFactory` that supports no authentication or password authentication.
+ * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
+ * options are present in `SparkConf`.
+ */
 class DefaultAuthConfFactory extends AuthConfFactory {
 
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
   def authConf(conf: SparkConf): AuthConf = {
-    val credentials = 
-      for (username <- conf.getOption(CassandraUserNameProperty);
-           password <- conf.getOption(CassandraPasswordProperty)) yield (username, password)
+    val credentials =
+      for (
+        username <- conf.getOption(CassandraUserNameProperty);
+        password <- conf.getOption(CassandraPasswordProperty)
+      ) yield (username, password)
 
     credentials match {
       case Some((user, password)) => PasswordAuthConf(user, password)
-      case None => NoAuthConf
+      case None                   => NoAuthConf
     }
   }
 }
 
-/** Entry point for obtaining `AuthConf` object from `SparkConf`, used when establishing connections to Cassandra.
-  * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory.class` property. */
+/**
+ * Entry point for obtaining `AuthConf` object from `SparkConf`, used when establishing connections to Cassandra.
+ * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory.class` property.
+ */
 object AuthConf {
   val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory.class"
 
@@ -86,6 +98,4 @@ object AuthConf {
     authConfFactory.authConf(conf)
   }
 }
-
-
 

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.util
 
 import java.io._
-import java.net.{Socket, InetAddress}
+import java.net.{ Socket, InetAddress }
 
 import scala.io.Source
 import scala.language.reflectiveCalls
@@ -9,13 +9,14 @@ import scala.util.Try
 
 object IOUtils {
 
-  /** Automatically closes resource after use. Handy for closing streams, files, sessions etc.
-    * Similar to try-with-resources in Java 7. */
+  /**
+   * Automatically closes resource after use. Handy for closing streams, files, sessions etc.
+   * Similar to try-with-resources in Java 7.
+   */
   def closeAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): T = {
     try {
       code(closeable)
-    }
-    finally {
+    } finally {
       closeable.close()
     }
   }
@@ -39,9 +40,10 @@ object IOUtils {
     dir
   }
 
-
-  /** Waits until a port at the given address is open or timeout passes.
-    * @return true if managed to connect to the port, false if timeout happened first */
+  /**
+   * Waits until a port at the given address is open or timeout passes.
+   * @return true if managed to connect to the port, false if timeout happened first
+   */
   def waitForPortOpen(host: InetAddress, port: Int, timeout: Long): Boolean = {
     val startTime = System.currentTimeMillis()
     val portProbe = Iterator.continually {

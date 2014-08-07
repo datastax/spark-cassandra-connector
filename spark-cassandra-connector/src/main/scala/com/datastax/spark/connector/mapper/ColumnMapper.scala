@@ -4,38 +4,38 @@ import com.datastax.spark.connector.cql.TableDef
 
 import scala.reflect.ClassTag
 
-
-/** Produces [[ColumnMap]] objects that map class `T` properties to columns
-  * in a given Cassandra table.
-  *
-  * You can associate a custom `ColumnMapper` object with any of your classes by
-  * providing an implicit `ColumnMapper` in the companion object of the mapped class:
-  * {{{
-  *   CREATE TABLE kv(key int primary key, value text);
-  * }}}
-  * {{{
-  *   case class KeyValue(k: Int, v: String)
-  *
-  *   object KeyValue {
-  *     implicit val columnMapper =
-  *       new DefaultColumnMapper[KeyValue](Map("k" -> "key", "v" -> "value"))
-  *   }
-  * }}}
-  */
+/**
+ * Produces [[ColumnMap]] objects that map class `T` properties to columns
+ * in a given Cassandra table.
+ *
+ * You can associate a custom `ColumnMapper` object with any of your classes by
+ * providing an implicit `ColumnMapper` in the companion object of the mapped class:
+ * {{{
+ *   CREATE TABLE kv(key int primary key, value text);
+ * }}}
+ * {{{
+ *   case class KeyValue(k: Int, v: String)
+ *
+ *   object KeyValue {
+ *     implicit val columnMapper =
+ *       new DefaultColumnMapper[KeyValue](Map("k" -> "key", "v" -> "value"))
+ *   }
+ * }}}
+ */
 trait ColumnMapper[T] extends Serializable {
   def columnMap(tableDef: TableDef): ColumnMap
 }
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {
-  implicit def defaultColumnMapper[T : ClassTag]: ColumnMapper[T] =
+  implicit def defaultColumnMapper[T: ClassTag]: ColumnMapper[T] =
     new DefaultColumnMapper[T]
 }
 
 /** Provides implicit [[ColumnMapper]] objects used for mapping tuples. */
 object ColumnMapper extends LowPriorityColumnMapper {
 
-  implicit def tuple2ColumnMapper[A1, A2] = 
+  implicit def tuple2ColumnMapper[A1, A2] =
     new TupleColumnMapper[(A1, A2)]
   implicit def tuple3ColumnMapper[A1, A2, A3] =
     new TupleColumnMapper[(A1, A2, A3)]

@@ -8,11 +8,13 @@ import org.apache.commons.lang3.reflect.ConstructorUtils
 import org.apache.spark.Logging
 
 import scala.reflect.runtime.universe._
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
-/** Factory for creating objects of any type by invoking their primary constructor.
-  * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
-  * and can be safely passed along with Spark tasks. */
+/**
+ * Factory for creating objects of any type by invoking their primary constructor.
+ * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
+ * and can be safely passed along with Spark tasks.
+ */
 class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
 
   import com.datastax.spark.connector.rdd.reader.AnyObjectFactory._
@@ -143,7 +145,7 @@ object AnyObjectFactory extends Logging {
   private[connector] def extractOuterClasses(c: Class[_]): List[Class[_]] = {
     getRealEnclosingClass(c) match {
       case Some(enclosingClass) => enclosingClass :: extractOuterClasses(enclosingClass)
-      case None => Nil
+      case None                 => Nil
     }
   }
 
@@ -155,7 +157,7 @@ object AnyObjectFactory extends Logging {
         iw.setAccessible(true)
         dive(iw.get(instance))
       case Failure(ex: NoSuchFieldException) => instance
-      case Failure(ex) => throw ex;
+      case Failure(ex)                       => throw ex;
     }
   }
 
@@ -166,7 +168,7 @@ object AnyObjectFactory extends Logging {
    * class in their constructors, and therefore they need to be treated as normal, top level classes.
    */
   def isRealMemberClass[T](clazz: Class[T]) = {
-    clazz.isMemberClass && 
+    clazz.isMemberClass &&
       clazz.getConstructors.headOption.exists(_.getParameterTypes.headOption.exists(_ == clazz.getEnclosingClass))
   }
 

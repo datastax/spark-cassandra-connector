@@ -3,13 +3,13 @@ package com.datastax.spark.connector
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.writer.{WritableToCassandra, Fields, RowWriterFactory, TableWriter}
+import com.datastax.spark.connector.writer.{ WritableToCassandra, Fields, RowWriterFactory, TableWriter }
 import com.datastax.driver.core.ConsistencyLevel
 
 import scala.reflect.ClassTag
 
 /** Provides Cassandra-specific methods on `RDD` */
-class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
+class RDDFunctions[T: ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
 
   private lazy val batchSizeInRowsStr = rdd.sparkContext.getConf.get(
     "spark.cassandra.output.batch.size.rows", "auto")
@@ -23,7 +23,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
   private lazy val batchSizeInRows = {
     val Number = "([0-9]+)".r
     batchSizeInRowsStr match {
-      case "auto" => None
+      case "auto"    => None
       case Number(x) => Some(x.toInt)
       case other =>
         throw new ConfigurationException(
@@ -41,7 +41,7 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
                       tableName: String,
                       columnNames: Seq[String] = Fields.ALL,
                       batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
- 
+
     val writer = batchSize match {
       case None       => tableWriter(keyspaceName, tableName, columnNames, None)(rwf)
       case Some(size) => tableWriter(keyspaceName, tableName, columnNames, batchSize)(rwf)
@@ -51,9 +51,9 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
   }
 
   /**
-    * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
-    * Internal API
-    */
+   * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
+   * Internal API
+   */
   private[connector] def tableWriter(keyspace: String, table: String,
                                      columns: Seq[String],
                                      batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
