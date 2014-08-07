@@ -1,3 +1,4 @@
+ * Add indexedColumn to ColumnDef (#122)
  * Extracted Java API into a separate module (#99)
 
 1.0.0 RC 2
@@ -25,7 +26,6 @@
  * Ability to register custom TypeConverters. (#32)
  * Handle null values in StringConverter. (#79)
  * Improved error message when there are no replicas in the local DC. (#69)
-
 
 1.0.0 beta 2
  * DSE compatibility improvements. (#64)
