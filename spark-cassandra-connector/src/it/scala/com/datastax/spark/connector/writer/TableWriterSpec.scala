@@ -120,6 +120,19 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     }
   }
 
+  it should "distinguish (deprecated) implicit `seqToSomeColumns`" in {
+    val col = Seq((2, 1L, None))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", Seq("key", "group"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) should be (2)
+        row.getString(2) should be (null)
+      }
+    }
+  }
+
   it should "write collections" in {
     val col = Seq(
       (1, Vector("item1", "item2"), Set("item1", "item2"), Map("key1" -> "value1", "key2" -> "value2")),
