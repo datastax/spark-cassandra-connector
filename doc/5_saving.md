@@ -12,7 +12,7 @@ keyspace name, table name and a list of columns. Make sure to include at least a
 
 ```scala
 collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
-collection.saveToCassandra("test", "words", Seq("word", "count"))
+collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ```
     
     cqlsh:test> select * from words;
@@ -34,7 +34,7 @@ to be saved. This example provides more information on property-column naming co
 ```scala
 case class WordCount(word: String, count: Long)
 collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))    
-collection.saveToCassandra("test", "words", Seq("word", "count"))
+collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ```
 
     cqlsh:test> select * from words;

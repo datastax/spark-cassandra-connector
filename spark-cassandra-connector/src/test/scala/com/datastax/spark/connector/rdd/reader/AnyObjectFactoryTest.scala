@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.testkit.AbstractSpec
 import com.datastax.spark.connector.util.JavaApiHelper
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._

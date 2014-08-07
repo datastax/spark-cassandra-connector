@@ -52,7 +52,7 @@ sc.cassandraTable[WordCount]("test", "words").toArray
 // Array(WordCount(bar,20), WordCount(foo,10))
 
 sc.parallelize(Seq(WordCount("baz", 30), WordCount("foobar", 40)))
-  .saveToCassandra("test", "words", Seq("word", "count"))
+  .saveToCassandra("test", "words", SomeColumns("word", "count"))
 ```
 
 ### Writing custom `ColumnMapper` implementations

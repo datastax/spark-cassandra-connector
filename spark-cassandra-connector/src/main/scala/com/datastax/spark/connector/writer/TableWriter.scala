@@ -3,6 +3,7 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
+import com.datastax.spark.connector.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
 import com.datastax.spark.connector.util.CountingIterator
 
@@ -144,16 +145,7 @@ class TableWriter[T] private (
   }
 }
 
-private[connector] abstract class Fields extends Serializable
-private[connector] object Fields {
-  /* All fields used for a table. */
-  final val ALL: Seq[String] = immutable.Seq.empty
-}
-
 object TableWriter {
-
-  /* All fields used for a table. */
-  final val AllColumns: Seq[String] = immutable.Seq.empty
 
   val DefaultParallelismLevel = 5
   val MeasuredInsertsCount = 128
@@ -164,19 +156,18 @@ object TableWriter {
       keyspaceName: String,
       tableName: String,
       consistencyLevel: ConsistencyLevel,
-      columnNames: Seq[String] = Fields.ALL,
+      columnNames: ColumnSelector,
       batchSizeInBytes: Int = DefaultBatchSizeInBytes,
       batchSizeInRows: Option[Int] = None, 
       parallelismLevel: Int = DefaultParallelismLevel): TableWriter[T] = {
 
-    def columnsToUse(table: TableDef): Seq[String] = columnNames match {
-      case Fields.ALL => table.allColumns.map(_.columnName).toSeq
-      case subset => subset
-    }
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = columnsToUse(tableDef)
+    val selectedColumns = columnNames match {
+      case SomeColumns(names @ _*) => names
+      case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
+    }
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
     new TableWriter[T](connector, tableDef, rowWriter, batchSizeInBytes, batchSizeInRows, parallelismLevel, consistencyLevel)
   }

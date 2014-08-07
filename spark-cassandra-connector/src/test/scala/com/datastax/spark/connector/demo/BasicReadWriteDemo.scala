@@ -2,8 +2,6 @@ package com.datastax.spark.connector.demo
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.demo.TableCopyDemo._
-import org.apache.spark.{SparkConf, SparkContext}
 
 object BasicReadWriteDemo extends App with DemoApp {
 
@@ -22,7 +20,7 @@ object BasicReadWriteDemo extends App with DemoApp {
 
   // Write two rows to the test.kv table:
   val col = sc.parallelize(Seq((4, "fourth row"), (5, "fifth row")))
-  col.saveToCassandra("test", "key_value", Seq("key", "value"))
+  col.saveToCassandra("test", "key_value", SomeColumns("key", "value"))
 
   sc.stop()
 }

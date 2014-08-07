@@ -3,7 +3,7 @@ package com.datastax.spark.connector
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.writer.{WritableToCassandra, Fields, RowWriterFactory, TableWriter}
+import com.datastax.spark.connector.writer._
 import com.datastax.driver.core.ConsistencyLevel
 
 import scala.reflect.ClassTag
@@ -36,34 +36,51 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
 
   private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
 
-  /** Saves the data from `RDD` to a Cassandra table. */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columnNames: Seq[String] = Fields.ALL,
-                      batchSize: Option[Int] = None)(implicit rwf: RowWriterFactory[T]) {
- 
-    val writer = batchSize match {
-      case None       => tableWriter(keyspaceName, tableName, columnNames, None)(rwf)
-      case Some(size) => tableWriter(keyspaceName, tableName, columnNames, batchSize)(rwf)
-    }
-
+  /**
+   * Saves the data from `RDD` to a Cassandra table.
+   * {{{
+   *   rdd.saveToCassandra(AllColumns("test", "words"))
+   * }}}
+   * @see [[WritableToCassandra]]
+   */
+  def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]): Unit = {
+    val writer = tableWriter(keyspaceName, tableName, AllColumns, None)(rwf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
   /**
+   * Saves the data from `RDD` to a Cassandra table. Uses the specified column names.
+   * @see [[WritableToCassandra]]
+   */
+  def saveToCassandra(keyspaceName: String, tableName: String, columns: SomeColumns)(implicit rwf: RowWriterFactory[T]): Unit = {
+    val writer = tableWriter(keyspaceName, tableName, columns, None)(rwf)
+    rdd.sparkContext.runJob(rdd, writer.write _)
+  }
+
+  /**
+   * Saves the data from `RDD` to a Cassandra table. Uses the specified column names with an additional batch size.
+   * @see [[WritableToCassandra]]
+   */
+  def saveToCassandra(keyspaceName: String, tableName: String, columns: SomeColumns, batchSize: Int)(implicit rwf: RowWriterFactory[T]): Unit = {
+    val writer = tableWriter(keyspaceName, tableName, columns, Some(batchSize))(rwf)
+    rdd.sparkContext.runJob(rdd, writer.write _)
+  }
+
+  /**
+   * Internal API.
     * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
-    * Internal API
     */
-  private[connector] def tableWriter(keyspace: String, table: String,
-                                     columns: Seq[String],
-                                     batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
+  private[connector] def tableWriter(keyspaceName: String, tableName: String,
+                                     columns: ColumnSelector, batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
+
     TableWriter[T](
       connector,
-      keyspaceName = keyspace,
-      tableName = table,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
       consistencyLevel = outputConsistencyLevel,
       columnNames = columns,
       batchSizeInBytes = batchSizeInBytes,
-      batchSizeInRows = batchSizeInRows,
+      batchSizeInRows = batchSize,
       parallelismLevel = writeParallelismLevel)
+
 }

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.CassandraRow
+import com.datastax.spark.connector.{SomeColumns, CassandraRow}
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -32,6 +32,8 @@ object JavaApiHelper {
   def toScalaSeq[T](array: Array[T]): Seq[T] = array
 
   def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
+
+  def toColumns(array: Array[String]): SomeColumns = SomeColumns(array: _*)
 
   def defaultRowWriterFactory[T](classTag: ClassTag[T], mapper: ColumnMapper[T]) = {
     RowWriterFactory.defaultRowWriterFactory(classTag, mapper)

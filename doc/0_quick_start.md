@@ -86,7 +86,7 @@ import com.datastax.spark.connector.streaming._
 Create any of the available or custom Spark streams, for example an Akka Actor stream:
 
 ```scala
-val stream = ssc.actorStream[String](Props[SimpleActor], actorName, StorageLevel.MEMORY_AND_DISK)
+val stream = ssc.actorStream[String](Props[SimpleStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 ```
 
 Writing to Cassandra from a Stream:
@@ -95,14 +95,14 @@ Writing to Cassandra from a Stream:
 val wc = stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
-    .saveToCassandra("streaming_test", "words", Seq("word", "count"))
+    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"))
 ```
 
 Where `saveToCassandra` accepts
 
 - keyspaceName: String, tableName: String
-- keyspaceName: String, tableName: String, columnNames: Seq[String]
-- keyspaceName: String, tableName: String, columnNames: Seq[String], batchSize: Option[Int]
+- keyspaceName: String, tableName: String, columnNames: SomeColumns
+- keyspaceName: String, tableName: String, columnNames: SomeColumns, batchSize: Int
 
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
@@ -119,7 +119,7 @@ Add two more rows to the table:
 
 ```scala
 val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
-collection.saveToCassandra("test", "kv", Seq("key", "value"))       
+collection.saveToCassandra("test", "kv", SomeColumns("key", "value"))       
 ```
 
 

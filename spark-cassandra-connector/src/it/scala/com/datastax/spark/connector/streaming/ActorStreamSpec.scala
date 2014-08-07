@@ -2,6 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{Props, Terminated, ActorSystem}
 import akka.testkit.TestKit
+import com.datastax.spark.connector.SomeColumns 
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
@@ -26,7 +27,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", Seq("word", "count"), Some(1))
+        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
 
       ssc.start()
 
