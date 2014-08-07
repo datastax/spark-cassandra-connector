@@ -95,7 +95,7 @@ Writing to Cassandra from a Stream:
 val wc = stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
-    .saveToCassandra("streaming_test", "words")
+    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"))
 ```
 
 Where `saveToCassandra` accepts

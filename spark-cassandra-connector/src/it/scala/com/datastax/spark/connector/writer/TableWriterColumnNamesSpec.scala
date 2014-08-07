@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.{SomeColumns, AllColumns}
+import com.datastax.spark.connector.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
 
 class TableWriterColumnNamesSpec extends AbstractSpec with CassandraServer with SparkServer {

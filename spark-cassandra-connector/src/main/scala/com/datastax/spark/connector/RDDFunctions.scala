@@ -2,7 +2,6 @@ package com.datastax.spark.connector
 
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.rdd.RDD
-import com.datastax.spark.connector.rdd.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.writer._
 import com.datastax.driver.core.ConsistencyLevel

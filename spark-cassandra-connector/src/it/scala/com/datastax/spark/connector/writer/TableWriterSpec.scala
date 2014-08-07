@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.SomeColumns
+import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.TypeConverter
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector.testkit._

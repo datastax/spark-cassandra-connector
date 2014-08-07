@@ -2,7 +2,6 @@ package com.datastax.spark.connector.demo
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.SomeColumns
 
 object BasicReadWriteDemo extends App with DemoApp {
 

@@ -2,7 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{Props, Terminated, ActorSystem}
 import akka.testkit.TestKit
-import com.datastax.spark.connector.rdd.SomeColumns
+import com.datastax.spark.connector.SomeColumns 
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.rdd.SomeColumns
+import com.datastax.spark.connector.SomeColumns
 
 trait WritableToCassandra[T] {
 

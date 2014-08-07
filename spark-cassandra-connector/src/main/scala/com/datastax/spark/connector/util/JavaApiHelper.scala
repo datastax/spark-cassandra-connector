@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.CassandraRow
+import com.datastax.spark.connector.{SomeColumns, CassandraRow}
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
-import com.datastax.spark.connector.rdd.SomeColumns
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
 

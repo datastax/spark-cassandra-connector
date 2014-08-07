@@ -3,8 +3,8 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
+import com.datastax.spark.connector.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
-import com.datastax.spark.connector.rdd.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.util.CountingIterator
 
 import org.apache.spark.{Logging, TaskContext}

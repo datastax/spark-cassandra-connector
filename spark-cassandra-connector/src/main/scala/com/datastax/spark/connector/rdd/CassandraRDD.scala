@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 
 import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
+import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
