@@ -45,7 +45,6 @@ object Settings extends Build {
     publish := {}
   )
 
-  // add ++ formatSettings
   lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
@@ -56,6 +55,15 @@ object Settings extends Build {
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
     autoAPIMappings := true
+  )
+
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
+    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
+    parallelExecution in ThisBuild := false,
+    parallelExecution in Global := false
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
@@ -88,7 +96,7 @@ object Settings extends Build {
   def formattingPreferences = {
     import scalariform.formatter.preferences._
     FormattingPreferences()
-      .setPreference(RewriteArrowSymbols, true)
+      .setPreference(RewriteArrowSymbols, false)
       .setPreference(AlignParameters, true)
       .setPreference(AlignSingleLineCaseStatements, true)
   }
