@@ -34,7 +34,7 @@ case class ColumnDef(keyspaceName: String,
   }
 }
 
-private[connector] object ColumnDef {
+object ColumnDef {
 
   def apply(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
     val table = column.getTable

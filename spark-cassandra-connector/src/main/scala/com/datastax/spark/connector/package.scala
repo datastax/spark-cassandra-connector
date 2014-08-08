@@ -17,8 +17,8 @@ import scala.reflect.ClassTag
  * Call [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]] method on the `SparkContext` object
  * to create a [[com.datastax.spark.connector.rdd.CassandraRDD CassandraRDD]] exposing Cassandra tables as Spark RDDs.
  *
- * Call [[com.datastax.spark.connector.RDDFunctions#saveToCassandra saveToCassandra]]
- * method on any `RDD` to save distributed collection to a Cassandra table.
+ * Call [[com.datastax.spark.connector.RDDFunctions]] `saveToCassandra`
+ * function on any `RDD` to save distributed collection to a Cassandra table.
  *
  * Example:
  * {{{
