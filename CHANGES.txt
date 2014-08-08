@@ -1,6 +1,7 @@
  * Add indexedColumn to ColumnDef (#122)
 
 1.0.0 RC 3
+ * Fix open Cluster leak in CassandraConnector#createSession (#142)
  * TableWriter#saveToCassandra accepts ColumnSelector instead of Seq[String] for
    passing a column list. Seq[String] still accepted for backwards compatibility,
    but deprecated.
