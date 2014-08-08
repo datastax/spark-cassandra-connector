@@ -87,7 +87,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 
   /** Rows per token average is required for fast local range splitting.
     * Used only for Murmur3Partitioner and RandomPartitioner.  */
-  private def estimateRowsPerToken(tokenRanges: Seq[TokenRange]): Double = {
+  private def estimateCassandraPartitionsPerToken(tokenRanges: Seq[TokenRange]): Double = {
     val random = new scala.util.Random(0)
     val tokenRangeSample = random.shuffle(tokenRanges).take(CassandraRDDPartitioner.TokenRangeSampleSize)
     val splitter = new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
@@ -100,11 +100,11 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def createSplitterFor(tokenRanges: Seq[TokenRange]): TokenRangeSplitter[V, T] = {
     tokenFactory.asInstanceOf[TokenFactory[_, _]] match {
       case TokenFactory.RandomPartitionerTokenFactory =>
-        val rowsPerToken = estimateRowsPerToken(tokenRanges)
-        new RandomPartitionerTokenRangeSplitter(rowsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
+        new RandomPartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
       case TokenFactory.Murmur3TokenFactory =>
-        val rowsPerToken = estimateRowsPerToken(tokenRanges)
-        new Murmur3PartitionerTokenRangeSplitter(rowsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
+        new Murmur3PartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
       case _ =>
         new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
     }
