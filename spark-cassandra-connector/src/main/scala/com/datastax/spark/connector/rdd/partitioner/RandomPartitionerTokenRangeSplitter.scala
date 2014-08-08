@@ -5,7 +5,7 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFacto
 import scala.math.BigDecimal.RoundingMode
 
 /** Fast token range splitter assuming that data are spread out evenly in the whole range. */
-class RandomPartitionerTokenRangeSplitter(rowsPerToken: Double) extends TokenRangeSplitter[BigInt, BigIntToken] {
+class RandomPartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) extends TokenRangeSplitter[BigInt, BigIntToken] {
 
   private val tokenFactory =
     TokenFactory.RandomPartitionerTokenFactory
@@ -21,7 +21,7 @@ class RandomPartitionerTokenRangeSplitter(rowsPerToken: Double) extends TokenRan
     val rangeSize =
       if (right > left) BigDecimal(right - left)
       else BigDecimal(right - left + tokenFactory.totalTokenCount)
-    val estimatedRows = rangeSize * rowsPerToken
+    val estimatedRows = rangeSize * cassandraPartitionsPerToken
     val n = math.max(1, (estimatedRows / splitSize).setScale(0, RoundingMode.HALF_UP).toInt)
     val splitPoints =
       (for (i <- 0 until n) yield wrap(left + (rangeSize * i.toDouble / n).toBigInt)) :+ right

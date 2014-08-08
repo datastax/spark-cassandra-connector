@@ -32,13 +32,14 @@ import scala.reflect._
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
   * properties control the number of partitions and the fetch size:
   *
-  *   - spark.cassandra.input.split.size:        approx number of rows in a Spark partition, default 100000
-  *   - spark.cassandra.input.page.row.size:     number of rows fetched per roundtrip, default 1000
-  *   - spark.cassandra.input.consistency.level: consistency level to use when reading, default LOCAL_ONE
+  *   - spark.cassandra.input.split.size:        approx number of Cassandra partitions in a Spark partition, default 100000
+  *   - spark.cassandra.input.page.row.size:     number of CQL rows fetched per roundtrip, default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark executor.
+  *
   * By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality and minimize network traffic.
   * This read consistency level is controlled by the following property:
+  *
   *   - spark.cassandra.input.consistency.level: consistency level for RDD reads, string matching the ConsistencyLevel enum name.
   *
   * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
