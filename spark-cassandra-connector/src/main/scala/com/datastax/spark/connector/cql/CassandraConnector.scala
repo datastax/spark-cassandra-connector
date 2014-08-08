@@ -159,9 +159,17 @@ object CassandraConnector extends Logging {
         .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
         .withAuthProvider(conf.authConf.authProvider)
         .build()
-    val clusterName = cluster.getMetadata.getClusterName
-    logInfo(s"Connected to Cassandra cluster: $clusterName")
-    cluster.connect()
+
+    try {
+      val clusterName = cluster.getMetadata.getClusterName
+      logInfo(s"Connected to Cassandra cluster: $clusterName")
+      cluster.connect()
+    }
+    catch {
+      case e: Throwable =>
+        cluster.close()
+        throw e
+    }
   }
 
   private def destroySession(session: Session) {
