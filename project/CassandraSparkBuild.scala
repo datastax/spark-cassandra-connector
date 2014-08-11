@@ -17,6 +17,8 @@
 
 import sbt._
 import sbt.Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object CassandraSparkBuild extends Build {
   import Settings._
@@ -24,7 +26,7 @@ object CassandraSparkBuild extends Build {
   lazy val root = Project(
     id = "root",
     base = file("."),
-    settings = parentSettings,
+    settings = parentSettings ++ assemblySettings,
     aggregate = Seq(connector, connectorJava, demos)
   )
 
@@ -40,7 +42,7 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector, connectorJava))
 
   def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
-    Project(name, file(name), settings = defaultSettings ++ dsettings, dependencies = cpd) configs (IntegrationTest)
+    Project(name, file(name), settings = defaultSettings ++ dsettings ++ assemblySettings, dependencies = cpd) configs (IntegrationTest)
 
 }
 
