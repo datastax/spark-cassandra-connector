@@ -42,7 +42,7 @@ import com.datastax.spark.connector._
 Whenever you call a method requiring access to Cassandra, the options in the `SparkConf` object will be used
 to create a new connection or to borrow one already open from the global connection cache. 
 The initial contact node given in
-`cassandra.connection.host` can be any node of the cluster. The driver will fetch the cluster topology from 
+`spark.cassandra.connection.host` can be any node of the cluster. The driver will fetch the cluster topology from 
 the contact node and will always try to connect to the closest node in the same data center. If possible, 
 connections are established to the same node the task is running on. Consequently, good locality of data can be achieved and the amount 
 of data sent across the network is minimized. 
@@ -58,7 +58,7 @@ represented by the underlying Java Driver `Cluster` object.
 
 Eventually, when all the tasks needing Cassandra connectivity terminate,
 the connection to the Cassandra cluster will be closed shortly thereafter. The period of time for keeping unused connections
-open is controlled by the global `cassandra.connection.keep_alive_ms` system property, which defaults to 250 ms. 
+open is controlled by the global `spark.cassandra.connection.keep_alive_ms` system property, which defaults to 250 ms. 
 
 
 ### Connecting manually to Cassandra
