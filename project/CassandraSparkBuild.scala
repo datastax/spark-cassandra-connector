@@ -31,16 +31,14 @@ object CassandraSparkBuild extends Build {
   lazy val connector = LibraryProject("spark-cassandra-connector", Seq(libraryDependencies ++= Dependencies.connector))
 
   lazy val connectorJava = LibraryProject("spark-cassandra-connector-java", Seq(libraryDependencies ++= Dependencies.connector),
-    Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided"))
+    Seq(connector))
 
-  lazy val demos = Project(
-    id = "spark-cassandra-connector-demos",
-    base = file("spark-cassandra-connector-demos"),
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.demos),
-    dependencies = Seq(connector, connectorJava))
+  lazy val demos = LibraryProject("spark-cassandra-connector-demos",
+    demoSettings ++ Seq(libraryDependencies ++= Dependencies.demos), Seq(connector, connectorJava))
 
   def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
-    Project(name, file(name), settings = defaultSettings ++ dsettings, dependencies = cpd) configs (IntegrationTest)
+    Project(name, file(name), settings = defaultSettings ++ dsettings,
+      dependencies = cpd.map(_.project % "compile;runtime->runtime;test->test;it->it,test;provided->provided")) configs (IntegrationTest)
 
 }
 

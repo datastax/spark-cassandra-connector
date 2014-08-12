@@ -2,7 +2,7 @@ package com.datastax.spark.connector.demo
 
 import com.datastax.spark.connector.cql.CassandraConnector
 
-object TableCopyDemo extends App with DemoApp {
+object TableCopyDemo extends DemoApp {
 
   import com.datastax.spark.connector._
 
@@ -21,5 +21,5 @@ object TableCopyDemo extends App with DemoApp {
   src.saveToCassandra("test", "destination")
 
   val dest = sc.cassandraTable("test", "destination")
-  dest.toArray().foreach(println)
+  dest.toArray().foreach(row => log.debug(s"$row"))
 }
