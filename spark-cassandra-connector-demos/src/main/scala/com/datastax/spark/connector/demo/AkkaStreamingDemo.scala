@@ -33,6 +33,8 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
   import InternalStreamingEvent._
   import context.dispatcher
 
+  context.system.registerOnTermination(shutdown())
+
   implicit val timeout = Timeout(5.seconds)
 
   private val actorName = "stream"
@@ -40,8 +42,6 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
   private val sas = SparkEnv.get.actorSystem
 
   private val path = ActorPath.fromString(s"$sas/user/Supervisor0/$actorName")
-
-  context.system.registerOnTermination(shutdown())
 
   private val reporter = context.actorOf(Props(new Reporter(ssc, keyspaceName, tableName, data)), "reporter")
 
@@ -55,7 +55,6 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
 
   ssc.start()
   log.info(s"Streaming context started.")
-
 
   for (actor <- sas.actorSelection(path).resolveOne()) {
     context.watch(actor)

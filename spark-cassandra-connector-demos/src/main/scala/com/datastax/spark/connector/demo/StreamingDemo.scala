@@ -1,20 +1,11 @@
 package com.datastax.spark.connector.demo
 
-import com.datastax.spark.connector.demo.AkkaStreamingDemo._
-import com.datastax.spark.connector.demo.InternalStreamingEvent.{Report, WordCount, Completed}
-import org.apache.commons.io.FileUtils
-import org.apache.spark.streaming.dstream.DStream
-
 import scala.collection.immutable
-import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import akka.actor.{PoisonPill, Actor, ActorRef}
-import akka.util.Timeout
-import org.apache.spark.{SparkEnv, Logging, SparkConf}
-import org.apache.spark.streaming.{Seconds, Milliseconds, StreamingContext}
-import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
-import com.datastax.spark.connector.streaming._
+import org.apache.spark.{SparkEnv, Logging}
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import com.datastax.spark.connector.cql.CassandraConnector
 
 /**
  * Creates the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
@@ -85,6 +76,7 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
   import akka.actor.Cancellable
   import com.datastax.spark.connector._
   import com.datastax.spark.connector.streaming._
+  import InternalStreamingEvent._
   import context.dispatcher
 
   private var task: Option[Cancellable] = None
