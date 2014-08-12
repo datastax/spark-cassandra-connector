@@ -2,7 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.Actor
 import com.datastax.spark.connector.SparkContextFunctions
-import com.datastax.spark.connector.rdd.reader.RowReaderFactory 
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.receivers.Receiver
 
