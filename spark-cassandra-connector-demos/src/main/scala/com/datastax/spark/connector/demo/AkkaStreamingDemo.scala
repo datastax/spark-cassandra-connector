@@ -64,12 +64,8 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
   ssc.start()
   log.info(s"Streaming context started.")
 
-  /* Note that the `actor` is in the Spark actor system. We will watch it from
-     the demo application's actor system. The `Sender` will send data to the
-     stream actor which dispatches messages round-robin to each router instance,
-     simply to distribute load over multiple actor mailboxes vs wait for one's
-     availability in the queue.
-   */
+  /* Note that the `actor` is in the Spark actor system. We will watch it from the demo
+     application's actor system. The `Sender` will send data to the stream actor. */
   for (actor <- sas.actorSelection(path).resolveOne()) {
     context.watch(actor)
     context.actorOf(Props(new Sender(data.toArray, actor)))
