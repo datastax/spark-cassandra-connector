@@ -18,8 +18,6 @@ object AkkaStreamingDemo extends StreamingDemo {
   * `org.apache.spark.streaming.receivers.Receiver`. This receiver tracks the number
   * of blocks of data pushed to Spark so that the demo can shut down once we assert
   * the expected data has been saved to Cassandra.
-  *
-  * See [[com.datastax.spark.connector.streaming.TypedStreamingActor]] and [[CounterActor]].
   */
 class Streamer extends TypedStreamingActor[String] with CounterActor {
 

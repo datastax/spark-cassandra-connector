@@ -8,7 +8,8 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
 
 /**
- * Creates the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
+ * Creates the `org.apache.spark.streaming.StreamingContext` then write async to the stream.
+ * This is the base for all streaming demos.
  */
 trait StreamingDemo extends DemoApp {
 
@@ -79,7 +80,6 @@ class Sender(val data: Array[String], val to: ActorRef) extends Actor {
   */
 class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
   import akka.actor.Cancellable
-  import com.datastax.spark.connector._
   import com.datastax.spark.connector.streaming._
   import InternalStreamingEvent._
   import context.dispatcher
