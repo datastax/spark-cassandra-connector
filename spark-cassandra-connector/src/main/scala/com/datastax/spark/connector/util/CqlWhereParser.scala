@@ -3,34 +3,44 @@ package com.datastax.spark.connector.util
 import org.apache.spark.Logging
 import scala.util.parsing.combinator.RegexParsers
 
-object cqlWhereParser extends RegexParsers with Logging {
+object CqlWhereParser extends RegexParsers with Logging {
   override type Elem = Char
   def identifier : Parser[String]   = """[_\p{L}][_\p{L}\p{Nd}]*""".r ^^ { _.toLowerCase}
-  def quotedIdentifier: Parser[String]   = """\"[_\p{L}][_\p{L}\p{Nd}]*\"""".r ^^ { _.toString }
-  def num     = """-?\d+(\.\d*)?([eE][-\+]?\d+)?""".r ^^ { _.toString }
-  def param = "?" | num | """'.*'""".r
-  def op = "<=" |">=" | "=" | ">" |   "<"
-  def inParam =  "(" ~ param ~ rep("," ~ param) ~ ")"
-  def expr: Parser[String] = (identifier | quotedIdentifier) ~ (op | "in") ~  (param | inParam)  ^^
+  def quotedIdentifier: Parser[String]   = "\"" ~> "(\"\"|[^\"])*".r <~  "\"" ^^{ _.toString }
+  def num = """-?\d+(\.\d*)?([eE][-\+]?\d+)?""".r
+  def bool = "true" | "false"
+  def str = """'(''|[^'])*'""".r
+  def uuid = """[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}""".r
+  def param = "?" |uuid | num | bool | str  ^^ { _.toString }
+  def op = "<=" |">=" | "=" | ">" | "<"
+  def inParam  =  "(" ~> param ~ rep("," ~ param) <~ ")" ^^
     {
-      case id ~ "in" ~ inParam => id.toString
-      case id ~ op ~ param => id.toString
+      case  param ~ list  => list.foldLeft(List[String](param)) {
+        case (params,  "," ~ param ) => params :+ param.toString
+      }
     }
-  def where:Parser[List[String]] =  expr ~ rep( "and" ~ expr) ^^
+  def expr = (identifier | quotedIdentifier) ~ (op | "in") ~  (param | inParam)  ^^
     {
-      case expr ~ list => list.foldLeft(List[String](expr)) {
-        case (list,  "and" ~ expr2 ) => list :+ expr2
+      case (id ~ "in" ~ "?") => new ParsedColumn(id, List[String]())
+      case (id ~ "in" ~ inParam) => new ParsedColumn(id, inParam.asInstanceOf[List[String]])
+      case (id ~ op ~ param) => new ParsedColumn(id, List(param.asInstanceOf[String]))
+    }
+  def where:Parser[List[ParsedColumn]] =  expr ~ rep( "and" ~ expr) ^^
+    {
+      case expr ~ list => list.foldLeft(List[ParsedColumn](expr)) {
+        case (exprs,  "and" ~ expr2 ) => exprs :+ expr2
       }
     }
 
-  def columns (s: String): Seq[String] = {
+  def columns (s: String): Seq[ParsedColumn] = {
     parseAll(where, s) match {
       case Success(columns, _) => columns
       case x => logError("Where predicate parsing error:" + x.toString);List()
     }
   }
+  class ParsedColumn (n: String,vs: List[String]) {
+    var name = n
+    var values = vs
+  }
 }
 
-abstract trait Statement
-case class Block(statements : List[Statement]) extends Statement
-case class ForLoop(variable: String, lowerBound:Int, upperBound: Int, statement:Statement) extends Statement
