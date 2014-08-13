@@ -120,7 +120,7 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
  *     KafkaUtils.createStream(ssc, kafkaParams, topics, StorageLevel.MEMORY_AND_DISK_SER_2)
  * }}}
  */
-trait KhafkaStreamingDemo extends StreamingDemo
+trait KafkaStreamingDemo extends StreamingDemo
 
 /**
  * TODO
