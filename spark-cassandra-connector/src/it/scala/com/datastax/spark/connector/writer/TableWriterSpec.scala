@@ -122,7 +122,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "distinguish (deprecated) implicit `seqToSomeColumns`" in {
     val col = Seq((2, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", Seq("key", "group"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
       val result = session.execute("SELECT * FROM write_test.key_value").all()
       result should have size 1
