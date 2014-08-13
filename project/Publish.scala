@@ -20,8 +20,12 @@ import sbtrelease.ReleasePlugin._
 
 object Publish extends Build {
 
-  override lazy val settings = Seq(
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+  lazy val creds = (for {
+    publish <- Option(Path.userHome / ".ivy2" / ".credentials")
+    if publish.exists
+  } yield Seq(credentials += Credentials(publish))).getOrElse(Seq.empty)
+
+  override lazy val settings = creds ++ Seq(
     publishTo <<= version { v: String =>
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
