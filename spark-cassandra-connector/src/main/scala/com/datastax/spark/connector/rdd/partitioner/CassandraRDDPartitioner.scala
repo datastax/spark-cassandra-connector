@@ -5,6 +5,7 @@ import java.net.InetAddress
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
+import com.datastax.spark.connector.util.cqlWhereParser
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
@@ -110,8 +111,14 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
+  def containsPartitionKey(clause: CqlWhereClause) = {
+    var whereColumns: Seq[String] = clause.predicates.map (cqlWhereParser.columns).fold (Seq[String]()) {_ ++ _}
+    val pk = tableDef.partitionKey.map(_.columnName)
+    whereColumns.intersect(pk).length > 0
+  }
+
   /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
-  def partitions: Array[Partition] = {
+  def partitions(whereClause: CqlWhereClause): Array[Partition] = {
     connector.withCassandraClientDo {
       client =>
         val tokenRanges = describeRing(client)
@@ -122,12 +129,15 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
         val groups = clusterer.group(splits).toArray
 
-        for ((group, index) <- groups.zipWithIndex) yield {
-          val cqlPredicates = group.flatMap(splitToCqlClause)
-          val endpoints = group.map(_.endpoints).reduce(_ intersect _)
-          val rowCount = group.map(_.rowCount.get).sum
-          CassandraPartition(index, endpoints, cqlPredicates, rowCount)
-        }
+        if (containsPartitionKey(whereClause))
+          Array(CassandraPartition(0, tokenRanges.flatMap(_.endpoints).distinct, List(CqlTokenRange("")), 0))
+        else
+          for ((group, index) <- groups.zipWithIndex) yield {
+            val cqlPredicates = group.flatMap(splitToCqlClause)
+            val endpoints = group.map(_.endpoints).reduce(_ intersect _)
+            val rowCount = group.map(_.rowCount.get).sum
+            CassandraPartition(index, endpoints, cqlPredicates, rowCount)
+          }
     }
   }
 
