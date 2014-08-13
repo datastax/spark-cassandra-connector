@@ -4,7 +4,7 @@ import scala.collection.immutable
 import akka.actor._
 import org.apache.spark.{SparkEnv, Logging}
 import org.apache.spark.streaming.StreamingContext
-import com.datastax.spark.connector.streaming._
+import com.datastax.spark.connector.streaming.TypedStreamingActor
 
 object AkkaStreamingDemo extends StreamingDemo {
 
@@ -14,6 +14,13 @@ object AkkaStreamingDemo extends StreamingDemo {
 
 }
 
+/** Simply showing what the streaming actor does for the sake of the demo. It is a
+  * `org.apache.spark.streaming.receivers.Receiver`. This receiver tracks the number
+  * of blocks of data pushed to Spark so that the demo can shut down once we assert
+  * the expected data has been saved to Cassandra.
+  *
+  * See [[com.datastax.spark.connector.streaming.TypedStreamingActor]] and [[CounterActor]].
+  */
 class Streamer extends TypedStreamingActor[String] with CounterActor {
 
   override def push(e: String): Unit = {
@@ -47,7 +54,10 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
 
   private val stream = ssc.actorStream[String](Props[Streamer], actorName, StorageLevel.MEMORY_AND_DISK)
 
-  /* Defines the work to do in the stream. */
+  /* Defines the work to do in the stream. Placing the import here to explicitly show
+     that this is where the implicits are used for the DStream's 'saveToCassandra' functions: */
+  import com.datastax.spark.connector.streaming._
+
   private val wc = stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
@@ -56,6 +66,12 @@ class NodeGuardian(ssc: StreamingContext, keyspaceName: String, tableName: Strin
   ssc.start()
   log.info(s"Streaming context started.")
 
+  /* Note that the `actor` is in the Spark actor system. We will watch it from
+     the demo application's actor system. The `Sender` will send data to the
+     stream actor which dispatches messages round-robin to each router instance,
+     simply to distribute load over multiple actor mailboxes vs wait for one's
+     availability in the queue.
+   */
   for (actor <- sas.actorSelection(path).resolveOne()) {
     context.watch(actor)
     context.actorOf(Props(new Sender(data.toArray, actor)))

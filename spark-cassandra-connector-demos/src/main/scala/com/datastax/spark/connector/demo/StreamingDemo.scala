@@ -24,7 +24,7 @@ trait StreamingDemo extends DemoApp {
     session.execute(s"TRUNCATE $keyspaceName.$tableName")
   }
 
-  lazy val ssc = new StreamingContext(sc, Milliseconds(300))
+  val ssc = new StreamingContext(sc, Milliseconds(300))
 
   lazy val sparkActorSystem = SparkEnv.get.actorSystem
 
@@ -72,6 +72,11 @@ class Sender(val data: Array[String], val to: ActorRef) extends Actor {
   }
 }
 
+/** When called upon, the Reporter starts a task which checks at regular intervals whether
+  * the produced amount of data has all been written to Cassandra from the stream. This allows
+  * the demo to stop on its own once this assertion is true. It will stop the task and ping
+  * the [[NodeGuardian]], its supervisor, of the `Completed` state.
+  */
 class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
   import akka.actor.Cancellable
   import com.datastax.spark.connector._
