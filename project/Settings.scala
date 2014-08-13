@@ -18,6 +18,8 @@ import sbt._
 import sbt.Keys._
 import sbt.plugins.{JvmPlugin, IvyPlugin}
 import sbtrelease.ReleasePlugin._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
@@ -40,7 +42,7 @@ object Settings extends Build {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
-  val parentSettings = buildSettings ++ Seq(
+  val parentSettings = buildSettings ++ assemblySettings ++ Seq(
     publishArtifact := false,
     publish := {}
   )
