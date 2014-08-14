@@ -40,7 +40,7 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector, connectorJava))
 
   def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
-    Project(name, file(name), settings = defaultSettings ++ dsettings, dependencies = cpd) configs (IntegrationTest)
+    Project(name, file(name), settings = defaultSettings ++ sbtAssemblySettings ++ dsettings, dependencies = cpd) configs (IntegrationTest)
 
 }
 

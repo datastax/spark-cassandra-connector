@@ -42,7 +42,7 @@ object Settings extends Build {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
-  val parentSettings = buildSettings ++ assemblySettings ++ Seq(
+  val parentSettings = buildSettings ++ Seq(
     publishArtifact := false,
     publish := {}
   )
@@ -59,7 +59,7 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ sbtAssemblyDemoSettings ++ Seq(
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -89,6 +89,30 @@ object Settings extends Build {
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
     managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
+
+  lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+    jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" }
+  )
+
+  /* By default, assembly is not enabled for the demos module, but it can be enabled with
+    `-Dspark.cassandra.connector.demos.assembly=true`. From the command line this would be:
+     sbt -Dspark.cassandra.connector.demos.assembly=true assembly */
+  lazy val sbtAssemblyDemoSettings =
+    if (System.getProperty("spark.cassandra.connector.demos.assembly", "false").toBoolean)
+      sbtAssemblySettings ++ Seq(
+        mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+          (old) => {
+            case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+            case PathList("javax", "servlet", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "util", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "remote", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "routing", xs @ _*) => MergeStrategy.first
+            case PathList("org", "apache", "commons", xs @ _*) => MergeStrategy.first
+            case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.first
+            case x => old(x)
+          }
+        })
+    else Seq.empty
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
