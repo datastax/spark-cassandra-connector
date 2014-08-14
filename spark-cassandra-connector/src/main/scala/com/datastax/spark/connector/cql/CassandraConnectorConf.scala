@@ -3,6 +3,7 @@ package com.datastax.spark.connector.cql
 import java.net.InetAddress
 
 import org.apache.spark.{Logging, SparkConf}
+import scala.util.control.NonFatal
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -35,13 +36,10 @@ object CassandraConnectorConf extends Logging {
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
     val hosts = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress).
-      split(",").
-      flatMap { host =>
-        try {
-          Some(InetAddress.getByName(host))
-        } catch {
-          case x: java.net.UnknownHostException =>
-            logError("Unknown host", x)
+      split(",").flatMap { host =>
+        try Some(InetAddress.getByName(host)) catch {
+          case NonFatal(e) =>
+            logError(s"Unknown host '$host'", e)
             None
         }
       }.toSet
