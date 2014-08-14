@@ -1,3 +1,4 @@
+ * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
 
 1.0.0 RC 3

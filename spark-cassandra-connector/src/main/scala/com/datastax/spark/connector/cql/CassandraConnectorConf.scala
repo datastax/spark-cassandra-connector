@@ -41,7 +41,7 @@ object CassandraConnectorConf extends Logging {
           Some(InetAddress.getByName(host))
         } catch {
           case x: java.net.UnknownHostException =>
-            logError("Uknown host", x)
+            logError("Unknown host", x)
             None
         }
       }.toSet
