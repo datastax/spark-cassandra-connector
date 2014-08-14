@@ -1,0 +1,34 @@
+#!/bin/bash
+# This very basic script that submits the demos jar to a local spark master.
+# TODO add input validation and error handling.
+
+# ## 1. Build the demos assembly jar:
+# sbt -Dspark.cassandra.connector.demos.assembly=true assembly
+
+# ## 2. Run this script ##
+# Pass in 3 parameters:
+# 1. Path to /bin/spark-submit
+# 2. Spark master
+# 3. The FQCN of the demo class to run, e.g: com.datastax.spark.connector.demo.BasicReadWriteDemo
+# For further customization options see https://spark.apache.org/docs/latest/submitting-applications.html
+# Example:
+# sudo ./scripts/submit-demos /path/to/spark/bin spark://master:7077 com.datastax.spark.connector.demo.BasicReadWriteDemo
+# ##
+
+
+PATH_TO_SPARK_BIN_SCRIPTS=$1
+SPARK_MASTER=$2
+APP_TO_RUN=$3
+
+# TODO read from Settings.scala scalaVersion and version in ThisBuild:
+VERSION="1.0.0-SNAPSHOT"
+SCALA_VERSION="scala-2.10"
+DEMOS_ASSEMBLY_JAR="spark-cassandra-connector-demos-assembly-$VERSION.jar"
+PATH_TO_JAR="spark-cassandra-connector-demos/target/$SCALA_VERSION/$DEMOS_ASSEMBLY_JAR"
+SPARK_SUBMIT="$PATH_TO_SPARK_BIN_SCRIPTS/spark-submit"
+
+# Run on a Spark standalone cluster
+echo "Attempting to submit demo $SPARK_SUBMIT on $SPARK_MASTER with $PATH_TO_JAR"
+$SPARK_SUBMIT --class $APP_TO_RUN --master $SPARK_MASTER $PATH_TO_JAR 100
+
+

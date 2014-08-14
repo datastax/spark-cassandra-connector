@@ -1,3 +1,7 @@
+1.0.0
+ * Added assembly task to the build, in order to build fat jars. (#126)
+   - Added a system property flag to enable assembly for the demo module which is disabled by default.
+   - Added simple submit script to submit a demo assembly jar to a local spark master
  * Fix error message on column conversion failure. (#208)
  * Add toMap and nameOf methods to CassandraRow.
    Reduce size of serialized CassandraRow. (#194)
