@@ -35,8 +35,8 @@ object CassandraConnectorConf extends Logging {
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
-    val hosts = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress).
-      split(",").flatMap { host =>
+    val hosts = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
+      .split(",").flatMap { host =>
         try Some(InetAddress.getByName(host)) catch {
           case NonFatal(e) =>
             logError(s"Unknown host '$host'", e)
