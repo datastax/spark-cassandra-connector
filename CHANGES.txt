@@ -1,3 +1,6 @@
+1.0.0
+ * Allow multiple comma-separated hosts in spark.cassandra.connection.host
+
 1.0.0 RC 6
  * Fix reading a Cassandra table as an RDD of Scala class objects in REPL
 
