@@ -113,9 +113,11 @@ class CassandraConnector(conf: CassandraConnectorConf)
     /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
-      val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp)
-      val localHost = liveHosts.find(LocalNodeFirstLoadBalancingPolicy.isLocalHost)
-      (localHost ++ Random.shuffle(liveHosts)).head
+      val random = new Random
+      val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp).toSet
+      val nodesInLocalDc = nodesInTheSameDC(_config.hosts, liveHosts)
+      val (localHost, otherHosts) = nodesInLocalDc.partition(LocalNodeFirstLoadBalancingPolicy.isLocalHost)
+      (localHost.toSeq ++ random.shuffle(otherHosts.toSeq)).head
     }
   }
 
