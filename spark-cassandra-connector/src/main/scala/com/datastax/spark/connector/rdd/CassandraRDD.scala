@@ -276,6 +276,10 @@ class CassandraRDD[R] private[connector] (
     partitions
   }
 
+  override def getPreferredLocations(split: Partition) =
+    split.asInstanceOf[CassandraPartition]
+      .endpoints.map(_.getHostName).toSeq
+
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnNames.map(quote).mkString(", ")
     val filter = range.cql + where.predicates.fold("")(_ + " AND " + _) + " ALLOW FILTERING"
