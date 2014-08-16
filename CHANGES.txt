@@ -1,3 +1,5 @@
+ * Added missing CassandraRDD#getPreferredLocations to improve data-locality. (#164)
+
 1.0.0 RC 3
  * Fix open Cluster leak in CassandraConnector#createSession (#142)
  * TableWriter#saveToCassandra accepts ColumnSelector instead of Seq[String] for
