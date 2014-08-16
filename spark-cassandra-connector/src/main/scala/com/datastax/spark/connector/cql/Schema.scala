@@ -17,7 +17,8 @@ case class ColumnDef(keyspaceName: String,
                      tableName: String,
                      columnName: String,
                      columnRole: ColumnRole,
-                     columnType: ColumnType[_]) {
+                     columnType: ColumnType[_],
+                     indexed : Boolean = false) {
 
   def isStatic = columnRole == StaticColumn
   def isCollection = columnType.isCollection
@@ -25,6 +26,7 @@ case class ColumnDef(keyspaceName: String,
   def isClusteringColumn = columnRole.isInstanceOf[ClusteringColumn]
   def isPrimaryKeyColumn = isClusteringColumn || isPartitionKeyColumn
   def isCounterColumn = columnType == CounterType
+  def isIndexedColumn = indexed
 
   def componentIndex = columnRole match {
     case ClusteringColumn(i) => Some(i)
@@ -77,7 +79,7 @@ object Schema extends Logging {
     val table = column.getTable
     val keyspace = table.getKeyspace
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType)
+    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, column.getIndex != null)
   }
 
   private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] =
