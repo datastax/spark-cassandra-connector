@@ -1,5 +1,6 @@
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
+ * Added missing CassandraRDD#getPreferredLocations to improve data-locality. (#164)
 
 1.0.0 RC 3
  * Fix open Cluster leak in CassandraConnector#createSession (#142)
