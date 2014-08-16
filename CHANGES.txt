@@ -1,4 +1,5 @@
  * Don't use hosts outside the datacenter of the connection host
+ * Added missing CassandraRDD#getPreferredLocations to improve data-locality. (#164)
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
 
