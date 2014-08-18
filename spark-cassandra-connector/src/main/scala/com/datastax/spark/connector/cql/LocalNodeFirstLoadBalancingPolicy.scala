@@ -27,22 +27,22 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
     val nodesInLocalDC = CassandraConnector.nodesInTheSameDC(contactPoints, liveNodes)
     val (localHost, otherHosts) = nodesInLocalDC.partition(isLocalHost)
-    (localHost.toSeq ++ random.shuffle(otherHosts.toSeq)).iterator
+    val (upHosts, downHosts) = otherHosts.partition(_.isUp)
+    (localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq)).iterator
   }
 
   override def onAdd(host: Host) {
-    if (host.isUp) {
-      // The added host might be a "better" version of a host already in the set.
-      // The nodes added in the init call don't have DC and rack set.
-      // Therefore we want to really replace the object now, to get full information on DC:
-      liveNodes -= host
-      liveNodes += host
-    }
+    // The added host might be a "better" version of a host already in the set.
+    // The nodes added in the init call don't have DC and rack set.
+    // Therefore we want to really replace the object now, to get full information on DC:
+    liveNodes -= host
+    liveNodes += host
   }
 
   override def onRemove(host: Host) { liveNodes -= host }
-  override def onUp(host: Host) = { liveNodes += host }
-  override def onDown(host: Host) = { liveNodes -= host }
+  override def onUp(host: Host) = { }
+  override def onDown(host: Host) = { }
+  override def onSuspected(host: Host) = { liveNodes += host }
 }
 
 object LocalNodeFirstLoadBalancingPolicy {

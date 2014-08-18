@@ -1,3 +1,4 @@
+ * Upgrade Java driver for Cassandra to 2.0.4. (#171)
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
  * Added missing CassandraRDD#getPreferredLocations to improve data-locality. (#164)

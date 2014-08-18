@@ -35,10 +35,9 @@ object CassandraServer {
   def useCassandraConfig(configTemplate: String, forceReload: Boolean = false) {
     if (System.getenv(HostProperty) == null) {
       if (currentConfigTemplate != configTemplate || forceReload) {
+        CassandraConnector.evictCache()
         if (cassandra != null)
           cassandra.destroy()
-
-        CassandraConnector.evictCache()
         cassandra = new CassandraServerRunner(configTemplate)
         currentConfigTemplate = configTemplate
       }
