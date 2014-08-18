@@ -14,8 +14,9 @@ class CassandraAuthenticatedConnectorSpec  extends FlatSpec with Matchers with C
 
   "A CassandraConnector" should "authenticate with username and password when using native protocol" in {
     conn.withSessionDo { session =>
-      assert(session.isClosed === false)
       assert(session !== null)
+      assert(session.isClosed === false)
+      assert(session.getCluster.getMetadata.getClusterName === "Test Cluster")
     }
   }
 
