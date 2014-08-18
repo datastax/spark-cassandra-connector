@@ -1,3 +1,4 @@
+1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
  * Added missing CassandraRDD#getPreferredLocations to improve data-locality. (#164)
  * Don't use hosts outside the datacenter of the connection host. (#137)
