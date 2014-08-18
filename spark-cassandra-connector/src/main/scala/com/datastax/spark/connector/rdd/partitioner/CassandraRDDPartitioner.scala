@@ -5,7 +5,7 @@ import java.net.InetAddress
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
-import com.datastax.spark.connector.util.CqlWhereParser
+import com.datastax.spark.connector.util.{Predicate, CqlWhereParser}
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
@@ -112,9 +112,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   }
 
   def containsPartitionKey(clause: CqlWhereClause) = {
-    var whereColumns: Seq[CqlWhereParser.ParsedColumn] = clause.predicates.map (CqlWhereParser.columns).fold (Seq[CqlWhereParser.ParsedColumn]()) {_ ++ _}
+    var whereColumns: Seq[Predicate] = clause.predicates.map (CqlWhereParser.predicates).fold (Seq[Predicate]()) {_ ++ _}
     val pk = tableDef.partitionKey.map(_.columnName)
-    whereColumns.map(_.name).intersect(pk).nonEmpty
+    whereColumns.map(_.columnName).intersect(pk).nonEmpty
   }
 
   /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
