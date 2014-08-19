@@ -67,43 +67,6 @@ Enable Cassandra-specific functions on the `SparkContext` and `RDD`:
 import com.datastax.spark.connector._
 ```
 
-### Setting up `StreamingContext`
-Follow the directions above for creating a `SparkConf`
-
-Create a `StreamingContext`:
-
-```scala
-val ssc = new StreamingContext(conf, Seconds(n))
-```
-
-Enable Cassandra-specific functions on the `StreamingContext`, `DStream` and `RDD`:
-
-```scala
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.streaming._
-```
-
-Create any of the available or custom Spark streams, for example an Akka Actor stream:
-
-```scala
-val stream = ssc.actorStream[String](Props[SimpleStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
-```
-
-Writing to Cassandra from a Stream:
-
-```scala
-val wc = stream.flatMap(_.split("\\s+"))
-    .map(x => (x, 1))
-    .reduceByKey(_ + _)
-    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"))
-```
-
-Where `saveToCassandra` accepts
-
-- keyspaceName: String, tableName: String
-- keyspaceName: String, tableName: String, columnNames: SomeColumns
-- keyspaceName: String, tableName: String, columnNames: SomeColumns, batchSize: Int
-
 ### Loading and analyzing data from Cassandra
 Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
 

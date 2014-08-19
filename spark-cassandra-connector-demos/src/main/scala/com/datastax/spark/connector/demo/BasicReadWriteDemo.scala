@@ -3,7 +3,7 @@ package com.datastax.spark.connector.demo
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 
-object BasicReadWriteDemo extends App with DemoApp {
+object BasicReadWriteDemo extends DemoApp {
 
   CassandraConnector(conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -16,7 +16,7 @@ object BasicReadWriteDemo extends App with DemoApp {
 
   // Read table test.kv and print its contents:
   val rdd = sc.cassandraTable("test", "key_value").select("key", "value")
-  rdd.toArray().foreach(println)
+  rdd.toArray().foreach(row => log.debug(s"$row"))
 
   // Write two rows to the test.kv table:
   val col = sc.parallelize(Seq((4, "fourth row"), (5, "fifth row")))

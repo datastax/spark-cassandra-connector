@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.streaming
 
-import scala.concurrent.duration._
-import akka.actor.Actor
 import com.datastax.spark.connector.testkit._
 
 /**
@@ -35,6 +33,7 @@ import com.datastax.spark.connector.testkit._
  */
 trait StreamingSpec extends AbstractSpec with CassandraServer with SparkCassandraFixture {
   import org.apache.spark.streaming.StreamingContext
+  import scala.concurrent.duration._
 
   val duration = 10.seconds
 
@@ -48,16 +47,4 @@ trait StreamingSpec extends AbstractSpec with CassandraServer with SparkCassandr
   }
 }
 
-/** A very basic Akka actor which streams `String` event data to spark. */
-private [streaming] class SimpleStreamingActor extends SparkStreamingActor with Counter {
-
-  def receive: Actor.Receive = {
-    case e: String => push(e)
-  }
-
-  def push(e: String): Unit = {
-    pushBlock(e)
-    increment()
-  }
-}
 
