@@ -1,11 +1,13 @@
-package com.datastax.spark.connector.demo
+package com.datastax.spark.connector.demo.streaming
 
 import scala.collection.immutable
 import scala.concurrent.duration._
-import akka.actor.{PoisonPill, Actor, ActorRef}
-import org.apache.spark.{SparkEnv, Logging}
+import akka.actor.{Actor, PoisonPill}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import org.apache.spark.{Logging, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.demo.DemoApp
 
 /**
  * Creates the `org.apache.spark.streaming.StreamingContext` then write async to the stream.
@@ -31,6 +33,26 @@ trait StreamingDemo extends DemoApp {
 
 }
 
+
+/* Initializes Akka, Cassandra and Spark settings. */
+final class SparkCassandraSettings(rootConfig: Config) {
+  def this() = this(ConfigFactory.load)
+
+  protected val config = rootConfig.getConfig("spark-cassandra")
+
+  val SparkMaster: String = config.getString("spark.master")
+
+  val SparkAppName: String = config.getString("spark.app.name")
+
+  val SparkCleanerTtl: Int = config.getInt("spark.cleaner.ttl")
+
+  val CassandraSeed: String = config.getString("spark.cassandra.connection.host")
+
+  val CassandraKeyspace = config.getString("spark.cassandra.keyspace")
+
+  val SparkStreamingBatchDuration: Long = config.getLong("spark.streaming.batch.duration")
+}
+
 trait CounterActor extends Actor  with Logging {
 
   protected val scale = 30
@@ -51,32 +73,10 @@ private[demo] object InternalStreamingEvent {
   case class WordCount(word: String, count: Int)
 }
 
-/** Generates and sends messages based on input `data`. */
-class Sender(val data: Array[String], val to: ActorRef) extends Actor {
-  import context.dispatcher
-
-  private val rand = new scala.util.Random()
-
-  val task = context.system.scheduler.schedule(2.second, 1.millis) {
-    to ! createMessage()
-  }
-
-  override def postStop(): Unit = task.cancel()
-
-  def createMessage(): String = {
-    val x = rand.nextInt(3)
-    data(x) + data(2 - x)
-  }
-
-  def receive: Actor.Receive = {
-    case _ =>
-  }
-}
-
 /** When called upon, the Reporter starts a task which checks at regular intervals whether
   * the produced amount of data has all been written to Cassandra from the stream. This allows
   * the demo to stop on its own once this assertion is true. It will stop the task and ping
-  * the [[NodeGuardian]], its supervisor, of the `Completed` state.
+  * the `NodeGuardian`, its supervisor, of the `Completed` state.
   */
 class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
   import akka.actor.Cancellable
@@ -97,7 +97,7 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
   def report(): Unit = {
     task = Some(context.system.scheduler.schedule(Duration.Zero, 1.millis) {
       val rdd = ssc.cassandraTable[WordCount](keyspaceName, tableName).select("word", "count")
-      if (rdd.toArray().nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2) {
+      if (rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2) {
         context.become(done)
         self ! Completed
       }
@@ -107,8 +107,8 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
   def complete(): Unit = {
     task map (_.cancel())
     val rdd = ssc.cassandraTable[WordCount](keyspaceName, tableName).select("word", "count")
-    assert(rdd.toArray().length == data.size)
-    log.info(s"Saved '${rdd.toArray()}' to Cassandra.")
+    assert(rdd.collect.length == data.size)
+    log.info(s"Saved data to Cassandra.")
     context.parent ! Completed
   }
 }
