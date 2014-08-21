@@ -39,8 +39,16 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
     }
   }
 
-  it should " return empty list on error" in {
-    parser.predicates(" Cde inasa  ('20', '30')").length should be(0)
+  it should " return UnknownPredicate on error" in {
+    parser.predicates(" Cde inasa  ('20', '30')")(0) match {
+      case  UnknownPredicate(_, data) => data should be ("Cde inasa  ('20', '30')")
+    }
+  }
+
+  it should " return UnknownPredicate on error in second expr" in {
+    parser.predicates("a = 10 and  Cde inasa  ('20', '30')")(1) match {
+      case  UnknownPredicate(_, data) => data should be ("Cde inasa  ('20', '30')")
+    }
   }
   it should " accept >= " in {
     parser.predicates("abc >= ?").length should be(1)
@@ -75,5 +83,17 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
       case RangePredicate(name, op, Param(value)) => value should be("-12.e+10")
       case _ => assert(false)
     }
+  }
+
+  it should "parse case insensitive 'aNd' operations" in {
+    parser.predicates("abc > 10 aNd cde > 20 AND c < 1")(1).columnName should be("cde")
+  }
+
+  it should "parse case insensitive 'iN' operations" in {
+    parser.predicates("cde iN  (20, 30)")(0).columnName should be("cde")
+  }
+
+  it should "parse case insensitive 'IN' operations ?" in {
+    parser.predicates("cde IN  ?")(0).columnName should be("cde")
   }
 }

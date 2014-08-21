@@ -24,6 +24,8 @@ object CqlWhereParser extends RegexParsers with Logging {
   }
 
   def op = "<=" | ">=" | "=" | ">" | "<"
+  def inOp = "(?i)in".r ^^ { _=> "in"}
+  def andOp = "(?i)and".r ^^ {_ => "and"}
 
   def inParam = "(" ~> param ~ rep("," ~ param) <~ ")" ^^ {
     case param ~ list => list.foldLeft(List[Literal](param)) {
@@ -31,14 +33,15 @@ object CqlWhereParser extends RegexParsers with Logging {
     }
   }
 
-  def expr: Parser[Predicate] = (identifier | quotedIdentifier) ~ (op | "in") ~ ( param | inParam) ^^ {
-    case (id ~ "in" ~ QParam()) => new InPredicate(id.name)
-    case (id ~ "in" ~ inParam) => InPredicateList(id.name, inParam.asInstanceOf[List[Literal]])
-    case (id ~ "=" ~ param) => EqPredicate(id.name, param.asInstanceOf[Literal])
-    case (id ~ op ~ param) => RangePredicate(id.name, Operator(op), param.asInstanceOf[Literal])
+  def expr: Parser[Predicate] = (((identifier | quotedIdentifier) ~ (op | inOp) ~ ( param | inParam)) | ".*".r) ^^ {
+    case (Identifier(name) ~ "in" ~ QParam()) => new InPredicate(name)
+    case (Identifier(name) ~ "in" ~ inParam) => InPredicateList(name, inParam.asInstanceOf[List[Literal]])
+    case (Identifier(name) ~ "=" ~ param) => EqPredicate(name, param.asInstanceOf[Literal])
+    case (Identifier(name) ~ op ~ param) => RangePredicate(name, Operator(op.asInstanceOf[String]), param.asInstanceOf[Literal])
+    case (unknown) => UnknownPredicate("", unknown.toString)
   }
 
-  def where = expr ~ rep("and" ~ expr) ^^ {
+  def where = expr ~ rep(andOp ~ expr) ^^ {
     case expr ~ list => list.foldLeft(List[Predicate](expr)) {
       case (exprs, "and" ~ expr2) => exprs :+ expr2
     }
@@ -66,5 +69,6 @@ case class InPredicate(columnName: String) extends Predicate
 case class InPredicateList(columnName: String, values: List[Literal]) extends Predicate
 case class EqPredicate(columnName: String, value: Literal) extends Predicate
 case class RangePredicate(columnName: String, operator: Operator, value: Literal) extends Predicate
+case class UnknownPredicate(columnName: String, text: String) extends Predicate
 
 // for completeness only
