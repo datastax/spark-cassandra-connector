@@ -22,7 +22,7 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
   }
   it should " parse strings" in {
     parser.predicates(" Cde in  ('20', '30')")(0) match {
-      case InPredicateList(name, list) => list(0).asInstanceOf[Param].value should be("'20'")
+      case InPredicateList(name, list) => { list(0).asInstanceOf[Param].value should be("'20'") }
       case _ => assert(false)
     }
   }

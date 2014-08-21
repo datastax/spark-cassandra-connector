@@ -50,25 +50,49 @@ object CqlWhereParser extends RegexParsers with Logging {
   def predicates(s: String): Seq[Predicate] = {
     parseAll(where, s) match {
       case Success(columns, _) => columns
-      case x => logError("Where predicate parsing error:" + x.toString); List()
+      case x => logWarning("Where predicate parsing error:" + x.toString); List()
     }
   }
 
 }
 
-trait Literal
-case class Operator(op: String) extends Literal
-case class Identifier(name: String) extends Literal
-case class Param(value: Any) extends Literal
-case class QParam() extends Literal
+
+trait Literal {
+  def toCqlString ():String
+  protected def quote(name: String) = "\"" + name + "\""
+
+}
+case class Operator(op: String) extends Literal {
+  override def toCqlString ():String = op
+}
+case class Identifier(name: String) extends Literal{
+  override def toCqlString ():String = quote(name)
+}
+case class Param(value: String) extends Literal{
+  override def toCqlString ():String = value
+}
+case class QParam() extends Literal {
+  override def toCqlString ():String = "?"
+}
 
 trait Predicate {
   def columnName: String
+  def toCqlString ():String
 }
-case class InPredicate(columnName: String) extends Predicate
-case class InPredicateList(columnName: String, values: List[Literal]) extends Predicate
-case class EqPredicate(columnName: String, value: Literal) extends Predicate
-case class RangePredicate(columnName: String, operator: Operator, value: Literal) extends Predicate
-case class UnknownPredicate(columnName: String, text: String) extends Predicate
+case class InPredicate(columnName: String) extends Predicate {
+  override def toCqlString ():String = columnName + " in ?"
+}
+case class InPredicateList(columnName: String, values: List[Literal]) extends Predicate {
+  override def toCqlString ():String = columnName + " in (" + values.map(_.toCqlString).mkString(", ") + ")"
+}
+case class EqPredicate(columnName: String, value: Literal) extends Predicate {
+  override def toCqlString ():String = columnName + " = " + value.toCqlString()
+}
+case class RangePredicate(columnName: String, operator: Operator, value: Literal) extends Predicate {
+  override def toCqlString ():String = columnName + " " + operator.toCqlString + " " + value.toCqlString()
+}
+case class UnknownPredicate(columnName: String, text: String) extends Predicate {
+  override def toCqlString ():String = text
+}
 
 // for completeness only
