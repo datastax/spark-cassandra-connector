@@ -59,14 +59,12 @@ object CqlWhereParser extends RegexParsers with Logging {
 
 trait Literal {
   def toCqlString ():String
-  protected def quote(name: String) = "\"" + name + "\""
-
 }
 case class Operator(op: String) extends Literal {
   override def toCqlString ():String = op
 }
 case class Identifier(name: String) extends Literal{
-  override def toCqlString ():String = quote(name)
+  override def toCqlString ():String = name
 }
 case class Param(value: String) extends Literal{
   override def toCqlString ():String = value
@@ -78,18 +76,20 @@ case class QParam() extends Literal {
 trait Predicate {
   def columnName: String
   def toCqlString ():String
+  protected def quote(name: String) = "\"" + name + "\""
+
 }
 case class InPredicate(columnName: String) extends Predicate {
-  override def toCqlString ():String = columnName + " in ?"
+  override def toCqlString ():String = quote(columnName) + " in ?"
 }
 case class InPredicateList(columnName: String, values: List[Literal]) extends Predicate {
-  override def toCqlString ():String = columnName + " in (" + values.map(_.toCqlString).mkString(", ") + ")"
+  override def toCqlString ():String = quote(columnName) + " in (" + values.map(_.toCqlString).mkString(", ") + ")"
 }
 case class EqPredicate(columnName: String, value: Literal) extends Predicate {
-  override def toCqlString ():String = columnName + " = " + value.toCqlString()
+  override def toCqlString ():String = quote(columnName) + " = " + value.toCqlString()
 }
 case class RangePredicate(columnName: String, operator: Operator, value: Literal) extends Predicate {
-  override def toCqlString ():String = columnName + " " + operator.toCqlString + " " + value.toCqlString()
+  override def toCqlString ():String = quote(columnName) + " " + operator.toCqlString + " " + value.toCqlString()
 }
 case class UnknownPredicate(columnName: String, text: String) extends Predicate {
   override def toCqlString ():String = text

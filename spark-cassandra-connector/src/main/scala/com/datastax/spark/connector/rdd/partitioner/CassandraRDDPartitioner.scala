@@ -123,12 +123,13 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
   private def crossWhereClause(xs: Seq[CqlWhereClause], ys: Seq[CqlWhereClause]) =
     for {x <- xs; y <- ys} yield x and y
 
-  private def partionKeBasedPartitions (whereClause: CqlWhereClause,
+  private def partitionKeBasedPartitions (whereClause: CqlWhereClause,
                                         predicates : Seq[Predicate],
                                         tokenRanges:Seq[TokenRange]): Array[Partition] = {
     var keyWhereClauses = Seq(CqlWhereClause(Seq[String](), Seq[Any]()))
     var otherWhereClause = CqlWhereClause(Seq[String](), Seq[Any]())
     val valIterator = whereClause.values.iterator
+    var noUnknownPredicates = true
     for (predicate <- predicates) {
       //collect values for '?' for current predicate
       val qValues = predicate match {
@@ -136,27 +137,32 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
         case InPredicate(_)
              | EqPredicate(_, QParam())
              | RangePredicate(_, _, QParam()) => Seq(valIterator.next())
+        case UnknownPredicate(_,_) => noUnknownPredicates= false; Seq()
+
         case _ => Seq()
       }
 
-      // partition key predicates: cross join 'in' predicate into set of  '=' predicates to make paritions for parallel cql calls
-      if (pkNames contains predicate.columnName) {
+      // partition key predicates: cross join 'in' predicate into set of  '=' predicates to make partitions for parallel cql calls
+      if (noUnknownPredicates && (pkNames contains predicate.columnName)) {
         keyWhereClauses = predicate match {
           case predicate: EqPredicate => keyWhereClauses.map(_
             and CqlWhereClause(Seq[String](predicate.toCqlString()), qValues))
 
           case predicate: InPredicate => {
-            val eqWhereClauses = qValues.map(v => CqlWhereClause(Seq(quote(predicate.columnName) + " = ?"), Seq(v)))
-            crossWhereClause(keyWhereClauses, eqWhereClauses)
+            val inWhereClauses = qValues(0).asInstanceOf[Product].productIterator.toSeq.map(v =>
+                          CqlWhereClause(Seq(quote(predicate.columnName) + " = ?"),
+                          Seq(v))
+            )
+            crossWhereClause(keyWhereClauses, inWhereClauses)
           }
 
           case predicate: InPredicateList => {
             val valIterator = qValues.iterator
-            val eqWhereClauses = predicate.values.map(_ match {
+            val inWhereClauses = predicate.values.map(_ match {
               case param: QParam => CqlWhereClause(Seq(quote(predicate.columnName) + " = ?"), Seq(valIterator.next))
               case param: Param => CqlWhereClause(Seq(quote(predicate.columnName) + " = " + param.toCqlString()), Seq())
             })
-            crossWhereClause(keyWhereClauses, eqWhereClauses)
+            crossWhereClause(keyWhereClauses, inWhereClauses)
           }
 
           case param: RangePredicate => throw new RuntimeException("Only in and = operation accpeted for parition keys")
@@ -167,6 +173,10 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
         otherWhereClause = otherWhereClause.and(CqlWhereClause(Seq[String](predicate.toCqlString()), qValues))
       }
     }
+    // add all left values to the end, it can happen in case of parsing errors
+    if (!noUnknownPredicates)
+      otherWhereClause =  otherWhereClause.and( CqlWhereClause(Seq(""), valIterator.toSeq))
+
     (for ((keyWhereClause, index) <- keyWhereClauses.zipWithIndex) yield {
       CassandraCustomPartition (index, tokenRanges.flatMap(_.endpoints).distinct,keyWhereClause and otherWhereClause)
     }).toArray
@@ -188,7 +198,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
         }
         try {
           if (containsPartitionKey(predicates)) {
-            partionKeBasedPartitions (whereClause,predicates,tokenRanges)
+            partitionKeBasedPartitions (whereClause,predicates,tokenRanges)
           } else
             for ((group, index) <- groups.zipWithIndex) yield {
               val cqlPredicates = group.flatMap(splitToCqlClause)

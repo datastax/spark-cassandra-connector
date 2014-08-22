@@ -65,4 +65,16 @@ class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with Cassand
     result should have length 1
     result.head.getInt("key1") should be (1)
   }
+
+  it should "work with composite keys and two in" in {
+    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 in ?", 200,100, (2,3)).toArray()
+    result should have length 1
+    result.head.getInt("key1") should be (2)
+  }
+
+  it should "work with composite keys and two in2" in {
+    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 in (?, ?)", 200,100, 3,2).toArray()
+    result should have length 1
+    result.head.getInt("key1") should be (2)
+  }
 }
