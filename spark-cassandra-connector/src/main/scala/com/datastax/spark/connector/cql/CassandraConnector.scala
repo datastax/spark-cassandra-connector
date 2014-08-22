@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.driver.core.{Session, Host, Cluster}
@@ -114,10 +115,11 @@ class CassandraConnector(conf: CassandraConnectorConf)
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       val random = new Random
-      val liveHosts = cluster.getMetadata.getAllHosts.filter(_.isUp).toSet
-      val nodesInLocalDc = nodesInTheSameDC(_config.hosts, liveHosts)
-      val (localHost, otherHosts) = nodesInLocalDc.partition(LocalNodeFirstLoadBalancingPolicy.isLocalHost)
-      (localHost.toSeq ++ random.shuffle(otherHosts.toSeq)).head
+      val nodesInLocalDC = CassandraConnector.nodesInTheSameDC(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+      val (localHost, otherHosts) = nodesInLocalDC.partition(LocalNodeFirstLoadBalancingPolicy.isLocalHost)
+      val (upHosts, downHosts) = otherHosts.partition(_.isUp)
+      (localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq))
+        .headOption.getOrElse(throw new IOException("Cannot connect to Cassandra"))
     }
   }
 
