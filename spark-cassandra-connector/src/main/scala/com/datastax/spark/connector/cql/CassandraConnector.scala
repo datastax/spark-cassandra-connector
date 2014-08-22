@@ -6,12 +6,12 @@ import java.net.InetAddress
 import com.datastax.driver.core.{Session, Host, Cluster}
 import com.datastax.driver.core.policies._
 import com.datastax.spark.connector.util.IOUtils
+
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.{Logging, SparkConf}
 import org.apache.thrift.protocol.TBinaryProtocol
 
 import scala.collection.JavaConversions._
-import scala.util.Random
 
 
 /** Provides and manages connections to Cassandra.
@@ -73,7 +73,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
     val session = sessionCache.acquire(_config)
     try {
       val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
-      val myNodes = nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
+      val myNodes = LocalNodeFirstLoadBalancingPolicy.nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
 
       // We need a separate SessionProxy here to protect against double closing the session.
@@ -111,15 +111,13 @@ class CassandraConnector(conf: CassandraConnectorConf)
     }
   }
 
-    /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
+  /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
-      val random = new Random
-      val nodesInLocalDC = CassandraConnector.nodesInTheSameDC(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
-      val (localHost, otherHosts) = nodesInLocalDC.partition(LocalNodeFirstLoadBalancingPolicy.isLocalHost)
-      val (upHosts, downHosts) = otherHosts.partition(_.isUp)
-      (localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq))
-        .headOption.getOrElse(throw new IOException("Cannot connect to Cassandra"))
+      LocalNodeFirstLoadBalancingPolicy
+        .sortNodesByProximityAndStatus(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+        .headOption
+        .getOrElse(throw new IOException("Cannot connect to Cassandra: No hosts found"))
     }
   }
 
@@ -184,19 +182,11 @@ object CassandraConnector extends Logging {
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
-
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: Session): Set[CassandraConnectorConf] = {
     val cluster = session.getCluster
-    val hosts = nodesInTheSameDC(conf.hosts, cluster.getMetadata.getAllHosts.toSet)
+    val hosts = LocalNodeFirstLoadBalancingPolicy.nodesInTheSameDC(conf.hosts, cluster.getMetadata.getAllHosts.toSet)
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
-  }
-
-  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts` */
-  def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
-    val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
-    val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
-    allHosts.filter(h => h.getDatacenter == null || contactDCs.contains(h.getDatacenter))
   }
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {

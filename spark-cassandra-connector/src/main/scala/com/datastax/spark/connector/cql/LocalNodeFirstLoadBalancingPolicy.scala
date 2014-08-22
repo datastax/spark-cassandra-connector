@@ -25,10 +25,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
   }
 
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
-    val nodesInLocalDC = CassandraConnector.nodesInTheSameDC(contactPoints, liveNodes)
-    val (localHost, otherHosts) = nodesInLocalDC.partition(isLocalHost)
-    val (upHosts, downHosts) = otherHosts.partition(_.isUp)
-    (localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq)).iterator
+    sortNodesByProximityAndStatus(contactPoints, liveNodes).iterator
   }
 
   override def onAdd(host: Host) {
@@ -47,11 +44,36 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
 
 object LocalNodeFirstLoadBalancingPolicy {
 
+  private val random = new Random
+
   private val localAddresses =
     NetworkInterface.getNetworkInterfaces.flatMap(_.getInetAddresses).toSet
 
+  /** Returns true if given host is local host */
   def isLocalHost(host: Host): Boolean = {
     val hostAddress = host.getAddress
     hostAddress.isLoopbackAddress || localAddresses.contains(hostAddress)
   }
+
+  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts` */
+  def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
+    val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
+    val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
+    allHosts.filter(h => h.getDatacenter == null || contactDCs.contains(h.getDatacenter))
+  }
+
+  /** Sorts nodes in the following order:
+    * 1. local host
+    * 2. live nodes in the same DC as `contactPoints`
+    * 3. down nodes in the same DC as `contactPoints`
+    *
+    * Nodes within a group are ordered randomly.
+    * Nodes from other DCs are not included. */
+  def sortNodesByProximityAndStatus(contactPoints: Set[InetAddress], hostsToSort: Set[Host]): Seq[Host] = {
+    val nodesInLocalDC = nodesInTheSameDC(contactPoints, hostsToSort)
+    val (localHost, otherHosts) = nodesInLocalDC.partition(isLocalHost)
+    val (upHosts, downHosts) = otherHosts.partition(_.isUp)
+    localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq)
+  }
+
 }
