@@ -19,6 +19,7 @@ spark.cassandra.connection.native.port   | Cassandra native port                
 spark.cassandra.auth.username            | login name for password authentication            |
 spark.cassandra.auth.password            | password for password authentication              |
 spark.cassandra.auth.conf.factory.class  | name of the class implementing `AuthConfFactory` providing custom authentication | `DefaultAuthConfFactory`
+spark.cassandra.connection.keep_alive_ms | period of time to keep unused connections open    | 250 ms
   
 Example:
 
