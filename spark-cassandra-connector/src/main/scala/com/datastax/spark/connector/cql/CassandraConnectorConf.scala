@@ -10,9 +10,10 @@ import scala.util.control.NonFatal
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
 case class CassandraConnectorConf(
   hosts: Set[InetAddress],
-  nativePort: Int,
-  rpcPort: Int,
-  authConf: AuthConf)
+  nativePort: Int = CassandraConnectorConf.DefaultNativePort,
+  rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
+  authConf: AuthConf = NoAuthConf,
+  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory)
 
 /** A factory for `CassandraConnectorConf` objects.
   * Allows for manually setting connection properties or reading them from `SparkConf` object.
@@ -27,27 +28,26 @@ object CassandraConnectorConf extends Logging {
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
   val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
 
-
-  def apply(host: InetAddress,
-            nativePort: Int = DefaultNativePort,
-            rpcPort: Int = DefaultRpcPort,
-            authConf: AuthConf = NoAuthConf): CassandraConnectorConf = {
-    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf)
+  private def resolveHost(hostName: String): Option[InetAddress] = {
+    try Some(InetAddress.getByName(hostName))
+    catch {
+      case NonFatal(e) =>
+        logError(s"Unknown host '$hostName'", e)
+        None
+    }
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
-    val hosts = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
-      .split(",").flatMap { host =>
-        try Some(InetAddress.getByName(host)) catch {
-          case NonFatal(e) =>
-            logError(s"Unknown host '$host'", e)
-            None
-        }
-      }.toSet
+    val hostsStr = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
+    val hosts = for {
+      hostName <- hostsStr.split(",").toSet[String]
+      hostAddress <- resolveHost(hostName)
+    } yield hostAddress
+
     val rpcPort = conf.getInt(CassandraConnectionRpcPortProperty, DefaultRpcPort)
     val nativePort = conf.getInt(CassandraConnectionNativePortProperty, DefaultNativePort)
     val authConf = AuthConf.fromSparkConf(conf)
-    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf)
+    val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
+    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory)
   }
-  
 }

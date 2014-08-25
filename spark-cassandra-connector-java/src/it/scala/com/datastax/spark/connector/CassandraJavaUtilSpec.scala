@@ -10,7 +10,7 @@ import scala.collection.JavaConversions._
 class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(cassandraHost)
+  val conn = CassandraConnector(Set(cassandraHost))
 
   before {
     conn.withSessionDo { session =>
