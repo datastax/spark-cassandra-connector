@@ -1,4 +1,4 @@
- * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with case classes in Spark shell (#188)
+ * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with case classes in Spark shell, added apropriate test cases (#188)
 
 1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
