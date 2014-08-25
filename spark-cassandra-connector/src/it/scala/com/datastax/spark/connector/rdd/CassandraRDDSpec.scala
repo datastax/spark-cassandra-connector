@@ -37,6 +37,11 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (2, 100, '0002')")
     session.execute("INSERT INTO read_test.key_value (key, group, value) VALUES (3, 300, '0003')")
 
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.simple_kv (key INT, value TEXT, PRIMARY KEY (key))")
+    session.execute("INSERT INTO read_test.simple_kv (key, value) VALUES (1, '0001')")
+    session.execute("INSERT INTO read_test.simple_kv (key, value) VALUES (2, '0002')")
+    session.execute("INSERT INTO read_test.simple_kv (key, value) VALUES (3, '0003')")
+
     session.execute("CREATE TABLE IF NOT EXISTS read_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
     session.execute("INSERT INTO read_test.collections (key, l, s, m) VALUES (2, null, null, null)")
@@ -78,6 +83,46 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined class objects" in {
+    val result = sc.cassandraTable[SampleScalaClass]("read_test", "simple_kv").toArray()
+    result should have length 3
+    result.head.key should (be >= 1 and be <= 3)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined class (with multiple constructors) objects" in {
+    val result = sc.cassandraTable[SampleScalaClassWithMultipleCtors]("read_test", "simple_kv").toArray()
+    result should have length 3
+    result.head.key should (be >= 1 and be <= 3)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined class (with no fields) objects" in {
+    val result = sc.cassandraTable[SampleScalaClassWithNoFields]("read_test", "simple_kv").toArray()
+    result should have length 3
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined case class (nested) objects" in {
+    val result = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass]("read_test", "simple_kv").toArray()
+    result should have length 3
+    result.head.key should (be >= 1 and be <= 3)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined case class (deeply nested) objects" in {
+    val result = sc.cassandraTable[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]("read_test", "simple_kv").toArray()
+    result should have length 3
+    result.head.key should (be >= 1 and be <= 3)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined case class (nested in object) objects" in {
+    val result = sc.cassandraTable[SampleObject.ClassInObject]("read_test", "simple_kv").toArray()
+    result should have length 3
+    result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
