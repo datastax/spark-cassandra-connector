@@ -2,12 +2,12 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{Props, Terminated, ActorSystem}
 import akka.testkit.TestKit
-import com.datastax.spark.connector.SomeColumns 
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture {
@@ -22,7 +22,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
 
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
-      val stream = ssc.actorStream[String](Props[SimpleStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
+      val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
@@ -41,10 +41,19 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-        awaitCond(rdd.toArray().nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
-        rdd.toArray().length should be (data.size)
+        awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
+        rdd.collect.length should be (data.size)
       }
     }
+  }
+}
+
+/** A very basic Akka actor which streams `String` event data to spark. */
+class TestStreamingActor extends TypedStreamingActor[String] with Counter {
+
+  override def push(e: String): Unit = {
+    super.push(e)
+    increment()
   }
 }
 
