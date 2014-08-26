@@ -15,6 +15,9 @@ import com.datastax.spark.connector.streaming.TypedStreamingActor
  * 3. Run the demo from SBT with: sbt spark-cassandra-connector-demos/run
  *      Then enter the number for: com.datastax.spark.connector.demo.streaming.AkkaStreamingDemo
  *    Or right click to run in an IDE
+ *
+ * Note: For our initial streaming release we started with Akka integration of Spark Streaming.
+ * However coming soon is Kafka, ZeroMQ, then Twitter Streaming.
  */
 object AkkaStreamingDemo extends App {
 
