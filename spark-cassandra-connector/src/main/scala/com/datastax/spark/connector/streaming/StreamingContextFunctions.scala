@@ -4,7 +4,8 @@ import akka.actor.Actor
 import com.datastax.spark.connector.SparkContextFunctions
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.receivers.Receiver
+import org.apache.spark.streaming.receiver
+import org.apache.spark.streaming.receiver.ActorHelper
 
 import scala.reflect.ClassTag
 
@@ -21,7 +22,7 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
 }
 
 /** Simple akka.actor.Actor mixin to implement further with Spark 1.0.1 upgrade. */
-trait SparkStreamingActor extends Actor with Receiver
+trait SparkStreamingActor extends Actor with ActorHelper
 
 abstract class TypedStreamingActor[T : ClassTag] extends SparkStreamingActor {
 
