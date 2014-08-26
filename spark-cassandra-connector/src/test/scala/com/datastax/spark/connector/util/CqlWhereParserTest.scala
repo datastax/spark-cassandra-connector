@@ -22,7 +22,7 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
   }
   it should " parse strings" in {
     parser.predicates(" Cde in  ('20', '30')")(0) match {
-      case InPredicateList(name, list) => list(0).asInstanceOf[Param].value should be("'20'")
+      case InPredicateList(name, list) => list(0).asInstanceOf[Value].value should be("'20'")
       case _ => assert(false)
     }
   }
@@ -30,10 +30,10 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
   it should " see difference among '?' and ? " in {
     parser.predicates(" Cde in  ('?', ?, '?', ?)")(0) match {
       case InPredicateList(name, list) => {
-        list(0).asInstanceOf[Param].value should be("'?'")
-        list(1).asInstanceOf[QParam]
-        list(2).asInstanceOf[Param].value should be("'?'")
-        list(3).asInstanceOf[QParam]
+        list(0).asInstanceOf[Value].value should be("'?'")
+        list(1) should be (Placeholder)
+        list(2).asInstanceOf[Value].value should be("'?'")
+        list(3) should be (Placeholder)
       }
       case _ => assert(false)
     }
@@ -67,20 +67,20 @@ class CqlWhereParserTest extends FlatSpec with Matchers {
 
   it should " accept param with quotes and other special symbols" in {
     parser.predicates("abc > 'abc''abc$%^'")(0) match {
-      case RangePredicate(name, op, Param(value)) => value should be("'abc''abc$%^'")
+      case RangePredicate(name, op, Value(value)) => value should be("'abc''abc$%^'")
       case _ => assert(false)
     }
   }
 
   it should " accept uuid param" in {
     parser.predicates("abc > 01234567-0123-0123-0123-0123456789ab")(0) match {
-      case RangePredicate(name,  op, Param(value)) => value should be("01234567-0123-0123-0123-0123456789ab")
+      case RangePredicate(name,  op, Value(value)) => value should be("01234567-0123-0123-0123-0123456789ab")
       case _ => assert(false)
     }
   }
   it should " accept float param" in {
     parser.predicates("abc >-12.e+10")(0) match {
-      case RangePredicate(name, op, Param(value)) => value should be("-12.e+10")
+      case RangePredicate(name, op, Value(value)) => value should be("-12.e+10")
       case _ => assert(false)
     }
   }
