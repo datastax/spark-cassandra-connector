@@ -116,69 +116,59 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
     }
   }
 
-  def containsPartitionKey(predicates: Seq[Predicate]) = {
+  private def containsPartitionKey(predicates: Seq[Predicate]) = {
     predicates.map(_.columnName).intersect(pkNames).nonEmpty
   }
 
-  private def crossWhereClause(xs: Seq[CqlWhereClause], ys: Seq[CqlWhereClause]) =
-    for {x <- xs; y <- ys} yield x and y
+  private def crossPredicates(xs: Seq[Seq[Predicate]], ys: Seq[Predicate]): Seq[Seq[Predicate]] =
+    if (xs.isEmpty) ys.map(Seq(_))
+    else
+      for {x <- xs; y <- ys} yield x :+ y
+
+  // TODO implements the endpoint search
+  // all available endpoints are returned so far
+  private def endpointForKey (keyPredicate: Seq[Predicate], tokenRanges:Seq[TokenRange]): Iterable[InetAddress] =
+    tokenRanges.flatMap(_.endpoints).distinct
 
   private def partitionKeBasedPartitions (whereClause: CqlWhereClause,
                                         predicates : Seq[Predicate],
                                         tokenRanges:Seq[TokenRange]): Array[Partition] = {
-    var keyWhereClauses = Seq(CqlWhereClause(Seq[String](), Seq[Any]()))
-    var otherWhereClause = CqlWhereClause(Seq[String](), Seq[Any]())
-    val valIterator = whereClause.values.iterator
-    var noUnknownPredicates = true
-    for (predicate <- predicates) {
-      //collect values for '?' for current predicate
-      val qValues = predicate match {
-        case InPredicateList(name, values) => values collect { case v: QParam => valIterator.next()}
-        case InPredicate(_)
-             | EqPredicate(_, QParam())
-             | RangePredicate(_, _, QParam()) => Seq(valIterator.next())
-        case UnknownPredicate(_,_) => noUnknownPredicates= false; Seq()
 
-        case _ => Seq()
-      }
+    val (knownPredicates, unknownPredicates) = predicates.span (!_.isInstanceOf[UnknownPredicate])
+    val (keyPredicates, nonKeyPredicates) = knownPredicates.partition(p => pkNames contains p.columnName)
+    val crossedKeyPredicates: Seq[Seq[Predicate]] = keyPredicates.foldLeft (Seq[Seq[Predicate]]()) {
+      (list, predicate) =>
+        predicate match {
+          case predicate: EqPredicate =>  crossPredicates(list, Seq(predicate))
 
-      // partition key predicates: cross join 'in' predicate into set of  '=' predicates to make partitions for parallel cql calls
-      if (noUnknownPredicates && (pkNames contains predicate.columnName)) {
-        keyWhereClauses = predicate match {
-          case predicate: EqPredicate => keyWhereClauses.map(_
-            and CqlWhereClause(Seq[String](predicate.toCqlString()), qValues))
-
-          case predicate: InPredicate => {
-            val inWhereClauses = qValues(0).asInstanceOf[Product].productIterator.toSeq.map(v =>
-                          CqlWhereClause(Seq(quote(predicate.columnName) + " = ?"),
-                          Seq(v))
-            )
-            crossWhereClause(keyWhereClauses, inWhereClauses)
+          case InPredicate(columnName, value) => {
+            val eqPredicates = value.asInstanceOf[Product].productIterator.toSeq.map(v =>
+              EqPredicate(columnName, Placeholder(v)))
+            crossPredicates(list, eqPredicates)
           }
 
-          case predicate: InPredicateList => {
-            val valIterator = qValues.iterator
-            val inWhereClauses = predicate.values.map(_ match {
-              case param: QParam => CqlWhereClause(Seq(quote(predicate.columnName) + " = ?"), Seq(valIterator.next))
-              case param: Param => CqlWhereClause(Seq(quote(predicate.columnName) + " = " + param.toCqlString()), Seq())
-            })
-            crossWhereClause(keyWhereClauses, inWhereClauses)
+          case InPredicateList(columnName, values) => {
+            val eqPredicates = values.map(EqPredicate(columnName, _))
+            crossPredicates(list, eqPredicates)
           }
 
-          case param: RangePredicate => throw new RuntimeException("Only in and = operation accpeted for parition keys")
+          case _ => throw new RuntimeException("Only in and = operation accepted for partition keys")
 
         }
-        // not partition key predicates left as is
-      } else {
-        otherWhereClause = otherWhereClause.and(CqlWhereClause(Seq[String](predicate.toCqlString()), qValues))
-      }
     }
-    // add all left values to the end, it can happen in case of parsing errors
-    if (!noUnknownPredicates)
-      otherWhereClause =  otherWhereClause.and( CqlWhereClause(Seq(""), valIterator.toSeq))
-
-    (for ((keyWhereClause, index) <- keyWhereClauses.zipWithIndex) yield {
-      CassandraCustomPartition (index, tokenRanges.flatMap(_.endpoints).distinct,keyWhereClause and otherWhereClause)
+    (for ((keyPredicates, index) <- crossedKeyPredicates.zipWithIndex) yield {
+      val predicates = keyPredicates ++ nonKeyPredicates  ++ unknownPredicates
+      //collect known values for '?' for current predicate
+      val qValues = predicates.map(_ match {
+        case InPredicateList(_, values) => values collect { case Placeholder(value) => value}
+        case InPredicate(_, value) => Seq(value)
+        case EqPredicate(_, Placeholder(value)) => Seq(value)
+        case RangePredicate(_, _, Placeholder(value)) => Seq(value)
+        case UnknownPredicate(_, _, values) => values
+        case _ => Seq()
+      }).reduce(_ ++ _)
+     CassandraCustomPartition (index, endpointForKey(keyPredicates, tokenRanges),
+            CqlWhereClause (predicates.map (_.toCqlString), qValues))
     }).toArray
   }
 
@@ -193,7 +183,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
         val maxGroupSize = tokenRanges.size / endpointCount
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
         val groups = clusterer.group(splits).toArray
-        val predicates: Seq[Predicate] = whereClause.predicates.map(CqlWhereParser.predicates).fold(Seq[Predicate]()) {
+        val qValIterator=whereClause.values.iterator
+        val predicates: Seq[Predicate] = whereClause.predicates.map(
+          predicate => CqlWhereParser.predicates(predicate, qValIterator)).fold(Seq[Predicate]()) {
           _ ++ _
         }
         try {
