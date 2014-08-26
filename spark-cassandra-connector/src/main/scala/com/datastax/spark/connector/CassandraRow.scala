@@ -90,6 +90,7 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
   private lazy val _indexOf =
     columnNames.zipWithIndex.toMap.withDefaultValue(-1)
 
+  @transient
   private lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
     throw new ColumnNotFoundException(
       s"Column not found: $name. " +
@@ -112,11 +113,19 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
   def indexOf(name: String): Int =
     _indexOf(name)
 
+  /** Returns the name of the i-th column. */
+  def nameOf(index: Int): String =
+    columnNames(index)
+
   /** Returns true if column with given name is defined and has an
     * entry in the underlying value array, i.e. was requested in the result set.
     * For columns having null value, returns true.*/
   def contains(name: String): Boolean =
     _indexOf(name) != -1
+
+  /** Converts this row to a Map */
+  def toMap: Map[String, Any] =
+    columnNames.zip(data).toMap
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */

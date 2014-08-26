@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 1.1.0
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
 
 1.0.0
- * Fixed a bug which caused problems with connecting to Cassandra under heavy load (#185)
- * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with case classes in Spark shell, added appropriate test cases (#188)
+ * Add toMap and nameOf methods to CassandraRow.
+   Reduce size of serialized CassandraRow. (#194)
+ * Fixed a bug which caused problems with connecting to Cassandra under
+   heavy load (#185)
+ * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with
+   case classes in Spark shell, added apropriate test cases (#188)
 
 1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
