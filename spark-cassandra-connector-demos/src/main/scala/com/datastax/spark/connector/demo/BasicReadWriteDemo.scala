@@ -16,7 +16,7 @@ object BasicReadWriteDemo extends DemoApp {
 
   // Read table test.kv and print its contents:
   val rdd = sc.cassandraTable("test", "key_value").select("key", "value")
-  rdd.toArray().foreach(row => log.debug(s"$row"))
+  rdd.collect().foreach(row => log.debug(s"$row"))
 
   // Write two rows to the test.kv table:
   val col = sc.parallelize(Seq((4, "fourth row"), (5, "fifth row")))

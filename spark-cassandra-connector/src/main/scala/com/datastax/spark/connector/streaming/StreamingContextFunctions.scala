@@ -31,7 +31,7 @@ abstract class TypedStreamingActor[T : ClassTag] extends SparkStreamingActor {
   }
 
   def push(event: T): Unit =
-    pushBlock(event)
+    store(event) 
 
 }
 
