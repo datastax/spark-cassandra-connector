@@ -10,6 +10,10 @@
    heavy load (#185)
  * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with
    case classes in Spark shell, added apropriate test cases (#188)
+ * Upgrade Spark to version 1.0.2 
+ * Removed depercated toArray, replaced with collect.
+ * Updated imports to org.apache.spark.streaming.receiver
+   and import org.apache.spark.streaming.receiver.ActorHelper
 
 1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
