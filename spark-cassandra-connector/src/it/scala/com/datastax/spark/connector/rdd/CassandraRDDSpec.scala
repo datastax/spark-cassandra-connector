@@ -7,6 +7,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.testkit.{SparkServer, CassandraServer}
 import com.datastax.spark.connector.types.TypeConverter
+import org.joda.time.DateTime
 
 import org.scalatest.{FlatSpec, Matchers}
 import scala.reflect.runtime.universe._
@@ -235,9 +236,21 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
     result should have length 2
   }
 
-  it should "convert values passed to where to correct types" in {
+  it should "convert values passed to where to correct types (String -> Timestamp)" in {
     val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
       .where("time >= ?", "2014-07-12 20:00:02").toArray()
+    result should have length 2
+  }
+
+  it should "convert values passed to where to correct types (DateTime -> Timestamp)" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2)).toArray()
+    result should have length 2
+  }
+
+  it should "convert values passed to where to correct types (Date -> Timestamp)" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2).toDate).toArray()
     result should have length 2
   }
 
