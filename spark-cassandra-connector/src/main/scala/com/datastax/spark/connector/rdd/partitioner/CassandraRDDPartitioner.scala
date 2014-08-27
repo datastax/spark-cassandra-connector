@@ -140,8 +140,11 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
     val values = keyPredicates.map(p => (p.columnName-> p.value)).toMap
     val serValues = tableDef.partitionKey.map(c =>
        serializeValue(c.columnType, values(c.columnName)))
-    // TODO support composed keys
-    tokenFactory.getToken(serValues(0))
+    if (serValues.size == 1 )
+      tokenFactory.getToken(new SimpleComposite(serValues(0)).toByteBuffer)
+    else {
+      tokenFactory.getToken(new CompoundComposite(serValues.toArray, serValues.size, false).toByteBuffer)
+    }
   }
   def endpointForKey (keyPredicates: Seq[EqPredicate], tokenRanges:Seq[TokenRange]): Iterable[InetAddress] = {
     val token = calculateToken(keyPredicates)

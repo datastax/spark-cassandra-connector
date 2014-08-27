@@ -7,9 +7,9 @@ case class TokenRange[V, T <: Token[V]] (
 
   def contains(value: T): Boolean = {
     if (isWrapAround) {
-      value > end && value <= start
+      value > start || value <= end
     } else {
-      value >= start && value < end
+      value > start && value <= end
     }
   }
 
