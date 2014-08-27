@@ -35,8 +35,7 @@ class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with Cassand
     result should have length 1
     result.head.getInt("key") should be (1)
   }
-
-    it should "allow partition key 'in' in where" in {
+  it should "allow partition key 'in' in where" in {
       val result = sc.cassandraTable("where_test", "key_value").where("key in (?, ?)", 2,3).toArray()
       result should have length 2
       result.head.getInt("key") should (be (2) or be (3))

@@ -25,7 +25,7 @@ trait ColumnType[T] extends Serializable {
   def isCollection: Boolean
 }
 
-object ColumnType {
+object ColumnType  {
 
   private val primitiveTypeMap = Map[DataType, ColumnType[_]](
     DataType.text() -> TextType,
@@ -45,6 +45,12 @@ object ColumnType {
     DataType.counter() -> CounterType,
     DataType.timeuuid() -> TimeUUIDType
   )
+
+  private val revertPrimitiveTypeMap: Map[ColumnType[_], DataType] = primitiveTypeMap.map (x => x._2 -> x._1).toMap
+
+  def toPrimitiveDriverType (dataType: ColumnType[_]):  DataType  = {
+    revertPrimitiveTypeMap(dataType)
+  }
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
     val typeArgs = dataType.getTypeArguments.map(fromDriverType)

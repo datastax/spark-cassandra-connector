@@ -5,6 +5,15 @@ import java.net.InetAddress
 case class TokenRange[V, T <: Token[V]] (
     start: T, end: T, endpoints: Set[InetAddress], rowCount: Option[Long]) {
 
+  def contains(value: T): Boolean = {
+    if (isWrapAround) {
+      value > end && value <= start
+    } else {
+      value >= start && value < end
+    }
+  }
+
+
   def isWrapAround: Boolean =
     start >= end
 

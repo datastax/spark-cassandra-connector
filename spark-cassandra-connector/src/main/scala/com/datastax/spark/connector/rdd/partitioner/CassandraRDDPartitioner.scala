@@ -1,7 +1,10 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
+import java.nio.ByteBuffer
 
+import com.datastax.driver.core.DataType
+import com.datastax.spark.connector.types.ColumnType
 import org.apache.spark.Logging
 
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
@@ -120,15 +123,30 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
     predicates.map(_.columnName).intersect(pkNames).nonEmpty
   }
 
-  private def crossPredicates(xs: Seq[Seq[Predicate]], ys: Seq[Predicate]): Seq[Seq[Predicate]] =
+  private def crossPredicates(xs: Seq[Seq[EqPredicate]], ys: Seq[EqPredicate]): Seq[Seq[EqPredicate]] =
     if (xs.isEmpty) ys.map(Seq(_))
     else
       for {x <- xs; y <- ys} yield x :+ y
 
-  // TODO implements the endpoint search
-  // all available endpoints are returned so far
-  private def endpointForKey (keyPredicate: Seq[Predicate], tokenRanges:Seq[TokenRange]): Iterable[InetAddress] =
-    tokenRanges.flatMap(_.endpoints).distinct
+
+  private def serializeValue (columnType: ColumnType[_], value: Literal): ByteBuffer = {
+    val dataType:DataType = ColumnType.toPrimitiveDriverType(columnType)
+    value match {
+      case Placeholder(v) => dataType.serialize(columnType.converterToCassandra.convert(v))
+      case Value(v) => dataType.parse(v)
+    }
+  }
+  def calculateToken(keyPredicates: Seq[EqPredicate]) =  {
+    val values = keyPredicates.map(p => (p.columnName-> p.value)).toMap
+    val serValues = tableDef.partitionKey.map(c =>
+       serializeValue(c.columnType, values(c.columnName)))
+    // TODO support composed keys
+    tokenFactory.getToken(serValues(0))
+  }
+  def endpointForKey (keyPredicates: Seq[EqPredicate], tokenRanges:Seq[TokenRange]): Iterable[InetAddress] = {
+    val token = calculateToken(keyPredicates)
+    tokenRanges.filter(_.contains(token) ).flatMap(_.endpoints).distinct
+  }
 
   private def partitionKeBasedPartitions (whereClause: CqlWhereClause,
                                         predicates : Seq[Predicate],
@@ -136,7 +154,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
 
     val (knownPredicates, unknownPredicates) = predicates.span (!_.isInstanceOf[UnknownPredicate])
     val (keyPredicates, nonKeyPredicates) = knownPredicates.partition(p => pkNames contains p.columnName)
-    val crossedKeyPredicates: Seq[Seq[Predicate]] = keyPredicates.foldLeft (Seq[Seq[Predicate]]()) {
+    val crossedKeyPredicates: Seq[Seq[EqPredicate]] = keyPredicates.foldLeft (Seq[Seq[EqPredicate]]()) {
       (list, predicate) =>
         predicate match {
           case predicate: EqPredicate =>  crossPredicates(list, Seq(predicate))
@@ -156,6 +174,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
 
         }
     }
+    if(keyPredicates.isEmpty) throw new RuntimeException("key predicates are empty")
+
     (for ((keyPredicates, index) <- crossedKeyPredicates.zipWithIndex) yield {
       val predicates = keyPredicates ++ nonKeyPredicates  ++ unknownPredicates
       //collect known values for '?' for current predicate
@@ -167,6 +187,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]] (
         case UnknownPredicate(_, _, values) => values
         case _ => Seq()
       }).reduce(_ ++ _)
+
      CassandraCustomPartition (index, endpointForKey(keyPredicates, tokenRanges),
             CqlWhereClause (predicates.map (_.toCqlString), qValues))
     }).toArray
