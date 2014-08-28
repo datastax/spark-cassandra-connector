@@ -1,74 +1,105 @@
 package com.datastax.spark.connector.util
 
+import java.util.UUID
+
 import org.apache.spark.Logging
 
 import scala.util.parsing.combinator.RegexParsers
 
 object CqlWhereParser extends RegexParsers with Logging {
 
-  def identifier = """[_\p{L}][_\p{L}\p{Nd}]*""".r ^^ { id => Identifier(id.toLowerCase)}
+  sealed trait RelationalOperator
+  case object EqualTo extends RelationalOperator
+  case object LowerThan extends RelationalOperator
+  case object LowerEqual extends RelationalOperator
+  case object GreaterThan extends RelationalOperator
+  case object GreaterEqual extends RelationalOperator
+  case object In extends RelationalOperator
 
-  def quotedIdentifier = "\"" ~> "(\"\"|[^\"])*".r <~ "\"" ^^ { id => Identifier(id.toString)}
+  sealed trait Value
+  case object Placeholder extends Value
 
-  def num = """-?\d+(\.\d*)?([eE][-\+]?\d+)?""".r
+  sealed trait Literal extends Value { def value: Any }
+  case class StringLiteral(value: String) extends Literal
+  case class NumberLiteral(value: String) extends Literal
+  case class BooleanLiteral(value: Boolean) extends Literal
+  case class UUIDLiteral(value: UUID) extends Literal
 
-  def bool = "true" | "false"
+  case class ValueList(values: Value*)
 
-  def str = """'(''|[^'])*'""".r
+  case class Identifier(name: String)
 
-  def uuid = """[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}""".r
+  sealed trait Predicate
+  sealed trait SingleColumnPredicate extends Predicate {
+    def columnName: String
+  }
+  case class InPredicate(columnName: String) extends SingleColumnPredicate
+  case class InListPredicate(columnName: String, values: ValueList) extends SingleColumnPredicate
+  case class EqPredicate(columnName: String, value: Value) extends SingleColumnPredicate
+  case class RangePredicate(columnName: String, operator: RelationalOperator, value: Value) extends SingleColumnPredicate
+  case class UnknownPredicate(text: String) extends Predicate
 
-  def param: Parser[Literal] = ("?" | uuid | num | bool | str) ^^ {
-    case "?" => Placeholder
-    case param => Value(param.toString)
+  private def unquotedIdentifier = """[_\p{L}][_\p{L}\p{Nd}]*""".r ^^ {
+    id => Identifier(id.toLowerCase)
   }
 
-  def op = "<=" | ">=" | "=" | ">" | "<"
-  def inOp = "(?i)in".r ^^ { _=> "in"}
-  def andOp = "(?i)and".r ^^ {_ => "and"}
-
-  def inParam = "(" ~> param ~ rep("," ~ param) <~ ")" ^^ {
-    case param ~ list => list.foldLeft(List[Literal](param)) {
-      case (params, "," ~ param) => params :+ param
-    }
+  private def quotedIdentifier = "\"" ~> "(\"\"|[^\"])*".r <~ "\"" ^^ {
+    def unEscapeQuotes(s: String) = s.replace("\"\"", "\"")
+    id => Identifier(unEscapeQuotes(id.toString))
   }
 
-  def expr: Parser[Predicate] = (((identifier | quotedIdentifier) ~ (op | inOp) ~ ( param | inParam)) | ".*".r) ^^ {
-    case (Identifier(name) ~ "in" ~ Placeholder) => new InPredicate(name)
-    case (Identifier(name) ~ "in" ~ inParam) => InPredicateList(name, inParam.asInstanceOf[List[Literal]])
-    case (Identifier(name) ~ "=" ~ param) => EqPredicate(name, param.asInstanceOf[Literal])
-    case (Identifier(name) ~ op ~ param) => RangePredicate(name, Operator(op.asInstanceOf[String]), param.asInstanceOf[Literal])
-    case (unknown) => UnknownPredicate("", unknown.toString)
+  private def identifier = unquotedIdentifier | quotedIdentifier
+
+  private def num = """-?\d+(\.\d*)?([eE][-\+]?\d+)?""".r ^^ NumberLiteral.apply
+
+  private def bool = ("true" | "false") ^^ {
+    s => BooleanLiteral(s.toBoolean)
   }
 
-  def where = expr ~ rep(andOp ~ expr) ^^ {
-    case expr ~ list => list.foldLeft(List[Predicate](expr)) {
-      case (exprs, "and" ~ expr2) => exprs :+ expr2
-    }
+  private def str = "'" ~> """(''|[^'])*""".r <~ "'" ^^ {
+    def unEscapeQuotes(s: String) = s.replace("''", "'")
+    s => StringLiteral(unEscapeQuotes(s))
   }
 
-  def predicates(s: String): Seq[Predicate] = {
-    parseAll(where, s) match {
+  private def uuid = """[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}""".r ^^ {
+    s => UUIDLiteral(UUID.fromString(s))
+  }
+
+  private def placeholder = "?" ^^ (_ => Placeholder)
+
+  private def value: Parser[Value] = placeholder | uuid | num | bool | str
+
+  private def relationalOperator: Parser[RelationalOperator] =
+    "<="       ^^ (_ => LowerEqual) |
+    ">="       ^^ (_ => GreaterEqual) |
+    "<"        ^^ (_ => LowerThan) |
+    ">"        ^^ (_ => GreaterThan) |
+    "="        ^^ (_ => EqualTo) |
+    "(?i)in".r ^^ (_ => In)
+
+  private def valueList: Parser[ValueList] = "(" ~> value ~ rep("," ~> value) <~ ")" ^^ {
+    case literal ~ list => ValueList(literal :: list :_*)
+  }
+
+  private def and = "(?i)and".r ^^ {_ => "and" }
+
+  private def predicate: Parser[Predicate] = ((identifier ~ relationalOperator ~ (value | valueList)) | ".*".r) ^^ {
+    case Identifier(name) ~ In ~ Placeholder                          => InPredicate(name)
+    case Identifier(name) ~ In ~ (list : ValueList)                   => InListPredicate(name, list)
+    case Identifier(name) ~ EqualTo ~ (v: Value)                      => EqPredicate(name, v)
+    case Identifier(name) ~ (op: RelationalOperator) ~ (param: Value) => RangePredicate(name, op, param)
+    case other                                                        => UnknownPredicate(other.toString)
+  }
+
+  private def whereClause = predicate ~ rep(and ~> predicate) ^^ {
+    case expr ~ list => expr :: list
+  }
+
+  def parse(cqlWhere: String): Seq[Predicate] = {
+    parseAll(whereClause, cqlWhere) match {
       case Success(columns, _) => columns
-      case x => logError("Where predicate parsing error:" + x.toString); List()
+      case x => logError("Parse error when parsing CQL WHERE clause:" + x.toString); List()
     }
   }
-
 }
 
-trait Literal
-case class Operator(op: String) 
-case class Identifier(name: String) 
-case class Value(value: Any) extends Literal
-case object Placeholder extends Literal
-
-trait Predicate {
-  def columnName: String
-}
-case class InPredicate(columnName: String) extends Predicate
-case class InPredicateList(columnName: String, values: List[Literal]) extends Predicate
-case class EqPredicate(columnName: String, value: Literal) extends Predicate
-case class RangePredicate(columnName: String, operator: Operator, value: Literal) extends Predicate
-case class UnknownPredicate(columnName: String, text: String) extends Predicate
-
-// for completeness only

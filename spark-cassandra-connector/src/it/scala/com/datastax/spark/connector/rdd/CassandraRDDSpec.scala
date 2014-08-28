@@ -254,6 +254,24 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
     result should have length 2
   }
 
+  it should "accept partitioning key in where" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key = ?", 1).toArray()
+    result should have length 3
+  }
+
+  it should "accept partitioning key and clustering column predicate in where" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key = ? AND time >= ?", 1, new DateTime(2014, 7, 12, 20, 0, 2).toDate).toArray()
+    result should have length 2
+  }
+
+  it should "accept composite partitioning key in where" in {
+    val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key")
+      .where("key_c1 = ? AND key_c2 = ?", 1, 1).toArray()
+    result should have length 2
+  }
+
   it should "throw IOException when table could not be found" in {
     intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").toArray() }
   }

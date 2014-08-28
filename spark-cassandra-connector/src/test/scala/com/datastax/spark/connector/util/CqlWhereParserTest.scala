@@ -1,99 +1,120 @@
 package com.datastax.spark.connector.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import java.util.UUID
 
-class CqlWhereParserTest extends FlatSpec with Matchers {
+import com.datastax.spark.connector.util.CqlWhereParser._
+
+import org.scalatest.{Inside, FlatSpec, Matchers}
+
+
+class CqlWhereParserTest extends FlatSpec with Matchers with Inside {
   var parser = CqlWhereParser
+
   "CqlWhereParser" should "parse 'and' operations" in {
-    parser.predicates("abc > 10 and cde > 20 and c < 1")(1).columnName should be("cde")
+    parser.parse("abc > 10 and cde >= 20 and c < 1") should be (
+      List(
+        RangePredicate("abc", GreaterThan, NumberLiteral("10")),
+        RangePredicate("cde", GreaterEqual, NumberLiteral("20")),
+        RangePredicate("c", LowerThan, NumberLiteral("1"))
+      )
+    )
   }
 
-  it should "parse in operations" in {
-    parser.predicates("cde in  (20, 30)")(0).columnName should be("cde")
+  it should "parse equality predicates" in {
+    parser.parse("abc = 10") should be (
+      List(EqPredicate("abc", NumberLiteral("10")))
+    )
   }
 
-
-  it should "parse quted names" in {
-    parser.predicates(" \"Cde\" in  (20, 30)")(0).columnName should be("Cde")
+  it should "parse range predicates" in {
+    parser.parse("abc > 10") should be (List(RangePredicate("abc", GreaterThan, NumberLiteral("10"))))
+    parser.parse("abc < 10") should be (List(RangePredicate("abc", LowerThan, NumberLiteral("10"))))
+    parser.parse("abc >= 10") should be (List(RangePredicate("abc", GreaterEqual, NumberLiteral("10"))))
+    parser.parse("abc <= 10") should be (List(RangePredicate("abc", LowerEqual, NumberLiteral("10"))))
   }
 
-  it should "lowcase names" in {
-    parser.predicates(" Cde in  (20, 30)")(0).columnName should be("cde")
+  it should "parse IN predicates" in {
+    parser.parse("cde in (20, 30)") should be (
+      List(InListPredicate("cde", ValueList(NumberLiteral("20"), NumberLiteral("30"))))
+    )
   }
-  it should " parse strings" in {
-    parser.predicates(" Cde in  ('20', '30')")(0) match {
-      case InPredicateList(name, list) => list(0).asInstanceOf[Value].value should be("'20'")
-      case _ => assert(false)
+
+  it should "parse quoted names" in {
+    parser.parse(" \"Cde\" in  (20, 30)")(0).asInstanceOf[SingleColumnPredicate].columnName should be ("Cde")
+  }
+
+  it should "return lowercase names" in {
+    parser.parse(" Cde in  (20, 30)")(0).asInstanceOf[SingleColumnPredicate].columnName should be ("cde")
+  }
+
+  it should "parse strings" in {
+    inside (parser.parse(" Cde in  ('20', '30')")(0)) {
+      case InListPredicate(name, ValueList(v1, v2)) =>
+        v1 should be (StringLiteral("20"))
+        v2 should be (StringLiteral("30"))
     }
   }
 
-  it should " see difference among '?' and ? " in {
-    parser.predicates(" Cde in  ('?', ?, '?', ?)")(0) match {
-      case InPredicateList(name, list) => {
-        list(0).asInstanceOf[Value].value should be("'?'")
-        list(1) should be (Placeholder)
-        list(2).asInstanceOf[Value].value should be("'?'")
-        list(3) should be (Placeholder)
-      }
-      case _ => assert(false)
+  it should "distinguish '?' from ?" in {
+    inside (parser.parse(" Cde in  ('?', ?, '?', ?)")(0)) {
+      case InListPredicate(name, list) =>
+        list.values(0) should be (StringLiteral("?"))
+        list.values(1) should be (Placeholder)
+        list.values(2) should be (StringLiteral("?"))
+        list.values(3) should be (Placeholder)
     }
   }
 
-  it should " return UnknownPredicate on error" in {
-    parser.predicates(" Cde inasa  ('20', '30')")(0) match {
-      case  UnknownPredicate(_, data) => data should be ("Cde inasa  ('20', '30')")
-    }
-  }
-
-  it should " return UnknownPredicate on error in second expr" in {
-    parser.predicates("a = 10 and  Cde inasa  ('20', '30')")(1) match {
-      case  UnknownPredicate(_, data) => data should be ("Cde inasa  ('20', '30')")
-    }
-  }
   it should " accept >= " in {
-    parser.predicates("abc >= ?").length should be(1)
+    parser.parse("abc >= ?").length should be(1)
   }
 
   it should " accept ?" in {
-    parser.predicates("abc in  ?")(0) match {
+    inside (parser.parse("abc in  ?")(0)) {
       case InPredicate(name) => name should be("abc")
-      case _ => assert(false)
     }
   }
 
   it should " accept name with quotes and other special symbols" in {
-    parser.predicates("\"\"\"ab!@#c\" in ?")(0).columnName should be("\"\"ab!@#c")
+    parser.parse("\"\"\"ab!@#c\" in ?")(0).asInstanceOf[SingleColumnPredicate].columnName should be("\"ab!@#c")
   }
 
   it should " accept param with quotes and other special symbols" in {
-    parser.predicates("abc > 'abc''abc$%^'")(0) match {
-      case RangePredicate(name, op, Value(value)) => value should be("'abc''abc$%^'")
-      case _ => assert(false)
+    inside (parser.parse("abc > 'abc''abc$%^'")(0)) {
+      case RangePredicate(name, op, StringLiteral(v)) => v should be("abc'abc$%^")
     }
   }
 
   it should " accept uuid param" in {
-    parser.predicates("abc > 01234567-0123-0123-0123-0123456789ab")(0) match {
-      case RangePredicate(name,  op, Value(value)) => value should be("01234567-0123-0123-0123-0123456789ab")
-      case _ => assert(false)
+    inside (parser.parse("abc > 01234567-0123-0123-0123-0123456789ab")(0)) {
+      case RangePredicate(name,  op, UUIDLiteral(v)) => v should be(UUID.fromString("01234567-0123-0123-0123-0123456789ab"))
     }
   }
   it should " accept float param" in {
-    parser.predicates("abc >-12.e+10")(0) match {
-      case RangePredicate(name, op, Value(value)) => value should be("-12.e+10")
-      case _ => assert(false)
+    inside (parser.parse("abc >-12.e+10")(0)) {
+      case RangePredicate(name, op, NumberLiteral(v)) => v should be("-12.e+10")
     }
   }
 
   it should "parse case insensitive 'aNd' operations" in {
-    parser.predicates("abc > 10 aNd cde > 20 AND c < 1")(1).columnName should be("cde")
+    parser.parse("abc > 10 aNd cde > 20 AND c < 1") should be (
+      List(
+        RangePredicate("abc", GreaterThan, NumberLiteral("10")),
+        RangePredicate("cde", GreaterThan, NumberLiteral("20")),
+        RangePredicate("c", LowerThan, NumberLiteral("1"))
+      )
+    )
   }
-
   it should "parse case insensitive 'iN' operations" in {
-    parser.predicates("cde iN  (20, 30)")(0).columnName should be("cde")
+    parser.parse("cde iN  (20, 30)") should be (
+      List(InListPredicate("cde", ValueList(NumberLiteral("20"), NumberLiteral("30"))))
+    )
   }
 
   it should "parse case insensitive 'IN' operations ?" in {
-    parser.predicates("cde IN  ?")(0).columnName should be("cde")
+    parser.parse("cde IN  ?") should be (
+      List(InPredicate("cde"))
+    )
   }
+
 }

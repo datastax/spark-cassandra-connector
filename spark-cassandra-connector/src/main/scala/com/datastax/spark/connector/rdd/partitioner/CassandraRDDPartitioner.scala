@@ -5,7 +5,8 @@ import java.net.InetAddress
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
-import com.datastax.spark.connector.util.{Predicate, CqlWhereParser}
+import com.datastax.spark.connector.util.CqlWhereParser
+import com.datastax.spark.connector.util.CqlWhereParser._
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
@@ -111,10 +112,28 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
-  def containsPartitionKey(clause: CqlWhereClause) = {
-    var whereColumns: Seq[Predicate] = clause.predicates.map (CqlWhereParser.predicates).fold (Seq[Predicate]()) {_ ++ _}
-    val pk = tableDef.partitionKey.map(_.columnName)
-    whereColumns.map(_.columnName).intersect(pk).nonEmpty
+  private def containsPartitionKey(clause: CqlWhereClause) = {
+    val pk = tableDef.partitionKey.map(_.columnName).toSet
+    val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
+
+    val whereColumns: Set[String] = wherePredicates.collect {
+      case EqPredicate(c, _) if pk.contains(c) => c
+      case InPredicate(c) if pk.contains(c) => c
+      case InListPredicate(c, _) if pk.contains(c) => c
+      case RangePredicate(c, _, _) if pk.contains(c) =>
+        throw new UnsupportedOperationException(
+          s"Range predicates on partition key columns (here: $c) are " +
+          s"not supported in where. Use filter instead.")
+    }.toSet
+
+    if (whereColumns.nonEmpty && whereColumns.size < pk.size) {
+      val missing = pk -- whereColumns
+      throw new UnsupportedOperationException(
+        s"Partition key predicate must include all partition key columns. Missing columns: ${missing.mkString(",")}"
+      )
+    }
+
+    whereColumns.nonEmpty
   }
 
   /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
