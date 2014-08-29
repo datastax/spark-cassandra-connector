@@ -270,7 +270,7 @@ class CassandraRDD[R] private[connector] (
   override def getPartitions: Array[Partition] = {
     verify // let's fail fast
     val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions
+    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
     logInfo(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
     logDebug("Partitions: \n" + partitions.mkString("\n"))
     partitions
@@ -282,7 +282,7 @@ class CassandraRDD[R] private[connector] (
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnNames.map(quote).mkString(", ")
-    val filter = range.cql + where.predicates.fold("")(_ + " AND " + _) + " ALLOW FILTERING"
+    val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
     (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", where.values)

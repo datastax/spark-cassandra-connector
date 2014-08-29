@@ -9,7 +9,7 @@ how to execute CQL statements from Spark applications.
 To connect your Spark application to Cassandra, set connection options in the 
 `SparkConf` object. These are prefixed with `spark.` so that they can be recognized
 from the spark-shell and set within the $SPARK_HOME/conf/spark-default.conf.
-The following options are available:
+The following options are available on `SparkConf` object:
 
 Property name                            | Description                                       | Default value
 -----------------------------------------|---------------------------------------------------|--------------------
@@ -20,9 +20,20 @@ spark.cassandra.auth.username            | login name for password authenticatio
 spark.cassandra.auth.password            | password for password authentication              |
 spark.cassandra.auth.conf.factory.class  | name of the class implementing `AuthConfFactory` providing custom authentication | `DefaultAuthConfFactory`
   
+Additionally, the following global system properties are available:
+
+Property name                                        | Description                                                   | Default value
+-----------------------------------------------------|---------------------------------------------------------------|--------------------
+spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                | 250 ms
+spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to attempt reconnecting to a dead node | 1000 ms 
+spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to attempt reconnecting to a dead node | 60000 ms 
+spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                    | 10 
+  
 Example:
 
 ```scala
+System.setProperty("spark.cassandra.query.retry.count", "1")  // don't retry
+
 val conf = new SparkConf(true)
         .set("spark.cassandra.connection.host", "192.168.123.10")
         .set("spark.cassandra.username", "cassandra")            
