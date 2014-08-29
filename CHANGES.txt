@@ -5,6 +5,7 @@
    heavy load (#185)
  * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with
    case classes in Spark shell, added appropriate test cases (#188)
+ * Added streaming demo with documentation, new streaming page to docs, new README for running all demos. (#115)
 
 1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
