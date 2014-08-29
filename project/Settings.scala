@@ -91,7 +91,15 @@ object Settings extends Build {
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
-    jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" }
+    jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" },
+    assemblyOption in assembly ~= { _.copy(includeScala = false) },
+      mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+      (old) => {
+        case PathList("org", "jboss", "netty", xs @ _*) => MergeStrategy.discard
+        case PathList("com", "google", xs @ _*) => MergeStrategy.discard
+        case x => old(x)
+      }
+    }
   )
 
   /* By default, assembly is not enabled for the demos module, but it can be enabled with

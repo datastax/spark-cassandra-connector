@@ -1,6 +1,7 @@
  * Add indexedColumn to ColumnDef (#122)
  * Added assembly task to the build, in order to build fat jars. (#126)
    - Added a system property flag to enable assembly for the demo module which is disabled by default.
+   - Added simple submit script to submit a demo assembly jar to a local spark master
 
 1.0.0 RC 3
  * Fix open Cluster leak in CassandraConnector#createSession (#142)

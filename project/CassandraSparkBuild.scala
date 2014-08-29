@@ -50,8 +50,6 @@ object Dependencies {
     import Versions._
 
     val akkaActor         = "com.typesafe.akka"       %% "akka-actor"           % Akka           % "provided"                 // ApacheV2
-    val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"         % Akka                                        // ApacheV2
-    val akkaContrib       = "com.typesafe.akka"       %% "akka-contrib"         % Akka                                        // ApacheV2
     val akkaRemote        = "com.typesafe.akka"       %% "akka-remote"          % Akka           % "provided"                 // ApacheV2
     val akkaSlf4j         = "com.typesafe.akka"       %% "akka-slf4j"           % Akka           % "provided"                 // ApacheV2
     val cassandraThrift   = "org.apache.cassandra"    % "cassandra-thrift"      % Cassandra
@@ -59,14 +57,14 @@ object Dependencies {
     val cassandraDriver   = "com.datastax.cassandra"  % "cassandra-driver-core" % CassandraDriver              withSources()  // ApacheV2
     val commonsLang3      = "org.apache.commons"      % "commons-lang3"         % CommonsLang3                                // ApacheV2
     val config            = "com.typesafe"            % "config"                % Config         % "provided"                 // ApacheV2
-    val guava             = "com.google.guava"        % "guava"                 % Guava                        force()
+    val guava             = "com.google.guava"        % "guava"                 % Guava          % "provided"  force()
     val jodaC             = "org.joda"                % "joda-convert"          % JodaC
     val jodaT             = "joda-time"               % "joda-time"             % JodaT
     val lzf               = "com.ning"                % "compress-lzf"          % Lzf            % "provided"
     val reflect           = "org.scala-lang"          % "scala-reflect"         % Scala
     val slf4jApi          = "org.slf4j"               % "slf4j-api"             % Slf4j          % "provided"                 // MIT
-    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark             exclude("com.google.guava", "guava") // ApacheV2
-    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark             exclude("com.google.guava", "guava") // ApacheV2
+    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark          % "provided"   exclude("com.google.guava", "guava") // ApacheV2
+    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark          % "provided"   exclude("com.google.guava", "guava") // ApacheV2
 
     object Metrics {
       val metricsJson     = "com.codahale.metrics"    % "metrics-json"          % MetricsJson    % "provided"
@@ -98,10 +96,12 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming)
 
-  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
+  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
 
-  val demos = metrics ++ logging ++ akka ++ cassandra ++ spark ++ Seq(
-    akkaCluster, akkaContrib, commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
+  val demos = metrics ++ logging ++ akka ++ cassandra ++ spark ++
+    Seq(commonsLang3, config, guava, jodaC, jodaT, lzf, reflect) ++
+    Seq("com.typesafe.akka" %% "akka-cluster" % Versions.Akka,
+     "com.typesafe.akka"    %% "akka-contrib" % Versions.Akka)
 
 }
