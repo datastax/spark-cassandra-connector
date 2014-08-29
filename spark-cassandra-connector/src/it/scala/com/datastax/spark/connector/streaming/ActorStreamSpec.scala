@@ -9,6 +9,7 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
+import scala.util.{Failure, Success}
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture {
   import TestEvent._
@@ -22,6 +23,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
 
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
+
       val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
@@ -29,11 +31,21 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         .reduceByKey(_ + _)
         .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
 
-      ssc.start()
-
       import system.dispatcher
-      val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
-      awaitCond(future.isCompleted)
+
+      // start the streaming context so the data can be processed
+      // and the actor gets started
+      ssc.start
+      Thread.sleep(3 * 1000) // This seems worng, there has to be a better way to handle the asynchrony
+
+      val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne(duration) 
+      awaitCond(future.isCompleted, duration)
+
+      future onComplete {
+        case Success(value) => println("future completed fine") 
+        case Failure(ex) => println(s"Error completing future: $ex")
+      }
+      
       for (actor <- future) {
         watch(actor)
         system.actorOf(Props(new TestProducer(data.toArray, actor)))
@@ -44,6 +56,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
         rdd.collect.length should be (data.size)
       }
+
     }
   }
 }

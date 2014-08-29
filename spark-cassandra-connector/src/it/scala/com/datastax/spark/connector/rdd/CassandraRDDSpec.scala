@@ -64,7 +64,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
-    val result = sc.cassandraTable("read_test", "key_value").toArray()
+    val result = sc.cassandraTable("read_test", "key_value").collect()
     result should have length 3
     result.head.getInt("key") should (be >= 1 and be <= 3)
     result.head.getLong("group") should (be >= 100L and be <= 300L)
@@ -72,7 +72,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow to read a Cassandra table as Array of tuples" in {
-    val result = sc.cassandraTable[(Int, Long, String)]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[(Int, Long, String)]("read_test", "key_value").collect()
     result should have length 3
     result.head._1 should (be >= 1 and be <= 3)
     result.head._2 should (be >= 100L and be <= 300L)
@@ -80,7 +80,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow to read a Cassandra table as Array of user-defined case class objects" in {
-    val result = sc.cassandraTable[KeyValue]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[KeyValue]("read_test", "key_value").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
@@ -88,47 +88,47 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow to read a Cassandra table as Array of user-defined class objects" in {
-    val result = sc.cassandraTable[SampleScalaClass]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleScalaClass]("read_test", "simple_kv").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
   it should "allow to read a Cassandra table as Array of user-defined class (with multiple constructors) objects" in {
-    val result = sc.cassandraTable[SampleScalaClassWithMultipleCtors]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleScalaClassWithMultipleCtors]("read_test", "simple_kv").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
   it should "allow to read a Cassandra table as Array of user-defined class (with no fields) objects" in {
-    val result = sc.cassandraTable[SampleScalaClassWithNoFields]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleScalaClassWithNoFields]("read_test", "simple_kv").collect()
     result should have length 3
   }
 
   it should "allow to read a Cassandra table as Array of user-defined case class (nested) objects" in {
-    val result = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass]("read_test", "simple_kv").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
   it should "allow to read a Cassandra table as Array of user-defined case class (deeply nested) objects" in {
-    val result = sc.cassandraTable[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]("read_test", "simple_kv").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
   it should "allow to read a Cassandra table as Array of user-defined case class (nested in object) objects" in {
-    val result = sc.cassandraTable[SampleObject.ClassInObject]("read_test", "simple_kv").toArray()
+    val result = sc.cassandraTable[SampleObject.ClassInObject]("read_test", "simple_kv").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.value should startWith("000")
   }
 
   it should "allow to read a Cassandra table as Array of user-defined mutable objects" in {
-    val result = sc.cassandraTable[MutableKeyValue]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[MutableKeyValue]("read_test", "key_value").collect()
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
@@ -136,7 +136,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "apply proper data type conversions for tuples" in {
-    val result = sc.cassandraTable[(String, Int, Long)]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[(String, Int, Long)]("read_test", "key_value").collect()
     result should have length 3
     Some(result.head._1) should contain oneOf("1", "2", "3")
     result.head._2 should (be >= 100 and be <= 300)
@@ -144,7 +144,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "apply proper data type conversions for user-defined case class objects" in {
-    val result = sc.cassandraTable[KeyValueWithConversion]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[KeyValueWithConversion]("read_test", "key_value").collect()
     result should have length 3
     Some(result.head.key) should contain oneOf("1", "2", "3")
     result.head.group should (be >= 100 and be <= 300)
@@ -152,7 +152,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "apply proper data type conversions for user-defined mutable objects" in {
-    val result = sc.cassandraTable[MutableKeyValueWithConversion]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[MutableKeyValueWithConversion]("read_test", "key_value").collect()
     result should have length 3
     Some(result.head.key) should contain oneOf("1", "2", "3")
     result.head.group should (be >= 100 and be <= 300)
@@ -161,7 +161,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
 
   it should "map columns to objects using user-defined function" in {
     val result = sc.cassandraTable[MutableKeyValue]("read_test", "key_value")
-      .as((key: Int, group: Long, value: String) => (key, group, value)).toArray()
+      .as((key: Int, group: Long, value: String) => (key, group, value)).collect()
     result should have length 3
     result.head._1 should (be >= 1 and be <= 3)
     result.head._2 should (be >= 100L and be <= 300L)
@@ -170,7 +170,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
 
   it should "map columns to objects using user-defined function with type conversion" in {
     val result = sc.cassandraTable[MutableKeyValue]("read_test", "key_value")
-      .as((key: String, group: String, value: Option[String]) => (key, group, value)).toArray()
+      .as((key: String, group: String, value: Option[String]) => (key, group, value)).collect()
     result should have length 3
     Some(result.head._1) should contain oneOf("1", "2", "3")
     Some(result.head._2) should contain oneOf("100", "300")
@@ -178,14 +178,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow for selecting a subset of columns" in {
-    val result = sc.cassandraTable("read_test", "key_value").select("value").toArray()
+    val result = sc.cassandraTable("read_test", "key_value").select("value").collect()
     result should have length 3
     result.head.size shouldEqual 1
     result.head.getString("value") should startWith("000")
   }
 
   it should "allow for selecting a subset of rows" in {
-    val result = sc.cassandraTable("read_test", "key_value").where("group < ?", 200L).toArray()
+    val result = sc.cassandraTable("read_test", "key_value").where("group < ?", 200L).collect()
     result should have length 2
     result.head.size shouldEqual 3
     result.head.getInt("group") shouldEqual 100
@@ -198,7 +198,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow for reading collections" in {
-    val result = sc.cassandraTable("read_test", "collections").toArray()
+    val result = sc.cassandraTable("read_test", "collections").collect()
     val rowById = result.groupBy(_.getInt("key")).mapValues(_.head)
     rowById(1).getList[String]("l") shouldEqual Vector("item1", "item2")
     rowById(1).getSet[String]("s") shouldEqual Set("item1", "item2")
@@ -210,7 +210,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
   }
 
   it should "allow for reading blobs" in {
-    val result = sc.cassandraTable("read_test", "blobs").toArray()
+    val result = sc.cassandraTable("read_test", "blobs").collect()
     val rowById = result.groupBy(_.getInt("key")).mapValues(_.head)
     rowById(1).getBytes("b").limit() shouldEqual 12
     rowById(1).get[Array[Byte]]("b") shouldEqual Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
@@ -223,7 +223,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
       def convertPF = { case x: String => CustomerId(x) }
     })
 
-    val result = sc.cassandraTable[(Int, Long, CustomerId)]("read_test", "key_value").toArray()
+    val result = sc.cassandraTable[(Int, Long, CustomerId)]("read_test", "key_value").collect()
     result should have length 3
     result(0)._3 shouldNot be(null)
     result(1)._3 shouldNot be(null)
@@ -232,44 +232,44 @@ class CassandraRDDSpec extends FlatSpec with Matchers with CassandraServer with 
 
   it should "allow for reading tables with composite partitioning key" in {
     val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key")
-      .where("group >= ?", 3).toArray()
+      .where("group >= ?", 3).collect()
     result should have length 2
   }
 
   it should "convert values passed to where to correct types (String -> Timestamp)" in {
     val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
-      .where("time >= ?", "2014-07-12 20:00:02").toArray()
+      .where("time >= ?", "2014-07-12 20:00:02").collect()
     result should have length 2
   }
 
   it should "convert values passed to where to correct types (DateTime -> Timestamp)" in {
     val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
-      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2)).toArray()
+      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2)).collect()
     result should have length 2
   }
 
   it should "convert values passed to where to correct types (Date -> Timestamp)" in {
     val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
-      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2).toDate).toArray()
+      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2).toDate).collect()
     result should have length 2
   }
 
   it should "throw IOException when table could not be found" in {
-    intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").toArray() }
+    intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").collect() }
   }
 
   it should "not leak threads" in {
     // compute a few RDDs so the thread pools get initialized
     // using parallel range, to initialize parallel collections fork-join-pools
     for (i <- (1 to 4).par)
-      sc.cassandraTable("read_test", "key_value").toArray()
+      sc.cassandraTable("read_test", "key_value").collect()
 
     // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
     val iterationCount = 128
     val startThreadCount = Thread.activeCount()
     for (i <- (1 to iterationCount).par)
-      sc.cassandraTable("read_test", "key_value").toArray()
+      sc.cassandraTable("read_test", "key_value").collect()
     val endThreadCount = Thread.activeCount()
 
     // This is not very precise, but if there was a thread leak and we leaked even only
