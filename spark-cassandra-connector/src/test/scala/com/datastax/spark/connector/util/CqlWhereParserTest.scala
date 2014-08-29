@@ -56,27 +56,27 @@ class CqlWhereParserTest extends FlatSpec with Matchers with Inside {
   }
 
   it should "distinguish '?' from ?" in {
-    inside (parser.parse(" Cde in  ('?', ?, '?', ?)")(0)) {
+    inside (parser.parse(" Cde in  ('?', ?, '?', ?)", Seq(1,2))(0)) {
       case InListPredicate(name, list) =>
         list.values(0) should be (StringLiteral("?"))
-        list.values(1) should be (Placeholder)
+        list.values(1) should be (Placeholder(1))
         list.values(2) should be (StringLiteral("?"))
-        list.values(3) should be (Placeholder)
+        list.values(3) should be (Placeholder(2))
     }
   }
 
   it should " accept >= " in {
-    parser.parse("abc >= ?").length should be(1)
+    parser.parse("abc >= ?", Seq(1)).length should be(1)
   }
 
   it should " accept ?" in {
-    inside (parser.parse("abc in  ?")(0)) {
-      case InPredicate(name) => name should be("abc")
+    inside (parser.parse("abc in  ?", Seq(1))(0)) {
+      case InPredicate(name, _) => name should be("abc")
     }
   }
 
   it should " accept name with quotes and other special symbols" in {
-    parser.parse("\"\"\"ab!@#c\" in ?")(0).asInstanceOf[SingleColumnPredicate].columnName should be("\"ab!@#c")
+    parser.parse("\"\"\"ab!@#c\" in ?", Seq(1))(0).asInstanceOf[SingleColumnPredicate].columnName should be("\"ab!@#c")
   }
 
   it should " accept param with quotes and other special symbols" in {
@@ -112,8 +112,8 @@ class CqlWhereParserTest extends FlatSpec with Matchers with Inside {
   }
 
   it should "parse case insensitive 'IN' operations ?" in {
-    parser.parse("cde IN  ?") should be (
-      List(InPredicate("cde"))
+    parser.parse("cde IN  ?", Seq(1)) should be (
+      List(InPredicate("cde", 1))
     )
   }
 
