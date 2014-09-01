@@ -63,8 +63,10 @@ object Dependencies {
     val lzf               = "com.ning"                % "compress-lzf"          % Lzf            % "provided"
     val reflect           = "org.scala-lang"          % "scala-reflect"         % Scala
     val slf4jApi          = "org.slf4j"               % "slf4j-api"             % Slf4j          % "provided"                 // MIT
-    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark          % "provided"   exclude("com.google.guava", "guava") // ApacheV2
-    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark          % "provided"   exclude("com.google.guava", "guava") // ApacheV2
+    /* To allow spark artifact inclusion in the demo module at runtime, we set 'provided'
+       scope on the connector below, specifically, versus globally here. */
+    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark                        exclude("com.google.guava", "guava") // ApacheV2
+    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark                        exclude("com.google.guava", "guava") // ApacheV2
 
     object Metrics {
       val metricsJson     = "com.codahale.metrics"    % "metrics-json"          % MetricsJson    % "provided"
@@ -96,7 +98,7 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming)
 
-  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark ++ Seq(
+  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
 
   val demos = metrics ++ logging ++ akka ++ cassandra ++ spark ++
