@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.streaming
 
-import akka.actor.{Props, Terminated, ActorSystem}
+import akka.actor.{ActorIdentity, ActorSystem, Identify, Props, Terminated}
 import akka.testkit.TestKit
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
@@ -10,8 +10,12 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
 import scala.util.{Failure, Success}
+import scala.concurrent.duration._
+import org.apache.spark.Logging
+import akka.testkit.ImplicitSender
+import akka.actor.ActorRef
 
-class ActorStreamingSpec extends ActorSpec with CounterFixture {
+class ActorStreamingSpec extends ActorSpec with CounterFixture with Logging {
   import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
@@ -32,23 +36,35 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
 
       import system.dispatcher
-
-      // start the streaming context so the data can be processed
-      // and the actor gets started
-      ssc.start
-      Thread.sleep(3 * 1000) // This seems worng, there has to be a better way to handle the asynchrony
-
-      val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne(duration) 
-      awaitCond(future.isCompleted, duration)
-
-      future onComplete {
-        case Success(value) => println("future completed fine") 
-        case Failure(ex) => println(s"Error completing future: $ex")
-      }
       
-      for (actor <- future) {
-        watch(actor)
-        system.actorOf(Props(new TestProducer(data.toArray, actor)))
+      system.eventStream.subscribe(self, classOf[TSAStartEvent])
+      
+      // start the streaming context so the data can be processed and actor started
+      ssc.start
+            
+      // Thread.sleep(3 * 1000)     
+//      system.actorSelection(s"/user/Supervisor0/$actorName") ! Identify(actorName)      
+//      val actor = expectMsgType[ActorIdentity](duration).ref.get
+//      watch(actor)
+//      system.actorOf(Props(new TestProducer(data.toArray, actor)))
+//      
+//      expectMsgPF(duration) {
+//        case ActorIdentity(`actorName`, Some(ref)) =>
+//          println(s"ActorIdentity message received for $actorName")
+//          watch(ref)
+//          system.actorOf(Props(new TestProducer(data.toArray, ref)))
+//        case ActorIdentity(`actorName`, None) =>  
+//          println(s"Identifier not found for : $actorName")
+//          system.stop(self)
+//        case msg@_ => println(s"Unknown Message reeived : $msg")        
+//      }
+
+      
+      expectMsgPF(duration) {
+        case TSAStartEvent(ref) =>
+          println(s"$actorName : has been started")
+          watch(ref)
+          system.actorOf(Props(new TestProducer(data.toArray, ref)))  
       }
 
       expectMsgPF(duration) { case Terminated(ref) =>
@@ -61,9 +77,13 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
   }
 }
 
+case class TSAStartEvent(ref: ActorRef)
+
 /** A very basic Akka actor which streams `String` event data to spark. */
 class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 
+  override def preStart() = context.system.eventStream.publish(TSAStartEvent(self))
+  
   override def push(e: String): Unit = {
     super.push(e)
     increment()
@@ -71,7 +91,7 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 }
 
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
-  extends TestKit(_system) with StreamingSpec {
+  extends TestKit(_system) with StreamingSpec with ImplicitSender {
 
   def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
