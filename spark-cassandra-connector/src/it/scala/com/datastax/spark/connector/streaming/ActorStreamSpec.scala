@@ -42,24 +42,6 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with Logging {
       // start the streaming context so the data can be processed and actor started
       ssc.start
             
-      // Thread.sleep(3 * 1000)     
-//      system.actorSelection(s"/user/Supervisor0/$actorName") ! Identify(actorName)      
-//      val actor = expectMsgType[ActorIdentity](duration).ref.get
-//      watch(actor)
-//      system.actorOf(Props(new TestProducer(data.toArray, actor)))
-//      
-//      expectMsgPF(duration) {
-//        case ActorIdentity(`actorName`, Some(ref)) =>
-//          println(s"ActorIdentity message received for $actorName")
-//          watch(ref)
-//          system.actorOf(Props(new TestProducer(data.toArray, ref)))
-//        case ActorIdentity(`actorName`, None) =>  
-//          println(s"Identifier not found for : $actorName")
-//          system.stop(self)
-//        case msg@_ => println(s"Unknown Message reeived : $msg")        
-//      }
-
-      
       expectMsgPF(duration) {
         case TSAStartEvent(ref) =>
           println(s"$actorName : has been started")
