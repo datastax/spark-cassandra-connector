@@ -26,6 +26,8 @@ import com.typesafe.sbt.SbtScalariform._
 
 import scala.language.postfixOps
 
+import net.virtualvoid.sbt.graph.Plugin.graphSettings
+
 object Settings extends Build {
 
   lazy val buildSettings = Seq(
@@ -46,7 +48,7 @@ object Settings extends Build {
     publish := {}
   )
 
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
@@ -74,11 +76,11 @@ object Settings extends Build {
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   val testOptionSettings = Seq(
-    // commented out for now until migrated to: Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+    Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  lazy val testSettings = tests ++ Seq(
+  lazy val testSettings = tests ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,

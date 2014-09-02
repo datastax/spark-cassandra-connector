@@ -28,15 +28,19 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   val javaClass: Class[T] =
     rm.runtimeClass(tpe).asInstanceOf[Class[T]]
 
+  // This must be serialized:
+  val constructorParamTypeNames: IndexedSeq[ParamType] =
+    toParamTypeNames(resolveConstructor(javaClass))
+
+  @transient
+  private lazy val javaConstructor: Constructor[T] =
+    resolveConstructorFromParamTypeNames(javaClass, constructorParamTypeNames)
+
   // It is quite important to invoke constructorParamTypes here because it invokes client side validation whether
   // the right constructor exists or not, before the job is started
   val argCount: Int = constructorParamTypes.length
 
-  private val argOffset = oneIfMemberClass(javaClass)
-
-  @transient
-  private lazy val javaConstructor: Constructor[T] =
-    resolveConstructor(javaClass)
+  val argOffset: Int = oneIfMemberClass(javaClass)
 
   @transient
   lazy val constructorParamTypes: Array[Type] = {
@@ -105,6 +109,8 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
 }
 
 object AnyObjectFactory extends Logging {
+  private[connector] type ParamType = Either[Class[_], String]
+
   private[connector] val paranamer = new AdaptiveParanamer
 
   private[connector] def getDefaultConstructor[T](clazz: Class[T]): Constructor[T] = {
@@ -139,6 +145,14 @@ object AnyObjectFactory extends Logging {
 
   def isNoArgsConstructor(ctor: Constructor[_]) =
     ctor.getParameterTypes.length == oneIfMemberClass(ctor.getDeclaringClass)
+
+  def resolveConstructorFromParamTypeNames[T](clazz: Class[T], paramTypeNames: IndexedSeq[ParamType]): Constructor[T] = {
+     clazz.getConstructors.find(toParamTypeNames(_) == paramTypeNames).get.asInstanceOf[Constructor[T]]
+  }
+
+  private[connector] def toParamTypeNames(ctor: Constructor[_]): IndexedSeq[ParamType] = {
+    ctor.getParameterTypes.map(c => if (c.isPrimitive) Right(c.getName) else Left(c)).toIndexedSeq
+  }
 
   private[connector] def extractOuterClasses(c: Class[_]): List[Class[_]] = {
     getRealEnclosingClass(c) match {
