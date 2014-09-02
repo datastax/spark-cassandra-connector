@@ -5,7 +5,7 @@ import java.io.IOException
 import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
@@ -326,16 +326,39 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
+  def fetchCustomPartition(session: Session, clause: CqlWhereClause): Iterator[R] = {
+    val columns = selectedColumnNames.map(quote).mkString(", ")
+    val filter =clause.predicates.filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
+    val quotedKeyspaceName = quote(keyspaceName)
+    val quotedTableName = quote(tableName)
+    val cql = s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter"
+    logInfo(s"Fetching data  by $cql with params ${clause.values.mkString("[", ",", "]")}")
+    val stmt = createStatement(session, cql, clause.values: _*)
+    val columnNamesArray = selectedColumnNames.toArray
+    try {
+      val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
+      logInfo(s"Row iterator for ${cql} obtained successfully.")
+      result
+    } catch {
+      case t: Throwable =>
+        throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
+    }
+  }
+
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
     val session = connector.openSession()
     val partition = split.asInstanceOf[CassandraPartition]
-    val tokenRanges = partition.tokenRanges
     val startTime = System.currentTimeMillis()
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
+    val rowIterator = split match {
+      case partition: CassandraRingPartition =>
+        partition.tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
+      case partition: CassandraCustomPartition =>
+        fetchCustomPartition(session, partition.where)
+    }
     val countingIterator = new CountingIterator(rowIterator)
 
     context.addOnCompleteCallback { () =>

@@ -1,34 +1,39 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
+import java.nio.ByteBuffer
 
+import com.datastax.driver.core.DataType
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
-import com.datastax.spark.connector.util.CqlWhereParser
+import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.util.CqlWhereParser._
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
-import org.apache.spark.Partition
+import org.apache.spark.{Logging, Partition}
 import org.apache.thrift.TApplicationException
 
 import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
+import scala.reflect.macros.ParseException
 
 /** Creates CassandraPartitions for given Cassandra table */
-class CassandraRDDPartitioner[V, T <: Token[V]](
-    connector: CassandraConnector,
-    tableDef: TableDef,
-    splitSize: Long)(
-  implicit
-    tokenFactory: TokenFactory[V, T]) {
+class CassandraRDDPartitioner[V, T <: Token[V]] (
+                                                 connector: CassandraConnector,
+                                                 tableDef: TableDef,
+                                                 splitSize: Long)(
+                                                 implicit
+                                                 tokenFactory: TokenFactory[V, T])  extends Logging {
 
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
+  val pkNames = tableDef.partitionKey.map(_.columnName)
 
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
@@ -63,7 +68,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def splitToCqlClause(range: TokenRange): Iterable[CqlTokenRange] = {
     val startToken = tokenFactory.toString(range.start)
     val endToken = tokenFactory.toString(range.end)
-    val pk = tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
+    val pk = pkNames.map(quote).mkString(", ")
 
     if (range.end == tokenFactory.minToken)
       List(CqlTokenRange(s"token($pk) > $startToken"))
@@ -112,13 +117,12 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
-  private def containsPartitionKey(clause: CqlWhereClause) = {
-    val pk = tableDef.partitionKey.map(_.columnName).toSet
-    val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
+  private def containsPartitionKey(wherePredicates: Seq[Predicate]) = {
+    val pk = pkNames.toSet
 
     val whereColumns: Set[String] = wherePredicates.collect {
       case EqPredicate(c, _) if pk.contains(c) => c
-      case InPredicate(c) if pk.contains(c) => c
+      case InPredicate(c,_) if pk.contains(c) => c
       case InListPredicate(c, _) if pk.contains(c) => c
       case RangePredicate(c, _, _) if pk.contains(c) =>
         throw new UnsupportedOperationException(
@@ -136,6 +140,83 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     whereColumns.nonEmpty
   }
 
+  private def crossPredicates(xs: Seq[Seq[EqPredicate]], ys: Seq[EqPredicate]): Seq[Seq[EqPredicate]] =
+    if (xs.isEmpty) ys.map(Seq(_))
+    else
+      for {x <- xs; y <- ys} yield x :+ y
+
+
+  private def serializeValue (columnType: ColumnType[_], value: Value): ByteBuffer = {
+    val dataType:DataType = ColumnType.toPrimitiveDriverType(columnType)
+    value match {
+      case Placeholder(v)     => dataType.serialize(columnType.converterToCassandra.convert(v))
+      case BooleanLiteral(v)  => dataType.serialize(columnType.converterToCassandra.convert(v))
+      case UUIDLiteral(v)     => dataType.serialize(columnType.converterToCassandra.convert(v))
+      case StringLiteral(v)   => dataType.parse(v)
+      case NumberLiteral(v)   => dataType.parse(v)
+    }
+  }
+  def calculateToken(keyPredicates: Seq[EqPredicate]) =  {
+    val values = keyPredicates.map(p => (p.columnName-> p.value)).toMap
+    val serValues = tableDef.partitionKey.map(c =>
+      serializeValue(c.columnType, values(c.columnName)))
+    if (serValues.size == 1 )
+      tokenFactory.getToken(new SimpleComposite(serValues(0)).toByteBuffer)
+    else {
+      tokenFactory.getToken(new CompoundComposite(serValues.toArray, serValues.size, false).toByteBuffer)
+    }
+  }
+  def endpointForKey (keyPredicates: Seq[EqPredicate], tokenRanges:Seq[TokenRange]): Iterable[InetAddress] = {
+    val token = calculateToken(keyPredicates)
+    tokenRanges.filter(_.contains(token) ).flatMap(_.endpoints).distinct
+  }
+
+  private def createKeyBasedPartitions (whereClause: CqlWhereClause,
+                                          predicates : Seq[Predicate],
+                                          tokenRanges:Seq[TokenRange]): Array[Partition] = {
+
+    val (knownPredicates, unknownPredicates) = predicates.span (!_.isInstanceOf[UnknownPredicate])
+    val (keyPredicates, nonKeyPredicates) = knownPredicates.map(_.asInstanceOf[SingleColumnPredicate])
+      .partition(p => pkNames contains p.columnName)
+    val crossedKeyPredicates: Seq[Seq[EqPredicate]] = keyPredicates.foldLeft (Seq[Seq[EqPredicate]]()) {
+      (list, predicate) =>
+        predicate match {
+          case predicate: EqPredicate =>  crossPredicates(list, Seq(predicate))
+
+          case InPredicate(columnName, value) => {
+            val eqPredicates = value.asInstanceOf[Product].productIterator.toSeq.map(v =>
+              EqPredicate(columnName, Placeholder(v)))
+            crossPredicates(list, eqPredicates)
+          }
+
+          case InListPredicate(columnName, values) => {
+            val eqPredicates = values.values.map(EqPredicate(columnName, _))
+            crossPredicates(list, eqPredicates)
+          }
+
+          case _ => throw new RuntimeException("Only in and = operation accepted for partition keys")
+
+        }
+    }
+    if(keyPredicates.isEmpty) throw new RuntimeException("key predicates are empty")
+
+    (for ((keyPredicates, index) <- crossedKeyPredicates.zipWithIndex) yield {
+      val predicates = keyPredicates ++ nonKeyPredicates  ++ unknownPredicates
+      //collect known values for '?' for current predicate
+      val qValues = predicates.map(_ match {
+        case InListPredicate(_, values) => values.values collect { case Placeholder(value) => value}
+        case InPredicate(_, value) => Seq(value)
+        case EqPredicate(_, Placeholder(value)) => Seq(value)
+        case RangePredicate(_, _, Placeholder(value)) => Seq(value)
+        case UnknownPredicate( _, values) => values
+        case _ => Seq()
+      }).reduce(_ ++ _)
+
+      CassandraCustomPartition (index, endpointForKey(keyPredicates, tokenRanges),
+        CqlWhereClause (predicates.map (_.toCqlString), qValues))
+    }).toArray
+
+  }
   /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
     connector.withCassandraClientDo {
@@ -147,17 +228,29 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         val maxGroupSize = tokenRanges.size / endpointCount
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
         val groups = clusterer.group(splits).toArray
-
-        if (containsPartitionKey(whereClause))
-          Array(CassandraPartition(0, tokenRanges.flatMap(_.endpoints).distinct, List(CqlTokenRange("")), 0))
-        else
-          for ((group, index) <- groups.zipWithIndex) yield {
-            val cqlPredicates = group.flatMap(splitToCqlClause)
-            val endpoints = group.map(_.endpoints).reduce(_ intersect _)
-            val rowCount = group.map(_.rowCount.get).sum
-            CassandraPartition(index, endpoints, cqlPredicates, rowCount)
+        val qValIterator=whereClause.values.iterator
+        val predicates: Seq[Predicate] = whereClause.predicates.map(
+          predicate => CqlWhereParser.parse(predicate, qValIterator)).fold(Seq[Predicate]()) {
+          _ ++ _
+        }
+        try {
+          if (containsPartitionKey(predicates)) {
+            createKeyBasedPartitions (whereClause,predicates,tokenRanges)
+          } else
+            for ((group, index) <- groups.zipWithIndex) yield {
+              val cqlPredicates = group.flatMap(splitToCqlClause)
+              val endpoints = group.map(_.endpoints).reduce(_ intersect _)
+              val rowCount = group.map(_.rowCount.get).sum
+              CassandraRingPartition(index, endpoints, cqlPredicates, rowCount)
+            }
+        } catch {
+          case x: Throwable => {
+            logWarning("Partitioning error, one Partition for the query where created", x);
+            Array(CassandraRingPartition(0, tokenRanges.flatMap(_.endpoints).distinct, List(CqlTokenRange("")), 0))
           }
+        }
     }
+
   }
 
 }

@@ -31,38 +31,49 @@ class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with Cassand
 
   "A CassandraRDD" should "allow partition key eq in where" in {
     val rdd = sc.cassandraTable("where_test", "key_value").where("key = ?", 1)
-    val result =  rdd.toArray()
+    val result = rdd.toArray()
     result should have length 1
-    result.head.getInt("key") should be (1)
+    result.head.getInt("key") should be(1)
   }
-
   it should "allow partition key 'in' in where" in {
-    val result = sc.cassandraTable("where_test", "key_value").where("key in (?, ?)", 2,3).toArray()
+    val result = sc.cassandraTable("where_test", "key_value").where("key in (?, ?)", 2, 3).toArray()
     result should have length 2
-    result.head.getInt("key") should (be (2) or be (3))
+    result.head.getInt("key") should (be(2) or be(3))
   }
 
   it should "allow cluster key 'in' in where" in {
-    val result = sc.cassandraTable("where_test", "key_value").where("group in (?, ?)", 200,300).toArray()
+    val result = sc.cassandraTable("where_test", "key_value").where("group in (?, ?)", 200, 300).toArray()
     result should have length 2
-    result.head.getInt("key") should (be (2) or be (3))
+    result.head.getInt("key") should (be(2) or be(3))
   }
 
   it should "work with composite keys in" in {
-    val result = sc.cassandraTable("where_test", "ckey_value").where("key1 = 1 and \"Key2\" in (?, ?)", 100,200).toArray()
+    val result = sc.cassandraTable("where_test", "ckey_value").where("key1 = 1 and \"Key2\" in (?, ?)", 100, 200).toArray()
     result should have length 1
-    result.head.getInt("key1") should be (1)
+    result.head.getInt("key1") should be(1)
   }
 
   it should "work with composite keys eq" in {
-    val result = sc.cassandraTable("where_test", "ckey_value").where("key1 = ? and \"Key2\" = ?", 1,100).toArray()
+    val result = sc.cassandraTable("where_test", "ckey_value").where("key1 = ? and \"Key2\" = ?", 1, 100).toArray()
     result should have length 1
-    result.head.getInt("key1") should be (1)
+    result.head.getInt("key1") should be(1)
   }
 
   it should "work with composite keys in2" in {
-    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 = 1", 100,200).toArray()
+    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 = 1", 100, 200).toArray()
     result should have length 1
-    result.head.getInt("key1") should be (1)
+    result.head.getInt("key1") should be(1)
+  }
+
+  it should "work with composite keys and two in" in {
+    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 in ?", 200, 100, (2, 3)).toArray()
+    result should have length 1
+    result.head.getInt("key1") should be(2)
+  }
+
+  it should "work with composite keys and two in2" in {
+    val result = sc.cassandraTable("where_test", "ckey_value").where("\"Key2\" in (?, ?) and key1 in (?, ?)", 200, 100, 3, 2).toArray()
+    result should have length 1
+    result.head.getInt("key1") should be(2)
   }
 }
