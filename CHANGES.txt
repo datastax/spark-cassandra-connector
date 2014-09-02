@@ -3,7 +3,7 @@
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
  * Add indexedColumn to ColumnDef (#122)
 
-1.0.0
+1.0.0 RC 5
  * Added assembly task to the build, in order to build fat jars. (#126)
    - Added a system property flag to enable assembly for the demo module which is disabled by default.
    - Added simple submit script to submit a demo assembly jar to a local spark master
