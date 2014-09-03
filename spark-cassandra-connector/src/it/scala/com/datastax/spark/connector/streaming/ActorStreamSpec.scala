@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.streaming
 
-import akka.actor.{ActorIdentity, ActorSystem, Identify, Props, Terminated}
+import akka.actor.{ActorIdentity, ActorRef, ActorSystem, Identify, Props, Terminated}
+import akka.testkit.ImplicitSender
 import akka.testkit.TestKit
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
@@ -9,13 +10,8 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
-import scala.util.{Failure, Success}
-import scala.concurrent.duration._
-import org.apache.spark.Logging
-import akka.testkit.ImplicitSender
-import akka.actor.ActorRef
 
-class ActorStreamingSpec extends ActorSpec with CounterFixture with Logging {
+class ActorStreamingSpec extends ActorSpec with CounterFixture {
   import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
