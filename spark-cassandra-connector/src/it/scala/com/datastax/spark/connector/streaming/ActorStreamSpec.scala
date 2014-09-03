@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.streaming
 
-import akka.actor.{Props, Terminated, ActorSystem}
+import akka.actor.{ActorIdentity, ActorRef, ActorSystem, Identify, Props, Terminated}
+import akka.testkit.ImplicitSender
 import akka.testkit.TestKit
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
@@ -22,6 +23,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
 
   "actorStream" must {
     "write from the actor stream to cassandra table: streaming_test.words" in {
+
       val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
       val wc = stream.flatMap(_.split("\\s+"))
@@ -29,14 +31,18 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         .reduceByKey(_ + _)
         .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
 
-      ssc.start()
-
       import system.dispatcher
-      val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne()
-      awaitCond(future.isCompleted)
-      for (actor <- future) {
-        watch(actor)
-        system.actorOf(Props(new TestProducer(data.toArray, actor)))
+      
+      system.eventStream.subscribe(self, classOf[TSAStartEvent])
+      
+      // start the streaming context so the data can be processed and actor started
+      ssc.start
+            
+      expectMsgPF(duration) {
+        case TSAStartEvent(ref) =>
+          println(s"$actorName : has been started")
+          watch(ref)
+          system.actorOf(Props(new TestProducer(data.toArray, ref)))  
       }
 
       expectMsgPF(duration) { case Terminated(ref) =>
@@ -44,13 +50,18 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
         rdd.collect.length should be (data.size)
       }
+
     }
   }
 }
 
+case class TSAStartEvent(ref: ActorRef)
+
 /** A very basic Akka actor which streams `String` event data to spark. */
 class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 
+  override def preStart() = context.system.eventStream.publish(TSAStartEvent(self))
+  
   override def push(e: String): Unit = {
     super.push(e)
     increment()
@@ -58,7 +69,7 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 }
 
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
-  extends TestKit(_system) with StreamingSpec {
+  extends TestKit(_system) with StreamingSpec with ImplicitSender {
 
   def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
