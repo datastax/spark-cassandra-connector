@@ -1,4 +1,4 @@
-1.0.0
+1.0.0 RC 6
  * Fix reading a Cassandra table as an RDD of Scala class objects in REPL
 
 1.0.0 RC 5
