@@ -1,3 +1,6 @@
+1.0.0
+ * Fix reading a Cassandra table as an RDD of Scala class objects in REPL
+
 1.0.0 RC 5
  * Added assembly task to the build, in order to build fat jars. (#126)
    - Added a system property flag to enable assembly for the demo module which is disabled by default.

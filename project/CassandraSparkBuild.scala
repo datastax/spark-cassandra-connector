@@ -81,6 +81,9 @@ object Dependencies {
       val junit           = "junit"                   % "junit"                 % "4.11"         % "test,it"                 // for now
       val junitInterface  = "com.novocode"            % "junit-interface"       % "0.10"         % "test,it"
       val scalatest       = "org.scalatest"           %% "scalatest"            % ScalaTest      % "test,it"                 // ApacheV2
+      val scalactic       = "org.scalactic"           %% "scalactic"            % Scalactic      % "test,it"                 // ApacheV2
+      val sparkRepl       = "org.apache.spark"        %% "spark-repl"           % Spark          % "test,it"   exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler")          // ApacheV2
+      val scalaCompiler   = "org.scala-lang"          % "scala-compiler"        % Scala
     }
   }
 
@@ -91,7 +94,7 @@ object Dependencies {
   // Consider: Metrics.metricsJvm, Metrics.latencyUtils, Metrics.hdrHistogram
   val metrics = Seq(Metrics.metricsJson)
 
-  val testKit = Seq(Test.akkaTestKit, Test.cassandraServer, Test.commonsIO, Test.junit, Test.junitInterface, Test.scalatest)
+  val testKit = Seq(Test.akkaTestKit, Test.cassandraServer, Test.commonsIO, Test.junit, Test.junitInterface, Test.scalatest, Test.sparkRepl, Test.scalaCompiler, Test.scalactic)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
