@@ -46,5 +46,3 @@ trait StreamingSpec extends AbstractSpec with CassandraServer with SparkCassandr
     ssc.stop(stopSparkContext = false)
   }
 }
-
-

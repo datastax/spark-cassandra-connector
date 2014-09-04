@@ -21,5 +21,5 @@ object TableCopyDemo extends DemoApp {
   src.saveToCassandra("test", "destination")
 
   val dest = sc.cassandraTable("test", "destination")
-  dest.toArray().foreach(row => log.debug(s"$row"))
+  dest.collect().foreach(row => log.debug(s"$row"))
 }
