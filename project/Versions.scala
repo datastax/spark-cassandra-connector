@@ -30,7 +30,8 @@ object Versions {
   val Lzf             = "0.8.4"
   val MetricsJson     = "3.0.2"
   val Scala           = "2.10.4"
-  val ScalaTest       = "2.2.1"
+  val ScalaTest       = "2.2.2"
+  val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
   val Spark           = "1.0.2"
 
