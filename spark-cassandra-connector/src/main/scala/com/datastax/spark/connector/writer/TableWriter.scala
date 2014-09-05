@@ -80,7 +80,7 @@ class TableWriter[T] private (
 
   /** Writes `MeasuredInsertsCount` rows to Cassandra and returns the maximum size of the row */
   private def measureMaxInsertSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    logInfo(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
+    logDebug(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
     var maxInsertSize = 1
     for (row <- data.take(MeasuredInsertsCount)) {
       val insert = rowWriter.bind(row, stmt)
@@ -89,7 +89,7 @@ class TableWriter[T] private (
       if (size > maxInsertSize)
         maxInsertSize = size
     }
-    logInfo(s"Maximum serialized row size: " + maxInsertSize + " B")
+    logDebug(s"Maximum serialized row size: " + maxInsertSize + " B")
     maxInsertSize
   }
 
@@ -127,7 +127,7 @@ class TableWriter[T] private (
       val queryExecutor = new QueryExecutor(session, parallelismLevel)
       val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 
-      logInfo(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
+      logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
       batchSize match {
         case 1 => writeUnbatched(rowIterator, stmt, queryExecutor)
         case _ => writeBatched(rowIterator, stmt, queryExecutor, batchSize)

@@ -271,8 +271,8 @@ class CassandraRDD[R] private[connector] (
     verify // let's fail fast
     val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
     val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
-    logInfo(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
-    logDebug("Partitions: \n" + partitions.mkString("\n"))
+    logDebug(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
+    logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
 
@@ -313,12 +313,12 @@ class CassandraRDD[R] private[connector] (
 
   private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
     val (cql, values) = tokenRangeToCqlQuery(range)
-    logInfo(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
+    logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.toArray
     try {
       val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
-      logInfo(s"Row iterator for range ${range.cql} obtained successfully.")
+      logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {
       case t: Throwable =>
@@ -341,7 +341,7 @@ class CassandraRDD[R] private[connector] (
     context.addOnCompleteCallback { () =>
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
-      logInfo(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")
+      logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")
       session.close()
     }
     countingIterator
