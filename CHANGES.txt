@@ -1,3 +1,5 @@
+ * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt
+
 1.1.0
  * Accept partition key predicates in CassandraRDD#where. (#37)
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
