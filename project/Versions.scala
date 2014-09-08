@@ -26,6 +26,7 @@ object Versions {
   val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"
+  val JOpt            = "4.7"
   val Logback         = "1.1.2"
   val Lzf             = "0.8.4"
   val MetricsJson     = "3.0.2"

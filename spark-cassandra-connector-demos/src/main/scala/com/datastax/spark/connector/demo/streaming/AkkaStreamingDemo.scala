@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.demo.streaming
 
+import com.datastax.spark.connector.util.Assertions
+
 import scala.collection.immutable
 import akka.actor._
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
@@ -20,7 +22,7 @@ object AkkaStreamingDemo extends App {
 
   val TableName = "words"
 
-  /* Initialize Akka, Cassandra and Spark */
+  /* Initialize Akka, Cassandra and Spark settings. */
   val settings = new SparkCassandraSettings()
   import settings._
 
@@ -29,13 +31,13 @@ object AkkaStreamingDemo extends App {
     .set("spark.cassandra.connection.host", CassandraSeed)
     .set("spark.cleaner.ttl", SparkCleanerTtl.toString)
     .setMaster(SparkMaster)
-    .setAppName(SparkAppName)
+    .setAppName("Streaming Akka App")
 
   /** Creates the keyspace and table in Cassandra. */
   CassandraConnector(conf).withSessionDo { session =>
-    session.execute(s"CREATE KEYSPACE IF NOT EXISTS $CassandraKeyspace WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute(s"CREATE TABLE IF NOT EXISTS $CassandraKeyspace.$TableName (word TEXT PRIMARY KEY, count COUNTER)")
-    session.execute(s"TRUNCATE $CassandraKeyspace.$TableName")
+    session.execute(s"CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute(s"CREATE TABLE IF NOT EXISTS streaming_test.$TableName (word TEXT PRIMARY KEY, count COUNTER)")
+    session.execute(s"TRUNCATE streaming_test.$TableName")
   }
 
   /** Connect to the Spark cluster: */
@@ -113,7 +115,7 @@ object AkkaStreamingDemo extends App {
  * @param data the demo data for a simple WordCount
  */
 class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tableName: String, data: immutable.Set[String])
-  extends Actor with Logging {
+  extends Actor with Assertions with Logging {
 
   import scala.concurrent.duration._
   import akka.util.Timeout
@@ -132,7 +134,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   private val path = ActorPath.fromString(s"$sas/user/Supervisor0/$actorName")
 
-  private val reporter = context.actorOf(Props(new Reporter(ssc, CassandraKeyspace, tableName, data)), "reporter")
+  private val reporter = context.actorOf(Props(new Reporter(ssc, "streaming_test", tableName, data)), "reporter")
 
   private val stream = ssc.actorStream[String](Props[Streamer], actorName, StorageLevel.MEMORY_AND_DISK)
 
@@ -171,14 +173,12 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
     case Completed       => shutdown()
   }
 
-  /** Stops the ActorSyste, the Spark `StreamingContext` and its underlying Spark system. */
+  /** Stops the ActorSystem, the Spark `StreamingContext` and its underlying Spark system. */
   def shutdown(): Unit = {
-    import scala.concurrent.{Future, Await}
-
     log.info(s"Stopping '$ssc' and shutting down.")
     context.system.shutdown()
-    Await.result(Future(context.system.isTerminated), 2.seconds)
-    ssc.stop(true)
+    awaitCond(context.system.isTerminated, 2.seconds)
+    ssc.stop(stopSparkContext = true, stopGracefully = true)
   }
 
 }
