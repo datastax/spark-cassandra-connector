@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.streaming.kafka
+package com.datastax.spark.connector.demo.streaming
 
 import java.net.InetAddress
 

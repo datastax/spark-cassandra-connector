@@ -1,13 +1,12 @@
 package com.datastax.spark.connector.demo.streaming
 
-import com.datastax.spark.connector.util.Assertions
-
 import scala.collection.immutable
 import akka.actor._
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{Logging, SparkConf, SparkContext, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.streaming.TypedStreamingActor
+import com.datastax.spark.connector.demo.Assertions
 
 /**
  * This demo can run against a single node, local or remote.
@@ -45,9 +44,6 @@ object AkkaStreamingDemo extends App {
 
   /** Creates the Spark Streaming context. */
   val ssc = new StreamingContext(sc, Milliseconds(300))
-
-  /** Captures Spark's Akka ActorSystem. */
-  lazy val sparkActorSystem = SparkEnv.get.actorSystem
 
   /** Creates the demo's Akka ActorSystem to easily insure dispatchers are separate and no naming conflicts.
     * Unfortunately Spark does not allow users to pass in existing ActorSystems. */
@@ -122,7 +118,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   import org.apache.spark.storage.StorageLevel
   import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
   import com.datastax.spark.connector._
-  import InternalStreamingEvent._
+  import StreamingEvent._
   import settings._
   import context.dispatcher
 
@@ -130,12 +126,16 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   private val actorName = "stream"
 
+  /** Captures Spark's Akka ActorSystem. */
   private val sas = SparkEnv.get.actorSystem
+
+  sas.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
 
   private val path = ActorPath.fromString(s"$sas/user/Supervisor0/$actorName")
 
   private val reporter = context.actorOf(Props(new Reporter(ssc, "streaming_test", tableName, data)), "reporter")
 
+  /** Creates an Akka Actor input stream. */
   private val stream = ssc.actorStream[String](Props[Streamer], actorName, StorageLevel.MEMORY_AND_DISK)
 
   /* Defines the work to do in the stream. Placing the import here to explicitly show
@@ -151,19 +151,15 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   ssc.start()
   log.info(s"Streaming context started.")
 
-  /* Note that the [[Streamer]] actor is in the Spark actor system. We watch it from the demo
-     application's actor system. The [[Sender]] will send data to the [[Streamer]] actor. */
-  for (actor <- sas.actorSelection(path).resolveOne()) {
-
-    /** For the purposes of the demo, we put an Akka DeathWatch on the stream actor, because this actor stops itself once its
-      * work is `done` (again, just for a simple demo that does work and stops once expectations are met). */
-    context.watch(actor)
-
-    /** Then we inject the [[Sender]] actor with the [[Streamer]] actor ref so it can easily send data to the stream. */
-    context.actorOf(Props(new Sender(data.toArray, actor)))
-  }
-
   def receive: Actor.Receive = {
+    /** Initializes direct point-to-point messaging of event-driven data from [[Sender]] to [[Streamer]].
+      * For purposes of a demo, we put an Akka DeathWatch on the stream actor, because this actor stops itself once its
+      * work is `done` (again, just for a simple demo that does work and stops once expectations are met).
+      * Then we inject the [[Sender]] actor with the [[Streamer]] actor ref so it can easily send data to the stream. */
+    case ReceiverStarted(receiver) =>
+      context.watch(receiver)
+      context.actorOf(Props(new Sender(data.toArray, receiver)))
+
     /** Akka DeathWatch notification that `ref`, the [[Streamer]] actor we are watching, has terminated itself.
       * We message the [[Reporter]], which triggers its scheduled validation task. */
     case Terminated(ref) => reporter ! Report
@@ -175,7 +171,8 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   /** Stops the ActorSystem, the Spark `StreamingContext` and its underlying Spark system. */
   def shutdown(): Unit = {
-    log.info(s"Stopping '$ssc' and shutting down.")
+    context.system.eventStream.unsubscribe(self)
+    log.info(s"Stopping the demo app actor system and '$ssc'")
     context.system.shutdown()
     awaitCond(context.system.isTerminated, 2.seconds)
     ssc.stop(stopSparkContext = true, stopGracefully = true)
@@ -204,6 +201,10 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   *   } }}}
   */
 class Streamer extends TypedStreamingActor[String] with CounterActor {
+  import StreamingEvent.ReceiverStarted
+  
+  override def preStart(): Unit =
+    context.system.eventStream.publish(ReceiverStarted(self))
 
   override def push(e: String): Unit = {
     super.push(e)
@@ -236,3 +237,67 @@ import scala.concurrent.duration._
     case _ =>
   }
 }
+
+
+trait CounterActor extends Actor  with Logging {
+
+  protected val scale = 30
+
+  private var count = 0
+
+  protected def increment(): Unit = {
+    count += 1
+    if (count == scale) self ! PoisonPill
+  }
+}
+
+private[demo] object StreamingEvent {
+  sealed trait Status extends Serializable
+  case class ReceiverStarted(ref: ActorRef) extends Status
+  case class Pushed(data: AnyRef) extends Status
+  case object Completed extends Status
+  case object Report extends Status
+  case class WordCount(word: String, count: Int)
+}
+
+/** When called upon, the Reporter starts a task which checks at regular intervals whether
+  * the produced amount of data has all been written to Cassandra from the stream. This allows
+  * the demo to stop on its own once this assertion is true. It will stop the task and ping
+  * the `NodeGuardian`, its supervisor, of the `Completed` state.
+  */
+class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
+  import scala.concurrent.duration._
+  import akka.actor.Cancellable
+  import com.datastax.spark.connector.streaming._
+  import StreamingEvent._
+  import context.dispatcher
+
+  private var task: Option[Cancellable] = None
+
+  def receive: Actor.Receive = {
+    case Report => report()
+  }
+
+  def done: Actor.Receive = {
+    case Completed => complete()
+  }
+
+  def report(): Unit = {
+    task = Some(context.system.scheduler.schedule(Duration.Zero, 1.millis) {
+      val rdd = ssc.cassandraTable[WordCount](keyspaceName, tableName).select("word", "count")
+      if (rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2) {
+        assert(rdd.collect.length == data.size)
+        log.info(s"Saved data to Cassandra:")
+        rdd.collect foreach println
+        context.become(done)
+        self ! Completed
+      }
+    })
+  }
+
+  def complete(): Unit = {
+    task map (_.cancel())
+    context.parent ! Completed
+  }
+}
+

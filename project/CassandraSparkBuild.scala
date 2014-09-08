@@ -25,7 +25,7 @@ object CassandraSparkBuild extends Build {
     id = "root",
     base = file("."),
     settings = parentSettings,
-    aggregate = Seq(connector, connectorJava, connectorKafka, demos)
+    aggregate = Seq(connector, connectorJava, demos)
   )
 
   lazy val connector = LibraryProject("spark-cassandra-connector", Seq(libraryDependencies ++= Dependencies.connector))
@@ -33,14 +33,11 @@ object CassandraSparkBuild extends Build {
   lazy val connectorJava = LibraryProject("spark-cassandra-connector-java", Seq(libraryDependencies ++= Dependencies.connector),
     Seq(connector))
 
-  lazy val connectorKafka = LibraryProject("spark-cassandra-connector-kafka", Seq(libraryDependencies ++= Dependencies.kafka),
-    Seq(connector))
-
   lazy val demos = Project(
     id = "spark-cassandra-connector-demos",
     base = file("spark-cassandra-connector-demos"),
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.demos),
-    dependencies = Seq(connector, connectorJava, connectorKafka))
+    dependencies = Seq(connector, connectorJava))
 
   def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
     Project(name, file(name), settings = defaultSettings ++ sbtAssemblySettings ++ dsettings,
@@ -97,7 +94,8 @@ object Dependencies {
   // Consider: Metrics.metricsJvm, Metrics.latencyUtils, Metrics.hdrHistogram
   val metrics = Seq(Metrics.metricsJson)
 
-  val testKit = Seq(Test.akkaTestKit, Test.cassandraServer, Test.commonsIO, Test.junit, Test.junitInterface, Test.scalatest, Test.sparkRepl, Test.scalaCompiler, Test.scalactic)
+  val testKit = Seq(Test.akkaTestKit, Test.cassandraServer, Test.commonsIO, Test.junit, Test.junitInterface,
+    Test.scalatest, Test.sparkRepl, Test.scalaCompiler, Test.scalactic)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
@@ -108,16 +106,15 @@ object Dependencies {
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
 
-  val kafka = connector ++ Seq("org.apache.spark" %% "spark-streaming-kafka" % Spark exclude("com.google.guava", "guava"))
-
-  val twitter = connector ++ Seq("org.apache.spark" %% "spark-streaming-twitter" % Spark exclude("com.google.guava", "guava"))
-
-  val zmq = connector ++ Seq("org.apache.spark" %% "spark-streaming-zeromq" % Spark exclude("com.google.guava", "guava"))
-
   val demos = metrics ++ logging ++ akka ++ cassandra ++ spark ++
     Seq(commonsLang3, config, guava, jodaC, jodaT, lzf, reflect) ++
-    Seq("com.typesafe.akka" %% "akka-cluster" % Versions.Akka,
-     "com.typesafe.akka" %% "akka-contrib" % Versions.Akka,
-      "net.sf.jopt-simple" % "jopt-simple" % JOpt)
+    Seq("org.apache.spark" %% "spark-streaming-kafka" % Spark exclude("com.google.guava", "guava"),
+        "org.apache.spark" %% "spark-streaming-twitter" % Spark exclude("com.google.guava", "guava"),
+        "org.apache.spark" %% "spark-streaming-zeromq" % Spark exclude("com.google.guava", "guava"),
+        /* Needed for kafka command line work */
+        "net.sf.jopt-simple" % "jopt-simple" % JOpt,
+        /* Not using yet but soon. */
+        "com.typesafe.akka" %% "akka-cluster" % Versions.Akka,
+        "com.typesafe.akka" %% "akka-contrib" % Versions.Akka)
 
 }

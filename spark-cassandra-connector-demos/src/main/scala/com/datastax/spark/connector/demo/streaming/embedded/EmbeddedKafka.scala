@@ -1,10 +1,7 @@
-package com.datastax.spark.connector.streaming.kafka.embedded
+package com.datastax.spark.connector.demo.streaming.embedded
 
 import java.io.File
 import java.util.Properties
-
-import kafka.utils.ZKStringSerializer
-import org.I0Itec.zkclient.ZkClient
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
@@ -13,6 +10,8 @@ import kafka.common.TopicAndPartition
 import kafka.producer.{KeyedMessage, ProducerConfig, Producer}
 import kafka.serializer.StringEncoder
 import kafka.server.{KafkaConfig, KafkaServer}
+import kafka.utils.ZKStringSerializer
+import org.I0Itec.zkclient.ZkClient
 
 final class EmbeddedKafka extends Embedded {
 
@@ -30,7 +29,6 @@ final class EmbeddedKafka extends Embedded {
   brokerConf.put("log.flush.interval.messages", "1")
   brokerConf.put("replica.socket.timeout.ms", "1500")
 
-
   /** Starts the ZK server. */
   private val zookeeper = new EmbeddedZookeeper()
   awaitCond(zookeeper.isRunning, 2000.millis)
@@ -43,7 +41,7 @@ final class EmbeddedKafka extends Embedded {
   val kafkaConfig = new KafkaConfig(brokerConf)
   val server = new KafkaServer(kafkaConfig)
   Thread.sleep(2000)
- 
+
   log.info(s"Starting the Kafka server at $ZookeeperConnectionString")
   server.startup()
   Thread.sleep(2000)

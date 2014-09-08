@@ -1,11 +1,12 @@
-package com.datastax.spark.connector.streaming.kafka.embedded
+package com.datastax.spark.connector.demo.streaming.embedded
 
 import java.net.InetSocketAddress
 
 import scala.util.Try
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
-/** To create a ZooKeeper client object, the application needs to pass a
+/** Implements a simple standalone ZooKeeperServer.
+  * To create a ZooKeeper client object, the application needs to pass a
   * connection string containing a comma separated list of host:port pairs,
   * each corresponding to a ZooKeeper server.
   * <p>

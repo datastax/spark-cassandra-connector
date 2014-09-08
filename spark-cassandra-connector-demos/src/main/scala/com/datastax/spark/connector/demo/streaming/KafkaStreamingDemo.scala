@@ -1,16 +1,29 @@
 package com.datastax.spark.connector.demo.streaming
 
+import com.datastax.spark.connector.demo.Assertions
 import kafka.serializer.StringDecoder
 import org.apache.spark.{SparkEnv, SparkConf, Logging}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
-import com.datastax.spark.connector.streaming.kafka.embedded._
+import com.datastax.spark.connector.demo.streaming.embedded._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.util.Assertions
 
+/**
+ * Simple Kafka Spark Streaming demo which
+ * 1. Starts an embedded ZooKeeper server
+ * 2. Starts an embedded Kafka server
+ * 3. Creates a new topic in the Kafka broker
+ * 4. Generates messages and publishes to the Kafka broker
+ * 5. Creates a Spark Streaming Kafka input stream which
+ *    pulls messages from a Kafka Broker,
+ *    runs basic Spark computations on the streaming data,
+ *    and writes results to Cassandra
+ * 6. Asserts expectations are met
+ * 7. Shuts down Spark, Kafka and ZooKeeper
+ */
 object KafkaStreamingDemo extends Assertions with Logging {
 
   /* Initialize Akka, Cassandra and Spark settings. */
@@ -40,12 +53,14 @@ object KafkaStreamingDemo extends Assertions with Logging {
 
     /** Creates the Spark Streaming context. */
     val ssc =  new StreamingContext(sc, Seconds(2))
+
     SparkEnv.get.actorSystem.registerOnTermination(kafka.shutdown())
 
     val sent =  Map("a" -> 5, "b" -> 3, "c" -> 10)
     kafka.createTopic(topic)
     kafka.produceAndSendMessage(topic, sent)
 
+    /** Creates an input stream that pulls messages from a Kafka Broker. */
     val stream = KafkaUtils.createStream[String, String, StringDecoder, StringDecoder](
       ssc, kafka.kafkaParams, Map(topic -> 1), StorageLevel.MEMORY_ONLY)
 
