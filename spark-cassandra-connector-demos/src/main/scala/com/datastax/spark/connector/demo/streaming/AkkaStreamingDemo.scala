@@ -74,7 +74,7 @@ object AkkaStreamingDemo extends App {
  * The NodeGuardian spins up three child actors (not in this order):
  *
  * 1. Streamer
- * A simple Akka actor which extends com.datastax.spark.connector.streaming.TypedStreamingActor` and ultimately
+ * A simple Akka actor which extends `com.datastax.spark.connector.streaming.TypedStreamingActor` and ultimately
  * implements a Spark `Receiver`. This simple receiver calls
  * {{{
  *    Receiver.pushBlock[T: ClassTag](data: T)
