@@ -1,4 +1,6 @@
 1.0.0
+ * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
+   closing Cluster objects. (#183)
  * Allow multiple comma-separated hosts in spark.cassandra.connection.host
 
 1.0.0 RC 6

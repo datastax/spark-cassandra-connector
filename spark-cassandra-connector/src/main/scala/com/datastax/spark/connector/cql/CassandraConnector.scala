@@ -179,6 +179,7 @@ object CassandraConnector extends Logging {
     val clusterName = cluster.getMetadata.getClusterName
     session.close()
     cluster.close()
+    PreparedStatementCache.remove(cluster)
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
