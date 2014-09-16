@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorSystem, Props, Terminated}
-import akka.testkit.ImplicitSender
-import akka.testkit.TestKit
+import akka.testkit.{ImplicitSender, TestKit}
+import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
@@ -11,7 +11,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
 
-class ActorStreamingSpec extends ActorSpec with CounterFixture {
+class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
@@ -31,26 +31,21 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture {
         .reduceByKey(_ + _)
         .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
 
-      import system.dispatcher
-      
       // start the streaming context so the data can be processed and actor started
       ssc.start
- 
-      Thread.sleep(3 * 1000) // This seems worng, there has to be a better way to handle the asynchrony
-      val future = system.actorSelection(s"$system/user/Supervisor0/$actorName").resolveOne(duration) 
-      awaitCond(future.isCompleted, duration)
 
-      for (actor <- future) {
-        watch(actor)
-        system.actorOf(Props(new TestProducer(data.toArray, actor)))
+      system.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
+
+      expectMsgPF(duration) { case ReceiverStarted(receiver) =>
+        watch(receiver)
+        system.actorOf(Props(new TestProducer(data.toArray, receiver)))
       }
-      
+
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
         awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
         rdd.collect.length should be (data.size)
       }
-
     }
   }
 }
@@ -65,7 +60,7 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 }
 
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
-  extends TestKit(_system) with StreamingSpec with ImplicitSender {
+  extends TestKit(_system) with StreamingSpec {
 
   def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 

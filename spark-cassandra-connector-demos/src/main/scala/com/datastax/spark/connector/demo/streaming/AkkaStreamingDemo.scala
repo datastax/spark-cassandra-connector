@@ -5,7 +5,7 @@ import akka.actor._
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{Logging, SparkConf, SparkContext, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.streaming.TypedStreamingActor
+import com.datastax.spark.connector.streaming.{StreamingEvent, TypedStreamingActor}
 
 /**
  * This demo can run against a single node, local or remote.
@@ -116,12 +116,14 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   extends Actor with Logging {
 
   import scala.concurrent.duration._
+  import scala.concurrent.{Future, Await}
   import akka.util.Timeout
   import org.apache.spark.storage.StorageLevel
   import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
   import com.datastax.spark.connector._
   import InternalStreamingEvent._
   import settings._
+  import StreamingEvent._
   import context.dispatcher
 
   implicit val timeout = Timeout(5.seconds)
@@ -130,7 +132,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   private val sas = SparkEnv.get.actorSystem
 
-  private val path = ActorPath.fromString(s"$sas/user/Supervisor0/$actorName")
+  sas.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
 
   private val reporter = context.actorOf(Props(new Reporter(ssc, CassandraKeyspace, tableName, data)), "reporter")
 
@@ -149,19 +151,16 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   ssc.start()
   log.info(s"Streaming context started.")
 
-  /* Note that the [[Streamer]] actor is in the Spark actor system. We watch it from the demo
-     application's actor system. The [[Sender]] will send data to the [[Streamer]] actor. */
-  for (actor <- sas.actorSelection(path).resolveOne()) {
-
-    /** For the purposes of the demo, we put an Akka DeathWatch on the stream actor, because this actor stops itself once its
-      * work is `done` (again, just for a simple demo that does work and stops once expectations are met). */
-    context.watch(actor)
-
-    /** Then we inject the [[Sender]] actor with the [[Streamer]] actor ref so it can easily send data to the stream. */
-    context.actorOf(Props(new Sender(data.toArray, actor)))
-  }
-
   def receive: Actor.Receive = {
+    case ReceiverStarted(receiver) =>
+      /** Initializes direct point-to-point messaging of event-driven data from [[Sender]] to [[Streamer]].
+        * For purposes of a demo, we put an Akka DeathWatch on the stream actor, because this actor stops itself once its
+        * work is `done` (again, just for a simple demo that does work and stops once expectations are met). */
+      context.watch(receiver)
+
+      /** Then we inject the [[Sender]] actor with the [[Streamer]] actor ref so it can easily send data to the stream. */
+      context.actorOf(Props(new Sender(data.toArray, receiver)))
+
     /** Akka DeathWatch notification that `ref`, the [[Streamer]] actor we are watching, has terminated itself.
       * We message the [[Reporter]], which triggers its scheduled validation task. */
     case Terminated(ref) => reporter ! Report
@@ -171,14 +170,13 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
     case Completed       => shutdown()
   }
 
-  /** Stops the ActorSyste, the Spark `StreamingContext` and its underlying Spark system. */
+  /** Stops the ActorSystem, the Spark `StreamingContext` and its underlying Spark system. */
   def shutdown(): Unit = {
-    import scala.concurrent.{Future, Await}
-
     log.info(s"Stopping '$ssc' and shutting down.")
+    context.system.eventStream.unsubscribe(self)
     context.system.shutdown()
     Await.result(Future(context.system.isTerminated), 2.seconds)
-    ssc.stop(true)
+    ssc.stop(stopSparkContext = true, stopGracefully = true)
   }
 
 }
