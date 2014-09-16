@@ -31,7 +31,6 @@ From SBT, run the following on the comman line, then enter the number of the dem
     
     sbt spark-cassandra-connector-demos/run
  
- 
 
 Or from an IDE, right click on a particular demo and 'run'.
 

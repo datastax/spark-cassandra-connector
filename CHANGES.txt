@@ -5,6 +5,12 @@
  * Removed depercated toArray, replaced with collect.
  * Updated imports to org.apache.spark.streaming.receiver
    and import org.apache.spark.streaming.receiver.ActorHelper
+ * Added the following Spark Streaming dependencies to the demos module:
+   Kafka, Twitter, ZeroMQ
+ * Added embedded Kafka and ZooKeeper servers for the Kafka Streaming demo
+   - keeping non private for user prototyping
+ * Added new Kafka Spark Streaming demo which reads from Kafka
+   and writes to Cassandra (Twitter and ZeroMQ are next)
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
