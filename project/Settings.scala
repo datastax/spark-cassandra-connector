@@ -16,14 +16,17 @@
 
 import sbt._
 import sbt.Keys._
-import sbt.plugins.{JvmPlugin, IvyPlugin}
 import sbtrelease.ReleasePlugin._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 
 import scala.language.postfixOps
+
+import net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 object Settings extends Build {
 
@@ -45,7 +48,7 @@ object Settings extends Build {
     publish := {}
   )
 
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
@@ -57,8 +60,13 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = Seq(
-    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC")
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ sbtAssemblyDemoSettings ++ Seq(
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m",  "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-Xmx1024m"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
+    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
+    parallelExecution in ThisBuild := false,
+    parallelExecution in Global := false
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
@@ -68,11 +76,11 @@ object Settings extends Build {
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   val testOptionSettings = Seq(
-    // commented out for now until migrated to: Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+    Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  lazy val testSettings = tests ++ Seq(
+  lazy val testSettings = tests ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
@@ -82,6 +90,38 @@ object Settings extends Build {
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
     managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
+
+  lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+    jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" },
+    assemblyOption in assembly ~= { _.copy(includeScala = false) },
+      mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+      (old) => {
+        case PathList("org", "jboss", "netty", xs @ _*) => MergeStrategy.discard
+        case PathList("com", "google", xs @ _*) => MergeStrategy.discard
+        case x => old(x)
+      }
+    }
+  )
+
+  /* By default, assembly is not enabled for the demos module, but it can be enabled with
+    `-Dspark.cassandra.connector.demos.assembly=true`. From the command line this would be:
+     sbt -Dspark.cassandra.connector.demos.assembly=true assembly */
+  lazy val sbtAssemblyDemoSettings =
+    if (System.getProperty("spark.cassandra.connector.demos.assembly", "false").toBoolean)
+      sbtAssemblySettings ++ Seq(
+        mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+          (old) => {
+            case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+            case PathList("javax", "servlet", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "util", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "remote", xs @ _*) => MergeStrategy.first
+            case PathList("akka", "routing", xs @ _*) => MergeStrategy.first
+            case PathList("org", "apache", "commons", xs @ _*) => MergeStrategy.first
+            case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.first
+            case x => old(x)
+          }
+        })
+    else Seq.empty
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
