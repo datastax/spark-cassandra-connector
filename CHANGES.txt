@@ -2,9 +2,11 @@
  * Accept partition key predicates in CassandraRDD#where. (#37)
  * Add indexedColumn to ColumnDef (#122)
  * Upgrade Spark to version 1.0.2 
- * Removed depercated toArray, replaced with collect.
+ * Removed deprecated toArray, replaced with collect.
  * Updated imports to org.apache.spark.streaming.receiver
    and import org.apache.spark.streaming.receiver.ActorHelper
+ * Updated streaming demo and spec for Spark 1.0.2 behavior compatibility
+ * Added new StreamingEvent types for Spark 1.0.2 Receiver readiness
  * Added the following Spark Streaming dependencies to the demos module:
    Kafka, Twitter, ZeroMQ
  * Added embedded Kafka and ZooKeeper servers for the Kafka Streaming demo

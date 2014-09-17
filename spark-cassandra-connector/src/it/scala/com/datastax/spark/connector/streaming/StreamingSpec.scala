@@ -43,6 +43,6 @@ trait StreamingSpec extends AbstractSpec with CassandraServer with SparkCassandr
 
   after {
     // Spark Context is shared among all integration test so we don't want to stop it here
-    ssc.stop(stopSparkContext = false)
+    ssc.stop(stopSparkContext = false, stopGracefully = true)
   }
 }

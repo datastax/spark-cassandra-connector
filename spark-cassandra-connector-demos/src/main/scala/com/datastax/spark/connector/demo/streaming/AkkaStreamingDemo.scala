@@ -1,12 +1,14 @@
 package com.datastax.spark.connector.demo.streaming
 
 import scala.collection.immutable
+import scala.concurrent.duration._
 import akka.actor._
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{Logging, SparkConf, SparkContext, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.streaming.TypedStreamingActor
 import com.datastax.spark.connector.demo.Assertions
+import com.datastax.spark.connector.demo.streaming.StreamingEvent._
 
 /**
  * This demo can run against a single node, local or remote.
@@ -113,13 +115,10 @@ object AkkaStreamingDemo extends App {
 class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tableName: String, data: immutable.Set[String])
   extends Actor with Assertions with Logging {
 
-  import scala.concurrent.duration._
   import akka.util.Timeout
   import org.apache.spark.storage.StorageLevel
   import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
   import com.datastax.spark.connector._
-  import StreamingEvent._
-  import settings._
   import context.dispatcher
 
   implicit val timeout = Timeout(5.seconds)
@@ -131,8 +130,6 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   sas.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
 
-  private val path = ActorPath.fromString(s"$sas/user/Supervisor0/$actorName")
-
   private val reporter = context.actorOf(Props(new Reporter(ssc, "streaming_test", tableName, data)), "reporter")
 
   /** Creates an Akka Actor input stream. */
@@ -142,7 +139,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
      that this is where the implicits are used for the DStream's 'saveToCassandra' functions: */
   import com.datastax.spark.connector.streaming._
 
-  private val wc = stream.flatMap(_.split("\\s+"))
+  stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
     .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
@@ -157,12 +154,15 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
       * work is `done` (again, just for a simple demo that does work and stops once expectations are met).
       * Then we inject the [[Sender]] actor with the [[Streamer]] actor ref so it can easily send data to the stream. */
     case ReceiverStarted(receiver) =>
+      log.info(s"Spark Streaming actor located: $receiver")
       context.watch(receiver)
       context.actorOf(Props(new Sender(data.toArray, receiver)))
 
     /** Akka DeathWatch notification that `ref`, the [[Streamer]] actor we are watching, has terminated itself.
       * We message the [[Reporter]], which triggers its scheduled validation task. */
-    case Terminated(ref) => reporter ! Report
+    case Terminated(ref) =>
+      log.info(s"Spark Streaming actor work completed and shutdown. Starting validation.")
+      reporter ! Report
 
     /** NodeGuardian actor receives confirmation from the [[Reporter]] of a successful validation.
       * We trigger a system shutdown of the Akka node, which calls `shutdown()`. */
@@ -171,6 +171,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
 
   /** Stops the ActorSystem, the Spark `StreamingContext` and its underlying Spark system. */
   def shutdown(): Unit = {
+    log.info(s"Assertions successful, shutting down.")
     context.system.eventStream.unsubscribe(self)
     log.info(s"Stopping the demo app actor system and '$ssc'")
     context.system.shutdown()
@@ -201,8 +202,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   *   } }}}
   */
 class Streamer extends TypedStreamingActor[String] with CounterActor {
-  import StreamingEvent.ReceiverStarted
-  
+
   override def preStart(): Unit =
     context.system.eventStream.publish(ReceiverStarted(self))
 
@@ -217,8 +217,6 @@ class Streamer extends TypedStreamingActor[String] with CounterActor {
   * and sent to the stream every millisecond, with an initial wait of 2 milliseconds. */
 class Sender(val data: Array[String], val to: ActorRef) extends Actor {
   import context.dispatcher
-
-import scala.concurrent.duration._
 
   private val rand = new scala.util.Random()
 
@@ -237,7 +235,6 @@ import scala.concurrent.duration._
     case _ =>
   }
 }
-
 
 trait CounterActor extends Actor  with Logging {
 
@@ -266,10 +263,9 @@ private[demo] object StreamingEvent {
   * the `NodeGuardian`, its supervisor, of the `Completed` state.
   */
 class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
-  import scala.concurrent.duration._
+
   import akka.actor.Cancellable
   import com.datastax.spark.connector.streaming._
-  import StreamingEvent._
   import context.dispatcher
 
   private var task: Option[Cancellable] = None
