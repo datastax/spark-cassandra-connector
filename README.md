@@ -32,11 +32,10 @@ If you want to access the functionality of Connector from Java, you may want to 
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.0.0-rc6" withSources() withJavadoc()
 
 ## Building
-You need to install SBT version 0.13 or newer to build this project.
 In the project root directory run:
 
-    sbt package
-    sbt doc
+    ./sbt/sbt package
+    ./sbt/sbt doc
     
 The library package jars will be placed in:
   - `spark-cassandra-connector/target/scala-2.10/`
@@ -80,17 +79,17 @@ end of each commit message (where *xx* is the number of the issue).
 ## Testing
 To run unit and integration tests:
 
-    sbt test
-    sbt it:test
+    ./sbt/sbt test
+    ./sbt/sbt it:test
 
 By default, integration tests start up a separate, single Cassandra instance and run Spark in local mode.
 It is possible to run integration tests with your own Cassandra and/or Spark cluster.
 First, prepare a jar with testing code:
     
-    sbt test:package
+    ./sbt/sbt test:package
     
 Then copy the generated test jar to your Spark nodes and run:    
 
     export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
-    sbt it:test    
+    ./sbt/sbt it:test    
