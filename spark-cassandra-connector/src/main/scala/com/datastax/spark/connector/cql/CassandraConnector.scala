@@ -152,7 +152,6 @@ object CassandraConnector extends Logging {
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
-    logInfo("Local DC = " + localDC)
     logDebug(s"Connecting to cluster: ${conf.hosts.mkString("{", ",", "}")}:${conf.nativePort}")
     val cluster =
       Cluster.builder()

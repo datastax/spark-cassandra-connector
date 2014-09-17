@@ -6,8 +6,10 @@ import java.net.{InetAddress, NetworkInterface}
 import scala.collection.JavaConversions._
 import scala.util.Random
 
+import org.apache.spark.Logging
+
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
-class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None) extends LoadBalancingPolicy {
+class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None) extends LoadBalancingPolicy with Logging {
 
   import LocalNodeFirstLoadBalancingPolicy._
 
@@ -16,10 +18,13 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
 
   override def distance(host: Host): HostDistance = localDC match {
     case Some(dc) => 
-      if (host.getDatacenter == dc)
+      if (host.getDatacenter == dc) {
+        logInfo(s"Adding host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
         HostDistance.LOCAL
-      else
+      } else {
+        logInfo(s"Ignoring host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
         HostDistance.IGNORED
+      }
     case None =>
       if (isLocalHost(host))
         HostDistance.LOCAL
