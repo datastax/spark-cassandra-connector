@@ -7,18 +7,25 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
-class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends LoadBalancingPolicy {
+class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None) extends LoadBalancingPolicy {
 
   import LocalNodeFirstLoadBalancingPolicy._
 
   private var liveNodes = Set.empty[Host]
   private val random = new Random
 
-  override def distance(host: Host): HostDistance =
-    if (isLocalHost(host))
-      HostDistance.LOCAL
-    else
-      HostDistance.REMOTE
+  override def distance(host: Host): HostDistance = localDC match {
+    case Some(dc) => 
+      if (host.getDatacenter == dc)
+        HostDistance.LOCAL
+      else
+        HostDistance.IGNORED
+    case None =>
+      if (isLocalHost(host))
+        HostDistance.LOCAL
+      else
+        HostDistance.REMOTE
+  }
 
   override def init(cluster: Cluster, hosts: java.util.Collection[Host]) {
     liveNodes = hosts.filter(_.isUp).toSet
