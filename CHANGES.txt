@@ -23,6 +23,8 @@
  * Upgraded Apache Spark to 1.1.0.
  * Upgraded to be Cassandra 2.1.0 and Cassandra 2.0 compatible.
  * Added spark.cassandra.connection.local_dc option
+ * Added spark.cassandra.connection.timeout_ms option
+ * Added spark.cassandra.read.timeout_ms option
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
