@@ -3,7 +3,7 @@ package com.datastax.spark.connector.cql
 import java.io.IOException
 import java.net.InetAddress
 
-import com.datastax.driver.core.{Session, Host, Cluster}
+import com.datastax.driver.core.{SocketOptions, Session, Host, Cluster}
 import com.datastax.driver.core.policies._
 import com.datastax.spark.connector.util.IOUtils
 
@@ -124,6 +124,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Opens a Thrift client to the given host. Don't use it unless you really know what you are doing. */
   def createThriftClient(host: InetAddress): CassandraClientProxy = {
     val transportFactory = conf.authConf.transportFactory
+    logDebug("Attempting to create thrift client to %s:%d".format(host.getHostAddress, rpcPort))
     val transport = transportFactory.openTransport(host.getHostAddress, rpcPort)
     val client = new Cassandra.Client(new TBinaryProtocol.Factory().getProtocol(transport))
     conf.authConf.configureThriftClient(client)
@@ -147,11 +148,19 @@ object CassandraConnector extends Logging {
   val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
 
+  val connectTimeout = System.getProperty("spark.cassandra.connection.timeout_ms", "5000").toInt
+  val readTimeout = System.getProperty("spark.cassandra.read.timeout_ms", "12000").toInt
+
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
     logDebug(s"Connecting to cluster: ${conf.hosts.mkString("{", ",", "}")}:${conf.nativePort}")
+
+    val options = new SocketOptions()
+      .setConnectTimeoutMillis(connectTimeout)
+      .setReadTimeoutMillis(readTimeout)
+
     val cluster =
       Cluster.builder()
         .addContactPoints(conf.hosts.toSeq: _*)
@@ -160,6 +169,7 @@ object CassandraConnector extends Logging {
         .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
         .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
         .withAuthProvider(conf.authConf.authProvider)
+        .withSocketOptions(options)
         .build()
 
     try {
