@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ConsistencyLevel, Session, Statement}
+import com.datastax.driver.core.{ResultSetFuture, ConsistencyLevel, Session, Statement}
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
@@ -311,14 +311,13 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
-  private def fetchTokenRange(session: Session, range: CqlTokenRange): Iterator[R] = {
+  private def fetchTokenRange(session: Session, range: CqlTokenRange): ResultSetFuture = {
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnNames.toArray
     try {
-      val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
-      logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
+      val result = session.executeAsync(stmt)
+      logDebug(s"Start executeAsync ${range.cql} obtained successfully.")
       result
     } catch {
       case t: Throwable =>
@@ -335,7 +334,8 @@ class CassandraRDD[R] private[connector] (
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
+    val results = tokenRanges.map(fetchTokenRange(session, _))
+    val rowIterator = results.iterator.flatMap(_.getUninterruptibly().map(rowTransformer.read(_, selectedColumnNames.toArray)))
     val countingIterator = new CountingIterator(rowIterator)
 
     context.addOnCompleteCallback { () =>
