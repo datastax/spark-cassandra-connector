@@ -3,6 +3,9 @@
 Spark Streaming extends the core API to allow high-throughput, fault-tolerant stream processing of live data streams.
 Data can be ingested from many sources such as Akka, Kafka, Flume, Twitter, ZeroMQ, TCP sockets, etc. Results can be stored in Cassandra.
 
+For our initial streaming release, due to time constraints, we started with Akka integration of Spark Streaming. 
+However coming soon is Kafka, ZeroMQ, then Twitter Streaming.
+
 ### The Basic Idea
 
 #### Spark Streaming
