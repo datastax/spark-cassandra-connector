@@ -14,26 +14,32 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
   import LocalNodeFirstLoadBalancingPolicy._
 
   private var liveNodes = Set.empty[Host]
+  private var dcToUse = ""
   private val random = new Random
 
-  override def distance(host: Host): HostDistance = localDC match {
-    case Some(dc) => 
-      if (host.getDatacenter == dc) {
-        logInfo(s"Adding host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
-        HostDistance.LOCAL
-      } else {
-        logInfo(s"Ignoring host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
-        HostDistance.IGNORED
-      }
-    case None =>
-      if (isLocalHost(host))
-        HostDistance.LOCAL
-      else
-        HostDistance.REMOTE
-  }
+  override def distance(host: Host): HostDistance =
+    if (host.getDatacenter == dcToUse) {
+      logInfo(s"Adding host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
+      sameDCHostDistance(host)
+    } else {
+      // this insures we keep remote hosts out of our list entirely, even when we get notified of newly joined nodes
+      logInfo(s"Ignoring remote host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
+      HostDistance.IGNORED
+    }
 
   override def init(cluster: Cluster, hosts: java.util.Collection[Host]) {
     liveNodes = hosts.filter(_.isUp).toSet
+    // use explicitly set DC if available, otherwise see if all contact points have same DC
+    // if so, use that DC; if not, throw an error
+    dcToUse = localDC match { 
+      case Some(local) => local
+      case None => 
+        val dcList = dcs(hosts)
+        if (dcList.size == 1) 
+          dcList.head
+        else 
+          throw new IllegalArgumentException(s"Contact points contain multiple data centers: ${dcList.mkString}")
+    }
   }
 
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
@@ -52,6 +58,14 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
   override def onUp(host: Host) = { }
   override def onDown(host: Host) = { }
   override def onSuspected(host: Host) = { liveNodes += host }
+
+  private def sameDCHostDistance(host: Host) =
+    if (isLocalHost(host))
+      HostDistance.LOCAL
+    else
+      HostDistance.REMOTE
+
+  private def dcs(hosts: java.util.Collection[Host]) = hosts.map(_.getDatacenter).toSet
 }
 
 object LocalNodeFirstLoadBalancingPolicy {
