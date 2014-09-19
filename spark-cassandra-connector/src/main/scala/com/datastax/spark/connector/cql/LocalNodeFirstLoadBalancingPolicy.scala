@@ -34,11 +34,11 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     dcToUse = localDC match { 
       case Some(local) => local
       case None => 
-        val dcList = dcs(hosts)
+        val dcList = dcs(nodesInTheSameDC(contactPoints, hosts.toSet))
         if (dcList.size == 1) 
           dcList.head
         else 
-          throw new IllegalArgumentException(s"Contact points contain multiple data centers: ${dcList.mkString}")
+          throw new IllegalArgumentException(s"Contact points contain multiple data centers: ${dcList.mkString(", ")}")
     }
   }
 
@@ -65,7 +65,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     else
       HostDistance.REMOTE
 
-  private def dcs(hosts: java.util.Collection[Host]) = hosts.map(_.getDatacenter).toSet
+  private def dcs(hosts: Set[Host]) = hosts.map(_.getDatacenter).toSet
 }
 
 object LocalNodeFirstLoadBalancingPolicy {
