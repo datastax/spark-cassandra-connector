@@ -6,8 +6,7 @@ import java.util.UUID
 import com.datastax.spark.connector.demo.Assertions
 import com.google.common.io.Files
 import org.apache.commons.lang3.SystemUtils
-import org.apache.spark.Logging
-import com.datastax.spark.connector.util.IOUtils
+import com.datastax.spark.connector.util.{Logging, IOUtils}
 
 /** INTERNAL API.
   * Helper class for demos and tests. Useful for quick prototyping. */

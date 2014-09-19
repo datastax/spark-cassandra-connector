@@ -1,6 +1,7 @@
  * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt
 
 1.1.0
+ * Replace internal spark Logging with own class (#245)
  * Accept partition key predicates in CassandraRDD#where. (#37)
  * Add indexedColumn to ColumnDef (#122)
  * Upgrade Spark to version 1.0.2 

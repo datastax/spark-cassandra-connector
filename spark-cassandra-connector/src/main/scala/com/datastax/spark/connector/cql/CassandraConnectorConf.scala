@@ -2,7 +2,8 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import org.apache.spark.{Logging, SparkConf}
+import com.datastax.spark.connector.util.Logging
+import org.apache.spark.SparkConf
 import scala.util.control.NonFatal
 
 /** Stores configuration of a connection to Cassandra.

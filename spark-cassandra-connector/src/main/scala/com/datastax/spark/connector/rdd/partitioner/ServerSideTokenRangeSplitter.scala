@@ -5,8 +5,8 @@ import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
+import com.datastax.spark.connector.util.Logging
 import org.apache.cassandra.thrift.CfSplit
-import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success, Try}

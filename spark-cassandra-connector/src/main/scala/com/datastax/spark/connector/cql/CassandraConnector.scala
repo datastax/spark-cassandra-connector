@@ -5,10 +5,10 @@ import java.net.InetAddress
 
 import com.datastax.driver.core.{Session, Host, Cluster}
 import com.datastax.driver.core.policies._
-import com.datastax.spark.connector.util.IOUtils
+import com.datastax.spark.connector.util.{Logging, IOUtils}
 
 import org.apache.cassandra.thrift.Cassandra
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 
 import scala.collection.JavaConversions._

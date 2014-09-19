@@ -5,9 +5,9 @@ import java.io.IOException
 import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
 import com.datastax.spark.connector.{AllColumns, SomeColumns, ColumnSelector}
 import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
-import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.{Logging, CountingIterator}
 
-import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.TaskContext
 
 import scala.collection._
 import scala.reflect.ClassTag
