@@ -27,6 +27,7 @@ Property name                                        | Description              
 spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                | 250 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to attempt reconnecting to a dead node | 1000 ms 
 spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to attempt reconnecting to a dead node | 60000 ms 
+spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)      | none
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                    | 10 
   
 Example:
