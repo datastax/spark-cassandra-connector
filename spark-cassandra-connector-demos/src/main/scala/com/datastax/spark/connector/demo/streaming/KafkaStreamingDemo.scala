@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.demo.streaming
 
 import com.datastax.spark.connector.demo.Assertions
+import com.datastax.spark.connector.util.Logging
 import kafka.serializer.StringDecoder
-import org.apache.spark.{SparkEnv, SparkConf, Logging}
+import org.apache.spark.{SparkEnv, SparkConf}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._

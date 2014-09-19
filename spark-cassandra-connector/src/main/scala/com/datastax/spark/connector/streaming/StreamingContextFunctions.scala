@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorRef, Actor}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.scheduler.StreamingListener
 import org.apache.spark.streaming.receiver.ActorHelper

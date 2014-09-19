@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.util.Logging
+
 import scala.collection.JavaConversions._
 import scala.language.existentials
-import org.apache.spark.Logging
 import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 
