@@ -282,10 +282,12 @@ class CassandraRDD[R] private[connector] (
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnNames.map(quote).mkString(", ")
-    val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
+    val predicates = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ")
+    val filter = if (predicates.isEmpty) ""
+      else "WHERE " + predicates + " ALLOW FILTERING"
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
-    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", where.values)
+    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName $filter", where.values)
   }
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
