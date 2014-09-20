@@ -1,6 +1,7 @@
- * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt
+1.2.0
 
 1.1.0
+ * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt
  * Replace internal spark Logging with own class (#245)
  * Accept partition key predicates in CassandraRDD#where. (#37)
  * Add indexedColumn to ColumnDef (#122)
