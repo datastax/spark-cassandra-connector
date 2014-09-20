@@ -145,6 +145,7 @@ object CassandraConnector extends Logging {
   val keepAliveMillis = System.getProperty("spark.cassandra.connection.keep_alive_ms", "250").toInt
   val minReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.min", "1000").toInt
   val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
+  val localDC = System.getProperty("spark.cassandra.connection.local_dc")
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
 
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
@@ -158,7 +159,7 @@ object CassandraConnector extends Logging {
         .withPort(conf.nativePort)
         .withRetryPolicy(new MultipleRetryPolicy(retryCount))
         .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
-        .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts))
+        .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC)))
         .withAuthProvider(conf.authConf.authProvider)
         .build()
 

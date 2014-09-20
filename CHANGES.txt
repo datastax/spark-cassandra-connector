@@ -17,6 +17,7 @@
    - keeping non private for user prototyping
  * Added new Kafka Spark Streaming demo which reads from Kafka
    and writes to Cassandra (Twitter and ZeroMQ are next)
+ * Added spark.cassandra.connection.local_dc option
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
