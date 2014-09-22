@@ -57,7 +57,7 @@ object Dependencies {
     val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"                 // ApacheV2
     val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra
     val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra
-    val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver              withSources()  // ApacheV2
+    val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % Cassandra                    withSources()  // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                                // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"                 // ApacheV2
     val guava               = "com.google.guava"        % "guava"                  % Guava          % "provided"  force()

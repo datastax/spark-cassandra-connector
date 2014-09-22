@@ -314,6 +314,7 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
 
 
 object CassandraRow {
+  import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
@@ -334,7 +335,7 @@ object CassandraRow {
     val columnType = columnDefinitions.getType(index)
     val columnValue = row.getBytesUnsafe(index)
     if (columnValue != null)
-      convert(columnType.deserialize(columnValue))
+      convert(columnType.deserialize(columnValue, protocolVersion))
     else
       null
   }
