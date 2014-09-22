@@ -9,8 +9,8 @@ execute arbitrary CQL queries in your Spark applications.
 ## Features
 
  - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5
- - Compatible with Apache Spark 0.9 and 1.0
- - Exposes Cassandra tables as Spark RDDs 
+ - Compatible with Apache Spark 1.0 and 1.1
+ - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
  - Saves RDDs back to Cassandra by implicit `saveToCassandra` call
@@ -25,11 +25,11 @@ This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0" withSources() withJavadoc()
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.1.0-alpha1" withSources() withJavadoc()
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.0.0" withSources() withJavadoc()
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.1.0-alpha1" withSources() withJavadoc()
 
 ## Building
 In the project root directory run:
