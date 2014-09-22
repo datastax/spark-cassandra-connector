@@ -1,15 +1,14 @@
-package com.datastax.spark.connector.testkit
+package com.datastax.spark.connector.embedded
 
 import java.io.{PrintWriter, StringWriter, StringReader, BufferedReader}
 import java.net.URLClassLoader
 
-import org.apache.spark.repl.SparkILoop
-
 import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.repl.SparkILoop
 
 trait SparkRepl {
   def runInterpreter(master: String, input: String): String = {
-    System.setProperty("spark.cassandra.connection.host", CassandraServer.cassandraHost.getHostAddress)
+    System.setProperty("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
     val in = new BufferedReader(new StringReader(input + "\n"))
     val out = new StringWriter()
     val cl = getClass.getClassLoader

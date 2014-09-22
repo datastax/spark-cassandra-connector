@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
 /**
  * Usages: Create the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
@@ -31,7 +32,7 @@ import com.datastax.spark.connector.testkit._
  *
  * etc.
  */
-trait StreamingSpec extends AbstractSpec with CassandraServer with SparkCassandraFixture {
+trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate with SparkCassandraFixture {
   import org.apache.spark.streaming.StreamingContext
   import scala.concurrent.duration._
 

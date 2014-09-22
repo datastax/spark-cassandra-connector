@@ -2,11 +2,12 @@ package com.datastax.spark.connector.cql
 
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
-class CassandraConnectorSpec extends FlatSpec with Matchers with CassandraServer {
+class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)
@@ -79,7 +80,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with CassandraServer
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(CassandraServer.cassandraHost)
+    val conn2 = CassandraConnector(EmbeddedCassandra.cassandraHost)
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()

@@ -1,16 +1,15 @@
 package com.datastax.spark.connector.demo.streaming
 
-import com.datastax.spark.connector.demo.Assertions
-import com.datastax.spark.connector.util.Logging
 import kafka.serializer.StringDecoder
 import org.apache.spark.{SparkEnv, SparkConf}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
-import com.datastax.spark.connector.demo.streaming.embedded._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.SomeColumns
+import com.datastax.spark.connector.SomeColumns 
+import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.embedded._
 
 /**
  * Simple Kafka Spark Streaming demo which
@@ -84,5 +83,6 @@ object KafkaStreamingDemo extends Assertions with Logging {
 
     log.info(s"Assertions successful, shutting down.")
     ssc.stop(stopSparkContext = true, stopGracefully = false)
+    ssc.awaitTermination()
   }
 }

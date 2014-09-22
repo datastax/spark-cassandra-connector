@@ -4,8 +4,9 @@ import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
-class TableWriterColumnNamesSpec extends AbstractSpec with CassandraServer with SparkServer {
+class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)

@@ -14,7 +14,7 @@ trait DemoApp extends App with Logging {
     .set("spark.cassandra.connection.host", CassandraHost)
     .set("spark.cleaner.ttl", "3600")
     .setMaster("local[12]")
-    .setAppName("Demo")
+    .setAppName(getClass.getSimpleName)
 
   // Connect to the Spark cluster:
   lazy val sc = new SparkContext(conf)
