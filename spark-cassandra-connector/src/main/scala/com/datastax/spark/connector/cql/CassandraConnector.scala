@@ -151,6 +151,8 @@ object CassandraConnector extends Logging {
   val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
 
+  implicit final val protocolVersion: Int = -1
+
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
