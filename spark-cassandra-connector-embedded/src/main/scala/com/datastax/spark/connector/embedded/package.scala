@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.demo.streaming
+package com.datastax.spark.connector
 
 import java.net.InetAddress
 

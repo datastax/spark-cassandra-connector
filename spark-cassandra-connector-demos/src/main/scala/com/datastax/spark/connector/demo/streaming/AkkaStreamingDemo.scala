@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.demo.streaming
 
-import com.datastax.spark.connector.util.Logging
-
 import scala.collection.immutable
 import scala.concurrent.duration._
 import akka.actor._
@@ -9,8 +7,9 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.streaming.TypedStreamingActor
-import com.datastax.spark.connector.demo.Assertions
 import com.datastax.spark.connector.demo.streaming.StreamingEvent._
+import com.datastax.spark.connector.embedded.Assertions
+import com.datastax.spark.connector.util.Logging
 
 /**
  * This demo can run against a single node, local or remote.
@@ -180,8 +179,8 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
     context.system.eventStream.unsubscribe(self)
     log.info(s"Stopping the demo app actor system and '$ssc'")
     context.system.shutdown()
-    awaitCond(context.system.isTerminated, 2.seconds)
-    ssc.stop(stopSparkContext = true, stopGracefully = true)
+    ssc.stop(stopSparkContext = true, stopGracefully = false)
+    ssc.awaitTermination()
   }
 
 }

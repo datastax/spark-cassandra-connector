@@ -5,12 +5,13 @@ import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
-class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
+class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
 
-  val conn = CassandraConnector(CassandraServer.cassandraHost)
+  val conn = CassandraConnector(EmbeddedCassandra.cassandraHost)
 
   before {
     conn.withSessionDo { session =>
