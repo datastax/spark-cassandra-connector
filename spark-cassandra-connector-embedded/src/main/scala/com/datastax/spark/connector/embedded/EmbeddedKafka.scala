@@ -25,7 +25,7 @@ final class EmbeddedKafka extends Embedded with Logging {
   brokerConf.put("broker.id", "0")
   brokerConf.put("host.name", "localhost")
   brokerConf.put("port", "9092")
-  brokerConf.put("log.dir", createTempDir().getAbsolutePath)
+  brokerConf.put("log.dir", createTempDir.getAbsolutePath)
   brokerConf.put("zookeeper.connect", ZookeeperConnectionString)
   brokerConf.put("log.flush.interval.messages", "1")
   brokerConf.put("replica.socket.timeout.ms", "1500")

@@ -12,7 +12,7 @@ object SparkTemplate {
   val conf = new SparkConf(true)
     .set("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
     .set("spark.cleaner.ttl", "3600")
-    .setMaster(sys.env.get("IT_TEST_SPARK_MASTER").getOrElse("local[*]"))
+    .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[*]"))
     .setAppName(getClass.getSimpleName)
 
 

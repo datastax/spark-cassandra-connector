@@ -18,7 +18,7 @@ trait Assertions {
    * block or missing that it returns the properly dilated default for this
    * case from settings (key "akka.test.single-expect-default").
    */
-  def remainingOrDefault = remainingOr(1.seconds)
+  def remainingOrDefault = remainingOr(1.seconds.dilated)
 
   /**
    * Obtain time remaining for execution of the innermost enclosing `within`
@@ -55,6 +55,6 @@ trait Assertions {
   private def remainingOrDilated(max: Duration): FiniteDuration = max match {
     case x if x eq Duration.Undefined => remainingOrDefault
     case x if !x.isFinite             => throw new IllegalArgumentException("max duration cannot be infinite")
-    case f: FiniteDuration            => f
+    case f: FiniteDuration            => f.dilated
   }
 }

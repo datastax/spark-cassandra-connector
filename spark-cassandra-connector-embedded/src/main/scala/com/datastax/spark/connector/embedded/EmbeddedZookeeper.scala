@@ -37,9 +37,9 @@ import org.apache.spark.Logging
   */
 class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) extends Embedded with Logging {
 
-  val snapshotDir = createTempDir()
+  val snapshotDir = createTempDir
 
-  val logDir = createTempDir()
+  val logDir = createTempDir
 
   val server = new ZooKeeperServer(snapshotDir, logDir, 500)
 

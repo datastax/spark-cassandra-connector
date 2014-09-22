@@ -1,11 +1,5 @@
 package com.datastax.spark.connector.embedded
 
-import java.io.{File, IOException}
-import java.util.UUID
-
-import com.google.common.io.Files
-import org.apache.commons.lang3.SystemUtils
-
 /** INTERNAL API.
   * Helper class for demos and tests. Useful for quick prototyping. */
 private[embedded] trait Embedded extends EmbeddedIO with Serializable with Assertions
@@ -44,9 +38,8 @@ private[embedded] trait EmbeddedIO {
     }
   }
 
-  def createTempDir(root: String = System.getProperty("java.io.tmpdir")): File = {
+  def createTempDir: File = {
     val dir = mkdir(new File(Files.createTempDir(), "spark-tmp-" + UUID.randomUUID.toString))
-
     registerShutdownDeleteDir(dir)
 
     Runtime.getRuntime.addShutdownHook(new Thread("delete Spark temp dir " + dir) {
