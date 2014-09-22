@@ -1,14 +1,17 @@
 package com.datastax.spark.connector
 
-import scala.concurrent.duration.FiniteDuration
+import scala.collection.immutable
+import scala.concurrent.duration._
+import akka.util.Timeout
 
 package object testkit {
 
   final val DefaultHost = "127.0.0.1"
 
+  implicit val DefaultTimeout = Timeout(5.seconds)
 
-  /* Factor by which to scale timeouts during tests, e.g. to account for shared build system load. */
-  implicit class SparkTestDuration(val duration: FiniteDuration) extends AnyVal {
-    def dilated: FiniteDuration = (duration * 1.0).asInstanceOf[FiniteDuration]
-  }
+  val data = immutable.Set("words ", "may ", "count ")
+
+  val actorName = "my-actor"
+
 }

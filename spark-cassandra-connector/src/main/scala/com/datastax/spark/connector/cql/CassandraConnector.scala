@@ -3,16 +3,13 @@ package com.datastax.spark.connector.cql
 import java.io.IOException
 import java.net.InetAddress
 
-import com.datastax.driver.core.{Session, Host, Cluster}
-import com.datastax.driver.core.policies._
-import com.datastax.spark.connector.util.{Logging, IOUtils}
-
+import scala.collection.JavaConversions._
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
-
-import scala.collection.JavaConversions._
-
+import com.datastax.driver.core.{Session, Host, Cluster}
+import com.datastax.driver.core.policies._
+import com.datastax.spark.connector.util.Logging
 
 /** Provides and manages connections to Cassandra.
   *
@@ -95,7 +92,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
     * Internally, the shared underlying `Session` will be closed shortly after all the proxies
     * are closed. */
   def withSessionDo[T](code: Session => T): T = {
-    IOUtils.closeAfterUse(openSession()) { session =>
+    closeResourceAfterUse(openSession()) { session =>
       code(SessionProxy.wrap(session))
     }
   }
@@ -134,10 +131,17 @@ class CassandraConnector(conf: CassandraConnectorConf)
     createThriftClient(closestLiveHost.getAddress)
 
   def withCassandraClientDo[T](host: InetAddress)(code: CassandraClientProxy => T): T =
-    IOUtils.closeAfterUse(createThriftClient(host))(code)
+    closeResourceAfterUse(createThriftClient(host))(code)
 
   def withCassandraClientDo[T](code: CassandraClientProxy => T): T =
-    IOUtils.closeAfterUse(createThriftClient())(code)
+    closeResourceAfterUse(createThriftClient())(code)
+
+  /** Automatically closes resource after use. Handy for closing streams, files, sessions etc.
+    * Similar to try-with-resources in Java 7. */
+  def closeResourceAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): T =
+    try code(closeable) finally {
+      closeable.close()
+    }
 
 }
 
@@ -146,6 +150,8 @@ object CassandraConnector extends Logging {
   val minReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.min", "1000").toInt
   val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
+
+  implicit final val protocolVersion: Int = -1
 
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)

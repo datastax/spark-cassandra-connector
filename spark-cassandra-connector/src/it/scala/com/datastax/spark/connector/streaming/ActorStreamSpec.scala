@@ -10,12 +10,13 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
-  CassandraConnector(SparkServer.conf).withSessionDo { session =>
+  CassandraConnector(SparkTemplate.conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS streaming_test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS streaming_test.words (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("TRUNCATE streaming_test.words")
@@ -62,7 +63,7 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
-  def this() = this (new StreamingContext(SparkServer.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+  def this() = this (new StreamingContext(SparkTemplate.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
 
 }
 

@@ -17,6 +17,14 @@
    - keeping non private for user prototyping
  * Added new Kafka Spark Streaming demo which reads from Kafka
    and writes to Cassandra (Twitter and ZeroMQ are next)
+ * Added new 'embedded' module
+   - Refactored the 'connector' module's IT SparkRepl, CassandraServer and CassandraServerRunner as
+     well as 'demos' EmbeddedKafka and EmbeddedZookeeper to the 'embedded' module. This allows the 'embedded'
+     module to be used as a dependency by the 'connector' IT tests, demos, and user local quick prototyping
+     without requiring a Spark and Cassandra Cluster, local or remote, to get started.
+ * Upgraded Apache Spark to 1.1.0.
+ * Upgraded to be Cassandra 2.1.0 and Cassandra 2.0 compatible.
+
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after

@@ -54,8 +54,8 @@ class CassandraRDD[R] private[connector] (
     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
 
-  /* Logging classes inheritance conflict fix
-   */
+  /* Logging classes inheritance conflict fix. */
+  override protected def logName = super[Logging].logName
   override def log = super[Logging].log
   override def logInfo(msg: => String) = super[Logging].logInfo(msg)
   override def logDebug(msg: => String) = super[Logging].logDebug(msg)
@@ -354,7 +354,7 @@ class CassandraRDD[R] private[connector] (
     val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
     val countingIterator = new CountingIterator(rowIterator)
 
-    context.addOnCompleteCallback { () =>
+    context.addTaskCompletionListener { (context) =>
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")

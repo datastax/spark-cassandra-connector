@@ -2,21 +2,22 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import scala.collection.JavaConversions._
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.TypeConverter
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.embedded._
 
-import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class CustomerId(id: String)
 
-class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with CassandraServer with SparkServer {
+class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)

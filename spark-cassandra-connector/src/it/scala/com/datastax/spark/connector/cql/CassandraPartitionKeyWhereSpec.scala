@@ -4,13 +4,14 @@ import java.io.IOException
 import java.util.Date
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.testkit.{CassandraServer, SparkServer}
+import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.embedded._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.reflect.runtime.universe._
 
-class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with CassandraServer with SparkServer {
+class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)

@@ -1,9 +1,10 @@
-package com.datastax.spark.connector.demo.streaming.embedded
+package com.datastax.spark.connector.embedded
 
 import java.net.InetSocketAddress
 
 import scala.util.Try
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+import org.apache.spark.Logging
 
 /** Implements a simple standalone ZooKeeperServer.
   * To create a ZooKeeper client object, the application needs to pass a
@@ -34,11 +35,11 @@ import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
   *            "/app/a/foo/bar" (from the server perspective).
   *            Default: the local IP and default port: 2180.
   */
-class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) extends Embedded {
+class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) extends Embedded with Logging {
 
-  val snapshotDir = createTempDir()
+  val snapshotDir = createTempDir
 
-  val logDir = createTempDir()
+  val logDir = createTempDir
 
   val server = new ZooKeeperServer(snapshotDir, logDir, 500)
 
