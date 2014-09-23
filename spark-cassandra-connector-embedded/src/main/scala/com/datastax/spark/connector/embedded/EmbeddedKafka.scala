@@ -1,10 +1,11 @@
-package com.datastax.spark.connector.demo.streaming.embedded
+package com.datastax.spark.connector.embedded
 
 import java.io.File
 import java.util.Properties
 
-import scala.concurrent.duration._
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, _}
+import org.apache.spark.Logging
+import kafka.producer._
 import kafka.admin.CreateTopicCommand
 import kafka.common.TopicAndPartition
 import kafka.producer.{KeyedMessage, ProducerConfig, Producer}
@@ -13,7 +14,7 @@ import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.ZKStringSerializer
 import org.I0Itec.zkclient.ZkClient
 
-final class EmbeddedKafka extends Embedded {
+final class EmbeddedKafka extends Embedded with Logging {
 
   val kafkaParams = Map(
     "zookeeper.connect" -> ZookeeperConnectionString,
@@ -24,7 +25,7 @@ final class EmbeddedKafka extends Embedded {
   brokerConf.put("broker.id", "0")
   brokerConf.put("host.name", "localhost")
   brokerConf.put("port", "9092")
-  brokerConf.put("log.dir", createTempDir().getAbsolutePath)
+  brokerConf.put("log.dir", createTempDir.getAbsolutePath)
   brokerConf.put("zookeeper.connect", ZookeeperConnectionString)
   brokerConf.put("log.flush.interval.messages", "1")
   brokerConf.put("replica.socket.timeout.ms", "1500")
@@ -64,11 +65,11 @@ final class EmbeddedKafka extends Embedded {
   private def createTestMessage(topic: String, send: Map[String, Int]): Seq[KeyedMessage[String, String]] =
     (for ((s, freq) <- send; i <- 0 until freq) yield new KeyedMessage[String, String](topic, s)).toSeq
 
-  def awaitPropagation(servers: Seq[KafkaServer], topic: String, partition: Int, timeout: Duration): Unit = {
-    assert(awaitCond(servers.forall(_.apis.leaderCache.
-      keySet.contains(TopicAndPartition(topic, partition))), timeout),
-      s"Partition [$topic, $partition] metadata not propagated after timeout")
-  }
+  def awaitPropagation(servers: Seq[KafkaServer], topic: String, partition: Int, timeout: Duration): Unit =
+    awaitCond(
+      p = servers.forall(_.apis.leaderCache.keySet.contains(TopicAndPartition(topic, partition))),
+      max = timeout,
+      message = s"Partition [$topic, $partition] metadata not propagated after timeout")
 
   def shutdown(): Unit = {
     log.info(s"Shutting down Kafka server.")

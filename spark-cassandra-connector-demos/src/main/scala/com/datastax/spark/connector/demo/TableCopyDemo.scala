@@ -4,8 +4,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 
 object TableCopyDemo extends DemoApp {
 
-  import com.datastax.spark.connector._
-
   CassandraConnector(conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS test.source (key INT PRIMARY KEY, data VARCHAR)")
@@ -17,9 +15,17 @@ object TableCopyDemo extends DemoApp {
     session.execute("INSERT INTO test.source(key, data) VALUES (3, 'third row')")
   }
 
+  import com.datastax.spark.connector._
+
   val src = sc.cassandraTable("test", "source")
   src.saveToCassandra("test", "destination")
 
   val dest = sc.cassandraTable("test", "destination")
-  dest.collect().foreach(row => log.debug(s"$row"))
+  dest.collect().foreach(row => log.info(s"$row"))
+
+  // Assert the rows were copied from test.source to test.destination table:
+  assert(dest.collect().length == 3)
+
+  log.info(s"Work completed.")
+  sc.stop()
 }

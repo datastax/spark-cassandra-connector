@@ -1,10 +1,9 @@
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
-import com.datastax.spark.connector.testkit.CassandraServer
+import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{Matchers, FlatSpec}
 
-class CassandraAuthenticatedConnectorSpec  extends FlatSpec with Matchers with CassandraServer {
+class CassandraAuthenticatedConnectorSpec  extends FlatSpec with Matchers with SharedEmbeddedCassandra {
 
   useCassandraConfig("cassandra-password-auth.yaml.template")
   val conn = CassandraConnector(cassandraHost, authConf = PasswordAuthConf("cassandra", "cassandra"))

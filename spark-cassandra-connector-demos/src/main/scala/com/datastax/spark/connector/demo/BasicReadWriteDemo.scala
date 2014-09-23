@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.demo
 
-import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 
 object BasicReadWriteDemo extends DemoApp {
@@ -14,13 +13,20 @@ object BasicReadWriteDemo extends DemoApp {
     session.execute("INSERT INTO test.key_value(key, value) VALUES (3, 'third row')")
   }
 
+  import com.datastax.spark.connector._
+
   // Read table test.kv and print its contents:
   val rdd = sc.cassandraTable("test", "key_value").select("key", "value")
-  rdd.collect().foreach(row => log.debug(s"$row"))
+  rdd.collect().foreach(row => log.info(s"$row"))
 
-  // Write two rows to the test.kv table:
+  // Write two new rows to the test.kv table:
   val col = sc.parallelize(Seq((4, "fourth row"), (5, "fifth row")))
   col.saveToCassandra("test", "key_value", SomeColumns("key", "value"))
+  col.collect().foreach(row => log.info(s"$row"))
 
+  // Assert the two new rows were stored in test.kv table:
+  assert(col.collect().length == 2)
+
+  log.info(s"Work completed.")
   sc.stop()
 }
