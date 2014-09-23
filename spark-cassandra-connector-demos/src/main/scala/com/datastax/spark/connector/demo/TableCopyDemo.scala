@@ -26,6 +26,6 @@ object TableCopyDemo extends DemoApp {
   // Assert the rows were copied from test.source to test.destination table:
   assert(dest.collect().length == 3)
 
-  log.info(s"Work completed.")
+  log.info(s"Work completed, stopping the Spark context.")
   sc.stop()
 }
