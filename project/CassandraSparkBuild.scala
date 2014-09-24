@@ -70,6 +70,9 @@ object Dependencies {
        scope on the connector below, specifically, versus globally here. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark exclude("com.google.guava", "guava") // ApacheV2
     val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark exclude("com.google.guava", "guava") // ApacheV2
+    val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
+    val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
+    val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
 
     object Metrics {
       val metricsJson       = "com.codahale.metrics"    % "metrics-json"           % MetricsJson    % "provided"
@@ -110,7 +113,7 @@ object Dependencies {
 
   val cassandra = Seq(cassandraThrift, cassandraClient, cassandraDriver)
 
-  val spark = Seq(sparkCore, sparkStreaming)
+  val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
