@@ -1,8 +1,58 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.SomeColumns
+import com.datastax.driver.core.ConsistencyLevel
+import com.datastax.spark.connector.{ColumnSelector, SomeColumns}
+import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.commons.configuration.ConfigurationException
+import org.apache.spark.SparkContext
 
-trait WritableToCassandra[T] {
+import scala.reflect.ClassTag
+
+abstract class WritableToCassandra[T: ClassTag] {
+
+  def sparkContext: SparkContext
+
+  private[connector] lazy val batchSizeInRowsStr = sparkContext.getConf.get(
+    "spark.cassandra.output.batch.size.rows", "auto")
+
+  private[connector] lazy val batchSizeInBytes = sparkContext.getConf.getInt(
+    "spark.cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
+
+  private[connector] lazy val outputConsistencyLevel = ConsistencyLevel.valueOf(
+    sparkContext.getConf.get("spark.cassandra.output.consistency.level", ConsistencyLevel.LOCAL_ONE.name))
+
+  private[connector] lazy val batchSizeInRows = {
+    val Number = "([0-9]+)".r
+    batchSizeInRowsStr match {
+      case "auto" => None
+      case Number(x) => Some(x.toInt)
+      case other =>
+        throw new ConfigurationException(
+          s"Invalid value of spark.cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
+    }
+  }
+
+  private[connector] lazy val writeParallelismLevel = sparkContext.getConf.getInt(
+    "spark.cassandra.output.concurrent.writes", TableWriter.DefaultParallelismLevel)
+
+  private[connector] lazy val connector = CassandraConnector(sparkContext.getConf)
+
+  /**
+   * Internal API.
+   * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
+   */
+  private[connector] def tableWriter(keyspaceName: String, tableName: String,
+                                     columns: ColumnSelector, batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
+
+    TableWriter[T](
+      connector,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      consistencyLevel = outputConsistencyLevel,
+      columnNames = columns,
+      batchSizeInBytes = batchSizeInBytes,
+      batchSizeInRows = batchSize,
+      parallelismLevel = writeParallelismLevel)
 
   /**
    * Saves the data from `RDD` to a Cassandra table.
