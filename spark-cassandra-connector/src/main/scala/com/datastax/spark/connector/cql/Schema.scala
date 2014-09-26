@@ -41,7 +41,7 @@ object ColumnDef {
     val table = column.getTable
     val keyspace = table.getKeyspace
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType)
+    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, column.getIndex != null)
   }
 }
 

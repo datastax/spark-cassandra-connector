@@ -84,6 +84,32 @@ object TypeConverter {
     def convertPF = BooleanConverter.convertPF.andThen(_.asInstanceOf[java.lang.Boolean])
   }
 
+  implicit object ByteConverter extends TypeConverter[Byte] {
+    def targetTypeTag = implicitly[TypeTag[Byte]]
+    def convertPF = {
+      case x: Number => x.byteValue
+      case x: String => x.toByte
+    }
+  }
+
+  implicit object JavaByteConverter extends TypeConverter[java.lang.Byte] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Byte]]
+    def convertPF = ByteConverter.convertPF.andThen(_.asInstanceOf[java.lang.Byte])
+  }
+
+  implicit object ShortConverter extends TypeConverter[Short] {
+    def targetTypeTag = implicitly[TypeTag[Short]]
+    def convertPF = {
+      case x: Number => x.shortValue
+      case x: String => x.toShort
+    }
+  }
+
+  implicit object JavaShortConverter extends TypeConverter[java.lang.Short] {
+    def targetTypeTag = implicitly[TypeTag[java.lang.Short]]
+    def convertPF = ShortConverter.convertPF.andThen(_.asInstanceOf[java.lang.Short])
+  }
+
   implicit object IntConverter extends TypeConverter[Int] {
     def targetTypeTag = implicitly[TypeTag[Int]]
     def convertPF = {
@@ -471,6 +497,8 @@ object TypeConverter {
 
   private def orderingFor(tpe: Type): Option[Ordering[_]] = {
     if      (tpe =:= typeOf[Boolean]) Some(implicitly[Ordering[Boolean]])
+    else if (tpe =:= typeOf[Byte]) Some(implicitly[Ordering[Byte]])
+    else if (tpe =:= typeOf[Short]) Some(implicitly[Ordering[Short]])
     else if (tpe =:= typeOf[Int]) Some(implicitly[Ordering[Int]])
     else if (tpe =:= typeOf[Long]) Some(implicitly[Ordering[Long]])
     else if (tpe =:= typeOf[Float]) Some(implicitly[Ordering[Float]])
@@ -492,6 +520,10 @@ object TypeConverter {
     AnyRefConverter,
     BooleanConverter,
     JavaBooleanConverter,
+    ByteConverter,
+    JavaByteConverter,
+    ShortConverter,
+    JavaShortConverter,
     IntConverter,
     JavaIntConverter,
     LongConverter,

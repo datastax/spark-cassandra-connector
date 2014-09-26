@@ -24,9 +24,10 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
 
 /** Simple akka.actor.Actor mixin. */
 trait SparkStreamingActor extends Actor with ActorHelper with Logging {
-  /* Logging classes inheritance conflict fix. */
-  override protected def logName = super[Logging].logName
-  override protected def log = super[Logging].log
+
+  /* Logging classes inheritance conflict fix */
+  override def log = super[Logging].log
+  override def logName = super[Logging].logName
   override def logInfo(msg: => String) = super[Logging].logInfo(msg)
   override def logDebug(msg: => String) = super[Logging].logDebug(msg)
   override def logTrace(msg: => String) = super[Logging].logTrace(msg)
@@ -37,7 +38,7 @@ trait SparkStreamingActor extends Actor with ActorHelper with Logging {
   override def logTrace(msg: => String, throwable: Throwable) = super[Logging].logTrace(msg, throwable)
   override def logWarning(msg: => String, throwable: Throwable) = super[Logging].logWarning(msg, throwable)
   override def logError(msg: => String, throwable: Throwable) = super[Logging].logError(msg, throwable)
-  override def isTraceEnabled = super[Logging].isTraceEnabled
+  override def isTraceEnabled() = super[Logging].isTraceEnabled()
 
   override def preStart(): Unit = {
     log.info(s"${self.path} starting.")

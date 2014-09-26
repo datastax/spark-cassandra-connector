@@ -55,8 +55,8 @@ class CassandraRDD[R] private[connector] (
   extends RDD[R](sc, Seq.empty) with Logging {
 
   /* Logging classes inheritance conflict fix. */
-  override protected def logName = super[Logging].logName
   override def log = super[Logging].log
+  override def logName = super[Logging].logName
   override def logInfo(msg: => String) = super[Logging].logInfo(msg)
   override def logDebug(msg: => String) = super[Logging].logDebug(msg)
   override def logTrace(msg: => String) = super[Logging].logTrace(msg)

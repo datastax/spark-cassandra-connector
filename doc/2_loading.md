@@ -157,5 +157,17 @@ Other conversions might work, but may cause loss of precision or may not work fo
 All types are convertible to strings. Converting strings to numbers, dates, 
 addresses or UUIDs is possible as long as the string has proper 
 contents, defined by the CQL3 standard. Maps can be implicitly converted to/from sequences of key-value tuples.
- 
+
+## Accessing Cassandra with SparkSQL (since 1.1)
+It is possible to query Cassandra using SparkSQL. Configure your `SparkContext` object
+to use Cassandra as usual and then wrap it in a `org.apache.spark.sql.cassandra.CassandraSQLContext` object.
+To execute an SQL query, call `CassandraSQLContext#sql` method.
+
+```scala
+import org.apache.spark.sql.cassandra.CassandraSQLContext
+val sc: SparkContext = ...
+val cc = new CassandraSQLContext(sc)
+val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
+```
+
 [Next - Server-side data selection and filtering](3_selection.md)
