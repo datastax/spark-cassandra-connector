@@ -47,19 +47,19 @@ final class EmbeddedKafka extends Embedded with Logging {
   server.startup()
   Thread.sleep(2000)
 
+  val p = new Properties()
+  p.put("metadata.broker.list", kafkaConfig.hostName + ":" + kafkaConfig.port)
+  p.put("serializer.class", classOf[StringEncoder].getName)
+
+  val producer = new Producer[String, String](new ProducerConfig(p))
+
   def createTopic(topic: String) {
     CreateTopicCommand.createTopic(client, topic, 1, 1, "0")
     awaitPropagation(Seq(server), topic, 0, 1000.millis)
   }
 
   def produceAndSendMessage(topic: String, sent: Map[String, Int]) {
-    val p = new Properties()
-    p.put("metadata.broker.list", kafkaConfig.hostName + ":" + kafkaConfig.port)
-    p.put("serializer.class", classOf[StringEncoder].getName)
-
-    val producer = new Producer[String, String](new ProducerConfig(p))
     producer.send(createTestMessage(topic, sent): _*)
-    producer.close()
   }
 
   private def createTestMessage(topic: String, send: Map[String, Int]): Seq[KeyedMessage[String, String]] =
@@ -73,6 +73,7 @@ final class EmbeddedKafka extends Embedded with Logging {
 
   def shutdown(): Unit = {
     log.info(s"Shutting down Kafka server.")
+    producer.close()
     server.shutdown()
     server.config.logDirs.foreach(f => deleteRecursively(new File(f)))
     log.info(s"Shutting down ZK client.")

@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.demo.streaming
 
+import com.datastax.spark.connector.demo.SparkCassandraDemo
+
 import scala.collection.immutable
 import scala.concurrent.duration._
 import akka.actor._
@@ -8,35 +10,15 @@ import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.streaming.TypedStreamingActor
 import com.datastax.spark.connector.demo.streaming.StreamingEvent._
-import com.datastax.spark.connector.embedded.Assertions
+import com.datastax.spark.connector.embedded.{EmbeddedCassandra, Assertions}
 import com.datastax.spark.connector.util.Logging
 
 /**
- * This demo can run against a single node, local or remote.
- * See the README for running the demos.
- * 1. Start Cassandra
- * 2. Start Spark:
- * 3. Run the demo from SBT with: sbt spark-cassandra-connector-demos/run
- *      Then enter the number for: com.datastax.spark.connector.demo.streaming.AkkaStreamingDemo
- *    Or right click to run in an IDE
- *
- * Note: For our initial streaming release we started with Akka integration of Spark Streaming.
- * However coming soon is Kafka, ZeroMQ, then Twitter Streaming.
+ * Basic Akka demo for Spark and Cassandra.
  */
-object AkkaStreamingDemo extends App {
+object AkkaStreamingDemo extends SparkCassandraDemo {
 
   val TableName = "words"
-
-  /* Initialize Akka, Cassandra and Spark settings. */
-  val settings = new SparkCassandraSettings()
-  import settings._
-
-  /** Configures Spark. */
-  val conf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", CassandraSeed)
-    .set("spark.cleaner.ttl", SparkCleanerTtl.toString)
-    .setMaster(SparkMaster)
-    .setAppName("Streaming Akka App")
 
   /** Creates the keyspace and table in Cassandra. */
   CassandraConnector(conf).withSessionDo { session =>
@@ -44,9 +26,6 @@ object AkkaStreamingDemo extends App {
     session.execute(s"CREATE TABLE IF NOT EXISTS streaming_test.$TableName (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute(s"TRUNCATE streaming_test.$TableName")
   }
-
-  /** Connect to the Spark cluster: */
-  lazy val sc = new SparkContext(conf)
 
   /** Creates the Spark Streaming context. */
   val ssc = new StreamingContext(sc, Milliseconds(300))
@@ -59,7 +38,7 @@ object AkkaStreamingDemo extends App {
   val data = immutableSeq(system.settings.config.getStringList("streaming-demo.data")).toSet
 
   /** Creates the root supervisor of this simple Akka `ActorSystem` node that you might deploy across a cluster. */
-  val guardian = system.actorOf(Props(new NodeGuardian(ssc, settings, TableName, data)), "node-guardian")
+  val guardian = system.actorOf(Props(new NodeGuardian(ssc, TableName, data)), "node-guardian")
 
 }
 
@@ -110,13 +89,11 @@ object AkkaStreamingDemo extends App {
  *
  *@param ssc the Spark `StreamingContext`
  *
- * @param settings the [[SparkCassandraSettings]] from config
- *
  * @param tableName the Cassandra table name to use
  *
  * @param data the demo data for a simple WordCount
  */
-class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tableName: String, data: immutable.Set[String])
+class NodeGuardian(ssc: StreamingContext, tableName: String, data: immutable.Set[String])
   extends Actor with Assertions with Logging {
 
   import akka.util.Timeout
@@ -266,7 +243,7 @@ private[demo] object StreamingEvent {
   * the demo to stop on its own once this assertion is true. It will stop the task and ping
   * the `NodeGuardian`, its supervisor, of the `Completed` state.
   */
-class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
+class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor with Logging {
 
   import akka.actor.Cancellable
   import com.datastax.spark.connector.streaming._
@@ -288,7 +265,7 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
       if (rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2) {
         assert(rdd.collect.length == data.size)
         log.info(s"Saved data to Cassandra:")
-        rdd.collect foreach println
+        rdd.collect foreach (row => log.info(s"$row"))
         context.become(done)
         self ! Completed
       }

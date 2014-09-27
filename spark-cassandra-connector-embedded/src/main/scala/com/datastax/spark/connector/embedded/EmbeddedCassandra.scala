@@ -2,16 +2,22 @@ package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
 
-/** A utility trait for integration testing.
+/** A utility trait for integration testing and quick prototyping or demos.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
   * This is not thread safe, and test suites must not be run in parallel,
-  * because they will "steal" the server.*/
+  * because they will "steal" the server.
+  *
+  * Shutdown hook is called automatically.
+  */
 trait EmbeddedCassandra {
 
   def cassandraHost = EmbeddedCassandra.cassandraHost
 
   /** Implementation hook. */
   def clearCache(): Unit
+
+  def startCassandra(configTemplate: String = "cassandra-default.yaml.template"): Unit =
+    useCassandraConfig(configTemplate)
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration is different
     * than the currently used configuration. When the configuration is switched, all the state (including data) of
@@ -35,8 +41,7 @@ object EmbeddedCassandra {
 
   val DefaultHost = "127.0.0.1"
 
-  // TODO change to CASSANDRA_HOST
-  val HostProperty = "IT_TEST_CASSANDRA_HOST"
+  val HostProperty = "CASSANDRA_HOST"
 
   private[connector] var cassandra: Option[CassandraRunner] = None
 

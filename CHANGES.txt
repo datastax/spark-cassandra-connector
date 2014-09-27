@@ -28,6 +28,11 @@
      well as 'demos' EmbeddedKafka and EmbeddedZookeeper to the 'embedded' module. This allows the 'embedded'
      module to be used as a dependency by the 'connector' IT tests, demos, and user local quick prototyping
      without requiring a Spark and Cassandra Cluster, local or remote, to get started.
+ * Upgraded Apache Spark to 1.1.0.
+ * Upgraded to be Cassandra 2.1.0 and Cassandra 2.0 compatible.
+ * Updated Demos to use EmbeddedCassandra - no cassandra instance required to run the Scala demos,
+   however the Java demo still does.
+ * Travis CI now runs SBT it:test as well as test.
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after

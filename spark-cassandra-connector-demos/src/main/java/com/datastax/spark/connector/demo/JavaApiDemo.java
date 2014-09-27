@@ -37,7 +37,7 @@ public class JavaApiDemo implements Serializable {
 
     public JavaApiDemo() {
         // just an initialisation of Spark Context
-        DemoApp demoApp = DemoApp$.MODULE$.apply();
+        SparkCassandraDemo demoApp = SparkCassandraDemo$.MODULE$.apply();
         JavaSparkContext sc = new JavaSparkContext(demoApp.sc());
 
         // here we are going to save some data to Cassandra...

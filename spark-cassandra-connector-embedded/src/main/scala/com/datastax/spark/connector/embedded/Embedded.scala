@@ -21,10 +21,11 @@ private[embedded] trait EmbeddedIO {
 
   /** Automatically closes resource after use. Handy for closing streams, files, sessions etc.
     * Similar to try-with-resources in Java 7. */
-  def closeAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): T =
-    try code(closeable) finally {
-      closeable.close()
+  def closeAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): Option[T] =
+    Option(code) map { _code =>
+      try _code(closeable) finally { closeable.close() }
     }
+
 
   /** Copies a text file substituting every occurrence of `$ {VARIABLE}` with a value from the given map */
   def copyTextFileWithVariableSubstitution(source: InputStream, target: OutputStream, map: String => String) {

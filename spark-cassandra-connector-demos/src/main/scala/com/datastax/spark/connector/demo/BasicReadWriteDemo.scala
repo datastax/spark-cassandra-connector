@@ -2,7 +2,7 @@ package com.datastax.spark.connector.demo
 
 import com.datastax.spark.connector.cql.CassandraConnector
 
-object BasicReadWriteDemo extends DemoApp {
+object BasicReadWriteDemo extends SparkCassandraDemo {
 
   CassandraConnector(conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
