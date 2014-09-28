@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.repl
 
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.testkit.{SparkTemplate, SharedEmbeddedCassandra}
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._

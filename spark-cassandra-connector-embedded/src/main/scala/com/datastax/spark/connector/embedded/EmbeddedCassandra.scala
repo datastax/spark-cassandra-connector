@@ -35,8 +35,7 @@ object EmbeddedCassandra {
 
   val DefaultHost = "127.0.0.1"
 
-  // TODO change to CASSANDRA_HOST
-  val HostProperty = "IT_TEST_CASSANDRA_HOST"
+  val HostProperty = "CASSANDRA_HOST"
 
   private[connector] var cassandra: Option[CassandraRunner] = None
 

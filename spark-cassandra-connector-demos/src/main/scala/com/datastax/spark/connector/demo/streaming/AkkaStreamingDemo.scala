@@ -266,7 +266,7 @@ private[demo] object StreamingEvent {
   * the demo to stop on its own once this assertion is true. It will stop the task and ping
   * the `NodeGuardian`, its supervisor, of the `Completed` state.
   */
-class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor  {
+class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, data: immutable.Set[String]) extends CounterActor with Logging {
 
   import akka.actor.Cancellable
   import com.datastax.spark.connector.streaming._
@@ -288,7 +288,7 @@ class Reporter(ssc: StreamingContext, keyspaceName: String, tableName: String, d
       if (rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2) {
         assert(rdd.collect.length == data.size)
         log.info(s"Saved data to Cassandra:")
-        rdd.collect foreach println
+        rdd.collect foreach (row => log.info(s"$row"))
         context.become(done)
         self ! Completed
       }

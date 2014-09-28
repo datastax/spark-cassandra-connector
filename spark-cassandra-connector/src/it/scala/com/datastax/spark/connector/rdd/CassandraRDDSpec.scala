@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.testkit.{SparkTemplate, SharedEmbeddedCassandra}
 import org.scalatest.{FlatSpec, Matchers}
 import org.joda.time.DateTime
 import com.datastax.spark.connector._

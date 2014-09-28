@@ -4,7 +4,7 @@ import java.io.IOException
 import java.util.Date
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.testkit.{SparkTemplate, SharedEmbeddedCassandra}
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.embedded._
 import org.scalatest.{FlatSpec, Matchers}
