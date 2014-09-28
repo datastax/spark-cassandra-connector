@@ -9,7 +9,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector.embedded._
 
 import scala.reflect.runtime.universe._
 
@@ -17,7 +16,7 @@ case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class CustomerId(id: String)
 
-class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
+class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)

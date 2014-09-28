@@ -30,9 +30,9 @@
      without requiring a Spark and Cassandra Cluster, local or remote, to get started.
  * Upgraded Apache Spark to 1.1.0.
  * Upgraded to be Cassandra 2.1.0 and Cassandra 2.0 compatible.
- * Updated Demos to use EmbeddedCassandra - no cassandra instance required to run the Scala demos,
-   however the Java demo still does.
  * Travis CI now runs SBT it:test as well as test.
+ * Added information to the README, under Testing, for using 'embedded' artifact adn EmbeddedCassandra for IT tests.
+ * Made the demo Cassandra host and Spark master configurable with -D.
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after

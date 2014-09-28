@@ -20,12 +20,14 @@ private[embedded] trait EmbeddedIO {
   val shutdownDeletePaths = new scala.collection.mutable.HashSet[String]()
 
   /** Automatically closes resource after use. Handy for closing streams, files, sessions etc.
-    * Similar to try-with-resources in Java 7. */
-  def closeAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): Option[T] =
-    Option(code) map { _code =>
-      try _code(closeable) finally { closeable.close() }
-    }
-
+    * Similar to try-with-resources in Java 7.
+    *
+    * Note: this throws a NPE that closeable is null, in SBT but not IntelliJ, when CassandraRunner calls:
+    *   ClassLoader.getSystemResourceAsStream(configTemplate)
+    * It works as expected with IT tests but not when used with sample apps.
+    */
+  def closeAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): T =
+    try code(closeable) finally { closeable.close() }
 
   /** Copies a text file substituting every occurrence of `$ {VARIABLE}` with a value from the given map */
   def copyTextFileWithVariableSubstitution(source: InputStream, target: OutputStream, map: String => String) {

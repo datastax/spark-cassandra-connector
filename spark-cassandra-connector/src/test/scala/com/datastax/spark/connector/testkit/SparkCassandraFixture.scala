@@ -9,7 +9,7 @@ import com.datastax.spark.connector.embedded.EmbeddedCassandra
 trait AbstractSpec extends WordSpecLike with Matchers with BeforeAndAfter
 
 /** Used for IT tests. */
-trait SharedEmbeddedCassandra extends EmbeddedCassandra {
+trait SharedEmbeddedCassandra extends EmbeddedCassandra with SparkTemplate {
 
   def clearCache(): Unit = CassandraConnector.evictCache()
 

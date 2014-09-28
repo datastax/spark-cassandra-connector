@@ -32,7 +32,7 @@ import com.datastax.spark.connector.embedded._
  *
  * etc.
  */
-trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
+trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra {
   import org.apache.spark.streaming.StreamingContext
   import scala.concurrent.duration._
 

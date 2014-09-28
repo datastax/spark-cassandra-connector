@@ -1,6 +1,10 @@
 package com.datastax.spark.connector.embedded
 
+import java.io.InputStream
 import java.net.InetAddress
+
+import scala.util.Try
+import scala.util.control.NonFatal
 
 /** A utility trait for integration testing and quick prototyping or demos.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -16,7 +20,7 @@ trait EmbeddedCassandra {
   /** Implementation hook. */
   def clearCache(): Unit
 
-  def startCassandra(configTemplate: String = "cassandra-default.yaml.template"): Unit =
+  def startCassandra(configTemplate: String = EmbeddedCassandra.DefaultTemplate): Unit =
     useCassandraConfig(configTemplate)
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration is different
@@ -43,6 +47,13 @@ object EmbeddedCassandra {
 
   val HostProperty = "CASSANDRA_HOST"
 
+  val DefaultTemplate = {
+    import scala.sys.process._
+    val path = "spark-cassandra-connector-embedded/src/main/resources/cassandra-default.yaml.template"
+    val pwd = ("pwd" lines_! ProcessLogger(line => ())).head
+    s"$pwd/$path"
+  }
+
   private[connector] var cassandra: Option[CassandraRunner] = None
 
   private[connector] var currentConfigTemplate: String = null
@@ -63,7 +74,7 @@ private[connector] class CassandraRunner(val configTemplate: String) extends Emb
   import EmbeddedCassandra._
 
   final val DefaultNativePort = 9042
-  val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
+  val tempDir = mkdir(new File(Files.createTempDir(), "spark-cassandra-connector"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
   val dataDir = mkdir(new File(workDir, "data"))
   val commitLogDir = mkdir(new File(workDir, "commitlog"))
@@ -103,7 +114,6 @@ private[connector] class CassandraRunner(val configTemplate: String) extends Emb
     FileUtils.deleteRecursive(tempDir)
     tempDir.delete()
   }
-
 }
 
 

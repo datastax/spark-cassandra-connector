@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import com.datastax.spark.connector.testkit.{SparkTemplate, SharedEmbeddedCassandra}
+import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{FlatSpec, Matchers}
 import org.joda.time.DateTime
 import com.datastax.spark.connector._
@@ -26,7 +26,7 @@ class MutableKeyValueWithConversion(var key: String, var group: Int) extends Ser
   var value: Long = 0L
 }
 
-class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)

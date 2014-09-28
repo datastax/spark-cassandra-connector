@@ -36,6 +36,8 @@ import static com.datastax.spark.connector.CassandraJavaUtil.javaFunctions;
 public class JavaApiDemo implements Serializable {
 
     public JavaApiDemo() {
+        System.setProperty("spark.cassandra.demos.embedded", "false");
+
         // just an initialisation of Spark Context
         SparkCassandraDemo demoApp = SparkCassandraDemo$.MODULE$.apply();
         JavaSparkContext sc = new JavaSparkContext(demoApp.sc());

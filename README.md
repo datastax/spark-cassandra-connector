@@ -77,7 +77,8 @@ If your pull-request is going to resolve some opened issue, please add *Fixes \#
 end of each commit message (where *xx* is the number of the issue).
 
 ## Testing
-To run unit and integration tests:
+
+### To run unit and integration tests:
 
     ./sbt/sbt test
     ./sbt/sbt it:test
@@ -93,3 +94,23 @@ Then copy the generated test jar to your Spark nodes and run:
     export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
     ./sbt/sbt it:test    
+    
+
+### EmbeddedCassandra: Developer Helper for IT Tests
+You can use the 'spark-cassandra-connector-embedded' dependency for IT tests, as a mixin trait to easily run a local Cassandra instance against those tests:
+[EmbeddedCassandra.scala](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector-embedded/src/main/scala/com/datastax/spark/connector/embedded/EmbeddedCassandra.scala)
+ 
+Add the dependency to your build in your 'it' dependencies
+    
+    "com.datastax.spark"  %% "spark-cassandra-connector-embedded"
+    
+    
+Add a trait that does this: 
+   
+    import com.datastax.spark.connector.cql.CassandraConnector
+    import com.datastax.spark.connector.embedded.EmbeddedCassandra    
+    MyItTrait extends EmbeddedCassandra {
+        def clearCache(): Unit = CassandraConnector.evictCache()
+    }
+      
+See [SharedEmbeddedCassandra.scala](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/test/scala/com/datastax/spark/connector/testkit/SparkCassandraFixture.scala#L11) for example.

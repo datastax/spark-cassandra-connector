@@ -10,7 +10,6 @@ import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector.embedded._
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import TestEvent._

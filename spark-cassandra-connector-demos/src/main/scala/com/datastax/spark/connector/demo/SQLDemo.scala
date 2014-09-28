@@ -6,7 +6,7 @@ import org.apache.spark.sql.cassandra.CassandraSQLContext
 /** This demo creates a table in Cassandra, populates it with sample data,
   * then queries it using SparkSQL and finally displays the query results to the standard output.
   * You need to start Cassandra on local node prior to executing this demo. */
-object SQLDemo extends DemoApp {
+object SQLDemo extends SparkCassandraDemo {
 
   val cc = new CassandraSQLContext(sc)
 
