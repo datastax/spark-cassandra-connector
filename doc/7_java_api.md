@@ -116,7 +116,7 @@ Once `CassandraJavaRDD` is created, you may apply selection and projection on th
 and `select` methods on it respectively. Their semantic is the same as the semantic of their counterparts
 in `CassandraRDD`.
 
-Note: See the [description of filtering](doc/3_selection.md) to understand the limitations of the `where` method.
+Note: See the [description of filtering](3_selection.md) to understand the limitations of the `where` method.
 
 Example:
 ```java
