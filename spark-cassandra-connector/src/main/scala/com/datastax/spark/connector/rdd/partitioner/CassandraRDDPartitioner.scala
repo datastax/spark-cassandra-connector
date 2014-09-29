@@ -65,7 +65,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     val endToken = tokenFactory.toString(range.end)
     val pk = tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
 
-    if (range.end == tokenFactory.minToken)
+    if (range.start == range.end)
+      List(CqlTokenRange(""))
+    else if (range.end == tokenFactory.minToken)
       List(CqlTokenRange(s"token($pk) > $startToken"))
     else if (range.start == tokenFactory.minToken)
       List(CqlTokenRange(s"token($pk) <= $endToken"))
@@ -152,7 +154,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
           Array(CassandraPartition(0, tokenRanges.flatMap(_.endpoints).distinct, List(CqlTokenRange("")), 0))
         else
           for ((group, index) <- groups.zipWithIndex) yield {
-            val cqlPredicates = group.flatMap(splitToCqlClause)
+            val mergedGroup = clusterer.mergeGroup(group)
+            val cqlPredicates = mergedGroup.flatMap(splitToCqlClause)
             val endpoints = group.map(_.endpoints).reduce(_ intersect _)
             val rowCount = group.map(_.rowCount.get).sum
             CassandraPartition(index, endpoints, cqlPredicates, rowCount)
