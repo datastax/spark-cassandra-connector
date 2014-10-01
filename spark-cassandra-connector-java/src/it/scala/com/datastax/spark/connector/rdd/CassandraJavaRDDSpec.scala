@@ -11,7 +11,7 @@ class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter wi
 
   useCassandraConfig("cassandra-default.yaml.template")
 
-  val conn = CassandraConnector(EmbeddedCassandra.cassandraHost)
+  val conn = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
 
   before {
     conn.withSessionDo { session =>

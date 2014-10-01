@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import java.io.{Serializable => JavaSerializable}
 
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.CassandraRDD
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import org.apache.spark.SparkContext
@@ -44,6 +45,7 @@ class SparkContextFunctions(sc: SparkContext) {
     *   rdd3.first.word  // foo
     *   rdd3.first.count // 20
     * }}}*/
-  def cassandraTable[T <: JavaSerializable : ClassTag : RowReaderFactory](keyspace: String, table: String): CassandraRDD[T] =
-    new CassandraRDD[T](sc, keyspace, table)
+  def cassandraTable[T <: JavaSerializable](keyspace: String, table: String)
+  (implicit connector: CassandraConnector = CassandraConnector(sc.getConf), ct: ClassTag[T], rrf: RowReaderFactory[T]) =
+    new CassandraRDD[T](sc, CassandraConnector(sc.getConf), keyspace, table)
 }
