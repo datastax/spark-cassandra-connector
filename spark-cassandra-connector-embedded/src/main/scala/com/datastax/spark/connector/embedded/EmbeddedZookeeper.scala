@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 
 import scala.util.Try
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
-import org.apache.spark.Logging
 
 /** Implements a simple standalone ZooKeeperServer.
   * To create a ZooKeeper client object, the application needs to pass a
@@ -35,7 +34,7 @@ import org.apache.spark.Logging
   *            "/app/a/foo/bar" (from the server perspective).
   *            Default: the local IP and default port: 2180.
   */
-class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) extends Embedded with Logging {
+class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) extends Embedded {
 
   val snapshotDir = createTempDir
 
@@ -51,12 +50,12 @@ class EmbeddedZookeeper(val connectString: String = ZookeeperConnectionString) e
   val factory = new NIOServerCnxnFactory()
   factory.configure(new InetSocketAddress(ip, port), 16)
   factory.startup(server)
-  log.info(s"ZooKeeperServer isRunning: $isRunning")
+  println(s"ZooKeeperServer isRunning: $isRunning")
 
   def isRunning: Boolean = Try(server.isRunning) getOrElse false
 
   def shutdown(): Unit = {
-    log.debug(s"Shutting down ZK NIOServerCnxnFactory.")
+    println(s"Shutting down ZK NIOServerCnxnFactory.")
     factory.shutdown()
     deleteRecursively(snapshotDir)
     deleteRecursively(logDir)
