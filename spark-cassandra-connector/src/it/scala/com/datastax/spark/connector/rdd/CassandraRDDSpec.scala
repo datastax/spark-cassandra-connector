@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import com.datastax.spark.connector.rdd.reader.KV
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{FlatSpec, Matchers}
 import org.joda.time.DateTime
@@ -17,6 +18,8 @@ import scala.reflect.runtime.universe._
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 case class CustomerId(id: String)
+case class KeyGroup(key: Int, group: Int)
+case class Value(value: String)
 
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
@@ -296,5 +299,39 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     // We divide iterationCount here, in order to detect thread leaks that would not happen every time and to account
     // for a few threads exiting during the test.
     endThreadCount should be < startThreadCount + iterationCount / 2
+  }
+
+  it should "allow to read Cassandra table as Array of KV tuples of two pairs" in {
+    val results = sc.cassandraTable[KV[(Int, Int), (Int, String)]]("read_test", "composite_key").select("key_c1", "key_c2" ,"group", "value").collect()
+    results should have length 4
+    results should contain (((1, 1), (1, "value1")))
+    results should contain (((1, 1), (2, "value2")))
+    results should contain (((1, 2), (3, "value3")))
+    results should contain (((2, 2), (4, "value4")))
+  }
+
+  it should "allow to read Cassandra table as Array of KV tuples of a pair and a case class" in {
+    val results = sc.cassandraTable[KV[(Int, Int), Value]]("read_test", "key_value").select("key", "group", "value").collect()
+    results should have length 3
+    val map = results.toMap
+    map((1, 100)) should be (Value("0001"))
+    map((2, 100)) should be (Value("0002"))
+    map((3, 300)) should be (Value("0003"))
+  }
+
+  it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple" in {
+    val results = sc.cassandraTable[KV[KeyGroup, (Int, Int, String)]]("read_test", "key_value").select("key", "group", "value").collect()
+    results should have length 3
+    results should contain ((KeyGroup(1, 100), (1, 100, "0001")))
+    results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
+    results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
+  }
+
+  it should "allow to read Cassandra table as Array of tuples of two case classes" in {
+    val results = sc.cassandraTable[KV[KeyGroup, Value]]("read_test", "key_value").select("key", "group", "value").collect()
+    results should have length 3
+    results should contain((KeyGroup(1, 100), Value("0001")))
+    results should contain((KeyGroup(2, 100), Value("0002")))
+    results should contain((KeyGroup(3, 300), Value("0003")))
   }
 }

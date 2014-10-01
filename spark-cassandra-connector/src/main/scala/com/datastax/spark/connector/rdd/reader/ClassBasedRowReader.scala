@@ -11,9 +11,9 @@ import com.datastax.spark.connector.types.{TypeConversionException, TypeConverte
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends RowReader[R] {
+class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0) extends RowReader[R] {
 
-  private val factory = new AnyObjectFactory[R]
+  private[connector] val factory = new AnyObjectFactory[R]
 
   private val columnMap = implicitly[ColumnMapper[R]].columnMap(table)
 
@@ -61,7 +61,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef) extends R
       case NamedColumnRef(name) =>
         CassandraRow.get(row, name)
       case IndexedColumnRef(index) =>
-        CassandraRow.get(row, index)
+        CassandraRow.get(row, index + skipColumns)
     }
   }
 

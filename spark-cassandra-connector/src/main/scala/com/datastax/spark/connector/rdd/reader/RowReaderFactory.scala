@@ -18,13 +18,20 @@ trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
   def rowReader(table: TableDef): RowReader[T] = this
 }
 
-trait LowPriorityRowReaderFactoryImplicits {
+trait LowPriorityRowReaderFactoryImplicits2 {
 
   implicit def classBasedRowReaderFactory[R <: Serializable : TypeTag : ColumnMapper] =
     new ClassBasedRowReaderFactory[R]
 }
 
-object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
+trait LowPriorityRowReaderFactoryImplicits1 extends LowPriorityRowReaderFactoryImplicits2 {
+
+  implicit def classAndClassCompoundRowReaderFactory
+  [K <: Serializable : TypeTag : ColumnMapper, V <: Serializable : TypeTag : ColumnMapper]: RowReaderFactory[KV[K, V]] =
+    new KVBasedRowReaderFactory[K, V]()
+}
+
+object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits1 {
 
   /** Default `RowReader`: reads a `Row` into serializable [[CassandraRow]] */
   implicit object GenericRowReader$
@@ -37,6 +44,7 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
     }
 
     override def columnCount = None
+
     override def columnNames = None
   }
 
