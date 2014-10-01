@@ -170,4 +170,16 @@ val cc = new CassandraSQLContext(sc)
 val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
 ```
 
+
+## Configuration Options for Adjusting Reads
+
+The following options can be specified in the SparkConf object or as a jvm
+-Doption to adjust the read parameters of a Cassandra table.
+
+| Environment Variable                    | Controls                                   | Default
+|-----------------------------------------|--------------------------------------------|---------
+| spark.cassandra.input.split.size        | approx number of rows in a Spark partition | 100000
+| spark.cassandra.input.page.row.size     | number of rows fetched per roundtrip       | 1000
+| spark.cassandra.input.consistency.level | consistency level to use when reading      | LOCAL_ONE
+
 [Next - Server-side data selection and filtering](3_selection.md)
