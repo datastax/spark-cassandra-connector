@@ -132,5 +132,16 @@ Other conversions might work, but may cause loss of precision or may not work fo
 All types are convertible to strings. Converting strings to numbers, dates, 
 addresses or UUIDs is possible as long as the string has proper 
 contents, defined by the CQL3 standard. Maps can be implicitly converted to/from sequences of key-value tuples.
- 
+
+## Configuration Options for Adjusting Reads
+
+The following options can be specified in the SparkConf object or as a jvm
+-Doption to adjust the read parameters of a Cassandra table.
+
+| Environment Variable                    | Controls                                   | Default
+|-----------------------------------------|--------------------------------------------|---------
+| spark.cassandra.input.split.size        | approx number of rows in a Spark partition | 100000
+| spark.cassandra.input.page.row.size     | number of rows fetched per roundtrip       | 1000
+| spark.cassandra.input.consistency.level | consistency level to use when reading      | LOCAL_ONE
+
 [Next - Server-side data selection and filtering](3_selection.md)
