@@ -1,6 +1,16 @@
 1.2.0
 
 1.1.0
+ * Upgraded Apache Spark to 1.1.0.
+ * Upgraded to be Cassandra 2.1.0 and Cassandra 2.0 compatible.
+ * Added spark.cassandra.connection.local_dc option
+ * Added spark.cassandra.connection.timeout_ms option
+ * Added spark.cassandra.read.timeout_ms option
+ * Added support for SparkSQL (#197)
+ * Fixed problems with saving DStreams to Cassandra directly (#280)
+ * Refactored and renamed AuthConf to ConnectionConfigurator. It has full access to the cluster builder so that it can configure all connection options. (#192)
+
+1.1.0 alpha 1
  * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt
  * Replace internal spark Logging with own class (#245)
  * Accept partition key predicates in CassandraRDD#where. (#37)

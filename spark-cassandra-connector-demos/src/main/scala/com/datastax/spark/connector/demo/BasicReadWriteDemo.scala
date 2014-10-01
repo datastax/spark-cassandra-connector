@@ -27,6 +27,6 @@ object BasicReadWriteDemo extends DemoApp {
   // Assert the two new rows were stored in test.kv table:
   assert(col.collect().length == 2)
 
-  log.info(s"Work completed.")
+  log.info(s"Work completed, stopping the Spark context.")
   sc.stop()
 }

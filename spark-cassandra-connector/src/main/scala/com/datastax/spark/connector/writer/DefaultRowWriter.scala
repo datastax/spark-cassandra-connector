@@ -79,6 +79,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
   }
 
   override def bind(data: T, stmt: PreparedStatement) = {
+    import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
     val boundStmt = stmt.bind()
     for (variable <- stmt.getVariables) {
       val columnName = variable.getName
@@ -86,7 +87,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
       val value = extractor.extractProperty(data, propertyName)
       val serializedValue =
         if (value != null)
-          variable.getType.serialize(value)
+          variable.getType.serialize(value, protocolVersion)
         else
           null
       boundStmt.setBytesUnsafe(columnName, serializedValue)
