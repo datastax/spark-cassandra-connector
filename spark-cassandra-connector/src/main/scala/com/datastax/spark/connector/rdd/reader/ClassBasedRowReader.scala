@@ -68,7 +68,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
     columnRef match {
       case NamedColumnRef(name) => name        
-      case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index)        
+      case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index + skipColumns)
     }
   }
 

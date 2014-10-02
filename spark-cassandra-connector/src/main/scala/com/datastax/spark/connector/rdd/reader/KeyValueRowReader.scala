@@ -20,8 +20,13 @@ class KeyValueRowReaderFactory[K: TypeTag : ColumnMapper, V: TypeTag : ColumnMap
 
 class KeyValueRowReader[K, V](keyReader: RowReader[K], valueReader: RowReader[V]) extends RowReader[(K, V)] {
 
-  override def columnCount: Option[Int] = None
-  override def columnNames: Option[Seq[String]] = None
+  override def columnCount: Option[Int] =
+    (for (keyCnt <- keyReader.columnCount; valueCnt <- valueReader.columnCount) yield keyCnt max valueCnt)
+      .orElse(keyReader.columnCount).orElse(valueReader.columnCount)
+
+  override def columnNames: Option[Seq[String]] =
+    (for (keyNames <- keyReader.columnNames; valueNames <- valueReader.columnNames) yield keyNames ++ valueNames)
+      .orElse(keyReader.columnNames).orElse(valueReader.columnNames)
 
   override def read(row: Row, columnNames: Array[String]): (K, V) = {
     (keyReader.read(row, columnNames), valueReader.read(row, columnNames))
