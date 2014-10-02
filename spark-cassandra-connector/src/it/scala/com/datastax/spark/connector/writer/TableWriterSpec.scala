@@ -20,7 +20,7 @@ case class CustomerId(id: String)
 class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(cassandraHost)
+  val conn = CassandraConnector(Set(cassandraHost))
 
   before {
     conn.withSessionDo { session =>

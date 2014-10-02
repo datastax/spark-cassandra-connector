@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorRef, Actor}
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.scheduler.StreamingListener
@@ -17,9 +18,12 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
   import java.io.{ Serializable => JSerializable }
   import scala.reflect.ClassTag
 
-  override def cassandraTable[T <: JSerializable : ClassTag : RowReaderFactory](keyspace: String, table: String): CassandraStreamingRDD[T] =
-    new CassandraStreamingRDD[T](ssc, keyspace, table)
-
+  override def cassandraTable[T <: JSerializable](keyspace: String, table: String)(
+    implicit
+      connector: CassandraConnector = CassandraConnector(ssc.sparkContext.getConf),
+      ct: ClassTag[T],
+      rrf: RowReaderFactory[T]): CassandraStreamingRDD[T] =
+    new CassandraStreamingRDD[T](ssc, connector, keyspace, table)
 }
 
 /** Simple akka.actor.Actor mixin. */
