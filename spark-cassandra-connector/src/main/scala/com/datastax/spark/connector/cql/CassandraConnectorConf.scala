@@ -12,7 +12,7 @@ case class CassandraConnectorConf(
   hosts: Set[InetAddress],
   nativePort: Int,
   rpcPort: Int,
-  authConf: AuthConf)
+  configurator: ConnectionConfigurator)
 
 /** A factory for `CassandraConnectorConf` objects.
   * Allows for manually setting connection properties or reading them from `SparkConf` object.
@@ -31,8 +31,8 @@ object CassandraConnectorConf extends Logging {
   def apply(host: InetAddress,
             nativePort: Int = DefaultNativePort,
             rpcPort: Int = DefaultRpcPort,
-            authConf: AuthConf = NoAuthConf): CassandraConnectorConf = {
-    CassandraConnectorConf(Set(host), nativePort, rpcPort, authConf)
+            configurator: ConnectionConfigurator = NoAuthConfigurator): CassandraConnectorConf = {
+    CassandraConnectorConf(Set(host), nativePort, rpcPort, configurator)
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
@@ -46,8 +46,8 @@ object CassandraConnectorConf extends Logging {
       }.toSet
     val rpcPort = conf.getInt(CassandraConnectionRpcPortProperty, DefaultRpcPort)
     val nativePort = conf.getInt(CassandraConnectionNativePortProperty, DefaultNativePort)
-    val authConf = AuthConf.fromSparkConf(conf)
-    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf)
+    val configurator = ConnectionConfigurator.fromSparkConf(conf)
+    CassandraConnectorConf(hosts, nativePort, rpcPort, configurator)
   }
   
 }
