@@ -1,5 +1,5 @@
  * Pluggable mechanism for obtaining connections to Cassandra. Ability to pass custom CassandraConnector to CassandraRDD. (#192)
- * Provided a row reader which allows to create RDDs of pairs of objects (#88)
+ * Provided a row reader which allows to create RDDs of pairs of objects as well as RDDs of simple objects handled by type converter directly; added meaningful compiler messages when invalid type was provided (#88)
 
 1.1.0 alpha 2
  * Upgraded Apache Spark to 1.1.0.

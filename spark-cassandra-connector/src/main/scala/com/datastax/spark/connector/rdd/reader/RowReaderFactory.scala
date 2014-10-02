@@ -1,15 +1,19 @@
 package com.datastax.spark.connector.rdd.reader
 
+import java.io.Serializable
+
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.spark.connector.util.MagicalTypeTricks.{IsNotSubclassOf, DoesntHaveImplicit}
+import com.datastax.spark.connector.util.MagicalTypeTricks.{DoesntHaveImplicit, IsNotSubclassOf}
 
+import scala.annotation.implicitNotFound
 import scala.reflect.runtime.universe._
 
 /** Creates [[RowReader]] objects prepared for reading rows from the given Cassandra table. */
+@implicitNotFound("No RowReaderFactory can be found for this type")
 trait RowReaderFactory[T] {
   def rowReader(table: TableDef): RowReader[T]
 }
@@ -26,7 +30,7 @@ trait LowPriorityRowReaderFactoryImplicits {
   implicit def isSingleColumnType[T](implicit ev1: TypeConverter[T], ev2: T IsNotSubclassOf (_, _)): IsSingleColumnType[T] = null
 
   implicit def classBasedRowReaderFactory[R <: Serializable]
-      (implicit tt: TypeTag[R], cm: ColumnMapper[R], ev: R IsNotSubclassOf (_, _)): RowReaderFactory[R]  =
+      (implicit tt: TypeTag[R], cm: ColumnMapper[R], ev: R IsNotSubclassOf (_, _), ev2: R DoesntHaveImplicit IsSingleColumnType[R]): RowReaderFactory[R]  =
     new ClassBasedRowReaderFactory[R]
 
   implicit def singleColumnKeyValueRowReaderFactory[
@@ -38,6 +42,9 @@ trait LowPriorityRowReaderFactoryImplicits {
       (implicit tt1: TypeTag[K], cm1: ColumnMapper[K], ev1: K DoesntHaveImplicit IsSingleColumnType[K],
                 tt2: TypeTag[V], cm2: ColumnMapper[V], ev2: V DoesntHaveImplicit IsSingleColumnType[V]): RowReaderFactory[(K, V)] =
     new KeyValueRowReaderFactory[K, V]()
+
+  implicit def valueRowReaderFactory[T](implicit ev: TypeConverter[T], ev2: IsSingleColumnType[T]): RowReaderFactory[T] =
+    new ValueRowReaderFactory[T]()
 
 }
 
