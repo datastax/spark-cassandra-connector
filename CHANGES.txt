@@ -8,6 +8,7 @@
  * Added spark.cassandra.read.timeout_ms option
  * Added support for SparkSQL (#197)
  * Fixed problems with saving DStreams to Cassandra directly (#280)
+ * Provided a row reader which allows to create RDDs of pairs of objects (#88)
 
 1.1.0 alpha 1
  * Add an ./sbt/sbt script (like with spark) so people don't need to install sbt

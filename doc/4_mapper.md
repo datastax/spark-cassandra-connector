@@ -57,5 +57,37 @@ class WordCount extends Serializable {
   var count: Int = 0    
 }
 ```       
-     
+
+### Mapping rows to pairs of objects
+You can also map rows to pairs of objects or tuples so that it resemble a mapping key to values.
+It is convenient to represent data from Cassandra as an RDD of pairs where the first component is
+the primary key and the second one includes all the remaining columns.
+
+Suppose we have a table with the following schema:
+
+```sql
+CREATE TABLE test.users (
+  user_name     TEXT,
+  domain        TEXT,
+  password_hash TEXT,
+  last_visit    TIMESTAMP,
+  PRIMARY KEY (domain, user_name)
+);
+
+INSERT INTO test.users (user_name, domain, password_hash, last_visit) VALUES ('john', 'datastax.com', '1234', '2014-06-05');
+```
+
+We can access map the rows of this table into pair in the following ways:
+
+```scala
+case class UserId(userName: String, domain: String)
+case class UserData(passwordHash: String, lastVisit: DateTime)
+
+sc.cassandraTable[KV[UserId, UserData]]("test", "users")
+
+sc.cassandraTable[KV[(String, String), UserData]]("test", "users")
+
+sc.cassandraTable[KV[(String, String), (String, DateTime)]]("test", "users")
+```
+
 [Next - Saving data](5_saving.md)
