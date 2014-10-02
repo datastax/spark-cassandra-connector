@@ -97,4 +97,37 @@ class TokenRangeClustererTest {
     assertEquals(3, groups.size)
   }
 
+
+  @Test
+  def testTrivialMerging() {
+    val tr1 = new TokenRange(token(0), token(10), Set(addr1), Some(5))
+    val tr2 = new TokenRange(token(10), token(20), Set(addr1), Some(5))
+    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val groups = trc.group(Seq(tr1, tr2))
+    val mergedGroups = trc.mergeGroup(groups.head)
+    assertEquals(1, mergedGroups.size)
+    assertEquals(new TokenRange(token(0), token(20), Set(addr1), Some(10)), mergedGroups.head)
+  }
+
+  @Test
+  def testOverlapMerging() {
+    val tr1 = new TokenRange(token(5), token(20), Set(addr1), Some(5))
+    val tr2 = new TokenRange(token(0), token(10), Set(addr1), Some(5))
+    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val groups = trc.group(Seq(tr1, tr2))
+    val mergedGroups = trc.mergeGroup(groups.head)
+    assertEquals(1, mergedGroups.size)
+    assertEquals(new TokenRange(token(0), token(20), Set(addr1), Some(10)), mergedGroups.head)
+  }
+
+  @Test
+  def testMinMaxMerging() {
+    val tr1 = new TokenRange(token(5), token(20), Set(addr1), Some(5))
+    val tr2 = new TokenRange(token(0), token(10), Set(addr1), Some(5))
+    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val groups = trc.group(Seq(tr1, tr2))
+    val mergedGroups = trc.mergeGroup(groups.head)
+    assertEquals(1, mergedGroups.size)
+    assertEquals(new TokenRange(token(0), token(20), Set(addr1), Some(10)), mergedGroups.head)
+  }
 }

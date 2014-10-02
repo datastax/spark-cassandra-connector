@@ -55,4 +55,22 @@ class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupS
     group(sortedRanges.toStream, Vector.empty)
   }
 
+  /**
+   * Find collocated token ranges: (a, b) , (b,c) and merge them in bigger one (a,c) to reduce number of requests
+   * @param tokenRanges
+   * @return merged token ranges
+   */
+  def mergeGroup(tokenRanges: Seq[TokenRange[V, T]]): Seq[TokenRange[V, T]] = {
+    val head::tail  = tokenRanges.sortWith(_.start < _.start).toList
+    val (ranges, last) = tail.foldLeft((Seq[TokenRange[V, T]] (), head)) (
+      (tuple,  nextRange) =>
+        if (tuple._2.end >= nextRange.start) (tuple._1, TokenRange(tuple._2.start, nextRange.end,
+          tuple._2.endpoints intersect nextRange.endpoints,
+          tuple._2.rowCount.flatMap(x=>nextRange.rowCount.map(x+_))))
+        else (tuple._1:+ tuple._2, nextRange)
+
+    )
+    ranges :+ last
+  }
+
 }

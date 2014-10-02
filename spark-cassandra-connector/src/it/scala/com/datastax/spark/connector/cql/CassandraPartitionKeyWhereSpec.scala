@@ -60,4 +60,9 @@ class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with SharedE
     result should have length 1
     result.head.getInt("key1") should be (1)
   }
+
+  it should "work with no 'where'" in {
+    val result = sc.cassandraTable("where_test", "ckey_value").collect()
+    result should have length 3
+  }
 }
