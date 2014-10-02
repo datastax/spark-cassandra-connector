@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import com.datastax.spark.connector.rdd.reader.KV
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{FlatSpec, Matchers}
 import org.joda.time.DateTime
@@ -73,6 +72,13 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result.head.getInt("key") should (be >= 1 and be <= 3)
     result.head.getLong("group") should (be >= 100L and be <= 300L)
     result.head.getString("value") should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of pairs of primitives" in {
+    val result = sc.cassandraTable[(Int, Long)]("read_test", "key_value").select("key", "group").collect()
+    result should have length 3
+    result.head._1 should (be >= 1 and be <= 3)
+    result.head._2 should (be >= 100L and be <= 300L)
   }
 
   it should "allow to read a Cassandra table as Array of tuples" in {
@@ -302,7 +308,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of two pairs" in {
-    val results = sc.cassandraTable[KV[(Int, Int), (Int, String)]]("read_test", "composite_key").select("key_c1", "key_c2" ,"group", "value").collect()
+    val results = sc.cassandraTable[((Int, Int), (Int, String))]("read_test", "composite_key").select("key_c1", "key_c2" ,"group", "value").collect()
     results should have length 4
     results should contain (((1, 1), (1, "value1")))
     results should contain (((1, 1), (2, "value2")))
@@ -311,7 +317,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a pair and a case class" in {
-    val results = sc.cassandraTable[KV[(Int, Int), Value]]("read_test", "key_value").select("key", "group", "value").collect()
+    val results = sc.cassandraTable[((Int, Int), Value)]("read_test", "key_value").select("key", "group", "value").collect()
     results should have length 3
     val map = results.toMap
     map((1, 100)) should be (Value("0001"))
@@ -320,7 +326,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple" in {
-    val results = sc.cassandraTable[KV[KeyGroup, (Int, Int, String)]]("read_test", "key_value").select("key", "group", "value").collect()
+    val results = sc.cassandraTable[(KeyGroup, (Int, Int, String))]("read_test", "key_value").select("key", "group", "value").collect()
     results should have length 3
     results should contain ((KeyGroup(1, 100), (1, 100, "0001")))
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
@@ -328,7 +334,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
   }
 
   it should "allow to read Cassandra table as Array of tuples of two case classes" in {
-    val results = sc.cassandraTable[KV[KeyGroup, Value]]("read_test", "key_value").select("key", "group", "value").collect()
+    val results = sc.cassandraTable[(KeyGroup, Value)]("read_test", "key_value").select("key", "group", "value").collect()
     results should have length 3
     results should contain((KeyGroup(1, 100), Value("0001")))
     results should contain((KeyGroup(2, 100), Value("0002")))
