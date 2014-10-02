@@ -40,8 +40,8 @@ System.setProperty("spark.cassandra.query.retry.count", "1")  // don't retry
 
 val conf = new SparkConf(true)
         .set("spark.cassandra.connection.host", "192.168.123.10")
-        .set("spark.cassandra.username", "cassandra")            
-        .set("spark.cassandra.password", "cassandra") 
+        .set("spark.cassandra.auth.username", "cassandra")            
+        .set("spark.cassandra.auth.password", "cassandra") 
                      
 val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 ```
