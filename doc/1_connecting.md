@@ -11,23 +11,27 @@ To connect your Spark application to Cassandra, set connection options in the
 from the spark-shell and set within the $SPARK_HOME/conf/spark-default.conf.
 The following options are available on `SparkConf` object:
 
-Property name                            | Description                                       | Default value
------------------------------------------|---------------------------------------------------|--------------------
-spark.cassandra.connection.host          | contact point to connect to the Cassandra cluster | address of the Spark master host
-spark.cassandra.connection.rpc.port      | Cassandra thrift port                             | 9160
-spark.cassandra.connection.native.port   | Cassandra native port                             | 9042
-spark.cassandra.auth.username            | login name for password authentication            |
-spark.cassandra.auth.password            | password for password authentication              |
-spark.cassandra.auth.conf.factory.class  | name of the class implementing `AuthConfFactory` providing custom authentication | `DefaultAuthConfFactory`
-  
+Property name                                  | Description                                       | Default value
+-----------------------------------------------|---------------------------------------------------|--------------------
+spark.cassandra.connection.host                | contact point to connect to the Cassandra cluster | address of the Spark master host
+spark.cassandra.connection.rpc.port            | Cassandra thrift port                             | 9160
+spark.cassandra.connection.native.port         | Cassandra native port                             | 9042
+spark.cassandra.connection.conf.factory        | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
+spark.cassandra.auth.username                  | login name for password authentication            |
+spark.cassandra.auth.password                  | password for password authentication              |
+spark.cassandra.auth.conf.factory              | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
+
 Additionally, the following global system properties are available:
 
 Property name                                        | Description                                                   | Default value
 -----------------------------------------------------|---------------------------------------------------------------|--------------------
 spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                | 250 ms
+spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node        | 5000 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to attempt reconnecting to a dead node | 1000 ms 
 spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to attempt reconnecting to a dead node | 60000 ms 
+spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)      | none
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                    | 10 
+spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return           | 12000 ms
   
 Example:
 
@@ -92,3 +96,4 @@ CassandraConnector(conf).withSessionDo { session =>
 ```
 
 [Next - Accessing data](2_loading.md)                                        
+

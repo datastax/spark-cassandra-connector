@@ -46,6 +46,7 @@ import scala.reflect._
   */
 class CassandraRDD[R] private[connector] (
     @transient sc: SparkContext,
+    val connector: CassandraConnector,
     val keyspaceName: String,
     val tableName: String,
     val columnNames: ColumnSelector = AllColumns,
@@ -54,9 +55,9 @@ class CassandraRDD[R] private[connector] (
     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
 
-  /* Logging classes inheritance conflict fix
-   */
+  /* Logging classes inheritance conflict fix. */
   override def log = super[Logging].log
+  override def logName = super[Logging].logName
   override def logInfo(msg: => String) = super[Logging].logInfo(msg)
   override def logDebug(msg: => String) = super[Logging].logDebug(msg)
   override def logTrace(msg: => String) = super[Logging].logTrace(msg)
@@ -80,10 +81,10 @@ class CassandraRDD[R] private[connector] (
   val inputConsistencyLevel =  ConsistencyLevel.valueOf(
     sc.getConf.get("spark.cassandra.input.consistency.level", ConsistencyLevel.LOCAL_ONE.name))
 
-  private val connector = CassandraConnector(sc.getConf)
 
-  private def copy(columnNames: ColumnSelector = columnNames, where: CqlWhereClause = where): CassandraRDD[R] =
-    new CassandraRDD(sc, keyspaceName, tableName, columnNames, where)
+  private def copy(columnNames: ColumnSelector = columnNames,
+                   where: CqlWhereClause = where): CassandraRDD[R] =
+    new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where)
 
   /** Adds a CQL `WHERE` predicate(s) to the query.
     * Useful for leveraging secondary indexes in Cassandra.
@@ -136,69 +137,69 @@ class CassandraRDD[R] private[connector] (
     * }}}*/
   def as[B : ClassTag, A0 : TypeConverter](f: A0 => B): CassandraRDD[B] = {
     implicit val ft = new FunctionBasedRowReader1(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter](f: (A0, A1) => B) = {
     implicit val ft = new FunctionBasedRowReader2(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter](f: (A0, A1, A2) => B) = {
     implicit val ft = new FunctionBasedRowReader3(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter,
   A3 : TypeConverter](f: (A0, A1, A2, A3) => B) = {
     implicit val ft = new FunctionBasedRowReader4(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter](f: (A0, A1, A2, A3, A4) => B) = {
     implicit val ft = new FunctionBasedRowReader5(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter](f: (A0, A1, A2, A3, A4, A5) => B) = {
     implicit val ft = new FunctionBasedRowReader6(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6) => B) = {
     implicit val ft = new FunctionBasedRowReader7(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter,
   A7 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7) => B) = {
     implicit val ft = new FunctionBasedRowReader8(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
   A8 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8) => B) = {
     implicit val ft = new FunctionBasedRowReader9(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
   A8 : TypeConverter, A9 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) => B) = {
     implicit val ft = new FunctionBasedRowReader10(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter, A8: TypeConverter,
   A9 : TypeConverter, A10 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B) = {
     implicit val ft = new FunctionBasedRowReader11(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
@@ -206,7 +207,7 @@ class CassandraRDD[R] private[connector] (
   A9 : TypeConverter, A10: TypeConverter, A11 : TypeConverter](
   f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B) = {
     implicit val ft = new FunctionBasedRowReader12(f)
-    new CassandraRDD[B](sc, keyspaceName, tableName, columnNames)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where)
   }
 
   // ===================================================================
@@ -354,7 +355,7 @@ class CassandraRDD[R] private[connector] (
     val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(session, _))
     val countingIterator = new CountingIterator(rowIterator)
 
-    context.addOnCompleteCallback { () =>
+    context.addTaskCompletionListener { (context) =>
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")

@@ -4,12 +4,14 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
+import scala.collection.JavaConversions._
+
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-import org.apache.cassandra.utils.ByteBufferUtil
 
-import scala.collection.JavaConversions._
+import org.apache.cassandra.utils.ByteBufferUtil
+import org.apache.spark.sql.catalyst.expressions.{Row => SparkSqlRow}
 
 /** Thrown when the requested column does not exist in the result set. */
 class ColumnNotFoundException(message: String) extends Exception(message)
@@ -84,7 +86,9 @@ class ColumnNotFoundException(message: String) extends Exception(message)
   *   - java.sql.Date
   *   - org.joda.time.DateTime
   */
-class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Serializable {
+final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends SparkSqlRow with Serializable {
+
+  private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
 
   @transient
   private lazy val _indexOf =
@@ -98,14 +102,14 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
   }
 
   /** Total number of columns in this row. Includes columns with null values. */
-  def size = data.size
+  def length = data.size
 
   /** Returns true if column value is Cassandra null */
-  def isNull(index: Int): Boolean =
+  def isNullAt(index: Int): Boolean =
     data(index) == null
 
   /** Returns true if column value is Cassandra null */
-  def isNull(name: String): Boolean = {
+  def isNullAt(name: String): Boolean = {
     data(_indexOfOrThrow(name)) == null
   }
 
@@ -136,9 +140,14 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
     * Looks the column up by column name. Column names are case-sensitive.*/
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
+  
+  /** Equivalent to `getAny` */
+  def apply(index: Int) = getAny(index)
+  def apply(name: String) = getAny(name)
 
   /** Returns a column value without applying any conversion.
-    * The underlying type is the same as the type returned by the low-level Cassandra driver.*/
+    * The underlying type is the same as the type returned by the low-level Cassandra driver.
+    * May return Java null. */
   def getAny(index: Int) = get[Any](index)
   def getAny(name: String) = get[Any](name)
 
@@ -160,11 +169,23 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
   /** Returns a `bool` column value. Besides working with `bool` Cassandra type, it can also read
     * numbers and strings. Non-zero numbers are converted to `true`, zero is converted to `false`.
     * Strings are converted using `String#toBoolean` method.*/
-  def getBool(index: Int) = get[Boolean](index)
-  def getBool(name: String) = get[Boolean](name)
+  def getBoolean(index: Int) = get[Boolean](index)
+  def getBoolean(name: String) = get[Boolean](name)
 
-  def getBoolOption(index: Int) = get[Option[Boolean]](index)
-  def getBoolOption(name: String) = get[Option[Boolean]](name)
+  def getBooleanOption(index: Int) = get[Option[Boolean]](index)
+  def getBooleanOption(name: String) = get[Option[Boolean]](name)
+  
+  def getByte(index: Int) = get[Byte](index)
+  def getByte(name: String) = get[Byte](name)
+
+  def getByteOption(index: Int) = get[Option[Byte]](index)
+  def getByteOption(name: String) = get[Option[Byte]](name)
+
+  def getShort(index: Int) = get[Short](index)
+  def getShort(name: String) = get[Short](name)
+
+  def getShortOption(index: Int) = get[Option[Short]](index)
+  def getShortOption(name: String) = get[Option[Short]](name)
 
   /** Returns a column value as a 32-bit integer number.
     * Besides working with `int` Cassandra type, it can also read
@@ -310,10 +331,14 @@ class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends Seri
       .zip(data)
       .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
       .mkString("{", ", ", "}")
+
+  def copy() = this  // this class is immutable
+  def iterator = data.iterator
 }
 
 
 object CassandraRow {
+  import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
@@ -334,7 +359,7 @@ object CassandraRow {
     val columnType = columnDefinitions.getType(index)
     val columnValue = row.getBytesUnsafe(index)
     if (columnValue != null)
-      convert(columnType.deserialize(columnValue))
+      convert(columnType.deserialize(columnValue, protocolVersion))
     else
       null
   }

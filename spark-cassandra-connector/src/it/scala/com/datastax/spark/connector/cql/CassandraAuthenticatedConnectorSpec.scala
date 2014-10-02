@@ -5,8 +5,9 @@ import org.scalatest.{Matchers, FlatSpec}
 
 class CassandraAuthenticatedConnectorSpec  extends FlatSpec with Matchers with SharedEmbeddedCassandra {
 
-  useCassandraConfig("cassandra-password-auth.yaml.template")
-  val conn = CassandraConnector(cassandraHost, authConf = PasswordAuthConf("cassandra", "cassandra"))
+  useCassandraConfig("cassandra-password-auth.yaml" +
+    ".template")
+  val conn = CassandraConnector(Set(cassandraHost), authConf = PasswordAuthConf("cassandra", "cassandra"))
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)

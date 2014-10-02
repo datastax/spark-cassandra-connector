@@ -1,40 +1,15 @@
 package com.datastax.spark.connector
 
-import org.apache.commons.configuration.ConfigurationException
-import org.apache.spark.rdd.RDD
-import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.writer._
-import com.datastax.driver.core.ConsistencyLevel
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
 /** Provides Cassandra-specific methods on `RDD` */
 class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
 
-  private lazy val batchSizeInRowsStr = rdd.sparkContext.getConf.get(
-    "spark.cassandra.output.batch.size.rows", "auto")
-
-  private lazy val batchSizeInBytes = rdd.sparkContext.getConf.getInt(
-    "spark.cassandra.output.batch.size.bytes", TableWriter.DefaultBatchSizeInBytes)
-
-  private lazy val outputConsistencyLevel = ConsistencyLevel.valueOf(
-    rdd.sparkContext.getConf.get("spark.cassandra.output.consistency.level", ConsistencyLevel.LOCAL_ONE.name))
-
-  private lazy val batchSizeInRows = {
-    val Number = "([0-9]+)".r
-    batchSizeInRowsStr match {
-      case "auto" => None
-      case Number(x) => Some(x.toInt)
-      case other =>
-        throw new ConfigurationException(
-          s"Invalid value of spark.cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
-    }
-  }
-
-  private lazy val writeParallelismLevel = rdd.sparkContext.getConf.getInt(
-    "spark.cassandra.output.concurrent.writes", TableWriter.DefaultParallelismLevel)
-
-  private lazy val connector = CassandraConnector(rdd.sparkContext.getConf)
+  override val sparkContext: SparkContext = rdd.sparkContext
 
   /**
    * Saves the data from `RDD` to a Cassandra table.
@@ -65,22 +40,5 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
     val writer = tableWriter(keyspaceName, tableName, columns, Some(batchSize))(rwf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
-
-  /**
-   * Internal API.
-    * Creates a [[com.datastax.spark.connector.writer.TableWriter]].
-    */
-  private[connector] def tableWriter(keyspaceName: String, tableName: String,
-                                     columns: ColumnSelector, batchSize: Option[Int])(implicit rwf: RowWriterFactory[T]): TableWriter[T] =
-
-    TableWriter[T](
-      connector,
-      keyspaceName = keyspaceName,
-      tableName = tableName,
-      consistencyLevel = outputConsistencyLevel,
-      columnNames = columns,
-      batchSizeInBytes = batchSizeInBytes,
-      batchSizeInRows = batchSize,
-      parallelismLevel = writeParallelismLevel)
 
 }

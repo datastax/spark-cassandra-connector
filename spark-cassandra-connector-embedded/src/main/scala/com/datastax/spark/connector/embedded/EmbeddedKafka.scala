@@ -4,7 +4,6 @@ import java.io.File
 import java.util.Properties
 
 import scala.concurrent.duration.{Duration, _}
-import org.apache.spark.Logging
 import kafka.producer._
 import kafka.admin.CreateTopicCommand
 import kafka.common.TopicAndPartition
@@ -14,7 +13,7 @@ import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.ZKStringSerializer
 import org.I0Itec.zkclient.ZkClient
 
-final class EmbeddedKafka extends Embedded with Logging {
+final class EmbeddedKafka extends Embedded {
 
   val kafkaParams = Map(
     "zookeeper.connect" -> ZookeeperConnectionString,
@@ -34,16 +33,14 @@ final class EmbeddedKafka extends Embedded with Logging {
   private val zookeeper = new EmbeddedZookeeper()
   awaitCond(zookeeper.isRunning, 2000.millis)
 
-  log.info(s"Attempting to connect with $ZookeeperConnectionString")
   val client = new ZkClient(ZookeeperConnectionString, 6000, 6000, ZKStringSerializer)
-  log.info(s"ZooKeeper Client connected.")
+  println(s"ZooKeeper Client connected.")
 
-  log.info(s"Attempting to connect KafkaServer with $ZookeeperConnectionString")
   val kafkaConfig = new KafkaConfig(brokerConf)
   val server = new KafkaServer(kafkaConfig)
   Thread.sleep(2000)
 
-  log.info(s"Starting the Kafka server at $ZookeeperConnectionString")
+  println(s"Starting the Kafka server at $ZookeeperConnectionString")
   server.startup()
   Thread.sleep(2000)
 
@@ -72,14 +69,13 @@ final class EmbeddedKafka extends Embedded with Logging {
       message = s"Partition [$topic, $partition] metadata not propagated after timeout")
 
   def shutdown(): Unit = {
-    log.info(s"Shutting down Kafka server.")
+    println(s"Shutting down Kafka server.")
     server.shutdown()
     server.config.logDirs.foreach(f => deleteRecursively(new File(f)))
-    log.info(s"Shutting down ZK client.")
     client.close()
     zookeeper.shutdown()
     awaitCond(!zookeeper.isRunning, 2000.millis)
-    log.info(s"ZooKeeper server shut down.")
+    println(s"ZooKeeper server shut down.")
   }
 }
 

@@ -10,7 +10,7 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(cassandraHost)
+  val conn = CassandraConnector(Set(cassandraHost))
 
   val createKeyspaceCql = "CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"
 
@@ -80,7 +80,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(EmbeddedCassandra.cassandraHost)
+    val conn2 = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()

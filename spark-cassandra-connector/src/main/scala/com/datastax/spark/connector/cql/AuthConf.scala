@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider, Cluster}
-import com.datastax.driver.core.Cluster.Builder
+import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider}
+import com.datastax.spark.connector.util.ReflectionUtil
 import org.apache.cassandra.thrift.{TFramedTransportFactory, ITransportFactory, AuthenticationRequest, Cassandra}
 import org.apache.cassandra.thrift.Cassandra.Iface
 import org.apache.spark.SparkConf
@@ -58,13 +58,13 @@ trait AuthConfFactory {
 /** Default `AuthConfFactory` that supports no authentication or password authentication.
   * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
   * options are present in `SparkConf`.*/
-class DefaultAuthConfFactory extends AuthConfFactory {
+object DefaultAuthConfFactory extends AuthConfFactory {
 
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
   def authConf(conf: SparkConf): AuthConf = {
-    val credentials = 
+    val credentials =
       for (username <- conf.getOption(CassandraUserNameProperty);
            password <- conf.getOption(CassandraPasswordProperty)) yield (username, password)
 
@@ -76,13 +76,16 @@ class DefaultAuthConfFactory extends AuthConfFactory {
 }
 
 /** Entry point for obtaining `AuthConf` object from `SparkConf`, used when establishing connections to Cassandra.
-  * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory.class` property. */
+  * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory` property. */
 object AuthConf {
-  val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory.class"
+  val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
 
   def fromSparkConf(conf: SparkConf) = {
-    val authConfFactoryClass = conf.get(AuthConfFactoryProperty, classOf[DefaultAuthConfFactory].getName)
-    val authConfFactory = Class.forName(authConfFactoryClass).newInstance().asInstanceOf[AuthConfFactory]
+    val authConfFactory = conf
+      .getOption(AuthConfFactoryProperty)
+      .map(ReflectionUtil.findGlobalObject[AuthConfFactory])
+      .getOrElse(DefaultAuthConfFactory)
+
     authConfFactory.authConf(conf)
   }
 }

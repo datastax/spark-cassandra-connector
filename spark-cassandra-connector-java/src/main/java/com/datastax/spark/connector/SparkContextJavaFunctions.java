@@ -1,5 +1,6 @@
 package com.datastax.spark.connector;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.CassandraJavaRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD;
@@ -43,8 +44,8 @@ public class SparkContextJavaFunctions {
     public <T extends Serializable> CassandraJavaRDD<T> cassandraTable(String keyspace, String table,
             RowReaderFactory<T> rowReaderFactory, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
-
-        return toJavaRDD(scf.cassandraTable(keyspace, table, ct, rowReaderFactory), targetClass);
+        CassandraConnector connector = CassandraConnector.apply(sparkContext.getConf());
+        return toJavaRDD(scf.cassandraTable(keyspace, table, connector, ct, rowReaderFactory), targetClass);
     }
 
     /**
