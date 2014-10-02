@@ -4,6 +4,8 @@ import com.datastax.driver.core.Row
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
+import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.util.MagicalTypeTricks.{IsNotSubclassOf, DoesntHaveImplicit}
 
 import scala.reflect.runtime.universe._
 
@@ -18,20 +20,28 @@ trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
   def rowReader(table: TableDef): RowReader[T] = this
 }
 
-trait LowPriorityRowReaderFactoryImplicits2 {
+trait LowPriorityRowReaderFactoryImplicits {
 
-  implicit def classBasedRowReaderFactory[R <: Serializable : TypeTag : ColumnMapper] =
+  trait IsSingleColumnType[T]
+  implicit def isSingleColumnType[T](implicit ev1: TypeConverter[T], ev2: T IsNotSubclassOf (_, _)): IsSingleColumnType[T] = null
+
+  implicit def classBasedRowReaderFactory[R <: Serializable]
+      (implicit tt: TypeTag[R], cm: ColumnMapper[R], ev: R IsNotSubclassOf (_, _)): RowReaderFactory[R]  =
     new ClassBasedRowReaderFactory[R]
+
+  implicit def singleColumnKeyValueRowReaderFactory[
+      K : TypeTag : TypeConverter : IsSingleColumnType,
+      V : TypeTag : TypeConverter : IsSingleColumnType]: RowReaderFactory[(K, V)] =
+    new ClassBasedRowReaderFactory[(K, V)]
+
+  implicit def compoundColumnKeyValueRowReaderFactory[K <: Serializable, V <: Serializable]
+      (implicit tt1: TypeTag[K], cm1: ColumnMapper[K], ev1: K DoesntHaveImplicit IsSingleColumnType[K],
+                tt2: TypeTag[V], cm2: ColumnMapper[V], ev2: V DoesntHaveImplicit IsSingleColumnType[V]): RowReaderFactory[(K, V)] =
+    new KeyValueRowReaderFactory[K, V]()
+
 }
 
-trait LowPriorityRowReaderFactoryImplicits1 extends LowPriorityRowReaderFactoryImplicits2 {
-
-  implicit def classAndClassCompoundRowReaderFactory
-  [K <: Serializable : TypeTag : ColumnMapper, V <: Serializable : TypeTag : ColumnMapper]: RowReaderFactory[KV[K, V]] =
-    new KVBasedRowReaderFactory[K, V]()
-}
-
-object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits1 {
+object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
 
   /** Default `RowReader`: reads a `Row` into serializable [[CassandraRow]] */
   implicit object GenericRowReader$
