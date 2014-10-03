@@ -45,7 +45,7 @@ public class SparkContextJavaFunctions {
             RowReaderFactory<T> rowReaderFactory, Class<T> targetClass) {
         ClassTag<T> ct = getClassTag(targetClass);
         CassandraConnector connector = CassandraConnector.apply(sparkContext.getConf());
-        return toJavaRDD(scf.cassandraTable(keyspace, table, connector, ct, rowReaderFactory), targetClass);
+        return toJavaRDD(scf.cassandraTable(keyspace, table, connector, ct, rowReaderFactory, null), targetClass);
     }
 
     /**
