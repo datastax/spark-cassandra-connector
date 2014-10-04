@@ -1,5 +1,8 @@
- * Pluggable mechanism for obtaining connections to Cassandra. Ability to pass custom CassandraConnector to CassandraRDD. (#192)
- * Provided a row reader which allows to create RDDs of pairs of objects as well as RDDs of simple objects handled by type converter directly; added meaningful compiler messages when invalid type was provided (#88)
+ * Pluggable mechanism for obtaining connections to Cassandra. 
+   Ability to pass custom CassandraConnector to CassandraRDD. (#192)
+ * Provided a row reader which allows to create RDDs of pairs of objects as well 
+   as RDDs of simple objects handled by type converter directly; 
+   added meaningful compiler messages when invalid type was provided (#88)
 
 1.1.0 alpha 2
  * Upgraded Apache Spark to 1.1.0.
@@ -28,10 +31,12 @@
  * Added new Kafka Spark Streaming demo which reads from Kafka
    and writes to Cassandra (Twitter and ZeroMQ are next)
  * Added new 'embedded' module
-   - Refactored the 'connector' module's IT SparkRepl, CassandraServer and CassandraServerRunner as
-     well as 'demos' EmbeddedKafka and EmbeddedZookeeper to the 'embedded' module. This allows the 'embedded'
-     module to be used as a dependency by the 'connector' IT tests, demos, and user local quick prototyping
-     without requiring a Spark and Cassandra Cluster, local or remote, to get started.
+   - Refactored the 'connector' module's IT SparkRepl, CassandraServer and 
+     CassandraServerRunner as well as 'demos' EmbeddedKafka 
+     and EmbeddedZookeeper to the 'embedded' module. This allows the 'embedded'
+     module to be used as a dependency by the 'connector' IT tests, demos, 
+     and user local quick prototyping without requiring a Spark and Cassandra 
+     Cluster, local or remote, to get started.
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
@@ -43,8 +48,10 @@
 
 1.0.0 RC 5
  * Added assembly task to the build, in order to build fat jars. (#126)
-   - Added a system property flag to enable assembly for the demo module which is disabled by default.
-   - Added simple submit script to submit a demo assembly jar to a local spark master
+   - Added a system property flag to enable assembly for the demo module 
+     which is disabled by default.
+   - Added simple submit script to submit a demo assembly jar to a local 
+     spark master
  * Fix error message on column conversion failure. (#208)
  * Add toMap and nameOf methods to CassandraRow.
    Reduce size of serialized CassandraRow. (#194)
@@ -52,7 +59,8 @@
    heavy load (#185)
  * Skip $_outer constructor param in ReflectionColumnMapper, fixes working with
    case classes in Spark shell, added appropriate test cases (#188)
- * Added streaming demo with documentation, new streaming page to docs, new README for running all demos. (#115)
+ * Added streaming demo with documentation, new streaming page to docs, 
+   new README for running all demos. (#115)
 
 1.0.0 RC 4
  * Upgrade Java driver for Cassandra to 2.0.4. (#171)
@@ -120,11 +128,13 @@
  * Added Java API. Fixed a bug in ClassBasedRowReader which caused
    problems when data were read into Java beans. Added type converters
    for boxed Java primitive types. (#11)
- * Extracted out initial testkit for unit and integration tests, and future testkit module.
- * Added new WritableToCassandra trait which both RDDFunction and DStreamFunction both implement.
-   Documentation moved to WritableToCassandra.
+ * Extracted out initial testkit for unit and integration tests, and future 
+   testkit module.
+ * Added new WritableToCassandra trait which both RDDFunction and 
+   DStreamFunction both implement. Documentation moved to WritableToCassandra.
  * Fixed broken links in API documentation.
- * Refactored RDDFunctions and DStreamFunctions - merged saveToCassandra overloaded methods into a single method with defaults.
+ * Refactored RDDFunctions and DStreamFunctions - merged saveToCassandra 
+   overloaded methods into a single method with defaults.
 
 1.0.0 beta 1
  * CassandraRDD#createStatement doesn't obtain a new session, but reuses
