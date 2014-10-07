@@ -34,6 +34,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
     new this.QueryExecution { val logical = plan }
 
+  @transient
   val conf = sc.getConf
 
   private var keyspaceName = conf.getOption("spark.cassandra.keyspace")
