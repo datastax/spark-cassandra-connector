@@ -3,13 +3,14 @@ package com.datastax.spark.connector.writer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
+import com.datastax.spark.connector.util.Logging
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
-class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int) {
+class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int) extends Logging {
 
   private val _successCount = new AtomicInteger(0)
   private val _failureCount = new AtomicInteger(0)
@@ -37,6 +38,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
         settable.set(result)
       }
       def onFailure(throwable: Throwable) {
+        logError("Failed to execute: " + task, throwable)
         _failureCount.incrementAndGet()
         release()
         settable.setException(throwable)
