@@ -1,9 +1,9 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 
- 
+
 ## Lightning-fast cluster computing with Spark and Cassandra
 
-This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and 
+This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
 execute arbitrary CQL queries in your Spark applications.
 
 ## Features
@@ -35,16 +35,16 @@ If you want to access the functionality of Connector from Java, you may want to 
 
 ### Building The Assembly Jar
 In the root directory run
-    
+
     sbt assembly
 
 A fat jar will be generated to both of these directories:
-   - `spark-cassandra-connector/target/scala-2.10/`  
+   - `spark-cassandra-connector/target/scala-2.10/`
    - `spark-cassandra-connector-java/target/scala-2.10/`
-    
+
 Select the former for Scala apps, the later for Java.
 
-### Building General Artifacts 
+### Building General Artifacts
 In the root directory run:
 
     sbt package
@@ -105,4 +105,4 @@ Then copy the generated test jar to your Spark nodes and run:
 
     export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
-    ./sbt/sbt it:test    
+    ./sbt/sbt it:test
