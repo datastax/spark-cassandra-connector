@@ -1,4 +1,4 @@
-1.0.1 (unreleased)
+1.0.1
  * Add logging of error message when asynchronous task fails in AsyncExecutor.
    (#265)
  * Fix connection problems with fetching token ranges from hosts with
