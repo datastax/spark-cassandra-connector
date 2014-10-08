@@ -40,6 +40,12 @@
      and user local quick prototyping without requiring a Spark and Cassandra 
      Cluster, local or remote, to get started.
 
+********************************************************************************
+
+1.0.1 (unreleased)
+ * Add logging of error message when asynchronous task fails in AsyncExecutor.
+   (#265)
+
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
    closing Cluster objects. (#183)
