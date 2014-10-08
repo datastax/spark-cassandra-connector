@@ -28,10 +28,12 @@ object CassandraSparkBuild extends Build {
     aggregate = Seq(connector, connectorJava, demos)
   )
 
-  lazy val connector = LibraryProject("spark-cassandra-connector", Seq(libraryDependencies ++= Dependencies.connector))
+  lazy val connector = LibraryProject("spark-cassandra-connector",
+    Seq(libraryDependencies ++= Dependencies.connector) ++ sbtAssemblySettings)
 
-  lazy val connectorJava = LibraryProject("spark-cassandra-connector-java", Seq(libraryDependencies ++= Dependencies.connector),
-    Seq(connector))
+  lazy val connectorJava = LibraryProject("spark-cassandra-connector-java",
+    Seq(libraryDependencies ++= Dependencies.connector) ++ sbtAssemblySettings,
+    Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided"))
 
   lazy val demos = Project(
     id = "spark-cassandra-connector-demos",
@@ -40,8 +42,7 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector, connectorJava))
 
   def LibraryProject(name: String, dsettings: Seq[Def.Setting[_]], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
-    Project(name, file(name), settings = defaultSettings ++ sbtAssemblySettings ++ dsettings,
-      dependencies = cpd.map(_.project % "compile;runtime->runtime;test->test;it->it,test;provided->provided")) configs IntegrationTest
+    Project(name, file(name), settings = defaultSettings ++ dsettings, dependencies = cpd) configs IntegrationTest
 
 }
 
@@ -58,7 +59,7 @@ object Dependencies {
     val cassandraDriver   = "com.datastax.cassandra"  % "cassandra-driver-core" % CassandraDriver              withSources()  // ApacheV2
     val commonsLang3      = "org.apache.commons"      % "commons-lang3"         % CommonsLang3                                // ApacheV2
     val config            = "com.typesafe"            % "config"                % Config         % "provided"                 // ApacheV2
-    val guava             = "com.google.guava"        % "guava"                 % Guava          % "provided"  force()
+    val guava             = "com.google.guava"        % "guava"                 % Guava                        force()
     val jodaC             = "org.joda"                % "joda-convert"          % JodaC
     val jodaT             = "joda-time"               % "joda-time"             % JodaT
     val lzf               = "com.ning"                % "compress-lzf"          % Lzf            % "provided"

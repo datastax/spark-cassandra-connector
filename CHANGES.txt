@@ -2,6 +2,8 @@
  * Fixed batch counter columns updates (#234, #316)
  * Expose both rpc addresses and local addresses of cassandra nodes in partition
    preferred locations (#325)
+ * Cleaned up the SBT assembly task and added build documentation
+   (backport of #315)
 
 1.0.1
  * Add logging of error message when asynchronous task fails in AsyncExecutor.
