@@ -33,7 +33,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
     val endToken = tokenFactory.fromString(tr.end_token)
-    val endpoints = tr.endpoints.map(InetAddress.getByName).toSet
+    val endpoints = tr.rpc_endpoints.map(InetAddress.getByName).toSet
     new TokenRange(startToken, endToken, endpoints, None)
   }
 

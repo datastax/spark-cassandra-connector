@@ -11,7 +11,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.embedded._
 
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.typeTag
 
 
 case class KeyValue(key: Int, group: Long, value: String)
@@ -339,5 +339,41 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results should contain((KeyGroup(1, 100), Value("0001")))
     results should contain((KeyGroup(2, 100), Value("0002")))
     results should contain((KeyGroup(3, 300), Value("0003")))
+  }
+
+  it should "allow to read Cassandra table as Array of String values" in {
+    val results = sc.cassandraTable[String]("read_test", "key_value").select("value").collect()
+    results should have length 3
+    results should contain("0001")
+    results should contain("0002")
+    results should contain("0003")
+  }
+
+  it should "allow to read Cassandra table as Array of Int values" in {
+    val results = sc.cassandraTable[Int]("read_test", "key_value").select("key").collect()
+    results should have length 3
+    results should contain(1)
+    results should contain(2)
+    results should contain(3)
+  }
+
+  it should "allow to read Cassandra table as Array of java.lang.Integer values" in {
+    val results = sc.cassandraTable[Integer]("read_test", "key_value").select("key").collect()
+    results should have length 3
+    results should contain(1)
+    results should contain(2)
+    results should contain(3)
+  }
+
+  it should "allow to read Cassandra table as Array of List of values" in {
+    val results = sc.cassandraTable[List[String]]("read_test", "collections").select("l").collect()
+    results should have length 2
+    results should contain(List("item1", "item2"))
+  }
+
+  it should "allow to read Cassandra table as Array of Set of values" in {
+    val results = sc.cassandraTable[Set[String]]("read_test", "collections").select("l").collect()
+    results should have length 2
+    results should contain(Set("item1", "item2"))
   }
 }

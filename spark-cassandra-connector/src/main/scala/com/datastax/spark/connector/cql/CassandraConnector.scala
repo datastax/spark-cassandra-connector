@@ -4,12 +4,12 @@ import java.io.IOException
 import java.net.InetAddress
 
 import scala.collection.JavaConversions._
-import org.apache.cassandra.thrift.Cassandra
+
 import org.apache.spark.SparkConf
-import org.apache.thrift.protocol.TBinaryProtocol
-import com.datastax.driver.core.{SocketOptions, Session, Host, Cluster}
-import com.datastax.driver.core.policies._
+
+import com.datastax.driver.core.{Cluster, Host, Session}
 import com.datastax.spark.connector.util.Logging
+
 
 /** Provides and manages connections to Cassandra.
   *
@@ -80,7 +80,8 @@ class CassandraConnector(conf: CassandraConnectorConf)
       // decrease refcount twice. There is a guard in SessionProxy
       // so any subsequent close calls on the same SessionProxy are a no-ops.
       SessionProxy.wrapWithCloseAction(session)(sessionCache.release)
-    } catch {
+    }
+    catch {
       case e: Throwable =>
         sessionCache.release(session)
         throw e
@@ -121,9 +122,16 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
   /** Opens a Thrift client to the given host. Don't use it unless you really know what you are doing. */
   def createThriftClient(host: InetAddress): CassandraClientProxy = {
-    logDebug("Attempting to create thrift client to %s:%d".format(host.getHostAddress, rpcPort))
-    val (client, transport) = conf.connectionFactory.createThriftClient(conf, host)
-    CassandraClientProxy.wrap(client, transport)
+    try {
+      logDebug(s"Attempting to open thrift connection to Cassandra at ${host.getHostAddress}:$rpcPort")
+      val (client, transport) = conf.connectionFactory.createThriftClient(conf, host)
+      CassandraClientProxy.wrap(client, transport)
+    }
+    catch {
+      case e: Throwable =>
+        throw new IOException(
+          s"Failed to open thrift connection to Cassandra at ${host.getHostAddress}:$rpcPort", e)
+    }
   }
 
   def createThriftClient(): CassandraClientProxy =
@@ -153,7 +161,8 @@ object CassandraConnector extends Logging {
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
-    logDebug(s"Connecting to cluster: ${conf.hosts.mkString("{", ",", "}")}:${conf.nativePort}")
+    lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.nativePort
+    logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
     val cluster = conf.connectionFactory.createCluster(conf)
     try {
       val clusterName = cluster.getMetadata.getClusterName
@@ -163,7 +172,7 @@ object CassandraConnector extends Logging {
     catch {
       case e: Throwable =>
         cluster.close()
-        throw e
+        throw new IOException(s"Failed to open native connection to Cassandra at $endpointsStr", e)
     }
   }
 
