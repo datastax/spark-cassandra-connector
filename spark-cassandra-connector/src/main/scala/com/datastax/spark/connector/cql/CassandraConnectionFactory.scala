@@ -41,11 +41,20 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   /** Creates and configures a Thrift client.
     * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
-    val transportFactory = conf.authConf.transportFactory
-    val transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
-    val client = new Cassandra.Client(new TBinaryProtocol(transport))
-    conf.authConf.configureThriftClient(client)
-    (client, transport)
+    var transport: TTransport = null
+    try {
+      val transportFactory = conf.authConf.transportFactory
+      transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
+      val client = new Cassandra.Client(new TBinaryProtocol(transport))
+      conf.authConf.configureThriftClient(client)
+      (client, transport)
+    }
+    catch {
+      case e: Throwable =>
+        if (transport != null)
+          transport.close()
+        throw e
+    }
   }
 
   /** Returns the Cluster.Builder object used to setup Cluster instance. */
