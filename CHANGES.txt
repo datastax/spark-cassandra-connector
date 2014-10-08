@@ -1,6 +1,11 @@
 1.0.1 (unreleased)
  * Add logging of error message when asynchronous task fails in AsyncExecutor.
    (#265)
+ * Fix connection problems with fetching token ranges from hosts with
+   rpc_address different than listen_address.
+   Log host address(es) and ports on connection failures.
+   Close thrift transport if connection fails for some reason after opening the transport,
+   e.g. authentication failure.
 
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
