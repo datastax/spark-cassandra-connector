@@ -1,3 +1,7 @@
+1.0.1 (unreleased)
+ * Add logging of error message when asynchronous task fails in AsyncExecutor.
+   (#265)
+
 1.0.0
  * Fix memory leak in PreparedStatementCache leaking PreparedStatements after
    closing Cluster objects. (#183)
