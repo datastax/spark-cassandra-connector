@@ -11,7 +11,6 @@ import com.datastax.driver.core.{Cluster, Host, Session}
 import com.datastax.spark.connector.util.Logging
 
 
-
 /** Provides and manages connections to Cassandra.
   *
   * A `CassandraConnector` instance is serializable and

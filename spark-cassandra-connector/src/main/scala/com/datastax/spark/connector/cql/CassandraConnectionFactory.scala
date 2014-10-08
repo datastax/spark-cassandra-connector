@@ -2,16 +2,14 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import com.datastax.driver.core.Cluster.Builder
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{SocketOptions, AuthProvider, Cluster, PlainTextAuthProvider}
-import com.datastax.spark.connector.util.ReflectionUtil
-import org.apache.cassandra.thrift.{AuthenticationRequest, Cassandra, TFramedTransportFactory}
+import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TTransport
 
-import scala.collection.JavaConversions._
+import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+import com.datastax.driver.core.{Cluster, SocketOptions}
+import com.datastax.spark.connector.util.ReflectionUtil
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
