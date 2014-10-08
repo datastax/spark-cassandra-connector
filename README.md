@@ -32,10 +32,23 @@ If you want to access the functionality of Connector from Java, you may want to 
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.1.0-alpha2" withSources() withJavadoc()
 
 ## Building
-In the project root directory run:
 
-    ./sbt/sbt package
-    ./sbt/sbt doc
+### Building The Assembly Jar
+In the root directory run
+    
+    sbt assembly
+
+A fat jar will be generated to both of these directories:
+   - `spark-cassandra-connector/target/scala-2.10/`  
+   - `spark-cassandra-connector-java/target/scala-2.10/`
+    
+Select the former for Scala apps, the later for Java.
+
+### Building General Artifacts 
+In the root directory run:
+
+    sbt package
+    sbt doc
     
 The library package jars will be placed in:
   - `spark-cassandra-connector/target/scala-2.10/`
