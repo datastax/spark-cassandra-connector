@@ -28,6 +28,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
+      session.execute("CREATE TABLE IF NOT EXISTS write_test.counters2 (pkey INT PRIMARY KEY, c counter)")
       session.execute("TRUNCATE write_test.key_value")
       session.execute("TRUNCATE write_test.collections")
       session.execute("TRUNCATE write_test.blobs")
@@ -183,6 +184,13 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       result.getLong("c1") shouldEqual 1L
       result.getLong("c2") shouldEqual 2L
     }
+  }
+
+  it should "increment and decrement counters in batches" in {
+    val rowCount = 10000
+    val col = for (i <- 1 to rowCount) yield (i, 1)
+    sc.parallelize(col).saveToCassandra("write_test", "counters2", SomeColumns("pkey", "c"))
+    sc.cassandraTable("write_test", "counters2").count should be(rowCount)
   }
 
   it should "write values of user-defined types" in {

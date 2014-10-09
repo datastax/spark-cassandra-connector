@@ -1,3 +1,6 @@
+1.0.2 (unreleased)
+ * Fixed batch counter columns updates (#234, #316)
+
 1.0.1
  * Add logging of error message when asynchronous task fails in AsyncExecutor.
    (#265)

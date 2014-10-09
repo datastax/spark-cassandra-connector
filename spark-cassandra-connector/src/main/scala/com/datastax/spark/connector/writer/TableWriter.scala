@@ -53,9 +53,11 @@ class TableWriter[T] private (
     s"UPDATE ${quote(keyspaceName)}.${quote(tableName)} SET $setClause WHERE $whereClause"
   }
 
-  val queryTemplate: String = {
-    val columns = columnNames.map(tableDef.columnByName)
-    if (columns.exists(_.isCounterColumn))
+  private val isCounterUpdate =
+    tableDef.allColumns.exists(_.isCounterColumn)
+
+  private val queryTemplate: String = {
+    if (isCounterUpdate)
       queryTemplateUsingUpdate
     else
       queryTemplateUsingInsert
@@ -72,7 +74,11 @@ class TableWriter[T] private (
   }
 
   private def createBatch(data: Seq[T], stmt: PreparedStatement): BatchStatement = {
-    val batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED)
+    val batchStmt =
+      if (isCounterUpdate)
+        new BatchStatement(BatchStatement.Type.COUNTER)
+      else
+        new BatchStatement(BatchStatement.Type.UNLOGGED)
     for (row <- data)
       batchStmt.add(rowWriter.bind(row, stmt))
     batchStmt
