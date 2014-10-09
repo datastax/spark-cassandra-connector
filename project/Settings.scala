@@ -43,16 +43,19 @@ object Settings extends Build {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
   )
 
-  val parentSettings = buildSettings ++ assemblySettings ++ Seq(
+  val parentSettings = buildSettings ++ Seq(
     publishArtifact := false,
     publish := {}
   )
+
+  override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 
   lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    compileOrder := CompileOrder.JavaThenScala,
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
@@ -60,7 +63,7 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ sbtAssemblyDemoSettings ++ Seq(
+  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m",  "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-Xmx1024m"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -92,36 +95,16 @@ object Settings extends Build {
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+    test in assembly := {},// TODO REMOVE ME!!
     jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" },
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
-      mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+    mergeStrategy in assembly <<= (mergeStrategy in assembly) {
       (old) => {
-        case PathList("org", "jboss", "netty", xs @ _*) => MergeStrategy.discard
-        case PathList("com", "google", xs @ _*) => MergeStrategy.discard
+        case PathList("com", "google", xs @ _*) => MergeStrategy.last
         case x => old(x)
       }
     }
   )
-
-  /* By default, assembly is not enabled for the demos module, but it can be enabled with
-    `-Dspark.cassandra.connector.demos.assembly=true`. From the command line this would be:
-     sbt -Dspark.cassandra.connector.demos.assembly=true assembly */
-  lazy val sbtAssemblyDemoSettings =
-    if (System.getProperty("spark.cassandra.connector.demos.assembly", "false").toBoolean)
-      sbtAssemblySettings ++ Seq(
-        mergeStrategy in assembly <<= (mergeStrategy in assembly) {
-          (old) => {
-            case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
-            case PathList("javax", "servlet", xs @ _*) => MergeStrategy.first
-            case PathList("akka", "util", xs @ _*) => MergeStrategy.first
-            case PathList("akka", "remote", xs @ _*) => MergeStrategy.first
-            case PathList("akka", "routing", xs @ _*) => MergeStrategy.first
-            case PathList("org", "apache", "commons", xs @ _*) => MergeStrategy.first
-            case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.first
-            case x => old(x)
-          }
-        })
-    else Seq.empty
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
@@ -136,7 +119,6 @@ object Settings extends Build {
       .setPreference(AlignSingleLineCaseStatements, true)
   }
 
-  override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 }
 
 /**

@@ -27,7 +27,7 @@ object Versions {
   val JodaT           = "2.3"
   val JOpt            = "4.7"
   val Lzf             = "0.8.4"
-  val MetricsJson     = "3.0.2"
+  val CodaHaleMetrics = "3.0.2"
   val Scala           = "2.10.4"
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"

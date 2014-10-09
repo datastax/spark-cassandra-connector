@@ -1,11 +1,10 @@
-1.1.0 beta 1
- * Pluggable mechanism for obtaining connections to Cassandra.
-   Ability to pass custom CassandraConnector to CassandraRDD. (#192)
+ * Pluggable mechanism for obtaining connections to Cassandra
+   Ability to pass custom CassandraConnector to CassandraRDDs (#192)
  * Provided a row reader which allows to create RDDs of pairs of objects as well 
    as RDDs of simple objects handled by type converter directly; 
    added meaningful compiler messages when invalid type was provided (#88)
- * Fixed serialization problem in CassandraSQLContext by making conf transient.
-   (#310)
+ * Fixed serialization problem in CassandraSQLContext by making conf transient (#310)
+ * Cleaned up the SBT assembly task and added build documentation (#315)
 
 1.1.0 alpha 2
  * Upgraded Apache Spark to 1.1.0.
@@ -42,6 +41,8 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
+1.0.2 (unreleased)
+ * Fixed batch counter columns updates (#234, #316)
 
 1.0.1
  * Add logging of error message when asynchronous task fails in AsyncExecutor.
