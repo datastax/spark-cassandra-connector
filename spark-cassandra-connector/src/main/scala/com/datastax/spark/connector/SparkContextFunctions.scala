@@ -1,7 +1,7 @@
 package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.{ValidRDDType, CassandraRDD}
+import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType, CassandraRDD}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import org.apache.spark.SparkContext
 
@@ -47,5 +47,5 @@ class SparkContextFunctions(sc: SparkContext) {
                        (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
                         ct: ClassTag[T], rrf: RowReaderFactory[T],
                         ev: ValidRDDType[T]) =
-    new CassandraRDD[T](sc, CassandraConnector(sc.getConf), keyspace, table)
+    new CassandraRDD[T](sc, connector, keyspace, table, readConf = ReadConf.fromSparkConf(sc.getConf))
 }

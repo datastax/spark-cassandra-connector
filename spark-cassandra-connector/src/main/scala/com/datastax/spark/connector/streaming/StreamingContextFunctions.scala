@@ -2,7 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorRef, Actor}
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.ValidRDDType
+import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.scheduler.StreamingListener
@@ -23,8 +23,11 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
       connector: CassandraConnector = CassandraConnector(ssc.sparkContext.getConf),
       ct: ClassTag[T],
       rrf: RowReaderFactory[T],
-      ev: ValidRDDType[T]): CassandraStreamingRDD[T] =
-    new CassandraStreamingRDD[T](ssc, connector, keyspace, table)
+      ev: ValidRDDType[T]): CassandraStreamingRDD[T] = {
+
+    val readConf = ReadConf.fromSparkConf(ssc.sparkContext.getConf)
+    new CassandraStreamingRDD[T](ssc, connector, keyspace, table, readConf = readConf)
+  }
 }
 
 /** Simple akka.actor.Actor mixin. */
