@@ -1,4 +1,4 @@
-1.0.2 (unreleased)
+1.0.2
  * Fixed batch counter columns updates (#234, #316)
  * Expose both rpc addresses and local addresses of cassandra nodes in partition
    preferred locations (#325)
