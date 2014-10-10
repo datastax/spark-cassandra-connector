@@ -55,7 +55,6 @@ object Settings extends Build {
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    compileOrder := CompileOrder.JavaThenScala,
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
