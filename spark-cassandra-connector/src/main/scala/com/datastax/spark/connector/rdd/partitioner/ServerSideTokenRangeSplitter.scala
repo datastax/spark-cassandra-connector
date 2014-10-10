@@ -4,7 +4,7 @@ import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
+import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, Token, TokenFactory, TokenRange}
 import org.apache.cassandra.thrift.CfSplit
 import org.apache.spark.Logging
 
@@ -19,7 +19,7 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
   tokenFactory: TokenFactory[V, T])
   extends TokenRangeSplitter[V, T] with Logging {
 
-  private def unthriftify(cfSplit: CfSplit, endpoints: Set[InetAddress]): TokenRange[V, T] = {
+  private def unthriftify(cfSplit: CfSplit, endpoints: Set[CassandraNode]): TokenRange[V, T] = {
     val left = tokenFactory.fromString(cfSplit.start_token)
     val right = tokenFactory.fromString(cfSplit.end_token)
     TokenRange(left, right, endpoints, Some(cfSplit.row_count))
@@ -41,7 +41,7 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
   def split(range: TokenRange[V, T], splitSize: Long) = {
     val fetchResults =
       for (endpoint <- range.endpoints.toStream)
-      yield Try(fetchSplits(range, endpoint, splitSize))
+      yield Try(fetchSplits(range, endpoint.rpcAddress, splitSize))
 
     fetchResults
       .collectFirst { case Success(splits) => splits }
