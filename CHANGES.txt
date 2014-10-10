@@ -1,3 +1,4 @@
+1.1.0 alpha 3
  * Pluggable mechanism for obtaining connections to Cassandra
    Ability to pass custom CassandraConnector to CassandraRDDs (#192)
  * Provided a row reader which allows to create RDDs of pairs of objects as well
