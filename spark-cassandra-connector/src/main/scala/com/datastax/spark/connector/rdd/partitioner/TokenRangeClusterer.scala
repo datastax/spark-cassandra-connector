@@ -2,9 +2,10 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
+import Ordering.Implicits._
+
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenRange}
 
-import scala.Ordering.Implicits._
 import scala.annotation.tailrec
 
 /** Divides a set of token ranges into groups containing not more than `maxRowCountPerGroup` rows

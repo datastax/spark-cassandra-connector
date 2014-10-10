@@ -4,7 +4,7 @@ import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
-import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
+import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, Token, TokenFactory}
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
@@ -31,7 +31,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
     val endToken = tokenFactory.fromString(tr.end_token)
-    val endpoints = tr.rpc_endpoints.map(InetAddress.getByName).toSet
+    val rpcAddresses = tr.rpc_endpoints.map(InetAddress.getByName)
+    val localAddresses = tr.endpoints.map(InetAddress.getByName)
+    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(CassandraNode.apply)).toSet
     new TokenRange(startToken, endToken, endpoints, None)
   }
 
@@ -126,7 +128,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
           val cqlPredicates = group.flatMap(splitToCqlClause)
           val endpoints = group.map(_.endpoints).reduce(_ intersect _)
           val rowCount = group.map(_.rowCount.get).sum
-          CassandraPartition(index, endpoints, cqlPredicates, rowCount)
+          CassandraPartition(index, endpoints.flatMap(_.allAddresses), cqlPredicates, rowCount)
         }
     }
   }
