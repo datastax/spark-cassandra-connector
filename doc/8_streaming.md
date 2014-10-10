@@ -60,22 +60,33 @@ This `Duration` is not to be confused with the [scala.concurrent.duration.Durati
     val ssc = new StreamingContext(conf, Seconds(n))
 ```
 
-#### Enable Saving To Cassandra
-Enable Cassandra-specific functions on the `StreamingContext`, `DStream` and `RDD`:
 
-```scala
-    import com.datastax.spark.connector.streaming._
-```
-
-#### Creating A Stream and Writing to Cassandra 
+#### Creating A Stream
 Create any of the available or custom Spark streams. The connector supports Akka Actor streams so far, but 
 will be supporting many more in the next release. You can extend the provided `import com.datastax.spark.connector.streaming.TypedStreamingActor`:
+
+Kafka Stream: creates an input stream that pulls messages from a Kafka Broker
+
+```scala
+    val stream = KafkaUtils.createStream[String, String, StringDecoder, StringDecoder](
+          ssc, kafka.kafkaParams, Map(topic -> 1), StorageLevel.MEMORY_ONLY)
+```
+
+Actor Stream
 
 ```scala
     val stream = ssc.actorStream[String](Props[TypedStreamingActor[String]], "stream", StorageLevel.MEMORY_AND_DISK)
 ```
  
-##### Configure and start the computation.
+      
+#### Enable Spark Streaming With Cassandra
+Enable Cassandra-specific functions on the `StreamingContext`, `DStream` and `RDD`:
+
+```scala
+    import com.datastax.spark.connector.streaming._
+```
+ 
+##### Writing to Cassandra From A Stream
 Where `streaming_test` is the keyspace name and `words` is the table name:
 
 Saving data:
@@ -90,6 +101,12 @@ Start the computation:
 ```scala         
     ssc.start()
 ```
+
+##### Reading From Cassandra From The `StreamingContext`
+
+ ```scala
+     val rdd = ssc.cassandraTable("streaming_test", "key_value").select("key", "value").where("fu = ?", 3)
+ ```
  
 For a more detailed description as well as tuning writes, see [Saving Data to Cassandra](5_saving.md).
 
