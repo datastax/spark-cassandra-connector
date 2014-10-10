@@ -11,7 +11,7 @@ import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.typeTag
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: String)

@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFactory}
+import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, BigIntToken, TokenFactory}
 import org.junit.Assert._
 import org.junit.Test
 
@@ -18,19 +18,20 @@ class RandomPartitionerTokenRangeSplitterTest {
 
   @Test
   def testSplit() {
+    val node = CassandraNode(InetAddress.getLocalHost, InetAddress.getLocalHost)
     val splitter = new RandomPartitionerTokenRangeSplitter(2.0)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("100")
     val range = new TokenRange(
       new BigIntToken(rangeLeft),
-      new BigIntToken(rangeRight), Set(InetAddress.getLocalHost), None)
+      new BigIntToken(rangeRight), Set(node), None)
     val out = splitter.split(range, 20)
 
     // 2 rows per token on average; to so 10 tokens = 20 rows; therefore 10 splits
     assertEquals(10, out.size)
     assertEquals(rangeLeft, out.head.start.value)
     assertEquals(rangeRight, out.last.end.value)
-    assertTrue(out.forall(_.endpoints == Set(InetAddress.getLocalHost)))
+    assertTrue(out.forall(_.endpoints == Set(node)))
     assertNoHoles(out)
   }
 
