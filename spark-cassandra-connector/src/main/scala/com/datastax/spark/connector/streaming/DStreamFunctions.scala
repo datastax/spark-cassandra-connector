@@ -1,7 +1,8 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.writer.{RowWriterFactory, WritableToCassandra}
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.writer.{TableWriter, WriteConf, RowWriterFactory, WritableToCassandra}
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.DStream
 
@@ -11,30 +12,19 @@ class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends WritableToCassa
 
   override def sparkContext: SparkContext = dstream.context.sparkContext
 
-  /** Performs [[com.datastax.spark.connector.writer.WritableToCassandra]] for each produced RDD.
-    * Uses all column names. */
-  def saveToCassandra(keyspaceName: String, tableName: String)(implicit rwf: RowWriterFactory[T]): Unit = {
-    val writer = tableWriter(keyspaceName, tableName, AllColumns, None)(rwf)
-    dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.write _))
-  }
-
-  /**
-   * Performs [[com.datastax.spark.connector.writer.WritableToCassandra]] for each produced RDD.
-   * Uses specific column names.
-   */
-  def saveToCassandra(keyspaceName: String, tableName: String,
-                      columnNames: SomeColumns)(implicit rwf: RowWriterFactory[T]): Unit = {
-    val writer = tableWriter(keyspaceName, tableName, columnNames, None)(rwf)
-    dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.write _))
-  }
+  def conf = sparkContext.getConf
 
   /**
    * Performs [[com.datastax.spark.connector.writer.WritableToCassandra]] for each produced RDD.
    * Uses specific column names with an additional batch size.
    */
-  def saveToCassandra(keyspaceName: String, tableName: String,
-                      columnNames: SomeColumns, batchSize: Int)(implicit rwf: RowWriterFactory[T]): Unit = {
-    val writer = tableWriter(keyspaceName, tableName, columnNames, Some(batchSize))(rwf)
+  def saveToCassandra(keyspaceName: String,
+                      tableName: String,
+                      columnNames: ColumnSelector = AllColumns,
+                      writeConf: WriteConf = WriteConf.fromSparkConf(conf))
+                     (implicit connector: CassandraConnector = CassandraConnector(conf),
+                      rwf: RowWriterFactory[T]): Unit = {
+    val writer = TableWriter(connector, keyspaceName, tableName, columnNames, writeConf)
     dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.write _))
   }
 }

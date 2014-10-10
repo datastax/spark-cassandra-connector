@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
@@ -27,15 +26,14 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         conn,
         keyspaceName = "column_names_test",
         tableName = "key_value",
-        consistencyLevel = ConsistencyLevel.LOCAL_ONE,
         columnNames = AllColumns,
-        batchSizeInBytes = TableWriter.DefaultBatchSizeInBytes,
-        batchSizeInRows = None,
-        parallelismLevel = TableWriter.DefaultParallelismLevel)
+        writeConf = WriteConf()
+      )
 
       writer.columnNames.size should be (all.size)
       writer.columnNames should be(all)
     }
+
     "distinguish and use only specified column names if provided" in {
       val subset = Seq("key", "group")
 
@@ -43,11 +41,9 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         conn,
         keyspaceName = "column_names_test",
         tableName = "key_value",
-        consistencyLevel = ConsistencyLevel.LOCAL_ONE,
         columnNames = SomeColumns(subset: _*),
-        batchSizeInBytes = TableWriter.DefaultBatchSizeInBytes,
-        batchSizeInRows = None,
-        parallelismLevel = TableWriter.DefaultParallelismLevel)
+        writeConf = WriteConf()
+      )
 
       writer.columnNames.size should be (subset.size)
       writer.columnNames should be (Vector("key", "group"))

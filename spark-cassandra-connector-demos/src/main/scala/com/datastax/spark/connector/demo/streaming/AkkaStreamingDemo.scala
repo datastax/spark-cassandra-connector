@@ -10,6 +10,7 @@ import com.datastax.spark.connector.streaming.TypedStreamingActor
 import com.datastax.spark.connector.demo.streaming.StreamingEvent._
 import com.datastax.spark.connector.embedded.Assertions
 import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.writer.WriteConf
 
 /**
  * This demo can run against a single node, local or remote.
@@ -146,7 +147,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
-    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
+    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSizeInRows = Some(1)))
 
   /** Once the stream and sender actors are created, the spark stream's compute configured, the `StreamingContext` is started. */
   ssc.start()

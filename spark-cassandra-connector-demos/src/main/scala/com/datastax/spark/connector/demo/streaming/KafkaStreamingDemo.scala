@@ -10,6 +10,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns 
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.writer.WriteConf
 
 /**
  * Simple Kafka Spark Streaming demo which
@@ -71,7 +72,7 @@ object KafkaStreamingDemo extends Assertions with Logging {
     stream.map { case (_, v) => v }
       .map(x => (x, 1))
       .reduceByKey(_ + _)
-      .saveToCassandra("streaming_test", "key_value", SomeColumns("key", "value"), 1)
+      .saveToCassandra("streaming_test", "key_value", SomeColumns("key", "value"), WriteConf(batchSizeInRows = Some(1)))
 
     ssc.start()
 

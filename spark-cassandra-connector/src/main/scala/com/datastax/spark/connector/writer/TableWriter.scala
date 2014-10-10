@@ -20,10 +20,7 @@ class TableWriter[T] private (
     connector: CassandraConnector,
     tableDef: TableDef,
     rowWriter: RowWriter[T],
-    maxBatchSizeInBytes: Int,
-    maxBatchSizeInRows: Option[Int],
-    parallelismLevel: Int,
-    consistencyLevel: ConsistencyLevel) extends Serializable with Logging {
+    writeConf: WriteConf) extends Serializable with Logging {
 
   import com.datastax.spark.connector.writer.TableWriter._
 
@@ -102,12 +99,12 @@ class TableWriter[T] private (
   /** Returns either configured batch size or, if not set, determines the optimal batch size by writing a
     * small number of rows and estimating their size. */
   private def optimumBatchSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    maxBatchSizeInRows match {
+    writeConf.batchSizeInRows match {
       case Some(size) =>
         size
       case None =>
         val maxInsertSize = measureMaxInsertSize(data, stmt, queryExecutor)
-        math.max(1, maxBatchSizeInBytes / (maxInsertSize * 2))  // additional margin for data larger than usual
+        math.max(1, writeConf.batchSizeInBytes / (maxInsertSize * 2))  // additional margin for data larger than usual
     }
   }
 
@@ -129,8 +126,8 @@ class TableWriter[T] private (
       val rowIterator = new CountingIterator(data)
       val startTime = System.currentTimeMillis()
       val stmt = prepareStatement(session)
-      stmt.setConsistencyLevel(consistencyLevel)
-      val queryExecutor = new QueryExecutor(session, parallelismLevel)
+      stmt.setConsistencyLevel(writeConf.consistencyLevel)
+      val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel)
       val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
@@ -161,11 +158,8 @@ object TableWriter {
       connector: CassandraConnector,
       keyspaceName: String,
       tableName: String,
-      consistencyLevel: ConsistencyLevel,
       columnNames: ColumnSelector,
-      batchSizeInBytes: Int = DefaultBatchSizeInBytes,
-      batchSizeInRows: Option[Int] = None, 
-      parallelismLevel: Int = DefaultParallelismLevel): TableWriter[T] = {
+      writeConf: WriteConf): TableWriter[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
@@ -175,6 +169,6 @@ object TableWriter {
       case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
     }
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
-    new TableWriter[T](connector, tableDef, rowWriter, batchSizeInBytes, batchSizeInRows, parallelismLevel, consistencyLevel)
+    new TableWriter[T](connector, tableDef, rowWriter, writeConf)
   }
 }
