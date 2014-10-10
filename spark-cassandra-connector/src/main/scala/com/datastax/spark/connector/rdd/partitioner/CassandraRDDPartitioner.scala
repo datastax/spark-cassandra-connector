@@ -2,19 +2,20 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
-import com.datastax.spark.connector.rdd._
-import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
-import com.datastax.spark.connector.util.CqlWhereParser
-import com.datastax.spark.connector.util.CqlWhereParser._
+import scala.collection.JavaConversions._
+import scala.collection.parallel.ForkJoinTaskSupport
+import scala.concurrent.forkjoin.ForkJoinPool
+
 import org.apache.cassandra.thrift
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
 import org.apache.thrift.TApplicationException
 
-import scala.collection.JavaConversions._
-import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
+import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.rdd._
+import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, Token, TokenFactory}
+import com.datastax.spark.connector.util.CqlWhereParser
+import com.datastax.spark.connector.util.CqlWhereParser._
 
 /** Creates CassandraPartitions for given Cassandra table */
 class CassandraRDDPartitioner[V, T <: Token[V]](
@@ -33,7 +34,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
     val endToken = tokenFactory.fromString(tr.end_token)
-    val endpoints = tr.rpc_endpoints.map(InetAddress.getByName).toSet
+    val rpcAddresses = tr.rpc_endpoints.map(InetAddress.getByName)
+    val localAddresses = tr.endpoints.map(InetAddress.getByName)
+    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(CassandraNode.apply)).toSet
     new TokenRange(startToken, endToken, endpoints, None)
   }
 
@@ -148,14 +151,17 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
         val groups = clusterer.group(splits).toArray
 
-        if (containsPartitionKey(whereClause))
-          Array(CassandraPartition(0, tokenRanges.flatMap(_.endpoints).distinct, List(CqlTokenRange("")), 0))
+        if (containsPartitionKey(whereClause)) {
+          val endpoints = tokenRanges.flatMap(_.endpoints)
+          val addresses = endpoints.flatMap(_.allAddresses)
+          Array(CassandraPartition(0, addresses, List(CqlTokenRange("")), 0))
+        }
         else
           for ((group, index) <- groups.zipWithIndex) yield {
             val cqlPredicates = group.flatMap(splitToCqlClause)
             val endpoints = group.map(_.endpoints).reduce(_ intersect _)
             val rowCount = group.map(_.rowCount.get).sum
-            CassandraPartition(index, endpoints, cqlPredicates, rowCount)
+            CassandraPartition(index, endpoints.flatMap(_.allAddresses), cqlPredicates, rowCount)
           }
     }
   }
