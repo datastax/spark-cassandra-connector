@@ -1,6 +1,8 @@
 1.1.0 beta 1 (unreleased)
  * Use asynchronous prefetching of multi-page ResultSets in CassandraRDD
    to reduce waiting for Cassandra query results.
+ * Make token range start and end be parameters of the query, not part of the query
+   template to reduce the number of statements requiring preparation.
 
 1.1.0 alpha 3
  * Pluggable mechanism for obtaining connections to Cassandra

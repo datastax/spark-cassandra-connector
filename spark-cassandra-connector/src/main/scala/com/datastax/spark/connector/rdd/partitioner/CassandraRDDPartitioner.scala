@@ -64,20 +64,20 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   }
 
   private def splitToCqlClause(range: TokenRange): Iterable[CqlTokenRange] = {
-    val startToken = tokenFactory.toString(range.start)
-    val endToken = tokenFactory.toString(range.end)
+    val startToken = range.start.value
+    val endToken = range.end.value
     val pk = tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
 
     if (range.end == tokenFactory.minToken)
-      List(CqlTokenRange(s"token($pk) > $startToken"))
+      List(CqlTokenRange(s"token($pk) > ?", startToken))
     else if (range.start == tokenFactory.minToken)
-      List(CqlTokenRange(s"token($pk) <= $endToken"))
+      List(CqlTokenRange(s"token($pk) <= ?", endToken))
     else if (!range.isWrapAround)
-      List(CqlTokenRange(s"token($pk) > $startToken AND token($pk) <= $endToken"))
+      List(CqlTokenRange(s"token($pk) > ? AND token($pk) <= ?", startToken, endToken))
     else
       List(
-        CqlTokenRange(s"token($pk) > $startToken"),
-        CqlTokenRange(s"token($pk) <= $endToken"))
+        CqlTokenRange(s"token($pk) > ?", startToken),
+        CqlTokenRange(s"token($pk) <= ?", endToken))
   }
 
   /** This works only for numeric tokens */
