@@ -35,14 +35,14 @@ class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter wi
     assert(rows.exists(row => !row.contains("value") && row.getInt("key") == 3))
   }
 
-  "CassandraJavaRDD" should "return selected columns" in {
+  it should "return selected columns" in {
     val rdd = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .select("key")
     assert(rdd.selectedColumnNames().size == 1)
     assert(rdd.selectedColumnNames().contains("key"))
   }
 
-  "CassandraJavaRDD" should "allow to use where clause to filter records" in {
+  it should "allow to use where clause to filter records" in {
     val rows = CassandraJavaUtil.javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .where("value = ?", "two").toArray()
     assert(rows.size == 1)
