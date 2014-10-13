@@ -5,7 +5,7 @@ import java.net.InetAddress
 import org.apache.spark.Partition
 
 /** Stores a CQL `WHERE` predicate matching a range of tokens. */
-case class CqlTokenRange(cql: String)
+case class CqlTokenRange(cql: String, values: Any*)
 
 /** Metadata describing Cassandra table partition processed by a single Spark task.
   * Beware the term "partition" is overloaded. Here, in the context of Spark,
