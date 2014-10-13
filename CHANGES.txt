@@ -1,3 +1,7 @@
+1.1.0 beta 1 (unreleased)
+ * Use asynchronous prefetching of multi-page ResultSets in CassandraRDD
+   to reduce waiting for Cassandra query results.
+
 1.1.0 alpha 3
  * Pluggable mechanism for obtaining connections to Cassandra
    Ability to pass custom CassandraConnector to CassandraRDDs (#192)

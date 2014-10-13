@@ -334,7 +334,9 @@ class CassandraRDD[R] private[connector] (
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.toArray
     try {
-      val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
+      val rs = session.execute(stmt)
+      val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
+      val result = iterator.map(rowTransformer.read(_, columnNamesArray))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {

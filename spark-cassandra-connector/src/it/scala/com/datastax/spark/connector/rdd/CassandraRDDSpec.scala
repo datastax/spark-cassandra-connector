@@ -32,6 +32,8 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))
+  val bigTableRowCount = 100000
+
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS read_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -64,6 +66,12 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')")
+
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.big_table (key INT PRIMARY KEY, value INT)")
+    val insert = session.prepare("INSERT INTO read_test.big_table(key, value) VALUES (?, ?)")
+    for (i <- 1 to bigTableRowCount) {
+      session.execute(insert.bind(i.asInstanceOf[AnyRef], i.asInstanceOf[AnyRef]))
+    }
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
@@ -375,5 +383,11 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     val results = sc.cassandraTable[Set[String]]("read_test", "collections").select("l").collect()
     results should have length 2
     results should contain(Set("item1", "item2"))
+  }
+
+  // This is to trigger result set paging, unused in most other tests:
+  it should "allow to count a high number of rows" in {
+    val count = sc.cassandraTable("read_test", "big_table").count()
+    count should be (bigTableRowCount)
   }
 }
