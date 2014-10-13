@@ -1,3 +1,6 @@
+1.0.3 (unreleased)
+ * Fixed handling of Cassandra rpc_address set to 0.0.0.0 (#332)
+
 1.0.2
  * Fixed batch counter columns updates (#234, #316)
  * Expose both rpc addresses and local addresses of cassandra nodes in partition
