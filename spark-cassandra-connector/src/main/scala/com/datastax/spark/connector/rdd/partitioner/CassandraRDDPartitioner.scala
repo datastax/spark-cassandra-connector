@@ -31,12 +31,26 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
+  private val NullAddress = InetAddress.getByName("0.0.0.0")
+
+  /* An incorrectly configured Cassandra node may send us 0.0.0.0 as the rpc_address.
+   * If this happens, we replace it with the local address (which must be always != 0.0.0.0) */
+  private def cassandraNode(rpcAddress: InetAddress, localAddress: InetAddress): CassandraNode = {
+    (rpcAddress, localAddress) match {
+      case (NullAddress, NullAddress) => throw new IllegalArgumentException(
+        "Broadcast address and RPC address of a Cassandra node cannot be both set to 0.0.0.0")
+      case (NullAddress, local)       => CassandraNode(local, local)
+      case (rpc, NullAddress)         => CassandraNode(rpc, rpc)
+      case (rpc, local)               => CassandraNode(rpc, local)
+    }
+  }
+
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
     val endToken = tokenFactory.fromString(tr.end_token)
     val rpcAddresses = tr.rpc_endpoints.map(InetAddress.getByName)
     val localAddresses = tr.endpoints.map(InetAddress.getByName)
-    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(CassandraNode.apply)).toSet
+    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(cassandraNode)).toSet
     new TokenRange(startToken, endToken, endpoints, None)
   }
 
