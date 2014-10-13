@@ -4,6 +4,8 @@ import java.net.InetAddress
 
 
 case class CassandraNode(rpcAddress: InetAddress, localAddress: InetAddress) {
+  require(rpcAddress != InetAddress.getByName("0.0.0.0"), "rpcAddress must not be 0.0.0.0")
+  require(localAddress != InetAddress.getByName("0.0.0.0"), "localAddress must not be 0.0.0.0")
   def allAddresses = Set(rpcAddress, localAddress)
 }
 

@@ -31,12 +31,26 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
+  private val NullAddress = InetAddress.getByName("0.0.0.0")
+
+  /* An incorrectly configured Cassandra node may send us 0.0.0.0 as the rpc_address.
+   * If this happens, we replace it with the local address (which must be always != 0.0.0.0) */
+  private def cassandraNode(rpcAddress: InetAddress, localAddress: InetAddress): CassandraNode = {
+    (rpcAddress, localAddress) match {
+      case (NullAddress, NullAddress) => throw new IllegalArgumentException(
+        "Broadcast address and RPC address of a Cassandra node cannot be both set to 0.0.0.0")
+      case (NullAddress, local)       => CassandraNode(local, local)
+      case (rpc, NullAddress)         => CassandraNode(rpc, rpc)
+      case (rpc, local)               => CassandraNode(rpc, local)
+    }
+  }
+
   private def unthriftify(tr: thrift.TokenRange): TokenRange = {
     val startToken = tokenFactory.fromString(tr.start_token)
     val endToken = tokenFactory.fromString(tr.end_token)
     val rpcAddresses = tr.rpc_endpoints.map(InetAddress.getByName)
     val localAddresses = tr.endpoints.map(InetAddress.getByName)
-    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(CassandraNode.apply)).toSet
+    val endpoints = (rpcAddresses zip localAddresses).map(Function.tupled(cassandraNode)).toSet
     new TokenRange(startToken, endToken, endpoints, None)
   }
 
@@ -64,20 +78,20 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   }
 
   private def splitToCqlClause(range: TokenRange): Iterable[CqlTokenRange] = {
-    val startToken = tokenFactory.toString(range.start)
-    val endToken = tokenFactory.toString(range.end)
+    val startToken = range.start.value
+    val endToken = range.end.value
     val pk = tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
 
     if (range.end == tokenFactory.minToken)
-      List(CqlTokenRange(s"token($pk) > $startToken"))
+      List(CqlTokenRange(s"token($pk) > ?", startToken))
     else if (range.start == tokenFactory.minToken)
-      List(CqlTokenRange(s"token($pk) <= $endToken"))
+      List(CqlTokenRange(s"token($pk) <= ?", endToken))
     else if (!range.isWrapAround)
-      List(CqlTokenRange(s"token($pk) > $startToken AND token($pk) <= $endToken"))
+      List(CqlTokenRange(s"token($pk) > ? AND token($pk) <= ?", startToken, endToken))
     else
       List(
-        CqlTokenRange(s"token($pk) > $startToken"),
-        CqlTokenRange(s"token($pk) <= $endToken"))
+        CqlTokenRange(s"token($pk) > ?", startToken),
+        CqlTokenRange(s"token($pk) <= ?", endToken))
   }
 
   /** This works only for numeric tokens */

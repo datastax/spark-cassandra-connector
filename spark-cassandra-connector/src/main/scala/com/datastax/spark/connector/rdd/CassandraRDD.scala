@@ -302,7 +302,7 @@ class CassandraRDD[R] private[connector] (
     val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
-    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", where.values)
+    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", range.values ++ where.values)
   }
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
@@ -334,7 +334,9 @@ class CassandraRDD[R] private[connector] (
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.toArray
     try {
-      val result = session.execute(stmt).iterator.map(rowTransformer.read(_, columnNamesArray))
+      val rs = session.execute(stmt)
+      val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
+      val result = iterator.map(rowTransformer.read(_, columnNamesArray))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {
