@@ -3,6 +3,7 @@
    to reduce waiting for Cassandra query results.
  * Make token range start and end be parameters of the query, not part of the query
    template to reduce the number of statements requiring preparation.
+ * Added type converter for GregorianCalendar (#334)
 
 1.1.0 alpha 3
  * Pluggable mechanism for obtaining connections to Cassandra
