@@ -2,18 +2,20 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorSystem, Props, Terminated}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-import com.datastax.spark.connector.cql.CassandraConnector
+
 import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
+import com.datastax.spark.connector.testkit._
+import com.datastax.spark.connector.writer.WriteConf
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
-  import TestEvent._
+  import com.datastax.spark.connector.testkit.TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
   CassandraConnector(SparkTemplate.conf).withSessionDo { session =>
@@ -30,7 +32,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), 1)
+        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSizeInRows = Some(1)))
 
       // start the streaming context so the data can be processed and actor started
       ssc.start

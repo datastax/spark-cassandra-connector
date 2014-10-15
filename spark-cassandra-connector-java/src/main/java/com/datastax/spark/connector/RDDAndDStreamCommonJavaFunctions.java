@@ -2,6 +2,7 @@ package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.writer.RowWriterFactory;
+import com.datastax.spark.connector.writer.WriteConf;
 import scala.reflect.ClassTag;
 
 import java.util.Map;
@@ -50,7 +51,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
 
     /**
      * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], int)}.
+     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
      * It additionally allows the specification of a factory of custom {@link com.datastax.spark.connector.writer.RowWriter}.
      * By default, a factory of {@link com.datastax.spark.connector.writer.DefaultRowWriter} is used together with
      * an underlying {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}.
@@ -58,9 +59,9 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
      * to Cassandra as if this method was called on each of them.
      *
-     * @see #saveToCassandra(String, String, String[], int)
+     * @see #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)
      */
-    public abstract void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, RowWriterFactory<T> rowWriterFactory);
+    public abstract void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, RowWriterFactory<T> rowWriterFactory);
 
     /**
      * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
@@ -94,7 +95,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
 
     /**
      * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], int)}.
+     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
      * It additionally allows the specification of a custom column mapper. By default,
      * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used, which works
      * perfectly with Java bean-like classes.
@@ -102,9 +103,9 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
      * to Cassandra as if this method was called on each of them.
      */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, ColumnMapper<T> columnMapper) {
+    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, ColumnMapper<T> columnMapper) {
         RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
-        saveToCassandra(keyspace, table, columnNames, batchSize, rwf);
+        saveToCassandra(keyspace, table, columnNames, writeConf, rwf);
     }
 
     /**
@@ -172,7 +173,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
 
     /**
      * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], int)}.
+     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
      * It additionally allows the specification of a custom RDD/DStream object property mapping to columns in Cassandra table.
      * <p/>
      * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
@@ -180,8 +181,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      *
      * @see #saveToCassandra(String, String, java.util.Map)
      */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, columnNames, batchSize, javaBeanColumnMapper(classTag, columnNameOverride));
+    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, Map<String, String> columnNameOverride) {
+        saveToCassandra(keyspace, table, columnNames, writeConf, javaBeanColumnMapper(classTag, columnNameOverride));
     }
 
     /**
@@ -302,7 +303,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * @see #saveToCassandra(String, String)
      * @see #saveToCassandra(String, String, String[])
      */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, int batchSize) {
-        saveToCassandra(keyspace, table, columnNames, batchSize, CassandraJavaUtil.NO_OVERRIDE);
+    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf) {
+        saveToCassandra(keyspace, table, columnNames, writeConf, CassandraJavaUtil.NO_OVERRIDE);
     }
 }
