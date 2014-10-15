@@ -2,7 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{Calendar, GregorianCalendar, UUID, Date}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -128,6 +128,8 @@ object TypeConverter {
     def convertPF = {
       case x: Number => x.longValue
       case x: Date => x.getTime
+      case x: DateTime => x.toDate.getTime
+      case x: Calendar => x.getTimeInMillis
       case x: String => x.toLong
     }
   }
@@ -198,6 +200,7 @@ object TypeConverter {
     def convertPF = {
       case x: Date => x
       case x: DateTime => x.toDate
+      case x: Calendar => x.getTime
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: String => TimestampParser.parse(x)
@@ -206,25 +209,22 @@ object TypeConverter {
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
     def targetTypeTag = implicitly[TypeTag[java.sql.Date]]
-    def convertPF = {
-      case x: java.sql.Date => x
-      case x: Date => new java.sql.Date(x.getTime)
-      case x: DateTime => new java.sql.Date(x.toDate.getTime)
-      case x: Long => new java.sql.Date(x)
-      case x: UUID if x.version() == 1 => new java.sql.Date(x.timestamp())
-      case x: String => new java.sql.Date(TimestampParser.parse(x).getTime)
-    }
+    def convertPF = DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
   }
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
     def targetTypeTag = implicitly[TypeTag[DateTime]]
-    def convertPF = {
-      case x: DateTime => x
-      case x: Date => new DateTime(x)
-      case x: Long => new DateTime(x)
-      case x: UUID if x.version() == 1 => new DateTime(x.timestamp())
-      case x: String => new DateTime(TimestampParser.parse(x))
+    def convertPF = DateConverter.convertPF.andThen(new DateTime(_))
+  }
+
+  implicit object GregorianCalendarConverter extends TypeConverter[GregorianCalendar] {
+    private[this] def calendar(date: Date): GregorianCalendar = {
+      val c = new GregorianCalendar()
+      c.setTime(date)
+      c
     }
+    def targetTypeTag = implicitly[TypeTag[GregorianCalendar]]
+    def convertPF = DateConverter.convertPF.andThen(calendar)
   }
 
   implicit object BigIntConverter extends TypeConverter[BigInt] {
@@ -540,6 +540,7 @@ object TypeConverter {
     DateConverter,
     SqlDateConverter,
     JodaDateConverter,
+    GregorianCalendarConverter,
     InetAddressConverter,
     UUIDConverter,
     ByteBufferConverter,
