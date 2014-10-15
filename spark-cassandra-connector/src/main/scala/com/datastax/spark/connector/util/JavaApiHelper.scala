@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.{SomeColumns, CassandraRow}
+import com.datastax.spark.connector.{AllColumns, SomeColumns, CassandraRow}
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -44,4 +44,5 @@ object JavaApiHelper {
 
   def genericRowReaderFactory: RowReaderFactory[CassandraRow] = RowReaderFactory.GenericRowReader$
 
+  def allColumns = AllColumns
 }

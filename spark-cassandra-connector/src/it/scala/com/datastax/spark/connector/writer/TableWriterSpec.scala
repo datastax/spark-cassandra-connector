@@ -3,15 +3,16 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import scala.collection.JavaConversions._
+import scala.reflect.runtime.universe.typeTag
+
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
-
-import scala.reflect.runtime.universe.typeTag
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
@@ -196,7 +197,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
 
   it should "write values of user-defined types" in {
     TypeConverter.registerConverter(new TypeConverter[String] {
-      def targetTypeTag = typeTag[String]
+      def targetTypeTag = scala.reflect.runtime.universe.typeTag[String]
       def convertPF = { case CustomerId(id) => id }
     })
 
