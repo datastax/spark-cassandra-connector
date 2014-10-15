@@ -1,4 +1,4 @@
-1.0.3 (unreleased)
+1.0.3
  * Fixed handling of Cassandra rpc_address set to 0.0.0.0 (#332)
 
 1.0.2
