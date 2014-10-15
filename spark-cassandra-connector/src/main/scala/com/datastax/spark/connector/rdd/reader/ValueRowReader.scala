@@ -5,6 +5,7 @@ import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.{ColumnRef, IndexedColumnRef, NamedColumnRef}
 import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.util.JavaApiHelper
 
 class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T] {
   /** Reads column values from low-level `Row` and turns them into higher level representation.
@@ -29,12 +30,16 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
     case IndexedColumnRef(idx) => Some(idx)
     case _ => None
   }
+
+  override def consecutiveColumns: Option[Int] = Some(1)
 }
 
 class ValueRowReaderFactory[T: TypeConverter]
   extends RowReaderFactory[T] {
 
-  override def rowReader(table: TableDef): RowReader[T] = {
-    new ValueRowReader[T](IndexedColumnRef(0))
+  override def rowReader(table: TableDef, options: RowReaderOptions): RowReader[T] = {
+    new ValueRowReader[T](IndexedColumnRef(options.offset))
   }
+
+  override def targetClass: Class[T] = JavaApiHelper.getRuntimeClass(implicitly[TypeConverter[T]].targetTypeTag)
 }

@@ -31,6 +31,8 @@ class DefaultColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] 
 
   import com.datastax.spark.connector.mapper.DefaultColumnMapper._
 
+  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
+
   private def setterNameToPropertyName(str: String) =
     str.substring(0, str.length - SetterSuffix.length)
 

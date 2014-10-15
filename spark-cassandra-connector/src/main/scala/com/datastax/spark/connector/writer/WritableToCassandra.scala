@@ -4,9 +4,7 @@ import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkContext
 
-import scala.reflect.ClassTag
-
-abstract class WritableToCassandra[T: ClassTag] {
+abstract class WritableToCassandra[T] {
 
   def sparkContext: SparkContext
 

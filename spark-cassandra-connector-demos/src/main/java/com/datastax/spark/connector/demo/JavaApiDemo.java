@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.demo;
 
-import com.datastax.spark.connector.CassandraRow;
+import com.datastax.spark.connector.CassandraJavaRow;
 import com.google.common.base.Objects;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.spark.api.java.JavaRDD;
@@ -13,13 +13,15 @@ import java.util.Date;
 import java.util.List;
 
 import static com.datastax.spark.connector.CassandraJavaUtil.javaFunctions;
+import static com.datastax.spark.connector.CassandraJavaUtil.mapRowTo;
+import static com.datastax.spark.connector.CassandraJavaUtil.mapToRows;
 
 /**
  * This Spark application demonstrates how to use Spark Cassandra Connector with Java.
- *
+ * <p/>
  * In order to run it, you will need to run Cassandra database, and create the following
  * keyspace, table and secondary index:
- *
+ * <p/>
  * <pre>
  * CREATE KEYSPACE test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};
  *
@@ -47,47 +49,47 @@ public class JavaApiDemo implements Serializable {
                 Person.newInstance(3, "Andrew", new Date())
         );
         JavaRDD<Person> rdd = sc.parallelize(people);
-        javaFunctions(rdd, Person.class).saveToCassandra("test", "people");
+        javaFunctions(rdd).saveToCassandra("test", "people", mapToRows(Person.class));
 
         // use case: we want to read that data as an RDD of CassandraRows and convert them to strings...
         JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people")
-                .map(new Function<CassandraRow, String>() {
+                .map(new Function<CassandraJavaRow, String>() {
                     @Override
-                    public String call(CassandraRow cassandraRow) throws Exception {
+                    public String call(CassandraJavaRow cassandraRow) throws Exception {
                         return cassandraRow.toString();
                     }
                 });
-        System.out.println("Data as CassandraRows: \n" + StringUtils.join("\n", cassandraRowsRDD.toArray()));
+        System.out.println("Data as CassandraRows: \n" + StringUtils.join("\n", cassandraRowsRDD.collect()));
 
         // use case: we want to read that data as an RDD of Person beans and also convert them to strings...
-        JavaRDD<String> rdd2 = javaFunctions(sc).cassandraTable("test", "people", Person.class)
+        JavaRDD<String> rdd2 = javaFunctions(sc).cassandraTable("test", "people", mapRowTo(Person.class))
                 .map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
                         return person.toString();
                     }
                 });
-        System.out.println("Data as Person beans: \n" + StringUtils.join("\n", rdd2.toArray()));
+        System.out.println("Data as Person beans: \n" + StringUtils.join("\n", rdd2.collect()));
 
         // use case: we want to filter rows on the database side with use of the where clause
-        JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", Person.class)
+        JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", mapRowTo(Person.class))
                 .where("name=?", "Anna").map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
                         return person.toString();
                     }
                 });
-        System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join("\n", rdd3.toArray()));
+        System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join("\n", rdd3.collect()));
 
         // use case: we want to explicitly set a projection on the column set
         JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people")
-                .select("id").map(new Function<CassandraRow, String>() {
+                .select("id").map(new Function<CassandraJavaRow, String>() {
                     @Override
-                    public String call(CassandraRow cassandraRow) throws Exception {
+                    public String call(CassandraJavaRow cassandraRow) throws Exception {
                         return cassandraRow.toString();
                     }
                 });
-        System.out.println("Data with only 'id' column fetched: \n" + StringUtils.join("\n", rdd4.toArray()));
+        System.out.println("Data with only 'id' column fetched: \n" + StringUtils.join("\n", rdd4.collect()));
 
         sc.stop();
     }

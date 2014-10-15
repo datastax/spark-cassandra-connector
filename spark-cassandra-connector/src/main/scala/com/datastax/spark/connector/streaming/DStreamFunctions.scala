@@ -6,9 +6,7 @@ import com.datastax.spark.connector.writer.{TableWriter, WriteConf, RowWriterFac
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.DStream
 
-import scala.reflect.ClassTag
-
-class DStreamFunctions[T: ClassTag](dstream: DStream[T]) extends WritableToCassandra[T] with Serializable {
+class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] with Serializable {
 
   override def sparkContext: SparkContext = dstream.context.sparkContext
 

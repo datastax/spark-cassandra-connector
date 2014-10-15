@@ -1,16 +1,17 @@
 package com.datastax.spark.connector.rdd.reader
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.math.BigInteger
 import java.text.SimpleDateFormat
 
-import com.datastax.spark.connector.{ColumnNotFoundException, CassandraRow}
+import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.{CassandraRow, ColumnNotFoundException}
 import org.junit.Assert._
-import org.junit.Test
+import org.scalatest.{FunSuite, ShouldMatchers}
 
-class CassandraRowTest {
+class CassandraRowTest extends FunSuite with ShouldMatchers {
 
-  @Test
-  def basicAccessTest() {
+  test("basicAccessTest") {
     val row = new CassandraRow(Array("1"), Array("value"))
     assertEquals(1, row.size)
     assertEquals(Some("1"), row.getStringOption(0))
@@ -19,28 +20,26 @@ class CassandraRowTest {
     assertEquals("1", row.getString("value"))
   }
 
-  @Test
-  def nullAccessTest() {
+  test("nullAccessTest") {
     val row = new CassandraRow(Array(null), Array("value"))
     assertEquals(None, row.getStringOption(0))
     assertEquals(None, row.getStringOption("value"))
     assertEquals(1, row.size)
   }
 
-  @Test
-  def nullToStringTest() {
+  test("nullToStringTest") {
     val row = new CassandraRow(Array(null), Array("value"))
-    assertEquals("CassandraRow{value: null}", row.toString)
+    assertEquals("CassandraRow{value: null}", row.toString())
   }
 
-  @Test(expected = classOf[ColumnNotFoundException])
-  def nonExistentColumnAccessTest() {
+  test("nonExistentColumnAccessTest") {
     val row = new CassandraRow(Array(null), Array("value"))
-    row.getString("wring-column")
+    intercept[ColumnNotFoundException] {
+      row.getString("wring-column")
+    }
   }
 
-  @Test
-  def primitiveConversionTest() {
+  test("primitiveConversionTest") {
     val dateStr = "2014-04-08 14:47:00+0100"
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
     val date = dateFormat.parse(dateStr)
@@ -52,6 +51,7 @@ class CassandraRowTest {
     assertEquals(date, row.getDate("date"))
     assertEquals(date.getTime, row.getLong("date"))
     assertEquals(dateFormat.format(date), row.getString("date"))
+    row.getDateTime("date").toDate should be(date)
 
     assertEquals("2", row.getString("integer"))
     assertEquals(2, row.getInt("integer"))
@@ -66,21 +66,28 @@ class CassandraRowTest {
     assertEquals(3L, row.getLong("string"))
     assertEquals(BigInt(3), row.getVarInt("string"))
     assertEquals(BigDecimal(3), row.getDecimal("string"))
+
+    assertEquals(2 : java.lang.Integer, row.getJInt("integer"))
+    assertEquals(2L : java.lang.Long, row.getJLong("integer"))
+    assertEquals(2.toByte : java.lang.Byte, row.getJByte("integer"))
+    assertEquals(2d : java.lang.Double, row.getJDouble("integer"))
+    assertEquals(2f : java.lang.Float, row.getJFloat("integer"))
+    assertEquals(new BigInteger("2"), row.getJVarInt("integer"))
+    assertEquals(new java.math.BigDecimal("2"), row.getJDecimal("integer"))
   }
 
-  @Test
-  def collectionConversionTest() {
-    val list = new java.util.ArrayList[String]()  // list<varchar>
+  test("collectionConversionTest") {
+    val list = new java.util.ArrayList[String]() // list<varchar>
     list.add("1")
     list.add("1")
     list.add("2")
 
-    val set = new java.util.HashSet[String]()  // set<varchar>
+    val set = new java.util.HashSet[String]() // set<varchar>
     set.add("apple")
     set.add("banana")
     set.add("mango")
 
-    val map = new java.util.HashMap[String, Int]()  // map<varchar, int>
+    val map = new java.util.HashMap[String, Int]() // map<varchar, int>
     map.put("a", 1)
     map.put("b", 2)
     map.put("c", 3)
@@ -97,14 +104,26 @@ class CassandraRowTest {
     assertEquals(Set("apple", "banana", "mango"), scalaSet)
 
     val scalaMap = row.getMap[String, Long]("map")
-    assertEquals(Map("a" -> 1, "b" -> 2, "c" -> 3), scalaMap)
+    assertEquals(Map("a" → 1, "b" → 2, "c" → 3), scalaMap)
 
     val scalaMapAsSet = row.getSet[(String, String)]("map")
-    assertEquals(Set("a" -> "1", "b" -> "2", "c" -> "3"), scalaMapAsSet)
+    assertEquals(Set("a" → "1", "b" → "2", "c" → "3"), scalaMapAsSet)
+
+    val javaList = row.getJList[String]("list")
+    javaList should contain allOf("1", "2")
+    javaList should have size 3
+
+    val javaSet = row.getJSet[String]("set")
+    javaSet should contain allOf("apple", "banana", "mango")
+
+    val javaMap = row.getJMap[String, Integer]("map")
+    javaMap should have size 3
+    javaMap.get("a") should be(1)
+    javaMap.get("b") should be(2)
+    javaMap.get("c") should be(3)
   }
 
-  @Test
-  def serializationTest() {
+  test("serializationTest") {
     val row = new CassandraRow(Array("1"), Array("value"))
     val bs = new ByteArrayOutputStream
     val os = new ObjectOutputStream(bs)

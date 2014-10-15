@@ -7,7 +7,7 @@ import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.SomeColumns 
+import com.datastax.spark.connector.{RowsInBatch, SomeColumns}
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.writer.WriteConf
@@ -72,14 +72,14 @@ object KafkaStreamingDemo extends Assertions with Logging {
     stream.map { case (_, v) => v }
       .map(x => (x, 1))
       .reduceByKey(_ + _)
-      .saveToCassandra("streaming_test", "key_value", SomeColumns("key", "value"), WriteConf(batchSizeInRows = Some(1)))
+      .saveToCassandra("streaming_test", "key_value", SomeColumns("key", "value"), WriteConf(batchSize = RowsInBatch(1)))
 
     ssc.start()
 
     val rdd = ssc.cassandraTable("streaming_test", "key_value").select("key", "value")
     import scala.concurrent.duration._
-    awaitCond(rdd.collect.size == sent.size, 5.seconds)
-    val rows = rdd.collect
+    awaitCond(rdd.collect().size == sent.size, 5.seconds)
+    val rows = rdd.collect()
     sent.forall { rows.contains(_)}
 
     log.info(s"Assertions successful, shutting down.")

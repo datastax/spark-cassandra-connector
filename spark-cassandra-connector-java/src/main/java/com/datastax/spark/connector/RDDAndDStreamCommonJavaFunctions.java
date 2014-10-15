@@ -1,309 +1,97 @@
 package com.datastax.spark.connector;
 
-import com.datastax.spark.connector.mapper.ColumnMapper;
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import com.datastax.spark.connector.writer.WriteConf;
-import scala.reflect.ClassTag;
+import org.apache.spark.SparkConf;
 
-import java.util.Map;
+import java.io.Serializable;
 
-import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFactory;
-import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
+import static com.datastax.spark.connector.CassandraJavaUtil.allColumns;
 
 /**
  * Java API for either {@code RDD} or {@code DStream}.
  */
 @SuppressWarnings("UnusedDeclaration")
 public abstract class RDDAndDStreamCommonJavaFunctions<T> {
-    private final ClassTag<T> classTag;
 
-    RDDAndDStreamCommonJavaFunctions(ClassTag<T> classTag) {
-        this.classTag = classTag;
+    protected abstract CassandraConnector defaultConnector();
+
+    protected abstract SparkConf getConf();
+
+    private WriteConf defaultWriteConf() {
+        return WriteConf.fromSparkConf(getConf());
     }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String)}.
-     * It additionally allows the specification of a factory of custom {@link com.datastax.spark.connector.writer.RowWriter}.
-     * By default, a factory of {@link com.datastax.spark.connector.writer.DefaultRowWriter} is used together with
-     * an underlying {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String)
-     */
-    public abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory);
+    public abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
+                                         ColumnSelector columnNames, WriteConf conf, CassandraConnector connector);
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String, String[])}.
-     * It additionally allows the specification of a factory of custom {@link com.datastax.spark.connector.writer.RowWriter}.
-     * By default, a factory of {@link com.datastax.spark.connector.writer.DefaultRowWriter} is used together with
-     * an underlying {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String, String[])
-     */
-    public abstract void saveToCassandra(String keyspace, String table, String[] columnNames, RowWriterFactory<T> rowWriterFactory);
-
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
-     * It additionally allows the specification of a factory of custom {@link com.datastax.spark.connector.writer.RowWriter}.
-     * By default, a factory of {@link com.datastax.spark.connector.writer.DefaultRowWriter} is used together with
-     * an underlying {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)
-     */
-    public abstract void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, RowWriterFactory<T> rowWriterFactory);
-
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String)}.
-     * It additionally allows the specification of a custom column mapper. By default,
-     * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used, which works
-     * perfectly with Java bean-like classes.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     */
-    public void saveToCassandra(String keyspace, String table, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
-        saveToCassandra(keyspace, table, rwf);
+    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
+        new SaveToCassandraOptions<>(this, keyspace, table, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf()).save();
     }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String, String[])}.
-     * It additionally allows the specification of a custom column mapper. By default,
-     * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used, which works
-     * perfectly with Java bean-like classes.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
-        saveToCassandra(keyspace, table, columnNames, rwf);
+    public SaveToCassandraOptions<T> toCassandra(String keyspaceName, String tableName, RowWriterFactory<T> rowWriterFactory) {
+        return new SaveToCassandraOptions<>(this, keyspaceName, tableName, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf());
     }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
-     * It additionally allows the specification of a custom column mapper. By default,
-     * {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper} is used, which works
-     * perfectly with Java bean-like classes.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, ColumnMapper<T> columnMapper) {
-        RowWriterFactory<T> rwf = defaultRowWriterFactory(classTag, columnMapper);
-        saveToCassandra(keyspace, table, columnNames, writeConf, rwf);
-    }
+    static class SaveToCassandraOptions<T> implements Serializable {
+        public final RDDAndDStreamCommonJavaFunctions<T> functions;
+        public final String keyspaceName;
+        public final String tableName;
+        public final RowWriterFactory<T> rowWriterFactory;
+        public final ColumnSelector columnSelector;
+        public final CassandraConnector connector;
+        public final WriteConf writeConf;
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String)}.
-     * It additionally allows the specification of a custom RDD object property mapping to columns in Cassandra table.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     * <p/>
-     * Example:
-     * <pre>
-     * CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-     * CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
-     *
-     * // all the Java classes which you want to use with Spark should be serializable
-     * public class WordCount implements Serializable {
-     *     private String w;
-     *     private Integer c;
-     *     private String o;
-     *
-     *     // constructors, setters, etc.
-     *
-     *     public String getW() {
-     *         return w;
-     *     }
-     *
-     *     public Integer getC() {
-     *         return c;
-     *     }
-     *
-     *     public String getO() {
-     *         return o;
-     *     }
-     * }
-     *
-     * JavaSparkContext jsc = ...
-     * JavaRDD<WordCount> rdd = jsc.parallelize(Arrays.asList(new WordCount("foo", 5, "bar")));
-     *
-     * Map<String, String> mapping = new HashMap<String, String>(3);
-     * mapping.put("w", "word");
-     * mapping.put("c", "count");
-     * mapping.put("o", "other");
-     *
-     * CassandraJavaUtil.javaFunctions(rdd, WordCount.class).saveToCassandra("test", "words", mapping);
-     * </pre>
-     */
-    public void saveToCassandra(String keyspace, String table, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, javaBeanColumnMapper(classTag, columnNameOverride));
-    }
+        public SaveToCassandraOptions(RDDAndDStreamCommonJavaFunctions<T> functions, String keyspaceName, String tableName,
+                                      RowWriterFactory<T> rowWriterFactory, ColumnSelector columnSelector, CassandraConnector connector, WriteConf writeConf) {
+            this.functions = functions;
+            this.keyspaceName = keyspaceName;
+            this.tableName = tableName;
+            this.rowWriterFactory = rowWriterFactory;
+            this.columnSelector = columnSelector;
+            this.connector = connector;
+            this.writeConf = writeConf;
+        }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * This method works just like {@link #saveToCassandra(String, String, String[])}.
-     * It additionally allows the specification of a custom RDD/DStream object property mapping to columns in Cassandra table.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String, java.util.Map)
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, columnNames, javaBeanColumnMapper(classTag, columnNameOverride));
-    }
+        public SaveToCassandraOptions<T> withConnector(CassandraConnector connector) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
+        }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of given size.
-     * This method works just like {@link #saveToCassandra(String, String, String[], com.datastax.spark.connector.writer.WriteConf)}.
-     * It additionally allows the specification of a custom RDD/DStream object property mapping to columns in Cassandra table.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String, java.util.Map)
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, Map<String, String> columnNameOverride) {
-        saveToCassandra(keyspace, table, columnNames, writeConf, javaBeanColumnMapper(classTag, columnNameOverride));
-    }
+        public SaveToCassandraOptions<T> withWriteConf(WriteConf conf) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, conf);
+        }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * Saves all properties that have corresponding Cassandra columns.
-     * The underlying RDD class must provide data for all columns.
-     * <p/>
-     * By default, writes are performed at {@code ConsistencyLevel.ONE} in order to leverage data-locality
-     * and minimize network traffic. This write consistency level is controlled by the following property:
-     * - {@code spark.cassandra.output.consistency.level}: consistency level for RDD writes, string matching
-     * the {@link com.datastax.driver.core.ConsistencyLevel} enum name.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     * <p/>
-     * Example:
-     * <pre>
-     * CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-     * CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
-     *
-     * // all the Java classes which you want to use with Spark should be serializable
-     * public class WordCount implements Serializable {
-     *     private String word;
-     *     private Integer count;
-     *     private String other;
-     *
-     *     // constructors, setters, etc.
-     *
-     *     public String getWord() {
-     *         return word;
-     *     }
-     *
-     *     public Integer getCount() {
-     *         return count;
-     *     }
-     *
-     *     public String getOther() {
-     *         return other;
-     *     }
-     * }
-     *
-     * JavaSparkContext jsc = ...
-     * JavaRDD<WordCount> rdd = jsc.parallelize(Arrays.asList(new WordCount("foo", 5, "bar")));
-     * CassandraJavaUtil.javaFunctions(rdd, WordCount.class).saveToCassandra("test", "words");
-     * </pre>
-     */
-    public void saveToCassandra(String keyspace, String table) {
-        saveToCassandra(keyspace, table, CassandraJavaUtil.NO_OVERRIDE);
-    }
+        public SaveToCassandraOptions<T> withRowWriterFactory(RowWriterFactory<T> factory) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, factory, columnSelector, connector, writeConf);
+        }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table.
-     * The {@code RDD} object properties must match Cassandra table column names.
-     * Non-selected property/column names are left unchanged in Cassandra.
-     * All primary key columns must be selected.
-     * <p/>
-     * By default, writes are performed at {@code ConsistencyLevel.ONE} in order to leverage data-locality
-     * and minimize network traffic. This write consistency level is controlled by the following property:
-     * - {@code spark.cassandra.output.consistency.level}: consistency level for RDD writes, string matching
-     * the {@link com.datastax.driver.core.ConsistencyLevel} enum name.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     * <p/>
-     * Example:
-     * <pre>
-     * CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-     * CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
-     *
-     * // all the Java classes which you want to use with Spark should be serializable
-     * public class WordCount implements Serializable {
-     *     private String word;
-     *     private Integer count;
-     *     private String other;
-     *
-     *     // constructors, setters, etc.
-     *
-     *     public String getWord() {
-     *         return word;
-     *     }
-     *
-     *     public Integer getCount() {
-     *         return count;
-     *     }
-     *
-     *     public String getOther() {
-     *         return other;
-     *     }
-     * }
-     *
-     * JavaSparkContext jsc = ...
-     * JavaRDD<WordCount> rdd = jsc.parallelize(Arrays.asList(new WordCount("foo", 5, "bar")));
-     * CassandraJavaUtil.javaFunctions(rdd, WordCount.class)
-     *      .saveToCassandra("test", "words", new String[] {"word", "count"}); // will not save the "other" column
-     * </pre>
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames) {
-        saveToCassandra(keyspace, table, columnNames, CassandraJavaUtil.NO_OVERRIDE);
-    }
+        public SaveToCassandraOptions<T> withColumnSelector(ColumnSelector columnSelector) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
+        }
 
-    /**
-     * Saves the data from the underlying {@code RDD} or {@code DStream} to a Cassandra table in batches of the given size.
-     * Use this overload only if you find automatically tuned batch size doesn't result in optimal performance.
-     * <p/>
-     * Larger batches raise memory use by temporary buffers and may incur
-     * larger GC pressure on the server. Small batches would result in more roundtrips
-     * and worse throughput. Typically sending a few kilobytes of data per every batch
-     * is enough to achieve good performance.
-     * <p/>
-     * By default, writes are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize
-     * network traffic. This write consistency level is controlled by the following property:
-     * - {@code spark.cassandra.output.consistency.level}: consistency level for RDD writes, string matching the
-     * {@link com.datastax.driver.core.ConsistencyLevel} enum name.
-     * <p/>
-     * If the underlying data source is a {@code DStream}, all generated RDDs will be saved
-     * to Cassandra as if this method was called on each of them.
-     *
-     * @see #saveToCassandra(String, String)
-     * @see #saveToCassandra(String, String, String[])
-     */
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf) {
-        saveToCassandra(keyspace, table, columnNames, writeConf, CassandraJavaUtil.NO_OVERRIDE);
+        public SaveToCassandraOptions<T> withBatchSize(BatchSize batchSize) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                    new WriteConf(batchSize, writeConf.consistencyLevel(), writeConf.parallelismLevel())
+            );
+        }
+
+        public SaveToCassandraOptions<T> withConsistencyLevel(ConsistencyLevel consistencyLevel) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                    new WriteConf(writeConf.batchSize(), consistencyLevel, writeConf.parallelismLevel())
+            );
+        }
+
+        public SaveToCassandraOptions<T> withParallelismLevel(int parallelismLevel) {
+            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                    new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), parallelismLevel)
+            );
+        }
+
+        public void save() {
+            functions.saveToCassandra(keyspaceName, tableName, rowWriterFactory, columnSelector, writeConf, connector);
+        }
+
     }
 }

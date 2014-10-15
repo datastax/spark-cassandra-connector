@@ -4,14 +4,14 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import scala.collection.JavaConversions._
-
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-
 import org.apache.cassandra.utils.ByteBufferUtil
 import org.apache.spark.sql.catalyst.expressions.{Row => SparkSqlRow}
+import org.joda.time.DateTime
+
+import scala.collection.JavaConversions._
 
 /** Thrown when the requested column does not exist in the result set. */
 class ColumnNotFoundException(message: String) extends Exception(message)
@@ -86,7 +86,7 @@ class ColumnNotFoundException(message: String) extends Exception(message)
   *   - java.sql.Date
   *   - org.joda.time.DateTime
   */
-final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends SparkSqlRow with Serializable {
+final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends CassandraJavaRow with SparkSqlRow with Serializable {
 
   private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
 
@@ -131,6 +131,12 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def toMap: Map[String, Any] =
     columnNames.zip(data).toMap
 
+  def toJMap: java.util.Map[String, AnyRef] = {
+    val map = new java.util.HashMap[String, AnyRef]()
+    for (i <- 0 until length) map.put(columnNames(i), data(i))
+    map
+  }
+
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   def get[T](index: Int)(implicit c: TypeConverter[T]): T =
@@ -141,9 +147,18 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
   
+  def getJ[T](index: Int, tc: TypeConverter[T]): T =
+    tc.convert(data(index))
+
+  def getJ[T](name: String, tc: TypeConverter[T]): T =
+    getJ[T](_indexOfOrThrow(name), tc)
+
   /** Equivalent to `getAny` */
-  def apply(index: Int) = getAny(index)
-  def apply(name: String) = getAny(name)
+  def apply(index: Int): Any = getAny(index)
+  def apply(name: String): Any = getAny(name)
+
+  def get(index: Int): AnyRef = getAnyRef(index)
+  def get(name: String): AnyRef = getAnyRef(name)
 
   /** Returns a column value without applying any conversion.
     * The underlying type is the same as the type returned by the low-level Cassandra driver.
@@ -172,17 +187,26 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getBoolean(index: Int) = get[Boolean](index)
   def getBoolean(name: String) = get[Boolean](name)
 
+  def getJBoolean(index: Int) = get[java.lang.Boolean](index)
+  def getJBoolean(name: String) = get[java.lang.Boolean](name)
+
   def getBooleanOption(index: Int) = get[Option[Boolean]](index)
   def getBooleanOption(name: String) = get[Option[Boolean]](name)
   
   def getByte(index: Int) = get[Byte](index)
   def getByte(name: String) = get[Byte](name)
 
+  def getJByte(index: Int) = get[java.lang.Byte](index)
+  def getJByte(name: String) = get[java.lang.Byte](name)
+
   def getByteOption(index: Int) = get[Option[Byte]](index)
   def getByteOption(name: String) = get[Option[Byte]](name)
 
   def getShort(index: Int) = get[Short](index)
   def getShort(name: String) = get[Short](name)
+
+  def getJShort(index: Int) = get[java.lang.Short](index)
+  def getJShort(name: String) = get[java.lang.Short](name)
 
   def getShortOption(index: Int) = get[Option[Short]](index)
   def getShortOption(name: String) = get[Option[Short]](name)
@@ -194,6 +218,9 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * The number must be within 32-bit integer range or the `TypeConversionException` will be thrown.*/
   def getInt(index: Int) = get[Int](index)
   def getInt(name: String) = get[Int](name)
+
+  def getJInt(index: Int) = get[java.lang.Integer](index)
+  def getJInt(name: String) = get[java.lang.Integer](name)
 
   def getIntOption(index: Int) = get[Option[Int]](index)
   def getIntOption(name: String) = get[Option[Int]](name)
@@ -207,6 +234,9 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getLong(index: Int) = get[Long](index)
   def getLong(name: String) = get[Long](name)
 
+  def getJLong(index: Int) = get[java.lang.Long](index)
+  def getJLong(name: String) = get[java.lang.Long](name)
+
   def getLongOption(index: Int) = get[Option[Long]](index)
   def getLongOption(name: String) = get[Option[Long]](name)
 
@@ -216,6 +246,9 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getFloat(index: Int) = get[Float](index)
   def getFloat(name: String) = get[Float](name)
 
+  def getJFloat(index: Int) = get[java.lang.Float](index)
+  def getJFloat(name: String) = get[java.lang.Float](name)
+
   def getFloatOption(index: Int) = get[Option[Float]](index)
   def getFloatOption(name: String) = get[Option[Float]](name)
 
@@ -224,6 +257,9 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * This method can be also used to read a `decimal` column, with some loss of precision.*/
   def getDouble(index: Int) = get[Double](index)
   def getDouble(name: String) = get[Double](name)
+
+  def getJDouble(index: Int) = get[java.lang.Double](index)
+  def getJDouble(name: String) = get[java.lang.Double](name)
 
   def getDoubleOption(index: Int) = get[Option[Double]](index)
   def getDoubleOption(name: String) = get[Option[Double]](name)
@@ -247,10 +283,10 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getBytesOption(name: String) = get[Option[ByteBuffer]](name)
 
   /** Returns a `timestamp` or `timeuuid` column value as `java.util.Date`.
-    * To convert a timestamp to one of other supported date types, use the generic `get` method:
+    * To convert a timestamp to one of other supported date types, use the generic `get` method,
+    * for example:
     * {{{
     *   row.get[java.sql.Date](0)
-    *   row.get[org.joda.time.DateTime](0)
     * }}}*/
   def getDate(index: Int) = get[Date](index)
   def getDate(name: String) = get[Date](name)
@@ -258,11 +294,21 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getDateOption(index: Int) = get[Option[Date]](index)
   def getDateOption(name: String) = get[Option[Date]](name)
 
+  /** Returns a `timestamp` or `timeuuid` column value as `org.joda.time.DateTime`. */
+  def getDateTime(index: Int) = get[DateTime](index)
+  def getDateTime(name: String) = get[DateTime](name)
+
+  def getDateTimeOption(index: Int) = get[Option[DateTime]](index)
+  def getDateTimeOption(name: String) = get[Option[DateTime]](name)
+
   /** Returns a `varint` column value.
     * Can be used with all other integer types as well as
     * with strings containing a valid integer number of arbitrary size. */
   def getVarInt(index: Int) = get[BigInt](index)
   def getVarInt(name: String) = get[BigInt](name)
+
+  def getJVarInt(index: Int) = get[java.math.BigInteger](index)
+  def getJVarInt(name: String) = get[java.math.BigInteger](name)
 
   def getVarIntOption(index: Int) = get[Option[BigInt]](index)
   def getVarIntOption(name: String) = get[Option[BigInt]](name)
@@ -272,6 +318,9 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * with strings containing a valid floating point number of arbitrary precision. */
   def getDecimal(index: Int) = get[BigDecimal](index)
   def getDecimal(name: String) = get[BigDecimal](name)
+
+  def getJDecimal(index: Int) = get[java.math.BigDecimal](index)
+  def getJDecimal(name: String) = get[java.math.BigDecimal](name)
 
   def getDecimalOption(index: Int) = get[Option[BigDecimal]](index)
   def getDecimalOption(name: String) = get[Option[BigDecimal]](name)
@@ -304,6 +353,11 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getList[T : TypeConverter](name: String) =
     get[Vector[T]](name)
 
+  def getJList[T](index: Int) =
+    get[java.util.List[AnyRef]](index).asInstanceOf[java.util.List[T]]
+  def getJList[T](name: String) =
+    get[java.util.List[AnyRef]](name).asInstanceOf[java.util.List[T]]
+
   /** Reads a `set` column value.
     * A null set is converted to an empty collection.
     * Items of the set are converted to the given type.
@@ -315,6 +369,11 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getSet[T : TypeConverter](name: String) =
     get[Set[T]](name)
 
+  def getJSet[T](index: Int) =
+    get[java.util.Set[AnyRef]](index).asInstanceOf[java.util.Set[T]]
+  def getJSet[T](name: String) =
+    get[java.util.Set[AnyRef]](name).asInstanceOf[java.util.Set[T]]
+
   /** Reads a `map` column value.
     * A null map is converted to an empty collection.
     * Keys and values of the map are converted to the given types.
@@ -325,8 +384,13 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getMap[K : TypeConverter, V : TypeConverter](name: String) =
     get[Map[K, V]](name)
 
+  def getJMap[K, V](index: Int) =
+    get[java.util.Map[AnyRef, AnyRef]](index).asInstanceOf[java.util.Map[K, V]]
+  def getJMap[K, V](name: String) =
+    get[java.util.Map[AnyRef, AnyRef]](name).asInstanceOf[java.util.Map[K, V]]
+
   /** Displays the row in human readable form, including the names and values of the columns */
-  override def toString =
+  override def toString() =
     "CassandraRow" + columnNames
       .zip(data)
       .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))

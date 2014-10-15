@@ -2,66 +2,34 @@ package com.datastax.spark.connector;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.streaming.DStreamFunctions;
-import com.datastax.spark.connector.util.JavaApiHelper;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import com.datastax.spark.connector.writer.WriteConf;
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.dstream.DStream;
-import scala.reflect.ClassTag;
 
 @SuppressWarnings("UnusedDeclaration")
 public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
-    public final DStream<T> rdd;
+    public final DStream<T> dstream;
     private final DStreamFunctions<T> dsf;
 
-    DStreamJavaFunctions(DStream<T> dStream, ClassTag<T> classTag) {
-        super(classTag);
-        this.rdd = dStream;
-        this.dsf = new DStreamFunctions<>(dStream, classTag);
+    DStreamJavaFunctions(DStream<T> dStream) {
+        this.dstream = dStream;
+        this.dsf = new DStreamFunctions<>(dStream);
     }
 
-
-    private SparkConf getConf() {
-        return rdd.context().conf();
-    }
-
-    private WriteConf getDefaultWriteConf() {
-        return WriteConf.fromSparkConf(getConf());
-    }
-
-    private CassandraConnector getConnector() {
-        return CassandraConnector.apply(getConf());
-    }
-    /**
-     * @inheritDoc
-     */
     @Override
-    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
-        // explicit type argument is intentional and required here
-        //noinspection RedundantTypeArguments
-        dsf.saveToCassandra(keyspace, table,
-                JavaApiHelper.allColumns(), getDefaultWriteConf(), getConnector(), rowWriterFactory);
+    protected CassandraConnector defaultConnector() {
+        return dsf.connector();
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, RowWriterFactory<T> rowWriterFactory) {
-        // explicit type argument is intentional and required here
-        //noinspection RedundantTypeArguments
-        dsf.saveToCassandra(keyspace, table,
-                JavaApiHelper.<String>toColumns(columnNames), getDefaultWriteConf(), getConnector(), rowWriterFactory);
+    protected SparkConf getConf() {
+        return dstream.ssc().conf();
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
-    public void saveToCassandra(String keyspace, String table, String[] columnNames, WriteConf writeConf, RowWriterFactory<T> rowWriterFactory) {
-        // explicit type argument is intentional and required here
-        //noinspection RedundantTypeArguments
-        dsf.saveToCassandra(keyspace, table,
-                JavaApiHelper.<String>toColumns(columnNames), writeConf, getConnector(), rowWriterFactory);
+    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
+                                ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
+        dsf.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }
 }
