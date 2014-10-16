@@ -19,7 +19,7 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
     }
 
     @Override
-    protected CassandraConnector defaultConnector() {
+    public CassandraConnector defaultConnector() {
         return dsf.connector();
     }
 
@@ -29,7 +29,7 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
     }
 
     @Override
-    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
+    protected void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
                                 ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
         dsf.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }

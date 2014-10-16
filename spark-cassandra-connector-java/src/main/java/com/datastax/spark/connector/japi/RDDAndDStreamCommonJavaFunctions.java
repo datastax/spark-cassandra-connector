@@ -18,26 +18,30 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.allColumns;
 @SuppressWarnings("UnusedDeclaration")
 public abstract class RDDAndDStreamCommonJavaFunctions<T> {
 
-    protected abstract CassandraConnector defaultConnector();
+    public abstract CassandraConnector defaultConnector();
 
     protected abstract SparkConf getConf();
 
-    private WriteConf defaultWriteConf() {
+    public WriteConf defaultWriteConf() {
         return WriteConf.fromSparkConf(getConf());
     }
 
-    public abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
+    protected abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
                                          ColumnSelector columnNames, WriteConf conf, CassandraConnector connector);
 
-    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory) {
-        new SaveToCassandraOptions<>(this, keyspace, table, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf()).save();
+    /**
+     * @deprecated this method will be removed in future release.
+     */
+    @Deprecated
+    public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory, ColumnSelector columnNames) {
+        new WriterBuilder<>(this, keyspace, table, rowWriterFactory, columnNames, defaultConnector(), defaultWriteConf()).saveToCassandra();
     }
 
-    public SaveToCassandraOptions<T> toCassandra(String keyspaceName, String tableName, RowWriterFactory<T> rowWriterFactory) {
-        return new SaveToCassandraOptions<>(this, keyspaceName, tableName, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf());
+    public WriterBuilder<T> writerBuilder(String keyspaceName, String tableName, RowWriterFactory<T> rowWriterFactory) {
+        return new WriterBuilder<>(this, keyspaceName, tableName, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf());
     }
 
-    static class SaveToCassandraOptions<T> implements Serializable {
+    public static class WriterBuilder<T> implements Serializable {
         public final RDDAndDStreamCommonJavaFunctions<T> functions;
         public final String keyspaceName;
         public final String tableName;
@@ -46,8 +50,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
         public final CassandraConnector connector;
         public final WriteConf writeConf;
 
-        public SaveToCassandraOptions(RDDAndDStreamCommonJavaFunctions<T> functions, String keyspaceName, String tableName,
-                                      RowWriterFactory<T> rowWriterFactory, ColumnSelector columnSelector, CassandraConnector connector, WriteConf writeConf) {
+        public WriterBuilder(RDDAndDStreamCommonJavaFunctions<T> functions, String keyspaceName, String tableName,
+                             RowWriterFactory<T> rowWriterFactory, ColumnSelector columnSelector, CassandraConnector connector, WriteConf writeConf) {
             this.functions = functions;
             this.keyspaceName = keyspaceName;
             this.tableName = tableName;
@@ -57,41 +61,41 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
             this.writeConf = writeConf;
         }
 
-        public SaveToCassandraOptions<T> withConnector(CassandraConnector connector) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
+        public WriterBuilder<T> withConnector(CassandraConnector connector) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
         }
 
-        public SaveToCassandraOptions<T> withWriteConf(WriteConf conf) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, conf);
+        public WriterBuilder<T> withWriteConf(WriteConf conf) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, conf);
         }
 
-        public SaveToCassandraOptions<T> withRowWriterFactory(RowWriterFactory<T> factory) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, factory, columnSelector, connector, writeConf);
+        public WriterBuilder<T> withRowWriterFactory(RowWriterFactory<T> factory) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, factory, columnSelector, connector, writeConf);
         }
 
-        public SaveToCassandraOptions<T> withColumnSelector(ColumnSelector columnSelector) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
+        public WriterBuilder<T> withColumnSelector(ColumnSelector columnSelector) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector, writeConf);
         }
 
-        public SaveToCassandraOptions<T> withBatchSize(BatchSize batchSize) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+        public WriterBuilder<T> withBatchSize(BatchSize batchSize) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
                     new WriteConf(batchSize, writeConf.consistencyLevel(), writeConf.parallelismLevel())
             );
         }
 
-        public SaveToCassandraOptions<T> withConsistencyLevel(ConsistencyLevel consistencyLevel) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+        public WriterBuilder<T> withConsistencyLevel(ConsistencyLevel consistencyLevel) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
                     new WriteConf(writeConf.batchSize(), consistencyLevel, writeConf.parallelismLevel())
             );
         }
 
-        public SaveToCassandraOptions<T> withParallelismLevel(int parallelismLevel) {
-            return new SaveToCassandraOptions<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+        public WriterBuilder<T> withParallelismLevel(int parallelismLevel) {
+            return new WriterBuilder<>(functions, keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
                     new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), parallelismLevel)
             );
         }
 
-        public void save() {
+        public void saveToCassandra() {
             functions.saveToCassandra(keyspaceName, tableName, rowWriterFactory, columnSelector, writeConf, connector);
         }
 

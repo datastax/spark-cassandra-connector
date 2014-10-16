@@ -49,7 +49,9 @@ public class JavaApiDemo implements Serializable {
                 Person.newInstance(3, "Andrew", new Date())
         );
         JavaRDD<Person> rdd = sc.parallelize(people);
-        javaFunctions(rdd).saveToCassandra("test", "people", mapToRows(Person.class));
+        javaFunctions(rdd)
+                .writerBuilder("test", "people", mapToRows(Person.class))
+                .saveToCassandra();
 
         // use case: we want to read that data as an RDD of CassandraRows and convert them to strings...
         JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people")

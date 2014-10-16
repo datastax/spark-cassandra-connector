@@ -212,8 +212,12 @@ public class CassandraJavaUtil {
         return map;
     }
 
-    public static Option<Integer> batchSize(int batchSize) {
-        return Option.apply(batchSize);
+    public static BatchSize rowsInBatch(int batchSizeInRows) {
+        return RowsInBatch$.MODULE$.apply(batchSizeInRows);
+    }
+
+    public static BatchSize bytesInBatch(int batchSizeInBytes) {
+        return BytesInBatch$.MODULE$.apply(batchSizeInBytes);
     }
 
     public static ColumnSelector someColumns(String... columnNames) {
