@@ -16,12 +16,12 @@ trait RowReader[T] extends Serializable {
   def columnNames: Option[Seq[String]]
 
   /** The number of columns that need to be fetched from C*. */
-  def columnCount: Option[Int]
+  def requiredColumns: Option[Int]
 
   /** This method should be implemented by those row readers which reads fields in the consecutive
     * positions from a CassandraRow. When a row reader implements it so that it returns a non-empty,
     * it denotes the number of columns this reader moves the column cursor forward for compound row
     * readers (such as [[KeyValueRowReader]]). */
-  def consecutiveColumns: Option[Int] = None
+  def consumedColumns: Option[Int] = None
 
 }

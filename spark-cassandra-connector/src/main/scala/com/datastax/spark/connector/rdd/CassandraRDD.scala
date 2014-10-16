@@ -250,7 +250,7 @@ class CassandraRDD[R] private[connector] (
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 
-    (rowTransformer.columnNames, rowTransformer.columnCount) match {
+    (rowTransformer.columnNames, rowTransformer.requiredColumns) match {
       case (Some(cs), None) => providedColumnNames.filter(cs.toSet)
       case (_, _) => providedColumnNames
     }
@@ -272,7 +272,7 @@ class CassandraRDD[R] private[connector] (
       case None =>
     }
 
-    rowTransformer.columnCount match {
+    rowTransformer.requiredColumns match {
       case Some(count) =>
         assert(selectedColumnNames.size >= count,
         s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")

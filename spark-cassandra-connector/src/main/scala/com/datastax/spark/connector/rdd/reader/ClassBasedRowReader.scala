@@ -122,8 +122,8 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   private val allColumnRefs = columnMap.constructor ++ columnMap.setters.values
 
   override def columnNames = Some(extractColumnNames(allColumnRefs))
-  override def columnCount = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
-  override def consecutiveColumns: Option[Int] = {
+  override def requiredColumns = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
+  override def consumedColumns: Option[Int] = {
     val keyIsTuple = tpe.typeSymbol.fullName startsWith "scala.Tuple"
     if (keyIsTuple) Some(factory.argCount) else None
   }

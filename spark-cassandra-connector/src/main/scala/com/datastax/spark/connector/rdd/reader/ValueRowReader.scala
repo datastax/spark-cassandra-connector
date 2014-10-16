@@ -26,12 +26,12 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
   }
 
   /** The number of columns that need to be fetched from C*. */
-  override def columnCount: Option[Int] = columnRef match {
+  override def requiredColumns: Option[Int] = columnRef match {
     case IndexedColumnRef(idx) => Some(idx)
     case _ => None
   }
 
-  override def consecutiveColumns: Option[Int] = Some(1)
+  override def consumedColumns: Option[Int] = Some(1)
 }
 
 class ValueRowReaderFactory[T: TypeConverter]

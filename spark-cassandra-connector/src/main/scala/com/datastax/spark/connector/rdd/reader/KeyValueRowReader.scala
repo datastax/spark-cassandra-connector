@@ -8,7 +8,7 @@ class KeyValueRowReaderFactory[K, V](keyRRF: RowReaderFactory[K], valueRRF: RowR
 
   override def rowReader(table: TableDef, options: RowReaderOptions): RowReader[(K, V)] = {
     val keyReader = keyRRF.rowReader(table, options)
-    val valueReaderOptions = options.copy(offset = options.offset + keyReader.consecutiveColumns.getOrElse(0))
+    val valueReaderOptions = options.copy(offset = options.offset + keyReader.consumedColumns.getOrElse(0))
     val valueReader = valueRRF.rowReader(table, valueReaderOptions)
     new KeyValueRowReader(keyReader, valueReader)
   }
@@ -18,9 +18,9 @@ class KeyValueRowReaderFactory[K, V](keyRRF: RowReaderFactory[K], valueRRF: RowR
 
 class KeyValueRowReader[K, V](keyReader: RowReader[K], valueReader: RowReader[V]) extends RowReader[(K, V)] {
 
-  override def columnCount: Option[Int] =
-    (for (keyCnt <- keyReader.columnCount; valueCnt <- valueReader.columnCount) yield keyCnt max valueCnt)
-      .orElse(keyReader.columnCount).orElse(valueReader.columnCount)
+  override def requiredColumns: Option[Int] =
+    (for (keyCnt <- keyReader.requiredColumns; valueCnt <- valueReader.requiredColumns) yield keyCnt max valueCnt)
+      .orElse(keyReader.requiredColumns).orElse(valueReader.requiredColumns)
 
   override def columnNames: Option[Seq[String]] =
     (for (keyNames <- keyReader.columnNames; valueNames <- valueReader.columnNames) yield keyNames ++ valueNames)
@@ -30,7 +30,7 @@ class KeyValueRowReader[K, V](keyReader: RowReader[K], valueReader: RowReader[V]
     (keyReader.read(row, columnNames), valueReader.read(row, columnNames))
   }
 
-  override def consecutiveColumns: Option[Int] =
-    for (keySkip <- keyReader.consecutiveColumns; valueSkip <- valueReader.consecutiveColumns)
+  override def consumedColumns: Option[Int] =
+    for (keySkip <- keyReader.consumedColumns; valueSkip <- valueReader.consumedColumns)
     yield keySkip + valueSkip
 }

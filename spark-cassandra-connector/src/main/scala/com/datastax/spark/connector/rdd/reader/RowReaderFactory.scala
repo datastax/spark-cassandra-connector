@@ -69,7 +69,7 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
       CassandraRow.fromJavaDriverRow(row, columnNames)
     }
 
-    override def columnCount: Option[Int] = None
+    override def requiredColumns: Option[Int] = None
 
     override def columnNames: Option[Seq[String]] = None
   }

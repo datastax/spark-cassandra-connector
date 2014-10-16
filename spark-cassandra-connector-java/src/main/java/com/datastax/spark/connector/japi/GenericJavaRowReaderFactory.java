@@ -46,12 +46,12 @@ public class GenericJavaRowReaderFactory {
         }
 
         @Override
-        public Option<Object> columnCount() {
+        public Option<Object> requiredColumns() {
             return Option.empty();
         }
 
         @Override
-        public Option<Object> consecutiveColumns() {
+        public Option<Object> consumedColumns() {
             return Option.empty();
         }
     }
