@@ -1,10 +1,8 @@
 package com.datastax.spark.connector.rdd.reader
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.math.BigInteger
 import java.text.SimpleDateFormat
 
-import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.{CassandraRow, ColumnNotFoundException}
 import org.junit.Assert._
 import org.scalatest.{FunSuite, ShouldMatchers}
@@ -66,14 +64,6 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
     assertEquals(3L, row.getLong("string"))
     assertEquals(BigInt(3), row.getVarInt("string"))
     assertEquals(BigDecimal(3), row.getDecimal("string"))
-
-    assertEquals(2 : java.lang.Integer, row.getJInt("integer"))
-    assertEquals(2L : java.lang.Long, row.getJLong("integer"))
-    assertEquals(2.toByte : java.lang.Byte, row.getJByte("integer"))
-    assertEquals(2d : java.lang.Double, row.getJDouble("integer"))
-    assertEquals(2f : java.lang.Float, row.getJFloat("integer"))
-    assertEquals(new BigInteger("2"), row.getJVarInt("integer"))
-    assertEquals(new java.math.BigDecimal("2"), row.getJDecimal("integer"))
   }
 
   test("collectionConversionTest") {
@@ -108,19 +98,6 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
 
     val scalaMapAsSet = row.getSet[(String, String)]("map")
     assertEquals(Set("a" → "1", "b" → "2", "c" → "3"), scalaMapAsSet)
-
-    val javaList = row.getJList[String]("list")
-    javaList should contain allOf("1", "2")
-    javaList should have size 3
-
-    val javaSet = row.getJSet[String]("set")
-    javaSet should contain allOf("apple", "banana", "mango")
-
-    val javaMap = row.getJMap[String, Integer]("map")
-    javaMap should have size 3
-    javaMap.get("a") should be(1)
-    javaMap.get("b") should be(2)
-    javaMap.get("c") should be(3)
   }
 
   test("serializationTest") {

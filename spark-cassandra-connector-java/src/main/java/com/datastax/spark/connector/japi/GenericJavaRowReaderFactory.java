@@ -1,4 +1,4 @@
-package com.datastax.spark.connector;
+package com.datastax.spark.connector.japi;
 
 import com.datastax.driver.core.Row;
 import com.datastax.spark.connector.cql.TableDef;
@@ -8,13 +8,10 @@ import com.datastax.spark.connector.rdd.reader.RowReaderOptions;
 import scala.Option;
 import scala.collection.Seq;
 
-/**
- * @author Jacek Lewandowski
- */
 public class GenericJavaRowReaderFactory {
-    public final static RowReaderFactory<CassandraJavaRow> instance = new RowReaderFactory<CassandraJavaRow>() {
+    public final static RowReaderFactory<CassandraRow> instance = new RowReaderFactory<CassandraRow>() {
         @Override
-        public RowReader<CassandraJavaRow> rowReader(TableDef table, RowReaderOptions options) {
+        public RowReader<CassandraRow> rowReader(TableDef table, RowReaderOptions options) {
             return JavaRowReader.instance;
         }
 
@@ -24,36 +21,38 @@ public class GenericJavaRowReaderFactory {
         }
 
         @Override
-        public Class<CassandraJavaRow> targetClass() {
-            return CassandraJavaRow.class;
+        public Class<CassandraRow> targetClass() {
+            return CassandraRow.class;
         }
     };
 
 
-    public static class JavaRowReader implements RowReader<CassandraJavaRow> {
+    public static class JavaRowReader implements RowReader<CassandraRow> {
         public final static JavaRowReader instance = new JavaRowReader();
 
         private JavaRowReader() {
         }
 
         @Override
-        public CassandraJavaRow read(Row row, String[] columnNames) {
-            return RowReaderFactory.GenericRowReader$$.MODULE$.read(row, columnNames);
+        public CassandraRow read(Row row, String[] columnNames) {
+            assert row.getColumnDefinitions().size() == columnNames.length :
+                    "Number of columns in a row must match the number of columns in the table metadata";
+            return CassandraRow$.MODULE$.fromJavaDriverRow(row, columnNames);
         }
 
         @Override
         public Option<Seq<String>> columnNames() {
-            return RowReaderFactory.GenericRowReader$$.MODULE$.columnNames();
+            return Option.empty();
         }
 
         @Override
         public Option<Object> columnCount() {
-            return RowReaderFactory.GenericRowReader$$.MODULE$.columnCount();
+            return Option.empty();
         }
 
         @Override
         public Option<Object> consecutiveColumns() {
-            return RowReaderFactory.GenericRowReader$$.MODULE$.consecutiveColumns();
+            return Option.empty();
         }
     }
 

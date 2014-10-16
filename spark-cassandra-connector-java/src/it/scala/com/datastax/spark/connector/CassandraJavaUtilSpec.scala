@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.rdd.RDD
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}

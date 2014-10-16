@@ -1,5 +1,6 @@
-package com.datastax.spark.connector;
+package com.datastax.spark.connector.japi;
 
+import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.streaming.DStreamFunctions;
 import com.datastax.spark.connector.writer.RowWriterFactory;

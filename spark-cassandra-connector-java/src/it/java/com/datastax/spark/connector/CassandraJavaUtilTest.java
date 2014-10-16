@@ -1,5 +1,9 @@
 package com.datastax.spark.connector;
 
+import com.datastax.spark.connector.japi.DStreamJavaFunctions;
+import com.datastax.spark.connector.japi.RDDJavaFunctions;
+import com.datastax.spark.connector.japi.SparkContextJavaFunctions;
+import com.datastax.spark.connector.japi.StreamingContextJavaFunctions;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
@@ -23,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.datastax.spark.connector.CassandraJavaUtil.*;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

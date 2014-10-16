@@ -5,6 +5,7 @@ import java.io.IOException
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.commons.lang3.tuple
@@ -43,9 +44,9 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table").collect()
     assert(rows.size == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getJInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getJInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getJInt("key") == 3))
+    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
   it should "allow to read data as Java beans " in {
@@ -91,9 +92,9 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .select("key").collect()
     assert(rows.size == 3)
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getJInt("key") == 1))
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getJInt("key") == 2))
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getJInt("key") == 3))
+    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 1))
+    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 2))
+    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 3))
   }
 
   it should "return selected columns" in {
@@ -107,7 +108,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .where("value = ?", "two").collect()
     assert(rows.size === 1)
-    assert(rows.exists(row => row.getString("value") == "two" && row.getJInt("key") == 2))
+    assert(rows.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
   }
 
   it should "allow to read rows as an array of a single-column type supported by TypeConverter" in {

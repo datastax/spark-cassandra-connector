@@ -1,6 +1,8 @@
-package com.datastax.spark.connector;
+package com.datastax.spark.connector.japi;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.spark.connector.BatchSize;
+import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import com.datastax.spark.connector.writer.WriteConf;
@@ -8,7 +10,7 @@ import org.apache.spark.SparkConf;
 
 import java.io.Serializable;
 
-import static com.datastax.spark.connector.CassandraJavaUtil.allColumns;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.allColumns;
 
 /**
  * Java API for either {@code RDD} or {@code DStream}.

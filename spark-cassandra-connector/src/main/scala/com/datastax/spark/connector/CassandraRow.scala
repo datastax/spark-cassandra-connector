@@ -1,8 +1,9 @@
 package com.datastax.spark.connector
 
+
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{Date, UUID}
+import java.util.{UUID, Date}
 
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.types.TypeConverter
@@ -12,9 +13,6 @@ import org.apache.spark.sql.catalyst.expressions.{Row => SparkSqlRow}
 import org.joda.time.DateTime
 
 import scala.collection.JavaConversions._
-
-/** Thrown when the requested column does not exist in the result set. */
-class ColumnNotFoundException(message: String) extends Exception(message)
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -86,56 +84,13 @@ class ColumnNotFoundException(message: String) extends Exception(message)
   *   - java.sql.Date
   *   - org.joda.time.DateTime
   */
-final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends CassandraJavaRow with SparkSqlRow with Serializable {
+final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends AbstractRow(data, columnNames) with SparkSqlRow with Serializable {
 
   private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
-
-  @transient
-  private lazy val _indexOf =
-    columnNames.zipWithIndex.toMap.withDefaultValue(-1)
-
-  @transient
-  private lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
-    throw new ColumnNotFoundException(
-      s"Column not found: $name. " +
-        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-  }
-
-  /** Total number of columns in this row. Includes columns with null values. */
-  def length = data.size
-
-  /** Returns true if column value is Cassandra null */
-  def isNullAt(index: Int): Boolean =
-    data(index) == null
-
-  /** Returns true if column value is Cassandra null */
-  def isNullAt(name: String): Boolean = {
-    data(_indexOfOrThrow(name)) == null
-  }
-
-  /** Returns index of column with given name or -1 if column not found */
-  def indexOf(name: String): Int =
-    _indexOf(name)
-
-  /** Returns the name of the i-th column. */
-  def nameOf(index: Int): String =
-    columnNames(index)
-
-  /** Returns true if column with given name is defined and has an
-    * entry in the underlying value array, i.e. was requested in the result set.
-    * For columns having null value, returns true.*/
-  def contains(name: String): Boolean =
-    _indexOf(name) != -1
 
   /** Converts this row to a Map */
   def toMap: Map[String, Any] =
     columnNames.zip(data).toMap
-
-  def toJMap: java.util.Map[String, AnyRef] = {
-    val map = new java.util.HashMap[String, AnyRef]()
-    for (i <- 0 until length) map.put(columnNames(i), data(i))
-    map
-  }
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
@@ -147,12 +102,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
   
-  def getJ[T](index: Int, tc: TypeConverter[T]): T =
-    tc.convert(data(index))
-
-  def getJ[T](name: String, tc: TypeConverter[T]): T =
-    getJ[T](_indexOfOrThrow(name), tc)
-
   /** Equivalent to `getAny` */
   def apply(index: Int): Any = getAny(index)
   def apply(name: String): Any = getAny(name)
@@ -187,26 +136,17 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getBoolean(index: Int) = get[Boolean](index)
   def getBoolean(name: String) = get[Boolean](name)
 
-  def getJBoolean(index: Int) = get[java.lang.Boolean](index)
-  def getJBoolean(name: String) = get[java.lang.Boolean](name)
-
   def getBooleanOption(index: Int) = get[Option[Boolean]](index)
   def getBooleanOption(name: String) = get[Option[Boolean]](name)
   
   def getByte(index: Int) = get[Byte](index)
   def getByte(name: String) = get[Byte](name)
 
-  def getJByte(index: Int) = get[java.lang.Byte](index)
-  def getJByte(name: String) = get[java.lang.Byte](name)
-
   def getByteOption(index: Int) = get[Option[Byte]](index)
   def getByteOption(name: String) = get[Option[Byte]](name)
 
   def getShort(index: Int) = get[Short](index)
   def getShort(name: String) = get[Short](name)
-
-  def getJShort(index: Int) = get[java.lang.Short](index)
-  def getJShort(name: String) = get[java.lang.Short](name)
 
   def getShortOption(index: Int) = get[Option[Short]](index)
   def getShortOption(name: String) = get[Option[Short]](name)
@@ -218,9 +158,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * The number must be within 32-bit integer range or the `TypeConversionException` will be thrown.*/
   def getInt(index: Int) = get[Int](index)
   def getInt(name: String) = get[Int](name)
-
-  def getJInt(index: Int) = get[java.lang.Integer](index)
-  def getJInt(name: String) = get[java.lang.Integer](name)
 
   def getIntOption(index: Int) = get[Option[Int]](index)
   def getIntOption(name: String) = get[Option[Int]](name)
@@ -234,9 +171,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getLong(index: Int) = get[Long](index)
   def getLong(name: String) = get[Long](name)
 
-  def getJLong(index: Int) = get[java.lang.Long](index)
-  def getJLong(name: String) = get[java.lang.Long](name)
-
   def getLongOption(index: Int) = get[Option[Long]](index)
   def getLongOption(name: String) = get[Option[Long]](name)
 
@@ -246,9 +180,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getFloat(index: Int) = get[Float](index)
   def getFloat(name: String) = get[Float](name)
 
-  def getJFloat(index: Int) = get[java.lang.Float](index)
-  def getJFloat(name: String) = get[java.lang.Float](name)
-
   def getFloatOption(index: Int) = get[Option[Float]](index)
   def getFloatOption(name: String) = get[Option[Float]](name)
 
@@ -257,9 +188,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * This method can be also used to read a `decimal` column, with some loss of precision.*/
   def getDouble(index: Int) = get[Double](index)
   def getDouble(name: String) = get[Double](name)
-
-  def getJDouble(index: Int) = get[java.lang.Double](index)
-  def getJDouble(name: String) = get[java.lang.Double](name)
 
   def getDoubleOption(index: Int) = get[Option[Double]](index)
   def getDoubleOption(name: String) = get[Option[Double]](name)
@@ -307,9 +235,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getVarInt(index: Int) = get[BigInt](index)
   def getVarInt(name: String) = get[BigInt](name)
 
-  def getJVarInt(index: Int) = get[java.math.BigInteger](index)
-  def getJVarInt(name: String) = get[java.math.BigInteger](name)
-
   def getVarIntOption(index: Int) = get[Option[BigInt]](index)
   def getVarIntOption(name: String) = get[Option[BigInt]](name)
 
@@ -318,9 +243,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * with strings containing a valid floating point number of arbitrary precision. */
   def getDecimal(index: Int) = get[BigDecimal](index)
   def getDecimal(name: String) = get[BigDecimal](name)
-
-  def getJDecimal(index: Int) = get[java.math.BigDecimal](index)
-  def getJDecimal(name: String) = get[java.math.BigDecimal](name)
 
   def getDecimalOption(index: Int) = get[Option[BigDecimal]](index)
   def getDecimalOption(name: String) = get[Option[BigDecimal]](name)
@@ -353,11 +275,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getList[T : TypeConverter](name: String) =
     get[Vector[T]](name)
 
-  def getJList[T](index: Int) =
-    get[java.util.List[AnyRef]](index).asInstanceOf[java.util.List[T]]
-  def getJList[T](name: String) =
-    get[java.util.List[AnyRef]](name).asInstanceOf[java.util.List[T]]
-
   /** Reads a `set` column value.
     * A null set is converted to an empty collection.
     * Items of the set are converted to the given type.
@@ -369,11 +286,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getSet[T : TypeConverter](name: String) =
     get[Set[T]](name)
 
-  def getJSet[T](index: Int) =
-    get[java.util.Set[AnyRef]](index).asInstanceOf[java.util.Set[T]]
-  def getJSet[T](name: String) =
-    get[java.util.Set[AnyRef]](name).asInstanceOf[java.util.Set[T]]
-
   /** Reads a `map` column value.
     * A null map is converted to an empty collection.
     * Keys and values of the map are converted to the given types.
@@ -383,11 +295,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     get[Map[K, V]](index)
   def getMap[K : TypeConverter, V : TypeConverter](name: String) =
     get[Map[K, V]](name)
-
-  def getJMap[K, V](index: Int) =
-    get[java.util.Map[AnyRef, AnyRef]](index).asInstanceOf[java.util.Map[K, V]]
-  def getJMap[K, V](name: String) =
-    get[java.util.Map[AnyRef, AnyRef]](name).asInstanceOf[java.util.Map[K, V]]
 
   /** Displays the row in human readable form, including the names and values of the columns */
   override def toString() =
@@ -406,7 +313,7 @@ object CassandraRow {
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
-  private def convert(obj: Any): AnyRef = {
+  private[connector] def convert(obj: Any): AnyRef = {
     obj match {
       case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
       case list: java.util.List[_] => list.view.map(convert).toList

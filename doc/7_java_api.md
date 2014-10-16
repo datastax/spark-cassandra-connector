@@ -16,7 +16,7 @@ The best way to use Connector Java API is to import statically all the methods i
 This utility class is the main entry point for Connector Java API.
 
 ```java
-import static com.datastax.spark.connector.CassandraJavaUtil.*;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 ```
 
 ### Accessing Cassandra tables in Java

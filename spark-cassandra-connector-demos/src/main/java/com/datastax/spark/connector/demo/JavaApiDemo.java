@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.demo;
 
-import com.datastax.spark.connector.CassandraJavaRow;
+import com.datastax.spark.connector.japi.CassandraRow;
 import com.google.common.base.Objects;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,9 +12,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static com.datastax.spark.connector.CassandraJavaUtil.javaFunctions;
-import static com.datastax.spark.connector.CassandraJavaUtil.mapRowTo;
-import static com.datastax.spark.connector.CassandraJavaUtil.mapToRows;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRows;
 
 /**
  * This Spark application demonstrates how to use Spark Cassandra Connector with Java.
@@ -53,9 +53,9 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to read that data as an RDD of CassandraRows and convert them to strings...
         JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("test", "people")
-                .map(new Function<CassandraJavaRow, String>() {
+                .map(new Function<CassandraRow, String>() {
                     @Override
-                    public String call(CassandraJavaRow cassandraRow) throws Exception {
+                    public String call(CassandraRow cassandraRow) throws Exception {
                         return cassandraRow.toString();
                     }
                 });
@@ -83,9 +83,9 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to explicitly set a projection on the column set
         JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people")
-                .select("id").map(new Function<CassandraJavaRow, String>() {
+                .select("id").map(new Function<CassandraRow, String>() {
                     @Override
-                    public String call(CassandraJavaRow cassandraRow) throws Exception {
+                    public String call(CassandraRow cassandraRow) throws Exception {
                         return cassandraRow.toString();
                     }
                 });
