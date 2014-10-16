@@ -1,5 +1,6 @@
-1.1.0 alpha 4
  * Simplified AuthConf - more responsibility on CassandraConnectionFactory
+
+1.1.0 alpha 4
  * Use asynchronous prefetching of multi-page ResultSets in CassandraRDD
    to reduce waiting for Cassandra query results.
  * Make token range start and end be parameters of the query, not part of the query
