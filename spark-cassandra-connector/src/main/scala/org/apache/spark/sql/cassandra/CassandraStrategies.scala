@@ -158,7 +158,7 @@ private[cassandra] trait CassandraStrategies {
             logInfo("Partition column predicates are pushed down.")
             (clusterColumnPd ++ partitionColumnPd, regularColumnPredicates ++ clusterColumnRemaining ++ partitionColumnRemaining)
           } else {
-            (clusterColumnPd, regularColumnPredicates ++ partitionColumnPredicates)
+            (clusterColumnPd, regularColumnPredicates  ++ clusterColumnRemaining ++ partitionColumnPredicates)
           }
         } else {
           // No IN predicate in primary key column predicates
