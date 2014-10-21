@@ -144,3 +144,5 @@ to streaming in this case - these methods are provided only for convenience and 
 You may also save the data from `JavaDStream` to Cassandra. Again, you need to use `javaFunctions` method to create 
 a special wrapper around `JavaDStream` and then invoke one of the `saveToCassandra` methods. *DStream* is a sequence
 of *RDDs* and when you invoke `saveToCassandra` on it, it will follow saving to Cassandra all the *RDDs* in that *DStream*.
+
+[Next - Spark Streaming with Cassandra](8_streaming.md)
