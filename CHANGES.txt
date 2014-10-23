@@ -1,3 +1,7 @@
+1.0.4 (unreleased)
+ * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
+   reflection thread-safety problems (#235)
+
 1.0.3
  * Fixed handling of Cassandra rpc_address set to 0.0.0.0 (#332)
 
