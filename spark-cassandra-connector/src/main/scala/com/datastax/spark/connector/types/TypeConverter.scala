@@ -514,7 +514,7 @@ object TypeConverter {
     ByteArrayConverter
   )
 
-  private def forCollectionType(tpe: Type): TypeConverter[_] = {
+  private def forCollectionType(tpe: Type): TypeConverter[_] = synchronized {
     tpe match {
       case TypeRef(_, symbol, List(arg)) =>
         val untypedItemConverter = forType(arg)
@@ -557,8 +557,9 @@ object TypeConverter {
     }
   }
 
-  /** Useful for getting converter based on a type received from Scala reflection */
-  def forType(tpe: Type): TypeConverter[_] = {
+  /** Useful for getting converter based on a type received from Scala reflection.
+    * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
+  def forType(tpe: Type): TypeConverter[_] = synchronized {
     type T = TypeConverter[_]
     val selectedConverters =
       converters.collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
@@ -570,9 +571,11 @@ object TypeConverter {
    }
   }
 
-  /** Useful when implicit converters are not in scope, but a TypeTag is */
-  def forType[T : TypeTag]: TypeConverter[T] =
+  /** Useful when implicit converters are not in scope, but a TypeTag is.
+    * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
+  def forType[T : TypeTag]: TypeConverter[T] = synchronized {
     forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
+  }
 
   /** Registers a custom converter */
   def registerConverter(c: TypeConverter[_]) {
