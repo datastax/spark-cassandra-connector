@@ -16,16 +16,32 @@ import java.util.{Map => JavaMap}
 /** A helper class to make it possible to access components written in Scala from Java code. */
 object JavaApiHelper {
 
+  def mirror = runtimeMirror(Thread.currentThread().getContextClassLoader)
+
   /** Returns a `TypeTag` for the given class. */
   def getTypeTag[T](clazz: Class[T]): TypeTag[T] = {
-    TypeTag.apply(runtimeMirror(Thread.currentThread().getContextClassLoader), new TypeCreator {
+    TypeTag.apply(mirror, new TypeCreator {
       override def apply[U <: Universe with Singleton](m: Mirror[U]): U#Type = {
         m.staticClass(clazz.getName).toTypeConstructor
       }
     })
   }
 
+  def getTypeTag[T](clazz: Class[_], typeParams: TypeTag[_]*): TypeTag[T] = {
+    TypeTag.apply(mirror, new TypeCreator {
+      override def apply[U <: Universe with Singleton](m: Mirror[U]) = {
+        val ct = m.staticClass(clazz.getName).toTypeConstructor.asInstanceOf[m.universe.Type]
+        val tpt = typeParams.map(_.in(m).tpe.asInstanceOf[m.universe.Type]).toList
+        m.universe.appliedType(ct, tpt).asInstanceOf[U#Type]
+      }
+    })
+  }
+
   def getClassTag[T](clazz: Class[T]): ClassTag[T] = ClassTag(clazz)
+
+  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = rootMirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
+
+  def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
 
   def toScalaMap[K, V](map: JavaMap[K, V]): Map[K, V] = Map(map.toSeq: _*)
 
@@ -35,8 +51,8 @@ object JavaApiHelper {
 
   def toColumns(array: Array[String]): SomeColumns = SomeColumns(array: _*)
 
-  def defaultRowWriterFactory[T](classTag: ClassTag[T], mapper: ColumnMapper[T]) = {
-    RowWriterFactory.defaultRowWriterFactory(classTag, mapper)
+  def defaultRowWriterFactory[T](mapper: ColumnMapper[T]) = {
+    RowWriterFactory.defaultRowWriterFactory(mapper)
   }
 
   def javaBeanColumnMapper[T](classTag: ClassTag[T], columnNameOverride: JavaMap[String, String]): ColumnMapper[T] =

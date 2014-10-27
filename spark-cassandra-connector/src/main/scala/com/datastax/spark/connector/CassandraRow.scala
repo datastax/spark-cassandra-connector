@@ -1,20 +1,18 @@
 package com.datastax.spark.connector
 
+
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{Date, UUID}
-
-import scala.collection.JavaConversions._
+import java.util.{UUID, Date}
 
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-
 import org.apache.cassandra.utils.ByteBufferUtil
 import org.apache.spark.sql.catalyst.expressions.{Row => SparkSqlRow}
+import org.joda.time.DateTime
 
-/** Thrown when the requested column does not exist in the result set. */
-class ColumnNotFoundException(message: String) extends Exception(message)
+import scala.collection.JavaConversions._
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -86,46 +84,9 @@ class ColumnNotFoundException(message: String) extends Exception(message)
   *   - java.sql.Date
   *   - org.joda.time.DateTime
   */
-final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends SparkSqlRow with Serializable {
+final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends AbstractRow(data, columnNames) with SparkSqlRow with Serializable {
 
   private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
-
-  @transient
-  private lazy val _indexOf =
-    columnNames.zipWithIndex.toMap.withDefaultValue(-1)
-
-  @transient
-  private lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
-    throw new ColumnNotFoundException(
-      s"Column not found: $name. " +
-        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-  }
-
-  /** Total number of columns in this row. Includes columns with null values. */
-  def length = data.size
-
-  /** Returns true if column value is Cassandra null */
-  def isNullAt(index: Int): Boolean =
-    data(index) == null
-
-  /** Returns true if column value is Cassandra null */
-  def isNullAt(name: String): Boolean = {
-    data(_indexOfOrThrow(name)) == null
-  }
-
-  /** Returns index of column with given name or -1 if column not found */
-  def indexOf(name: String): Int =
-    _indexOf(name)
-
-  /** Returns the name of the i-th column. */
-  def nameOf(index: Int): String =
-    columnNames(index)
-
-  /** Returns true if column with given name is defined and has an
-    * entry in the underlying value array, i.e. was requested in the result set.
-    * For columns having null value, returns true.*/
-  def contains(name: String): Boolean =
-    _indexOf(name) != -1
 
   /** Converts this row to a Map */
   def toMap: Map[String, Any] =
@@ -142,8 +103,11 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     get[T](_indexOfOrThrow(name))
   
   /** Equivalent to `getAny` */
-  def apply(index: Int) = getAny(index)
-  def apply(name: String) = getAny(name)
+  def apply(index: Int): Any = getAny(index)
+  def apply(name: String): Any = getAny(name)
+
+  def get(index: Int): AnyRef = getAnyRef(index)
+  def get(name: String): AnyRef = getAnyRef(name)
 
   /** Returns a column value without applying any conversion.
     * The underlying type is the same as the type returned by the low-level Cassandra driver.
@@ -247,16 +211,23 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
   def getBytesOption(name: String) = get[Option[ByteBuffer]](name)
 
   /** Returns a `timestamp` or `timeuuid` column value as `java.util.Date`.
-    * To convert a timestamp to one of other supported date types, use the generic `get` method:
+    * To convert a timestamp to one of other supported date types, use the generic `get` method,
+    * for example:
     * {{{
     *   row.get[java.sql.Date](0)
-    *   row.get[org.joda.time.DateTime](0)
     * }}}*/
   def getDate(index: Int) = get[Date](index)
   def getDate(name: String) = get[Date](name)
 
   def getDateOption(index: Int) = get[Option[Date]](index)
   def getDateOption(name: String) = get[Option[Date]](name)
+
+  /** Returns a `timestamp` or `timeuuid` column value as `org.joda.time.DateTime`. */
+  def getDateTime(index: Int) = get[DateTime](index)
+  def getDateTime(name: String) = get[DateTime](name)
+
+  def getDateTimeOption(index: Int) = get[Option[DateTime]](index)
+  def getDateTimeOption(name: String) = get[Option[DateTime]](name)
 
   /** Returns a `varint` column value.
     * Can be used with all other integer types as well as
@@ -326,7 +297,7 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     get[Map[K, V]](name)
 
   /** Displays the row in human readable form, including the names and values of the columns */
-  override def toString =
+  override def toString() =
     "CassandraRow" + columnNames
       .zip(data)
       .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
@@ -342,7 +313,7 @@ object CassandraRow {
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
-  private def convert(obj: Any): AnyRef = {
+  private[connector] def convert(obj: Any): AnyRef = {
     obj match {
       case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
       case list: java.util.List[_] => list.view.map(convert).toList

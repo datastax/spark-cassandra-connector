@@ -6,6 +6,8 @@ import scala.reflect.ClassTag
 
 class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
 
+  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
+
   private def indexedColumnRefs(n: Int) =
     (0 until n).map(IndexedColumnRef)
 

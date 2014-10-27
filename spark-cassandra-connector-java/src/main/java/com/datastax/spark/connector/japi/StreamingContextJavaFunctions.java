@@ -1,4 +1,4 @@
-package com.datastax.spark.connector;
+package com.datastax.spark.connector.japi;
 
 import org.apache.spark.streaming.StreamingContext;
 

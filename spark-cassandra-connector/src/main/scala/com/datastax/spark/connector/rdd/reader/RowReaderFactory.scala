@@ -12,16 +12,23 @@ import com.datastax.spark.connector.util.MagicalTypeTricks.{DoesntHaveImplicit, 
 import scala.annotation.implicitNotFound
 import scala.reflect.runtime.universe._
 
+case class RowReaderOptions(offset: Int = 0)
+
+object RowReaderOptions {
+  val Default = RowReaderOptions()
+}
+
 /** Creates [[RowReader]] objects prepared for reading rows from the given Cassandra table. */
 @implicitNotFound("No RowReaderFactory can be found for this type")
 trait RowReaderFactory[T] {
-  def rowReader(table: TableDef): RowReader[T]
+  def rowReader(table: TableDef, options: RowReaderOptions = RowReaderOptions.Default): RowReader[T]
+  def targetClass: Class[T]
 }
 
 /** Helper for implementing `RowReader` objects that can be used as `RowReaderFactory` objects. */
 trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
   this: RowReader[T] =>
-  def rowReader(table: TableDef): RowReader[T] = this
+  def rowReader(table: TableDef, options: RowReaderOptions): RowReader[T] = this
 }
 
 trait LowPriorityRowReaderFactoryImplicits {
@@ -41,7 +48,7 @@ trait LowPriorityRowReaderFactoryImplicits {
   implicit def compoundColumnKeyValueRowReaderFactory[K <: Serializable, V <: Serializable]
       (implicit tt1: TypeTag[K], cm1: ColumnMapper[K], ev1: K DoesntHaveImplicit IsSingleColumnType[K],
                 tt2: TypeTag[V], cm2: ColumnMapper[V], ev2: V DoesntHaveImplicit IsSingleColumnType[V]): RowReaderFactory[(K, V)] =
-    new KeyValueRowReaderFactory[K, V]()
+    new KeyValueRowReaderFactory[K, V](new ClassBasedRowReaderFactory[K], new ClassBasedRowReaderFactory[V])
 
   implicit def valueRowReaderFactory[T](implicit ev: TypeConverter[T], ev2: IsSingleColumnType[T]): RowReaderFactory[T] =
     new ValueRowReaderFactory[T]()
@@ -54,17 +61,17 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
   implicit object GenericRowReader$
     extends RowReader[CassandraRow] with ThisRowReaderAsFactory[CassandraRow] {
 
+    override def targetClass: Class[CassandraRow] = classOf[CassandraRow]
+
     override def read(row: Row, columnNames: Array[String]) = {
       assert(row.getColumnDefinitions.size() == columnNames.size,
         "Number of columns in a row must match the number of columns in the table metadata")
       CassandraRow.fromJavaDriverRow(row, columnNames)
     }
 
-    override def columnCount = None
+    override def requiredColumns: Option[Int] = None
 
-    override def columnNames = None
+    override def columnNames: Option[Seq[String]] = None
   }
 
 }
-
-

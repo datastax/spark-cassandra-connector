@@ -19,7 +19,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
 
-
 /** RDD representing a Cassandra table.
   * This class is the main entry point for analyzing data in Cassandra database with Spark.
   * Obtain objects of this class by calling [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]].
@@ -79,8 +78,12 @@ class CassandraRDD[R] private[connector] (
 
   private def copy(columnNames: ColumnSelector = columnNames,
                    where: CqlWhereClause = where,
-                   readConf: ReadConf = readConf): CassandraRDD[R] =
+                   readConf: ReadConf = readConf, connector: CassandraConnector = connector): CassandraRDD[R] =
     new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+
+  /** Returns a copy of this Cassandra RDD with specified connector */
+  def withConnector(connector: CassandraConnector): CassandraRDD[R] =
+    copy(connector = connector)
 
   /** Adds a CQL `WHERE` predicate(s) to the query.
     * Useful for leveraging secondary indexes in Cassandra.
@@ -247,7 +250,7 @@ class CassandraRDD[R] private[connector] (
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 
-    (rowTransformer.columnNames, rowTransformer.columnCount) match {
+    (rowTransformer.columnNames, rowTransformer.requiredColumns) match {
       case (Some(cs), None) => providedColumnNames.filter(cs.toSet)
       case (_, _) => providedColumnNames
     }
@@ -269,7 +272,7 @@ class CassandraRDD[R] private[connector] (
       case None =>
     }
 
-    rowTransformer.columnCount match {
+    rowTransformer.requiredColumns match {
       case Some(count) =>
         assert(selectedColumnNames.size >= count,
         s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")
@@ -367,4 +370,16 @@ class CassandraRDD[R] private[connector] (
     countingIterator
   }
 
+}
+
+object CassandraRDD {
+  def apply[T](sc: SparkContext, keyspaceName: String, tableName: String)
+              (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraRDD[T] =
+    new CassandraRDD[T](
+      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
+
+  def apply[K, V](sc: SparkContext, keyspaceName: String, tableName: String)
+                 (implicit keyCT: ClassTag[K], valueCT: ClassTag[V], rrf: RowReaderFactory[(K, V)]): CassandraRDD[(K, V)] =
+    new CassandraRDD[(K, V)](
+      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
 }

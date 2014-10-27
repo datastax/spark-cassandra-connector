@@ -12,11 +12,11 @@ import scala.collection.JavaConversions._
 
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
   * Can save case class objects, java beans and tuples. */
-class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedColumns: Seq[String])
+class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[String])
   extends RowWriter[T] {
 
   private val columnMapper = implicitly[ColumnMapper[T]]
-  private val cls = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+  private val cls = columnMapper.classTag.runtimeClass.asInstanceOf[Class[T]]
   private val columnMap = columnMapper.columnMap(table)
   private val selectedColumnsSet = selectedColumns.toSet
   private val selectedColumnsIndexed = selectedColumns.toIndexedSeq
@@ -105,7 +105,7 @@ class DefaultRowWriter[T : ClassTag : ColumnMapper](table: TableDef, selectedCol
 
 object DefaultRowWriter {
 
-  def factory[T : ClassTag : ColumnMapper] = new RowWriterFactory[T] {
+  def factory[T : ColumnMapper] = new RowWriterFactory[T] {
     override def rowWriter(tableDef: TableDef, columnNames: Seq[String]) = {
       new DefaultRowWriter[T](tableDef, columnNames)
     }

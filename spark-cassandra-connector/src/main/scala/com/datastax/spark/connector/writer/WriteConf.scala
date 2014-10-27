@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.spark.connector.{RowsInBatch, BatchSize}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
@@ -7,16 +8,15 @@ import com.datastax.driver.core.ConsistencyLevel
 
 /** Write settings for RDD
   *
-  * @param batchSizeInBytes approx. number of bytes to be written in a single batch
-  * @param batchSizeInRows  exact number of rows to be written in a single batch;
-  *                         if set, shadows batchSizeInBytes property
+  * @param batchSize approx. number of bytes to be written in a single batch or 
+  *                  exact number of rows to be written in a single batch;
+  *                         
   * @param consistencyLevel consistency level for writes, default LOCAL_ONE
   * @param parallelismLevel number of batches to be written in parallel
   */
 
 case class WriteConf(
-  batchSizeInBytes: Int = WriteConf.DefaultBatchSizeInBytes,
-  batchSizeInRows: Option[Int] = None,
+  batchSize: BatchSize = BatchSize.Automatic,
   consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
   parallelismLevel: Int = WriteConf.DefaultParallelismLevel)
 
@@ -37,11 +37,11 @@ object WriteConf {
     val batchSizeInRowsStr = conf.get(
       "spark.cassandra.output.batch.size.rows", "auto")
 
-    val batchSizeInRows = {
+    val batchSize = {
       val Number = "([0-9]+)".r
       batchSizeInRowsStr match {
-        case "auto" => None
-        case Number(x) => Some(x.toInt)
+        case "auto" => BatchSize.Automatic
+        case Number(x) => RowsInBatch(x.toInt)
         case other =>
           throw new ConfigurationException(
             s"Invalid value of spark.cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
@@ -52,8 +52,7 @@ object WriteConf {
       "spark.cassandra.output.concurrent.writes", DefaultParallelismLevel)
 
     WriteConf(
-      batchSizeInBytes = batchSizeInBytes,
-      batchSizeInRows = batchSizeInRows,
+      batchSize = batchSize,
       consistencyLevel = consistencyLevel,
       parallelismLevel = parallelismLevel)
 

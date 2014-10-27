@@ -2,17 +2,16 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorSystem, Props, Terminated}
 import akka.testkit.{ImplicitSender, TestKit}
-import org.apache.spark.SparkEnv
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
-import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-
-import com.datastax.spark.connector.SomeColumns
+import com.datastax.spark.connector.{RowsInBatch, SomeColumns}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.writer.WriteConf
+import org.apache.spark.SparkEnv
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import com.datastax.spark.connector.testkit.TestEvent._
@@ -32,10 +31,10 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
       val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSizeInRows = Some(1)))
+        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSize = RowsInBatch(1)))
 
       // start the streaming context so the data can be processed and actor started
-      ssc.start
+      ssc.start()
 
       system.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
 
@@ -46,8 +45,8 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("streaming_test", "words").select("word", "count")
-        awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
-        rdd.collect.length should be (data.size)
+        awaitCond(rdd.collect().nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
+        rdd.collect().length should be (data.size)
       }
     }
   }

@@ -5,10 +5,8 @@ import com.datastax.spark.connector.writer._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import scala.reflect.ClassTag
-
 /** Provides Cassandra-specific methods on `RDD` */
-class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
+class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
 
   override val sparkContext: SparkContext = rdd.sparkContext
 
@@ -25,5 +23,4 @@ class RDDFunctions[T : ClassTag](rdd: RDD[T]) extends WritableToCassandra[T] wit
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
-
 }
