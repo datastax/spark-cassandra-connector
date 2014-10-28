@@ -29,7 +29,7 @@ class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartit
       def run() {
         for(s <- stream) {
           while(s.iterator.hasNext) {
-            println(s"Consumer (KafkaStream) received: ${new String(s.iterator.next.message)}")
+            //println(s"Consumer (KafkaStream) received: ${s.iterator.next.message}")
             latch.countDown()
           }
         }
