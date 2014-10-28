@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.driver.core.DataType
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
+
+import com.datastax.driver.core.DataType
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
@@ -16,7 +17,9 @@ trait ColumnType[T] extends Serializable {
     TypeConverter.forType(scalaTypeTag)
 
   /** Returns the TypeTag of the Scala type recommended to represent values of this column. */
-  def scalaTypeTag: TypeTag[T]
+  @transient
+  lazy val scalaTypeTag: TypeTag[T] =
+    converterToScala.targetTypeTag
 
   /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String

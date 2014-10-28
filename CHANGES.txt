@@ -1,6 +1,9 @@
 1.0.4 (unreleased)
  * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
    reflection thread-safety problems (#235)
+ * Synchronized computation of TypeTags in TypeConverter#targetTypeTag, 
+   ColumnType#scalaTypeTag methods and other places to workaround some of 
+   Scala 2.10 reflection thread-safety problems (#364)
  * Downgraded Guava to version 14.
    Upgraded Java driver to 2.0.7.
    Upgraded Cassandra to 2.0.11. (#366)
