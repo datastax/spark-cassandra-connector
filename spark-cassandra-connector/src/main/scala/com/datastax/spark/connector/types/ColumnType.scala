@@ -1,8 +1,10 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.driver.core.DataType
+import com.datastax.driver.core.{UDTValue, DataType}
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
+
+import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
@@ -52,7 +54,18 @@ object ColumnType {
       case DataType.Name.LIST => ListType(typeArgs(0))
       case DataType.Name.SET => SetType(typeArgs(0))
       case DataType.Name.MAP => MapType(typeArgs(0), typeArgs(1))
+      case DataType.Name.UDT => UserDefinedTypeStub
       case _ => primitiveTypeMap(dataType)
     }
   }
+}
+
+// TODO: This is a stub.
+// UDTValues are not Serializable.
+// Properly, we should use a dedicated,
+// serializable class for UDTValues and also allow to map them to case classes.
+case object UserDefinedTypeStub extends ColumnType[UDTValue] {
+  def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[UDTValue])
+  def scalaTypeTag = implicitly[TypeTag[UDTValue]]
+  override def isCollection = false
 }

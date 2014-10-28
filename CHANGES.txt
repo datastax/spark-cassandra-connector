@@ -1,4 +1,6 @@
  * Fixed bug in Java API which might cause ClassNotFoundException
+ * Added stubs for UDTs. It is possible to read tables with UDTs, but
+   values of UDTs will come out as java driver UDTValue objects (#374)
 
 1.1.0 beta 1
  * Redesigned Java API, some refactorings (#300)

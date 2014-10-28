@@ -67,6 +67,10 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')")
     session.execute("INSERT INTO read_test.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')")
 
+    session.execute("CREATE TYPE read_test.address (street text, city text, zip int)")
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
+    session.execute("INSERT INTO read_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+
     session.execute("CREATE TABLE IF NOT EXISTS read_test.big_table (key INT PRIMARY KEY, value INT)")
     val insert = session.prepare("INSERT INTO read_test.big_table(key, value) VALUES (?, ?)")
     for (i <- 1 to bigTableRowCount) {
@@ -288,6 +292,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     val result = sc.cassandraTable[(Int, Int, Int, String)]("read_test", "composite_key")
       .where("key_c1 = ? AND key_c2 = ?", 1, 1).collect()
     result should have length 2
+  }
+
+  it should "allow to fetch columns from a table with user defined Cassandra type (UDT)" in {
+    val result = sc.cassandraTable("read_test", "udts").select("key", "name").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+    row.getString(1) should be("name")
   }
 
   it should "throw IOException when table could not be found" in {

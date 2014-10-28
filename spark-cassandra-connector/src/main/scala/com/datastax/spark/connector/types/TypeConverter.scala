@@ -11,6 +11,8 @@ import scala.reflect.runtime.universe._
 import org.apache.cassandra.utils.ByteBufferUtil
 import org.joda.time.DateTime
 
+import com.datastax.driver.core.UDTValue
+
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
@@ -282,6 +284,16 @@ object TypeConverter {
     }
   }
 
+  val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
+
+  // TODO: This is a stub. Currently doesn't do any conversion at all.
+  implicit object UDTValueConverter extends TypeConverter[UDTValue] {
+    def targetTypeTag = UDTValueTypeTag
+    def convertPF = {
+      case x: UDTValue => x
+    }
+  }
+
   class TupleConverter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
@@ -544,7 +556,8 @@ object TypeConverter {
     InetAddressConverter,
     UUIDConverter,
     ByteBufferConverter,
-    ByteArrayConverter
+    ByteArrayConverter,
+    UDTValueConverter
   )
 
   private def forCollectionType(tpe: Type): TypeConverter[_] = synchronized {

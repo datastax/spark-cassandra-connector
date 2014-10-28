@@ -68,7 +68,6 @@ case object TimestampType extends PrimitiveColumnType[Date] {
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {
-  
   def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[InetAddress])
   def scalaTypeTag = implicitly[TypeTag[InetAddress]]
 }
@@ -92,4 +91,3 @@ case object BlobType extends PrimitiveColumnType[ByteBuffer] {
   def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[ByteBuffer])
   def scalaTypeTag = implicitly[TypeTag[ByteBuffer]]
 }
-
