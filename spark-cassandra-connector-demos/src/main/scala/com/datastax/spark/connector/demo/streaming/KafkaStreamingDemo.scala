@@ -48,7 +48,7 @@ object KafkaStreamingDemo extends Assertions with Logging {
   private val topic = "topic1"
 
   /** Starts the Kafka broker. */
-  lazy val kafka = new EmbeddedKafka
+  lazy val kafka = new EmbeddedKafka()
 
   def main(args: Array[String]) {
 

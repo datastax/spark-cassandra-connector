@@ -13,12 +13,14 @@ import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.ZKStringSerializer
 import org.I0Itec.zkclient.ZkClient
 
-final class EmbeddedKafka extends Embedded {
+final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded {
 
-  val kafkaParams = Map(
+  def this(groupId: String) = this(Map(
     "zookeeper.connect" -> ZookeeperConnectionString,
-    "group.id" -> s"test-consumer-${scala.util.Random.nextInt(10000)}",
-    "auto.offset.reset" -> "smallest")
+    "group.id" -> groupId,
+    "auto.offset.reset" -> "smallest"))
+
+  def this() = this(s"consumer-${scala.util.Random.nextInt(10000)}")
 
   private val brokerConf = new Properties()
   brokerConf.put("broker.id", "0")
@@ -44,9 +46,9 @@ final class EmbeddedKafka extends Embedded {
   server.startup()
   Thread.sleep(2000)
 
-  def createTopic(topic: String) {
-    CreateTopicCommand.createTopic(client, topic, 1, 1, "0")
-    awaitPropagation(Seq(server), topic, 0, 1000.millis)
+  def createTopic(topic: String, numPartitions: Int = 1, replicationFactor: Int = 1) {
+    CreateTopicCommand.createTopic(client, topic, numPartitions, replicationFactor, "0")
+    awaitPropagation(Seq(server), topic, 0, 2000.millis)
   }
 
   def produceAndSendMessage(topic: String, sent: Map[String, Int]) {

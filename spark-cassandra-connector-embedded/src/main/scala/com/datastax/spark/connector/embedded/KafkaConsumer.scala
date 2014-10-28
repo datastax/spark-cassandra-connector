@@ -11,12 +11,12 @@ import kafka.consumer.{Consumer, ConsumerConfig}
   * This is a helpful utility for IT tests to insure data is getting published to Kafka
   * for streaming ingestion upstream.
   */
-class KafkaConsumer(zookeeper: String, topic: String, groupId: String, partitions: Int, numThreads: Int, latch: CountDownLatch) {
+class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartitions: Int, numThreads: Int, latch: CountDownLatch) {
 
   val  consumer: kafka.consumer.ConsumerConnector = Consumer.create(createConsumerConfig)
 
   // create n partitions of the stream for topic “test”, to allow n threads to consume
-  val topicMessageStreams = consumer.createMessageStreams(Map(topic -> partitions), new StringDecoder(), new StringDecoder())
+  val topicMessageStreams = consumer.createMessageStreams(Map(topic -> numPartitions), new StringDecoder(), new StringDecoder())
 
   val streams = topicMessageStreams.get(topic)
 
