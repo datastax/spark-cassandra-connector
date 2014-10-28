@@ -64,11 +64,7 @@ object KafkaStreamingWordCountDemo extends DemoApp with Assertions {
   val stream = KafkaUtils.createStream[String, String, StringDecoder, StringDecoder](
     ssc, kafka.kafkaParams, Map(topic -> 1), StorageLevel.MEMORY_ONLY)
 
-  stream.map { case (_, v) => v }
-    .map(word => (word.toLowerCase, 1))
-    .reduceByKey(_ + _)
-   // .map { case (word,count) => (word,count)}
-    .saveToCassandra("demo", "wordcount")
+  stream.map { case (_, v) => v.toLowerCase }.countByValue().saveToCassandra("demo", "wordcount")
 
   ssc.start()
 
