@@ -46,7 +46,7 @@ object KafkaStreamingWordCountDemo extends DemoApp with Assertions {
 
   val producer = new KafkaProducer[String,String](kafka.kafkaConfig)
 
-  val toKafka = (line: String) => producer.send(topic, "demo.wordcount.group", line)
+  val toKafka = (line: String) => producer.send(topic, "demo.wordcount.group", line.toLowerCase)
 
   /* The write to kafka from spark, read from kafka in the stream and write to cassandra would happen
   from separate components in a production env. This is a simple demo to show the code for integration.
@@ -64,7 +64,7 @@ object KafkaStreamingWordCountDemo extends DemoApp with Assertions {
   val stream = KafkaUtils.createStream[String, String, StringDecoder, StringDecoder](
     ssc, kafka.kafkaParams, Map(topic -> 1), StorageLevel.MEMORY_ONLY)
 
-  stream.map { case (_, v) => v.toLowerCase }.countByValue().saveToCassandra("demo", "wordcount")
+  stream.map(_._2).countByValue().saveToCassandra("demo", "wordcount")
 
   ssc.start()
 
