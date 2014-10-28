@@ -5,7 +5,7 @@ import java.util.Properties
 import java.util.concurrent.Executors
 
 import kafka.serializer.StringDecoder
-import kafka.consumer.{Consumer, ConsumerConfig}
+import kafka.consumer.{ConsumerConnector, Consumer, ConsumerConfig}
 
 /** The KafkaConsumer is a very simple consumer of a single Kafka topic.
   * This is a helpful utility for IT tests to insure data is getting published to Kafka
@@ -13,7 +13,7 @@ import kafka.consumer.{Consumer, ConsumerConfig}
   */
 class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartitions: Int, numThreads: Int, latch: CountDownLatch) {
 
-  val  consumer: kafka.consumer.ConsumerConnector = Consumer.create(createConsumerConfig)
+  private val  consumer: ConsumerConnector = Consumer.create(createConsumerConfig)
 
   // create n partitions of the stream for topic “test”, to allow n threads to consume
   val topicMessageStreams = consumer.createMessageStreams(Map(topic -> numPartitions), new StringDecoder(), new StringDecoder())
