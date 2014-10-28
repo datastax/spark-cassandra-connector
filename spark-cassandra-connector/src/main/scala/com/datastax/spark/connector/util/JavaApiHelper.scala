@@ -39,7 +39,7 @@ object JavaApiHelper {
 
   def getClassTag[T](clazz: Class[T]): ClassTag[T] = ClassTag(clazz)
 
-  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = rootMirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
+  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
 
   def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
 
