@@ -9,7 +9,7 @@ import org.apache.spark.SparkContext
 import scala.reflect.ClassTag
 
 /** Provides Cassandra-specific methods on `SparkContext` */
-class SparkContextFunctions(sc: SparkContext) {
+class SparkContextFunctions(@transient val sc: SparkContext) extends Serializable {
 
   /** Returns a view of a Cassandra table as `CassandraRDD`.
     * This method is made available on `SparkContext` by importing `com.datastax.spark.connector._`
