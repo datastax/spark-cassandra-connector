@@ -10,6 +10,8 @@
     - Kafka shutdown cleaned up
     - Kafka server more configurable for speed and use cases
  * Added new word count demo and a new Kafka streaming word count demo
+ * Modified build file to allow easier module id for usages of 'sbt project'
+
 
 1.1.0 alpha 4
  * Use asynchronous prefetching of multi-page ResultSets in CassandraRDD
