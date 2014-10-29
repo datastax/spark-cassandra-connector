@@ -17,12 +17,12 @@
 object Versions {
 
   val Akka            = "2.2.3"// upgrade asap
-  val Cassandra       = "2.0.9"
-  val CassandraDriver = "2.0.6"
+  val Cassandra       = "2.0.11"
+  val CassandraDriver = "2.0.7"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
   val Config          = "1.2.1"
-  val Guava           = "15.0"
+  val Guava           = "14.0.1"
   val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"
