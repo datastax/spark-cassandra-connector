@@ -1,6 +1,6 @@
 # Documentation
 ## The `spark-cassandra-connector-embedded` Artifact
-The `spark-cassandra-connector-embedded` can be used as a test or prototype dependency to spin up embedded servers for testing ideas, quickly learning integration, etc.
+The `spark-cassandra-connector-embedded` can be used as a test or prototype with embedded dependencies, to spin up embedded servers for testing ideas, quickly learning integration, etc.
 Pulling this dependency in allows you to do 
 
 - Integration Tests (IT) tests with an embedded Cassandra instance 
