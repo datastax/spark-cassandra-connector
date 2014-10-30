@@ -17,7 +17,7 @@
 object Versions {
   val Akka            = "2.2.3"// upgrade asap
   val Cassandra       = "2.1.1"
-  val CassandraDriver = "2.1.1"
+  val CassandraDriver = "2.1.2"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
   val Config          = "1.2.1"

@@ -6,7 +6,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID, HashMap => JHashMap, List => JList, Map => JMap, Set => JSet}
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.AbstractRow
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
@@ -203,10 +203,10 @@ object CassandraRow {
     * the newly created `CassandraRow`, but it is not used to fetch data from
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
-  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): CassandraRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- 0 until columnNames.length)
-      data(i) = AbstractRow.get(row, i)
+      data(i) = AbstractRow.get(row, i, protocolVersion)
     new CassandraRow(data, columnNames)
   }
 

@@ -154,7 +154,6 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
 object CassandraConnector extends Logging {
 
-  implicit val protocolVersion: Int = -1
   val keepAliveMillis = System.getProperty("spark.cassandra.connection.keep_alive_ms", "250").toInt
 
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
