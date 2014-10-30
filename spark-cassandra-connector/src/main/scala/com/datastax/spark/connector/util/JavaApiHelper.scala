@@ -1,17 +1,16 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.{AllColumns, SomeColumns, CassandraRow}
-import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
+import java.util.{Map => JavaMap}
+
+import com.datastax.spark.connector.mapper.{ColumnMapper, JavaBeanColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
+import com.datastax.spark.connector.{AllColumns, CassandraRow, SomeColumns}
 
 import scala.collection.JavaConversions._
 import scala.reflect._
-import scala.reflect.api._
+import scala.reflect.api.{Mirror, TypeCreator, _}
 import scala.reflect.runtime.universe._
-import scala.reflect.api.{Mirror, TypeCreator}
-
-import java.util.{Map => JavaMap}
 
 /** A helper class to make it possible to access components written in Scala from Java code. */
 object JavaApiHelper {
@@ -19,7 +18,7 @@ object JavaApiHelper {
   def mirror = runtimeMirror(Thread.currentThread().getContextClassLoader)
 
   /** Returns a `TypeTag` for the given class. */
-  def getTypeTag[T](clazz: Class[T]): TypeTag[T] = {
+  def getTypeTag[T](clazz: Class[T]): TypeTag[T] = TypeTag.synchronized {
     TypeTag.apply(mirror, new TypeCreator {
       override def apply[U <: Universe with Singleton](m: Mirror[U]): U#Type = {
         m.staticClass(clazz.getName).toTypeConstructor
@@ -27,7 +26,7 @@ object JavaApiHelper {
     })
   }
 
-  def getTypeTag[T](clazz: Class[_], typeParams: TypeTag[_]*): TypeTag[T] = {
+  def getTypeTag[T](clazz: Class[_], typeParams: TypeTag[_]*): TypeTag[T] = TypeTag.synchronized {
     TypeTag.apply(mirror, new TypeCreator {
       override def apply[U <: Universe with Singleton](m: Mirror[U]) = {
         val ct = m.staticClass(clazz.getName).toTypeConstructor.asInstanceOf[m.universe.Type]
