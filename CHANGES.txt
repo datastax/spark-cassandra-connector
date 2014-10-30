@@ -4,6 +4,7 @@
  * Downgraded Guava to version 14.
    Upgraded Java driver to 2.0.7.
    Upgraded Cassandra to 2.0.11. (#366)
+ * Made SparkContext variable transient in SparkContextFunctions (#373)
 
 1.0.3
  * Fixed handling of Cassandra rpc_address set to 0.0.0.0 (#332)
