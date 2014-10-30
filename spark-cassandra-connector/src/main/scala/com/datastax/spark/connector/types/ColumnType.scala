@@ -17,9 +17,7 @@ trait ColumnType[T] extends Serializable {
     TypeConverter.forType(scalaTypeTag)
 
   /** Returns the TypeTag of the Scala type recommended to represent values of this column. */
-  @transient
-  lazy val scalaTypeTag: TypeTag[T] =
-    converterToScala.targetTypeTag
+  def scalaTypeTag: TypeTag[T]
 
   /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String
