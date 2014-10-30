@@ -2,14 +2,13 @@ package com.datastax.spark.connector.rdd.reader
 
 import java.lang.reflect.Method
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
 import com.datastax.spark.connector.util.JavaApiHelper
 
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
@@ -58,12 +57,12 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     override def initialValue() = Array.ofDim[AnyRef](factory.argCount)
   }
 
-  private def getColumnValue(row: Row, columnRef: ColumnRef) = {
+  private def getColumnValue(row: Row, columnRef: ColumnRef, protocolVersion: ProtocolVersion) = {
     columnRef match {
       case NamedColumnRef(name) =>
-        CassandraRow.get(row, name)
+        CassandraRow.get(row, name, protocolVersion)
       case IndexedColumnRef(index) =>
-        CassandraRow.get(row, index + skipColumns)
+        CassandraRow.get(row, index + skipColumns, protocolVersion)
     }
   }
 
@@ -86,19 +85,19 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     }
   }
 
-  private def fillBuffer(row: Row, buf: Array[AnyRef]) {
+  private def fillBuffer(row: Row, buf: Array[AnyRef], protocolVersion: ProtocolVersion) {
     for (i <- 0 until buf.length) {
       val columnRef = constructorColumnRefs(i)
       val columnName = getColumnName(row, columnRef)
-      val columnValue = getColumnValue(row, columnRef)
+      val columnValue = getColumnValue(row, columnRef, protocolVersion)
       val converter = constructorArgConverters(i)
       buf(i) = convert(columnValue, columnName, converter)
     }
   }
 
-  private def invokeSetters(row: Row, obj: R): R = {
+  private def invokeSetters(row: Row, obj: R, protocolVersion: ProtocolVersion): R = {
     for ((setter, columnRef) <- setters) {
-      val columnValue = getColumnValue(row, columnRef)
+      val columnValue = getColumnValue(row, columnRef, protocolVersion)
       val columnName = getColumnName(row, columnRef)
       val converter = setterConverters(setter.getName)
       val convertedValue = convert(columnValue, columnName, converter)
@@ -107,10 +106,10 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     obj
   }
 
-  override def read(row: Row, columnNames: Array[String]) = {
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) = {
     val buf = buffer.get
-    fillBuffer(row, buf)
-    invokeSetters(row, factory.newInstance(buf: _*))
+    fillBuffer(row, buf, protocolVersion)
+    invokeSetters(row, factory.newInstance(buf: _*), protocolVersion)
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
@@ -131,7 +130,8 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
 
 
 class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
-  override def rowReader(tableDef: TableDef, options: RowReaderOptions) = new ClassBasedRowReader[R](tableDef, options.offset)
+  override def rowReader(tableDef: TableDef, options: RowReaderOptions) =
+    new ClassBasedRowReader[R](tableDef, options.offset)
 
   override def targetClass: Class[R] = JavaApiHelper.getRuntimeClass(typeTag[R])
 }

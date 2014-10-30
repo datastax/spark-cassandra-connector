@@ -26,6 +26,7 @@ class TableWriter[T] private (
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
   val columns = columnNames.map(tableDef.columnByName)
+  val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
 
   private def quote(name: String): String =
     "\"" + name + "\""
@@ -75,7 +76,7 @@ class TableWriter[T] private (
       else
         new BatchStatement(BatchStatement.Type.UNLOGGED)
     for (row <- data)
-      batchStmt.add(rowWriter.bind(row, stmt))
+      batchStmt.add(rowWriter.bind(row, stmt, protocolVersion))
     batchStmt
   }
 
@@ -84,7 +85,7 @@ class TableWriter[T] private (
     logDebug(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
     var maxInsertSize = 1
     for (row <- data.take(MeasuredInsertsCount)) {
-      val insert = rowWriter.bind(row, stmt)
+      val insert = rowWriter.bind(row, stmt, protocolVersion)
       queryExecutor.executeAsync(insert)
       val size = rowWriter.estimateSizeInBytes(row)
       if (size > maxInsertSize)
@@ -115,7 +116,7 @@ class TableWriter[T] private (
 
   private def writeUnbatched(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor) {
     for (row <- data)
-      queryExecutor.executeAsync(rowWriter.bind(row, stmt))
+      queryExecutor.executeAsync(rowWriter.bind(row, stmt, protocolVersion))
   }
 
   /** Main entry point */

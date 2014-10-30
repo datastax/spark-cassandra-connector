@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import org.apache.cassandra.utils.ByteBufferUtil
@@ -309,7 +309,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
 
 
 object CassandraRow {
-  import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
@@ -325,7 +324,7 @@ object CassandraRow {
 
   /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
    *  If the field is null, returns null (not Scala Option). */
-  def get(row: Row, index: Int): AnyRef = {
+  def get(row: Row, index: Int, protocolVersion: ProtocolVersion): AnyRef = {
     val columnDefinitions = row.getColumnDefinitions
     val columnType = columnDefinitions.getType(index)
     val columnValue = row.getBytesUnsafe(index)
@@ -335,9 +334,9 @@ object CassandraRow {
       null
   }
 
-  def get(row: Row, name: String): AnyRef = {
+  def get(row: Row, name: String, protocolVersion: ProtocolVersion): AnyRef = {
     val index = row.getColumnDefinitions.getIndexOf(name)
-    get(row, index)
+    get(row, index, protocolVersion)
   }
 
   /** Deserializes first n columns from the given `Row` and returns them as
@@ -346,10 +345,10 @@ object CassandraRow {
     * the newly created `CassandraRow`, but it is not used to fetch data from
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
-  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): CassandraRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- 0 until columnNames.length)
-        data(i) = get(row, i)
+        data(i) = get(row, i, protocolVersion)
     new CassandraRow(data, columnNames)
   }
 

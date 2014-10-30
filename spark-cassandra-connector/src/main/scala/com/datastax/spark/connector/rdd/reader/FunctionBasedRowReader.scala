@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.types.TypeConverter
 
@@ -18,8 +18,8 @@ trait FunctionBasedRowReader[R] extends RowReader[R] with ThisRowReaderAsFactory
 class FunctionBasedRowReader1[R, A0](f: A0 => R)(
   implicit a0c: TypeConverter[A0], @transient override val ct: ClassTag[R]) extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
-    f(a0c.convert(CassandraRow.get(row, 0)))
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
+    f(a0c.convert(CassandraRow.get(row, 0, protocolVersion)))
 
   override def requiredColumns = Some(1)
   override def columnNames = None
@@ -32,10 +32,10 @@ class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion))
     )
 
   override def requiredColumns = Some(2)
@@ -50,11 +50,11 @@ class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)))
 
   override def requiredColumns = Some(3)
   override def columnNames = None
@@ -70,12 +70,12 @@ class FunctionBasedRowReader4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion))
     )
 
   override def requiredColumns = Some(4)
@@ -93,13 +93,13 @@ class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => 
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion))
     )
 
   override def requiredColumns = Some(5)
@@ -118,14 +118,14 @@ class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4,
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion))
     )
 
   override def requiredColumns = Some(6)
@@ -144,15 +144,15 @@ class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3,
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion))
     )
 
   override def requiredColumns = Some(7)
@@ -173,16 +173,16 @@ class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6)),
-      a7c.convert(CassandraRow.get(row, 7))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion)),
+      a7c.convert(CassandraRow.get(row, 7, protocolVersion))
     )
 
   override def requiredColumns = Some(8)
@@ -204,17 +204,17 @@ class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6)),
-      a7c.convert(CassandraRow.get(row, 7)),
-      a8c.convert(CassandraRow.get(row, 8))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion)),
+      a7c.convert(CassandraRow.get(row, 7, protocolVersion)),
+      a8c.convert(CassandraRow.get(row, 8, protocolVersion))
     )
 
   override def requiredColumns = Some(9)
@@ -237,18 +237,18 @@ class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6)),
-      a7c.convert(CassandraRow.get(row, 7)),
-      a8c.convert(CassandraRow.get(row, 8)),
-      a9c.convert(CassandraRow.get(row, 9))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion)),
+      a7c.convert(CassandraRow.get(row, 7, protocolVersion)),
+      a8c.convert(CassandraRow.get(row, 8, protocolVersion)),
+      a9c.convert(CassandraRow.get(row, 9, protocolVersion))
     )
 
   override def requiredColumns = Some(10)
@@ -272,19 +272,19 @@ class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6)),
-      a7c.convert(CassandraRow.get(row, 7)),
-      a8c.convert(CassandraRow.get(row, 8)),
-      a9c.convert(CassandraRow.get(row, 9)),
-      a10c.convert(CassandraRow.get(row, 10))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion)),
+      a7c.convert(CassandraRow.get(row, 7, protocolVersion)),
+      a8c.convert(CassandraRow.get(row, 8, protocolVersion)),
+      a9c.convert(CassandraRow.get(row, 9, protocolVersion)),
+      a10c.convert(CassandraRow.get(row, 10, protocolVersion))
     )
 
   override def requiredColumns = Some(11)
@@ -309,20 +309,20 @@ class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String]) =
+  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(CassandraRow.get(row, 0)),
-      a1c.convert(CassandraRow.get(row, 1)),
-      a2c.convert(CassandraRow.get(row, 2)),
-      a3c.convert(CassandraRow.get(row, 3)),
-      a4c.convert(CassandraRow.get(row, 4)),
-      a5c.convert(CassandraRow.get(row, 5)),
-      a6c.convert(CassandraRow.get(row, 6)),
-      a7c.convert(CassandraRow.get(row, 7)),
-      a8c.convert(CassandraRow.get(row, 8)),
-      a9c.convert(CassandraRow.get(row, 9)),
-      a10c.convert(CassandraRow.get(row, 10)),
-      a11c.convert(CassandraRow.get(row, 11))
+      a0c.convert(CassandraRow.get(row, 0, protocolVersion)),
+      a1c.convert(CassandraRow.get(row, 1, protocolVersion)),
+      a2c.convert(CassandraRow.get(row, 2, protocolVersion)),
+      a3c.convert(CassandraRow.get(row, 3, protocolVersion)),
+      a4c.convert(CassandraRow.get(row, 4, protocolVersion)),
+      a5c.convert(CassandraRow.get(row, 5, protocolVersion)),
+      a6c.convert(CassandraRow.get(row, 6, protocolVersion)),
+      a7c.convert(CassandraRow.get(row, 7, protocolVersion)),
+      a8c.convert(CassandraRow.get(row, 8, protocolVersion)),
+      a9c.convert(CassandraRow.get(row, 9, protocolVersion)),
+      a10c.convert(CassandraRow.get(row, 10, protocolVersion)),
+      a11c.convert(CassandraRow.get(row, 11, protocolVersion))
     )
 
   override def requiredColumns = Some(12)
