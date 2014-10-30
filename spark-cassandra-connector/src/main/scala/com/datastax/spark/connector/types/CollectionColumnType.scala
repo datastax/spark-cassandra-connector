@@ -15,7 +15,7 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
     TypeConverter.javaArrayListConverter(elemType.converterToCassandra)
 
   @transient
-  lazy val scalaTypeTag = {
+  lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Vector[T]]]
   }
@@ -27,7 +27,7 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
     new OptionToNullConverter(TypeConverter.javaHashSetConverter(elemType.converterToCassandra))
 
   @transient
-  lazy val scalaTypeTag = {
+  lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Set[T]]]
   }
@@ -40,7 +40,7 @@ case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) exten
       TypeConverter.javaHashMapConverter(keyType.converterToCassandra, valueType.converterToCassandra))
 
   @transient
-  lazy val scalaTypeTag = {
+  lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val keyTypeTag = keyType.scalaTypeTag
     implicit val valueTypeTag = valueType.scalaTypeTag
     implicitly[TypeTag[Map[K, V]]]

@@ -66,6 +66,6 @@ object ColumnType {
 // serializable class for UDTValues and also allow to map them to case classes.
 case object UserDefinedTypeStub extends ColumnType[UDTValue] {
   def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[UDTValue])
-  def scalaTypeTag = implicitly[TypeTag[UDTValue]]
   override def isCollection = false
+  override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
 }
