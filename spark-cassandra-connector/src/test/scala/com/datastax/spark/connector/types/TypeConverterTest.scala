@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.{Date, UUID}
+import java.util.{GregorianCalendar, Date, UUID}
 import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
@@ -142,6 +142,26 @@ class TypeConverterTest {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
     val date = new DateTime(dateFormat.parse(dateStr))
     assertEquals(date, c.convert(dateStr))
+  }
+
+  @Test
+  def testCalendar1() {
+    val c = TypeConverter.forType[GregorianCalendar]
+    val dateStr = "2014-04-23 11:21:32+0100"
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+    val date = new GregorianCalendar()
+    date.setTime(dateFormat.parse(dateStr))
+    assertEquals(date, c.convert(dateStr))
+  }
+
+  @Test
+  def testCalendar2() {
+    val c = TypeConverter.forType[Date]
+    val dateStr = "2014-04-23 11:21:32+0100"
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+    val calendar = new GregorianCalendar()
+    calendar.setTime(dateFormat.parse(dateStr))
+    assertEquals(calendar.getTime, c.convert(calendar))
   }
 
   @Test

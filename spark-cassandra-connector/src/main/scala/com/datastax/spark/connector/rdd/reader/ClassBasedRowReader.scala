@@ -7,7 +7,9 @@ import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
+import com.datastax.spark.connector.util.JavaApiHelper
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
@@ -120,10 +122,16 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   private val allColumnRefs = columnMap.constructor ++ columnMap.setters.values
 
   override def columnNames = Some(extractColumnNames(allColumnRefs))
-  override def columnCount = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
+  override def requiredColumns = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
+  override def consumedColumns: Option[Int] = {
+    val keyIsTuple = tpe.typeSymbol.fullName startsWith "scala.Tuple"
+    if (keyIsTuple) Some(factory.argCount) else None
+  }
 }
 
 
 class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
-  override def rowReader(tableDef: TableDef) = new ClassBasedRowReader[R](tableDef)
+  override def rowReader(tableDef: TableDef, options: RowReaderOptions) = new ClassBasedRowReader[R](tableDef, options.offset)
+
+  override def targetClass: Class[R] = JavaApiHelper.getRuntimeClass(typeTag[R])
 }

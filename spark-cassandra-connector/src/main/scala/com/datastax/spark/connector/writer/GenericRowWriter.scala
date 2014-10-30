@@ -1,16 +1,12 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.PreparedStatement
 import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 
 /** A [[RowWriter]] that can write [[CassandraRow]] objects.*/
-class GenericRowWriter(table: TableDef, selectedColumns: Seq[String]) extends RowWriter[CassandraRow] {
+class GenericRowWriter(table: TableDef, selectedColumns: Seq[String]) extends AbstractRowWriter[CassandraRow](table: TableDef, selectedColumns: Seq[String]) {
 
-  override def columnNames =
-    selectedColumns.toIndexedSeq
-
-  private def getColumnValue(data: CassandraRow, columnName: String): AnyRef = {
+  override protected def getColumnValue(data: CassandraRow, columnName: String): AnyRef = {
     val index = data.indexOf(columnName)
     if (index >= 0) {
       val converter = table.columnByName(columnName).columnType.converterToCassandra
@@ -19,26 +15,6 @@ class GenericRowWriter(table: TableDef, selectedColumns: Seq[String]) extends Ro
     }
     else
       null
-  }
-
-  @transient
-  private lazy val buffer = new ThreadLocal[Array[AnyRef]] {
-    override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
-  }
-
-  private def fillBuffer(data: CassandraRow): Array[AnyRef] = {
-    val buf = buffer.get
-    for (i <- 0 until columnNames.size)
-      buf(i) = getColumnValue(data, columnNames(i))
-    buf
-  }
-
-  override def bind(data: CassandraRow, stmt: PreparedStatement) = {
-    stmt.bind(fillBuffer(data): _*)
-  }
-
-  override def estimateSizeInBytes(data: CassandraRow) = {
-    ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
   }
 }
 

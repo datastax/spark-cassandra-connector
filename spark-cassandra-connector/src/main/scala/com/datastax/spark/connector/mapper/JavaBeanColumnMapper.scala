@@ -10,6 +10,8 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
 
   import com.datastax.spark.connector.mapper.JavaBeanColumnMapper._
 
+  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
+
   private def propertyName(accessorName: String) = {
     val AccessorRegex(_, strippedName) = accessorName
     strippedName(0).toLower + strippedName.substring(1)

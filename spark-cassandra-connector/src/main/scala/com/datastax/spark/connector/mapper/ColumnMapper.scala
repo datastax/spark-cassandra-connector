@@ -24,6 +24,8 @@ import scala.reflect.ClassTag
   */
 trait ColumnMapper[T] extends Serializable {
   def columnMap(tableDef: TableDef): ColumnMap
+
+  def classTag: ClassTag[T]
 }
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */

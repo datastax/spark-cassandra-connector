@@ -147,7 +147,7 @@ class NodeGuardian(ssc: StreamingContext, settings: SparkCassandraSettings, tabl
   stream.flatMap(_.split("\\s+"))
     .map(x => (x, 1))
     .reduceByKey(_ + _)
-    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSizeInRows = Some(1)))
+    .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"), WriteConf(batchSize = RowsInBatch(1)))
 
   /** Once the stream and sender actors are created, the spark stream's compute configured, the `StreamingContext` is started. */
   ssc.start()

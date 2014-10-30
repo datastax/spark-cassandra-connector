@@ -1,5 +1,8 @@
-package com.datastax.spark.connector.rdd;
+package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
+import com.datastax.spark.connector.rdd.CassandraRDD;
+import com.datastax.spark.connector.rdd.ReadConf;
 import com.datastax.spark.connector.util.JavaApiHelper;
 import org.apache.spark.api.java.JavaRDD;
 import scala.reflect.ClassTag;
@@ -13,16 +16,12 @@ import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
  */
 public class CassandraJavaRDD<R> extends JavaRDD<R> {
 
-    private final Class<R> clazz;
-
     public CassandraJavaRDD(CassandraRDD<R> rdd, Class<R> clazz) {
         super(rdd, getClassTag(clazz));
-        this.clazz = clazz;
     }
 
-    @Override
-    public ClassTag<R> classTag() {
-        return getClassTag(clazz);
+    public CassandraJavaRDD(CassandraRDD<R> rdd, ClassTag<R> classTag) {
+        super(rdd, classTag);
     }
 
     @Override
@@ -41,7 +40,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
         CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<String>toScalaSeq(columnNames));
-        return new CassandraJavaRDD<>(newRDD, clazz);
+        return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
     /**
@@ -52,7 +51,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      */
     public CassandraJavaRDD<R> where(String cqlWhereClause, Object... args) {
         CassandraRDD<R> newRDD = rdd().where(cqlWhereClause, toScalaSeq(args));
-        return new CassandraJavaRDD<>(newRDD, clazz);
+        return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
     /**
@@ -61,7 +60,22 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public String[] selectedColumnNames() {
         // explicit type cast is intentional and required here
         //noinspection RedundantCast
-        return (String []) rdd().selectedColumnNames().<String>toArray(getClassTag(String.class));
+        return (String[]) rdd().selectedColumnNames().<String>toArray(getClassTag(String.class));
     }
 
+    /**
+     * Returns a copy of this RDD with connector changed to the specified one.
+     */
+    public CassandraJavaRDD<R> withConnector(CassandraConnector connector) {
+        CassandraRDD<R> newRDD = rdd().withConnector(connector);
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
+     * Returns a copy of this RDD with read configuration changed to the specified one.
+     */
+    public CassandraJavaRDD<R> withReadConf(ReadConf config) {
+        CassandraRDD<R> newRDD = rdd().withReadConf(config);
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
 }

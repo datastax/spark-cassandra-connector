@@ -2,7 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{Calendar, GregorianCalendar, UUID, Date}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -10,6 +10,8 @@ import scala.reflect.runtime.universe._
 
 import org.apache.cassandra.utils.ByteBufferUtil
 import org.joda.time.DateTime
+
+import com.datastax.driver.core.UDTValue
 
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
@@ -128,6 +130,8 @@ object TypeConverter {
     def convertPF = {
       case x: Number => x.longValue
       case x: Date => x.getTime
+      case x: DateTime => x.toDate.getTime
+      case x: Calendar => x.getTimeInMillis
       case x: String => x.toLong
     }
   }
@@ -198,6 +202,7 @@ object TypeConverter {
     def convertPF = {
       case x: Date => x
       case x: DateTime => x.toDate
+      case x: Calendar => x.getTime
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: String => TimestampParser.parse(x)
@@ -206,25 +211,22 @@ object TypeConverter {
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
     def targetTypeTag = implicitly[TypeTag[java.sql.Date]]
-    def convertPF = {
-      case x: java.sql.Date => x
-      case x: Date => new java.sql.Date(x.getTime)
-      case x: DateTime => new java.sql.Date(x.toDate.getTime)
-      case x: Long => new java.sql.Date(x)
-      case x: UUID if x.version() == 1 => new java.sql.Date(x.timestamp())
-      case x: String => new java.sql.Date(TimestampParser.parse(x).getTime)
-    }
+    def convertPF = DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
   }
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
     def targetTypeTag = implicitly[TypeTag[DateTime]]
-    def convertPF = {
-      case x: DateTime => x
-      case x: Date => new DateTime(x)
-      case x: Long => new DateTime(x)
-      case x: UUID if x.version() == 1 => new DateTime(x.timestamp())
-      case x: String => new DateTime(TimestampParser.parse(x))
+    def convertPF = DateConverter.convertPF.andThen(new DateTime(_))
+  }
+
+  implicit object GregorianCalendarConverter extends TypeConverter[GregorianCalendar] {
+    private[this] def calendar(date: Date): GregorianCalendar = {
+      val c = new GregorianCalendar()
+      c.setTime(date)
+      c
     }
+    def targetTypeTag = implicitly[TypeTag[GregorianCalendar]]
+    def convertPF = DateConverter.convertPF.andThen(calendar)
   }
 
   implicit object BigIntConverter extends TypeConverter[BigInt] {
@@ -279,6 +281,16 @@ object TypeConverter {
     def convertPF = {
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
+    }
+  }
+
+  val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
+
+  // TODO: This is a stub. Currently doesn't do any conversion at all.
+  implicit object UDTValueConverter extends TypeConverter[UDTValue] {
+    def targetTypeTag = UDTValueTypeTag
+    def convertPF = {
+      case x: UDTValue => x
     }
   }
 
@@ -540,13 +552,15 @@ object TypeConverter {
     DateConverter,
     SqlDateConverter,
     JodaDateConverter,
+    GregorianCalendarConverter,
     InetAddressConverter,
     UUIDConverter,
     ByteBufferConverter,
-    ByteArrayConverter
+    ByteArrayConverter,
+    UDTValueConverter
   )
 
-  private def forCollectionType(tpe: Type): TypeConverter[_] = {
+  private def forCollectionType(tpe: Type): TypeConverter[_] = synchronized {
     tpe match {
       case TypeRef(_, symbol, List(arg)) =>
         val untypedItemConverter = forType(arg)
@@ -589,8 +603,9 @@ object TypeConverter {
     }
   }
 
-  /** Useful for getting converter based on a type received from Scala reflection */
-  def forType(tpe: Type): TypeConverter[_] = {
+  /** Useful for getting converter based on a type received from Scala reflection.
+    * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
+  def forType(tpe: Type): TypeConverter[_] = synchronized {
     type T = TypeConverter[_]
     val selectedConverters =
       converters.collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
@@ -602,9 +617,11 @@ object TypeConverter {
    }
   }
 
-  /** Useful when implicit converters are not in scope, but a TypeTag is */
-  def forType[T : TypeTag]: TypeConverter[T] =
+  /** Useful when implicit converters are not in scope, but a TypeTag is.
+    * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
+  def forType[T : TypeTag]: TypeConverter[T] = synchronized {
     forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
+  }
 
   /** Registers a custom converter */
   def registerConverter(c: TypeConverter[_]) {

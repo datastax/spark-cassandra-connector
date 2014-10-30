@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import org.apache.cassandra.thrift.Cassandra
+import org.apache.cassandra.thrift.{AuthenticationRequest, TFramedTransportFactory, Cassandra}
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TTransport
@@ -10,6 +10,8 @@ import org.apache.thrift.transport.TTransport
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core.{Cluster, SocketOptions}
 import com.datastax.spark.connector.util.ReflectionUtil
+
+import scala.collection.JavaConversions._
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -41,10 +43,13 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
     var transport: TTransport = null
     try {
-      val transportFactory = conf.authConf.transportFactory
+      val transportFactory = new TFramedTransportFactory()
       transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
       val client = new Cassandra.Client(new TBinaryProtocol(transport))
-      conf.authConf.configureThriftClient(client)
+      val creds = conf.authConf.thriftCredentials
+      if (creds.nonEmpty) {
+        client.login(new AuthenticationRequest(creds))
+      }
       (client, transport)
     }
     catch {

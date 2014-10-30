@@ -2,15 +2,13 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.{Session, BatchStatement, PreparedStatement, ConsistencyLevel}
-import com.datastax.spark.connector.{AllColumns, SomeColumns, ColumnSelector}
-import com.datastax.spark.connector.cql.{ColumnDef, Schema, TableDef, CassandraConnector}
-import com.datastax.spark.connector.util.{Logging, CountingIterator}
-
+import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
 import scala.collection._
-import scala.reflect.ClassTag
 
 /** Writes RDD data into given Cassandra table.
   * Individual column values are extracted from RDD objects using given [[RowWriter]]
@@ -99,12 +97,12 @@ class TableWriter[T] private (
   /** Returns either configured batch size or, if not set, determines the optimal batch size by writing a
     * small number of rows and estimating their size. */
   private def optimumBatchSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    writeConf.batchSizeInRows match {
-      case Some(size) =>
+    writeConf.batchSize match {
+      case RowsInBatch(size) =>
         size
-      case None =>
+      case BytesInBatch(size) =>
         val maxInsertSize = measureMaxInsertSize(data, stmt, queryExecutor)
-        math.max(1, writeConf.batchSizeInBytes / (maxInsertSize * 2))  // additional margin for data larger than usual
+        math.max(1, size / (maxInsertSize * 2))  // additional margin for data larger than usual
     }
   }
 
@@ -154,7 +152,7 @@ object TableWriter {
   val MeasuredInsertsCount = 128
   val DefaultBatchSizeInBytes = 64 * 1024
 
-  def apply[T : ClassTag : RowWriterFactory](
+  def apply[T : RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
       tableName: String,

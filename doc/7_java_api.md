@@ -16,7 +16,7 @@ The best way to use Connector Java API is to import statically all the methods i
 This utility class is the main entry point for Connector Java API.
 
 ```java
-import static com.datastax.spark.connector.CassandraJavaUtil.*;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 ```
 
 The code snippets below work with a sample keyspace `ks` and table `people`. From the CQLSH shell, create 
@@ -177,3 +177,5 @@ of *RDDs* and when you invoke `saveToCassandra` on it, it will follow saving to 
 
 A longer example (with source code) of the Connector Java API is on the DataStax tech blog:
 [Accessing Cassandra from Spark in Java](http://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java).
+
+[Next - Spark Streaming with Cassandra](8_streaming.md)
