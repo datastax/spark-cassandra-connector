@@ -2,7 +2,7 @@ package com.datastax.spark.connector
 
 import java.nio.ByteBuffer
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 import org.apache.cassandra.utils.ByteBufferUtil
 
 import scala.collection.JavaConversions._
@@ -50,8 +50,6 @@ private[connector] abstract class AbstractRow(val data: Array[AnyRef], val colum
 
 object AbstractRow {
 
-  import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
-
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
   private[connector] def convert(obj: Any): AnyRef = {
@@ -66,7 +64,7 @@ object AbstractRow {
 
   /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
     * If the field is null, returns null (not Scala Option). */
-  def get(row: Row, index: Int): AnyRef = {
+  def get(row: Row, index: Int, protocolVersion: ProtocolVersion): AnyRef = {
     val columnDefinitions = row.getColumnDefinitions
     val columnType = columnDefinitions.getType(index)
     val columnValue = row.getBytesUnsafe(index)
@@ -76,9 +74,9 @@ object AbstractRow {
       null
   }
 
-  def get(row: Row, name: String): AnyRef = {
+  def get(row: Row, name: String, protocolVersion: ProtocolVersion): AnyRef = {
     val index = row.getColumnDefinitions.getIndexOf(name)
-    get(row, index)
+    get(row, index, protocolVersion)
   }
 
 }

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.PreparedStatement
+import com.datastax.driver.core.{ProtocolVersion, PreparedStatement}
 import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.catalyst.expressions.Row
 
@@ -24,7 +24,7 @@ abstract class AbstractRowWriter[T <: Row](table: TableDef, selectedColumns: Seq
     buf
   }
 
-  override def bind(data: T, stmt: PreparedStatement) = {
+  override def bind(data: T, stmt: PreparedStatement, protocolVersion: ProtocolVersion) = {
     stmt.bind(fillBuffer(data): _*)
   }
 

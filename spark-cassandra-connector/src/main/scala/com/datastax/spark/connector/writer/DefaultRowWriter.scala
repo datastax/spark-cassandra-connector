@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.PreparedStatement
+import com.datastax.driver.core.{ProtocolVersion, PreparedStatement}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.{IndexedColumnRef, NamedColumnRef, ColumnRef, ColumnMapper}
 import com.datastax.spark.connector.types.TypeConverter
@@ -78,8 +78,7 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
     override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
   }
 
-  override def bind(data: T, stmt: PreparedStatement) = {
-    import com.datastax.spark.connector.cql.CassandraConnector.protocolVersion
+  override def bind(data: T, stmt: PreparedStatement, protocolVersion: ProtocolVersion) = {
     val boundStmt = stmt.bind()
     for (variable <- stmt.getVariables) {
       val columnName = variable.getName

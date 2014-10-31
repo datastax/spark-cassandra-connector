@@ -4,7 +4,8 @@ import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.cql.TableDef
 
 /** A [[RowWriter]] that can write [[CassandraRow]] objects.*/
-class GenericRowWriter(table: TableDef, selectedColumns: Seq[String]) extends AbstractRowWriter[CassandraRow](table: TableDef, selectedColumns: Seq[String]) {
+class GenericRowWriter(table: TableDef, selectedColumns: Seq[String])
+  extends AbstractRowWriter[CassandraRow](table: TableDef, selectedColumns: Seq[String]) {
 
   override protected def getColumnValue(data: CassandraRow, columnName: String): AnyRef = {
     val index = data.indexOf(columnName)

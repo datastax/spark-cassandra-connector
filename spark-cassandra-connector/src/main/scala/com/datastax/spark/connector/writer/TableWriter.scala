@@ -26,13 +26,15 @@ class TableWriter[T] private (
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
   val columns = columnNames.map(tableDef.columnByName)
+  val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
 
   private def quote(name: String): String =
     "\"" + name + "\""
 
   private lazy val queryTemplateUsingInsert: String = {
-    val columnSpec = columnNames.map(quote).mkString(", ")
-    val valueSpec = columnNames.map(":" + _).mkString(", ")
+    val quotedColumnNames: Seq[String] = columnNames.map(quote)
+    val columnSpec = quotedColumnNames.mkString(", ")
+    val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
     s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec)"
   }
 
@@ -40,10 +42,11 @@ class TableWriter[T] private (
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
 
-    val setNonCounterColumnsClause = nonCounterColumns.map(_.columnName).map(c => s"${quote(c)} = :$c")
-    val setCounterColumnsClause = counterColumns.map(_.columnName).map(c => s"${quote(c)} = ${quote(c)} + :$c")
+    def quotedColumnNames(columns: Seq[ColumnDef]) = columns.map(_.columnName).map(quote)
+    val setNonCounterColumnsClause = quotedColumnNames(nonCounterColumns).map(c => s"$c = :$c")
+    val setCounterColumnsClause = quotedColumnNames(counterColumns).map(c => s"$c = $c + :$c")
     val setClause = (setNonCounterColumnsClause ++ setCounterColumnsClause).mkString(", ")
-    val whereClause = primaryKey.map(_.columnName).map(c => s"${quote(c)} = :$c").mkString(" AND ")
+    val whereClause = quotedColumnNames(primaryKey).map(c => s"$c = :$c").mkString(" AND ")
 
     s"UPDATE ${quote(keyspaceName)}.${quote(tableName)} SET $setClause WHERE $whereClause"
   }
@@ -75,7 +78,7 @@ class TableWriter[T] private (
       else
         new BatchStatement(BatchStatement.Type.UNLOGGED)
     for (row <- data)
-      batchStmt.add(rowWriter.bind(row, stmt))
+      batchStmt.add(rowWriter.bind(row, stmt, protocolVersion))
     batchStmt
   }
 
@@ -84,7 +87,7 @@ class TableWriter[T] private (
     logDebug(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
     var maxInsertSize = 1
     for (row <- data.take(MeasuredInsertsCount)) {
-      val insert = rowWriter.bind(row, stmt)
+      val insert = rowWriter.bind(row, stmt, protocolVersion)
       queryExecutor.executeAsync(insert)
       val size = rowWriter.estimateSizeInBytes(row)
       if (size > maxInsertSize)
@@ -115,7 +118,7 @@ class TableWriter[T] private (
 
   private def writeUnbatched(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor) {
     for (row <- data)
-      queryExecutor.executeAsync(rowWriter.bind(row, stmt))
+      queryExecutor.executeAsync(rowWriter.bind(row, stmt, protocolVersion))
   }
 
   /** Main entry point */
