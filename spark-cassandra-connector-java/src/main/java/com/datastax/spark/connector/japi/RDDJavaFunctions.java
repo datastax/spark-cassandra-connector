@@ -8,6 +8,12 @@ import com.datastax.spark.connector.writer.WriteConf;
 import org.apache.spark.SparkConf;
 import org.apache.spark.rdd.RDD;
 
+/**
+ * A Java API wrapper over {@link org.apache.spark.rdd.RDD} to provide Spark Cassandra Connector functionality.
+ *
+ * <p>To obtain an instance of this wrapper, use one of the factory methods in {@link
+ * com.datastax.spark.connector.japi.CassandraJavaUtil} class.</p>
+ */
 @SuppressWarnings("UnusedDeclaration")
 public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final RDD<T> rdd;
@@ -30,7 +36,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
 
     @Override
     protected void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
-                                ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
+                                   ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
         rddf.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }
 

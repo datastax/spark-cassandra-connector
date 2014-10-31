@@ -8,6 +8,13 @@ import com.datastax.spark.connector.writer.WriteConf;
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.dstream.DStream;
 
+/**
+ * A Java API wrapper over {@link org.apache.spark.streaming.dstream.DStream} to provide Spark Cassandra Connector
+ * functionality.
+ *
+ * <p>To obtain an instance of this wrapper, use one of the factory methods in {@link
+ * com.datastax.spark.connector.japi.CassandraJavaUtil} class.</p>
+ */
 @SuppressWarnings("UnusedDeclaration")
 public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public final DStream<T> dstream;
@@ -30,7 +37,7 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
 
     @Override
     protected void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
-                                ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
+                                   ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
         dsf.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }
 }

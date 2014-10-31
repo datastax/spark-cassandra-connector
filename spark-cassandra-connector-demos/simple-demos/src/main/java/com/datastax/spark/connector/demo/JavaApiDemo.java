@@ -14,7 +14,7 @@ import java.util.List;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRows;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 /**
  * This Spark application demonstrates how to use Spark Cassandra Connector with Java.
@@ -50,7 +50,7 @@ public class JavaApiDemo implements Serializable {
         );
         JavaRDD<Person> rdd = sc.parallelize(people);
         javaFunctions(rdd)
-                .writerBuilder("test", "people", mapToRows(Person.class))
+                .writerBuilder("test", "people", mapToRow(Person.class))
                 .saveToCassandra();
 
         // use case: we want to read that data as an RDD of CassandraRows and convert them to strings...
