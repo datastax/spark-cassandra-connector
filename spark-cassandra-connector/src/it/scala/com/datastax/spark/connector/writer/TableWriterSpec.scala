@@ -29,6 +29,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
       session.execute("CREATE TABLE IF NOT EXISTS write_test.counters2 (pkey INT PRIMARY KEY, c counter)")
+      session.execute("CREATE TABLE IF NOT EXISTS write_test.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)")
       session.execute("TRUNCATE write_test.key_value")
       session.execute("TRUNCATE write_test.collections")
       session.execute("TRUNCATE write_test.blobs")
@@ -94,6 +95,19 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     )
     sc.parallelize(col).saveToCassandra("write_test", "key_value")
     verifyKeyValueTable()
+  }
+
+  it should "write RDD of tuples to a table with camel case column names" in {
+    val col = Seq((1, "value1"), (2, "value2"), (3, "value3"))
+    sc.parallelize(col).saveToCassandra("write_test", "camelCase", SomeColumns("primaryKey", "textValue"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.\"camelCase\"").all()
+      result should have size 3
+      for (row <- result) {
+        Some(row.getInt(0)) should contain oneOf(1, 2, 3)
+        Some(row.getString(1)) should contain oneOf("value1", "value2", "value3")
+      }
+    }
   }
 
   it should "write empty values" in {
