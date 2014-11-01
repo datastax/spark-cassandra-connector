@@ -5,7 +5,7 @@ import org.apache.spark.{SparkContext, SparkConf}
 
 trait DemoApp extends App with Logging {
 
-  val words = "spark-cassandra-connector-demos/src/main/resources/data/words"
+  val words = "./spark-cassandra-connector-demos/simple-demos/src/main/resources/data/words"
 
   val SparkMasterHost = "127.0.0.1"
 

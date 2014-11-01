@@ -66,12 +66,7 @@ object Settings extends Build {
   )
 
   lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
-    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m",  "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-Xmx1024m"),
-    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
-    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-    parallelExecution in ThisBuild := false,
-    parallelExecution in Global := false
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m",  "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-Xmx1024m")
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
@@ -97,7 +92,6 @@ object Settings extends Build {
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
-    test in assembly := {},// TODO REMOVE ME!!
     jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     mergeStrategy in assembly <<= (mergeStrategy in assembly) {
@@ -106,6 +100,10 @@ object Settings extends Build {
         case x => old(x)
       }
     }
+  )
+
+  lazy val demoAssemblySettings = sbtAssemblySettings ++ Seq(
+    run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
   )
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
