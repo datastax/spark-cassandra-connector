@@ -25,7 +25,8 @@ object Versions {
   val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"
-  val JOpt            = "4.7"
+  val JOpt            = "3.2"//4.7
+  val Kafka           = "0.8.0"// TODO issues w encoder/decoder ATM "0.8.1.1"
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
   val Scala           = "2.10.4"
