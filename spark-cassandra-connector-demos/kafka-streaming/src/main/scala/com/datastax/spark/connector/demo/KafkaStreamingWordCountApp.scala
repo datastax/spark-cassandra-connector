@@ -32,7 +32,7 @@ import com.datastax.spark.connector.streaming._
  */
 object KafkaStreamingWordCountApp extends App with Logging with Assertions {
 
-  val words = "./spark-cassandra-connector-demos/kafka-stream/src/main/resources/data/words"
+  val words = "./spark-cassandra-connector-demos/kafka-streaming/src/main/resources/data/words"
 
   val topic = "demo.wordcount.topic"
 
@@ -81,9 +81,9 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   stream.map(_._2).countByValue().saveToCassandra("demo", "wordcount")
 
   ssc.start()
-
-  validate()
-  shutdown()
+  ssc.awaitTermination()
+  //validate()
+  //shutdown()
 
   def shutdown(): Unit = {
     log.info("Shutting down.")
