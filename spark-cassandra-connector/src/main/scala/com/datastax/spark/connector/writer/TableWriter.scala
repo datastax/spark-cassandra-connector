@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.cql.{ColumnDef, CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 

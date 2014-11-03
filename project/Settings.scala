@@ -55,6 +55,9 @@ object Settings extends Build {
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    artifactName in ThisScope := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+      baseDirectory.value.name + "_" + sv.binary + "-" + module.revision + "." + artifact.extension
+    },
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
@@ -95,7 +98,7 @@ object Settings extends Build {
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     test in assembly := {},// TODO REMOVE ME!!
-    jarName in assembly <<= (normalizedName, version) map { (name, version) => s"$name-assembly-$version.jar" },
+    jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     mergeStrategy in assembly <<= (mergeStrategy in assembly) {
       (old) => {
