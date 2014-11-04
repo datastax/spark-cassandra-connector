@@ -2,9 +2,7 @@ package com.datastax.spark.connector.demo
 
 import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
-import org.joda.time.{DateTimeZone, DateTime}
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.streaming._
 
 /**
  * Set Twitter credentials in your deploy/runtime environment:
@@ -25,16 +23,19 @@ import com.datastax.spark.connector.streaming._
  * -Dspark.cassandra.connection.host, default is 127.0.0.1
  * -Dspark.cores.max, default configured is 2
  *
- * Verify data persisted after running in cqlsh: should output sequences similar to:
+ * Verify data persisted after running in cqlsh with:
+ * cqlsh> select * from twitter_stream.hashtags_by_interval;
+ * 
+ * You should output sequences similar to:
  * {{{
- *    hashtag            | interval      | mentions
- *   --------------------+---------------+----------
- *      android          | M201411011649 |        1
- *      android          | M201411011648 |        9
- *      android          | M201411011647 |        2
- *      android          |   H2014110116 |       12
- *      android          |     D20141101 |       12
- *      android          |           ALL |       12
+ *     hashtag      | interval             | mentions
+ *    --------------+----------------------+----------
+ *           iphone | 2014110419:54:35.000 |        2
+ *           iphone | 2014110419:54:10.000 |        1
+ *          android | 2014110419:55:10.000 |        4
+ *          android | 2014110419:55:05.000 |        1
+ *      iphonegames | 2014110419:54:35.000 |        1
+ *     androidgames | 2014110419:55:10.000 |        3
  * }}}
  */
 object TwitterStreamingApp {
@@ -81,7 +82,4 @@ object TwitterStreamingApp {
            """)
     }
   }
-
-  def now: DateTime = new DateTime(DateTimeZone.UTC)
-  def now(pattern: String): String = now.toString(pattern)
 }
