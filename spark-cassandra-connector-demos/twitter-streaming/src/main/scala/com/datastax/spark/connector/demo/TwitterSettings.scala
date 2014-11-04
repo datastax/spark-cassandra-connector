@@ -12,7 +12,7 @@ final class TwitterSettings {
   val RegexFilterPattern: Regex = {
     val filters = immutableSeq(config.getStringList("filters")).toSet
     val topics = filters.map(_.stripPrefix("#")).mkString("|")
-    if (filters.mkString contains "#")  s"""(#\\w*(?:$topics)\\w*)""".r else s"""(w*(?:$topics)w*)""".r
+    if (filters.mkString contains "#")  s"(#\\w*(?:$topics)\\w*)".r else s"(w*(?:$topics)w*)".r
   }
 
   /** Attempts to detect System property, falls back to config. */
