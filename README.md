@@ -69,6 +69,8 @@ The documentation will be generated to:
   - [Customizing the object mapping](doc/6_advanced_mapper.md)
   - [Using Connector in Java](doc/7_java_api.md)
   - [Spark Streaming with Cassandra](doc/8_streaming.md)
+  - [About The Demos](doc/9_demos.md)
+  - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    
