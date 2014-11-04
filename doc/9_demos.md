@@ -108,9 +108,6 @@ Or to run with any config overrides:
 
     sbt -Dspark.master="value" twitter/run
   
-### To Run With Assembly
-    
-    sbt -Ddemos.assembly=true twitter/assembly
 
 ### With Local Spark Standalone  
 Start a standalone master server by executing:
