@@ -17,16 +17,16 @@ object BasicReadWriteDemo extends DemoApp {
 
   // Read table test.kv and print its contents:
   val rdd = sc.cassandraTable("test", "key_value").select("key", "value")
-  rdd.collect().foreach(row => log.info(s"$row"))
+  rdd.collect().foreach(row => log.info(s"Existing Data: $row"))
 
   // Write two new rows to the test.kv table:
   val col = sc.parallelize(Seq((4, "fourth row"), (5, "fifth row")))
   col.saveToCassandra("test", "key_value", SomeColumns("key", "value"))
-  col.collect().foreach(row => log.info(s"$row"))
 
   // Assert the two new rows were stored in test.kv table:
   assert(col.collect().length == 2)
 
+  col.collect().foreach(row => log.info(s"New Data: $row"))
   log.info(s"Work completed, stopping the Spark context.")
   sc.stop()
 }
