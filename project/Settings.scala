@@ -93,6 +93,7 @@ object Settings extends Build {
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
+    run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)),
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     mergeStrategy in assembly <<= (mergeStrategy in assembly) {
       (old) => {
@@ -104,10 +105,9 @@ object Settings extends Build {
 
   /* By default, assembly is not enabled for the demos module, but it can be enabled with
     `-Ddemos.assembly=true`. From the command line this would be:
-     sbt -Ddemos.assembly=true twitter-stream/assembly */
+     sbt -Ddemos.assembly=true twitter/assembly */
   lazy val demoAssemblySettings =
-    if (System.getProperty("demos.assembly", "true").toBoolean)
-      sbtAssemblySettings ++ Seq(run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)))
+    if (System.getProperty("demos.assembly", "true").toBoolean) sbtAssemblySettings
     else Seq.empty
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(

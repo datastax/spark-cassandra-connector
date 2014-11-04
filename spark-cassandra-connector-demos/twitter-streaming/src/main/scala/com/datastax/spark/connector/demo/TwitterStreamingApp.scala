@@ -1,11 +1,8 @@
 package com.datastax.spark.connector.demo
 
-import scala.concurrent.duration._
-import org.apache.spark.{SparkEnv, SparkContext, SparkConf}
+import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.joda.time.{DateTimeZone, DateTime}
-import twitter4j.auth.{OAuthAuthorization, Authorization}
-import twitter4j.conf.ConfigurationBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.streaming._
 
@@ -63,17 +60,10 @@ object TwitterStreamingApp {
   val sc = new SparkContext(conf)
 
   val ssc = new StreamingContext(sc, Seconds(StreamingBatchInterval))
-/*
-  Runtime.getRuntime.addShutdownHook(new Thread("Shutdown") {
-    override def run() {
-      ssc.stop(true, false)
-      Thread.sleep(3000)
-    }
-  })*/
 
   def main(args: Array[String]): Unit = {
     val stream = new TwitterStreamingHashTagsByInterval
-    stream.start(credentials.auth, ssc, filters, CassandraKeyspace, CassandraTable)
+    stream.start(credentials.auth, ssc, RegexFilterPattern, CassandraKeyspace, CassandraTable)
   }
 
   /** Creates the keyspace and table schema. */
@@ -84,8 +74,8 @@ object TwitterStreamingApp {
       session.execute(s"""
              CREATE TABLE IF NOT EXISTS $CassandraKeyspace.$CassandraTable (
                 hashtag text,
-                mentions counter,
                 interval text,
+                mentions counter,
                 PRIMARY KEY(hashtag, interval)
             ) WITH CLUSTERING ORDER BY (interval DESC)
            """)
@@ -94,40 +84,4 @@ object TwitterStreamingApp {
 
   def now: DateTime = new DateTime(DateTimeZone.UTC)
   def now(pattern: String): String = now.toString(pattern)
-}
-
-object Twitter {
-
-  case class TwitterAuth(auth: Option[Authorization])
-
-  object TwitterAuth {
-
-    /** Creates an instance of TwitterAuth by first attempting to acquire
-      * from the deploy environment variables.
-      *
-      * If the settings exist in the deploy environment, and if not,
-      * falls back to acquiring from java system properties passed in.
-      *
-      * Auth settings allow the Twitter4j library, used by twitter stream,
-      * to generate OAuth credentials. */
-    def apply(): TwitterAuth = {
-      val args = Array(
-        sys.env.getOrElse("TWITTER_CONSUMER_KEY", sys.props("twitter4j.oauth.consumerKey")),
-        sys.env.getOrElse("TWITTER_CONSUMER_SECRET", sys.props("twitter4j.oauth.consumerSecret")),
-        sys.env.getOrElse("TWITTER_ACCESS_TOKEN", sys.props("twitter4j.oauth.accessToken")),
-        sys.env.getOrElse("TWITTER_ACCESS_TOKEN_SECRET", sys.props("twitter4j.oauth.accessTokenSecret")))
-
-      val opt = if (args.contains(null)) None else Some(toAuth(args(0),args(1),args(2),args(3)))
-      TwitterAuth(opt)
-    }
-
-    /** Auth settings allow the Twitter4j library, used by twitter stream, to generate OAuth credentials. */
-    def toAuth(consumerKey: String, consumerSecret: String, accessToken: String, accessTokenSecret: String): Authorization =
-      new OAuthAuthorization(new ConfigurationBuilder()
-        .setOAuthConsumerKey(consumerKey)
-        .setOAuthConsumerSecret(consumerSecret)
-        .setOAuthAccessToken(accessToken)
-        .setOAuthAccessTokenSecret(accessTokenSecret)
-        .build)
-  }
 }

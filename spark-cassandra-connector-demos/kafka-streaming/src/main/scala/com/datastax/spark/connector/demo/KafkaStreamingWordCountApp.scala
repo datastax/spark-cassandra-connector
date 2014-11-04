@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.demo
 
-import com.datastax.spark.connector.util.Logging
-
 import scala.sys.process._
 import scala.util.Try
 import kafka.serializer.StringDecoder
@@ -12,10 +10,10 @@ import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.streaming._
-
 
 /**
  * Simple Kafka Spark Streaming demo which
@@ -40,7 +38,7 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   lazy val kafka = new EmbeddedKafka()
 
   val conf = new SparkConf(true)
-    .setMaster("local[10]")
+    .setMaster("local[*]")
     .setAppName(getClass.getSimpleName)
     .set("spark.executor.memory", "1g")
     .set("spark.cores.max", "1")
@@ -81,9 +79,9 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   stream.map(_._2).countByValue().saveToCassandra("demo", "wordcount")
 
   ssc.start()
-  ssc.awaitTermination()
-  //validate()
-  //shutdown()
+
+  validate()
+  shutdown()
 
   def shutdown(): Unit = {
     log.info("Shutting down.")
