@@ -32,9 +32,10 @@ import java.util.Set;
 import static com.datastax.spark.connector.util.JavaApiHelper.*;
 
 /**
- * The main entry point to Spark Cassandra Connector Java API. There are a plenty of different static factory methods
- * which build useful wrappers around Spark Context, Streaming Context and RDD. There are also handy methods to build
- * reader and writer factories and to configure their parameters.
+ * The main entry point to Spark Cassandra Connector Java API.
+ *
+ * <p>There are several helpful static factory methods which build useful wrappers around Spark Context, Streaming Context
+ * and RDD. There are also helper methods to build reader and writer factories which configure their parameters.</p>
  */
 @SuppressWarnings("UnusedDeclaration")
 public class CassandraJavaUtil {
