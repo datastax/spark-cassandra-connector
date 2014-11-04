@@ -66,7 +66,7 @@ object Settings extends Build {
   )
 
   lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
-    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m",  "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-Xmx1024m")
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
