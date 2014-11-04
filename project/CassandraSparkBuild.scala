@@ -153,7 +153,7 @@ object Dependencies {
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
 
-  val embedded = logging ++ spark ++ Seq(sparkCatalyst)  ++ cassandra ++ Seq(
+  val embedded = logging ++ spark ++ cassandra ++ Seq(
     Embedded.cassandraServer, Embedded.jopt, Embedded.kafka, Embedded.sparkRepl)
 
   val kafka = Seq(Demos.kafkaStreaming)
