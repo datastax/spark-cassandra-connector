@@ -11,16 +11,19 @@ and [Spark documentation](https://spark.apache.org/docs/0.9.1/).
 
 Install and launch a Cassandra 2.0 cluster and a Spark cluster.   
 
-Configure a new Scala project with the following dependencies: 
+Configure a new Scala project with the following dependencies:
 
  - Apache Spark 0.9 or 1.0 and its dependencies
  - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
  - DataStax Cassandra driver for your Cassandra version 
  
 This driver does not depend on the Cassandra server code.   
-For a detailed dependency list, see project dependencies in the `project/CassandraSparkBuild.scala` file.
+- For a detailed dependency list, see project dependencies in the `project/CassandraSparkBuild.scala` file.
+- For dependency versions, see `project/Versions.scala` file.
 
-Add the cassandra-driver-spark.jar and its dependency jars to the following classpaths:
+Add the `spark-cassandra-connector` jar and its dependency jars to the following classpaths:
+
+    "com.datastax.spark" %% "spark-cassandra-connector" % Version
 
  - the classpath of your project
  - the classpath of every Spark cluster node
