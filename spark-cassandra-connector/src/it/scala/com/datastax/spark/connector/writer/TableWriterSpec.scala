@@ -21,25 +21,31 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(cassandraHost)
 
-  before {
-    conn.withSessionDo { session =>
-      session.execute("CREATE KEYSPACE IF NOT EXISTS write_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.counters2 (pkey INT PRIMARY KEY, c counter)")
-      session.execute("CREATE TABLE IF NOT EXISTS write_test.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)")
-      session.execute("TRUNCATE write_test.key_value")
-      session.execute("TRUNCATE write_test.collections")
-      session.execute("TRUNCATE write_test.blobs")
-      session.execute("TRUNCATE write_test.counters")
-    }
+  conn.withSessionDo { session =>
+    session.execute("CREATE KEYSPACE IF NOT EXISTS write_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
+
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_1 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_2 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_3 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_4 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_5 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_6 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_7 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_8 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_9 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_10 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.counters2 (pkey INT PRIMARY KEY, c counter)")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.single_column (pk INT PRIMARY KEY)")
   }
 
-  private def verifyKeyValueTable() {
+  private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
-      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      val result = session.execute("SELECT * FROM write_test." + tableName).all()
       result should have size 3
       for (row <- result) {
         Some(row.getInt(0)) should contain oneOf(1, 2, 3)
@@ -51,20 +57,20 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   "A TableWriter" should "write RDD of tuples" in {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_1", SomeColumns("key", "group", "value"))
+    verifyKeyValueTable("key_value_1")
   }
 
   it should "write RDD of tuples applying proper data type conversions" in {
     val col = Seq(("1", "1", "value1"), ("2", "2", "value2"), ("3", "3", "value3"))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value")
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_2")
+    verifyKeyValueTable("key_value_2")
   }
 
   it should "write RDD of case class objects" in {
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value")
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_3")
+    verifyKeyValueTable("key_value_3")
   }
 
   it should "write RDD of case class objects applying proper data type conversions" in {
@@ -73,8 +79,8 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       KeyValueWithConversion("2", 2, "value2"),
       KeyValueWithConversion("3", 3, "value3")
     )
-    sc.parallelize(col).saveToCassandra("write_test", "key_value")
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_4")
+    verifyKeyValueTable("key_value_4")
   }
 
   it should "write RDD of CassandraRow objects" in {
@@ -83,8 +89,8 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       CassandraRow.fromMap(Map("key" -> 2, "group" -> 2L, "value" -> "value2")),
       CassandraRow.fromMap(Map("key" -> 3, "group" -> 3L, "value" -> "value3"))
     )
-    sc.parallelize(col).saveToCassandra("write_test", "key_value")
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_5")
+    verifyKeyValueTable("key_value_5")
   }
 
   it should "write RDD of CassandraRow objects applying proper data type conversions" in {
@@ -93,8 +99,8 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
       CassandraRow.fromMap(Map("key" -> "2", "group" -> BigInt(2), "value" -> "value2")),
       CassandraRow.fromMap(Map("key" -> "3", "group" -> BigInt(3), "value" -> "value3"))
     )
-    sc.parallelize(col).saveToCassandra("write_test", "key_value")
-    verifyKeyValueTable()
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_6")
+    verifyKeyValueTable("key_value_6")
   }
 
   it should "write RDD of tuples to a table with camel case column names" in {
@@ -112,9 +118,9 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "write empty values" in {
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_7", SomeColumns("key", "group", "value"))
     conn.withSessionDo { session =>
-      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      val result = session.execute("SELECT * FROM write_test.key_value_7").all()
       result should have size 1
       for (row <- result) {
         row.getString(2) should be (null)
@@ -124,9 +130,9 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "write only specific column data if ColumnNames is passed as 'columnNames'" in {
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_8", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      val result = session.execute("SELECT * FROM write_test.key_value_8").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (1)
@@ -137,9 +143,9 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
 
   it should "distinguish (deprecated) implicit `seqToSomeColumns`" in {
     val col = Seq((2, 1L, None))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_9", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      val result = session.execute("SELECT * FROM write_test.key_value_9").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (2)
@@ -214,13 +220,23 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Ca
     })
 
     val col = Seq((1, 1L, CustomerId("foo")))
-    sc.parallelize(col).saveToCassandra("write_test", "key_value", SomeColumns("key", "group", "value"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_10", SomeColumns("key", "group", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute("SELECT * FROM write_test.key_value").all()
+      val result = session.execute("SELECT * FROM write_test.key_value_10").all()
       result should have size 1
       for (row <- result)
         row.getString(2) shouldEqual "foo"
+    }
+  }
+
+  it should "write to single-column tables" in {
+    val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
+    sc.parallelize(col).saveToCassandra("write_test", "single_column", SomeColumns("pk"))
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.single_column").all()
+      result should have size 5
+      result.map(_.getInt(0)).toSet should be (Set(1, 2, 3, 4, 5))
     }
   }
 
