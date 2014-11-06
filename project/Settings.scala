@@ -50,14 +50,11 @@ object Settings extends Build {
 
   override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ graphSettings ++ Seq(
+  lazy val moduleSettings = graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    artifactName in ThisScope := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
-      baseDirectory.value.name + "_" + sv.binary + "-" + module.revision + "." + artifact.extension
-    },
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
@@ -65,7 +62,12 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = moduleSettings ++ graphSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+
+  lazy val assembledSettings = defaultSettings ++ jarsInCluster++ sbtAssemblySettings
+
+  lazy val demoSettings = graphSettings ++ Seq(
+    publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
 
@@ -80,7 +82,33 @@ object Settings extends Build {
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  lazy val testSettings = tests ++ graphSettings ++ Seq(
+  val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
+
+  lazy val jarsInCluster = Seq(
+    itClusterTask := {
+      val (art, itTestJar) = packagedArtifact.in(IntegrationTest,packageBin).value
+      val (art2, testJar) = packagedArtifact.in(Test,packageBin).value
+      val path = Seq(itTestJar.getAbsolutePath, testJar.getAbsolutePath).mkString(",")
+      //System.setProperty("cassandra.spark.jars", path)
+      println(s"Set property 'cassandra.spark.jars' to " + System.getProperty("cassandra.spark.jars"))
+      javaOptions in run ++= Seq(s"-Dspark.jars=$path")
+    }
+  )
+
+  lazy val testArtifacts = Seq(
+    artifactName in (Test,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+     baseDirectory.value.name + "-test_" + sv.binary + "-" + module.revision + "." + artifact.extension
+    },
+    artifactName in (IntegrationTest,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+      baseDirectory.value.name + "-it-test_" + sv.binary + "-" + module.revision + "." + artifact.extension
+    },
+    publishArtifact in (Test,packageBin) := true,
+    publishArtifact in (IntegrationTest,packageBin) := true,
+    publish in (Test,packageBin) := {},
+    publish in (IntegrationTest,packageBin) := {}
+  )
+
+  lazy val testSettings = tests ++ testArtifacts ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
@@ -125,10 +153,7 @@ object Settings extends Build {
 
 }
 
-/**
- * TODO make plugin
- * Shell prompt which shows the current project, git branch
- */
+/** Shell prompt which shows the current project, git branch */
 object ShellPrompt {
 
   def gitBranches = ("git branch" lines_! devnull).mkString

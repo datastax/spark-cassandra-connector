@@ -35,6 +35,7 @@ object Publish extends Build {
     },
     publishMavenStyle := true,
     publishArtifact in Test := false,
+    publishArtifact in IntegrationTest := false,
     pomIncludeRepository := { x => false },
     pomExtra :=
       <scm>
