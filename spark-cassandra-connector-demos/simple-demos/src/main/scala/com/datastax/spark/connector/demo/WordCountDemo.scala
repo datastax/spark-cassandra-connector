@@ -18,4 +18,7 @@ object WordCountDemo extends DemoApp {
     .reduceByKey(_ + _)
     .saveToCassandra("demo", "wordcount")
 
+  // print out the data saved from Spark to Cassandra
+  sc.cassandraTable("demo", "wordcount").collect.foreach(println)
+  sc.stop()
 }

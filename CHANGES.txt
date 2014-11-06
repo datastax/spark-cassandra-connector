@@ -77,6 +77,7 @@
    Upgraded Cassandra to 2.0.11. (#366)
  * Made SparkContext variable transient in SparkContextFunctions (#373)
  * Fixed saving to tables with uppercase column names (#377)
+ * Fixed saving collections of Tuple1 (#420)
 
 1.0.3
  * Fixed handling of Cassandra rpc_address set to 0.0.0.0 (#332)

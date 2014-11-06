@@ -1,17 +1,17 @@
-package com.datastax.spark.connector.demo.streaming
+package com.datastax.spark.connector.demo
 
-import com.datastax.spark.connector.demo.DemoApp
-import com.datastax.spark.connector.demo.streaming.StreamingEvent.WordCount
+import scala.sys.process._
+import scala.util.Try
 import kafka.serializer.StringDecoder
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.SparkContext._
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.embedded._
-import com.datastax.spark.connector.writer.WriteConf
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.streaming._
 
@@ -28,15 +28,25 @@ import com.datastax.spark.connector.streaming._
  * 6. Asserts expectations are met
  * 7. Shuts down Spark, Kafka and ZooKeeper
  */
-object KafkaStreamingWordCountDemo extends DemoApp with Assertions {
+object KafkaStreamingWordCountApp extends App with Logging with Assertions {
 
-  private val topic = "demo.wordcount.topic"
+  val words = "./spark-cassandra-connector-demos/kafka-streaming/src/main/resources/data/words"
+
+  val topic = "demo.wordcount.topic"
 
   /** Starts the Kafka broker. */
   lazy val kafka = new EmbeddedKafka()
 
+  val conf = new SparkConf(true)
+    .setMaster("local[*]")
+    .setAppName(getClass.getSimpleName)
+    .set("spark.executor.memory", "1g")
+    .set("spark.cores.max", "1")
+    .set("spark.cassandra.connection.host", "127.0.0.1")
+
   /** Creates the keyspace and table in Cassandra. */
   CassandraConnector(conf).withSessionDo { session =>
+    session.execute(s"DROP KEYSPACE IF EXISTS demo")
     session.execute(s"CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute(s"CREATE TABLE IF NOT EXISTS demo.wordcount (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute(s"TRUNCATE demo.wordcount")
@@ -47,6 +57,8 @@ object KafkaStreamingWordCountDemo extends DemoApp with Assertions {
   val producer = new KafkaProducer[String,String](kafka.kafkaConfig)
 
   val toKafka = (line: String) => producer.send(topic, "demo.wordcount.group", line.toLowerCase)
+
+  val sc = new SparkContext(conf)
 
   /* The write to kafka from spark, read from kafka in the stream and write to cassandra would happen
   from separate components in a production env. This is a simple demo to show the code for integration.
