@@ -34,7 +34,8 @@ trait LowPriorityColumnMapper {
 
 /** Provides implicit [[ColumnMapper]] objects used for mapping tuples. */
 object ColumnMapper extends LowPriorityColumnMapper {
-
+  implicit def tuple1ColumnMapper[A1] =
+    new TupleColumnMapper[Tuple1[A1]]
   implicit def tuple2ColumnMapper[A1, A2] = 
     new TupleColumnMapper[(A1, A2)]
   implicit def tuple3ColumnMapper[A1, A2, A3] =
