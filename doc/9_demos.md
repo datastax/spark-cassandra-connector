@@ -36,7 +36,7 @@ If you don't already have it, download the latest Apache Cassandra binaries, un-
     
 ### Settings
 #### Simple Demos
-The simple demos (WordCountDemo, BasicReadWriteDemo, SQLDemo, AkkaStreamingDemo, etc) set 
+The basic demos (WordCountDemo, BasicReadWriteDemo, SQLDemo, AkkaStreamingDemo, etc) set
 `spark.master` as 127.0.0.1 or `local[n]`, and `spark.cassandra.connection.host` as 127.0.0.1. Change this locally if desired.
     
 #### Kafka Streaming Demo
@@ -124,7 +124,4 @@ Start one or more workers and connect them to the master via:
      
 Once you have started a worker, look at the master’s web UI (http://localhost:8080 by default).
 You should see the new node listed there, along with its number of CPUs and memory (minus one gigabyte left for the OS).
- 
-  
-## Using SBT Assembly To Submit A Demo To Spark
  
