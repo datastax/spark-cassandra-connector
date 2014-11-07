@@ -6,6 +6,7 @@
  * Don't fail with "contact points contain multiple datacenters"
    if one or more of the nodes given as contact points don't have DC information,
    because they are unreachable.
+ * Fixed #395 - removed annoying slf4j warnings when running tests
 
 1.1.0 beta 1
  * Redesigned Java API, some refactorings (#300)
