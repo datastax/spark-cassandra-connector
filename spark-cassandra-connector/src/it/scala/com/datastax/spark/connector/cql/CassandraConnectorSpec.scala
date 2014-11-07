@@ -96,7 +96,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "be configurable from SparkConf" in {
-    val host = CassandraServer.cassandraHost.getHostAddress
+    val host = EmbeddedCassandra.cassandraHost.getHostAddress
     val conf = new SparkConf(loadDefaults = true)
       .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
 
@@ -106,7 +106,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
-    val goodHost = CassandraServer.cassandraHost.getHostAddress
+    val goodHost = EmbeddedCassandra.cassandraHost.getHostAddress
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = new SparkConf(loadDefaults = true)

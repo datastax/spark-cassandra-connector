@@ -276,6 +276,24 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result should have length 2
   }
 
+  it should "convert values passed to where to correct types (String -> Timestamp) (double limit)" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time > ? and time < ?", "2014-07-12 20:00:01", "2014-07-12 20:00:03").collect()
+    result should have length 1
+  }
+
+  it should "convert values passed to where to correct types (DateTime -> Timestamp) (double limit)" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time > ? and time < ?", new DateTime(2014, 7, 12, 20, 0, 1), new DateTime(2014, 7, 12, 20, 0, 3)).collect()
+    result should have length 1
+  }
+
+  it should "convert values passed to where to correct types (Date -> Timestamp) (double limit)" in {
+    val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("time > ? and time < ?", new DateTime(2014, 7, 12, 20, 0, 1).toDate, new DateTime(2014, 7, 12, 20, 0, 3).toDate).collect()
+    result should have length 1
+  }
+
   it should "accept partitioning key in where" in {
     val result = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
       .where("key = ?", 1).collect()
