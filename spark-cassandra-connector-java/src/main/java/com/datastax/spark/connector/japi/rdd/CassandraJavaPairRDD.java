@@ -12,8 +12,11 @@ import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 
 /**
- * A Java wrapper for {@link CassandraRDD}. Makes the invocation of
- * Cassandra related methods easy in Java.
+ * A Java API wrapper over {@link com.datastax.spark.connector.rdd.CassandraRDD} of tuples to provide Spark Cassandra
+ * Connector functionality in Java.
+ *
+ * <p>The wrapper can be obtained by one of the methods of {@link com.datastax.spark.connector.japi.SparkContextJavaFunctions}
+ * or {@link com.datastax.spark.connector.japi.StreamingContextJavaFunctions}.</p>
  */
 public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     public CassandraJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd, Class<K> keyClass, Class<V> valueClass) {
@@ -31,10 +34,10 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
 
     /**
      * Narrows down the selected set of columns.
-     * Use this for better performance, when you don't need all the columns in the result RDD.
-     * When called multiple times, it selects the subset of the already selected columns, so
-     * after a column was removed by the previous {@code select} call, it is not possible to
-     * add it back.
+     *
+     * <p>Use this for better performance, when you don't need all the columns in the result RDD. When called multiple
+     * times, it selects the subset of the already selected columns, so after a column was removed by the previous
+     * {@code select} call, it is not possible to add it back.</p>
      */
     public CassandraJavaPairRDD<K, V> select(String... columnNames) {
         // explicit type argument is intentional and required here
@@ -45,9 +48,10 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
 
     /**
      * Adds a CQL {@code WHERE} predicate(s) to the query.
-     * Useful for leveraging secondary indexes in Cassandra.
-     * Implicitly adds an {@code ALLOW FILTERING} clause to the {@code WHERE} clause, however beware that some predicates
-     * might be rejected by Cassandra, particularly in cases when they filter on an unindexed, non-clustering column.
+     *
+     * <p>Useful for leveraging secondary indexes in Cassandra. Implicitly adds an {@code ALLOW FILTERING} clause to the
+     * {@code WHERE} clause, however beware that some predicates might be rejected by Cassandra, particularly in cases
+     * when they filter on an unindexed, non-clustering column.</p>
      */
     public CassandraJavaPairRDD<K, V> where(String cqlWhereClause, Object... args) {
         CassandraRDD<Tuple2<K, V>> newRDD = rdd().where(cqlWhereClause, toScalaSeq(args));
