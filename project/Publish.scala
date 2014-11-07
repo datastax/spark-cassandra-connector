@@ -59,6 +59,34 @@ object Publish extends Build {
           <organization>DataStax</organization>
           <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
+        <developer>
+          <id>alexliu68</id>
+          <name>Alex Liu</name>
+          <url>http://github.com/alexliu68</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
+        <developer>
+          <id>RussellSpitzer</id>
+          <name>Russell Spitzer</name>
+          <url>http://github.com/RussellSpitzer</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
+        <developer>
+          <id>artem-aliev</id>
+          <name>Artem Aliev</name>
+          <url>http://github.com/artem-aliev</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
+        <developer>
+          <id>bcantoni</id>
+          <name>Brian Cantoni</name>
+          <url>http://github.com/bcantoni</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
       </developers>
       <contributors>
         <contributor>
@@ -68,6 +96,26 @@ object Publish extends Build {
         <contributor>
           <name>Luis Angel Vicente Sanchez</name>
           <url>http://github.com/lvicentesanchez</url>
+        </contributor>
+        <contributor>
+          <name>Todd</name>
+          <url>http://github.com/tsindot</url>
+        </contributor>
+        <contributor>
+          <name>Li Geng</name>
+          <url>http://github.com/anguslee</url>
+        </contributor>
+        <contributor>
+          <name>Isk</name>
+          <url>http://github.com/criticaled</url>
+        </contributor>
+        <contributor>
+          <name>Holden Karau</name>
+          <url>http://github.com/holdenk</url>
+        </contributor>
+        <contributor>
+          <name>Philipp Hoffmann</name>
+          <url>http://github.com/philipphoffmann</url>
         </contributor>
       </contributors>
   )
