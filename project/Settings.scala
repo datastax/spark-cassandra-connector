@@ -62,11 +62,11 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val defaultSettings = moduleSettings ++ graphSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+  lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
 
   lazy val assembledSettings = defaultSettings ++ jarsInCluster++ sbtAssemblySettings
 
-  lazy val demoSettings = graphSettings ++ Seq(
+  lazy val demoSettings = moduleSettings ++ Seq(
     publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
@@ -100,7 +100,7 @@ object Settings extends Build {
      baseDirectory.value.name + "-test_" + sv.binary + "-" + module.revision + "." + artifact.extension
     },
     artifactName in (IntegrationTest,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
-      baseDirectory.value.name + "-it-test_" + sv.binary + "-" + module.revision + "." + artifact.extension
+      baseDirectory.value.name + "-it_" + sv.binary + "-" + module.revision + "." + artifact.extension
     },
     publishArtifact in (Test,packageBin) := true,
     publishArtifact in (IntegrationTest,packageBin) := true,
