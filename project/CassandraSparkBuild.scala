@@ -112,8 +112,8 @@ object Dependencies {
 
     object Embedded {
       val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"          % Akka                                      // ApacheV2
-      val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka withSources()                       // ApacheV2
-      val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra                                  // ApacheV2
+      val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka withSources() exclude("org.slf4j", "slf4j-simple")                      // ApacheV2
+      val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra exclude("ch.qos.logback", "logback-classic") exclude("ch.qos.logback", "logback-core")                               // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"            % JOpt // For kafka command line work
       val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler")          // ApacheV2
     }
