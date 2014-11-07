@@ -210,4 +210,19 @@ a special wrapper around `JavaDStream` and then invoke `writerBuilder` method an
 *DStream* is a sequence of *RDDs* and when you invoke `saveToCassandra` on the builder, it will follow saving to
 Cassandra all the *RDDs* in that *DStream*.
 
+### Summary of changes between versions 1.0 and 1.1
+
+- added the new functionality of the connector which has been introduced in v1.1
+- removed multiple overloaded `cassandraTable` methods from the Java wrappers of `SparkContext` or `StreamingContext`
+- introduced several static factory methods in `CassandraJavaUtils` for:
+    - creating column based reader factories (`mapColumnTo` methods)
+    - creating row based reader factories (`mapRowTo` methods)
+    - creating writer factories (`mapToRow` methods)
+    - creating type tags for arbitrary types and type parameters (`typeTag` methods)
+    - resolving type converters for arbitrary types and type parameters (`typeConverter` methods)
+- removed class argument from Java RDD wrappers factory methods
+- deprecated `saveToCassandra` methods in Java RDD wrappers; the preferred way to save data to Cassandra is to use
+  `writerBuilder` method, which returns `RDDAndDStreamCommonJavaFunctions.WriterBuilder` instance, which in turn has
+  `saveToCassandra` method
+
 [Next - Spark Streaming with Cassandra](8_streaming.md)
