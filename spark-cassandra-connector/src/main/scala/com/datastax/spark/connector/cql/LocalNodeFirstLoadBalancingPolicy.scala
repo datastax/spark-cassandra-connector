@@ -65,7 +65,8 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     else
       HostDistance.REMOTE
 
-  private def dcs(hosts: Set[Host]) = hosts.map(_.getDatacenter).toSet
+  private def dcs(hosts: Set[Host]) =
+    hosts.filter(_.getDatacenter != null).map(_.getDatacenter).toSet
 }
 
 object LocalNodeFirstLoadBalancingPolicy {
@@ -81,11 +82,13 @@ object LocalNodeFirstLoadBalancingPolicy {
     hostAddress.isLoopbackAddress || localAddresses.contains(hostAddress)
   }
 
-  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts` */
+  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts`.
+    * It guarantees to return at least the hosts pointed by `contactPoints`, even if their
+    * DC information is missing. Other hosts with missing DC information are not considered.*/
   def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
     val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
     val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
-    allHosts.filter(h => h.getDatacenter == null || contactDCs.contains(h.getDatacenter))
+    contactNodes ++ allHosts.filter(h => contactDCs.contains(h.getDatacenter))
   }
 
   /** Sorts nodes in the following order:
