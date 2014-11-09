@@ -230,7 +230,7 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
-  private val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
+  private lazy val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
 
   private def checkColumnsExistence(columnNames: Seq[String]): Seq[String] = {
     val allColumnNames = tableDef.allColumns.map(_.columnName).toSet

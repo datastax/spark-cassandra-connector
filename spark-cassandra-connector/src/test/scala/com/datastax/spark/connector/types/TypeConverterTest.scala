@@ -74,8 +74,8 @@ class TypeConverterTest {
   @Test
   def testJavaFloat() {
     val c = TypeConverter.forType[java.lang.Float]
-    assertEquals(1.0f, c.convert("1.0"), 0.0001f)
-    assertEquals(1.0f, c.convert(1.0f), 0.0001f)
+    assertEquals(1.0f, c.convert("1.0").toFloat, 0.0001f)
+    assertEquals(1.0f, c.convert(1.0f).toFloat, 0.0001f)
   }
 
   @Test
