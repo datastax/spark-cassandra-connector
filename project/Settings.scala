@@ -24,6 +24,7 @@ import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 
+import scala.collection.mutable
 import scala.language.postfixOps
 
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
@@ -64,7 +65,9 @@ object Settings extends Build {
 
   lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
 
-  lazy val assembledSettings = defaultSettings ++ jarsInCluster++ sbtAssemblySettings
+  lazy val assembledSettings = defaultSettings ++ jarsInCluster++ sbtAssemblySettings ++ Seq(
+    javaOptions in CassandraSparkBuild.ExtIntegrationTest += s"-Dspark.jars=${allArtifacts.mkString(",")}"
+  )
 
   lazy val demoSettings = moduleSettings ++ Seq(
     publishArtifact in (Test,packageBin) := false,
@@ -84,14 +87,17 @@ object Settings extends Build {
 
   val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
 
+  val allArtifacts = mutable.HashSet[String]()
+
   lazy val jarsInCluster = Seq(
     itClusterTask := {
-      val (art, itTestJar) = packagedArtifact.in(IntegrationTest,packageBin).value
-      val (art2, testJar) = packagedArtifact.in(Test,packageBin).value
-      val path = Seq(itTestJar.getAbsolutePath, testJar.getAbsolutePath).mkString(",")
-      //System.setProperty("cassandra.spark.jars", path)
-      println(s"Set property 'cassandra.spark.jars' to " + System.getProperty("cassandra.spark.jars"))
-      javaOptions in run ++= Seq(s"-Dspark.jars=$path")
+      val (_, moduleJar) = packagedArtifact.in(Compile,         packageBin).value
+      val (_, itTestJar) = packagedArtifact.in(IntegrationTest, packageBin).value
+      val (_, testJar)   = packagedArtifact.in(Test,            packageBin).value
+      allArtifacts += moduleJar.getAbsolutePath
+      allArtifacts += itTestJar.getAbsolutePath
+      allArtifacts += testJar.getAbsolutePath
+      println("All artifacts: " + allArtifacts.mkString(", "))
     }
   )
 
