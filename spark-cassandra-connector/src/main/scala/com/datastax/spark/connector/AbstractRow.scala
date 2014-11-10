@@ -7,7 +7,7 @@ import org.apache.cassandra.utils.ByteBufferUtil
 
 import scala.collection.JavaConversions._
 
-private[connector] abstract class AbstractRow(val data: Array[AnyRef], val columnNames: Array[String]) extends Serializable {
+abstract class AbstractRow(val data: IndexedSeq[AnyRef], val columnNames: IndexedSeq[String]) extends Serializable {
 
   @transient
   private[connector] lazy val _indexOf =
@@ -22,6 +22,9 @@ private[connector] abstract class AbstractRow(val data: Array[AnyRef], val colum
 
   /** Total number of columns in this row. Includes columns with null values. */
   def length = data.size
+
+  /** Total number of columns in this row. Includes columns with null values. */
+  def size = data.size
 
   /** Returns true if column value is Cassandra null */
   def isNullAt(index: Int): Boolean =
