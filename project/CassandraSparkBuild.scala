@@ -21,6 +21,8 @@ import sbt.Keys._
 object CassandraSparkBuild extends Build {
   import Settings._
 
+  lazy val ExtIntegrationTest = config("extit") extend IntegrationTest
+
   lazy val root = RootProject("root", file("."), Seq(connector, jconnector, embedded, demos))
 
   lazy val connector = AssemblyProject("spark-cassandra-connector", Dependencies.connector,
@@ -42,11 +44,11 @@ object CassandraSparkBuild extends Build {
   /* Project Templates */
   def AssemblyProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
     Project(name, file(name), settings = assembledSettings ++ Seq(libraryDependencies ++= modules),
-      dependencies = cpd) configs (IntegrationTest)
+      dependencies = cpd) configs (IntegrationTest, ExtIntegrationTest)
 
   def UtilityProject(name: String, modules: Seq[ModuleID]): Project =
     Project(name, file(name),
-      settings = defaultSettings ++ Seq(libraryDependencies ++= modules)) configs (IntegrationTest)
+      settings = defaultSettings ++ Seq(libraryDependencies ++= modules)) configs (IntegrationTest, ExtIntegrationTest)
 
   def DemoProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]]): Project =
     Project(id = name, base = file(s"spark-cassandra-connector-demos/$name"),
@@ -54,6 +56,7 @@ object CassandraSparkBuild extends Build {
 
   def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
     Project(id = name, base = dir, settings = parentSettings, aggregate = contains)
+
 }
 
 object Dependencies {
