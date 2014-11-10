@@ -65,10 +65,6 @@ object Settings extends Build {
 
   lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
 
-  lazy val assembledSettings = defaultSettings ++ jarsInCluster++ sbtAssemblySettings ++ Seq(
-    javaOptions in CassandraSparkBuild.ExtIntegrationTest += s"-Dspark.jars=${allArtifacts.mkString(",")}"
-  )
-
   lazy val demoSettings = moduleSettings ++ Seq(
     publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
@@ -80,15 +76,15 @@ object Settings extends Build {
 
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
-  val testOptionSettings = Seq(
-    Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-    Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
-  )
-
+  lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
   val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
 
+  /* sbt spark-cassandra-connector/it:itClusterTask 
+  All artifacts:
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-it_2.10-1.1.0-SNAPSHOT.jar,
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector_2.10-1.1.0-SNAPSHOT.jar,
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-test_2.10-1.1.0-SNAPSHOT.jar*/
   val allArtifacts = mutable.HashSet[String]()
-
   lazy val jarsInCluster = Seq(
     itClusterTask := {
       val (_, moduleJar) = packagedArtifact.in(Compile,         packageBin).value
@@ -99,6 +95,14 @@ object Settings extends Build {
       allArtifacts += testJar.getAbsolutePath
       println("All artifacts: " + allArtifacts.mkString(", "))
     }
+  )
+  lazy val assembledSettings = defaultSettings ++ jarsInCluster ++ sbtAssemblySettings ++ Seq(
+    javaOptions in ClusterIntegrationTest ++= Seq(s"-Dspark.jars=${allArtifacts.mkString(",")}")
+  )
+
+  val testOptionSettings = Seq(
+    Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+    Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
   lazy val testArtifacts = Seq(
