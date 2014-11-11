@@ -33,7 +33,7 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("java_api_test", "test_table", mapToRows(classOf[SampleJavaBeanWithMultipleCtors]))
+      .writerBuilder("java_api_test", "test_table", mapToRow(classOf[SampleJavaBeanWithMultipleCtors]))
       .saveToCassandra()
 
     val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table"))
@@ -56,7 +56,7 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("java_api_test", "test_table", mapToRows(classOf[SampleJavaBean]))
+      .writerBuilder("java_api_test", "test_table", mapToRow(classOf[SampleJavaBean]))
       .saveToCassandra()
 
     val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table"))
@@ -82,7 +82,7 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("java_api_test", "test_table", mapToRows(classOf[outer.InnerClass]))
+      .writerBuilder("java_api_test", "test_table", mapToRow(classOf[outer.InnerClass]))
       .saveToCassandra()
 
     val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table"))

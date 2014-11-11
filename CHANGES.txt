@@ -3,6 +3,12 @@
    values of UDTs will come out as java driver UDTValue objects (#374)
  * Upgraded Java driver to 2.1.2 version and fixed deprecation warnings.
    Use correct protocolVersion when serializing/deserializing Cassandra columns.
+ * Don't fail with "contact points contain multiple datacenters"
+   if one or more of the nodes given as contact points don't have DC information,
+   because they are unreachable.
+ * Removed annoying slf4j warnings when running tests (#395)
+ * CassandraRDD is fully lazy now - initialization no longer fetches Cassandra
+   schema (#339).
 
 1.1.0 beta 1
  * Redesigned Java API, some refactorings (#300)

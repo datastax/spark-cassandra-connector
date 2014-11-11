@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
@@ -92,6 +93,28 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
     session2.isClosed shouldEqual false
     session2.close()
     session2.isClosed shouldEqual true
+  }
+
+  it should "be configurable from SparkConf" in {
+    val host = EmbeddedCassandra.cassandraHost.getHostAddress
+    val conf = new SparkConf(loadDefaults = true)
+      .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
+
+    // would throw exception if connection unsuccessful
+    val conn2 = CassandraConnector(conf)
+    conn2.withSessionDo { session => }
+  }
+
+  it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
+    val goodHost = EmbeddedCassandra.cassandraHost.getHostAddress
+    val invalidHost = "192.168.254.254"
+    // let's connect to two addresses, of which the first one is deliberately invalid
+    val conf = new SparkConf(loadDefaults = true)
+      .set(CassandraConnectorConf.CassandraConnectionHostProperty, invalidHost + "," + goodHost)
+
+    // would throw exception if connection unsuccessful
+    val conn2 = CassandraConnector(conf)
+    conn2.withSessionDo { session => }
   }
 }
 

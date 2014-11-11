@@ -12,6 +12,12 @@ import scala.Tuple2;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 
+/**
+ * Java API wrapper over {@link org.apache.spark.SparkContext} to provide Spark Cassandra Connector functionality.
+ *
+ * <p>To obtain an instance of this wrapper, use one of the factory methods in {@link
+ * com.datastax.spark.connector.japi.CassandraJavaUtil} class.</p>
+ */
 @SuppressWarnings("UnusedDeclaration")
 public class SparkContextJavaFunctions {
     public final SparkContext sparkContext;
@@ -39,10 +45,11 @@ public class SparkContextJavaFunctions {
 
 
     /**
-     * Returns a view of a Cassandra table as a {@code CassandraJavaRDD}. With this method, each row
-     * is converted to a {@code CassandraRow} object.
-     * <p/>
-     * Example:
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD}.
+     *
+     * <p>With this method, each row is converted to a {@code CassandraRow} object.</p>
+     *
+     * <p>Example:
      * <pre>
      * CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
      * CREATE TABLE test.words (word text PRIMARY KEY, count int);
@@ -55,6 +62,7 @@ public class SparkContextJavaFunctions {
      * rdd.first().getString("word");     // foo
      * rdd.first().getInt("count");       // 20
      * </pre>
+     * </p>
      *
      * @since 1.0.0
      */
@@ -64,11 +72,19 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * @param keyspace Cassandra keyspace
-     * @param table    Cassandra table
-     * @param rrf      a row reader factory to convert Cassandra rows into values of type {@code T}
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD}.
+     *
+     * <p>With this method, each row is converted to a object of type {@code T} by a specified row reader factory
+     * {@code rrf}. Row reader factories can be easily obtained with one of utility methods in {@link
+     * com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
+     *
+     * @param keyspace the name of the keyspace which contains the accessed table
+     * @param table    the accessed Cassandra table name
+     * @param rrf      a row reader factory to convert rows into target values
      * @param <T>      target value type
-     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD} of objects of type {@code T}
+     *
+     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD} of type {@code T}
+     *
      * @since 1.1.0
      */
     public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rrf) {
@@ -77,13 +93,21 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * @param keyspace Cassandra keyspace
-     * @param table    Cassandra table
-     * @param keyRRF   a row reader factory to convert Cassandra rows into keys of type {@code K}
-     * @param valueRRF a row reader factory to convert Cassandra rows into values of type {@code V}
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD}.
+     *
+     * <p>With this method, each row is converted to a pair of two objects of types {@code K} and {@code V}
+     * respectively. For each conversion a separate row reader factory is specified. Row reader factories can be easily
+     * obtained with one of utility methods in {@link com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
+     *
+     * @param keyspace the name of the keyspace which contains the accessed table
+     * @param table    the accessed Cassandra table
+     * @param keyRRF   a row reader factory to convert rows into keys of type {@code K}
+     * @param valueRRF a row reader factory to convert rows into values of type {@code V}
      * @param <K>      key type
      * @param <V>      value type
-     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD} of {@code K}, {@code V} pairs
+     *
+     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD} of ({@code K}, {@code V}) pairs
+     *
      * @since 1.1.0
      */
     public <K, V> CassandraJavaPairRDD<K, V> cassandraTable(String keyspace, String table, RowReaderFactory<K> keyRRF, RowReaderFactory<V> valueRRF) {
