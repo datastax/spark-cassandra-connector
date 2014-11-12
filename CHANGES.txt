@@ -73,7 +73,7 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
-1.0.4 (unreleased)
+1.0.4
  * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
    reflection thread-safety problems (#235)
  * Synchronized computation of TypeTags in TypeConverter#targetTypeTag, 
