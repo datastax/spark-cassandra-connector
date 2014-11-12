@@ -4,8 +4,8 @@ import com.datastax.driver.core.{ProtocolVersion, PreparedStatement}
 import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.catalyst.expressions.Row
 
-/** A [[RowWriter]] that can write [[Row]] objects.*/
-abstract class AbstractRowWriter[T <: Row](table: TableDef, selectedColumns: Seq[String]) extends RowWriter[T] {
+/** A [[RowWriter]] that can write SparkSQL [[Row]] objects or [[com.datastax.spark.connector.CassandraRow]] objects .*/
+abstract class AbstractRowWriter[T](table: TableDef, selectedColumns: Seq[String]) extends RowWriter[T] {
 
   override def columnNames =
     selectedColumns.toIndexedSeq

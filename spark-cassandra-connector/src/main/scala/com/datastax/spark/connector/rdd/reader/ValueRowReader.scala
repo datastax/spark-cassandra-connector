@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.spark.connector.CassandraRow
+import com.datastax.spark.connector.{AbstractRow, CassandraRow}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.{ColumnRef, IndexedColumnRef, NamedColumnRef}
 import com.datastax.spark.connector.types.TypeConverter
@@ -13,8 +13,8 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
     * @param columnNames column names available in the `row` */
   override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): T = {
     columnRef match {
-      case IndexedColumnRef(idx) => implicitly[TypeConverter[T]].convert(CassandraRow.get(row, idx, protocolVersion))
-      case NamedColumnRef(name) => implicitly[TypeConverter[T]].convert(CassandraRow.get(row, name, protocolVersion))
+      case IndexedColumnRef(idx) => implicitly[TypeConverter[T]].convert(AbstractRow.get(row, idx, protocolVersion))
+      case NamedColumnRef(name) => implicitly[TypeConverter[T]].convert(AbstractRow.get(row, name, protocolVersion))
     }
   }
 

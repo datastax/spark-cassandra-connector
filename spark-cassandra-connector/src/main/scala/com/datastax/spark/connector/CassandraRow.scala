@@ -8,11 +8,7 @@ import java.util.{UUID, Date}
 import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-import org.apache.cassandra.utils.ByteBufferUtil
-import org.apache.spark.sql.catalyst.expressions.{Row => SparkSqlRow}
 import org.joda.time.DateTime
-
-import scala.collection.JavaConversions._
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -84,9 +80,7 @@ import scala.collection.JavaConversions._
   *   - java.sql.Date
   *   - org.joda.time.DateTime
   */
-final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extends AbstractRow(data, columnNames) with SparkSqlRow with Serializable {
-
-  private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
+final class CassandraRow(data: IndexedSeq[AnyRef], columnNames: IndexedSeq[String]) extends AbstractRow(data, columnNames) with Serializable {
 
   /** Converts this row to a Map */
   def toMap: Map[String, Any] =
@@ -310,35 +304,6 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
 
 object CassandraRow {
 
-  /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
-     Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
-  private[connector] def convert(obj: Any): AnyRef = {
-    obj match {
-      case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
-      case list: java.util.List[_] => list.view.map(convert).toList
-      case set: java.util.Set[_] => set.view.map(convert).toSet
-      case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v)) }.toMap
-      case other => other.asInstanceOf[AnyRef]
-    }
-  }
-
-  /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
-   *  If the field is null, returns null (not Scala Option). */
-  def get(row: Row, index: Int, protocolVersion: ProtocolVersion): AnyRef = {
-    val columnDefinitions = row.getColumnDefinitions
-    val columnType = columnDefinitions.getType(index)
-    val columnValue = row.getBytesUnsafe(index)
-    if (columnValue != null)
-      convert(columnType.deserialize(columnValue, protocolVersion))
-    else
-      null
-  }
-
-  def get(row: Row, name: String, protocolVersion: ProtocolVersion): AnyRef = {
-    val index = row.getColumnDefinitions.getIndexOf(name)
-    get(row, index, protocolVersion)
-  }
-
   /** Deserializes first n columns from the given `Row` and returns them as
     * a `CassandraRow` object. The number of columns retrieved is determined by the length
     * of the columnNames argument. The columnNames argument is used as metadata for
@@ -348,7 +313,7 @@ object CassandraRow {
   def fromJavaDriverRow(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): CassandraRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- 0 until columnNames.length)
-        data(i) = get(row, i, protocolVersion)
+        data(i) = AbstractRow.get(row, i, protocolVersion)
     new CassandraRow(data, columnNames)
   }
 
@@ -356,7 +321,7 @@ object CassandraRow {
     * values denoting column values. */
   def fromMap(map: Map[String, Any]): CassandraRow = {
     val (columnNames, values) = map.unzip
-    new CassandraRow(values.map(_.asInstanceOf[AnyRef]).toArray, columnNames.toArray)
+    new CassandraRow(values.map(_.asInstanceOf[AnyRef]).toIndexedSeq, columnNames.toIndexedSeq)
   }
 
 }
