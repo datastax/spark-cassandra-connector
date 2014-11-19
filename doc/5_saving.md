@@ -29,7 +29,7 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ## Saving a collection of objects
 When saving a collection of objects of a user-defined class, the items to be saved
 must provide appropriately named public property accessors for getting every column
-to be saved. This example provides more information on property-column naming conventions is described [here](mapper.md).
+to be saved. This example provides more information on property-column naming conventions is described [here](4_mapper.md).
 
 ```scala
 case class WordCount(word: String, count: Long)

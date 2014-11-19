@@ -24,6 +24,7 @@ import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 
+import scala.collection.mutable
 import scala.language.postfixOps
 
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
@@ -37,7 +38,7 @@ object Settings extends Build {
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.1.0-SNAPSHOT",
+    version in ThisBuild := "1.2.0-SNAPSHOT",
     scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
@@ -50,14 +51,11 @@ object Settings extends Build {
 
   override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
 
-  lazy val defaultSettings = testSettings ++ mimaSettings ++ releaseSettings ++ graphSettings ++ Seq(
+  lazy val moduleSettings = graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
     scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
     javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
     javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
-    artifactName in ThisScope := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
-      baseDirectory.value.name + "_" + sv.binary + "-" + module.revision + "." + artifact.extension
-    },
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
@@ -65,7 +63,10 @@ object Settings extends Build {
     autoAPIMappings := true
   )
 
-  lazy val demoSettings = defaultSettings ++ mimaSettings ++ releaseSettings ++ Seq(
+  lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+
+  lazy val demoSettings = moduleSettings ++ Seq(
+    publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
 
@@ -75,12 +76,49 @@ object Settings extends Build {
 
   val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
+  lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
+  val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
+
+  /* sbt spark-cassandra-connector/it:itClusterTask 
+  All artifacts:
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-it_2.10-1.1.0-SNAPSHOT.jar,
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector_2.10-1.1.0-SNAPSHOT.jar,
+  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-test_2.10-1.1.0-SNAPSHOT.jar*/
+  val allArtifacts = mutable.HashSet[String]()
+  lazy val jarsInCluster = Seq(
+    itClusterTask := {
+      val (_, moduleJar) = packagedArtifact.in(Compile,         packageBin).value
+      val (_, itTestJar) = packagedArtifact.in(IntegrationTest, packageBin).value
+      val (_, testJar)   = packagedArtifact.in(Test,            packageBin).value
+      allArtifacts += moduleJar.getAbsolutePath
+      allArtifacts += itTestJar.getAbsolutePath
+      allArtifacts += testJar.getAbsolutePath
+      println("All artifacts: " + allArtifacts.mkString(", "))
+    }
+  )
+  lazy val assembledSettings = defaultSettings ++ jarsInCluster ++ sbtAssemblySettings ++ Seq(
+    javaOptions in ClusterIntegrationTest ++= Seq(s"-Dspark.jars=${allArtifacts.mkString(",")}")
+  )
+
   val testOptionSettings = Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     Tests.Argument(TestFrameworks.JUnit, "-oDF", "-v", "-a")
   )
 
-  lazy val testSettings = tests ++ graphSettings ++ Seq(
+  lazy val testArtifacts = Seq(
+    artifactName in (Test,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+     baseDirectory.value.name + "-test_" + sv.binary + "-" + module.revision + "." + artifact.extension
+    },
+    artifactName in (IntegrationTest,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+      baseDirectory.value.name + "-it_" + sv.binary + "-" + module.revision + "." + artifact.extension
+    },
+    publishArtifact in (Test,packageBin) := true,
+    publishArtifact in (IntegrationTest,packageBin) := true,
+    publish in (Test,packageBin) := {},
+    publish in (IntegrationTest,packageBin) := {}
+  )
+
+  lazy val testSettings = tests ++ testArtifacts ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     testOptions in Test ++= testOptionSettings,
@@ -125,10 +163,7 @@ object Settings extends Build {
 
 }
 
-/**
- * TODO make plugin
- * Shell prompt which shows the current project, git branch
- */
+/** Shell prompt which shows the current project, git branch */
 object ShellPrompt {
 
   def gitBranches = ("git branch" lines_! devnull).mkString

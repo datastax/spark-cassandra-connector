@@ -320,8 +320,12 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     row.getString(1) should be("name")
   }
 
-  it should "throw IOException when table could not be found" in {
+  it should "throw appropriate IOException when the table was not found at the computation time" in {
     intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").collect() }
+  }
+
+  it should "be lazy and must not throw IOException if the table was not found at the RDD initialization time" in {
+    sc.cassandraTable("read_test", "unknown_table")
   }
 
   it should "not leak threads" in {

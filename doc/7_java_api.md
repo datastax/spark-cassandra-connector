@@ -21,6 +21,26 @@ This utility class is the main entry point for Connector Java API.
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 ```
 
+The code snippets below work with a sample keyspace `ks` and table `people`. From the CQLSH shell, create 
+the keyspace, table, and data with these commands:
+
+```
+create keyspace if not exists ks with replication = {'class':'SimpleStrategy', 'replication_factor':1};
+
+create table if not exists ks.people (
+  id int primary key,
+  name text,
+  birth_date timestamp
+);
+
+create index on ks.people (name);
+
+insert into ks.people (id, name, birth_date) values (10, 'Catherine', '1987-12-02');
+insert into ks.people (id, name, birth_date) values (11, 'Isadora', '2004-09-08');
+insert into ks.people (id, name, birth_date) values (12, 'Anna', '1970-10-02');
+```
+
+
 ### Accessing Cassandra tables in Java
 `CassandraJavaRDD` is a `CassandraRDD` counterpart in Java. It allows to invoke easily Connector specific methods
 in order to enforce selection or projection on the database side. However, conversely to `CassandraRDD`, it extends
@@ -40,10 +60,10 @@ JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("ks", "tab")
                 return cassandraRow.toString();
             }
         });
-System.out.println("Data as CassandraRows: \n" + StringUtils.join("\n", cassandraRowsRDD.toArray()));
+System.out.println("Data as CassandraRows: \n" + StringUtils.join(cassandraRowsRDD.toArray(), "\n"));
 ```
 
-In the above example, `cassandraTable` method has been used to create `CassandraJavaRDD` view of the data in `ks.tab`.
+In the above example, `cassandraTable` method has been used to create `CassandraJavaRDD` view of the data in `ks.people`.
 The elements of the returned *RDD* are of `CassandraRow` type. If you want to produce an *RDD* of custom beans, you may
 use `cassandraTable` method, which accepts a custom `RowReaderFactory` - (see
 [Working with user-defined case classes and tuples](4_mapper.md) for more details).
@@ -84,6 +104,12 @@ public static class Person implements Serializable {
 
     // Remember to declare no-args constructor
     public Person() { }
+
+    public Person(Integer id, String name, Date birthDate) {
+        this.id = id;
+        this.name = name;
+        this.birthDate = birthDate;
+    }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -141,30 +167,32 @@ CassandraJavaPairRDD<Integer, Person> rdd2 = javaFunctions(sc)
 ### Using selection and projection on the database side
 Once `CassandraJavaRDD` is created, you may apply selection and projection on that RDD by invoking `where` 
 and `select` methods on it respectively. Their semantic is the same as the semantic of their counterparts
-in `CassandraRDD`. 
+in `CassandraRDD`.
+
+Note: See the [description of filtering](3_selection.md) to understand the limitations of the `where` method.
 
 Example:
 ```java
-JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "tab")
+JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "people")
         .select("id").map(new Function<CassandraRow, String>() {
             @Override
             public String call(CassandraRow cassandraRow) throws Exception {
                 return cassandraRow.toString();
             }
         });
-System.out.println("Data with only 'id' column fetched: \n" + StringUtils.join("\n", rdd.toArray()));
+System.out.println("Data with only 'id' column fetched: \n" + StringUtils.join(rdd.toArray(), "\n"));
 ```
 
 Example:
 ```java
-JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "tab")
+JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "people")
         .where("name=?", "Anna").map(new Function<CassandraRow, String>() {
             @Override
             public String call(CassandraRow cassandraRow) throws Exception {
                 return cassandraRow.toString();
             }
         });
-System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join("\n", rdd.toArray()));
+System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join(rdd.toArray(), "\n"));
 ```
 
 ### Saving data to Cassandra
@@ -183,9 +211,9 @@ Example:
 
 ```java
 List<Person> people = Arrays.asList(
-        Person.newInstance(1, "John", new Date()),
-        Person.newInstance(2, "Anna", new Date()),
-        Person.newInstance(3, "Andrew", new Date())
+        new Person(1, "John", new Date()),
+        new Person(2, "Troy", new Date()),
+        new Person(3, "Andrew", new Date())
 );
 JavaRDD<Person> rdd = sc.parallelize(people);
 javaFunctions(rdd).writerBuilder("ks", "people", mapToRow(Person.class)).saveToCassandra();
@@ -224,5 +252,10 @@ Cassandra all the *RDDs* in that *DStream*.
 - deprecated `saveToCassandra` methods in Java RDD wrappers; the preferred way to save data to Cassandra is to use
   `writerBuilder` method, which returns `RDDAndDStreamCommonJavaFunctions.WriterBuilder` instance, which in turn has
   `saveToCassandra` method
+
+### Further Examples
+
+A longer example (with source code) of the Connector Java API is on the DataStax tech blog:
+[Accessing Cassandra from Spark in Java](http://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java).
 
 [Next - Spark Streaming with Cassandra](8_streaming.md)

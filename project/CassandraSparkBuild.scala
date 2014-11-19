@@ -21,60 +21,39 @@ import sbt.Keys._
 object CassandraSparkBuild extends Build {
   import Settings._
 
-  lazy val root = Project(
-    id = "root",
-    base = file("."),
-    settings = parentSettings,
-    aggregate = Seq(connector, jconnector, embedded, demos)
-  )
+  lazy val root = RootProject("root", file("."), Seq(connector, jconnector, embedded, demos))
 
-  lazy val connector = Project(
-    id = "connector",
-    base = file("spark-cassandra-connector"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.connector) ++ sbtAssemblySettings,
-    dependencies = Seq(embedded % "test->test;it->it,test;")
-  ) configs IntegrationTest
+  lazy val connector = AssemblyProject("spark-cassandra-connector", Dependencies.connector,
+    Seq(embedded % "test->test;it->it,test;"))
 
-  lazy val jconnector = Project(
-    id = "jconnector",
-    base = file("spark-cassandra-connector-java"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.connector) ++ sbtAssemblySettings,
-    dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
-  ) configs IntegrationTest
+  lazy val jconnector = AssemblyProject("spark-cassandra-connector-java", Dependencies.connector,
+    Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided"))
 
-  lazy val embedded = Project(
-    id = "embedded",
-    base = file("spark-cassandra-connector-embedded"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs IntegrationTest
+  lazy val embedded = UtilityProject("spark-cassandra-connector-embedded", Dependencies.embedded)
 
-  lazy val demos = Project(
-    id = "demos",
-    base = file("spark-cassandra-connector-demos"),
-    settings = parentSettings,
-    aggregate = Seq(simpleDemos, kafkaStreaming, twitterStreaming)
-  )
+  lazy val demos = RootProject("demos", file("spark-cassandra-connector-demos"), Seq(simpleDemos, kafkaStreaming, twitterStreaming))
 
-  /* Partitioned to eventually allow users to run spark-submit, with only the necessary
-     dependencies in assembly, per demo. */
+  lazy val simpleDemos = DemoProject("simple-demos", Seq.empty, Seq(connector, jconnector, embedded))
 
-  lazy val simpleDemos = Project(
-    id = "simple",
-    base = file("spark-cassandra-connector-demos/simple-demos"),
-    settings = demoSettings,
-    dependencies = Seq(connector, jconnector, embedded))
+  lazy val kafkaStreaming = DemoProject("kafka-streaming", Dependencies.kafka, Seq(connector, embedded))
 
-  lazy val kafkaStreaming = Project(
-    id = "kafka",
-    base = file("spark-cassandra-connector-demos/kafka-streaming"),
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.kafka),
-    dependencies = Seq(connector, embedded))
+  lazy val twitterStreaming = DemoProject("twitter-streaming", Dependencies.twitter, Seq(connector))
 
-  lazy val twitterStreaming = Project(
-    id = "twitter",
-    base = file("spark-cassandra-connector-demos/twitter-streaming"),
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
-    dependencies = Seq(connector))
+  /* Project Templates */
+  def AssemblyProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
+    Project(name, file(name), settings = assembledSettings ++ Seq(libraryDependencies ++= modules),
+      dependencies = cpd) configs (IntegrationTest, ClusterIntegrationTest)
+
+  def UtilityProject(name: String, modules: Seq[ModuleID]): Project =
+    Project(name, file(name),
+      settings = defaultSettings ++ Seq(libraryDependencies ++= modules)) configs (IntegrationTest, ClusterIntegrationTest)
+
+  def DemoProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]]): Project =
+    Project(id = name, base = file(s"spark-cassandra-connector-demos/$name"),
+      settings = demoSettings ++ Seq(libraryDependencies ++= modules), dependencies = cpd)
+
+  def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
+    Project(id = name, base = dir, settings = parentSettings, aggregate = contains)
 
 }
 

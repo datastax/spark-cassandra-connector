@@ -1,3 +1,6 @@
+* Fixed problem with setting a batch size in bytes (#435)
+
+1.1.0 beta 2
  * Fixed bug in Java API which might cause ClassNotFoundException
  * Added stubs for UDTs. It is possible to read tables with UDTs, but
    values of UDTs will come out as java driver UDTValue objects (#374)
@@ -6,7 +9,9 @@
  * Don't fail with "contact points contain multiple datacenters"
    if one or more of the nodes given as contact points don't have DC information,
    because they are unreachable.
- * Fixed #395 - removed annoying slf4j warnings when running tests
+ * Removed annoying slf4j warnings when running tests (#395)
+ * CassandraRDD is fully lazy now - initialization no longer fetches Cassandra
+   schema (#339).
 
 1.1.0 beta 1
  * Redesigned Java API, some refactorings (#300)
@@ -70,7 +75,7 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
-1.0.4 (unreleased)
+1.0.4
  * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
    reflection thread-safety problems (#235)
  * Synchronized computation of TypeTags in TypeConverter#targetTypeTag, 

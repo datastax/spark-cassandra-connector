@@ -151,9 +151,7 @@ class TableWriter[T] private (
 
 object TableWriter {
 
-  val DefaultParallelismLevel = 5
   val MeasuredInsertsCount = 128
-  val DefaultBatchSizeInBytes = 64 * 1024
 
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
