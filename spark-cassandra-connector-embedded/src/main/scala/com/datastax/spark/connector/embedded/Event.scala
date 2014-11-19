@@ -14,6 +14,9 @@ object Event {
 
   case object Report extends Status
 
+  sealed trait Task extends Serializable
+  case object QueryTask extends Task
+
   case class WordCount(word: String, count: Int) extends Serializable
 
 }

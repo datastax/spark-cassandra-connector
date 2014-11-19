@@ -1,24 +1,26 @@
 package com.datastax.spark.connector.embedded
 
-import java.util.concurrent.CountDownLatch
 import java.util.Properties
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.duration._
+import akka.actor.{ActorLogging, Actor}
 import kafka.serializer.StringDecoder
-import kafka.consumer.{ConsumerConnector, Consumer, ConsumerConfig}
+import kafka.consumer.{Consumer, ConsumerConfig}
 
 /** The KafkaConsumer is a very simple consumer of a single Kafka topic.
   * This is a helpful utility for IT tests to insure data is getting published to Kafka
   * for streaming ingestion upstream.
   */
-class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartitions: Int, numThreads: Int, latch: CountDownLatch) {
+class KafkaConsumer(zookeeper: String, topic: String, groupId: String, partitions: Int, numThreads: Int, count: AtomicInteger) {
 
-  private val  consumer: ConsumerConnector = Consumer.create(createConsumerConfig)
+  val connector = Consumer.create(createConsumerConfig)
 
   // create n partitions of the stream for topic “test”, to allow n threads to consume
-  val topicMessageStreams = consumer.createMessageStreams(Map(topic -> numPartitions), new StringDecoder(), new StringDecoder())
-
-  val streams = topicMessageStreams.get(topic)
+  val streams = connector
+    .createMessageStreams(Map(topic -> partitions), new StringDecoder(), new StringDecoder())
+    .get(topic)
 
   // launch all the threads
   val executor = Executors.newFixedThreadPool(numThreads)
@@ -29,15 +31,14 @@ class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartit
       def run() {
         for(s <- stream) {
           while(s.iterator.hasNext) {
-            //println(s"Consumer (KafkaStream) received: ${s.iterator.next.message}")
-            latch.countDown()
+            count.getAndIncrement
           }
         }
       }
     })
   }
 
-  def createConsumerConfig: ConsumerConfig = {
+  private def createConsumerConfig: ConsumerConfig = {
     val props = new Properties()
     props.put("consumer.timeout.ms", "2000")
     props.put("zookeeper.connect", zookeeper)
@@ -51,7 +52,29 @@ class KafkaConsumer(zookeeper: String, topic: String, groupId: String, numPartit
 
   def shutdown() {
     println("Consumer shutting down.")
-    if (consumer != null) consumer.shutdown()
-    if (executor != null) executor.shutdown()
+    Option(connector) map (_.shutdown())
+    Option(executor) map (_.shutdown())
+  }
+}
+
+/** Simple actor with a Kafka consumer to report the latest message count in a Kafka Topic. */
+class KafkaTopicLogger(topic: String, group: String, taskInterval: FiniteDuration = 3.seconds)
+  extends Actor with ActorLogging {
+  import Event._
+  import context.dispatcher
+
+  val atomic = new AtomicInteger(0)
+
+  val consumer = new KafkaConsumer(ZookeeperConnectionString, topic, group, 1, 10, atomic)
+
+  var task = context.system.scheduler.schedule(3.seconds, taskInterval) {
+    self ! QueryTask
+  }
+
+  override def postStop(): Unit = task.cancel
+
+  def receive: Actor.Receive = {
+    case QueryTask =>
+      log.info(s"Kafka message count [{}]", atomic.get)
   }
 }
