@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.{RowsInBatch, BatchSize}
+import com.datastax.spark.connector.{BytesInBatch, RowsInBatch, BatchSize}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
@@ -40,7 +40,7 @@ object WriteConf {
     val batchSize = {
       val Number = "([0-9]+)".r
       batchSizeInRowsStr match {
-        case "auto" => BatchSize.Automatic
+        case "auto" => BytesInBatch(batchSizeInBytes)
         case Number(x) => RowsInBatch(x.toInt)
         case other =>
           throw new ConfigurationException(

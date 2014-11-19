@@ -1,3 +1,5 @@
+* Fixed problem with setting a batch size in bytes (#435)
+
 1.1.0 beta 2
  * Fixed bug in Java API which might cause ClassNotFoundException
  * Added stubs for UDTs. It is possible to read tables with UDTs, but
