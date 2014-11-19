@@ -70,8 +70,11 @@ class KafkaTopicLogger(topic: String, group: String, taskInterval: FiniteDuratio
   var task = context.system.scheduler.schedule(3.seconds, taskInterval) {
     self ! QueryTask
   }
-
-  override def postStop(): Unit = task.cancel
+ 
+  override def postStop(): Unit = {
+    task.cancel
+    consumer.shutdown()
+  }
 
   def receive: Actor.Receive = {
     case QueryTask =>
