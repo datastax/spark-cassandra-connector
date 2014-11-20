@@ -29,12 +29,12 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     session.execute("CREATE INDEX test_table_idx ON java_api_test.test_table (value)")
     session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (1, 'one')")
     session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (2, 'two')")
-    session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (3, 'three')")
+    session.execute("INSERT INTO java_api_test.test_table (key, value) VALUES (3,  null)")
 
     session.execute("CREATE TABLE java_api_test.test_table2 (some_key INT, some_value TEXT, PRIMARY KEY (some_key))")
     session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (1, 'one')")
     session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (2, 'two')")
-    session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (3, 'three')")
+    session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (3, null)")
 
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO java_api_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
@@ -50,7 +50,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(rows.size == 3)
     assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
     assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+    assert(rows.exists(row ⇒ row.getString("value") == null && row.getInt("key") == 3))
   }
 
   it should "allow to read data as Java beans " in {
@@ -58,7 +58,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == "three" && bean.getKey == 3))
+    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "allow to read data as Java beans (with multiple constructors)" in {
@@ -66,7 +66,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == "three" && bean.getKey == 3))
+    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "throw NoSuchMethodException when trying to read data as Java beans (without no-args constructor)" in {
@@ -79,7 +79,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == "three" && bean.getKey == 3))
+    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "allow to read data as deeply nested Java beans" in {
@@ -88,7 +88,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == "three" && bean.getKey == 3))
+    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
 
@@ -123,7 +123,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows1 should have size 3
     rows1 should contain("one")
     rows1 should contain("two")
-    rows1 should contain("three")
+    rows1 should contain(null)
 
     val rows2 = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.Integer]))
@@ -187,7 +187,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain((1, "one"))
     rows should contain((2, "two"))
-    rows should contain((3, "three"))
+    rows should contain((3, null))
   }
 
   it should "allow to read rows as an array of multi-column type with explicit column name mapping" in {
@@ -199,7 +199,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain((1, "one"))
     rows should contain((2, "two"))
-    rows should contain((3, "three"))
+    rows should contain((3, null))
   }
 
   it should "allow to read rows as an array of KV pairs of two single-column types" in {
@@ -211,7 +211,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain((1, "one"))
     rows should contain((2, "two"))
-    rows should contain((3, "three"))
+    rows should contain((3, null))
   }
 
   it should "allow to read rows as an array of KV pairs of a single-column type and a multi-column type" in {
@@ -223,7 +223,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain((1, (1, "one")))
     rows should contain((2, (2, "two")))
-    rows should contain((3, (3, "three")))
+    rows should contain((3, (3, null)))
   }
 
   it should "allow to read rows as an array of KV pairs of a multi-column type and a single-column type" in {
@@ -235,7 +235,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain(((1, "one"), 1))
     rows should contain(((2, "two"), 2))
-    rows should contain(((3, "three"), 3))
+    rows should contain(((3, null), 3))
   }
 
   it should "allow to read rows as an array of KV pairs of multi-column types" in {
@@ -247,7 +247,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     rows should have size 3
     rows should contain(((1, "one"), (1, "one")))
     rows should contain(((2, "two"), (2, "two")))
-    rows should contain(((3, "three"), (3, "three")))
+    rows should contain(((3, null), (3, null)))
   }
 
   it should "allow to read Cassandra data as array of Integer" in {
