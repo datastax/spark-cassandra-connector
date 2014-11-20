@@ -57,6 +57,9 @@ class DefaultColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] 
     val propertyName = setterNameToPropertyName(setterName)
     columnNameOverride.getOrElse(propertyName, columnNameForProperty(propertyName, tableDef))
   }
+
+  /** Don't allow nulls in Scala - fail fast with NPE if null is tried. */
+  override protected def allowsNull = false
 }
 
 object DefaultColumnMapper {

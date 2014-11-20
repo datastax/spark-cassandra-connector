@@ -39,6 +39,10 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO java_api_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
     session.execute("INSERT INTO java_api_test.collections (key, l, s, m) VALUES (2, null, null, null)")
+
+    session.execute("CREATE TABLE IF NOT EXISTS java_api_test.nulls (key INT PRIMARY KEY, i int, vi varint, t text, d timestamp, l list<int>)")
+    session.execute("INSERT INTO java_api_test.nulls (key, i, vi, t, d, l) VALUES (1, null, null, null, null, null)")
+
   }
 
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
@@ -266,6 +270,19 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     intercept[IOException] {
       javaFunctions(sc).cassandraTable("java_api_test", "test_table").withConnector(invalidConnector).collect()
     }
+  }
+
+  it should "allow to read null columns" in {
+    val row = javaFunctions(sc)
+      .cassandraTable("java_api_test", "nulls")
+      .select("i", "vi", "t", "d", "l")
+      .first()
+
+    row.getInt(0) should be (null)
+    row.getVarInt(1) should be (null)
+    row.getString(2) should be (null)
+    row.getDate(3) should be (null)
+    row.getList[Int](4) should be (new java.util.ArrayList[Int]())
   }
 
 }

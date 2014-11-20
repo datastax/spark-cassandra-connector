@@ -77,6 +77,10 @@ object TypeConverter {
     }
   }
 
+  private val nullPF: PartialFunction[Any, Null] = {
+    case null => null
+  }
+
   private val BooleanTypeTag = TypeTag.synchronized {
     implicitly[TypeTag[Boolean]]
   }
@@ -98,7 +102,9 @@ object TypeConverter {
 
   implicit object JavaBooleanConverter extends TypeConverter[java.lang.Boolean] {
     def targetTypeTag = JavaBooleanTypeTag
-    def convertPF = BooleanConverter.convertPF.andThen(_.asInstanceOf[java.lang.Boolean])
+    def convertPF = BooleanConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Boolean])
   }
 
   private val ByteTypeTag = TypeTag.synchronized {
@@ -119,7 +125,9 @@ object TypeConverter {
 
   implicit object JavaByteConverter extends TypeConverter[java.lang.Byte] {
     def targetTypeTag = JavaByteTypeTag
-    def convertPF = ByteConverter.convertPF.andThen(_.asInstanceOf[java.lang.Byte])
+    def convertPF = ByteConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Byte])
   }
 
   private val ShortTypeTag = TypeTag.synchronized {
@@ -140,7 +148,9 @@ object TypeConverter {
 
   implicit object JavaShortConverter extends TypeConverter[java.lang.Short] {
     def targetTypeTag = JavaShortTypeTag
-    def convertPF = ShortConverter.convertPF.andThen(_.asInstanceOf[java.lang.Short])
+    def convertPF = ShortConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Short])
   }
 
   private val IntTypeTag = TypeTag.synchronized {
@@ -161,7 +171,9 @@ object TypeConverter {
 
   implicit object JavaIntConverter extends TypeConverter[java.lang.Integer] {
     def targetTypeTag = JavaIntTypeTag
-    def convertPF = IntConverter.convertPF.andThen(_.asInstanceOf[java.lang.Integer])
+    def convertPF = IntConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Integer])
   }
 
   private val LongTypeTag = TypeTag.synchronized {
@@ -185,7 +197,9 @@ object TypeConverter {
 
   implicit object JavaLongConverter extends TypeConverter[java.lang.Long] {
     def targetTypeTag = JavaLongTypeTag
-    def convertPF = LongConverter.convertPF.andThen(_.asInstanceOf[java.lang.Long])
+    def convertPF = LongConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Long])
   }
 
   private val FloatTypeTag = TypeTag.synchronized {
@@ -206,7 +220,9 @@ object TypeConverter {
 
   implicit object JavaFloatConverter extends TypeConverter[java.lang.Float] {
     def targetTypeTag = JavaFloatTypeTag
-    def convertPF = FloatConverter.convertPF.andThen(_.asInstanceOf[java.lang.Float])
+    def convertPF = FloatConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Float])
   }
 
   private val DoubleTypeTag = TypeTag.synchronized {
@@ -227,7 +243,9 @@ object TypeConverter {
 
   implicit object JavaDoubleConverter extends TypeConverter[java.lang.Double] {
     def targetTypeTag = JavaDoubleTypeTag
-    def convertPF = DoubleConverter.convertPF.andThen(_.asInstanceOf[java.lang.Double])
+    def convertPF = DoubleConverter.convertPF
+      .orElse(nullPF)
+      .andThen(_.asInstanceOf[java.lang.Double])
   }
 
   private val StringTypeTag = TypeTag.synchronized {
@@ -243,7 +261,7 @@ object TypeConverter {
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x: Any  => x.toString
-      case null => "null"
+      case null => null
     }
   }
 
@@ -256,6 +274,7 @@ object TypeConverter {
     def convertPF = {
       case x: ByteBuffer => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
+      case null => null
     }
   }
 
@@ -268,6 +287,7 @@ object TypeConverter {
     def convertPF = {
       case x: Array[Byte] => x
       case x: ByteBuffer => ByteBufferUtil.getArray(x)
+      case null => null
     }
   }
 
@@ -284,6 +304,7 @@ object TypeConverter {
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: String => TimestampParser.parse(x)
+      case null => null
     }
   }
 
@@ -293,7 +314,10 @@ object TypeConverter {
 
   implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
     def targetTypeTag = SqlDateTypeTag
-    def convertPF = DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
+    def convertPF = DateConverter.convertPF.andThen {
+      case null => null
+      case d => new java.sql.Date(d.getTime)
+    }
   }
 
   private val JodaDateTypeTag = TypeTag.synchronized {
@@ -302,7 +326,10 @@ object TypeConverter {
 
   implicit object JodaDateConverter extends TypeConverter[DateTime] {
     def targetTypeTag = JodaDateTypeTag
-    def convertPF = DateConverter.convertPF.andThen(new DateTime(_))
+    def convertPF = DateConverter.convertPF.andThen {
+      case null => null
+      case d => new DateTime(d)
+    }
   }
 
   private val GregorianCalendarTypeTag = TypeTag.synchronized {
@@ -316,7 +343,10 @@ object TypeConverter {
       c
     }
     def targetTypeTag = GregorianCalendarTypeTag
-    def convertPF = DateConverter.convertPF.andThen(calendar)
+    def convertPF = DateConverter.convertPF.andThen {
+      case null => null
+      case d => calendar(d)
+    }
   }
 
   private val BigIntTypeTag = TypeTag.synchronized {
@@ -331,6 +361,7 @@ object TypeConverter {
       case x: java.lang.Integer => BigInt(x)
       case x: java.lang.Long => BigInt(x)
       case x: String => BigInt(x)
+      case null => null
     }
   }
 
@@ -346,6 +377,7 @@ object TypeConverter {
       case x: java.lang.Integer => new java.math.BigInteger(x.toString)
       case x: java.lang.Long => new java.math.BigInteger(x.toString)
       case x: String => new java.math.BigInteger(x)
+      case null => null
     }
   }
 
@@ -358,6 +390,7 @@ object TypeConverter {
     def convertPF = {
       case x: Number => BigDecimal(x.toString)
       case x: String => BigDecimal(x)
+      case null => null
     }
   }
 
@@ -370,7 +403,7 @@ object TypeConverter {
     def convertPF = {
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
+      case null => null
     }
   }
 
@@ -383,6 +416,7 @@ object TypeConverter {
     def convertPF = {
       case x: UUID => x
       case x: String => UUID.fromString(x)
+      case null => null
     }
   }
 
@@ -395,6 +429,7 @@ object TypeConverter {
     def convertPF = {
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
+      case null => null
     }
   }
 
@@ -405,6 +440,7 @@ object TypeConverter {
     def targetTypeTag = UDTValueTypeTag
     def convertPF = {
       case x: UDTValue => x
+      case null => null
     }
   }
 
