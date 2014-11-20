@@ -1,4 +1,5 @@
 * Fixed problem with setting a batch size in bytes (#435)
+* Fixed handling of null column values in Java API (#429)
 
 1.1.0 beta 2
  * Fixed bug in Java API which might cause ClassNotFoundException
