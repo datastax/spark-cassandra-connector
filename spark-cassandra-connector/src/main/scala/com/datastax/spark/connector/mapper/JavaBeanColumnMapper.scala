@@ -41,6 +41,8 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
     columnNameOverride.getOrElse(paramName, columnNameForProperty(paramName, tableDef))
   }
 
+  /** Java Beans allow nulls in property values */
+  override protected def allowsNull = true
 }
 
 object JavaBeanColumnMapper {

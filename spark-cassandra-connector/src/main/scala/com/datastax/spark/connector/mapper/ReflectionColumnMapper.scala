@@ -17,6 +17,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
   protected def setterToColumnName(setterName: String, tableDef: TableDef): String
   protected def getterToColumnName(getterName: String, tableDef: TableDef): String
   protected def constructorParamToColumnName(paramName: String, tableDef: TableDef): String
+  protected def allowsNull: Boolean
 
   protected final def camelCaseToUnderscore(str: String): String =
     StringUtils.splitByCharacterTypeCamelCase(str).mkString("_").replaceAll("_+", "_").toLowerCase
@@ -62,6 +63,6 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
       }
     }.toMap
 
-    new SimpleColumnMap(constructor, getters, setters)
+    new SimpleColumnMap(constructor, getters, setters, allowsNull)
   }
 }

@@ -43,6 +43,15 @@ trait TypeConverter[T] extends Serializable {
   }
 }
 
+/** Handles nullable types and converts any null to null. */
+trait NullableTypeConverter[T <: AnyRef] extends TypeConverter[T] {
+  override def convert(obj: Any): T =
+    if (obj != null)
+      super.convert(obj)
+    else
+      null.asInstanceOf[T]
+}
+
 /** Chains together several converters converting to the same type.
   * This way you can extend functionality of any converter to support new input types. */
 class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends TypeConverter[T] {
@@ -96,7 +105,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Boolean]]
   }
 
-  implicit object JavaBooleanConverter extends TypeConverter[java.lang.Boolean] {
+  implicit object JavaBooleanConverter extends NullableTypeConverter[java.lang.Boolean] {
     def targetTypeTag = JavaBooleanTypeTag
     def convertPF = BooleanConverter.convertPF.andThen(_.asInstanceOf[java.lang.Boolean])
   }
@@ -117,7 +126,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Byte]]
   }
 
-  implicit object JavaByteConverter extends TypeConverter[java.lang.Byte] {
+  implicit object JavaByteConverter extends NullableTypeConverter[java.lang.Byte] {
     def targetTypeTag = JavaByteTypeTag
     def convertPF = ByteConverter.convertPF.andThen(_.asInstanceOf[java.lang.Byte])
   }
@@ -138,7 +147,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Short]]
   }
 
-  implicit object JavaShortConverter extends TypeConverter[java.lang.Short] {
+  implicit object JavaShortConverter extends NullableTypeConverter[java.lang.Short] {
     def targetTypeTag = JavaShortTypeTag
     def convertPF = ShortConverter.convertPF.andThen(_.asInstanceOf[java.lang.Short])
   }
@@ -159,7 +168,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Integer]]
   }
 
-  implicit object JavaIntConverter extends TypeConverter[java.lang.Integer] {
+  implicit object JavaIntConverter extends NullableTypeConverter[java.lang.Integer] {
     def targetTypeTag = JavaIntTypeTag
     def convertPF = IntConverter.convertPF.andThen(_.asInstanceOf[java.lang.Integer])
   }
@@ -183,7 +192,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Long]]
   }
 
-  implicit object JavaLongConverter extends TypeConverter[java.lang.Long] {
+  implicit object JavaLongConverter extends NullableTypeConverter[java.lang.Long] {
     def targetTypeTag = JavaLongTypeTag
     def convertPF = LongConverter.convertPF.andThen(_.asInstanceOf[java.lang.Long])
   }
@@ -204,7 +213,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Float]]
   }
 
-  implicit object JavaFloatConverter extends TypeConverter[java.lang.Float] {
+  implicit object JavaFloatConverter extends NullableTypeConverter[java.lang.Float] {
     def targetTypeTag = JavaFloatTypeTag
     def convertPF = FloatConverter.convertPF.andThen(_.asInstanceOf[java.lang.Float])
   }
@@ -225,7 +234,7 @@ object TypeConverter {
     implicitly[TypeTag[java.lang.Double]]
   }
 
-  implicit object JavaDoubleConverter extends TypeConverter[java.lang.Double] {
+  implicit object JavaDoubleConverter extends NullableTypeConverter[java.lang.Double] {
     def targetTypeTag = JavaDoubleTypeTag
     def convertPF = DoubleConverter.convertPF.andThen(_.asInstanceOf[java.lang.Double])
   }
@@ -234,7 +243,7 @@ object TypeConverter {
     implicitly[TypeTag[String]]
   }
 
-  implicit object StringConverter extends TypeConverter[String] {
+  implicit object StringConverter extends NullableTypeConverter[String] {
     def targetTypeTag = StringTypeTag
     def convertPF = {
       case x: Date => TimestampFormatter.format(x)
@@ -243,7 +252,6 @@ object TypeConverter {
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x: Any  => x.toString
-      case null => "null"
     }
   }
 
@@ -251,7 +259,7 @@ object TypeConverter {
     implicitly[TypeTag[ByteBuffer]]
   }
 
-  implicit object ByteBufferConverter extends TypeConverter[ByteBuffer] {
+  implicit object ByteBufferConverter extends NullableTypeConverter[ByteBuffer] {
     def targetTypeTag = ByteBufferTypeTag
     def convertPF = {
       case x: ByteBuffer => x
@@ -263,7 +271,7 @@ object TypeConverter {
     implicitly[TypeTag[Array[Byte]]]
   }
 
-  implicit object ByteArrayConverter extends TypeConverter[Array[Byte]] {
+  implicit object ByteArrayConverter extends NullableTypeConverter[Array[Byte]] {
     def targetTypeTag = ByteArrayTypeTag
     def convertPF = {
       case x: Array[Byte] => x
@@ -275,7 +283,7 @@ object TypeConverter {
     implicitly[TypeTag[Date]]
   }
 
-  implicit object DateConverter extends TypeConverter[Date] {
+  implicit object DateConverter extends NullableTypeConverter[Date] {
     def targetTypeTag = DateTypeTag
     def convertPF = {
       case x: Date => x
@@ -291,7 +299,7 @@ object TypeConverter {
     implicitly[TypeTag[java.sql.Date]]
   }
 
-  implicit object SqlDateConverter extends TypeConverter[java.sql.Date] {
+  implicit object SqlDateConverter extends NullableTypeConverter[java.sql.Date] {
     def targetTypeTag = SqlDateTypeTag
     def convertPF = DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
   }
@@ -300,7 +308,7 @@ object TypeConverter {
     implicitly[TypeTag[DateTime]]
   }
 
-  implicit object JodaDateConverter extends TypeConverter[DateTime] {
+  implicit object JodaDateConverter extends NullableTypeConverter[DateTime] {
     def targetTypeTag = JodaDateTypeTag
     def convertPF = DateConverter.convertPF.andThen(new DateTime(_))
   }
@@ -309,7 +317,7 @@ object TypeConverter {
     implicitly[TypeTag[GregorianCalendar]]
   }
 
-  implicit object GregorianCalendarConverter extends TypeConverter[GregorianCalendar] {
+  implicit object GregorianCalendarConverter extends NullableTypeConverter[GregorianCalendar] {
     private[this] def calendar(date: Date): GregorianCalendar = {
       val c = new GregorianCalendar()
       c.setTime(date)
@@ -323,7 +331,7 @@ object TypeConverter {
     implicitly[TypeTag[BigInt]]
   }
 
-  implicit object BigIntConverter extends TypeConverter[BigInt] {
+  implicit object BigIntConverter extends NullableTypeConverter[BigInt] {
     def targetTypeTag = BigIntTypeTag
     def convertPF = {
       case x: BigInt => x
@@ -338,7 +346,7 @@ object TypeConverter {
     implicitly[TypeTag[java.math.BigInteger]]
   }
 
-  implicit object JavaBigIntegerConverter extends TypeConverter[java.math.BigInteger] {
+  implicit object JavaBigIntegerConverter extends NullableTypeConverter[java.math.BigInteger] {
     def targetTypeTag = JavaBigIntegerTypeTag
     def convertPF = {
       case x: BigInt => x.bigInteger
@@ -353,7 +361,7 @@ object TypeConverter {
     implicitly[TypeTag[BigDecimal]]
   }
 
-  implicit object BigDecimalConverter extends TypeConverter[BigDecimal] {
+  implicit object BigDecimalConverter extends NullableTypeConverter[BigDecimal] {
     def targetTypeTag = BigDecimalTypeTag
     def convertPF = {
       case x: Number => BigDecimal(x.toString)
@@ -365,12 +373,11 @@ object TypeConverter {
     implicitly[TypeTag[java.math.BigDecimal]]
   }
 
-  implicit object JavaBigDecimalConverter extends TypeConverter[java.math.BigDecimal] {
+  implicit object JavaBigDecimalConverter extends NullableTypeConverter[java.math.BigDecimal] {
     def targetTypeTag = JavaBigDecimalTypeTag
     def convertPF = {
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
-      case x => throw new TypeConversionException(s"Cannot convert object $x to $targetTypeName.")
     }
   }
 
@@ -378,7 +385,7 @@ object TypeConverter {
     implicitly[TypeTag[UUID]]
   }
 
-  implicit object UUIDConverter extends TypeConverter[UUID] {
+  implicit object UUIDConverter extends NullableTypeConverter[UUID] {
     def targetTypeTag = UUIDTypeTag
     def convertPF = {
       case x: UUID => x
@@ -390,7 +397,7 @@ object TypeConverter {
     implicitly[TypeTag[InetAddress]]
   }
 
-  implicit object InetAddressConverter extends TypeConverter[InetAddress] {
+  implicit object InetAddressConverter extends NullableTypeConverter[InetAddress] {
     def targetTypeTag = InetAddressTypeTag
     def convertPF = {
       case x: InetAddress => x
@@ -401,7 +408,7 @@ object TypeConverter {
   val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
 
   // TODO: This is a stub. Currently doesn't do any conversion at all.
-  implicit object UDTValueConverter extends TypeConverter[UDTValue] {
+  implicit object UDTValueConverter extends NullableTypeConverter[UDTValue] {
     def targetTypeTag = UDTValueTypeTag
     def convertPF = {
       case x: UDTValue => x

@@ -101,6 +101,12 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
       val columnName = getColumnName(row, columnRef)
       val converter = setterConverters(setter.getName)
       val convertedValue = convert(columnValue, columnName, converter)
+      if (!columnMap.allowsNull && convertedValue == null) {
+        throw new NullPointerException(
+          "Unexpected null value of column " + columnName + ". " +
+            "If you want to receive null values from Cassandra, please wrap the column type into Option " +
+            "or use JavaBeanColumnMapper")
+      }
       setter.invoke(obj, convertedValue)
     }
     obj

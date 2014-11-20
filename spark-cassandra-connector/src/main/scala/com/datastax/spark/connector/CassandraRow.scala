@@ -89,7 +89,11 @@ final class CassandraRow(data: IndexedSeq[AnyRef], columnNames: IndexedSeq[Strin
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   def get[T](index: Int)(implicit c: TypeConverter[T]): T =
-    c.convert(data(index))
+    c.convert(data(index)) match {
+      case null => throw new NullPointerException(
+        "Unexpected null value of column " + index + ". Use get[Option[...]] to receive null values.")
+      case notNull => notNull
+    }
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/

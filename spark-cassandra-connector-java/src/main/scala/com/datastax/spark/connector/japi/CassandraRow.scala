@@ -26,22 +26,22 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
-  def get[T](index: Int, tc: TypeConverter[T]): T =
+  def get[T <: AnyRef](index: Int, tc: TypeConverter[T]): T =
     _get(index)(tc)
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
-  def get[T](name: String, tc: TypeConverter[T]): T =
+  def get[T <: AnyRef](name: String, tc: TypeConverter[T]): T =
     _get(name)(tc)
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
-  private def _get[T](index: Int)(implicit tc: TypeConverter[T]): T =
+  private def _get[T <: AnyRef](index: Int)(implicit tc: TypeConverter[T]): T =
     tc.convert(data(index))
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
-  private def _get[T](name: String)(implicit tc: TypeConverter[T]): T =
+  private def _get[T  <: AnyRef](name: String)(implicit tc: TypeConverter[T]): T =
     tc.convert(data(_indexOfOrThrow(name)))
 
   /** Equivalent to `getAny` */
@@ -146,8 +146,7 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * A null list is converted to an empty collection.
     * Items of the list are converted to the given type.
     * This method can be also used to read `set` and `map` column types.
-    * For `map`, the list items are converted to key-value pairs.
-    * @tparam T type of the list item, must be given explicitly. */
+    * For `map`, the list items are converted to key-value pairs.*/
   def getList(index: Int) = _get[JList[AnyRef]](index)
   def getList(name: String) = _get[JList[AnyRef]](name)
 
@@ -158,8 +157,7 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
     * A null set is converted to an empty collection.
     * Items of the set are converted to the given type.
     * This method can be also used to read `list` and `map` column types.
-    * For `map`, the set items are converted to key-value pairs.
-    * @tparam T type of the set item, must be given explicitly. */
+    * For `map`, the set items are converted to key-value pairs. */
   def getSet(index: Int) = _get[JSet[AnyRef]](index)
   def getSet(name: String) = _get[JSet[AnyRef]](name)
 
@@ -168,9 +166,7 @@ final class CassandraRow(data: Array[AnyRef], columnNames: Array[String]) extend
 
   /** Reads a `map` column value.
     * A null map is converted to an empty collection.
-    * Keys and values of the map are converted to the given types.
-    * @tparam K type of keys, must be given explicitly.
-    * @tparam V type of values, must be given explicitly.*/
+    * Keys and values of the map are converted to the given types. */
   def getMap(index: Int) = _get[JMap[AnyRef, AnyRef]](index)
   def getMap(name: String) = _get[JMap[AnyRef, AnyRef]](name)
 
