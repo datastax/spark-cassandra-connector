@@ -1,3 +1,5 @@
+* Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
+
 1.1.0 rc 1
 * Fixed problem with setting a batch size in bytes (#435)
 * Fixed handling of null column values in Java API (#429)
