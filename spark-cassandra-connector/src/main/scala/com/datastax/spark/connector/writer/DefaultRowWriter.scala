@@ -6,8 +6,6 @@ import com.datastax.spark.connector.mapper.{IndexedColumnRef, NamedColumnRef, Co
 import com.datastax.spark.connector.types.TypeConverter
 
 import scala.collection.{Map, Seq}
-import scala.reflect.ClassTag
-
 import scala.collection.JavaConversions._
 
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].

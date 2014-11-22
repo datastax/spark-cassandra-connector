@@ -5,10 +5,16 @@ import com.datastax.spark.connector.BatchSize;
 import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.writer.RowWriterFactory;
+import com.datastax.spark.connector.writer.TTLOption$;
+import com.datastax.spark.connector.writer.TimestampOption$;
 import com.datastax.spark.connector.writer.WriteConf;
 import org.apache.spark.SparkConf;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 import java.io.Serializable;
+import java.util.Date;
+import java.util.Objects;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.allColumns;
 
@@ -172,7 +178,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
         public WriterBuilder withBatchSize(BatchSize batchSize) {
             if (writeConf.batchSize() != batchSize)
                 return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(batchSize, writeConf.consistencyLevel(), writeConf.parallelismLevel())
+                        new WriteConf(batchSize, writeConf.consistencyLevel(), writeConf.parallelismLevel()
+                                , writeConf.ttl(), writeConf.timestamp())
                 );
             else
                 return this;
@@ -189,7 +196,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
         public WriterBuilder withConsistencyLevel(ConsistencyLevel consistencyLevel) {
             if (writeConf.consistencyLevel() != consistencyLevel)
                 return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), consistencyLevel, writeConf.parallelismLevel())
+                        new WriteConf(writeConf.batchSize(), consistencyLevel, writeConf.parallelismLevel(),
+                                writeConf.ttl(), writeConf.timestamp())
                 );
             else
                 return this;
@@ -206,7 +214,83 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
         public WriterBuilder withParallelismLevel(int parallelismLevel) {
             if (writeConf.parallelismLevel() != parallelismLevel)
                 return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), parallelismLevel)
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), parallelismLevel,
+                                writeConf.ttl(), writeConf.timestamp())
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withConstantTimestamp(long timeInMicroseconds) {
+            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.constant(timeInMicroseconds)))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                writeConf.ttl(), TimestampOption$.MODULE$.constant(timeInMicroseconds))
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withConstantTimestamp(Date timestamp) {
+            long timeInMicroseconds = timestamp.getTime() * 1000L;
+            return withConstantTimestamp(timeInMicroseconds);
+        }
+
+        public WriterBuilder withConstantTimestamp(DateTime timestamp) {
+            long timeInMicroseconds = timestamp.getMillis() * 1000L;
+            return withConstantTimestamp(timeInMicroseconds);
+        }
+
+        public WriterBuilder withAutoTimestamp() {
+            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.auto()))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                writeConf.ttl(), TimestampOption$.MODULE$.auto())
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withPerRowTimestamp(String placeholder) {
+            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.perRow(placeholder)))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                writeConf.ttl(), TimestampOption$.MODULE$.perRow(placeholder))
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withConstantTTL(int ttlInSeconds) {
+            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.constant(ttlInSeconds)))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                TTLOption$.MODULE$.constant(ttlInSeconds), writeConf.timestamp())
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withConstantTTL(Duration ttl) {
+            int secs = (int) ttl.getStandardSeconds();
+            return withConstantTTL(secs);
+        }
+
+        public WriterBuilder withAutoTTL() {
+            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.auto()))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                TTLOption$.MODULE$.auto(), writeConf.timestamp())
+                );
+            else
+                return this;
+        }
+
+        public WriterBuilder withPerRowTTL(String placeholder) {
+            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.perRow(placeholder)))
+                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
+                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
+                                TTLOption$.MODULE$.perRow(placeholder), writeConf.timestamp())
                 );
             else
                 return this;
