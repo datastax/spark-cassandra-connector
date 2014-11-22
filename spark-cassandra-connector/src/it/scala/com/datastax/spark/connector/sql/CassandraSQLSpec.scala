@@ -62,6 +62,9 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_collection (a INT, b SET<INT>, c MAP<INT, INT>, PRIMARY KEY (a))")
     session.execute("INSERT INTO sql_test.test_collection (a, b, c) VALUES (1, {1,2,3}, {1:2, 2:3})")
 
+    session.execute("CREATE TYPE sql_test.address (street text, city text, zip int)")
+    session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
+    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
   it should "allow to select all rows" in {
@@ -328,5 +331,15 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     val result = cc.sql("INSERT INTO test_data_type1 SELECT * FROM test_data_type").collect()
     val result1 = cc.sql("SELECT * FROM test_data_type1").collect()
     result1 should have length 1
+  }
+
+  it should "allow to select specified non-UDT columns from a table containing some UDT columns" in {
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc.sql("SELECT key, name FROM udts").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+    row.getString(1) should be ("name")
   }
 }

@@ -1,4 +1,5 @@
 * Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
+* Fix SparkSQL failures caused by presence of non-selected columns of UDT type in the table.
 
 1.1.0 rc 1
 * Fixed problem with setting a batch size in bytes (#435)
