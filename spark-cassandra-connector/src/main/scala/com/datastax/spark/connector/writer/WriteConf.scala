@@ -1,10 +1,12 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.spark.connector.cql.{RegularColumn, ColumnDef}
+import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.{BytesInBatch, RowsInBatch, BatchSize}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
-import com.datastax.driver.core.ConsistencyLevel
+import com.datastax.driver.core.{DataType, ConsistencyLevel}
 
 /** Write settings for RDD
   *
@@ -13,12 +15,32 @@ import com.datastax.driver.core.ConsistencyLevel
   *                         
   * @param consistencyLevel consistency level for writes, default LOCAL_ONE
   * @param parallelismLevel number of batches to be written in parallel
+  * @param ttl       the default TTL value which is used when it is defined (in seconds)
+  * @param timestamp the default timestamp value which is used when it is defined (in microseconds)
   */
 
 case class WriteConf(
   batchSize: BatchSize = BatchSize.Automatic,
   consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
-  parallelismLevel: Int = WriteConf.DefaultParallelismLevel)
+  parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
+  ttl: WriteOption[Int] = TTLOption.auto,
+  timestamp: WriteOption[Long] = TimestampOption.auto) {
+
+  private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
+    case PerRowWriteOption(placeholder) => placeholder
+  }
+
+  private[writer] val optionsAsColumns: (String, String) => Seq[ColumnDef] = { (keyspace, table) =>
+    def toRegularColDef(opt: WriteOption[_], dataType: DataType) = opt match {
+      case PerRowWriteOption(placeholder) =>
+        Some(ColumnDef(keyspace, table, placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
+      case _ => None
+    }
+
+    Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
+  }
+
+}
 
 
 object WriteConf {

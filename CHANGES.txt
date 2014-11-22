@@ -1,3 +1,7 @@
+1.2.0
+* Added support for TTL and timestamp in the writer (#153)
+
+1.1.0
 * Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
 
 1.1.0 rc 1
