@@ -13,7 +13,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
 
   import LocalNodeFirstLoadBalancingPolicy._
 
-  private var liveNodes = Set.empty[Host]
+  private var nodes = Set.empty[Host]
   private var dcToUse = ""
   private val random = new Random
 
@@ -28,7 +28,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     }
 
   override def init(cluster: Cluster, hosts: java.util.Collection[Host]) {
-    liveNodes = hosts.filter(_.isUp).toSet
+    nodes = hosts.toSet
     // use explicitly set DC if available, otherwise see if all contact points have same DC
     // if so, use that DC; if not, throw an error
     dcToUse = localDC match { 
@@ -43,21 +43,21 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
   }
 
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
-    sortNodesByProximityAndStatus(contactPoints, liveNodes).iterator
+    sortNodesByProximityAndStatus(contactPoints, nodes).iterator
   }
 
   override def onAdd(host: Host) {
     // The added host might be a "better" version of a host already in the set.
     // The nodes added in the init call don't have DC and rack set.
     // Therefore we want to really replace the object now, to get full information on DC:
-    liveNodes -= host
-    liveNodes += host
+    nodes -= host
+    nodes += host
   }
+  override def onRemove(host: Host) { nodes -= host }
+  override def onSuspected(host: Host) = { nodes += host }
 
-  override def onRemove(host: Host) { liveNodes -= host }
   override def onUp(host: Host) = { }
   override def onDown(host: Host) = { }
-  override def onSuspected(host: Host) = { liveNodes += host }
 
   private def sameDCHostDistance(host: Host) =
     if (isLocalHost(host))
