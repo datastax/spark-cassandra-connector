@@ -11,8 +11,8 @@ class GenericRowWriter(table: TableDef, selectedColumns: Seq[String])
     val index = data.indexOf(columnName)
     if (index >= 0) {
       val converter = table.columnByName(columnName).columnType.converterToCassandra
-      val value = data.get[AnyRef](index)
-      converter.convert(value).asInstanceOf[AnyRef]
+      val value = data.getRaw(index)
+      converter.convert(value)
     }
     else
       null
