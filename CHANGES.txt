@@ -1,3 +1,5 @@
+* Fix NPE when saving CassandraRows containing null values (#446)
+
 1.1.0 rc 2
 * Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
 * Fix SparkSQL failures caused by presence of non-selected columns of UDT type in the table.
