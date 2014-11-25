@@ -89,40 +89,53 @@ final class CassandraRow(data: IndexedSeq[AnyRef], columnNames: IndexedSeq[Strin
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   def get[T](index: Int)(implicit c: TypeConverter[T]): T =
-    c.convert(data(index))
+    c.convert(data(index)) match {
+      case null => throw new NullPointerException(
+        "Unexpected null value of column " + index + ". Use get[Option[...]] to receive null values.")
+      case notNull => notNull
+    }
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
-  
-  /** Equivalent to `getAny` */
-  def apply(index: Int): Any = getAny(index)
-  def apply(name: String): Any = getAny(name)
-
-  def get(index: Int): AnyRef = getAnyRef(index)
-  def get(name: String): AnyRef = getAnyRef(name)
 
   /** Returns a column value without applying any conversion.
     * The underlying type is the same as the type returned by the low-level Cassandra driver.
     * May return Java null. */
-  def getAny(index: Int) = get[Any](index)
-  def getAny(name: String) = get[Any](name)
+  @deprecated("Use getRaw instead", "1.1")
+  def getAny(index: Int) = getRaw(index)
+  @deprecated("Use getRaw instead", "1.1")
+  def getAny(name: String) = getRaw(name)
 
   /** Returns a column value without applying any conversion, besides converting a null to a None.
     * The underlying type is the same as the type returned by the low-level Cassandra driver.*/
-  def getAnyOption(index: Int) = get[Option[Any]](index)
-  def getAnyOption(name: String) = get[Option[Any]](name)
+  @deprecated("Use getRaw and wrap the result in an Option instead", "1.1")
+  def getAnyOption(index: Int) = Option(getRaw(index))
+  @deprecated("Use getRaw and wrap the result in an Option instead", "1.1")
+  def getAnyOption(name: String) = Option(getRaw(name))
 
-  /** Returns a column value by index without applying any conversion.
-    * The underlying type is the same as the type returned by the low-level Cassandra driver. */
-  def getAnyRef(index: Int) = get[AnyRef](index)
-  def getAnyRef(name: String) = get[AnyRef](name)
+  /** Returns a column value without applying any conversion.
+    * The underlying type is the same as the type returned by the low-level Cassandra driver.
+    * May return Java null. */
+  @deprecated("Use getRaw instead", "1.1")
+  def getAnyRef(index: Int) = getRaw(index)
+  @deprecated("Use getRaw instead", "1.1")
+  def getAnyRef(name: String) = getRaw(name)
 
   /** Returns a column value without applying any conversion, besides converting a null to a None.
-    * The underlying type is the same as the type returned by the low-level Cassandra driver. */
-  def getAnyRefOption(index: Int) = get[Option[AnyRef]](index)
-  def getAnyRefOption(name: String) = get[Option[AnyRef]](name)
+    * The underlying type is the same as the type returned by the low-level Cassandra driver.*/
+  @deprecated("Use getRaw and wrap the result in an Option instead", "1.1")
+  def getAnyRefOption(index: Int) = Option(getRaw(index))
+  @deprecated("Use getRaw and wrap the result in an Option instead", "1.1")
+  def getAnyRefOption(name: String) = Option(getRaw(name))
+
+  /** Returns a column value by index without applying any conversion.
+    * The underlying type is the same as the type returned by the low-level Cassandra driver,
+    * is implementation defined and may change in the future.
+    * Cassandra nulls are returned as Scala nulls. */
+  def getRaw(index: Int): AnyRef = data(index)
+  def getRaw(name: String): AnyRef = data(_indexOfOrThrow(name))
 
   /** Returns a `bool` column value. Besides working with `bool` Cassandra type, it can also read
     * numbers and strings. Non-zero numbers are converted to `true`, zero is converted to `false`.

@@ -35,7 +35,7 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
 
 case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) extends CollectionColumnType[Map[K, V]] {
   @transient
-  lazy val converterToCassandra: TypeConverter[_] =
+  lazy val converterToCassandra =
     new OptionToNullConverter(
       TypeConverter.javaHashMapConverter(keyType.converterToCassandra, valueType.converterToCassandra))
 
