@@ -47,7 +47,7 @@ The Twitter streaming demo accepts java system properties passed in on the comma
 Default configurations are set in the /resources/application.conf file as fallbacks. 
 One could run like this, for instance:
 
-    sbt -Dspark.master="mySparkUri" twitter/run
+    sbt -Dspark.master="mySparkUri" twitter-streaming/run
     
     -Dspark.master, default is local[*]
     -Dspark.master, default is localhost
@@ -77,7 +77,7 @@ And then select which demo you want:
 #### Running The Kafka Streaming Demo
 On the command line at the root of `spark-cassandra-connector`:
 
-    sbt kafka/run
+    sbt kafka-streaming/run
       
 #### Running The Twitter Streaming Demo
 First you need to set your Twitter auth credentials. This is required by Twitter.
@@ -102,11 +102,11 @@ To set Twitter credentials in your runtime environment:
 ##### To Run
 On the command line at the root of `spark-cassandra-connector`:
 
-    sbt twitter/run
+    sbt twitter-streaming/run
         
 Or to run with any config overrides:
 
-    sbt -Dspark.master="value" twitter/run
+    sbt -Dspark.master="value" twitter-streaming/run
   
 
 ### With Local Spark Standalone  
