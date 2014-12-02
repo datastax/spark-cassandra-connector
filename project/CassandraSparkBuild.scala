@@ -65,9 +65,9 @@ object Dependencies {
     val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"                 // ApacheV2
     val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"                 // ApacheV2
     val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"                 // ApacheV2
-    val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra        exclude("com.google.guava", "guava")                           // ApacheV2
-    val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra        exclude("com.google.guava", "guava")                           // ApacheV2
-    val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver  exclude("com.google.guava", "guava")            withSources()  // ApacheV2
+    val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra        exclude("com.google.guava", "guava") // ApacheV2
+    val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra        exclude("com.google.guava", "guava") // ApacheV2
+    val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver  exclude("com.google.guava", "guava") // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                                // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"                 // ApacheV2
     val guava               = "com.google.guava"        % "guava"                  % Guava
@@ -79,7 +79,7 @@ object Dependencies {
     /* To allow spark artifact inclusion in the demo module at runtime, we set 'provided'
        scope on the connector below, specifically, versus globally here. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark exclude("com.google.guava", "guava") // ApacheV2
-    val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark withSources() exclude("com.google.guava", "guava") // ApacheV2
+    val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark exclude("com.google.guava", "guava") // ApacheV2
     val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
     val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
     val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core")
@@ -91,14 +91,14 @@ object Dependencies {
 
     object Embedded {
       val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"          % Akka                                      // ApacheV2
-      val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka withSources() exclude("org.slf4j", "slf4j-simple")                      // ApacheV2
+      val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka exclude("org.slf4j", "slf4j-simple")                      // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra exclude("ch.qos.logback", "logback-classic") exclude("ch.qos.logback", "logback-core")                               // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"            % JOpt // For kafka command line work
       val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler")          // ApacheV2
     }
 
     object Demos {
-      val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka" % Spark withSources() exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
+      val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka" % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
       val twitterStreaming  = "org.apache.spark"        %% "spark-streaming-twitter" % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
     }
 
