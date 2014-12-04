@@ -23,8 +23,8 @@ case class WriteConf(
   batchSize: BatchSize = BatchSize.Automatic,
   consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
   parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
-  ttl: WriteOption[Int] = TTLOption.auto,
-  timestamp: WriteOption[Long] = TimestampOption.auto) {
+  ttl: TTLOption = TTLOption.auto,
+  timestamp: TimestampOption = TimestampOption.auto) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case PerRowWriteOption(placeholder) => placeholder

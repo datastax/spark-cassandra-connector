@@ -9,45 +9,49 @@ import scala.concurrent.duration.{Duration => ScalaDuration}
 
 sealed trait WriteOption[+T]
 
+sealed trait TTLOption extends WriteOption[Int]
+
+sealed trait TimestampOption extends WriteOption[Long]
+
 case class StaticWriteOption[T](value: T) extends WriteOption[T]
 
 case class PerRowWriteOption[T](placeholder: String) extends WriteOption[T]
 
-case object AutoWriteOption extends WriteOption[Nothing]
-
 object TTLOption {
-  def auto: WriteOption[Int] = AutoWriteOption
-         
-  def forever = StaticWriteOption[Int](0)
 
-  def constant(ttl: Int): StaticWriteOption[Int] = {
+  case object auto extends TTLOption
+
+  def forever: TTLOption = new StaticWriteOption[Int](0) with TTLOption
+
+  def constant(ttl: Int): TTLOption = {
     require(ttl > 0, "Explicitly specified TTL must be greater than zero.")
-    StaticWriteOption[Int](ttl)
+    new StaticWriteOption[Int](ttl) with TTLOption
   }
 
-  def constant(ttl: SparkDuration): StaticWriteOption[Int] = constant((ttl.milliseconds / 1000L).toInt)
+  def constant(ttl: SparkDuration): TTLOption = constant((ttl.milliseconds / 1000L).toInt)
 
-  def constant(ttl: JodaDuration): StaticWriteOption[Int] = constant(ttl.getStandardSeconds.toInt)
+  def constant(ttl: JodaDuration): TTLOption = constant(ttl.getStandardSeconds.toInt)
 
-  def constant(ttl: ScalaDuration): StaticWriteOption[Int] = if (ttl.isFinite()) constant(ttl.toSeconds.toInt) else forever
+  def constant(ttl: ScalaDuration): TTLOption = if (ttl.isFinite()) constant(ttl.toSeconds.toInt) else forever
 
-  def perRow(placeholder: String): PerRowWriteOption[Int] =
-    PerRowWriteOption[Int](placeholder)
+  def perRow(placeholder: String): TTLOption =
+    new PerRowWriteOption[Int](placeholder) with TTLOption
 
 }
 
 object TimestampOption {
-  def auto: WriteOption[Long] = AutoWriteOption
 
-  def constant(microseconds: Long): StaticWriteOption[Long] = {
+  case object auto extends TimestampOption
+
+  def constant(microseconds: Long): TimestampOption = {
     require(microseconds > 0, "Explicitly specified time must be greater than zero.")
-    StaticWriteOption[Long](microseconds)
+    new StaticWriteOption[Long](microseconds) with TimestampOption
   }
 
-  def constant(timestamp: Date): StaticWriteOption[Long] = constant(timestamp.getTime * 1000L)
+  def constant(timestamp: Date): TimestampOption = constant(timestamp.getTime * 1000L)
 
-  def constant(timestamp: DateTime): StaticWriteOption[Long] = constant(timestamp.getMillis * 1000L)
+  def constant(timestamp: DateTime): TimestampOption = constant(timestamp.getMillis * 1000L)
 
-  def perRow(placeholder: String): PerRowWriteOption[Long] =
-    PerRowWriteOption[Long](placeholder)
+  def perRow(placeholder: String): TimestampOption =
+    new PerRowWriteOption[Long](placeholder) with TimestampOption
 }
