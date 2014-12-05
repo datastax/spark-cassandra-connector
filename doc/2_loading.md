@@ -56,8 +56,8 @@ val firstRow = rdd.first
 Get the number of columns and column names:
 
 ```scala
-rdd.columnNames    // Stream(word, count) 
-rdd.size           // 2 
+firstRow.columnNames    // Stream(word, count) 
+firstRow.size           // 2 
 ```
 
 Use one of `getXXX` getters to obtain a column value converted to desired type: 
