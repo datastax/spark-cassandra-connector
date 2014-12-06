@@ -15,7 +15,7 @@
  */
 
 object Versions {
-  val Akka            = "2.2.3"// upgrade asap
+  val Akka            = "2.2.3"//can't upgrade to 0.8.2 until spark does
   val Cassandra       = "2.1.2"
   val CassandraDriver = "2.1.3"
   val CommonsIO       = "2.4"
@@ -26,13 +26,13 @@ object Versions {
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val JOpt            = "3.2"//4.7
-  val Kafka           = "0.8.0"// TODO issues w encoder/decoder ATM "0.8.1.1"
+  val Kafka           = "0.8.0"//can't upgrade to 0.8.2 until spark does
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
   val Scala           = "2.10.4"
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
-  val Spark           = "1.1.0"
+  val Spark           = "1.1.1"
 
 }
