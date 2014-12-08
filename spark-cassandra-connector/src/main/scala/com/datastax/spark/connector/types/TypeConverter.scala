@@ -631,14 +631,13 @@ object TypeConverter {
     new JavaHashMapConverter[K, V]
 
   /** Converts Scala Options to Java nullable references. Used when saving data to Cassandra. */
-  class OptionToNullConverter(nestedConverter: TypeConverter[_]) extends TypeConverter[AnyRef] {
+  class OptionToNullConverter(nestedConverter: TypeConverter[_]) extends NullableTypeConverter[AnyRef] {
 
     def targetTypeTag = implicitly[TypeTag[AnyRef]]
 
     def convertPF = {
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
       case None => null
-      case null => null
       case x => nestedConverter.convert(x).asInstanceOf[AnyRef]
     }
   }

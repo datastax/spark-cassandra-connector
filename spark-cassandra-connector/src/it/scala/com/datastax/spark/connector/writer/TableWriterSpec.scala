@@ -34,6 +34,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
       session.execute(s"CREATE TABLE IF NOT EXISTS write_test.key_value_$x (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
     }
 
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.blobs (key INT PRIMARY KEY, b blob)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))")
@@ -123,6 +124,22 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
       result should have size 1
       for (row <- result) {
         row.getString(2) should be (null)
+      }
+    }
+  }
+
+  it should "write null values" in {
+    val key = 1.asInstanceOf[AnyRef]
+    val row = new CassandraRow(IndexedSeq(key, null, null), IndexedSeq("key", "text_value", "int_value"))
+
+    sc.parallelize(Seq(row)).saveToCassandra("write_test", "nulls")
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT * FROM write_test.nulls").all()
+      result should have size 1
+      for (r <- result) {
+        r.getInt(0) shouldBe key
+        r.isNull(1) shouldBe true
+        r.isNull(2) shouldBe true
       }
     }
   }

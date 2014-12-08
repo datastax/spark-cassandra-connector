@@ -38,7 +38,7 @@ object Settings extends Build {
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.1.0-SNAPSHOT",
+    version in ThisBuild := "1.1.1-SNAPSHOT",
     scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
@@ -79,11 +79,6 @@ object Settings extends Build {
   lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
   val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
 
-  /* sbt spark-cassandra-connector/it:itClusterTask 
-  All artifacts:
-  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-it_2.10-1.1.0-SNAPSHOT.jar,
-  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector_2.10-1.1.0-SNAPSHOT.jar,
-  /Users/helena/development/spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-test_2.10-1.1.0-SNAPSHOT.jar*/
   val allArtifacts = mutable.HashSet[String]()
   lazy val jarsInCluster = Seq(
     itClusterTask := {

@@ -11,7 +11,7 @@ trait ColumnType[T] extends Serializable {
 
   /** Returns a converter that converts values to the type of this column expected by the
     * Cassandra Java driver when saving the row.*/
-  def converterToCassandra: TypeConverter[_]
+  def converterToCassandra: TypeConverter[_ <: AnyRef]
 
   /** Returns a converter that converts values to the Scala type associated with this column. */
   lazy val converterToScala: TypeConverter[T] =

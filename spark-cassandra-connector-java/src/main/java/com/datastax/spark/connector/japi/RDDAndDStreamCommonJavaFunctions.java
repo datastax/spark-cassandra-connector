@@ -4,10 +4,7 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.spark.connector.BatchSize;
 import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.writer.RowWriterFactory;
-import com.datastax.spark.connector.writer.TTLOption$;
-import com.datastax.spark.connector.writer.TimestampOption$;
-import com.datastax.spark.connector.writer.WriteConf;
+import com.datastax.spark.connector.writer.*;
 import org.apache.spark.SparkConf;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -177,10 +174,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withBatchSize(BatchSize batchSize) {
             if (writeConf.batchSize() != batchSize)
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(batchSize, writeConf.consistencyLevel(), writeConf.parallelismLevel()
-                                , writeConf.ttl(), writeConf.timestamp())
-                );
+                return withWriteConf(new WriteConf(batchSize, writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -195,10 +190,8 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withConsistencyLevel(ConsistencyLevel consistencyLevel) {
             if (writeConf.consistencyLevel() != consistencyLevel)
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), consistencyLevel, writeConf.parallelismLevel(),
-                                writeConf.ttl(), writeConf.timestamp())
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), consistencyLevel,
+                                writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -213,85 +206,145 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withParallelismLevel(int parallelismLevel) {
             if (writeConf.parallelismLevel() != parallelismLevel)
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), parallelismLevel,
-                                writeConf.ttl(), writeConf.timestamp())
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                parallelismLevel, writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has custom write timestamp
+         * changed to a value specified in microseconds.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withConstantTimestamp(long timeInMicroseconds) {
             if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.constant(timeInMicroseconds)))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                writeConf.ttl(), TimestampOption$.MODULE$.constant(timeInMicroseconds))
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), writeConf.ttl(),
+                                TimestampOption$.MODULE$.constant(timeInMicroseconds)));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has custom write timestamp
+         * changed to a specified value.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withConstantTimestamp(Date timestamp) {
             long timeInMicroseconds = timestamp.getTime() * 1000L;
             return withConstantTimestamp(timeInMicroseconds);
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has custom write timestamp
+         * changed to a specified value.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withConstantTimestamp(DateTime timestamp) {
             long timeInMicroseconds = timestamp.getMillis() * 1000L;
             return withConstantTimestamp(timeInMicroseconds);
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has write timestamp set
+         * to use automatic value set by Cassandra.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withAutoTimestamp() {
-            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.auto()))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                writeConf.ttl(), TimestampOption$.MODULE$.auto())
-                );
+            if (!Objects.equals(writeConf.timestamp(), TimestampOption.auto$.MODULE$))
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), writeConf.ttl(), TimestampOption.auto$.MODULE$));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has write timestamp set
+         * to a placeholder which will be filled-in by mapper.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withPerRowTimestamp(String placeholder) {
             if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.perRow(placeholder)))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                writeConf.ttl(), TimestampOption$.MODULE$.perRow(placeholder))
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                        writeConf.parallelismLevel(), writeConf.ttl(), TimestampOption$.MODULE$.perRow(placeholder)));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has TTL set to a given
+         * number of seconds.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withConstantTTL(int ttlInSeconds) {
             if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.constant(ttlInSeconds)))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                TTLOption$.MODULE$.constant(ttlInSeconds), writeConf.timestamp())
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), TTLOption$.MODULE$.constant(ttlInSeconds),
+                                writeConf.timestamp()));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has TTL set to a given
+         * duration.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withConstantTTL(Duration ttl) {
             int secs = (int) ttl.getStandardSeconds();
             return withConstantTTL(secs);
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has write TTL set
+         * to use automatic value set by Cassandra.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withAutoTTL() {
-            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.auto()))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                TTLOption$.MODULE$.auto(), writeConf.timestamp())
-                );
+            if (!Objects.equals(writeConf.ttl(), TTLOption.auto$.MODULE$))
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), TTLOption.auto$.MODULE$, writeConf.timestamp()));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has TTL set to a placeholder
+         * which will be filled-in by mapper.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
         public WriterBuilder withPerRowTTL(String placeholder) {
             if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.perRow(placeholder)))
-                return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, columnSelector, connector,
-                        new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(), writeConf.parallelismLevel(),
-                                TTLOption$.MODULE$.perRow(placeholder), writeConf.timestamp())
-                );
+                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
+                                writeConf.parallelismLevel(), TTLOption$.MODULE$.perRow(placeholder), writeConf.timestamp()));
             else
                 return this;
         }
