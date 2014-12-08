@@ -212,6 +212,19 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
                 return this;
         }
 
+
+        private WriterBuilder withTimestamp(TimestampOption timestamp) {
+            return Objects.equals(writeConf.timestamp(), timestamp)
+                ? this
+                : withWriteConf(new WriteConf(
+                    writeConf.batchSize(),
+                    writeConf.consistencyLevel(),
+                    writeConf.parallelismLevel(),
+                    writeConf.ttl(),
+                    timestamp));
+        }
+
+
         /**
          * Returns a copy of this builder with the new write configuration which has custom write timestamp
          * changed to a value specified in microseconds.
@@ -221,12 +234,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withConstantTimestamp(long timeInMicroseconds) {
-            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.constant(timeInMicroseconds)))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                                writeConf.parallelismLevel(), writeConf.ttl(),
-                                TimestampOption$.MODULE$.constant(timeInMicroseconds)));
-            else
-                return this;
+            return withTimestamp(TimestampOption$.MODULE$.constant(timeInMicroseconds));
         }
 
         /**
@@ -264,11 +272,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withAutoTimestamp() {
-            if (!Objects.equals(writeConf.timestamp(), TimestampOption.auto$.MODULE$))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                                writeConf.parallelismLevel(), writeConf.ttl(), TimestampOption.auto$.MODULE$));
-            else
-                return this;
+            return withTimestamp(TimestampOption.auto$.MODULE$);
         }
 
         /**
@@ -280,11 +284,19 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withPerRowTimestamp(String placeholder) {
-            if (!Objects.equals(writeConf.timestamp(), TimestampOption$.MODULE$.perRow(placeholder)))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                        writeConf.parallelismLevel(), writeConf.ttl(), TimestampOption$.MODULE$.perRow(placeholder)));
-            else
-                return this;
+            return withTimestamp(TimestampOption$.MODULE$.perRow(placeholder));
+        }
+
+
+        private WriterBuilder withTTL(TTLOption ttl) {
+            return Objects.equals(writeConf.ttl(), ttl)
+                ? this
+                : withWriteConf(new WriteConf(
+                    writeConf.batchSize(),
+                    writeConf.consistencyLevel(),
+                    writeConf.parallelismLevel(),
+                    ttl,
+                    writeConf.timestamp()));
         }
 
         /**
@@ -296,12 +308,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withConstantTTL(int ttlInSeconds) {
-            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.constant(ttlInSeconds)))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                                writeConf.parallelismLevel(), TTLOption$.MODULE$.constant(ttlInSeconds),
-                                writeConf.timestamp()));
-            else
-                return this;
+            return withTTL(TTLOption$.MODULE$.constant(ttlInSeconds));
         }
 
         /**
@@ -326,11 +333,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withAutoTTL() {
-            if (!Objects.equals(writeConf.ttl(), TTLOption.auto$.MODULE$))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                                writeConf.parallelismLevel(), TTLOption.auto$.MODULE$, writeConf.timestamp()));
-            else
-                return this;
+            return withTTL(TTLOption.auto$.MODULE$);
         }
 
         /**
@@ -342,11 +345,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withPerRowTTL(String placeholder) {
-            if (!Objects.equals(writeConf.ttl(), TTLOption$.MODULE$.perRow(placeholder)))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.consistencyLevel(),
-                                writeConf.parallelismLevel(), TTLOption$.MODULE$.perRow(placeholder), writeConf.timestamp()));
-            else
-                return this;
+            return withTTL(TTLOption$.MODULE$.perRow(placeholder));
         }
 
         /**
