@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{ColumnDef, CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
@@ -24,18 +24,46 @@ class TableWriter[T] private (
 
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
-  val columnNames = rowWriter.columnNames
+  val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
   val columns = columnNames.map(tableDef.columnByName)
   val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
+
+  val defaultTTL = writeConf.ttl match {
+    case x: StaticWriteOption[Int] => Some(x.value)
+    case _: PerRowWriteOption[Int] => None
+    case TTLOption.auto => None
+  }
+
+  val defaultTimestamp = writeConf.timestamp match {
+    case x: StaticWriteOption[Long] => Some(x.value)
+    case _: PerRowWriteOption[Long] => None
+    case TimestampOption.auto => None
+  }
 
   private def quote(name: String): String =
     "\"" + name + "\""
 
-  private lazy val queryTemplateUsingInsert: String = {
+  private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
     val columnSpec = quotedColumnNames.mkString(", ")
     val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
-    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec)"
+
+    val ttlSpec = writeConf.ttl match {
+      case x: PerRowWriteOption[Int] => Some(s"TTL :${x.placeholder}")
+      case x: StaticWriteOption[Int] => Some(s"TTL ${x.value}")
+      case TTLOption.auto => None
+    }
+
+    val timestampSpec = writeConf.timestamp match {
+      case x: PerRowWriteOption[Long] => Some(s"TIMESTAMP :${x.placeholder}")
+      case x: StaticWriteOption[Long] => Some(s"TIMESTAMP ${x.value}")
+      case TimestampOption.auto => None
+    }
+
+    val options = List(ttlSpec, timestampSpec).flatten
+    val optionsSpec = if (options.nonEmpty) s"USING ${options.mkString(" AND ")}" else ""
+
+    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $optionsSpec".trim
   }
 
   private lazy val queryTemplateUsingUpdate: String = {
@@ -167,7 +195,10 @@ object TableWriter {
       case SomeColumns(names @ _*) => names
       case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
     }
-    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
+
+    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
+      tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
+      selectedColumns ++ writeConf.optionPlaceholders)
     new TableWriter[T](connector, tableDef, rowWriter, writeConf)
   }
 }

@@ -2,8 +2,9 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.spark.connector.mapper.DefaultColumnMapper
+
 import scala.collection.JavaConversions._
-import scala.reflect.runtime.universe.typeTag
 
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
@@ -15,6 +16,8 @@ import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
+case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
+case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp: Long)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class CustomerId(id: String)
 
@@ -24,18 +27,12 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
   val conn = CassandraConnector(Set(cassandraHost))
 
   conn.withSessionDo { session =>
+    session.execute("DROP KEYSPACE IF EXISTS write_test")
     session.execute("CREATE KEYSPACE IF NOT EXISTS write_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_1 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_2 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_3 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_4 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_5 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_6 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_7 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_8 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_9 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-    session.execute("CREATE TABLE IF NOT EXISTS write_test.key_value_10 (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    for (x <- 1 to 16) {
+      session.execute(s"CREATE TABLE IF NOT EXISTS write_test.key_value_$x (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+    }
 
     session.execute("CREATE TABLE IF NOT EXISTS write_test.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
@@ -263,6 +260,101 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     val col = Seq(("1", "1", "value1"), ("2", "2", "value2"), ("3", "3", "value3"))
     intercept[IOException] {
       sc.parallelize(col).saveToCassandra("write_test", "unknown_table")
+    }
+  }
+
+  it should "write RDD of case class objects with default TTL" in {
+    val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_11", writeConf = WriteConf(ttl = TTLOption.constant(100)))
+
+    verifyKeyValueTable("key_value_11")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT TTL(value) FROM write_test.key_value_11").all()
+      result should have size 3
+      result.foreach(_.getInt(0) should be > 50)
+      result.foreach(_.getInt(0) should be <= 100)
+    }
+  }
+
+  it should "write RDD of case class objects with default timestamp" in {
+    val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
+    val ts = System.currentTimeMillis() - 1000L
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_12", writeConf = WriteConf(timestamp = TimestampOption.constant(ts * 1000L)))
+
+    verifyKeyValueTable("key_value_12")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT WRITETIME(value) FROM write_test.key_value_12").all()
+      result should have size 3
+      result.foreach(_.getLong(0) should be (ts * 1000L))
+    }
+  }
+
+  it should "write RDD of case class objects with per-row TTL" in {
+    val col = Seq(KeyValueWithTTL(1, 1L, "value1", 100), KeyValueWithTTL(2, 2L, "value2", 200), KeyValueWithTTL(3, 3L, "value3", 300))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_13", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
+
+    verifyKeyValueTable("key_value_13")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT key, TTL(value) FROM write_test.key_value_13").all()
+      result should have size 3
+      result.foreach(row => {
+        row.getInt(1) should be > (100 * row.getInt(0) - 50)
+        row.getInt(1) should be <= (100 * row.getInt(0))
+      })
+    }
+  }
+
+  it should "write RDD of case class objects with per-row timestamp" in {
+    val ts = System.currentTimeMillis() - 1000L
+    val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_14", writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
+
+    verifyKeyValueTable("key_value_14")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT key, WRITETIME(value) FROM write_test.key_value_14").all()
+      result should have size 3
+      result.foreach(row => {
+        row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
+      })
+    }
+  }
+
+  it should "write RDD of case class objects with per-row TTL with custom mapping" in {
+    val col = Seq(KeyValueWithTTL(1, 1L, "value1", 100), KeyValueWithTTL(2, 2L, "value2", 200), KeyValueWithTTL(3, 3L, "value3", 300))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_15", writeConf = WriteConf(ttl = TTLOption.perRow("ttl_placeholder")))(
+      conn, DefaultRowWriter.factory(new DefaultColumnMapper(Map("ttl" -> "ttl_placeholder"))))
+
+    verifyKeyValueTable("key_value_15")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT key, TTL(value) FROM write_test.key_value_15").all()
+      result should have size 3
+      result.foreach(row => {
+        row.getInt(1) should be > (100 * row.getInt(0) - 50)
+        row.getInt(1) should be <= (100 * row.getInt(0))
+      })
+    }
+  }
+
+  it should "write RDD of case class objects with per-row timestamp with custom mapping" in {
+    val ts = System.currentTimeMillis() - 1000L
+    val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_16",
+      writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp_placeholder")))(
+        conn, DefaultRowWriter.factory(new DefaultColumnMapper(Map("timestamp" -> "timestamp_placeholder"))))
+
+    verifyKeyValueTable("key_value_16")
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT key, WRITETIME(value) FROM write_test.key_value_16").all()
+      result should have size 3
+      result.foreach(row => {
+        row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
+      })
     }
   }
 
