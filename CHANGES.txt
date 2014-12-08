@@ -1,3 +1,7 @@
+1.0.5
+ * Fixed setting output consistency level which was being set on prepared
+   statements instead of being set on batches (#463)
+
 1.0.4
  * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
    reflection thread-safety problems (#235)
