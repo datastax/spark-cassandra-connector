@@ -131,7 +131,14 @@ class CassandraRDD[R] private[connector] (
     * Use this for better performance, when you don't need all the columns in the result RDD.
     * When called multiple times, it selects the subset of the already selected columns, so
     * after a column was removed by the previous `select` call, it is not possible to
-    * add it back.  */
+    * add it back.
+    *
+    * The selected columns are [[SelectionColumn]] instances. This type allows to specify columns for
+    * straightforward retrieval and to read TTL or write time of regular columns as well. Implicit
+    * conversions included in [[com.datastax.spark.connector]] package make it possible to provide
+    * just column names (which is also backward compatible) and optional add `.ttl` or `.writeTime`
+    * suffix in order to create an appropriate [[SelectionColumn]] instance.
+    */
   def select(columns: SelectionColumn*): CassandraRDD[R] = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
   }
