@@ -105,7 +105,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .select("key")
     assert(rdd.selectedColumnNames().size === 1)
-    assert(rdd.selectedColumnNames().contains("key"))
+    assert(rdd.selectedColumnNames().contains(new PlainSelectionColumn("key")))
   }
 
   it should "allow to use where clause to filter records" in {
