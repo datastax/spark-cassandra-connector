@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import java.lang.reflect.Method
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.spark.connector.{AbstractRow, CassandraRow}
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
@@ -59,17 +59,17 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
 
   private def getColumnValue(row: Row, columnRef: ColumnRef, protocolVersion: ProtocolVersion) = {
     columnRef match {
-      case NamedColumnRef(name) =>
-        AbstractRow.get(row, name, protocolVersion)
-      case IndexedColumnRef(index) =>
+      case NamedColumnRef(_, selectedAs) =>
+        AbstractRow.get(row, selectedAs, protocolVersion)
+      case ColumnIndex(index) =>
         AbstractRow.get(row, index + skipColumns, protocolVersion)
     }
   }
 
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
     columnRef match {
-      case NamedColumnRef(name) => name        
-      case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index + skipColumns)
+      case NamedColumnRef(_, selectedAs) => selectedAs
+      case ColumnIndex(index) => row.getColumnDefinitions.getName(index + skipColumns)
     }
   }
 
@@ -119,10 +119,10 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
-    columnRefs.collect{ case NamedColumnRef(name) => name }.toSeq
+    columnRefs.collect{ case ColumnName(name) => name }.toSeq
 
   private def extractColumnIndexes(columnRefs: Iterable[ColumnRef]): Seq[Int] =
-    columnRefs.collect{ case IndexedColumnRef(index) => index }.toSeq
+    columnRefs.collect{ case ColumnIndex(index) => index }.toSeq
 
   private val allColumnRefs = columnMap.constructor ++ columnMap.setters.values
 
