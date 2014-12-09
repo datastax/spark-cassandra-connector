@@ -1,5 +1,6 @@
 package com.datastax.spark
 
+import com.datastax.spark.connector.rdd.{WriteTimeColumn, TTLColumn, PlainSelectionColumn}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -55,4 +56,10 @@ package object connector {
   implicit def toRDDFunctions[T : ClassTag](rdd: RDD[T]): RDDFunctions[T] =
     new RDDFunctions[T](rdd)
 
+  implicit class ColumnNameFunctions(val columnName: String) extends AnyVal {
+    def writeTime: WriteTimeColumn = WriteTimeColumn(columnName)
+    def ttl: TTLColumn = TTLColumn(columnName)
+  }
+
+  implicit def toSelectionColumn(columnName: String): PlainSelectionColumn = PlainSelectionColumn(columnName)
 }
