@@ -165,7 +165,13 @@ object TableWriter {
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames match {
-      case SomeColumns(names @ _*) => names
+      case SomeColumns(names @ _*) => names.map {
+        case ColumnName(columnName) => columnName
+        case TTL(_) | WriteTime(_) =>
+          throw new IllegalArgumentException(
+            s"Neither TTL nor WriteTime fields are not supported for writing. " +
+            s"Use appropriate write configuration settings to specify TTL or WriteTime.")
+      }
       case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
     }
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)

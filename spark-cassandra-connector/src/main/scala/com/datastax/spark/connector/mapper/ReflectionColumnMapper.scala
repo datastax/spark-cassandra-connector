@@ -2,6 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.{Constructor, Method}
 
+import com.datastax.spark.connector.{ColumnRef, ColumnName}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
 import org.apache.commons.lang.StringUtils
@@ -41,7 +42,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
         val columnNames = paramNames
           .map(constructorParamToColumnName(_, tableDef))
           .filter(_ != "$_outer")
-        columnNames.map(NamedColumnRef)
+        columnNames.map(ColumnName)
       }
     }
 
@@ -51,7 +52,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
       for (method <- cls.getMethods if isGetter(method)) yield {
         val methodName = method.getName
         val columnName = getterToColumnName(methodName, tableDef)
-        (methodName, NamedColumnRef(columnName))
+        (methodName, ColumnName(columnName))
       }
     }.toMap
 
@@ -59,7 +60,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
       for (method <- cls.getMethods if isSetter(method)) yield {
         val methodName = method.getName
         val columnName = setterToColumnName(methodName, tableDef)
-        (methodName, NamedColumnRef(columnName))
+        (methodName, ColumnName(columnName))
       }
     }.toMap
 

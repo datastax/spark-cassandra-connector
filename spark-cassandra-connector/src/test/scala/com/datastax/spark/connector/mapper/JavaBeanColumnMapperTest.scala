@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.spark.connector.ColumnName
 import com.datastax.spark.connector.cql.{TableDef, RegularColumn, ColumnDef}
 import com.datastax.spark.connector.types.IntType
 import org.apache.commons.lang3.SerializationUtils
@@ -35,18 +36,18 @@ class JavaBeanColumnMapperTest {
   def testGetters() {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass].columnMap(tableDef)
     val getters = columnMap.getters
-    assertEquals(NamedColumnRef(c1.columnName), getters("getProperty1"))
-    assertEquals(NamedColumnRef(c2.columnName), getters("getCamelCaseProperty"))
-    assertEquals(NamedColumnRef(c3.columnName), getters("isFlagged"))
+    assertEquals(ColumnName(c1.columnName), getters("getProperty1"))
+    assertEquals(ColumnName(c2.columnName), getters("getCamelCaseProperty"))
+    assertEquals(ColumnName(c3.columnName), getters("isFlagged"))
   }
 
   @Test
   def testSetters() {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass].columnMap(tableDef)
     val setters = columnMap.setters
-    assertEquals(NamedColumnRef(c1.columnName), setters("setProperty1"))
-    assertEquals(NamedColumnRef(c2.columnName), setters("setCamelCaseProperty"))
-    assertEquals(NamedColumnRef(c3.columnName), setters("setFlagged"))
+    assertEquals(ColumnName(c1.columnName), setters("setProperty1"))
+    assertEquals(ColumnName(c2.columnName), setters("setCamelCaseProperty"))
+    assertEquals(ColumnName(c3.columnName), setters("setFlagged"))
   }
 
   @Test
@@ -54,9 +55,9 @@ class JavaBeanColumnMapperTest {
     val columnNameOverrides: Map[String, String] = Map("property1" -> c5.columnName, "flagged" -> c4.columnName)
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass](columnNameOverrides).columnMap(tableDef)
     val getters = columnMap.getters
-    assertEquals(NamedColumnRef(c5.columnName), getters("getProperty1"))
-    assertEquals(NamedColumnRef(c2.columnName), getters("getCamelCaseProperty"))
-    assertEquals(NamedColumnRef(c4.columnName), getters("isFlagged"))
+    assertEquals(ColumnName(c5.columnName), getters("getProperty1"))
+    assertEquals(ColumnName(c2.columnName), getters("getCamelCaseProperty"))
+    assertEquals(ColumnName(c4.columnName), getters("isFlagged"))
   }
 
   @Test
@@ -64,9 +65,9 @@ class JavaBeanColumnMapperTest {
     val columnNameOverrides: Map[String, String] = Map("property1" -> c5.columnName, "flagged" -> c4.columnName)
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass](columnNameOverrides).columnMap(tableDef)
     val setters = columnMap.setters
-    assertEquals(NamedColumnRef(c5.columnName), setters("setProperty1"))
-    assertEquals(NamedColumnRef(c2.columnName), setters("setCamelCaseProperty"))
-    assertEquals(NamedColumnRef(c4.columnName), setters("setFlagged"))
+    assertEquals(ColumnName(c5.columnName), setters("setProperty1"))
+    assertEquals(ColumnName(c2.columnName), setters("setCamelCaseProperty"))
+    assertEquals(ColumnName(c4.columnName), setters("setFlagged"))
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.spark.connector.{ColumnRef, ColumnIndex}
 import com.datastax.spark.connector.cql.TableDef
 
 import scala.reflect.ClassTag
@@ -9,7 +10,7 @@ class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
   override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
   private def indexedColumnRefs(n: Int) =
-    (0 until n).map(IndexedColumnRef)
+    (0 until n).map(ColumnIndex)
 
   override def columnMap(tableDef: TableDef): ColumnMap = {
 
@@ -21,7 +22,7 @@ class TupleColumnMapper[T <: Product : ClassTag] extends ColumnMapper[T] {
 
     val getters = {
       for (name@GetterRegex(id) <- cls.getMethods.map(_.getName))
-      yield (name, IndexedColumnRef(id.toInt - 1))
+      yield (name, ColumnIndex(id.toInt - 1))
     }.toMap
 
     val setters =

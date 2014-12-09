@@ -21,7 +21,7 @@ case class CassandraTableScan(
     //TODO: cluster level CassandraConnector, read configuration settings
     var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)
     if (attributes.map(_.name).size > 0)
-      rdd = rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name)): _*)
+      rdd = rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): NamedColumnRef): _*)
     if (pushdownPred.nonEmpty) {
       val(cql, values) = whereClause(pushdownPred)
       rdd = rdd.where(cql, values: _*)
