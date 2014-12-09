@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import java.lang.reflect.Method
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.spark.connector.{AbstractRow, CassandraRow}
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
@@ -59,8 +59,8 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
 
   private def getColumnValue(row: Row, columnRef: ColumnRef, protocolVersion: ProtocolVersion) = {
     columnRef match {
-      case NamedColumnRef(name) =>
-        AbstractRow.get(row, name, protocolVersion)
+      case IndexedByNameColumnRef(_, selectedAs) =>
+        AbstractRow.get(row, selectedAs, protocolVersion)
       case IndexedColumnRef(index) =>
         AbstractRow.get(row, index + skipColumns, protocolVersion)
     }
@@ -68,7 +68,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
 
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
     columnRef match {
-      case NamedColumnRef(name) => name        
+      case IndexedByNameColumnRef(_, selectedAs) => selectedAs
       case IndexedColumnRef(index) => row.getColumnDefinitions.getName(index + skipColumns)
     }
   }

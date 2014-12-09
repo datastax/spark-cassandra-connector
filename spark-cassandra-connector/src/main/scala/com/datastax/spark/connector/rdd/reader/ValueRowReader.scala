@@ -1,27 +1,30 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.spark.connector.{AbstractRow, CassandraRow}
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.mapper.{ColumnRef, IndexedColumnRef, NamedColumnRef}
+import com.datastax.spark.connector.mapper.{IndexedByNameColumnRef, IndexedColumnRef, ColumnRef}
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.JavaApiHelper
 
 class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T] {
+
+  private val converter = implicitly[TypeConverter[T]]
+
   /** Reads column values from low-level `Row` and turns them into higher level representation.
     * @param row row fetched from Cassandra
     * @param columnNames column names available in the `row` */
   override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): T = {
     columnRef match {
-      case IndexedColumnRef(idx) => implicitly[TypeConverter[T]].convert(AbstractRow.get(row, idx, protocolVersion))
-      case NamedColumnRef(name) => implicitly[TypeConverter[T]].convert(AbstractRow.get(row, name, protocolVersion))
+      case IndexedColumnRef(idx) => converter.convert(AbstractRow.get(row, idx, protocolVersion))
+      case IndexedByNameColumnRef(_, selectedAs) => converter.convert(AbstractRow.get(row, selectedAs, protocolVersion))
     }
   }
 
   /** List of columns this `RowReader` is going to read.
     * Useful to avoid fetching the columns that are not needed. */
   override def columnNames: Option[Seq[String]] = columnRef match {
-    case NamedColumnRef(name) => Some(Seq(name))
+    case IndexedByNameColumnRef(_, selectedAs) => Some(Seq(selectedAs))
     case _ => None
   }
 

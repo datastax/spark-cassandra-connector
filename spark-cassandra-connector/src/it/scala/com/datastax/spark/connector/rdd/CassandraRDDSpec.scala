@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{FlatSpec, Matchers}
 import org.joda.time.DateTime
@@ -19,6 +20,8 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 case class CustomerId(id: String)
 case class KeyGroup(key: Int, group: Int)
 case class Value(value: String)
+case class WriteTimeClass(id: Int, value: String, writeTimeOfValue: Long)
+case class TTLClass(id: Int, value: String, ttlOfValue: Int)
 
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
@@ -76,6 +79,8 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     for (i <- 1 to bigTableRowCount) {
       session.execute(insert.bind(i.asInstanceOf[AnyRef], i.asInstanceOf[AnyRef]))
     }
+
+    session.execute("CREATE TABLE IF NOT EXISTS read_test.write_time_ttl_test (id INT PRIMARY KEY, value TEXT, value2 TEXT)")
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
@@ -424,4 +429,106 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     val count = sc.cassandraTable("read_test", "big_table").count()
     count should be (bigTableRowCount)
   }
+
+  it should "allow to fetch write time of a specified column as a tuple element" in {
+    val writeTime = System.currentTimeMillis() * 1000L
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime")
+    }
+    val results = sc.cassandraTable[(Int, String, Long)]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".writeTime).collect().headOption
+    results.isDefined should be(true)
+    results.get should be((1, "test", writeTime))
+  }
+
+  it should "allow to fetch ttl of a specified column as a tuple element" in {
+    val ttl = 1000
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl")
+    }
+    val results = sc.cassandraTable[(Int, String, Int)]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".ttl).collect().headOption
+    results.isDefined should be(true)
+    results.get._1 should be (1)
+    results.get._2 should be ("test")
+    results.get._3 should be > (ttl - 10)
+    results.get._3 should be <= ttl
+  }
+
+  it should "allow to fetch both write time and ttl of a specified column as tuple elements" in {
+    val writeTime = System.currentTimeMillis() * 1000L
+    val ttl = 1000
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime AND TTL $ttl")
+    }
+    val results = sc.cassandraTable[(Int, String, Long, Int)]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".writeTime, "value".ttl).collect().headOption
+    results.isDefined should be(true)
+    results.get._1 should be (1)
+    results.get._2 should be ("test")
+    results.get._3 should be (writeTime)
+    results.get._4 should be > (ttl - 10)
+    results.get._4 should be <= ttl
+  }
+
+  it should "allow to fetch write time of two different columns as tuple elements" in {
+    val writeTime = System.currentTimeMillis() * 1000L
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime")
+    }
+    val results = sc.cassandraTable[(Int, Long, Long)]("read_test", "write_time_ttl_test")
+      .select("id", "value".writeTime, "value2".writeTime).collect().headOption
+    results.isDefined should be(true)
+    results.get should be((1, writeTime, writeTime))
+  }
+
+  it should "allow to fetch ttl of two different columns as tuple elements" in {
+    val ttl = 1000
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl")
+    }
+    val results = sc.cassandraTable[(Int, Int, Int)]("read_test", "write_time_ttl_test")
+      .select("id", "value".ttl, "value2".ttl).collect().headOption
+    results.isDefined should be(true)
+    results.get._1 should be (1)
+    results.get._2 should be > (ttl - 10)
+    results.get._2 should be <= ttl
+    results.get._3 should be > (ttl - 10)
+    results.get._3 should be <= ttl
+  }
+
+  it should "allow to fetch writetime of a specified column and map it to a class field with custom mapping" in {
+    val writeTime = System.currentTimeMillis() * 1000L
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime")
+    }
+    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedAs))
+    val results = sc.cassandraTable[WriteTimeClass]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".writeTime).collect().headOption
+    results.isDefined should be (true)
+    results.head should be (WriteTimeClass(1, "test", writeTime))
+  }
+
+  it should "allow to fetch ttl of a specified column and map it to a class field with custom mapping" in {
+    val ttl = 1000
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl")
+    }
+    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedAs))
+    val results = sc.cassandraTable[TTLClass]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".ttl).collect().headOption
+    results.isDefined should be (true)
+    results.head.id should be (1)
+    results.head.value should be ("test")
+    results.head.ttlOfValue > (ttl - 10)
+    results.head.ttlOfValue <= ttl
+  }
+
 }
