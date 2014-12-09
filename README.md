@@ -75,10 +75,14 @@ The documentation will be generated to:
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    
 
-## Reporting Bugs
-Please use GitHub to report feature requests or bugs.  
+## Community
+### Reporting Bugs
+Please use GitHub to report feature requests or bugs.
 
-## Contributing
+### Mailing List
+Questions etc can be submitted to the [user mailing list](http://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user).
+
+### Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
 Make sure you have installed and enabled the Scala Plugin.
 Open the project with IntelliJ IDEA and it will automatically create the project structure
