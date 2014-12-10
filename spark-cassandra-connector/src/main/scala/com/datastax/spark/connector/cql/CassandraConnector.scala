@@ -24,10 +24,16 @@ import com.datastax.spark.connector.util.Logging
   * Cassandra cluster will share a single underlying `Cluster` object.
   * `CassandraConnector` will close the underlying `Cluster` object automatically
   * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
-  * than `spark.cassandra.connection.keep_alive_ms` property value.
+  * than `cassandra.connection.keep_alive_ms` *system property* value.
   *
-  * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
-  * can be either given explicitly or automatically configured from `SparkConf`.
+  * Note that in order to set `cassandra.connection.keep_alive_ms` parameter properly, you have to add
+  * `-Dcassandra.connection.keep_alive_ms=some_value` to the JVM command line options for both a driver
+  * and executors. You can do this by specifying it in `--driver-java-options "..."` and
+  * `--conf spark.executor.extraJavaOptions="..."`. Refer to Spark documentation for details.
+  *
+  * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object
+  * (except for `cassandra.connection.keep_alive_ms`) which can be either given explicitly
+  * or automatically configured from `SparkConf`.
   * The connection options are:
   *   - `spark.cassandra.connection.host`:               contact point to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.rpc.port`:           Cassandra thrift port, defaults to 9160
@@ -37,11 +43,13 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.auth.password`:                 password for password authentication
   *   - `spark.cassandra.auth.conf.factory`:             name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
   *
-  * Additionally this object uses the following global System properties:
-  *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
+  * Additionally this object uses the following connection properties (previously they had to be provided :
   *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
   *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
-  *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query 
+  *   - `spark.cassandra.query.retry.count`:                    how many times to reattempt a failed query
+  *   - `spark.cassandra.connection.local_dc`:                  the local DC to connect to (other nodes will be ignored)
+  *   - `spark.cassandra.connection.timeout_ms`:                maximum period of time to attempt connecting to a node
+  *   - `spark.cassandra.read.timeout_ms`:                      maximum period of time to wait for a read to return
   */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
@@ -154,7 +162,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
 object CassandraConnector extends Logging {
 
-  val keepAliveMillis = System.getProperty("spark.cassandra.connection.keep_alive_ms", "250").toInt
+  val keepAliveMillis = System.getProperty("cassandra.connection.keep_alive_ms", "250").toInt
 
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
     createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
@@ -207,9 +215,10 @@ object CassandraConnector extends Logging {
             nativePort: Int = CassandraConnectorConf.DefaultNativePort,
             rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
             authConf: AuthConf = NoAuthConf,
+            connectionOptions: ConnectionOptions = ConnectionOptions(),
             connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory) = {
 
-    val config = CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory)
+    val config = CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionOptions, connectionFactory)
     new CassandraConnector(config)
   }
 

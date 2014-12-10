@@ -1,5 +1,6 @@
 1.1.1 (unreleased)
  * Merged bug fix for #463 from b1.0
+ * Fixed the problem with passing additional connection settings to executors (#467)
 
 1.1.0
  * Switch to java driver 2.1.3 and Guava 14.0.1 (yay!).
