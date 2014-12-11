@@ -123,16 +123,12 @@ final class RefCountedCache[K, V](create: K => V,
           task.run()
   }
 
-  /** Removes all entries from the cache and destroys stored values by calling `destroy` on them.
-    * Warning - this is not thread-safe. You must not call this method if you know
-    * the cache is in use.*/
+  /** Removes and destroys unused entries from the cache immediately.
+    * Entries with reference count > 0 are not removed. */
   def evict() {
-    for ((key, value) <- cache)
-      destroy(value)
-    deferredReleases.clear()
-    cache.clear()
-    valuesToKeys.clear()
-    refCounter.clear()
+    for ((value, task) <- deferredReleases)
+      if (deferredReleases.remove(value, task))
+        task.run()
   }
 
   /** Returns true if cache contains given key. */
