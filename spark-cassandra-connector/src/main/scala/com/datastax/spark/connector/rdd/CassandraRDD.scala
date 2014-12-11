@@ -377,10 +377,10 @@ object CassandraRDD {
   def apply[T](sc: SparkContext, keyspaceName: String, tableName: String)
               (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraRDD[T] =
     new CassandraRDD[T](
-      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
+      sc, CassandraConnector(sc.getConf, CassandraConnectionHint.forReading), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
 
   def apply[K, V](sc: SparkContext, keyspaceName: String, tableName: String)
                  (implicit keyCT: ClassTag[K], valueCT: ClassTag[V], rrf: RowReaderFactory[(K, V)]): CassandraRDD[(K, V)] =
     new CassandraRDD[(K, V)](
-      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
+      sc, CassandraConnector(sc.getConf, CassandraConnectionHint.forReading), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
 }

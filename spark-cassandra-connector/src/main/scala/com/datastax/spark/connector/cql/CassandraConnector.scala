@@ -62,6 +62,9 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Connection configurator */
   def configurator = _config.connectionFactory
 
+  /** Hint about the main purpose of the connection */
+  def hint = _config.hint
+
   /** Returns a shared session to Cassandra and increases the internal open
     * reference counter. It does not release the session automatically,
     * so please remember to close it after use. Closing a shared session
@@ -198,8 +201,11 @@ object CassandraConnector extends Logging {
   }))
 
   /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
-  def apply(conf: SparkConf): CassandraConnector = {
-    new CassandraConnector(CassandraConnectorConf(conf))
+  def apply(conf: SparkConf): CassandraConnector = apply(conf, None)
+
+  /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
+  def apply(conf: SparkConf, hint: Option[CassandraConnectionHint]): CassandraConnector = {
+    new CassandraConnector(CassandraConnectorConf(conf, hint))
   }
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */
@@ -207,9 +213,10 @@ object CassandraConnector extends Logging {
             nativePort: Int = CassandraConnectorConf.DefaultNativePort,
             rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
             authConf: AuthConf = NoAuthConf,
-            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory) = {
+            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
+            hint: Option[CassandraConnectionHint] = None) = {
 
-    val config = CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory)
+    val config = CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory, hint)
     new CassandraConnector(config)
   }
 

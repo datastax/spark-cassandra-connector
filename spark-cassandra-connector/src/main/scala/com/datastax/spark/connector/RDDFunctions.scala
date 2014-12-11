@@ -1,6 +1,6 @@
 package com.datastax.spark.connector
 
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnectionHint, CassandraConnector}
 import com.datastax.spark.connector.writer._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -18,7 +18,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
                       tableName: String,
                       columns: ColumnSelector = AllColumns,
                       writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))
-                     (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+                     (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf, CassandraConnectionHint.forWriting),
                       rwf: RowWriterFactory[T]): Unit = {
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
     rdd.sparkContext.runJob(rdd, writer.write _)

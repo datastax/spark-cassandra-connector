@@ -13,7 +13,8 @@ case class CassandraConnectorConf(
   nativePort: Int = CassandraConnectorConf.DefaultNativePort,
   rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
   authConf: AuthConf = NoAuthConf,
-  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory)
+  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
+  hint: Option[CassandraConnectionHint] = None)
 
 /** A factory for `CassandraConnectorConf` objects.
   * Allows for manually setting connection properties or reading them from `SparkConf` object.
@@ -37,7 +38,7 @@ object CassandraConnectorConf extends Logging {
     }
   }
 
-  def apply(conf: SparkConf): CassandraConnectorConf = {
+  def apply(conf: SparkConf, purpose: Option[CassandraConnectionHint]): CassandraConnectorConf = {
     val hostsStr = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
@@ -48,6 +49,14 @@ object CassandraConnectorConf extends Logging {
     val nativePort = conf.getInt(CassandraConnectionNativePortProperty, DefaultNativePort)
     val authConf = AuthConf.fromSparkConf(conf)
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
-    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory)
+    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory, purpose)
   }
 }
+
+case class CassandraConnectionHint private(namespace: String)
+
+object CassandraConnectionHint {
+  val forReading = Some(CassandraConnectionHint("read"))
+  val forWriting = Some(CassandraConnectionHint("write"))
+}
+
