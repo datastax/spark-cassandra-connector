@@ -7,7 +7,7 @@ import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TTransport
 
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+import com.datastax.driver.core.policies.{LoadBalancingPolicy, TokenAwarePolicy, ExponentialReconnectionPolicy}
 import com.datastax.driver.core.{Cluster, SocketOptions}
 import com.datastax.spark.connector.util.ReflectionUtil
 
@@ -36,8 +36,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
   val connectTimeout = System.getProperty("spark.cassandra.connection.timeout_ms", "5000").toInt
   val readTimeout = System.getProperty("spark.cassandra.read.timeout_ms", "12000").toInt
-  
-  
+
+
   /** Creates and configures a Thrift client.
     * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
@@ -66,12 +66,24 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .setConnectTimeoutMillis(connectTimeout)
       .setReadTimeoutMillis(readTimeout)
 
+    val loadBalancingPolicy: LoadBalancingPolicy = conf.hint match {
+      case CassandraConnectionHint.forReading =>
+        new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC), true)
+
+      case CassandraConnectionHint.forWriting =>
+        val childPolicy = new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC), false)
+        new TokenAwarePolicy(childPolicy, true)
+
+      case _ =>
+        new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC), true)
+    }
+
     Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.nativePort)
       .withRetryPolicy(new MultipleRetryPolicy(retryCount))
       .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
-      .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC)))
+      .withLoadBalancingPolicy(loadBalancingPolicy)
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
   }

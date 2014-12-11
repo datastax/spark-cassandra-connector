@@ -9,7 +9,8 @@ import scala.util.Random
 import org.apache.spark.Logging
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
-class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None) extends LoadBalancingPolicy with Logging {
+class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None,
+                                        preferLocalHost: Boolean = true) extends LoadBalancingPolicy with Logging {
 
   import LocalNodeFirstLoadBalancingPolicy._
 
@@ -60,7 +61,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
   override def onDown(host: Host) = { }
 
   private def sameDCHostDistance(host: Host) =
-    if (isLocalHost(host))
+    if (!preferLocalHost || isLocalHost(host))
       HostDistance.LOCAL
     else
       HostDistance.REMOTE
@@ -87,7 +88,7 @@ object LocalNodeFirstLoadBalancingPolicy {
     * DC information is missing. Other hosts with missing DC information are not considered.*/
   def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
     val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
-    val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
+    val contactDCs = contactNodes.map(_.getDatacenter).filter(_ != null).toSet
     contactNodes ++ allHosts.filter(h => contactDCs.contains(h.getDatacenter))
   }
 
