@@ -49,7 +49,7 @@ object Settings extends Build {
     publish := {}
   )
 
-  override lazy val settings = super.settings ++ buildSettings ++ Seq(shellPrompt := ShellPrompt.prompt)
+  override lazy val settings = super.settings ++ buildSettings
 
   lazy val moduleSettings = graphSettings ++ Seq(
     scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
@@ -158,21 +158,22 @@ object Settings extends Build {
 
 }
 
-/** Shell prompt which shows the current project, git branch */
-object ShellPrompt {
-
-  def gitBranches = ("git branch" lines_! devnull).mkString
-
-  def current: String = """\*\s+([\.\w-]+)""".r findFirstMatchIn gitBranches map (_ group 1) getOrElse "-"
-
-  def currBranch: String = ("git status -sb" lines_! devnull headOption) getOrElse "-" stripPrefix "## "
-
-  lazy val prompt = (state: State) =>
-    "%s:%s:%s> ".format("spark-cassandra-connector", Project.extract (state).currentProject.id, currBranch)
-
-  object devnull extends ProcessLogger {
-    def info(s: => String) {}
-    def error(s: => String) {}
-    def buffer[T](f: => T): T = f
+object ShellPromptPlugin extends AutoPlugin {
+  override def trigger = allRequirements
+  override lazy val projectSettings = Seq(
+    shellPrompt := buildShellPrompt
+  )
+  val devnull: ProcessLogger = new ProcessLogger {
+    def info (s: => String) {}
+    def error (s: => String) { }
+    def buffer[T] (f: => T): T = f
+  }
+  def currBranch =
+    ("git status -sb" lines_! devnull headOption).
+      getOrElse("-").stripPrefix("## ")
+  val buildShellPrompt: State => String = {
+    case (state: State) =>
+      val currProject = Project.extract (state).currentProject.id
+      s"""$currProject:$currBranch> """
   }
 }
