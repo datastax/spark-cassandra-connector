@@ -11,9 +11,15 @@ import scala.collection.JavaConversions._
   * ready to be executed with Java Driver. Depending on provided options the statements are grouped into
   * batches or not. */
 class BatchStatementBuilder[T](batchType: BatchStatement.Type, rowWriter: RowWriter[T], stmt: PreparedStatement,
-                    protocolVersion: ProtocolVersion) extends Logging {
+                    protocolVersion: ProtocolVersion, routingKeyGenerator: RoutingKeyGenerator) extends Logging {
 
   import com.datastax.spark.connector.writer.BatchStatementBuilder._
+
+  private def bind(row: T): BoundStatement = {
+    val bs = rowWriter.bind(row, stmt, protocolVersion)
+    bs.setRoutingKey(routingKeyGenerator.computeRoutingKey(bs))
+    bs
+  }
 
   /** Converts a sequence of statements into a batch if its size is greater than 1. */
   private def maybeCreateBatch(stmts: Seq[BoundStatement]): Statement = {
@@ -29,7 +35,7 @@ class BatchStatementBuilder[T](batchType: BatchStatement.Type, rowWriter: RowWri
   /** Splits data items into groups of equal number of elements and make batches from these groups. */
   private def rowsLimitedBatches(data: Iterator[T], batchSizeInRows: Int): Stream[Statement] = {
     val batches = for (batch <- data.grouped(batchSizeInRows)) yield {
-      val boundStmts = batch.map(row => rowWriter.bind(row, stmt, protocolVersion))
+      val boundStmts = batch.map(bind)
       maybeCreateBatch(boundStmts)
     }
 
@@ -39,7 +45,7 @@ class BatchStatementBuilder[T](batchType: BatchStatement.Type, rowWriter: RowWri
   /** Splits data items into groups of size not greater than the provided limit in bytes and make batches
     * from these groups. */
   private def sizeLimitedBatches(data: Iterator[T], batchSizeInBytes: Int): Stream[Statement] = {
-    val boundStmts = data.toStream.map(row => rowWriter.bind(row, stmt, protocolVersion))
+    val boundStmts = data.toStream.map(bind)
 
     def batchesStream(stmtsStream: Stream[BoundStatement]): Stream[Statement] = stmtsStream match {
       case Stream.Empty => Stream.Empty
@@ -60,7 +66,7 @@ class BatchStatementBuilder[T](batchType: BatchStatement.Type, rowWriter: RowWri
 
   /** Just make bound statements from data items. */
   private def boundStatements(data: Iterator[T]): Stream[Statement] =
-    data.map(rowWriter.bind(_, stmt, protocolVersion)).toStream
+    data.map(bind).toStream
 
   /** Depending on provided batch size, convert the data items into stream of bound statements, batches
     * of equal rows number or batches of equal size in bytes. */

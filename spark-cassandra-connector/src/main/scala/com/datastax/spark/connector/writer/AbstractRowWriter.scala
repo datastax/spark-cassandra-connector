@@ -7,7 +7,7 @@ import org.apache.spark.sql.catalyst.expressions.Row
 /** A [[RowWriter]] that can write SparkSQL [[Row]] objects or [[com.datastax.spark.connector.CassandraRow]] objects .*/
 abstract class AbstractRowWriter[T](table: TableDef, selectedColumns: Seq[String]) extends RowWriter[T] {
 
-  override def columnNames =
+  override val columnNames =
     selectedColumns.toIndexedSeq
 
   protected def getColumnValue(data: T, columnName: String): AnyRef
