@@ -1,20 +1,23 @@
 1.2.0
-* Added support for TTL and timestamp in the writer (#153)
+ * Added support for TTL and timestamp in the writer (#153)
+
+1.1.1 (unreleased)
+ * Merged bug fix for #463 from b1.0
+ * Upgraded Spark to the latest release version, 1.1.1 (#461)
 
 1.1.0
-* Switch to java driver 2.1.3 and Guava 14.0.1 (yay!).
-* Upgraded Spark to the latest release version, 1.1.1 (#461)
+ * Switch to java driver 2.1.3 and Guava 14.0.1 (yay!).
 
 1.1.0 rc 3
-* Fix NPE when saving CassandraRows containing null values (#446)
+ * Fix NPE when saving CassandraRows containing null values (#446)
 
 1.1.0 rc 2
-* Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
-* Fix SparkSQL failures caused by presence of non-selected columns of UDT type in the table.
+ * Added JavaTypeConverter to make is easy to implement custom TypeConverter in Java (#429)
+ * Fix SparkSQL failures caused by presence of non-selected columns of UDT type in the table.
 
 1.1.0 rc 1
-* Fixed problem with setting a batch size in bytes (#435)
-* Fixed handling of null column values in Java API (#429)
+ * Fixed problem with setting a batch size in bytes (#435)
+ * Fixed handling of null column values in Java API (#429)
 
 1.1.0 beta 2
  * Fixed bug in Java API which might cause ClassNotFoundException
@@ -91,6 +94,10 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
+1.0.5 (unreleased)
+ * Fixed setting output consistency level which was being set on prepared
+   statements instead of being set on batches (#463)
+
 1.0.4
  * Synchronized TypeConverter.forType methods to workaround some Scala 2.10
    reflection thread-safety problems (#235)

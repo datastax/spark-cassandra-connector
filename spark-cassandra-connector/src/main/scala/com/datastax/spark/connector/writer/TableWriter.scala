@@ -140,6 +140,7 @@ class TableWriter[T] private (
   private def writeBatched(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor, batchSize: Int) {
     for (batch <- data.grouped(batchSize)) {
       val batchStmt = createBatch(batch, stmt)
+      batchStmt.setConsistencyLevel(writeConf.consistencyLevel)
       queryExecutor.executeAsync(batchStmt)
     }
   }
