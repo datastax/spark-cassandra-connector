@@ -30,14 +30,6 @@ trait CassandraConnectionFactory extends Serializable {
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 object DefaultConnectionFactory extends CassandraConnectionFactory {
 
-  val minReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.min", "1000").toInt
-  val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
-  val localDC = System.getProperty("spark.cassandra.connection.local_dc")
-  val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
-  val connectTimeout = System.getProperty("spark.cassandra.connection.timeout_ms", "5000").toInt
-  val readTimeout = System.getProperty("spark.cassandra.read.timeout_ms", "12000").toInt
-  
-  
   /** Creates and configures a Thrift client.
     * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
@@ -63,15 +55,18 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   /** Returns the Cluster.Builder object used to setup Cluster instance. */
   def clusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
     val options = new SocketOptions()
-      .setConnectTimeoutMillis(connectTimeout)
-      .setReadTimeoutMillis(readTimeout)
+      .setConnectTimeoutMillis(conf.connectionOptions.connectTimeout)
+      .setReadTimeoutMillis(conf.connectionOptions.readTimeout)
 
     Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.nativePort)
-      .withRetryPolicy(new MultipleRetryPolicy(retryCount))
-      .withReconnectionPolicy(new ExponentialReconnectionPolicy(minReconnectionDelay, maxReconnectionDelay))
-      .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC)))
+      .withRetryPolicy(new MultipleRetryPolicy(conf.connectionOptions.retryCount))
+      .withReconnectionPolicy(
+        new ExponentialReconnectionPolicy(
+          conf.connectionOptions.minReconnectionDelay, conf.connectionOptions.maxReconnectionDelay))
+      .withLoadBalancingPolicy(
+        new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(conf.connectionOptions.localDC)))
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
   }

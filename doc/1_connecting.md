@@ -21,27 +21,31 @@ spark.cassandra.auth.username                  | login name for password authent
 spark.cassandra.auth.password                  | password for password authentication              |
 spark.cassandra.auth.conf.factory              | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
 
-Additionally, the following global system properties are available:
+Additionally, the following properties can be set in `SparkConf` (previously they were set as system properties).
 
 Property name                                        | Description                                                   | Default value
 -----------------------------------------------------|---------------------------------------------------------------|--------------------
-spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                | 250 ms
 spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node        | 5000 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to attempt reconnecting to a dead node | 1000 ms 
 spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to attempt reconnecting to a dead node | 60000 ms 
 spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)      | none
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                    | 10 
 spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return           | 12000 ms
-  
+
+There is also one global system property `cassandra.connection.keep_alive_ms` which denotes the period of
+time to keep unused connections open (250 ms by default). It cannot be distributed as normal `SparkConf`
+and you have to pass it by attaching `-Dcassandra.connection.keep_alive_ms=some_value` to JVM properties.
+This can be done by specifying the aforementioned setting in `--driver-java-options "..."` for the driver
+program and in `--conf spark.executor.extraJavaOptions="..."` for executors (at least for Spark 1.1.x).
+
 Example:
 
 ```scala
-System.setProperty("spark.cassandra.query.retry.count", "1")  // don't retry
-
 val conf = new SparkConf(true)
         .set("spark.cassandra.connection.host", "192.168.123.10")
         .set("spark.cassandra.auth.username", "cassandra")            
-        .set("spark.cassandra.auth.password", "cassandra") 
+        .set("spark.cassandra.auth.password", "cassandra")
+        .set("spark.cassandra.query.retry.count", "1")  // don't retry
                      
 val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 ```
@@ -73,7 +77,7 @@ represented by the underlying Java Driver `Cluster` object.
 
 Eventually, when all the tasks needing Cassandra connectivity terminate,
 the connection to the Cassandra cluster will be closed shortly thereafter. The period of time for keeping unused connections
-open is controlled by the global `spark.cassandra.connection.keep_alive_ms` system property, which defaults to 250 ms. 
+open is controlled by the global `cassandra.connection.keep_alive_ms` system property, which defaults to 250 ms.
 
 
 ### Connecting manually to Cassandra
