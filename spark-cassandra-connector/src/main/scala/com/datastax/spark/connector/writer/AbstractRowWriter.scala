@@ -28,7 +28,4 @@ abstract class AbstractRowWriter[T](table: TableDef, selectedColumns: Seq[String
     stmt.bind(fillBuffer(data): _*)
   }
 
-  override def estimateSizeInBytes(data: T) = {
-    ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
-  }
 }

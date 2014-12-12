@@ -95,9 +95,6 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
   private def fillBuffer(data: T): Array[AnyRef] =
     extractor.extract(data, buffer.get)
 
-  override def estimateSizeInBytes(data: T) = {
-    ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
-  }
 }
 
 object DefaultRowWriter {

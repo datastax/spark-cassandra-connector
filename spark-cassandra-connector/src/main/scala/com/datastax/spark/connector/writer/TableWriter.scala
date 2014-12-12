@@ -2,7 +2,8 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
+import com.datastax.driver.core.BatchStatement.Type
+import com.datastax.driver.core.{PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
@@ -19,8 +20,6 @@ class TableWriter[T] private (
     tableDef: TableDef,
     rowWriter: RowWriter[T],
     writeConf: WriteConf) extends Serializable with Logging {
-
-  import com.datastax.spark.connector.writer.TableWriter._
 
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
@@ -99,56 +98,6 @@ class TableWriter[T] private (
     }
   }
 
-  private def createBatch(data: Seq[T], stmt: PreparedStatement): BatchStatement = {
-    val batchStmt =
-      if (isCounterUpdate)
-        new BatchStatement(BatchStatement.Type.COUNTER)
-      else
-        new BatchStatement(BatchStatement.Type.UNLOGGED)
-    for (row <- data)
-      batchStmt.add(rowWriter.bind(row, stmt, protocolVersion))
-    batchStmt
-  }
-
-  /** Writes `MeasuredInsertsCount` rows to Cassandra and returns the maximum size of the row */
-  private def measureMaxInsertSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    logDebug(s"Writing $MeasuredInsertsCount rows to $keyspaceName.$tableName and measuring maximum serialized row size...")
-    var maxInsertSize = 1
-    for (row <- data.take(MeasuredInsertsCount)) {
-      val insert = rowWriter.bind(row, stmt, protocolVersion)
-      queryExecutor.executeAsync(insert)
-      val size = rowWriter.estimateSizeInBytes(row)
-      if (size > maxInsertSize)
-        maxInsertSize = size
-    }
-    logDebug(s"Maximum serialized row size: " + maxInsertSize + " B")
-    maxInsertSize
-  }
-
-  /** Returns either configured batch size or, if not set, determines the optimal batch size by writing a
-    * small number of rows and estimating their size. */
-  private def optimumBatchSize(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor): Int = {
-    writeConf.batchSize match {
-      case RowsInBatch(size) =>
-        size
-      case BytesInBatch(size) =>
-        val maxInsertSize = measureMaxInsertSize(data, stmt, queryExecutor)
-        math.max(1, size / (maxInsertSize * 2))  // additional margin for data larger than usual
-    }
-  }
-
-  private def writeBatched(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor, batchSize: Int) {
-    for (batch <- data.grouped(batchSize)) {
-      val batchStmt = createBatch(batch, stmt)
-      batchStmt.setConsistencyLevel(writeConf.consistencyLevel)
-      queryExecutor.executeAsync(batchStmt)
-    }
-  }
-
-  private def writeUnbatched(data: Iterator[T], stmt: PreparedStatement, queryExecutor: QueryExecutor) {
-    for (row <- data)
-      queryExecutor.executeAsync(rowWriter.bind(row, stmt, protocolVersion))
-  }
 
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
@@ -158,29 +107,28 @@ class TableWriter[T] private (
       val stmt = prepareStatement(session)
       stmt.setConsistencyLevel(writeConf.consistencyLevel)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel)
-      val batchSize = optimumBatchSize(rowIterator, stmt, queryExecutor)
+      val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
+      val batchMaker = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion)
 
-      logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of $batchSize rows each.")
-      batchSize match {
-        case 1 => writeUnbatched(rowIterator, stmt, queryExecutor)
-        case _ => writeBatched(rowIterator, stmt, queryExecutor, batchSize)
+      logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
+      for (stmtToWrite <- batchMaker.makeStatements(rowIterator, writeConf.batchSize)) {
+        stmtToWrite.setConsistencyLevel(writeConf.consistencyLevel)
+        queryExecutor.executeAsync(stmtToWrite)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()
 
       if (queryExecutor.failureCount > 0)
-        throw new IOException(s"Failed to write ${queryExecutor.failureCount} batches to $keyspaceName.$tableName.")
+        throw new IOException(s"Failed to write ${queryExecutor.failureCount} statements to $keyspaceName.$tableName.")
 
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
-      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} batches to $keyspaceName.$tableName in $duration%.3f s.")
+      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} statements to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
 }
 
 object TableWriter {
-
-  val MeasuredInsertsCount = 128
 
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
