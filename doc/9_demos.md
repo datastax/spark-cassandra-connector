@@ -61,7 +61,7 @@ To run from SBT read on.
 #### Running Any Of The `simple` Demos
 On the command line at the root of `spark-cassandra-connector`:
     
-    sbt simple/run
+    sbt simple-demos/run
     
 And then select which demo you want:
     
