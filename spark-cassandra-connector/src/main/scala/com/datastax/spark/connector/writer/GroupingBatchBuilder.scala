@@ -3,6 +3,7 @@ package com.datastax.spark.connector.writer
 import org.apache.spark.util.MutablePair
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 object GroupingBatchBuilder {
@@ -115,6 +116,54 @@ object GroupingBatchBuilder {
       } else
         buf(realIdx).update(realIdx, value)
     }
+  }
+
+
+  private[connector] class QueuedHashMap[K, V: Ordering : ClassTag](capacity: Int) {
+
+    type Box = MutablePair[Int, (K, V)]
+
+    implicit val ordering = new Ordering[(K, V)] {
+      override def compare(x: (K, V), y: (K, V)): Int = implicitly[Ordering[V]].compare(x._2, y._2)
+    }
+
+    private[this] val data = new PriorityQueueWithUplifting[(K, V)](capacity)
+    private[this] val keyMap = mutable.HashMap[K, Box]().withDefaultValue(null)
+
+    /** Retrieves the element by key */
+    def apply(key: K): Option[V] = keyMap(key) match {
+      case null =>
+        None
+      case box: Box =>
+        Some(box._2._2)
+    }
+
+    /** Assumes that the box at the given key has been updated. It performs required updates in
+      * the data structures. */
+    def update(key: K): Unit = data.update(keyMap(key))
+
+    /** Adds a new element to the map. */
+    def add(key: K, value: V): Unit = {
+      if (keyMap.contains(key))
+        throw new IllegalStateException(s"Key $key already exists")
+
+      val box = data.add((key, value))
+      keyMap.put(key, box)
+    }
+
+    /** Removes and returns the top element. */
+    def remove(): V = {
+      val box = data.remove()
+      keyMap.remove(box._2._1)
+      box._2._2
+    }
+
+    /** Returns the size of the map. */
+    def size(): Int = data.size
+
+    /** Returns the top element of the map. */
+    def head(): V = data.apply(0)._2._2
+
   }
 
 }
