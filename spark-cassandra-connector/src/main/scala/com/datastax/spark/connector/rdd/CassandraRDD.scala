@@ -353,7 +353,7 @@ class CassandraRDD[R] private[connector] (
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
-        yield converter.convert(value).asInstanceOf[AnyRef]
+        yield converter.convert(value)
       val bstm = stmt.bind(convertedValues: _*)
       bstm.setFetchSize(fetchSize)
       bstm
@@ -373,7 +373,7 @@ class CassandraRDD[R] private[connector] (
       val rs = session.execute(stmt)
       val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
       val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
-      val result = iterator.map(rowTransformer.read(_, columnNamesArray, protocolVersion))
+      val result = iterator.map(rowTransformer.read(_, columnNamesArray)(protocolVersion))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {

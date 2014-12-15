@@ -43,6 +43,10 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.nulls (key INT PRIMARY KEY, i int, vi varint, t text, d timestamp, l list<int>)")
     session.execute("INSERT INTO java_api_test.nulls (key, i, vi, t, d, l) VALUES (1, null, null, null, null, null)")
 
+    session.execute("CREATE TYPE java_api_test.address (street text, city text, zip int)")
+    session.execute("CREATE TABLE IF NOT EXISTS java_api_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
+    session.execute("INSERT INTO java_api_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+
   }
 
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
@@ -283,6 +287,23 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     row.getString(2) should be (null)
     row.getDate(3) should be (null)
     row.getList[Int](4) should be (new java.util.ArrayList[Int]())
+  }
+
+  it should "allow to fetch UDT columns" in {
+    val result = javaFunctions(sc)
+      .cassandraTable("java_api_test", "udts")
+      .select("key", "name", "addr").collect()
+
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+    row.getString(1) should be("name")
+
+    val udtValue = row.getUDTValue(2)
+    udtValue.size should be(3)
+    udtValue.getString("street") should be("Some Street")
+    udtValue.getString("city") should be("Paris")
+    udtValue.getInt("zip") should be(11120)
   }
 
 }

@@ -10,7 +10,7 @@ import org.scalatest.{FunSuite, ShouldMatchers}
 class CassandraRowTest extends FunSuite with ShouldMatchers {
 
   test("basicAccessTest") {
-    val row = new CassandraRow(Array("1"), Array("value"))
+    val row = new CassandraRow(Array("value"), Array("1"))
     assertEquals(1, row.size)
     assertEquals(Some("1"), row.getStringOption(0))
     assertEquals(Some("1"), row.getStringOption("value"))
@@ -19,19 +19,19 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
   }
 
   test("nullAccessTest") {
-    val row = new CassandraRow(Array(null), Array("value"))
+    val row = new CassandraRow(Array("value"), Array(null))
     assertEquals(None, row.getStringOption(0))
     assertEquals(None, row.getStringOption("value"))
     assertEquals(1, row.size)
   }
 
   test("nullToStringTest") {
-    val row = new CassandraRow(Array(null), Array("value"))
+    val row = new CassandraRow(Array("value"), Array(null))
     assertEquals("CassandraRow{value: null}", row.toString())
   }
 
   test("nonExistentColumnAccessTest") {
-    val row = new CassandraRow(Array(null), Array("value"))
+    val row = new CassandraRow(Array("value"), Array(null))
     intercept[ColumnNotFoundException] {
       row.getString("wring-column")
     }
@@ -44,7 +44,7 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
     val integer = Integer.valueOf(2)
     val string = "3"
 
-    val row = new CassandraRow(Array(date, integer, string), Array("date", "integer", "string"))
+    val row = new CassandraRow(Array("date", "integer", "string"), Array(date, integer, string))
     assertEquals(3, row.size)
     assertEquals(date, row.getDate("date"))
     assertEquals(date.getTime, row.getLong("date"))
@@ -82,7 +82,7 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
     map.put("b", 2)
     map.put("c", 3)
 
-    val row = new CassandraRow(Array(list, set, map), Array("list", "set", "map"))
+    val row = new CassandraRow(Array("list", "set", "map"), Array(list, set, map))
 
     val scalaList = row.getList[Int]("list")
     assertEquals(Vector(1, 1, 2), scalaList)
@@ -101,7 +101,7 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
   }
 
   test("serializationTest") {
-    val row = new CassandraRow(Array("1"), Array("value"))
+    val row = new CassandraRow(Array("value"), Array("1"))
     val bs = new ByteArrayOutputStream
     val os = new ObjectOutputStream(bs)
     os.writeObject(row)

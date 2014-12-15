@@ -64,7 +64,7 @@ object ColumnDataType {
   
     // TODO: This mapping is useless, it is here only to avoid lookup failure if a table contains a UDT column. 
     // It is not possible to read UDT columns in SparkSQL now. 
-    connector.types.UserDefinedTypeStub -> catalyst.types.StructType(Seq.empty)
+    connector.types.UserDefinedType -> catalyst.types.StructType(Seq.empty)
   )
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): catalyst.types.DataType = {

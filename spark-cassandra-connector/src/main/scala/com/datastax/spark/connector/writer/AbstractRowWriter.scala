@@ -24,7 +24,7 @@ abstract class AbstractRowWriter[T](table: TableDef, selectedColumns: Seq[String
     buf
   }
 
-  override def bind(data: T, stmt: PreparedStatement, protocolVersion: ProtocolVersion) = {
+  override def bind(data: T, stmt: PreparedStatement)(implicit protocolVersion: ProtocolVersion) = {
     stmt.bind(fillBuffer(data): _*)
   }
 

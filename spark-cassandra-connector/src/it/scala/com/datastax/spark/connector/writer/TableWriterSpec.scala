@@ -130,7 +130,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
 
   it should "write null values" in {
     val key = 1.asInstanceOf[AnyRef]
-    val row = new CassandraRow(IndexedSeq(key, null, null), IndexedSeq("key", "text_value", "int_value"))
+    val row = new CassandraRow(IndexedSeq("key", "text_value", "int_value"), IndexedSeq(key, null, null))
 
     sc.parallelize(Seq(row)).saveToCassandra("write_test", "nulls")
     conn.withSessionDo { session =>

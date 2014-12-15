@@ -77,7 +77,7 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
     override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
   }
 
-  override def bind(data: T, stmt: PreparedStatement, protocolVersion: ProtocolVersion) = {
+  override def bind(data: T, stmt: PreparedStatement)(implicit protocolVersion: ProtocolVersion) = {
     val boundStmt = stmt.bind()
     for (variable <- stmt.getVariables) {
       val columnName = variable.getName

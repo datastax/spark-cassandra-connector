@@ -325,6 +325,20 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     row.getString(1) should be("name")
   }
 
+  it should "allow to fetch UDT columns" in {
+    val result = sc.cassandraTable("read_test", "udts").select("key", "name", "addr").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+    row.getString(1) should be("name")
+
+    val udtValue = row.getUDTValue(2)
+    udtValue.size should be(3)
+    udtValue.getString("street") should be("Some Street")
+    udtValue.getString("city") should be("Paris")
+    udtValue.getInt("zip") should be(11120)
+  }
+
   it should "throw appropriate IOException when the table was not found at the computation time" in {
     intercept[IOException] { sc.cassandraTable("read_test", "unknown_table").collect() }
   }

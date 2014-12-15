@@ -10,7 +10,7 @@ trait RowReader[T] extends Serializable {
     * @param row row fetched from Cassandra
     * @param columnNames column names available in the `row`
     * @param protocolVersion java driver protocol version to be used for deserialization */
-  def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): T
+  def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): T
 
   /** List of columns this `RowReader` is going to read.
     * Useful to avoid fetching the columns that are not needed. */

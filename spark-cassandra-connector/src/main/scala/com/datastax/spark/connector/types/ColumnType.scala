@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.driver.core.{UDTValue, DataType}
+import com.datastax.driver.core.DataType
+import com.datastax.spark.connector.UDTValue
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
@@ -54,18 +55,14 @@ object ColumnType {
       case DataType.Name.LIST => ListType(typeArgs(0))
       case DataType.Name.SET => SetType(typeArgs(0))
       case DataType.Name.MAP => MapType(typeArgs(0), typeArgs(1))
-      case DataType.Name.UDT => UserDefinedTypeStub
+      case DataType.Name.UDT => UserDefinedType
       case _ => primitiveTypeMap(dataType)
     }
   }
 }
 
-// TODO: This is a stub.
-// UDTValues are not Serializable.
-// Properly, we should use a dedicated,
-// serializable class for UDTValues and also allow to map them to case classes.
-case object UserDefinedTypeStub extends ColumnType[UDTValue] {
-  def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[UDTValue])
+case object UserDefinedType extends ColumnType[UDTValue] {
+  def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[com.datastax.driver.core.UDTValue])
   override def isCollection = false
   override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
 }
