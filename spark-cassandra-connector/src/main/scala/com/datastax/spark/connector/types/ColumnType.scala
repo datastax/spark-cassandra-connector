@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
-import com.datastax.driver.core.{ProtocolVersion, DataType}
+import com.datastax.driver.core.{UserType, ProtocolVersion, DataType}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -47,14 +47,22 @@ object ColumnType {
     DataType.counter() -> CounterType
   )
 
+  /** Makes sure the sequence does not contain any lazy transformations.
+    * This guarantees that if T is Serializable, the collection is Serializable. */
+  private def unlazify[T](seq: Seq[T]): Seq[T] = Seq(seq: _*)
+
+  private def fields(dataType: UserType): Seq[FieldDef] = unlazify {
+    for (field <- dataType.iterator().toSeq) yield
+      FieldDef(field.getName, fromDriverType(field.getType))
+  }
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
     val typeArgs = dataType.getTypeArguments.map(fromDriverType)
-    dataType.getName match {
-      case DataType.Name.LIST => ListType(typeArgs(0))
-      case DataType.Name.SET => SetType(typeArgs(0))
-      case DataType.Name.MAP => MapType(typeArgs(0), typeArgs(1))
-      case DataType.Name.UDT => UserDefinedType
+    (dataType, dataType.getName) match {
+      case (_, DataType.Name.LIST) => ListType(typeArgs(0))
+      case (_, DataType.Name.SET)  => SetType(typeArgs(0))
+      case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
+      case (userType: UserType, _) => UserDefinedType(fields(userType))
       case _ => primitiveTypeMap(dataType)
     }
   }

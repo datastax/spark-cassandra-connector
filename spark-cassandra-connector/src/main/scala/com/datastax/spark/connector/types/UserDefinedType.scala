@@ -9,8 +9,17 @@ import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, Us
 import com.datastax.spark.connector.UDTValue
 import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
+case class FieldDef(fieldName: String, fieldType: ColumnType[_])
 
-object UserDefinedType extends ColumnType[UDTValue] {
+case class UserDefinedType(fields: Seq[FieldDef]) extends ColumnType[UDTValue] {
+  lazy val fieldNames = fields.toIndexedSeq.map(_.fieldName)
+  lazy val fieldTypes = fields.toIndexedSeq.map(_.fieldType)
+  override def isCollection = false
+  override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
+}
+
+
+object UserDefinedType {
 
   class DriverUDTValueConverter(dataType: UserType)(implicit protocolVersion: ProtocolVersion)
     extends TypeConverter[DriverUDTValue] {
@@ -51,10 +60,6 @@ object UserDefinedType extends ColumnType[UDTValue] {
       case dt: UserType => new DriverUDTValueConverter(dt)
       case _            => throw new IllegalArgumentException("UserType expected.")
     }
-
-
-  override def isCollection = false
-  override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
 
 }
 
