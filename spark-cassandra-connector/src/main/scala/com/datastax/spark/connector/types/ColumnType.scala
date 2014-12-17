@@ -1,18 +1,16 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.driver.core.DataType
-import com.datastax.spark.connector.UDTValue
+import java.net.InetAddress
+import java.nio.ByteBuffer
+import java.util.{UUID, Date}
+
+import com.datastax.driver.core.{ProtocolVersion, DataType}
+
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
-
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
-
-  /** Returns a converter that converts values to the type of this column expected by the
-    * Cassandra Java driver when saving the row.*/
-  def converterToCassandra: TypeConverter[_ <: AnyRef]
 
   /** Returns a converter that converts values to the Scala type associated with this column. */
   lazy val converterToScala: TypeConverter[T] =
@@ -44,10 +42,11 @@ object ColumnType {
     DataType.timestamp() -> TimestampType,
     DataType.inet() -> InetType,
     DataType.uuid() -> UUIDType,
+    DataType.timeuuid() -> TimeUUIDType,
     DataType.blob() -> BlobType,
-    DataType.counter() -> CounterType,
-    DataType.timeuuid() -> TimeUUIDType
+    DataType.counter() -> CounterType
   )
+
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
     val typeArgs = dataType.getTypeArguments.map(fromDriverType)
@@ -59,10 +58,44 @@ object ColumnType {
       case _ => primitiveTypeMap(dataType)
     }
   }
+
+  // Lambdas are used here instead of TypeConverter instances, because a user can chain custom
+  // type converters for the builtin types by calling TypeConverter.registerConverter.
+  // If we instantiated converters in advance, using user defined converters would not be possible.
+  private val primitiveConverterMap = Map[DataType, () => TypeConverter[_]](
+    DataType.text() -> { () => TypeConverter.forType[String] },
+    DataType.ascii() -> { () => TypeConverter.forType[String] },
+    DataType.varchar() -> { () => TypeConverter.forType[String] },
+    DataType.cint() -> { () => TypeConverter.forType[java.lang.Integer] },
+    DataType.bigint() -> { () => TypeConverter.forType[java.lang.Long] },
+    DataType.cfloat() -> { () => TypeConverter.forType[java.lang.Float] },
+    DataType.cdouble() -> { () => TypeConverter.forType[java.lang.Double] },
+    DataType.cboolean() -> { () => TypeConverter.forType[java.lang.Boolean] },
+    DataType.varint() -> { () => TypeConverter.forType[java.math.BigInteger] },
+    DataType.decimal() -> { () => TypeConverter.forType[java.math.BigDecimal] },
+    DataType.timestamp() -> { () => TypeConverter.forType[Date] },
+    DataType.inet() -> { () => TypeConverter.forType[InetAddress] },
+    DataType.uuid() -> { () => TypeConverter.forType[UUID] },
+    DataType.timeuuid() -> { () => TypeConverter.forType[UUID] },
+    DataType.blob() -> { () => TypeConverter.forType[ByteBuffer] },
+    DataType.counter() -> { () => TypeConverter.forType[java.lang.Long] }
+  )
+
+
+  /** Returns a converter that converts values to the type of this column expected by the
+    * Cassandra Java driver when saving the row.*/
+  def converterToCassandra(dataType: DataType)(implicit protocolVersion: ProtocolVersion): TypeConverter[_ <: AnyRef] = {
+    val typeArgs = dataType.getTypeArguments.map(converterToCassandra)
+    val converter: TypeConverter[_] =
+      dataType.getName match {
+        case DataType.Name.LIST => TypeConverter.javaArrayListConverter(typeArgs(0))
+        case DataType.Name.SET => TypeConverter.javaHashSetConverter(typeArgs(0))
+        case DataType.Name.MAP => TypeConverter.javaHashMapConverter(typeArgs(0), typeArgs(1))
+        case DataType.Name.UDT => UserDefinedType.driverUDTValueConverter(dataType)
+        case _ => primitiveConverterMap(dataType)()
+      }
+    new TypeConverter.OptionToNullConverter(converter)
+  }
+
 }
 
-case object UserDefinedType extends ColumnType[UDTValue] {
-  def converterToCassandra = new OptionToNullConverter(TypeConverter.forType[com.datastax.driver.core.UDTValue])
-  override def isCollection = false
-  override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
-}

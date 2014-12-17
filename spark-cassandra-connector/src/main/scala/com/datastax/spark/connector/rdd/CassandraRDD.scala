@@ -6,7 +6,7 @@ import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
 import scala.language.existentials
 
-import com.datastax.driver.core.{Session, Statement}
+import com.datastax.driver.core.{ProtocolVersion, Session, Statement}
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
@@ -341,15 +341,17 @@ class CassandraRDD[R] private[connector] (
     (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", range.values ++ where.values)
   }
 
+  def protocolVersion(session: Session): ProtocolVersion = {
+    session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
+  }
+
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
     try {
+      implicit val pv = protocolVersion(session)
       val stmt = session.prepare(cql)
       stmt.setConsistencyLevel(consistencyLevel)
       val converters = stmt.getVariables
-        .view
-        .map(_.getType)
-        .map(ColumnType.fromDriverType)
-        .map(_.converterToCassandra)
+        .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
@@ -370,10 +372,10 @@ class CassandraRDD[R] private[connector] (
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.map(_.selectedAs).toArray
     try {
+      implicit val pv = protocolVersion(session)
       val rs = session.execute(stmt)
-      val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
       val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
-      val result = iterator.map(rowTransformer.read(_, columnNamesArray)(protocolVersion))
+      val result = iterator.map(rowTransformer.read(_, columnNamesArray))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
     } catch {

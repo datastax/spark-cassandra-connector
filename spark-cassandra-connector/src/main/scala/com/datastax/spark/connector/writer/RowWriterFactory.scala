@@ -24,5 +24,5 @@ trait LowPriorityRowWriterFactoryImplicits {
 
 /** Provides an implicit `RowWriterFactory` for saving [[com.datastax.spark.connector.CassandraRow CassandraRow]] objects.*/
 object RowWriterFactory extends LowPriorityRowWriterFactoryImplicits {
-  implicit val genericRowWriterFactory = GenericRowWriter.Factory
+  implicit val genericRowWriterFactory = CassandraRowWriter.Factory
 }

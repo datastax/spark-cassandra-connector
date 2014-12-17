@@ -51,6 +51,25 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 The driver will execute a CQL `INSERT` statement for every object in the `RDD`, 
 grouped in unlogged batches. The consistency level for writes is `ONE`. 
 
+## Saving objects of Cassandra User Defined Types
+To save structures consisting of many fields, use `com.datastax.spark.connector.UDTValue`
+class. An instance of this class can be easily obtained from a Scala `Map` by calling `fromMap`
+factory method.
+
+Assume the following table definition:
+```sql
+CREATE TYPE test.address (city text, street text, number int);
+CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
+```
+
+To create a new row in the `test.companies` table:
+```scala
+case class Company(name: String, address: UDTValue)
+val address = UDTValue.fromMap("city" -> "Santa Clara", "street" -> "Freedom Circle", number -> 3975)
+val company = Company("DataStax", address)
+sc.parallelize(Seq(company)).saveToCassandra("test", "companies")
+```
+
 ## Tuning
 The following properties set in `SparkConf` can be used to fine-tune the saving process:
 

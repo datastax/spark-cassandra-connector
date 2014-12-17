@@ -19,6 +19,9 @@ object UDTValue {
     new UDTValue(fields, values)
   }
 
+  def fromMap(map: Map[String, Any]): UDTValue =
+    new UDTValue(map.keys.toIndexedSeq, map.values.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
+
   val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
 
   implicit object UDTValueConverter extends NullableTypeConverter[UDTValue] {

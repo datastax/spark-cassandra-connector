@@ -41,6 +41,10 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     session.execute("CREATE TABLE IF NOT EXISTS write_test.counters2 (pkey INT PRIMARY KEY, c counter)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)")
     session.execute("CREATE TABLE IF NOT EXISTS write_test.single_column (pk INT PRIMARY KEY)")
+
+    session.execute("CREATE TYPE write_test.address (street text, city text, zip int)")
+    session.execute("CREATE TABLE IF NOT EXISTS write_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
+
   }
 
   private def verifyKeyValueTable(tableName: String) {
@@ -229,7 +233,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     sc.cassandraTable("write_test", "counters2").count should be(rowCount)
   }
 
-  it should "write values of user-defined types" in {
+  it should "write values of user-defined classes" in {
     TypeConverter.registerConverter(new TypeConverter[String] {
       def targetTypeTag = scala.reflect.runtime.universe.typeTag[String]
       def convertPF = { case CustomerId(id) => id }
@@ -245,6 +249,24 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
         row.getString(2) shouldEqual "foo"
     }
   }
+
+  it should "write values of user-defined-types in Cassandra" in {
+    val address = UDTValue.fromMap(Map("city" -> "Warsaw", "zip" -> 10000, "street" -> "Marszałkowska"))
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra("write_test", "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute("SELECT key, name, addr FROM write_test.udts").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+      }
+    }
+  }
+
 
   it should "write to single-column tables" in {
     val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
