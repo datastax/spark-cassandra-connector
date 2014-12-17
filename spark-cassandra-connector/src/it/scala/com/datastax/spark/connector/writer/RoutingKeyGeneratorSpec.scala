@@ -34,7 +34,7 @@ class RoutingKeyGeneratorSpec extends FlatSpec with Matchers with BeforeAndAfter
 
       val readTokenStr = CassandraRow.fromJavaDriverRow(row, Array("token(id)"), protocolVersion).getString(0)
 
-      val rk = rkg.computeRoutingKey(bStmt)
+      val rk = rkg.apply(bStmt)
       val rkToken = cp.getToken(rk)
 
       rkToken.getTokenValue.toString should be(readTokenStr)
@@ -55,7 +55,7 @@ class RoutingKeyGeneratorSpec extends FlatSpec with Matchers with BeforeAndAfter
 
       val readTokenStr = CassandraRow.fromJavaDriverRow(row, Array("token(id,id2)"), protocolVersion).getString(0)
 
-      val rk = rkg.computeRoutingKey(bStmt)
+      val rk = rkg.apply(bStmt)
       val rkToken = cp.getToken(rk)
 
       rkToken.getTokenValue.toString should be(readTokenStr)

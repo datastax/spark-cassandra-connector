@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import com.datastax.driver.core.BatchStatement.Type
-import com.datastax.driver.core.{PreparedStatement, Session}
+import com.datastax.driver.core.{BoundStatement, PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
@@ -102,18 +102,36 @@ class TableWriter[T] private (
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
     connector.withSessionDo { session =>
+      val t0 = System.nanoTime()
+
       val rowIterator = new CountingIterator(data)
-      val startTime = System.currentTimeMillis()
-      val stmt = prepareStatement(session)
-      stmt.setConsistencyLevel(writeConf.consistencyLevel)
+      val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel)
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
-      val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator)
+      val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)
+
+      val batchKeyGenerator = writeConf.batchLevel match {
+        case BatchLevel.All => bs: BoundStatement => 0
+
+        case BatchLevel.ReplicaSet => bs: BoundStatement =>
+          if (bs.getRoutingKey == null)
+            bs.setRoutingKey(routingKeyGenerator(bs))
+          session.getCluster.getMetadata.getReplicas(keyspaceName, bs.getRoutingKey).hashCode() // hash code is enough
+
+        case BatchLevel.Partition => bs: BoundStatement =>
+          if (bs.getRoutingKey == null) {
+            bs.setRoutingKey(routingKeyGenerator(bs))
+          }
+          bs.getRoutingKey.duplicate()
+      }
+
+      val batchBuilder = new GroupingBatchBuilder(batchStmtBuilder, batchKeyGenerator,
+        writeConf.batchSize, writeConf.batchBufferSize, data)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
-      for (stmtToWrite <- batchStmtBuilder.makeStatements(rowIterator, writeConf.batchSize)) {
-        stmtToWrite.setConsistencyLevel(writeConf.consistencyLevel)
+      val t1 = System.nanoTime()
+      for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite)
       }
 
@@ -122,9 +140,10 @@ class TableWriter[T] private (
       if (queryExecutor.failureCount > 0)
         throw new IOException(s"Failed to write ${queryExecutor.failureCount} statements to $keyspaceName.$tableName.")
 
-      val endTime = System.currentTimeMillis()
-      val duration = (endTime - startTime) / 1000.0
-      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} statements to $keyspaceName.$tableName in $duration%.3f s.")
+      val tEnd = System.nanoTime()
+      val duration1 = (t1 - t0) / 1000000000d
+      val duration2 = (tEnd - t1) / 1000000000.0
+      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} statements to $keyspaceName.$tableName in $duration2%.3f s (setup time was $duration1%.3f s).")
     }
   }
 }
