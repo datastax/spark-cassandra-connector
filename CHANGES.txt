@@ -1,5 +1,6 @@
 1.2.0 (unreleased)
  * Added support for TTL and timestamp in the writer (#153)
+ * Added support for UDT column types (SPARKC-1)
  * Upgraded Spark to the latest release version, 1.1.1 (#461)
 
 1.1.1
