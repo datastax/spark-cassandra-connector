@@ -1,10 +1,68 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.driver.core._
+import com.datastax.spark.connector.BatchSize
+import com.google.common.collect.AbstractIterator
 import org.apache.spark.util.MutablePair
 
 import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.{Iterator, mutable}
 import scala.reflect.ClassTag
+
+class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
+                              batchKeyGenerator: BoundStatement => Any,
+                              batchSize: BatchSize,
+                              maxBatches: Int,
+                              data: Iterator[T]) extends AbstractIterator[Statement] with Iterator[Statement] {
+  require(maxBatches > 0)
+
+  import com.datastax.spark.connector.writer.GroupingBatchBuilder._
+
+  private[this] val qmap = new QueuedHashMap[Any, Batch](maxBatches + 1)
+
+  def processStatement(boundStatement: BoundStatement): Unit = {
+    val batchKey = batchKeyGenerator(boundStatement)
+    qmap.apply(batchKey) match {
+      case Some(batch) =>
+        batch.add(boundStatement)
+        qmap.update(batchKey)
+      case None =>
+        val batch = Batch(batchSize)
+        batch.add(boundStatement)
+        qmap.add(batchKey, batch)
+    }
+  }
+
+  @tailrec
+  final override def computeNext(): Statement = {
+    // make sure we process all the pending batches before we read more data
+    if (qmap.size() > maxBatches || (qmap.size() > 0 && qmap.head().isSizeExceeded)) {
+      val batch = qmap.remove()
+
+      if (batch.isSizeExceeded && batch.statements.size > 1) {
+        // if the batch is oversized it is oversized by 1 item
+        val batchStmt = batchStatementBuilder.maybeCreateBatch(batch.statements.view(0, batch.statements.size - 1))
+        val last = batch.statements.last
+        batch.reuse()
+        batch.add(last)
+        qmap.add(batchKeyGenerator(last), batch)
+        batchStmt
+      } else {
+        batchStatementBuilder.maybeCreateBatch(batch.statements)
+      }
+    } else {
+      if (data.hasNext) {
+        processStatement(batchStatementBuilder.bind(data.next()))
+        computeNext()
+      } else if (qmap.size() > 0) {
+        batchStatementBuilder.maybeCreateBatch(qmap.remove().statements)
+      } else {
+        endOfData()
+      }
+    }
+  }
+
+}
 
 object GroupingBatchBuilder {
 
