@@ -19,6 +19,10 @@ sealed trait NamedColumnRef extends ColumnRef {
   def selectedAs: String
 }
 
+object NamedColumnRef {
+  def unapply(columnRef: NamedColumnRef) = Some((columnRef.columnName, columnRef.selectedAs))
+}
+
 /** References a column by name. */
 case class ColumnName(columnName: String) extends NamedColumnRef {
   val cql = s""""$columnName""""
