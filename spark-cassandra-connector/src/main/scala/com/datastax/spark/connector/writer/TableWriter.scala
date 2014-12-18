@@ -5,7 +5,6 @@ import java.io.IOException
 import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.{TTLColumn, WriteTimeColumn, PlainSelectionColumn}
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
@@ -195,8 +194,8 @@ object TableWriter {
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames match {
       case SomeColumns(names @ _*) => names.map {
-        case PlainSelectionColumn(columnName) => columnName
-        case TTLColumn(_) | WriteTimeColumn(_) =>
+        case ColumnName(columnName) => columnName
+        case TTL(_) | WriteTime(_) =>
           throw new IllegalArgumentException(
             s"Neither TTL nor WriteTime fields are not supported for writing. " +
             s"Use appropriate write configuration settings to specify TTL or WriteTime.")

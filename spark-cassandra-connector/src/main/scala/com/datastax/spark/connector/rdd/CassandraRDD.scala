@@ -100,13 +100,13 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
-  private def checkColumnsAvailable(columns: Seq[SelectionColumn], availableColumns: Seq[SelectionColumn]) {
+  private def checkColumnsAvailable(columns: Seq[NamedColumnRef], availableColumns: Seq[NamedColumnRef]) {
     val availableColumnsSet = availableColumns.collect {
-      case PlainSelectionColumn(columnName) => columnName
+      case ColumnName(columnName) => columnName
     }.toSet
 
     val notFound = columns.collectFirst {
-      case PlainSelectionColumn(columnName) if !availableColumnsSet.contains(columnName) => columnName
+      case ColumnName(columnName) if !availableColumnsSet.contains(columnName) => columnName
     }
 
     if (notFound.isDefined)
@@ -116,7 +116,7 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Filters currently selected set of columns with a new set of columns */
-  private def narrowColumnSelection(columns: Seq[SelectionColumn]): Seq[SelectionColumn] = {
+  private def narrowColumnSelection(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
     columnNames match {
       case SomeColumns(cs @ _*) =>
         checkColumnsAvailable(columns, cs)
@@ -133,13 +133,13 @@ class CassandraRDD[R] private[connector] (
     * after a column was removed by the previous `select` call, it is not possible to
     * add it back.
     *
-    * The selected columns are [[SelectionColumn]] instances. This type allows to specify columns for
+    * The selected columns are [[NamedColumnRef]] instances. This type allows to specify columns for
     * straightforward retrieval and to read TTL or write time of regular columns as well. Implicit
     * conversions included in [[com.datastax.spark.connector]] package make it possible to provide
     * just column names (which is also backward compatible) and optional add `.ttl` or `.writeTime`
-    * suffix in order to create an appropriate [[SelectionColumn]] instance.
+    * suffix in order to create an appropriate [[NamedColumnRef]] instance.
     */
-  def select(columns: SelectionColumn*): CassandraRDD[R] = {
+  def select(columns: NamedColumnRef*): CassandraRDD[R] = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
   }
 
@@ -245,23 +245,23 @@ class CassandraRDD[R] private[connector] (
 
   private lazy val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
 
-  private def checkColumnsExistence(columns: Seq[SelectionColumn]): Seq[SelectionColumn] = {
+  private def checkColumnsExistence(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
     val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
 
-    def checkSingleColumn(column: SelectionColumn) = {
+    def checkSingleColumn(column: NamedColumnRef) = {
       if (!allColumnNames.contains(column.columnName))
         throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
 
       column match {
-        case PlainSelectionColumn(_) =>
+        case ColumnName(_) =>
 
-        case TTLColumn(columnName) =>
+        case TTL(columnName) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
 
-        case WriteTimeColumn(columnName) =>
+        case WriteTime(columnName) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
@@ -275,10 +275,10 @@ class CassandraRDD[R] private[connector] (
 
 
   /** Returns the names of columns to be selected from the table.*/
-  lazy val selectedColumnNames: Seq[SelectionColumn] = {
+  lazy val selectedColumnNames: Seq[NamedColumnRef] = {
     val providedColumnNames =
       columnNames match {
-        case AllColumns => tableDef.allColumns.map(col => col.columnName: SelectionColumn).toSeq
+        case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef).toSeq
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 

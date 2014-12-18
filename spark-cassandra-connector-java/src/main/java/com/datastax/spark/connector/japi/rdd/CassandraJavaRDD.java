@@ -1,10 +1,10 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.NamedColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
-import com.datastax.spark.connector.rdd.SelectionColumn;
 import com.datastax.spark.connector.util.JavaApiHelper;
 import org.apache.spark.api.java.JavaRDD;
 import scala.reflect.ClassTag;
@@ -44,7 +44,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public CassandraJavaRDD<R> select(String... columnNames) {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
-        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<SelectionColumn>toScalaSeq(CassandraJavaUtil.convert(columnNames)));
+        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<NamedColumnRef>toScalaSeq(CassandraJavaUtil.convert(columnNames)));
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
@@ -55,10 +55,10 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      * times, it selects the subset of the already selected columns, so after a column was removed by the previous
      * {@code select} call, it is not possible to add it back.</p>
      */
-    public CassandraJavaRDD<R> select(SelectionColumn... selectionColumns) {
+    public CassandraJavaRDD<R> select(NamedColumnRef... selectionColumns) {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
-        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<SelectionColumn>toScalaSeq(selectionColumns));
+        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<NamedColumnRef>toScalaSeq(selectionColumns));
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
@@ -77,10 +77,10 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     /**
      * Returns the names of columns to be selected from the table.
      */
-    public SelectionColumn[] selectedColumnNames() {
+    public NamedColumnRef[] selectedColumnNames() {
         // explicit type cast is intentional and required here
         //noinspection RedundantCast
-        return (SelectionColumn[]) rdd().selectedColumnNames().<SelectionColumn>toArray(getClassTag(SelectionColumn.class));
+        return (NamedColumnRef[]) rdd().selectedColumnNames().<NamedColumnRef>toArray(getClassTag(NamedColumnRef.class));
     }
 
     /**

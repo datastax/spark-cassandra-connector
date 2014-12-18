@@ -1,9 +1,9 @@
 package com.datastax.spark
 
-import com.datastax.spark.connector.rdd.{WriteTimeColumn, TTLColumn, PlainSelectionColumn}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
@@ -57,9 +57,9 @@ package object connector {
     new RDDFunctions[T](rdd)
 
   implicit class ColumnNameFunctions(val columnName: String) extends AnyVal {
-    def writeTime: WriteTimeColumn = WriteTimeColumn(columnName)
-    def ttl: TTLColumn = TTLColumn(columnName)
+    def writeTime: WriteTime = WriteTime(columnName)
+    def ttl: TTL = TTL(columnName)
   }
 
-  implicit def toSelectionColumn(columnName: String): PlainSelectionColumn = PlainSelectionColumn(columnName)
+  implicit def toNamedColumnRef(columnName: String): NamedColumnRef = ColumnName(columnName)
 }

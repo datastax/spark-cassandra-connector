@@ -1,6 +1,11 @@
-package com.datastax.spark.connector.rdd
+package com.datastax.spark.connector
 
-sealed trait SelectionColumn {
+import scala.language.implicitConversions
+
+/** Unambiguous reference to a column in the query result set row. */
+sealed trait ColumnRef
+
+sealed trait NamedColumnRef extends ColumnRef {
   /** Returns the column name which this selection bases on. In case of a function, such as `ttl` or
     * `writetime`, it returns the column name passed to that function. */
   def columnName: String
@@ -14,23 +19,27 @@ sealed trait SelectionColumn {
   def selectedAs: String
 }
 
-case class PlainSelectionColumn(columnName: String) extends SelectionColumn {
+/** References a column by name. */
+case class ColumnName(columnName: String) extends NamedColumnRef {
   val cql = s""""$columnName""""
   val selectedAs = columnName
 
   override def toString: String = selectedAs
 }
 
-case class TTLColumn(columnName: String) extends SelectionColumn {
+case class TTL(columnName: String) extends NamedColumnRef {
   val cql = s"""TTL("$columnName")"""
   val selectedAs = s"ttl($columnName)"
 
   override def toString: String = selectedAs
 }
 
-case class WriteTimeColumn(columnName: String) extends SelectionColumn {
+case class WriteTime(columnName: String) extends NamedColumnRef {
   val cql = s"""WRITETIME("$columnName")"""
   val selectedAs = s"writetime($columnName)"
 
   override def toString: String = selectedAs
 }
+
+/** References a column by its index in the row. Useful for tuples. */
+case class ColumnIndex(columnIndex: Int) extends ColumnRef
