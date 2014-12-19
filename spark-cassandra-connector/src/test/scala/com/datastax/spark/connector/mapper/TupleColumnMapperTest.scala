@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.spark.connector.ColumnIndex
 import com.datastax.spark.connector.cql.{TableDef, RegularColumn, ColumnDef}
 import com.datastax.spark.connector.types.IntType
 import org.apache.commons.lang3.SerializationUtils
@@ -17,15 +18,15 @@ class TupleColumnMapperTest {
   def testGetters() {
     val columnMap = new TupleColumnMapper[(Int, String, Boolean)].columnMap(tableDef)
     val getters = columnMap.getters
-    assertEquals(IndexedColumnRef(0), getters("_1"))
-    assertEquals(IndexedColumnRef(1), getters("_2"))
-    assertEquals(IndexedColumnRef(2), getters("_3"))
+    assertEquals(ColumnIndex(0), getters("_1"))
+    assertEquals(ColumnIndex(1), getters("_2"))
+    assertEquals(ColumnIndex(2), getters("_3"))
   }
 
   @Test
   def testConstructor() {
     val columnMap = new TupleColumnMapper[(Int, String, Boolean)].columnMap(tableDef)
-    assertEquals(Seq(IndexedColumnRef(0), IndexedColumnRef(1), IndexedColumnRef(2)), columnMap.constructor)
+    assertEquals(Seq(ColumnIndex(0), ColumnIndex(1), ColumnIndex(2)), columnMap.constructor)
   }
 
   @Test
@@ -38,9 +39,9 @@ class TupleColumnMapperTest {
   def testImplicit() {
     val columnMap = implicitly[ColumnMapper[(Int, String, Boolean)]].columnMap(tableDef)
     val getters = columnMap.getters
-    assertEquals(IndexedColumnRef(0), getters("_1"))
-    assertEquals(IndexedColumnRef(1), getters("_2"))
-    assertEquals(IndexedColumnRef(2), getters("_3"))
+    assertEquals(ColumnIndex(0), getters("_1"))
+    assertEquals(ColumnIndex(1), getters("_2"))
+    assertEquals(ColumnIndex(2), getters("_3"))
   }
 
 }
