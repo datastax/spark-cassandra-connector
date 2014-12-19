@@ -278,4 +278,15 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     row.getInt(0) should be(1)
     row.getString(1) should be ("name")
   }
+
+  // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
+  it should "allow to restrict a clustering timestamp column value" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.export_table(objectid int, utcstamp timestamp, service_location_id int, " +
+        "service_location_name text, meterid int, primary key(meterid, utcstamp))")
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    cc.cassandraSql("select objectid, meterid, utcstamp  from export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
+  }
 }
