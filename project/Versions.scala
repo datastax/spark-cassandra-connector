@@ -27,7 +27,7 @@ object Versions {
   val JodaT           = "2.3"
   val JOpt            = "3.2"//4.7
   val Kafka           = "0.8.0"//https://github.com/apache/spark/pull/3631
-  val Lzf             = "0.8.4"
+  val Lzf             = "1.0.0"
   val CodaHaleMetrics = "3.0.2"
   val Scala           = "2.10.4"
   val ScalaTest       = "2.2.2"
