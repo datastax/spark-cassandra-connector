@@ -2,8 +2,8 @@ package org.apache.spark.sql.cassandra
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, LowerCaseSchema}
-import org.apache.spark.sql.{SQLContext, SchemaRDD}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.{Strategy, SQLContext, SchemaRDD}
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * [[org.apache.spark.sql.SchemaRDD]] collections.
@@ -57,14 +57,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
-  override protected[sql] lazy val catalog = new CassandraCatalog(this) with OverrideCatalog {
-    override def lookupRelation(
-      databaseName: Option[String],
-      tableName: String,
-      alias: Option[String] = None): LogicalPlan = {
-      LowerCaseSchema(super.lookupRelation(databaseName, tableName, alias))
-    }
-  }
+  override protected[sql] lazy val catalog = new CassandraCatalog(this) with OverrideCatalog
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
@@ -73,7 +66,6 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     override val strategies: Seq[Strategy] = Seq(
       CommandStrategy(CassandraSQLContext.this),
       TakeOrdered,
-      ParquetOperations,
       InMemoryScans,
       CassandraTableScans,
       DataSinks,

@@ -4,7 +4,7 @@ import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.catalyst.plans.logical.LeafNode
+import org.apache.spark.sql.catalyst.plans.logical.{Statistics, LeafNode}
 import org.apache.spark.sql.catalyst
 
 private[cassandra] case class CassandraRelation
@@ -29,6 +29,12 @@ private[cassandra] case class CassandraRelation
 
   override def output: Seq[Attribute] = projectAttributes
 
+  @transient override lazy val statistics = Statistics(
+    sizeInBytes = {
+      BigInt(cc.conf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.defaultSizeInBytes))
+    }
+  )
+
   def tableName = tableDef.tableName
 }
 
@@ -48,8 +54,8 @@ object ColumnDataType {
     connector.types.FloatType      -> catalyst.types.FloatType,
     connector.types.DoubleType     -> catalyst.types.DoubleType,
   
-    connector.types.VarIntType     -> catalyst.types.DecimalType, // no native arbitrary-size integer type
-    connector.types.DecimalType    -> catalyst.types.DecimalType,
+    connector.types.VarIntType     -> catalyst.types.DecimalType(), // no native arbitrary-size integer type
+    connector.types.DecimalType    -> catalyst.types.DecimalType(),
 
     connector.types.TimestampType  -> catalyst.types.TimestampType,
     connector.types.InetType       -> catalyst.types.StringType, 

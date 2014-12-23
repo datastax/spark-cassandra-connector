@@ -27,15 +27,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     tableName: String,
     alias: Option[String] = None): LogicalPlan = {
 
-    lazy val defaultDatabase = databaseName.getOrElse(cc.getKeyspace)
-    val defaultCluster = "default"
-    val (cluster, database, table) = tableName.split("\\.") match {
-      case Array(t)       => (defaultCluster, defaultDatabase, t)
-      case Array(d, t)    => (defaultCluster, d, t)
-      case Array(c, d, t) => (c, d, t)
-      case _              => throw new IOException(s"Wrong table name: $tableName")
-    }
-
+    val (cluster, database, table) = getClusterDBTableNames(databaseName, tableName)
     val schema = schemas.get(cluster)
     val keyspaceDef = schema.keyspaceByName.getOrElse(database, throw new IOException(s"Keyspace not found: $database"))
     val tableDef = keyspaceDef.tableByName.getOrElse(table, throw new IOException(s"Table not found: $database.$table"))
@@ -43,9 +35,28 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     alias.map(a => Subquery(a, tableWithQualifiers)).getOrElse(tableWithQualifiers)
   }
 
+  private def getClusterDBTableNames(db: Option[String], tableName: String): (String, String, String) = {
+    lazy val defaultDatabase = db.getOrElse(cc.getKeyspace)
+    val defaultCluster = "default"
+    tableName.split("\\.") match {
+      case Array(t)       => (defaultCluster, defaultDatabase, t)
+      case Array(d, t)    => (defaultCluster, d, t)
+      case Array(c, d, t) => (c, d, t)
+      case _              => throw new IOException(s"Wrong table name: $tableName")
+    }
+  }
+
   override def registerTable(databaseName: Option[String], tableName: String, plan: LogicalPlan): Unit = ???
 
   override def unregisterTable(databaseName: Option[String], tableName: String): Unit = ???
 
   override def unregisterAllTables(): Unit = ???
+
+  override def tableExists(db: Option[String], tableName: String): Boolean = {
+    val (cluster, database, table) = getClusterDBTableNames(db, tableName)
+    val schema = schemas.get(cluster)
+    val keyspaceDef = schema.keyspaceByName.getOrElse(database, return false)
+    val tableDef = keyspaceDef.tableByName.getOrElse(table, return false)
+    true
+  }
 }
