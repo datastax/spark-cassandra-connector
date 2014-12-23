@@ -94,7 +94,7 @@ object Dependencies {
       val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka exclude("org.slf4j", "slf4j-simple") // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra exclude("ch.qos.logback", "logback-classic") exclude("ch.qos.logback", "logback-core") // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"            % JOpt // For kafka command line work
-      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
+      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % SparkRepl exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
     }
 
     object Demos {

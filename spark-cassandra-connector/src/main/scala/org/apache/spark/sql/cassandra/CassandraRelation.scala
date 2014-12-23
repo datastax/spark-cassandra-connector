@@ -29,11 +29,6 @@ private[cassandra] case class CassandraRelation
 
   override def output: Seq[Attribute] = projectAttributes
 
-  @transient override lazy val statistics = Statistics(
-    sizeInBytes = {
-      BigInt(cc.conf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.defaultSizeInBytes))
-    }
-  )
   def tableName = tableDef.tableName
 }
 
