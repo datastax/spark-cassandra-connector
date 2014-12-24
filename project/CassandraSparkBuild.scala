@@ -137,5 +137,5 @@ object Dependencies {
 
   val kafka = Seq(Demos.kafkaStreaming)
 
-  val twitter = Seq(sparkCatalyst, Demos.twitterStreaming)
+  val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
 }
