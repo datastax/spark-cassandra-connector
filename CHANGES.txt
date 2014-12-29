@@ -2,8 +2,7 @@
  * Added support for TTL and timestamp in the writer (#153)
  * Upgraded Spark to the latest release version, 1.1.1 (#461)
 
-1.1.1 (unreleased)
- * Merged bug fix for #463 from b1.0
+1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
 
 1.1.0
@@ -95,7 +94,7 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
-1.0.5 (unreleased)
+1.0.5
  * Fixed setting output consistency level which was being set on prepared
    statements instead of being set on batches (#463)
 
