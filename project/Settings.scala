@@ -38,7 +38,7 @@ object Settings extends Build {
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.1.1-SNAPSHOT",
+    version in ThisBuild := "1.1.2-SNAPSHOT",
     scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))

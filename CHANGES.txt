@@ -1,5 +1,4 @@
-1.1.1 (unreleased)
- * Merged bug fix for #463 from b1.0
+1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
 
 1.1.0
