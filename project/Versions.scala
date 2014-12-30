@@ -15,7 +15,7 @@
  */
 
 object Versions {
-  val Akka            = "2.2.3"//spark master on 2.3.4 https://github.com/apache/spark/blob/master/pom.xml#L113-L114
+  val Akka            = "2.3.4"
   val Cassandra       = "2.1.2"
   val CassandraDriver = "2.1.3"
   val CommonsIO       = "2.4"
@@ -33,6 +33,6 @@ object Versions {
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
-  val Spark           = "1.1.1"
-
+  val Spark           = "1.2.0"
+  val SparkRepl       = "1.1.1"
 }
