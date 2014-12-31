@@ -202,7 +202,7 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
   }
 
   it should "allow to insert into another table in different keyspace" in {
-    val result = cc.sql("INSERT INTO sql_test2.test3 as test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
+    val result = cc.sql("INSERT INTO sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
     val result2 = cc.sql("SELECT test3.a, test3.b, test3.c FROM sql_test2.test3 as test3").collect()
     result2 should have length 9
   }
