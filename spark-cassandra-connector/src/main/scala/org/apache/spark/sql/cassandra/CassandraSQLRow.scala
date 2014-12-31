@@ -1,23 +1,24 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.driver.core.{Row, ProtocolVersion}
-import com.datastax.spark.connector.AbstractRow
+import com.datastax.spark.connector.AbstractGettableData
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.spark.sql.catalyst.expressions.{Row => SparkRow}
 
-final class CassandraSQLRow(data: IndexedSeq[AnyRef], columnNames: IndexedSeq[String])
-  extends AbstractRow(data, columnNames) with SparkRow with Serializable {
+final class CassandraSQLRow(columnNames: IndexedSeq[String], val fieldValues: IndexedSeq[AnyRef])
+  extends AbstractGettableData with SparkRow with Serializable {
+
+  protected def fieldNames = columnNames
 
   private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
-
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   private def get[T](index: Int)(implicit c: TypeConverter[T]): T =
-    c.convert(data(index))
+    c.convert(fieldValues(index))
 
-  override def apply(i: Int) = data(i)
+  override def apply(i: Int) = fieldValues(i)
   override def copy() = this // immutable
   override def size = super.size
 
@@ -29,23 +30,23 @@ final class CassandraSQLRow(data: IndexedSeq[AnyRef], columnNames: IndexedSeq[St
   override def getShort(i: Int) = get[Short](i)
   override def getInt(i: Int) = get[Int](i)
   override def getString(i: Int) = get[String](i)
-  override def iterator = data.iterator
+  override def iterator = fieldValues.iterator
 }
 
 
 object CassandraSQLRow {
 
-  def fromJavaDriverRow(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): CassandraSQLRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- 0 until columnNames.length)
-      data(i) = AbstractRow.get(row, i, protocolVersion)
-    new CassandraSQLRow(data, columnNames)
+      data(i) = AbstractGettableData.get(row, i)
+    new CassandraSQLRow(columnNames, data)
   }
 
   implicit object CassandraSQLRowReader extends RowReader[CassandraSQLRow] with ThisRowReaderAsFactory[CassandraSQLRow] {
 
-    override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): CassandraSQLRow =
-      fromJavaDriverRow(row, columnNames, protocolVersion)
+    override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow =
+      fromJavaDriverRow(row, columnNames)
 
     override def requiredColumns = None
     override def columnNames = None

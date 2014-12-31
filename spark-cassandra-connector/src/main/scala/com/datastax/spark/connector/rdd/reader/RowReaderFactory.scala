@@ -63,10 +63,10 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
 
     override def targetClass: Class[CassandraRow] = classOf[CassandraRow]
 
-    override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) = {
+    override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) = {
       assert(row.getColumnDefinitions.size() == columnNames.size,
         "Number of columns in a row must match the number of columns in the table metadata")
-      CassandraRow.fromJavaDriverRow(row, columnNames, protocolVersion)
+      CassandraRow.fromJavaDriverRow(row, columnNames)
     }
 
     override def requiredColumns: Option[Int] = None

@@ -52,9 +52,6 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
     }
   }
 
-  private val columnNameToType: Map[String, TypeConverter[_]] =
-    table.allColumns.map(c => (c.columnName, c.columnType.converterToCassandra)).toMap
-
   val (propertyNames, columnNames) = {
     val propertyToColumnName = columnMap.getters.mapValues(columnNameByRef).toSeq
     val selectedPropertyColumnPairs =
@@ -63,41 +60,19 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
     selectedPropertyColumnPairs.unzip
   }
 
-  private val columnNameToPropertyName = (columnNames zip propertyNames).toMap
-
   checkMissingProperties(propertyNames)
   checkMissingColumns(columnNames)
   checkMissingPrimaryKeyColumns(columnNames)
 
-  private val propertyTypes = columnNames.map(columnNameToType)
-  private val extractor = new ConvertingPropertyExtractor(cls, propertyNames zip propertyTypes)
+  private val columnNameToPropertyName = (columnNames zip propertyNames).toMap
+  private val extractor = new PropertyExtractor(cls, propertyNames)
 
-  @transient
-  private lazy val buffer = new ThreadLocal[Array[AnyRef]] {
-    override def initialValue() = Array.ofDim[AnyRef](columnNames.size)
-  }
-
-  override def bind(data: T, stmt: PreparedStatement, protocolVersion: ProtocolVersion) = {
-    val boundStmt = stmt.bind()
-    for (variable <- stmt.getVariables) {
-      val columnName = variable.getName
-      val propertyName = columnNameToPropertyName(columnName)
+  override def readColumnValues(data: T, buffer: Array[Any]) = {
+    for ((c, i) <- columnNames.zipWithIndex) {
+      val propertyName = columnNameToPropertyName(c)
       val value = extractor.extractProperty(data, propertyName)
-      val serializedValue =
-        if (value != null)
-          variable.getType.serialize(value, protocolVersion)
-        else
-          null
-      boundStmt.setBytesUnsafe(columnName, serializedValue)
+      buffer(i) = value
     }
-    boundStmt
-  }
-
-  private def fillBuffer(data: T): Array[AnyRef] =
-    extractor.extract(data, buffer.get)
-
-  override def estimateSizeInBytes(data: T) = {
-    ObjectSizeEstimator.measureSerializedSize(fillBuffer(data))
   }
 }
 

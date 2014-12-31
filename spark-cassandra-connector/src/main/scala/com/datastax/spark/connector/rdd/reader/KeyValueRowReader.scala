@@ -26,8 +26,8 @@ class KeyValueRowReader[K, V](keyReader: RowReader[K], valueReader: RowReader[V]
     (for (keyNames <- keyReader.columnNames; valueNames <- valueReader.columnNames) yield keyNames ++ valueNames)
       .orElse(keyReader.columnNames).orElse(valueReader.columnNames)
 
-  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion): (K, V) = {
-    (keyReader.read(row, columnNames, protocolVersion), valueReader.read(row, columnNames, protocolVersion))
+  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): (K, V) = {
+    (keyReader.read(row, columnNames), valueReader.read(row, columnNames))
   }
 
   override def consumedColumns: Option[Int] =

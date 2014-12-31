@@ -127,6 +127,24 @@ row.get[String]("emails")               // "[someone@email.com, s@email.com]"
 A `null` collection is equivalent to an empty collection, therefore you don't need to use `get[Option[...]]` 
 with collections.
 
+### Reading columns of Cassandra User Defined Types
+UDT column values are represented by `com.datastax.spark.connector.UDTValue` type.
+The same set of getters is available on `UDTValue` as on `CassandraRow`.
+
+Assume the following table definition:
+```sql
+CREATE TYPE test.address (city text, street text, number int);
+CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
+```
+
+You can read the address field of the company in the following way:
+```scala
+val address: UDTValue = row.getUDTValue("address")
+val city = address.getString("city")
+val street = address.getString("street")
+val number = address.getInt("number")
+```
+
 ### Data type conversions
 
 The following table shows recommended Scala types corresponding to Cassandra column types. 
@@ -151,7 +169,8 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `uuid`            | `java.util.UUID` 
 | `timeuuid`        | `java.util.UUID` 
 | `varchar`         | `String` 
-| `varint`          | `BigInt`, `java.math.BigInteger` 
+| `varint`          | `BigInt`, `java.math.BigInteger`
+| user defined      | `UDTValue`
 
 Other conversions might work, but may cause loss of precision or may not work for all values. 
 All types are convertible to strings. Converting strings to numbers, dates, 

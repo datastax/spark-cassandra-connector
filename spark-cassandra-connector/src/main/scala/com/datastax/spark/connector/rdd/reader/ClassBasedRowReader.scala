@@ -3,7 +3,9 @@ package com.datastax.spark.connector.rdd.reader
 import java.lang.reflect.Method
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
+
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.AbstractGettableData
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
@@ -57,12 +59,12 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     override def initialValue() = Array.ofDim[AnyRef](factory.argCount)
   }
 
-  private def getColumnValue(row: Row, columnRef: ColumnRef, protocolVersion: ProtocolVersion) = {
+  private def getColumnValue(row: Row, columnRef: ColumnRef)(implicit protocolVersion: ProtocolVersion) = {
     columnRef match {
       case NamedColumnRef(_, selectedAs) =>
-        AbstractRow.get(row, selectedAs, protocolVersion)
+        AbstractGettableData.get(row, selectedAs)
       case ColumnIndex(index) =>
-        AbstractRow.get(row, index + skipColumns, protocolVersion)
+        AbstractGettableData.get(row, index + skipColumns)
     }
   }
 
@@ -85,19 +87,19 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     }
   }
 
-  private def fillBuffer(row: Row, buf: Array[AnyRef], protocolVersion: ProtocolVersion) {
+  private def fillBuffer(row: Row, buf: Array[AnyRef])(implicit protocolVersion: ProtocolVersion) {
     for (i <- 0 until buf.length) {
       val columnRef = constructorColumnRefs(i)
       val columnName = getColumnName(row, columnRef)
-      val columnValue = getColumnValue(row, columnRef, protocolVersion)
+      val columnValue = getColumnValue(row, columnRef)
       val converter = constructorArgConverters(i)
       buf(i) = convert(columnValue, columnName, converter)
     }
   }
 
-  private def invokeSetters(row: Row, obj: R, protocolVersion: ProtocolVersion): R = {
+  private def invokeSetters(row: Row, obj: R)(implicit protocolVersion: ProtocolVersion): R = {
     for ((setter, columnRef) <- setters) {
-      val columnValue = getColumnValue(row, columnRef, protocolVersion)
+      val columnValue = getColumnValue(row, columnRef)
       val columnName = getColumnName(row, columnRef)
       val converter = setterConverters(setter.getName)
       val convertedValue = convert(columnValue, columnName, converter)
@@ -112,10 +114,10 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
     obj
   }
 
-  override def read(row: Row, columnNames: Array[String], protocolVersion: ProtocolVersion) = {
+  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) = {
     val buf = buffer.get
-    fillBuffer(row, buf, protocolVersion)
-    invokeSetters(row, factory.newInstance(buf: _*), protocolVersion)
+    fillBuffer(row, buf)
+    invokeSetters(row, factory.newInstance(buf: _*))
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =

@@ -2,10 +2,11 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
+import com.datastax.spark.connector.types.FieldDef
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LeafNode
-import org.apache.spark.sql.catalyst
+import org.apache.spark.sql.{StructField, catalyst}
 
 private[cassandra] case class CassandraRelation
   (tableDef: TableDef, alias: Option[String])(@transient cc: CassandraSQLContext)
@@ -40,7 +41,6 @@ private[cassandra] case class CassandraRelation
 object ColumnDataType {
 
   private val primitiveTypeMap = Map[connector.types.ColumnType[_], catalyst.types.DataType](
-
     connector.types.TextType       -> catalyst.types.StringType,
     connector.types.AsciiType      -> catalyst.types.StringType,
     connector.types.VarCharType    -> catalyst.types.StringType,
@@ -60,19 +60,20 @@ object ColumnDataType {
     connector.types.InetType       -> catalyst.types.StringType, 
     connector.types.UUIDType       -> catalyst.types.StringType,
     connector.types.TimeUUIDType   -> catalyst.types.StringType,
-    connector.types.BlobType       -> catalyst.types.ByteType,
-  
-    // TODO: This mapping is useless, it is here only to avoid lookup failure if a table contains a UDT column. 
-    // It is not possible to read UDT columns in SparkSQL now. 
-    connector.types.UserDefinedTypeStub -> catalyst.types.StructType(Seq.empty)
+    connector.types.BlobType       -> catalyst.types.ByteType
   )
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): catalyst.types.DataType = {
+
+    def catalystStructField(field: FieldDef): StructField =
+      StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
+
     cassandraType match {
-      case connector.types.SetType(et)      => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)     => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)  => catalyst.types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
-      case _                                => primitiveTypeMap(cassandraType)
+      case connector.types.SetType(et)             => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.ListType(et)            => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.MapType(kt, vt)         => catalyst.types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.UserDefinedType(fields) => catalyst.types.StructType(fields.map(catalystStructField))
+      case _                                       => primitiveTypeMap(cassandraType)
     }
   }
 }
