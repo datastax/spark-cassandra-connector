@@ -111,6 +111,7 @@ object Dependencies {
       val scalatest         = "org.scalatest"           %% "scalatest"            % ScalaTest       % "test,it"                   // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"            % Scalactic       % "test,it"                   // ApacheV2
       val scalaCompiler     = "org.scala-lang"          % "scala-compiler"        % Scala
+      val mockito           = "org.mockito"             % "mockito-all"           % "1.10.19"       % "test,it"                   // MIT
     }
   }
 
@@ -121,7 +122,7 @@ object Dependencies {
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
   val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-    Test.junitInterface, Test.scalatest, Test.scalaCompiler, Test.scalactic)
+    Test.junitInterface, Test.scalatest, Test.scalaCompiler, Test.scalactic, Test.mockito)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
