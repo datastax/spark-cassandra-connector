@@ -14,7 +14,7 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
       m(k) shouldBe v
       m.get(k) shouldBe Some(v)
     }
-    m.size shouldBe keys.size
+    m.size shouldBe keys.distinct.size
     m.headValue shouldBe values.max
   }
 
@@ -59,6 +59,17 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
   private val random = new Random
 
   "A PriorityHashMap" should {
+    "support adding elements (simple)" in {
+      val m = new PriorityHashMap[Int, Int](8)
+      m.put(1, 3)
+      m.put(3, 1)
+      m.put(2, 2)
+      m.remove(2)
+      m.remove(1)
+      m.remove(3)
+      m.isEmpty shouldBe true
+    }
+
     "support adding elements ascending by value" in {
       val m = new PriorityHashMap[Int, Int](capacity)
       val keys = 1 to maxKey
@@ -198,7 +209,6 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
       m.remove(0)
       m.put(m.capacity, m.capacity)  // now should be ok
     }
-
   }
 
 }

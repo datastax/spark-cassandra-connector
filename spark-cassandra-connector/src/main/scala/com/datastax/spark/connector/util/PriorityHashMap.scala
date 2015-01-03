@@ -27,13 +27,16 @@ import scala.annotation.tailrec
  * capacity cannot be modified after construction. It is technically possible
  * to remove this limitation in the future.
  *
- * PriorityHashMap is not thread-safe.
+ * PriorityHashMap is mutable and not thread-safe.
  *
- * Internally, PriorityHashMap is composed of three data arrays:
+ * Internally, PriorityHashMap is composed of the following data arrays:
  * - an array storing references to keys, forming a heap-based priority queue;
  * - an array storing corresponding references to values, always in the same order as keys;
  * - an array storing indexes into the first two arrays, used as an inline hash-table allowing to
- *   quickly locate keys in the heap in constant time.
+ *   quickly locate keys in the heap in constant time;
+ * - an array for fast translating indexes in the heap into indexes into hash-table, so
+ *   after moving a key/value in the heap, the corresponding index in the hash-table can be
+ *   quickly updated, without hashing.
  *
  * The indexes hash-table doesn't use overflow lists for dealing with hash collisions.
  * The overflow entries are placed in the main hash-table array in the first not-taken
@@ -46,7 +49,7 @@ import scala.annotation.tailrec
  * @tparam K type of keys
  * @tparam V type of values; values must be comparable
  */
-class PriorityHashMap[K, V : Ordering](_capacity: Int) {
+final class PriorityHashMap[K, V : Ordering](_capacity: Int) {
 
   private[this] var _size = 0
   def size = _size
@@ -69,17 +72,38 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
     * This is to protect against bad hashes forming long sequences
     * of consecutive numbers, which would result in O(n) lookup, instead of O(1), even
     * if there were no hash-collisions. */
+  @inline
   private def hash(key: K): Int =
     (key.hashCode() << 1) & mask
 
+  /** A heap of keys. The key for the largest value is at index 0. */
   private[this] val _keys = Array.ofDim[AnyRef](capacity).asInstanceOf[Array[K]]
+
+  /** A heap of values. The largest value is at index 0. */
   private[this] val _values = Array.ofDim[AnyRef](capacity).asInstanceOf[Array[V]]
-  private[this] val _indexes = Array.fill(capacity * 2)(-1)  // hash-table twice as big, to account for hash-collisions
+
+  /** A hash-table mapping keys to indexes of the keys/values in the heap.
+    * A key hash determines an entry in this table, which tells
+    * the location of the key and value in the _keys and _values arrays.
+    * Entries for multiple colliding hashes are placed next to each other (to the right).
+    * Unused entries are denoted by -1. The hash-table is twice bigger than the heap
+    * so that there are enough empty entries to make key searches stop after a small (typically 1)
+    * number of entries. */
+  private[this] val _indexes = Array.fill(capacity * 2)(-1)
+
+  /** Tells the location of the key in the _indexes array.
+    * Each i-th entry of this table is a position in the _indexes array,
+    * matching i-th key/value element on the _keys/_values heaps.
+    * This allows to quickly update appropriate _indexes entry when a key/value pair is moved
+    * on the heap, without hashing and searching for the key. */
+  private[this] val _positions = Array.fill(capacity)(-1)
+
   private[this] val ordering = implicitly[Ordering[V]]
 
   /** Finds a key in the indexes array.
     * Returns a position in the indexes array pointing to the found key or a position of
     * the first empty index entry, if key was not found. */
+  @inline
   private def find(key: K): Int = {
     find(key, hash(key))
   }
@@ -94,9 +118,15 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
     else find(key, (pos + 1) & mask)
   }
 
-  /** Records a new position of the key in the index array. */
-  private def setIndex(key: K, index: Int): Unit =
-    _indexes(find(key)) = index
+  /** Records a new position of the key in the index array.
+    * Returns the position of the key in the indexes hash-table. */
+  @inline
+  private def setIndex(key: K, index: Int): Int = {
+    val pos = find(key)
+    _indexes(pos) = index
+    _positions(index) = pos
+    pos
+  }
 
   /** Fixes the position of the key in the indexes array.
     * Required after removal of keys from the indexes array. */
@@ -111,55 +141,67 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
     }
   }
 
-  /** Removes an entry from the hash table */
+  /** Removes an entry from the hash table.
+    * This is not as simple as just setting the given entry to empty value,
+    * because there might be some overflow entries to the right. Therefore,
+    * we need to rehash all the consecutive entries to the right and maybe
+    * fix their positions (it is quite likely they will stay, though). */
+  @inline
   private def removeIndex(pos: Int): Unit = {
+    val index = _indexes(pos)
     _indexes(pos) = -1
+    _positions(index) = -1
     rehash((pos + 1) & mask)
   }
 
-  /** Swaps two items in the given array */
-  private def swap[T](array: Array[T], i1: Int, i2: Int): Unit = {
-    val tmp = array(i1)
-    array(i1) = array(i2)
-    array(i2) = tmp
+  /** Sets a key-value pair in the heap at a given index and stores the index
+    * in the _indexes array under given position. The given position must be
+    * the correct position that the key hashes to. */
+  @inline
+  private def setKeyValueUnsafe(pos: Int, index: Int, key: K, value: V): Unit = {
+    _keys(index) = key
+    _values(index) = value
+    _indexes(pos) = index
+    _positions(index) = pos
   }
 
-  /** Swaps two keys/values in the heap and updates their indexes in the indexes hash-table */
-  private def swap(i1: Int, i2: Int): Unit = {
-    val k1 = _keys(i1)
-    val k2 = _keys(i2)
-    // indexes must be updated first, because setIndex needs correct keys() array to find the key.
-    // if we swapped keys earlier, the key could not be found
-    setIndex(k1, i2)
-    setIndex(k2, i1)
-    swap(_keys, i1, i2)
-    swap(_values, i1, i2)
-  }
-
-  /** Moves a key/value to a new position in the heap and updates the indexes hash-table appropriately */
-  private def move(from: Int, to: Int): Unit = {
-    _keys(to) = _keys(from)
-    _values(to) = _values(from)
-    setIndex(_keys(to), to)
+  /** Moves a key/value to a new position in the heap and updates the indexes hash-table appropriately.
+    * Returns the index of the entry in the indexes hash-table. */
+  @inline
+  private def move(from: Int, to: Int): Int = {
+    val pos = _positions(from)
+    setKeyValueUnsafe(pos, to, _keys(from), _values(from))
+    pos
   }
 
   /** Clears given key/value pair of the heap i.e. sets them to null.
     * This is to make sure we don't keep any references to the removed items so GC could clean them up. */
+  @inline
   private def clear(index: Int): Unit = {
     _keys.asInstanceOf[Array[AnyRef]](index) = null
     _values.asInstanceOf[Array[AnyRef]](index) = null
+    _positions(index) = -1
   }
 
   /** Returns the index of the left child of the given entry in the heap */
+  @inline
   private def left(index: Int) = (index << 1) + 1
+
   /** Returns the index of the right child of the given entry in the heap */
+  @inline
   private def right(index: Int) = (index << 1) + 2
+
   /** Returns the index of the parent of the given entry in the heap */
+  @inline
   private def parent(index: Int) = (index - 1) >>> 1
 
+  @inline
   private def isValidIndex(index: Int) = index < _size
+  @inline
   private def hasLeft(index: Int) = isValidIndex(left(index))
+  @inline
   private def hasRight(index: Int) = isValidIndex(right(index))
+  @inline
   private def hasParent(index: Int) = index > 0
 
   /** Returns the index of the child on the heap that has the highest value */
@@ -176,39 +218,60 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
     }
   }
 
-  /** Maintains the heap invariant by moving a larger item up, until it is smaller
-    * than its parent. */
+  /** Goes up the path and moves parents one item down, until the parent is
+    * larger than the given value. */
   @tailrec
-  private def siftUp(index: Int): Unit = {
+  private def moveSmallerParentDown(index: Int, value: V): Int = {
     if (hasParent(index)) {
       val parentIndex = parent(index)
-      val thisValue = _values(index)
       val parentValue = _values(parentIndex)
-      if (ordering.compare(thisValue, parentValue) > 0) {
-        swap(index, parentIndex)
-        siftUp(parentIndex)
+      if (ordering.compare(value, parentValue) > 0) {
+        move(parentIndex, index)
+        moveSmallerParentDown(parentIndex, value)
       }
+      else index
     }
+    else index
+  }
+
+  /** Maintains the heap invariant by moving a larger item up, until it is smaller
+    * than its parent. */
+  private def siftUp(pos: Int, index: Int): Unit = {
+    val thisKey = _keys(index)
+    val thisValue = _values(index)
+    val parentIndex = moveSmallerParentDown(index, thisValue)
+    if (parentIndex != index) {
+      setKeyValueUnsafe(pos, parentIndex, thisKey, thisValue)
+    }
+  }
+
+  @tailrec
+  private def moveLargerChildUp(index: Int, value: V): Int = {
+    if (hasLeft(index)) {
+      val maxIndex = indexOfMaxChild(index)
+      val maxValue = _values(maxIndex)
+      if (ordering.compare(value, maxValue) < 0) {
+        move(maxIndex, index)
+        moveLargerChildUp(maxIndex, value)
+      }
+      else index
+    }
+    else index
   }
 
   /** Maintains the heap invariant by moving a smaller item up, until it is larger
     * than all of its children. */
-  @tailrec
-  private def siftDown(index: Int): Unit = {
+  private def siftDown(pos: Int, index: Int): Unit = {
+    val thisKey = _keys(index)
     val thisValue = _values(index)
-    if (hasLeft(index)) {
-      val maxIndex = indexOfMaxChild(index)
-      val maxValue = _values(maxIndex)
-      if (ordering.compare(thisValue, maxValue) < 0) {
-        swap(index, maxIndex)
-        siftDown(maxIndex)
-      }
-    }
+    val childIndex = moveLargerChildUp(index, thisValue)
+    if (childIndex != index)
+      setKeyValueUnsafe(pos, childIndex, thisKey, thisValue)
   }
 
-  private def siftUpOrDown(index: Int): Unit = {
-    siftUp(index)
-    siftDown(index)
+  private def siftUpOrDown(pos: Int, index: Int): Unit = {
+    siftUp(pos, index)
+    siftDown(pos, index)
   }
 
   /** Removes an element from the heap, replaces it with the last element,
@@ -216,17 +279,16 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
   private def removeAt(index: Int): Unit = {
     _size -= 1
     if (index != _size) {
-      move(_size, index)
-      siftUpOrDown(index)
+      val pos = move(_size, index)
+      siftUpOrDown(pos, index)
     }
     clear(_size)
   }
 
   /** Updates a value and moves it up or down in the heap. */
-  private def update(pos: Int, value: V): Unit = {
-    val index = _indexes(pos)
+  private def update(pos: Int, index: Int, value: V): Unit = {
     _values(index) = value
-    siftUpOrDown(index)
+    siftUpOrDown(pos, index)
   }
 
   /** Adds a new entry to the end of the heap and updates
@@ -237,20 +299,19 @@ class PriorityHashMap[K, V : Ordering](_capacity: Int) {
         s"Cannot add a new item ($key -> $value) to a PriorityMap that reached its maximum capacity $capacity")
     val index = _size
     _size += 1
-    _keys(index) = key
-    _values(index) = value
-    _indexes(pos) = index
-    siftUp(index)
+    setKeyValueUnsafe(pos, index, key, value)
+    siftUp(pos, index)
   }
 
   /** Adds or updates a map entry.
     * Complexity: O(log n) average, O(1) optimistic. */
   def put(key: K, value: V): Unit = {
     val pos = find(key)
-    if (_indexes(pos) < 0)
+    val index = _indexes(pos)
+    if (index < 0)
       add(pos, key, value)
     else
-      update(pos, value)
+      update(pos, index, value)
   }
 
   /** Returns a value associated with the given key.
