@@ -266,7 +266,7 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
   it should "work with random data" in {
     conn.withSessionDo { session =>
       val bm = makeBatchBuilder(session)
-      val data = (1 to 10000).map(x => (Random.nextInt().abs, Random.nextString(Random.nextInt(20))))
+      val data = (1 to 1000000).map(x => (Random.nextInt().abs, Random.nextString(Random.nextInt(20))))
       val t0 = System.nanoTime()
       val statements = bm(dynamicBatchKeyGen5, RowsInBatch(10), 4, data.toIterator).toList
       val t = (System.nanoTime() - t0) / 10000000L
@@ -277,7 +277,7 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
         case s: BatchStatement =>
           s.size() should be <= 10
           s.getStatements.map(_.asInstanceOf[BoundStatement])
-      }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      }.map(s => (s.getInt(0), s.getString(1))).sortBy(_.toString()) should contain theSameElementsInOrderAs data.sortBy(_.toString())
     }
 
   }
