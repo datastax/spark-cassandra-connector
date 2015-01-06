@@ -24,19 +24,24 @@ import com.datastax.spark.connector.cql.CassandraConnector
  * -Dspark.cores.max, default configured is 2
  *
  * Verify data persisted after running in cqlsh with:
- * cqlsh> select * from twitter_stream.hashtags_by_interval;
+ * cqlsh> select * from twitter_stream.topics_by_interval;
  * 
  * You should output sequences similar to:
  * {{{
- *     hashtag      | interval             | mentions
- *    --------------+----------------------+----------
- *           iphone | 2014110419:54:35.000 |        2
- *           iphone | 2014110419:54:10.000 |        1
- *          android | 2014110419:55:10.000 |        4
- *          android | 2014110419:55:05.000 |        1
- *      iphonegames | 2014110419:54:35.000 |        1
- *     androidgames | 2014110419:55:10.000 |        3
+ *   topic | interval             | mentions
+ *  -------+----------------------+----------
+ *     cat | 2014122415:08:20.000 |    1
+ *     cat | 2014122415:06:55.000 |    1
+ *     cat | 2014122415:06:50.000 |    2
+ *     cat | 2014122415:06:10.000 |    1
+ *     dog | 2014122415:08:10.000 |    1
+ *     dog | 2014122415:08:05.000 |    1
+ *     dog | 2014122415:07:10.000 |    3
+ *     dog | 2014122415:06:15.000 |    1
  * }}}
+ *
+ * Note that Cassandra is ordering each topic by interval, from most recent,
+ * versus having Spark order data.
  */
 object TwitterStreamingApp {
   import Twitter._
@@ -55,16 +60,14 @@ object TwitterStreamingApp {
   createSchema()
 
   val credentials = TwitterAuth()
-  if(credentials.auth.isEmpty) throw new IllegalArgumentException(
-    s"Twitter Credentials not found in the environment of from System properties")
 
   val sc = new SparkContext(conf)
 
   val ssc = new StreamingContext(sc, Seconds(StreamingBatchInterval))
 
   def main(args: Array[String]): Unit = {
-    val stream = new TwitterStreamingHashTagsByInterval
-    stream.start(credentials.auth, ssc, RegexFilterPattern, CassandraKeyspace, CassandraTable)
+    val stream = new TwitterStreamingTopicsByInterval
+    stream.start(credentials.auth, ssc, Topics, CassandraKeyspace, CassandraTable)
   }
 
   /** Creates the keyspace and table schema. */
@@ -74,10 +77,10 @@ object TwitterStreamingApp {
       session.execute(s"CREATE KEYSPACE IF NOT EXISTS $CassandraKeyspace WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
       session.execute(s"""
              CREATE TABLE IF NOT EXISTS $CassandraKeyspace.$CassandraTable (
-                hashtag text,
+                topic text,
                 interval text,
                 mentions counter,
-                PRIMARY KEY(hashtag, interval)
+                PRIMARY KEY(topic, interval)
             ) WITH CLUSTERING ORDER BY (interval DESC)
            """)
     }
