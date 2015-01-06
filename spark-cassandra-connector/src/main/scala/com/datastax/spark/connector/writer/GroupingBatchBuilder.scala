@@ -1,12 +1,16 @@
 package com.datastax.spark.connector.writer
 
+import java.util
+
 import com.datastax.driver.core._
 import com.datastax.spark.connector.BatchSize
+import com.datastax.spark.connector.util.PriorityHashMap
 import com.google.common.collect.AbstractIterator
 import org.apache.spark.util.MutablePair
 
 import scala.annotation.tailrec
-import scala.collection.{Iterator, mutable}
+import scala.collection.Iterator
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
@@ -16,49 +20,76 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
                               data: Iterator[T]) extends AbstractIterator[Statement] with Iterator[Statement] {
   require(maxBatches > 0)
 
-  import com.datastax.spark.connector.writer.GroupingBatchBuilder._
+  private[this] val batchMap = new PriorityHashMap[Any, Batch](maxBatches)
+  private[this] val emptyBatches = new util.Stack[Batch]()
+  emptyBatches.ensureCapacity(maxBatches + 1)
 
-  private[this] val qmap = new QueuedHashMap[Any, Batch](maxBatches + 1)
+  private[this] var lastStatement: BoundStatement = null
 
-  def processStatement(boundStatement: BoundStatement): Unit = {
+  private def processStatement(boundStatement: BoundStatement): Option[Batch] = {
     val batchKey = batchKeyGenerator(boundStatement)
-    qmap.apply(batchKey) match {
+    batchMap.get(batchKey) match {
       case Some(batch) =>
-        batch.add(boundStatement)
-        qmap.update(batchKey)
+        updateBatchInMap(batchKey, batch, boundStatement)
       case None =>
-        val batch = Batch(batchSize)
-        batch.add(boundStatement)
-        qmap.add(batchKey, batch)
+        addBatchToMap(batchKey, boundStatement)
     }
+  }
+
+  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: BoundStatement): Option[Batch] = {
+    if (batch.add(newStatement, force = false)) {
+      batchMap.put(batchKey, batch)
+      None
+    } else {
+      batchMap.remove(batchKey)
+      Some(batch)
+    }
+  }
+
+  private def addBatchToMap(batchKey: Any, newStatement: BoundStatement): Option[Batch] = {
+    if (batchMap.size == maxBatches) {
+      Some(batchMap.dequeue())
+    } else {
+      val batch = newBatch()
+      batch.add(newStatement, force = true)
+      batchMap.put(batchKey, batch)
+      None
+    }
+  }
+
+  private def newBatch(): Batch = {
+    if (emptyBatches.isEmpty)
+      Batch(batchSize)
+    else
+      emptyBatches.pop()
+  }
+
+  private def createStmtAndReleaseBatch(batch: Batch): Statement = {
+    val stmt = batchStatementBuilder.maybeCreateBatch(batch.statements)
+    batch.clear()
+    emptyBatches.push(batch)
+    stmt
   }
 
   @tailrec
   final override def computeNext(): Statement = {
-    // make sure we process all the pending batches before we read more data
-    if (qmap.size() > maxBatches || (qmap.size() > 0 && qmap.head().isSizeExceeded)) {
-      val batch = qmap.remove()
+    if (lastStatement == null && data.hasNext) {
+      lastStatement = batchStatementBuilder.bind(data.next())
+    }
 
-      if (batch.isSizeExceeded && batch.statements.size > 1) {
-        // if the batch is oversized it is oversized by 1 item
-        val batchStmt = batchStatementBuilder.maybeCreateBatch(batch.statements.view(0, batch.statements.size - 1))
-        val last = batch.statements.last
-        batch.reuse()
-        batch.add(last)
-        qmap.add(batchKeyGenerator(last), batch)
-        batchStmt
-      } else {
-        batchStatementBuilder.maybeCreateBatch(batch.statements)
+    if (lastStatement != null) {
+      processStatement(lastStatement) match {
+        case Some(batch) =>
+          createStmtAndReleaseBatch(batch)
+        case None =>
+          lastStatement = null
+          computeNext()
       }
     } else {
-      if (data.hasNext) {
-        processStatement(batchStatementBuilder.bind(data.next()))
-        computeNext()
-      } else if (qmap.size() > 0) {
-        batchStatementBuilder.maybeCreateBatch(qmap.remove().statements)
-      } else {
+      if (batchMap.nonEmpty)
+        createStmtAndReleaseBatch(batchMap.dequeue())
+      else
         endOfData()
-      }
     }
   }
 

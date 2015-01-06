@@ -385,6 +385,14 @@ final class PriorityHashMap[K, V : Ordering](_capacity: Int) {
   def values: IndexedSeq[V] =
     _values.take(size)
 
+  /** Removes the entry and returns its value */
+  def dequeue(): V = {
+    checkNonEmpty()
+    val v = _values(0)
+    remove(_keys(0))
+    v
+  }
+
   override def toString: String = {
     "PriorityHashMap(" + _keys.zip(_values).take(size).mkString(",") + ")"
   }

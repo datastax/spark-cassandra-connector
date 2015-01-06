@@ -7,22 +7,25 @@ import scala.collection.mutable.ArrayBuffer
 
 /** A simple wrapper over a collection of bound statements. */
 private[writer] sealed trait Batch extends Ordered[Batch] {
-  def add(stmt: BoundStatement): Unit
-
-  /** Returns `true` if the collected statements exceed the desired size of this batch. Rows based and
-    * bytes based implementations compute it in different ways. */
-  def isSizeExceeded: Boolean
+  /** Returns `false` if the collected statements would exceed the desired size of this batch after adding
+    * the statement. Returns `true` when the statement is successfully added. Rows based and bytes based
+    * implementations compute it in different ways. */
+  def add(stmt: BoundStatement, force: Boolean = false): Boolean
 
   def statements: Seq[BoundStatement]
 
+  /** only for internal use */
+  protected[Batch] def size: Int
+
+  override def compare(that: Batch): Int = size.compareTo(that.size)
+
   /** Removes all the collected statements and resets this batch to the initial state. */
-  def reuse(): Unit
+  def clear(): Unit
 }
 
 private[writer] object Batch {
-  implicit val batchOrdering = new Ordering[Batch] {
-    override def compare(x: Batch, y: Batch): Int = x.compare(y)
-  }
+
+  implicit val batchOrdering = Ordering.ordered[Batch]
 
   def apply(batchSize: BatchSize): Batch = {
     batchSize match {
@@ -33,44 +36,46 @@ private[writer] object Batch {
 }
 
 private[writer] class RowLimitedBatch(val maxRows: Int) extends Batch {
-  val buf = new ArrayBuffer[BoundStatement](maxRows)
+  private val buf = new ArrayBuffer[BoundStatement](maxRows)
 
-  def add(stmt: BoundStatement): Unit = {
-    buf += stmt
+  override def add(stmt: BoundStatement, force: Boolean = false): Boolean = {
+    if (!force && buf.size >= maxRows) {
+      false
+    } else {
+      buf += stmt
+      true
+    }
   }
 
-  override def isSizeExceeded: Boolean = buf.size > maxRows
-
-  override def compare(that: Batch): Int = that match {
-    case thatBatch: RowLimitedBatch => buf.size.compare(thatBatch.maxRows)
-    case _ => throw new ClassCastException("Not a RowLimitedBatch")
-  }
+  override def size = buf.size
 
   override def statements: Seq[BoundStatement] = buf
 
-  override def reuse(): Unit = buf.clear()
+  override def clear(): Unit = buf.clear()
 }
 
 private[writer] class SizeLimitedBatch(val maxBytes: Int) extends Batch {
-  val buf = new ArrayBuffer[BoundStatement](10)
-  var size = 0
+  private val buf = new ArrayBuffer[BoundStatement](10)
+  private var _size = 0
 
-  def add(stmt: BoundStatement): Unit = {
-    buf += stmt
-    size += BatchStatementBuilder.calculateDataSize(stmt)
+  override def add(stmt: BoundStatement, force: Boolean = false): Boolean = {
+    val stmtSize = BatchStatementBuilder.calculateDataSize(stmt)
+    // buf.nonEmpty here is to allow adding at least a single statement regardless its size
+    if (!force && (_size + stmtSize) > maxBytes) {
+      false
+    } else {
+      buf += stmt
+      _size += stmtSize
+      true
+    }
   }
 
-  override def isSizeExceeded: Boolean = size > maxBytes
-
-  override def compare(that: Batch): Int = that match {
-    case thatBatch: SizeLimitedBatch => size.compare(thatBatch.size)
-    case _ => throw new ClassCastException("Not a SizeLimitedBatch")
-  }
+  override def size = _size
 
   override def statements: Seq[BoundStatement] = buf
 
-  override def reuse(): Unit = {
-    size = 0
+  override def clear(): Unit = {
+    _size = 0
     buf.clear()
   }
 }
