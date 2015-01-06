@@ -13,12 +13,12 @@ class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
                                val routingKeyGenerator: RoutingKeyGenerator,
                                val consistencyLevel: ConsistencyLevel) extends Logging {
 
-
   private val columnNames = rowWriter.columnNames.toIndexedSeq
   private val columnTypes = columnNames.map(preparedStmt.getVariables.getType)
   private val converters = columnTypes.map(ColumnType.converterToCassandra(_)(protocolVersion))
   private val buffer = Array.ofDim[Any](columnNames.size)
 
+  /** Creates `BoundStatement` from the given data item */
   def bind(row: T): BoundStatement = {
     val boundStatement = preparedStmt.bind()
     rowWriter.readColumnValues(row, buffer)
@@ -35,7 +35,8 @@ class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
     boundStatement
   }
 
-  /** Converts a sequence of statements into a batch if its size is greater than 1. */
+  /** Converts a sequence of statements into a batch if its size is greater than 1.
+    * Sets the routing key and consistency level. */
   def maybeCreateBatch(stmts: Seq[BoundStatement]): Statement = {
     require(stmts.size > 0, "Statements list cannot be empty")
     val stmt = stmts.head

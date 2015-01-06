@@ -7,14 +7,15 @@ import scala.collection.mutable.ArrayBuffer
 
 /** A simple wrapper over a collection of bound statements. */
 private[writer] sealed trait Batch extends Ordered[Batch] {
-  /** Returns `false` if the collected statements would exceed the desired size of this batch after adding
-    * the statement. Returns `true` when the statement is successfully added. Rows based and bytes based
-    * implementations compute it in different ways. */
+  /** Returns `true` if the element has been successfully added. Returns `false` if the element
+    * cannot be added because adding it would violate the size limitation. If `force` is set to `true`,
+    * it adds the item regardless of size limitations and always returns `true`. */
   def add(stmt: BoundStatement, force: Boolean = false): Boolean
 
+  /** Collected statements */
   def statements: Seq[BoundStatement]
 
-  /** only for internal use */
+  /** Only for internal use - batches are compared by this value. */
   protected[Batch] def size: Int
 
   override def compare(that: Batch): Int = size.compareTo(that.size)
@@ -35,6 +36,7 @@ private[writer] object Batch {
   }
 }
 
+/** The implementation which uses the number of items as a size constraint. */
 private[writer] class RowLimitedBatch(val maxRows: Int) extends Batch {
   private val buf = new ArrayBuffer[BoundStatement](maxRows)
 
@@ -54,6 +56,7 @@ private[writer] class RowLimitedBatch(val maxRows: Int) extends Batch {
   override def clear(): Unit = buf.clear()
 }
 
+/** The implementation which uses length in bytes as a size constraint. */
 private[writer] class SizeLimitedBatch(val maxBytes: Int) extends Batch {
   private val buf = new ArrayBuffer[BoundStatement](10)
   private var _size = 0
