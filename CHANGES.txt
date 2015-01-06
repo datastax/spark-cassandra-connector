@@ -1,6 +1,8 @@
 1.2.0 (unreleased)
  * Added support for TTL and timestamp in the writer (#153)
  * Upgraded Spark to the latest release version, 1.1.1 (#461)
+ * For 1.2.0 release, table name with dot is not supported for Spark SQL,
+   it will be fixed in the next release
 
 1.1.1 (unreleased)
  * Merged bug fix for #463 from b1.0
