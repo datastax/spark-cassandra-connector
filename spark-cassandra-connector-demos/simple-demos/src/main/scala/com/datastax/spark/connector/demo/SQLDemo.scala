@@ -22,7 +22,8 @@ object SQLDemo extends DemoApp {
     session.execute("INSERT INTO test.sql_demo(key, grp, value) VALUES (6, 2, 2.8)")
   }
 
-  val rdd = cc.cassandraSql("SELECT grp, max(value) AS mv FROM test.sql_demo GROUP BY grp ORDER BY mv")
+  cc.setKeyspace("test")
+  val rdd = cc.cassandraSql("SELECT grp, max(value) AS mv FROM sql_demo GROUP BY grp ORDER BY mv")
   rdd.collect().foreach(println)  // [2, 4.0] [1, 10.0]
 
   sc.stop()

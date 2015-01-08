@@ -94,7 +94,7 @@ object Dependencies {
       val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka exclude("org.slf4j", "slf4j-simple") // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra exclude("ch.qos.logback", "logback-classic") exclude("ch.qos.logback", "logback-core") // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"            % JOpt // For kafka command line work
-      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
+      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % SparkRepl exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
     }
 
     object Demos {
@@ -111,6 +111,7 @@ object Dependencies {
       val scalatest         = "org.scalatest"           %% "scalatest"            % ScalaTest       % "test,it"                   // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"            % Scalactic       % "test,it"                   // ApacheV2
       val scalaCompiler     = "org.scala-lang"          % "scala-compiler"        % Scala
+      val mockito           = "org.mockito"             % "mockito-all"           % "1.10.19"       % "test,it"                   // MIT
     }
   }
 
@@ -121,7 +122,7 @@ object Dependencies {
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
   val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-    Test.junitInterface, Test.scalatest, Test.scalaCompiler, Test.scalactic)
+    Test.junitInterface, Test.scalatest, Test.scalaCompiler, Test.scalactic, Test.mockito)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
@@ -137,5 +138,5 @@ object Dependencies {
 
   val kafka = Seq(Demos.kafkaStreaming)
 
-  val twitter = Seq(sparkCatalyst, Demos.twitterStreaming)
+  val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
 }

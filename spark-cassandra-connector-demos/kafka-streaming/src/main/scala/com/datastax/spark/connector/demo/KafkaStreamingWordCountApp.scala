@@ -32,7 +32,8 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
 
   val words = "./spark-cassandra-connector-demos/kafka-streaming/src/main/resources/data/words"
 
-  val topic = "demo.wordcount.topic"
+  val topic = "streaming.wordcount.topic"
+  val group = "streaming.wordcount.group"
 
   /** Starts the Kafka broker. */
   lazy val kafka = new EmbeddedKafka()
@@ -46,23 +47,22 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
 
   /** Creates the keyspace and table in Cassandra. */
   CassandraConnector(conf).withSessionDo { session =>
-    session.execute(s"DROP KEYSPACE IF EXISTS demo")
-    session.execute(s"CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute(s"CREATE TABLE IF NOT EXISTS demo.wordcount (word TEXT PRIMARY KEY, count COUNTER)")
-    session.execute(s"TRUNCATE demo.wordcount")
+    session.execute(s"DROP KEYSPACE IF EXISTS kafka_streaming")
+    session.execute(s"CREATE KEYSPACE IF NOT EXISTS kafka_streaming WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute(s"CREATE TABLE IF NOT EXISTS kafka_streaming.wordcount (word TEXT PRIMARY KEY, count COUNTER)")
+    session.execute(s"TRUNCATE kafka_streaming.wordcount")
   }
 
   kafka.createTopic(topic)
 
   val producer = new KafkaProducer[String,String](kafka.kafkaConfig)
 
-  val toKafka = (line: String) => producer.send(topic, "demo.wordcount.group", line.toLowerCase)
+  val toKafka = (line: String) => producer.send(topic, group, line.toLowerCase)
 
   val sc = new SparkContext(conf)
 
   /* The write to kafka from spark, read from kafka in the stream and write to cassandra would happen
-  from separate components in a production env. This is a simple demo to show the code for integration.
-   */
+  from separate components in a production env. This is a simple demo to show the code for integration. */
   sc.textFile(words)
     .flatMap(_.split("\\s+"))
     .toLocalIterator.foreach(toKafka)
@@ -76,7 +76,7 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   val stream = KafkaUtils.createStream[String, String, StringDecoder, StringDecoder](
     ssc, kafka.kafkaParams, Map(topic -> 1), StorageLevel.MEMORY_ONLY)
 
-  stream.map(_._2).countByValue().saveToCassandra("demo", "wordcount")
+  stream.map(_._2).countByValue().saveToCassandra("kafka_streaming", "wordcount")
 
   ssc.start()
 
@@ -90,7 +90,7 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   }
 
   def validate(): Unit = {
-    val rdd = ssc.cassandraTable("demo", "wordcount")
+    val rdd = ssc.cassandraTable("kafka_streaming", "wordcount")
     import scala.concurrent.duration._
     awaitCond(rdd.toLocalIterator.size > 100, 5.seconds)
     log.info("Assertions successful.")

@@ -9,20 +9,18 @@ import twitter4j.auth.Authorization
 import com.datastax.spark.connector.streaming._
 import com.datastax.spark.connector.SomeColumns
 
-class TwitterStreamingHashTagsByInterval extends Serializable {
+class TwitterStreamingTopicsByInterval extends Serializable {
 
-  def start(auth: Option[Authorization], ssc: StreamingContext, filters: Regex, keyspace: String, table: String): Unit = {
-
-    val transform = (cruft: String) => filters.findAllIn(cruft).flatMap(_.stripPrefix("#"))
+  def start(auth: Option[Authorization], ssc: StreamingContext, topics: Set[String], keyspace: String, table: String): Unit = {
 
     val stream = TwitterUtils.createStream(ssc, auth, Nil, StorageLevel.MEMORY_ONLY_SER_2)
 
     /** Note that Cassandra is doing the sorting for you here. */
     stream.flatMap(_.getText.toLowerCase.split("""\s+"""))
-      .map(transform)
+      .filter(topics.contains(_))
       .countByValueAndWindow(Seconds(5), Seconds(5))
       .transform((rdd, time) => rdd.map { case (term, count) => (term, count, now(time))})
-      .saveToCassandra(keyspace, table, SomeColumns("hashtag", "mentions", "interval"))
+      .saveToCassandra(keyspace, table, SomeColumns("topic", "mentions", "interval"))
 
     ssc.checkpoint("./checkpoint")
     ssc.start()

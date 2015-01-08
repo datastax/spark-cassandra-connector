@@ -20,9 +20,6 @@ private[cassandra] trait CassandraStrategies {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case logical.InsertIntoTable(table: CassandraRelation, partition, child, overwrite) =>
         InsertIntoCassandraTable(table, planLater(child), overwrite)(cassandraContext) :: Nil
-      case logical.InsertIntoTable(
-      InMemoryRelation(_, _, _, CassandraTableScan(_, table, _)), partition, child, overwrite) =>
-        InsertIntoCassandraTable(table, planLater(child), overwrite)(cassandraContext) :: Nil
       case _ => Nil
     }
   }

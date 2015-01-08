@@ -8,11 +8,12 @@ final class TwitterSettings {
 
   protected val config = ConfigFactory.load.getConfig("streaming-app")
 
+  val Topics = immutableSeq(config.getStringList("filters")).toSet
+
   /** For purposes of live demos #term or term is configurable, as #term may be less frequent. */
   val RegexFilterPattern: Regex = {
-    val filters = immutableSeq(config.getStringList("filters")).toSet
-    val topics = filters.map(_.stripPrefix("#")).mkString("|")
-    if (filters.mkString contains "#")  s"(#\\w*(?:$topics)\\w*)".r else s"(w*(?:$topics)w*)".r
+    val topics = Topics.mkString("|")
+    if (topics contains "#")  s"(#\\w*(?:$topics)\\w*)".r else s"(w*(?:$topics)w*)".r
   }
 
   /** Attempts to detect System property, falls back to config. */
@@ -43,7 +44,7 @@ object Twitter {
   import twitter4j.auth.{OAuthAuthorization, Authorization}
   import twitter4j.conf.ConfigurationBuilder
 
-  case class TwitterAuth(auth: Option[Authorization])
+  case class TwitterAuth(auth: Option[Authorization]) extends Serializable
 
   object TwitterAuth {
 
