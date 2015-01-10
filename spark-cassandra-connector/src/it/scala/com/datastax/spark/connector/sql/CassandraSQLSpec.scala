@@ -104,6 +104,13 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result should have length 8
   }
 
+  it should "allow to select rows with in clause pushed down" in {
+    val query = cc.sql("SELECT * FROM test2 WHERE a in (1,2)")
+    query.queryExecution.sparkPlan.nodeName should be ("CassandraTableScan")
+    val result = query.collect()
+    result should have length 6
+  }
+
   it should "allow to select rows with or clause" in {
     val result = cc.sql("SELECT * FROM test1 WHERE b = 2 or b = 1").collect()
     result should have length 8

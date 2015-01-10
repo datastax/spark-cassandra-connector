@@ -53,7 +53,7 @@ private[cassandra] trait CassandraStrategies {
         predicate.isInstanceOf[EqualTo]
 
       private def isIn(predicate: Expression) : Boolean =
-        predicate.isInstanceOf[In]
+        predicate.isInstanceOf[In] || predicate.isInstanceOf[InSet]
 
       private def isRangeComparison(predicate: Expression) : Boolean = predicate match {
         case _: LessThan           => true
