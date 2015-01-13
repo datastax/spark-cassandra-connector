@@ -3,11 +3,13 @@ package com.datastax.spark.connector.cql
 import com.datastax.driver.core.policies.LoadBalancingPolicy
 import com.datastax.driver.core.{Statement, Cluster, HostDistance, Host}
 import java.net.{InetAddress, NetworkInterface}
+import org.apache.spark.Logging
+
 import scala.collection.JavaConversions._
 import scala.util.Random
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
-class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends LoadBalancingPolicy {
+class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends LoadBalancingPolicy with Logging {
 
   import LocalNodeFirstLoadBalancingPolicy._
 
@@ -21,7 +23,8 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
       HostDistance.REMOTE
 
   override def init(cluster: Cluster, hosts: java.util.Collection[Host]) {
-    liveNodes = hosts.filter(_.isUp).toSet
+    logDebug(s"Initializing load balancing policy with hosts=${hosts.map(host => s"Host(${host.getAddress.getHostAddress}, ${host.isUp})").mkString(", ")}")
+    liveNodes = hosts.toSet
   }
 
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
@@ -34,12 +37,23 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
     // Therefore we want to really replace the object now, to get full information on DC:
     liveNodes -= host
     liveNodes += host
+    logInfo(s"Added host s${host.getAddress.getHostAddress}")
   }
 
-  override def onRemove(host: Host) { liveNodes -= host }
-  override def onUp(host: Host) = { }
-  override def onDown(host: Host) = { }
-  override def onSuspected(host: Host) = { liveNodes += host }
+  override def onRemove(host: Host) {
+    liveNodes -= host
+    logInfo(s"Removed host s${host.getAddress.getHostAddress}")
+  }
+  override def onUp(host: Host) = {
+    logInfo(s"Host s${host.getAddress.getHostAddress} is now up")
+  }
+  override def onDown(host: Host) = {
+    logInfo(s"Host s${host.getAddress.getHostAddress} is now down")
+  }
+  override def onSuspected(host: Host) = {
+    liveNodes += host
+    logInfo(s"Host s${host.getAddress.getHostAddress} is now suspected")
+  }
 }
 
 object LocalNodeFirstLoadBalancingPolicy {
