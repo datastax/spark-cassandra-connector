@@ -12,7 +12,9 @@ import scala.util.Random
 
 import org.apache.spark.Logging
 
-/** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
+/** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.
+  * For writes, if a statement has a routing key set, this LBP is token aware - it prefers the nodes which
+  * are replicas of the computed token to the other nodes. */
 class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None,
                                         shuffleReplicas: Boolean = true) extends LoadBalancingPolicy with Logging {
 
