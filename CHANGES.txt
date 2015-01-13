@@ -1,3 +1,6 @@
+1.0.6
+ * Upgraded Java Driver to 2.0.8 and added some logging in LocalNodeFirstLoadBalancingPolicy (SPARKC-18)
+ 
 1.0.5
  * Fixed setting output consistency level which was being set on prepared
    statements instead of being set on batches (#463)
