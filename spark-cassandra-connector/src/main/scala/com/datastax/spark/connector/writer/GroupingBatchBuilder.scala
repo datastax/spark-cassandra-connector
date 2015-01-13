@@ -38,19 +38,12 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
   require(maxBatches > 0)
 
   private[this] val batchMap = new PriorityHashMap[Any, Batch](maxBatches)
-  private[this] val emptyBatches = new util.Stack[Batch]()
-  emptyBatches.ensureCapacity(maxBatches + 1)
 
-  private[this] var lastStatement: BoundStatement = null
-
-  // last key computation could be expensive, especially it would be a token range; therefore it is better
-  // to store the value in a temporary variable for subsequent usages
-  private[this] var lastKey: Any = null
-
-  /** The contract of this method is to return `Some(Batch)` if the returned batch needs to be consumed
-    * first, before the given statement can be processed, that is, the statement is not processed in this
-    * case. The method returns `None` if the statement is successfully added to the batch in the queue. */
-  private def processStatement(batchKey: Any, boundStatement: BoundStatement): Option[Batch] = {
+  /** The method processes the given statement - it adds it to the existing batch or to the new one.
+    * If adding the statement would not fit into an existing batch or the new batch would not fit into
+    * the buffer, the batch statement is created from the batch and it is returned and the given
+    * bound statement is added to a fresh batch. */
+  private def processStatement(batchKey: Any, boundStatement: BoundStatement): Option[Statement] = {
     batchMap.get(batchKey) match {
       case Some(batch) =>
         updateBatchInMap(batchKey, batch, boundStatement)
@@ -59,63 +52,66 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
     }
   }
 
-  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: BoundStatement): Option[Batch] = {
+  /** Adds the given statement to the batch if possible; If there is no enough capacity in the batch,
+    * a batch statement is created and returned; the batch is cleaned and the given statement is added
+    * to it. */
+  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: BoundStatement): Option[Statement] = {
     if (batch.add(newStatement, force = false)) {
       batchMap.put(batchKey, batch)
       None
     } else {
-      batchMap.remove(batchKey)
-      Some(batch)
+      Some(replaceBatch(batch, newStatement, batchKey))
     }
   }
 
-  private def addBatchToMap(batchKey: Any, newStatement: BoundStatement): Option[Batch] = {
+  /** Adds a new batch to the buffer and adds the given statement to it. Returns a statement which had
+    * to be dequeued. */
+  private def addBatchToMap(batchKey: Any, newStatement: BoundStatement): Option[Statement] = {
     if (batchMap.size == maxBatches) {
-      Some(batchMap.dequeue())
+      Some(replaceBatch(batchMap.dequeue(), newStatement, batchKey))
+
     } else {
-      val batch = newBatch()
+      val batch = Batch(batchSize)
       batch.add(newStatement, force = true)
       batchMap.put(batchKey, batch)
       None
     }
   }
 
-  /** Tries to get unused batch from the stack; if the stack is empty, it creates a new `Batch` object */
-  private def newBatch(): Batch = {
-    if (emptyBatches.isEmpty)
-      Batch(batchSize)
-    else
-      emptyBatches.pop()
-  }
-
-  /** Creates a statement from `Batch` object, clears the batch and puts it back on the stack */
+  /** Creates a statement from the given batch and cleans the batch so that it can be reused. */
+  @inline
   private def createStmtAndReleaseBatch(batch: Batch): Statement = {
     val stmt = batchStatementBuilder.maybeCreateBatch(batch.statements)
     batch.clear()
-    emptyBatches.push(batch)
+    stmt
+  }
+
+  /** Creates a statement from the given batch; cleans the batch and adds a given statement to it;
+    * updates the entry in the buffer. */
+  @inline
+  private def replaceBatch(batch: Batch, newStatement: BoundStatement, newBatchKey: Any): Statement = {
+    val stmt = createStmtAndReleaseBatch(batch)
+    batch.add(newStatement, force = true)
+    batchMap.put(newBatchKey, batch)
     stmt
   }
 
   @tailrec
   final override def computeNext(): Statement = {
-    if (lastStatement == null && data.hasNext) {
-      lastStatement = batchStatementBuilder.bind(data.next())
-      lastKey = batchKeyGenerator(lastStatement)
-    }
+    if (data.hasNext) {
+      val stmt = batchStatementBuilder.bind(data.next())
+      val key = batchKeyGenerator(stmt)
 
-    if (lastStatement != null) {
-      processStatement(lastKey, lastStatement) match {
-        case Some(batch) =>
-          createStmtAndReleaseBatch(batch)
-        case None =>
-          lastStatement = null
-          computeNext()
+      processStatement(key, stmt) match {
+        case Some(batchStmt) => batchStmt
+        case _ => computeNext()
       }
+
+    } else if (batchMap.nonEmpty) {
+      createStmtAndReleaseBatch(batchMap.dequeue())
+
     } else {
-      if (batchMap.nonEmpty)
-        createStmtAndReleaseBatch(batchMap.dequeue())
-      else
-        endOfData()
+      endOfData()
     }
   }
 
