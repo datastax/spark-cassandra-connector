@@ -8,8 +8,8 @@ execute arbitrary CQL queries in your Spark applications.
 
 ## Features
 
- - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5
- - Compatible with Apache Spark 1.0 and 1.1
+ - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5 (see table below)
+ - Compatible with Apache Spark 1.0 and 1.1 (see table below)
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
@@ -19,6 +19,17 @@ execute arbitrary CQL queries in your Spark applications.
  - Filters rows on the server side via the CQL `WHERE` clause 
  - Allows for execution of arbitrary CQL statements
  - Plays nice with Cassandra Virtual Nodes
+
+## Version Compatibility
+
+The connector project has several branches, each of which map into different supported versions of Spark and Cassandra. Refer to the compatibility table below which shows the major.minor version range supported between the connector, Spark, Cassandra, and the Cassandra Java driver:
+
+| Connector | Spark         | Cassandra | Cassandra Java Driver |
+| --------- | ------------- | --------- | --------------------- |
+| 1.2       | 1.2, 1.1, 1.0 | 2.1, 2.0  | 2.1                   |
+| 1.1       | 1.1, 1.0      | 2.1, 2.0  | 2.1                   |
+| 1.0       | 1.0, 0.9      | 2.0       | 1.0                   |
+
 
 ## Download
 This project has been published to the Maven Central Repository.
