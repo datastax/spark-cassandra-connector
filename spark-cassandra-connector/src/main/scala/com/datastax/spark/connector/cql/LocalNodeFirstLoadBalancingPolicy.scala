@@ -1,21 +1,29 @@
 package com.datastax.spark.connector.cql
 
+import java.nio.ByteBuffer
+
+import java.util.{Iterator => JIterator, Collection => JCollection}
 import com.datastax.driver.core.policies.LoadBalancingPolicy
-import com.datastax.driver.core.{Statement, Cluster, HostDistance, Host}
+import com.datastax.driver.core._
 import java.net.{InetAddress, NetworkInterface}
+
 import scala.collection.JavaConversions._
 import scala.util.Random
 
 import org.apache.spark.Logging
 
-/** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs. */
-class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None) extends LoadBalancingPolicy with Logging {
+/** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.
+  * For writes, if a statement has a routing key set, this LBP is token aware - it prefers the nodes which
+  * are replicas of the computed token to the other nodes. */
+class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC: Option[String] = None,
+                                        shuffleReplicas: Boolean = true) extends LoadBalancingPolicy with Logging {
 
   import LocalNodeFirstLoadBalancingPolicy._
 
   private var nodes = Set.empty[Host]
   private var dcToUse = ""
   private val random = new Random
+  private var clusterMetadata: Metadata = _
 
   override def distance(host: Host): HostDistance =
     if (host.getDatacenter == dcToUse) {
@@ -27,7 +35,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
       HostDistance.IGNORED
     }
 
-  override def init(cluster: Cluster, hosts: java.util.Collection[Host]) {
+  override def init(cluster: Cluster, hosts: JCollection[Host]) {
     nodes = hosts.toSet
     // use explicitly set DC if available, otherwise see if all contact points have same DC
     // if so, use that DC; if not, throw an error
@@ -40,10 +48,39 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
         else 
           throw new IllegalArgumentException(s"Contact points contain multiple data centers: ${dcList.mkString(", ")}")
     }
+    clusterMetadata = cluster.getMetadata
   }
 
-  override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
+  private def tokenUnawareQueryPlan(query: String, statement: Statement): JIterator[Host] = {
     sortNodesByProximityAndStatus(contactPoints, nodes).iterator
+  }
+
+  private def findReplicas(keyspace: String, partitionKey: ByteBuffer): Set[Host] = {
+    clusterMetadata.getReplicas(Metadata.quote(keyspace), partitionKey).toSet
+      .filter(host => host.isUp && distance(host) != HostDistance.IGNORED)
+  }
+
+  private def tokenAwareQueryPlan(keyspace: String, statement: Statement): JIterator[Host] = {
+    assert(keyspace != null)
+    assert(statement.getRoutingKey != null)
+
+    val replicas = findReplicas(keyspace, statement.getRoutingKey)
+    val (localReplica, otherReplicas) = replicas.partition(isLocalHost)
+    lazy val maybeShuffled = if (shuffleReplicas) random.shuffle(otherReplicas.toIndexedSeq) else otherReplicas
+
+    lazy val otherHosts = tokenUnawareQueryPlan(keyspace, statement).toIterator
+      .filter(host => !replicas.contains(host) && distance(host) != HostDistance.IGNORED)
+
+    (localReplica.iterator #:: maybeShuffled.iterator #:: otherHosts #:: Stream.empty).flatten.iterator
+  }
+
+  override def newQueryPlan (loggedKeyspace: String, statement: Statement): JIterator[Host] = {
+    val keyspace = if (statement.getKeyspace == null) loggedKeyspace else statement.getKeyspace
+
+    if (statement.getRoutingKey == null || keyspace == null)
+      tokenUnawareQueryPlan(keyspace, statement)
+    else
+      tokenAwareQueryPlan(keyspace, statement)
   }
 
   override def onAdd(host: Host) {
@@ -87,7 +124,7 @@ object LocalNodeFirstLoadBalancingPolicy {
     * DC information is missing. Other hosts with missing DC information are not considered.*/
   def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
     val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
-    val contactDCs =  contactNodes.map(_.getDatacenter).filter(_ != null).toSet
+    val contactDCs = contactNodes.map(_.getDatacenter).filter(_ != null).toSet
     contactNodes ++ allHosts.filter(h => contactDCs.contains(h.getDatacenter))
   }
 

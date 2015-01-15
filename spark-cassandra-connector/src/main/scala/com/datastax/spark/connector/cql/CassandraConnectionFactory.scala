@@ -36,8 +36,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
   val connectTimeout = System.getProperty("spark.cassandra.connection.timeout_ms", "5000").toInt
   val readTimeout = System.getProperty("spark.cassandra.read.timeout_ms", "12000").toInt
-  
-  
+
+
   /** Creates and configures a Thrift client.
     * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
