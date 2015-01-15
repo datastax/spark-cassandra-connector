@@ -1,4 +1,4 @@
-1.2.0 (unreleased)
+1.2.0 alpha 1
  * Added support for TTL and timestamp in the writer (#153)
  * Added support for UDT column types (SPARKC-1)
  * Upgraded Spark to version 1.2.0 (SPARKC-15)
@@ -8,6 +8,8 @@
    data by partition key / clustering columns. Useful for e.g. time-series data. (SPARKC-2)
  * Refactored the write path so that the writes are now token-aware (SPARKC-5, previously #442)
  * Added support for INSET predicate pushdown (patch by granturing)
+
+********************************************************************************
 
 1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
@@ -101,6 +103,7 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
+
 1.0.6
  * Upgraded Java Driver to 2.0.8 and added some logging in LocalNodeFirstLoadBalancingPolicy (SPARKC-18)
  
