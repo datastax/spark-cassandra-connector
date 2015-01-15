@@ -40,6 +40,7 @@ case class CassandraTableScan(
     predicate match {
       case cmp: BinaryComparison => Seq(castFromString(cmp.right.toString, cmp.right.dataType))
       case in: In => in.list.map(value => castFromString(value.toString, value.dataType))
+      case inset: InSet => inset.hset.toSeq
       case _ => throw new UnsupportedOperationException("Unsupported predicate: " + predicate)
     }
   }
@@ -51,7 +52,7 @@ case class CassandraTableScan(
       case _: LessThanOrEqual =>    "<="
       case _: GreaterThan =>        ">"
       case _: GreaterThanOrEqual => ">="
-      case _: In =>                 "IN"
+      case _: In | _: InSet =>      "IN"
       case _ => throw new UnsupportedOperationException(
         "It's not a valid predicate to be pushed down, only >, <, >=, <= and In are allowed: " + predicate)
     }
@@ -63,6 +64,8 @@ case class CassandraTableScan(
         cmp.references.head.name + " " + predicateOperator(cmp) + " ?"
       case in: In =>
         in.value.references.head.name + " IN " + in.list.map(_ => "?").mkString("(", ", ", ")")
+      case inset: InSet =>
+        inset.value.references.head.name + " IN " + inset.hset.toSeq.map(_ => "?").mkString("(", ", " , ")")
       case _ =>
         throw new UnsupportedOperationException(
           "It's not a valid predicate to be pushed down, only >, <, >=, <= and In are allowed: " + predicate)
