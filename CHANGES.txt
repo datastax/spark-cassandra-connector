@@ -6,6 +6,7 @@
    it will be fixed in the next release
  * Added fast spanBy and spanByKey methods to RDDs useful for grouping Cassandra
    data by partition key / clustering columns. Useful for e.g. time-series data. (SPARKC-2)
+ * Refactored the write path so that the writes are now token-aware (SPARKC-5, previously #442)
 
 1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
