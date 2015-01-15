@@ -18,6 +18,7 @@ import scala.reflect.runtime.universe.typeTag
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 case class CustomerId(id: String)
+case class Key(key: Int)
 case class KeyGroup(key: Int, group: Int)
 case class Value(value: String)
 case class WriteTimeClass(id: Int, value: String, writeTimeOfValue: Long)
@@ -393,6 +394,41 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
     results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
   }
+
+  it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {
+
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS read_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+      session.execute("INSERT INTO read_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+    }
+
+    val results = sc
+      .cassandraTable[(Key, (Int, Int, String))]("read_test", "wide_rows")
+      .select("key", "group", "value")
+      .spanByKey
+      .collect()
+      .toMap
+
+    results should have size 2
+    results should contain key Key(10)
+    results should contain key Key(20)
+
+    results(Key(10)) should contain inOrder(
+      (10, 10, "1010"),
+      (10, 11, "1011"),
+      (10, 12, "1012"))
+
+    results(Key(20)) should contain inOrder(
+      (20, 20, "2020"),
+      (20, 21, "2021"),
+      (20, 22, "2022"))
+  }
+
 
   it should "allow to read Cassandra table as Array of tuples of two case classes" in {
     val results = sc.cassandraTable[(KeyGroup, Value)]("read_test", "key_value").select("key", "group", "value").collect()

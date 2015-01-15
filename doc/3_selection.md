@@ -1,5 +1,5 @@
 # Documentation
-## Server-side data selection and filtering
+## Server-side data selection, filtering and grouping
 
 In this section, you'll learn how to reduce the amount of data transferred from Cassandra to Spark
 to speed up processing.
@@ -39,5 +39,29 @@ are currently allowed by the Cassandra engine. This limitation is going to be ad
 Cassandra releases. Currently, `ALLOW FILTERING` works well 
 with columns indexed by secondary indexes or clustering columns.  
 
+### Grouping rows by partition key
+
+Physically, cassandra stores data already grouped by Cassandra partition key and ordered by clustering
+column(s) within each partition. As a single Cassandra partition never spans multiple Spark partitions,
+it is possible to very efficiently group data by partition key without shuffling data around.
+Call `spanBy` or `spanByKey` methods instead of `groupBy` or `groupByKey`:
+
+```sql
+CREATE TABLE events (year int, month int, ts timestamp, data varchar);
+```
+
+```scala
+sc.cassandraTable("test", "events")
+  .spanBy(row => (row.getInt("year"), row.getInt("month")))
+
+sc.cassandraTable("test", "events")
+  .keyBy(row => (row.getInt("year"), row.getInt("month")))
+  .spanByKey
+```
+
+The methods `spanBy` and `spanByKey` iterate every Spark partition locally
+and put every RDD item into the same group as long as the key doesn't change.
+Whenever the key changes, a new group is started. You need enough memory
+to store the biggest group.
 
 [Next - Working with user-defined case classes and tuples](4_mapper.md)

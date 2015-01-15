@@ -6,6 +6,9 @@ import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
 import scala.language.existentials
 
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+
 import com.datastax.driver.core.{ProtocolVersion, Session, Statement}
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
@@ -14,9 +17,6 @@ import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
 import com.datastax.spark.connector.util.{Logging, CountingIterator}
-
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, SparkContext, TaskContext}
 import com.datastax.spark.connector._
 
 

@@ -53,8 +53,11 @@ package object connector {
   implicit def toSparkContextFunctions(sc: SparkContext): SparkContextFunctions =
     new SparkContextFunctions(sc)
 
-  implicit def toRDDFunctions[T : ClassTag](rdd: RDD[T]): RDDFunctions[T] =
-    new RDDFunctions[T](rdd)
+  implicit def toRDDFunctions[T](rdd: RDD[T]): RDDFunctions[T] =
+    new RDDFunctions(rdd)
+
+  implicit def toPairRDDFunctions[K, V](rdd: RDD[(K, V)]): PairRDDFunctions[K, V] =
+    new PairRDDFunctions(rdd)
 
   implicit class ColumnNameFunctions(val columnName: String) extends AnyVal {
     def writeTime: WriteTime = WriteTime(columnName)
