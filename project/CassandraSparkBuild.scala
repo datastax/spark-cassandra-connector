@@ -21,36 +21,51 @@ import sbt.Keys._
 object CassandraSparkBuild extends Build {
   import Settings._
 
+  val namespace = "spark-cassandra-connector"
+
+  val demosPath = file(s"$namespace-demos")
+
   lazy val root = RootProject("root", file("."), Seq(connector, jconnector, embedded, demos))
 
-  lazy val connector = AssemblyProject("spark-cassandra-connector", Dependencies.connector,
-    Seq(embedded % "test->test;it->it,test;"))
+  lazy val connector = Project(
+    id = namespace,
+    base = file(namespace),
+    settings = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector),
+    dependencies = Seq(embedded % "test->test;it->it,test;")
+  ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  lazy val jconnector = AssemblyProject("spark-cassandra-connector-java", Dependencies.connector,
-    Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided"))
+  lazy val jconnector = Project(
+    id = s"$namespace-java",
+    base = file(s"$namespace-java"),
+    settings = connector.settings,
+    dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
+  ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  lazy val embedded = UtilityProject("spark-cassandra-connector-embedded", Dependencies.embedded)
+  lazy val embedded = Project(
+    id = s"$namespace-embedded",
+    base = file(s"$namespace-embedded"),
+    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
+  ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  lazy val demos = RootProject("demos", file("spark-cassandra-connector-demos"), Seq(simpleDemos, kafkaStreaming, twitterStreaming))
+  lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
 
-  lazy val simpleDemos = DemoProject("simple-demos", Seq.empty, Seq(connector, jconnector, embedded))
+  lazy val simpleDemos = Project(
+    id = "simple-demos",
+    base = demosPath / "simple-demos",
+    settings = demoSettings,
+    dependencies = Seq(connector, jconnector, embedded))
 
-  lazy val kafkaStreaming = DemoProject("kafka-streaming", Dependencies.kafka, Seq(connector, embedded)).settings(sbtAssemblySettings:_*)
+  lazy val kafkaStreaming = Project(
+    id = "kafka-streaming",
+    base = demosPath / "kafka-streaming",
+    settings = demoSettings ++ sbtAssemblySettings ++ Seq(libraryDependencies ++= Dependencies.kafka),
+    dependencies = Seq(connector, embedded))
 
-  lazy val twitterStreaming = DemoProject("twitter-streaming", Dependencies.twitter, Seq(connector))
-
-  /* Project Templates */
-  def AssemblyProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]] = Seq.empty): Project =
-    Project(name, file(name), settings = assembledSettings ++ Seq(libraryDependencies ++= modules),
-      dependencies = cpd) configs (IntegrationTest, ClusterIntegrationTest)
-
-  def UtilityProject(name: String, modules: Seq[ModuleID]): Project =
-    Project(name, file(name),
-      settings = defaultSettings ++ Seq(libraryDependencies ++= modules)) configs (IntegrationTest, ClusterIntegrationTest)
-
-  def DemoProject(name: String, modules: Seq[ModuleID], cpd: Seq[ClasspathDep[ProjectReference]]): Project =
-    Project(id = name, base = file(s"spark-cassandra-connector-demos/$name"),
-      settings = demoSettings ++ Seq(libraryDependencies ++= modules), dependencies = cpd)
+  lazy val twitterStreaming = Project(
+    id = "twitter-streaming",
+    base = demosPath / "twitter-streaming",
+    settings = demoSettings ++ sbtAssemblySettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
+    dependencies = Seq(connector))
 
   def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
     Project(id = name, base = dir, settings = parentSettings, aggregate = contains)
