@@ -125,6 +125,7 @@ object Settings extends Build {
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+    parallelExecution in assembly := false,
     jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)),
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
