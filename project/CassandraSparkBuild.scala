@@ -58,13 +58,13 @@ object CassandraSparkBuild extends Build {
   lazy val kafkaStreaming = Project(
     id = "kafka-streaming",
     base = demosPath / "kafka-streaming",
-    settings = demoSettings ++ sbtAssemblySettings ++ Seq(libraryDependencies ++= Dependencies.kafka),
+    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.kafka),
     dependencies = Seq(connector, embedded))
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
-    settings = demoSettings ++ sbtAssemblySettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
+    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector))
 
   def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
