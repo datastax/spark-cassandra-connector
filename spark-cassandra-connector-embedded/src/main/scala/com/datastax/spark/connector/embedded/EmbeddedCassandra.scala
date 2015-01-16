@@ -72,13 +72,13 @@ private[connector] class CassandraRunner(val configTemplate: String) extends Emb
       copyTextFileWithVariableSubstitution(input, output, properties)
     }
   }
-  private def makeJarPath() : String ={
-    var sysClassLoader : ClassLoader = ClassLoader.getSystemClassLoader();
-    sysClassLoader.asInstanceOf[java.net.URLClassLoader].getURLs().
-                                map( e => e.getFile).mkString(":")
-  }  
 
-  private val classPath = makeJarPath()
+  private def jarpath = {
+    val sysClassLoader : ClassLoader = ClassLoader.getSystemClassLoader()
+    sysClassLoader.asInstanceOf[java.net.URLClassLoader].getURLs().map( e => e.getFile).mkString(":")
+  }
+
+  private val classPath = jarpath()
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
