@@ -28,6 +28,18 @@ Add the `spark-cassandra-connector` jar and its dependency jars to the following
  - the classpath of your project
  - the classpath of every Spark cluster node
  
+The easiest way to do this is to make the assembled connector jar using
+
+     sbt assembly
+     
+This will generate a jar file with all of the required dependencies in 
+
+     spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-assembly-*.jar
+     
+Then add this jar to your Spark classpath by adding the following line to your spark-env.sh
+
+    SPARK_CLASSPATH=spark-cassandra-connector/spark-cassandra-connector/target/scala-2.10/spark-cassandra-connector-assembly-$CurrentVersion-SNAPSHOT.jar
+ 
 This driver is also compatible with Spark distribution provided in 
 [DataStax Enterprise 4.5](http://www.datastax.com/documentation/datastax_enterprise/4.5/datastax_enterprise/newFeatures.html).
  
