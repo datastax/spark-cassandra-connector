@@ -30,6 +30,7 @@ spark.cassandra.connection.timeout_ms                | maximum period of time to
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to attempt reconnecting to a dead node | 1000 ms 
 spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to attempt reconnecting to a dead node | 60000 ms 
 spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)      | none
+spark.cassandra.connection.use_ssl                   | whether to connect using use_ssl      						 | false
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                    | 10 
 spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return           | 12000 ms
   
