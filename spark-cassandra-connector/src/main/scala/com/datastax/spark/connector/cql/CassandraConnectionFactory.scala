@@ -33,6 +33,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   val minReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.min", "1000").toInt
   val maxReconnectionDelay = System.getProperty("spark.cassandra.connection.reconnection_delay_ms.max", "60000").toInt
   val localDC = System.getProperty("spark.cassandra.connection.local_dc")
+  val useSSL = System.getProperty("spark.cassandra.connection.use_ssl", "false").toBoolean
   val retryCount = System.getProperty("spark.cassandra.query.retry.count", "10").toInt
   val connectTimeout = System.getProperty("spark.cassandra.connection.timeout_ms", "5000").toInt
   val readTimeout = System.getProperty("spark.cassandra.read.timeout_ms", "12000").toInt
@@ -66,7 +67,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .setConnectTimeoutMillis(connectTimeout)
       .setReadTimeoutMillis(readTimeout)
 
-    Cluster.builder()
+    val cb = Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.nativePort)
       .withRetryPolicy(new MultipleRetryPolicy(retryCount))
@@ -74,6 +75,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withLoadBalancingPolicy(new LocalNodeFirstLoadBalancingPolicy(conf.hosts, Option(localDC)))
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
+    if (useSSL) cb.withSSL else cb
   }
 
   /** Creates and configures native Cassandra connection */
