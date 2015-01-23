@@ -78,7 +78,7 @@ private[connector] class CassandraRunner(val configTemplate: String) extends Emb
     sysClassLoader.asInstanceOf[java.net.URLClassLoader].getURLs().map( e => e.getFile).mkString(":")
   }
 
-  private val classPath = jarpath()
+  private val classPath = jarpath
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
