@@ -151,6 +151,27 @@ class TableWriter[T] private (
 
 object TableWriter {
 
+  private def checkColumns(table: TableDef, columnNames: Seq[String]) = {
+    checkMissingColumns(table, columnNames)
+    checkMissingPrimaryKeyColumns(table, columnNames)
+  }
+
+  private def checkMissingColumns(table: TableDef, columnNames: Seq[String]) {
+    val allColumnNames = table.allColumns.map(_.columnName)
+    val missingColumns = columnNames.toSet -- allColumnNames
+    if (missingColumns.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Column(s) not found: ${missingColumns.mkString(", ")}")
+  }
+
+  private def checkMissingPrimaryKeyColumns(table: TableDef, columnNames: Seq[String]) {
+    val primaryKeyColumnNames = table.primaryKey.map(_.columnName)
+    val missingPrimaryKeyColumns = primaryKeyColumnNames.toSet -- columnNames
+    if (missingPrimaryKeyColumns.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")}")
+  }
+
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
@@ -170,11 +191,14 @@ object TableWriter {
             s"Use appropriate write configuration settings to specify TTL or WriteTime.")
       }
       case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
+      case PartitionKeyColumns => tableDef.partitionKey.map(_.columnName)
     }
 
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
       selectedColumns ++ writeConf.optionPlaceholders, columnNames.aliases)
+    
+    checkColumns(tableDef, selectedColumns)
     new TableWriter[T](connector, tableDef, rowWriter, writeConf)
   }
 }

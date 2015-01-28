@@ -26,20 +26,12 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
         s"One or more properties not found in RDD data: ${missingColumns.mkString(", ")}")
   }
 
-  private def checkMissingColumns(columnNames: Seq[String]) {
-    val allColumnNames = table.allColumns.map(_.columnName)
-    val missingColumns = columnNames.toSet -- allColumnNames
-    if (missingColumns.nonEmpty)
+  private def checkUndefinedColumns(mappedColumns: Seq[String]) {
+    val undefinedColumns = selectedColumns.toSet -- mappedColumns.toSet
+    if (undefinedColumns.nonEmpty)
       throw new IllegalArgumentException(
-        s"Column(s) not found: ${missingColumns.mkString(", ")}")
-  }
-
-  private def checkMissingPrimaryKeyColumns(columnNames: Seq[String]) {
-    val primaryKeyColumnNames = table.primaryKey.map(_.columnName)
-    val missingPrimaryKeyColumns = primaryKeyColumnNames.toSet -- columnNames
-    if (missingPrimaryKeyColumns.nonEmpty)
-      throw new IllegalArgumentException(
-        s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")} (required primary key columns are: $primaryKeyColumnNames and all columns are $columnNames, table is: $table)")
+        s"Missing required columns in RDD data: ${undefinedColumns.mkString(", ")}"
+      )
   }
 
   private def columnNameByRef(columnRef: ColumnRef): Option[String] = {
@@ -59,8 +51,7 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
   }
 
   checkMissingProperties(propertyNames)
-  checkMissingColumns(columnNames)
-  checkMissingPrimaryKeyColumns(columnNames)
+  checkUndefinedColumns(columnNames)
 
   private val columnNameToPropertyName = (columnNames zip propertyNames).toMap
   private val extractor = new PropertyExtractor(cls, propertyNames)
@@ -81,5 +72,5 @@ object DefaultRowWriter {
       new DefaultRowWriter[T](tableDef, columnNames, aliasToColumnName)
     }
   }
-
 }
+

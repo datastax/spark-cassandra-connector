@@ -1,15 +1,15 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.{ColumnSelector, AllColumns}
+import com.datastax.spark.connector.rdd.reader._
+import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, ClusteringOrder, CqlWhereClause, ReadConf}
+import com.datastax.spark.connector.{AllColumns, ColumnSelector}
+import org.apache.spark.streaming.StreamingContext
 
 import scala.reflect.ClassTag
-import org.apache.spark.streaming.StreamingContext
-import com.datastax.spark.connector.rdd.{ClusteringOrder, ReadConf, CassandraRDD, CqlWhereClause}
-import com.datastax.spark.connector.rdd.reader._
 
 /** RDD representing a Cassandra table for Spark Streaming.
-  * @see [[com.datastax.spark.connector.rdd.CassandraRDD]] */
+  * @see [[com.datastax.spark.connector.rdd.CassandraTableScanRDD]]*/
 class CassandraStreamingRDD[R] private[connector] (
     sctx: StreamingContext,
     connector: CassandraConnector,
@@ -24,4 +24,4 @@ class CassandraStreamingRDD[R] private[connector] (
   implicit
     ct : ClassTag[R],
     @transient val rrf: RowReaderFactory[R])
-  extends CassandraRDD[R](sctx.sparkContext, connector, keyspace, table, columns, where, empty, limit, clusteringOrder, readConf)
+  extends CassandraTableScanRDD[R](sctx.sparkContext, connector, keyspace, table, columns, where, limit, clusteringOrder, readConf)

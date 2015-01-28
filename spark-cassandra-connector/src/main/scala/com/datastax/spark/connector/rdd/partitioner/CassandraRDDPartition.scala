@@ -7,6 +7,10 @@ import org.apache.spark.Partition
 /** Stores a CQL `WHERE` predicate matching a range of tokens. */
 case class CqlTokenRange(cql: String, values: Any*)
 
+trait EndpointPartition extends Partition {
+  def endpoints: Iterable[InetAddress]
+}
+
 /** Metadata describing Cassandra table partition processed by a single Spark task.
   * Beware the term "partition" is overloaded. Here, in the context of Spark,
   * it means an arbitrary collection of rows that can be processed locally on a single Cassandra cluster node.
@@ -21,5 +25,5 @@ case class CqlTokenRange(cql: String, values: Any*)
 case class CassandraPartition(index: Int,
                               endpoints: Iterable[InetAddress],
                               tokenRanges: Iterable[CqlTokenRange],
-                              rowCount: Long) extends Partition
+                              rowCount: Long) extends EndpointPartition
 

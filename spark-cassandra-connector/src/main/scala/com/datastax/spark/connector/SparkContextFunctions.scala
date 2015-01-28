@@ -1,8 +1,8 @@
 package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType, CassandraRDD}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
+import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, EmptyCassandraRDD, ReadConf, ValidRDDType}
 import org.apache.spark.SparkContext
 
 import scala.reflect.ClassTag
@@ -47,7 +47,7 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
                        (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
                         ct: ClassTag[T], rrf: RowReaderFactory[T],
                         ev: ValidRDDType[T]) =
-    new CassandraRDD[T](sc, connector, keyspace, table, readConf = ReadConf.fromSparkConf(sc.getConf))
+    new CassandraTableScanRDD[T](sc, connector, keyspace, table, readConf = ReadConf.fromSparkConf(sc.getConf))
 
   /** Produces the empty CassandraRDD which does not perform any validation and it does not even
     * try to return any rows. */
@@ -55,5 +55,5 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
                             (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
                              ct: ClassTag[T], rrf: RowReaderFactory[T],
                              ev: ValidRDDType[T]) =
-    new CassandraRDD[T](sc, connector, keyspace, table, readConf = ReadConf.fromSparkConf(sc.getConf), empty = true)
+    new EmptyCassandraRDD[T](sc, keyspace, table, readConf = ReadConf.fromSparkConf(sc.getConf))
 }

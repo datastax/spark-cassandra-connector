@@ -10,6 +10,10 @@ case object AllColumns extends ColumnSelector {
   override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
 }
 
+case object PartitionKeyColumns extends ColumnSelector {
+  override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
+}
+
 case class SomeColumns(columns: SelectableColumnRef*) extends ColumnSelector {
   override def aliases: Map[String, String] = columns.map {
     case ref => (ref.alias.getOrElse(ref.selectedFromCassandraAs), ref.selectedFromCassandraAs)
