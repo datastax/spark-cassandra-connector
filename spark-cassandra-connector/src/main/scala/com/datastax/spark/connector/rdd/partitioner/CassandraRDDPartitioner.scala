@@ -2,28 +2,27 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import scala.collection.JavaConversions._
-import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
-
-import org.apache.cassandra.thrift
-import org.apache.cassandra.thrift.Cassandra
-import org.apache.spark.Partition
-import org.apache.thrift.TApplicationException
-
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, Token, TokenFactory}
 import com.datastax.spark.connector.util.CqlWhereParser
 import com.datastax.spark.connector.util.CqlWhereParser._
+import org.apache.cassandra.thrift
+import org.apache.cassandra.thrift.Cassandra
+import org.apache.spark.Partition
+import org.apache.thrift.TApplicationException
+
+import scala.collection.JavaConversions._
+import scala.collection.parallel.ForkJoinTaskSupport
+import scala.concurrent.forkjoin.ForkJoinPool
 
 /** Creates CassandraPartitions for given Cassandra table */
 class CassandraRDDPartitioner[V, T <: Token[V]](
-    connector: CassandraConnector,
-    tableDef: TableDef,
-    splitSize: Long)(
-  implicit
-    tokenFactory: TokenFactory[V, T]) {
+                                                 connector: CassandraConnector,
+                                                 tableDef: TableDef,
+                                                 splitSize: Long)(
+                                                 implicit
+                                                 tokenFactory: TokenFactory[V, T]) {
 
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
@@ -39,9 +38,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     (rpcAddress, localAddress) match {
       case (NullAddress, NullAddress) => throw new IllegalArgumentException(
         "Broadcast address and RPC address of a Cassandra node cannot be both set to 0.0.0.0")
-      case (NullAddress, local)       => CassandraNode(local, local)
-      case (rpc, NullAddress)         => CassandraNode(rpc, rpc)
-      case (rpc, local)               => CassandraNode(rpc, local)
+      case (NullAddress, local) => CassandraNode(local, local)
+      case (rpc, NullAddress) => CassandraNode(rpc, rpc)
+      case (rpc, local) => CassandraNode(rpc, local)
     }
   }
 
@@ -140,7 +139,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       case RangePredicate(c, _, _) if pk.contains(c) =>
         throw new UnsupportedOperationException(
           s"Range predicates on partition key columns (here: $c) are " +
-          s"not supported in where. Use filter instead.")
+            s"not supported in where. Use filter instead.")
     }.toSet
 
     if (whereColumns.nonEmpty && whereColumns.size < pk.size) {
@@ -153,7 +152,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     whereColumns.nonEmpty
   }
 
-  /** Computes Spark partitions of the given table. Called by [[CassandraRDD]]. */
+  /** Computes Spark partitions of the given table. Called by [[CassandraTableScanRDD]]. */
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
     connector.withCassandraClientDo {
       client =>

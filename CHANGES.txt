@@ -3,6 +3,8 @@ Unreleased
  * Fixed some Java API problems and refactored its internals (SPARKC-77)
  * Allowing specification of column to property map (aliases) for reading and writing objects
    (SPARKC-9)
+ * Added interface for doing primary key joins between arbitrary RDDs and Cassandra (SPARKC-25)
+ * Added method for repartitioning an RDD based upon the replication of a Cassandra Table (SPARKC-25)
 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)

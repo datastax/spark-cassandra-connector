@@ -207,6 +207,94 @@ val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
 ```
 
 
+## Performing Efficient Joins With Cassandra Tables (since 1.2)
+### Repartitioning RDDs based on a Cassandra Table's Replication
+The method `repartitionByCassandraReplica` can be used to relocate data in an RDD to match the replication strategy of
+a given table and keyspace. The method will look for partition key information in the given RDD and then use those values
+to determine which nodes in the Cluster would be responsible for that data. You can control the resultant number of partitions
+with the parameter `partitionsPerHost`.
+
+```scala
+//CREATE TABLE test.shopping_history ( cust_id INT, date TIMESTAMP,  product TEXT, quantity INT, PRIMARY KEY (cust_id, date, product));
+case class CustomerID(cust_id: Int) // Defines partition key
+val idsOfInterest = sc.parallelize(1 to 1000).map(CustomerID(_))
+val repartitioned =  idsOfInterest.repartitionByCassandraReplica("test", "shopping_history", 10)
+repartitioned.partitions
+//res0: Array[org.apache.spark.Partition] = Array(ReplicaPartition(0,Set(/127.0.0.1)), ...)
+repartitioned.partitioner
+//res1: Option[org.apache.spark.Partitioner] = Some(com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner@4484d6c2)
+scala> repartitioned
+//res2: com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD[CustomerID] = CassandraPartitionedRDD[5] at RDD at CassandraPartitionedRDD.scala:12
+```
+
+
+### Using joinWithCassandraTable
+The connector supports using any RDD as a source of a direct join with a Cassandra Table through `joinWithCassandraTable`.
+Any RDD which is writable to a Cassandra table via the `saveToCassandra` method can be used with this procedure as long
+as the full partition key is specified.
+
+`joinWithCassandraTable` utilizes the java drive to execute a single query for every partition
+required by the source RDD so no un-needed data will be requested or serialized. This means a join between any RDD
+and a Cassandra Table can be preformed without doing a full table scan. . When preformed
+between two Cassandra Tables which share the same partition key this will *not* require movement of data between machines.
+In all cases this method will use the source RDD's partitioning and placement for data locality.
+
+`joinWithCassandraTable` is not effected by `cassandra.input.split.size` since partitions are automatically inherited from
+the source RDD. The other input properties have their normal effects.
+
+####Join between two Cassandra Tables Sharing a Partition Key
+```scala
+//CREATE TABLE test.customer_info ( cust_id INT, name TEXT, address TEXT, PRIMARY KEY (cust_id));
+val internalJoin = sc.cassandraTable("test","customer_info").joinWithCassandraTable("test","shopping_history")
+internalJoin.toDebugString
+//res4: String = (1) CassandraJoinRDD[9] at RDD at CassandraRDD.scala:14 []
+internalJoin.collect
+internalJoin.collect.foreach(println)
+//(CassandraRow{cust_id: 3, address: Poland, name: Jacek},CassandraRow{cust_id: 3, date: 2015-03-09 13:59:25-0700, product: Guacamole, quantity: 2})
+//(CassandraRow{cust_id: 0, address: West Coast, name: Russ},CassandraRow{cust_id: 0, date: 2015-03-09 13:58:14-0700, product: Scala is Fun, quantity: 1})
+//(CassandraRow{cust_id: 0, address: West Coast, name: Russ},CassandraRow{cust_id: 0, date: 2015-03-09 13:59:04-0700, product: Candy, quantity: 3})
+```
+
+####Join with Generic RDD
+```scala
+val joinWithRDD = sc.parallelize(0 to 5).filter(_%2==0).map(CustomerID(_)).joinWithCassandraTable("test","customer_info")
+joinWithRDD.collect.foreach(println)
+//(CustomerID(0),CassandraRow{cust_id: 0, address: West Coast, name: Russ})
+//(CustomerID(2),CassandraRow{cust_id: 2, address: Poland, name: Piotr})
+```
+
+The `repartitionByCassandraReplica` method can be used prior to calling joinWithCassandraTable to obtain data locality,
+such that each spark partition will only require queries to their local node. This method can also be used with two
+Cassandra Tables which have partitioned with different partition keys.
+
+####Join with a generic RDD after repartitioning
+```scala
+val oddIds = sc.parallelize(0 to 5).filter(_%2==1).map(CustomerID(_))
+val localQueryRDD = oddIds.repartitionByCassandraReplica("test","customer_info").joinWithCassandra("test","customer_info")
+repartitionRDD.collect.foreach(println)
+//(CustomerID(1),CassandraRow{cust_id: 1, address: East Coast, name: Helena})
+//(CustomerID(3),CassandraRow{cust_id: 3, address: Poland, name: Jacek})
+```
+
+###Compatibility of joinWithCassandraTable and other CassandraRDD APIs
+The result of a joinWithCassandraRDD is compatible with all of the standard CassandraRDD api options with one additional
+function, `.on`. Use `.on(ColumnSelector)` for specifying which columns to join on. Since `.on` only applies to CassandraJoinRDDs
+it must immediately follow the `joinWithCassandraTable` call.
+
+Joining on any column or columns in
+the primary key is supported as long as it can be made into a valid CQL query. This means the entire partition key must
+be specified and if any clustering key is specified all previous clustering keys must be supplied as well.
+
+####Cassandra Operations on a CassandraJoinRDD
+```scala
+val recentOrders = internalJoin.where("date > '2015-03-09'") // Where applied to every partition
+val someOrders = internalJoin.limit(1) // Returns at most 1 CQL Row per Spark Partition
+val numOrders = internalJoin.count() // Sums the total number of cql Rows
+val orderQuantities = internalJoin.select("quantity") // Returns only the amount column as the right side of the join
+val specifiedJoin = internalJoin.on(SomeColumns("cust_id")) // Joins on the cust_id column
+val emptyJoin = internalJoin.toEmptyCassandraRDD // Makes an EmptyRDD
+```
+
 ## Configuration Options for Adjusting Reads
 
 The following options can be specified in the SparkConf object or as a jvm
