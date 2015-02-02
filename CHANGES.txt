@@ -8,6 +8,7 @@
    data by partition key / clustering columns. Useful for e.g. time-series data. (SPARKC-2)
  * Refactored the write path so that the writes are now token-aware (SPARKC-5, previously #442)
  * Added support for INSET predicate pushdown (patch by granturing)
+ * Added support for SSL connections
 
 ********************************************************************************
 

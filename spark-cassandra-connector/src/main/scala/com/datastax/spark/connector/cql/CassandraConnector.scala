@@ -41,7 +41,11 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
   *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
   *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
+  *   - `spark.cassandra.connection.timeout_ms`: maximum period of time to attempt connecting to a node (default 5 s)
+  *   - `spark.cassandra.connection.local_dc`: the local DC to connect to (other nodes will be ignored)
+  *   - `spark.cassandra.connection.use_ssl`: whether to connect using use_ssl (default false)
   *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query 
+  *   - `spark.cassandra.read.timeout_ms`: maximum period of time to wait for a read to return 
   */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
