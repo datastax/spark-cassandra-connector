@@ -13,7 +13,13 @@ case class CassandraConnectorConf(
   nativePort: Int = CassandraConnectorConf.DefaultNativePort,
   rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
   authConf: AuthConf = NoAuthConf,
+  localDC: Option[String] = None,
   keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
+  minReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMinReconnectionDelayMillis,
+  maxReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMaxReconnectionDelayMillis,
+  queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
+  connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
+  readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory
 )
 
@@ -25,13 +31,26 @@ object CassandraConnectorConf extends Logging {
 
   val DefaultRpcPort = 9160
   val DefaultNativePort = 9042
+
   val DefaultKeepAliveMillis = 250
+  val DefaultMinReconnectionDelayMillis = 1000
+  val DefaultMaxReconnectionDelayMillis = 60000
+  val DefaultQueryRetryCount = 10
+  val DefaultConnectTimeoutMillis = 5000
+  val DefaultReadTimeoutMillis = 12000
 
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
   val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
-  val CassandraConnectionKeepAliveProperty = "spark.cassandra.connection.keep_alive_ms"
 
+  val CassandraConnectionLocalDCProperty = "spark.cassandra.connection.local_dc"
+  val CassandraConnectionTimeoutProperty = "spark.cassandra.connection.timeout_ms"
+  val CassandraConnectionKeepAliveProperty = "spark.cassandra.connection.keep_alive_ms"
+  val CassandraMinReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.min"
+  val CassandraMaxReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.max"
+  val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
+  val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms" 
+  
   private def resolveHost(hostName: String): Option[InetAddress] = {
     try Some(InetAddress.getByName(hostName))
     catch {
@@ -52,7 +71,28 @@ object CassandraConnectorConf extends Logging {
     val nativePort = conf.getInt(CassandraConnectionNativePortProperty, DefaultNativePort)
     val authConf = AuthConf.fromSparkConf(conf)
     val keepAlive = conf.getInt(CassandraConnectionKeepAliveProperty, DefaultKeepAliveMillis)
+    
+    val localDC = conf.getOption(CassandraConnectionLocalDCProperty)
+    val minReconnectionDelay = conf.getInt(CassandraMinReconnectionDelayProperty, DefaultMinReconnectionDelayMillis)
+    val maxReconnectionDelay = conf.getInt(CassandraMaxReconnectionDelayProperty, DefaultMaxReconnectionDelayMillis)
+    val queryRetryCount = conf.getInt(CassandraQueryRetryCountProperty, DefaultQueryRetryCount)
+    val connectTimeout = conf.getInt(CassandraConnectionTimeoutProperty, DefaultConnectTimeoutMillis)
+    val readTimeout = conf.getInt(CassandraReadTimeoutProperty, DefaultReadTimeoutMillis)
+
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
-    CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, keepAlive, connectionFactory)
+
+    CassandraConnectorConf(
+      hosts = hosts,
+      nativePort = nativePort,
+      rpcPort = rpcPort,
+      authConf = authConf,
+      localDC = localDC,
+      keepAliveMillis = keepAlive,
+      minReconnectionDelayMillis = minReconnectionDelay,
+      maxReconnectionDelayMillis = maxReconnectionDelay,
+      queryRetryCount = queryRetryCount,
+      connectTimeoutMillis = connectTimeout,
+      readTimeoutMillis = readTimeout,
+      connectionFactory = connectionFactory)
   }
 }
