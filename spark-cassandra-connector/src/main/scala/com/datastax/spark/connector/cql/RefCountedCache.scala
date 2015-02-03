@@ -11,15 +11,10 @@ import scala.collection.concurrent.TrieMap
   * Useful for sharing a costly resource.
   * @param create function to create new objects if not found in cache
   * @param destroy function to be called once the value is not used any more
-  * @param keys function generating additional keys the value should be reachable by
-  * @param releaseDelayMillis number of milliseconds to keep unused values in cache, before they are removed. */
+  * @param keys function generating additional keys the value should be reachable by */
 final class RefCountedCache[K, V](create: K => V,
                                   destroy: V => Any,
-                                  keys: (K, V) => Set[K] = (_: K, _: V) => Set.empty[K],
-                                  releaseDelayMillis: Int = 0) {
-
-  if (releaseDelayMillis < 0)
-    throw new IllegalArgumentException(s"releaseDelayMillis can't be negative: $releaseDelayMillis")
+                                  keys: (K, V) => Set[K] = (_: K, _: V) => Set.empty[K]) {
 
   private case class ReleaseTask(value: V, count: Int, scheduledTime: Long) extends Runnable {
     def run() {
@@ -88,18 +83,18 @@ final class RefCountedCache[K, V](create: K => V,
   }
 
   @tailrec
-  private def releaseDeferred(value: V, count: Int = 1) {
+  private def releaseDeferred(value: V, releaseDelayMillis: Int, count: Int) {
     val newTime = System.currentTimeMillis() + releaseDelayMillis
     val newTask =
       deferredReleases.remove(value) match {
         case Some(oldTask) =>
-          ReleaseTask(value, oldTask.count + count, newTime)
+          ReleaseTask(value, oldTask.count + count, math.max(oldTask.scheduledTime, newTime))
         case None =>
           ReleaseTask(value, count, newTime)
       }
     deferredReleases.putIfAbsent(value, newTask) match {
       case Some(oldTask) =>
-        releaseDeferred(value, newTask.count)
+        releaseDeferred(value, releaseDelayMillis, newTask.count)
       case None =>
     }
   }
@@ -107,11 +102,11 @@ final class RefCountedCache[K, V](create: K => V,
   /** Releases previously acquired value. Once the value is released by all threads and
     * the `releaseDelayMillis` timeout passes, the value is destroyed by calling `destroy` function and
     * removed from the cache. */
-  def release(value: V) {
+  def release(value: V, releaseDelayMillis: Int = 0) {
     if (releaseDelayMillis == 0 || scheduledExecutorService.isShutdown)
       releaseImmediately(value)
     else
-      releaseDeferred(value)
+      releaseDeferred(value, releaseDelayMillis, 1)
   }
 
   /** Shuts down the background deferred `release` scheduler and forces all pending release tasks to be executed */
@@ -162,9 +157,8 @@ final class RefCountedCache[K, V](create: K => V,
     }
   })
 
-  if (releaseDelayMillis > 0) {
-    val period = math.max(10, releaseDelayMillis)
-    scheduledExecutorService.scheduleAtFixedRate(processPendingReleasesTask, period, period, TimeUnit.MILLISECONDS)
-  }
-
+  // This must be high enough so it doesn't cause too much CPU usage,
+  // but also low enough to allow for acceptable releaseDelayMillis resolution.
+  private val period = 100
+  scheduledExecutorService.scheduleAtFixedRate(processPendingReleasesTask, period, period, TimeUnit.MILLISECONDS)
 }
