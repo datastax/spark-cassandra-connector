@@ -32,16 +32,15 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.connection.host`:               contact point to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.rpc.port`:           Cassandra thrift port, defaults to 9160
   *   - `spark.cassandra.connection.native.port`:        Cassandra native port, defaults to 9042
-      - `spark.cassandra.connection.factory`:            name of a Scala module or class implementing [[CassandraConnectionFactory]] that allows to plugin custom code for connecting to Cassandra
+  *   - `spark.cassandra.connection.factory`:            name of a Scala module or class implementing [[CassandraConnectionFactory]] that allows to plugin custom code for connecting to Cassandra
+  *   - `spark.cassandra.connection.keep_alive_ms`:      how long to keep unused connection before closing it (default 250 ms)
+  *   - `spark.cassandra.connection.timeout_ms`:         how long to wait for connection to the Cassandra cluster (default 5 s)
+  *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
+  *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
   *   - `spark.cassandra.auth.username`:                 login for password authentication
   *   - `spark.cassandra.auth.password`:                 password for password authentication
   *   - `spark.cassandra.auth.conf.factory`:             name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
-  *
-  * Additionally this object uses the following global System properties:
-  *   - `spark.cassandra.connection.keep_alive_ms`: the number of milliseconds to keep unused `Cluster` object before destroying it (default 100 ms)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
-  *   - `spark.cassandra.query.retry.count`: how many times to reattempt a failed query 
+  *   - `spark.cassandra.query.retry.count`:             how many times to reattempt a failed query (default 10)
   */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
@@ -78,12 +77,12 @@ class CassandraConnector(conf: CassandraConnectorConf)
       // Closing SessionProxy is not really closing the session, because sessions are shared.
       // Instead, refcount is decreased. But double closing the same Session reference must not
       // decrease refcount twice. There is a guard in SessionProxy
-      // so any subsequent close calls on the same SessionProxy are a no-ops.
-      SessionProxy.wrapWithCloseAction(session)(sessionCache.release)
+      // so any subsequent close calls on the same SessionProxy are no-ops.
+      SessionProxy.wrapWithCloseAction(session)(sessionCache.release(_, _config.keepAliveMillis))
     }
     catch {
       case e: Throwable =>
-        sessionCache.release(session)
+        sessionCache.release(session, 0)
         throw e
     }
   }
@@ -157,7 +156,7 @@ object CassandraConnector extends Logging {
   val keepAliveMillis = System.getProperty("spark.cassandra.connection.keep_alive_ms", "250").toInt
 
   private val sessionCache = new RefCountedCache[CassandraConnectorConf, Session](
-    createSession, destroySession, alternativeConnectionConfigs, releaseDelayMillis = keepAliveMillis)
+    createSession, destroySession, alternativeConnectionConfigs)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
     lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.nativePort
@@ -207,9 +206,29 @@ object CassandraConnector extends Logging {
             nativePort: Int = CassandraConnectorConf.DefaultNativePort,
             rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
             authConf: AuthConf = NoAuthConf,
+            localDC: Option[String] = None,
+            keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
+            minReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMinReconnectionDelayMillis,
+            maxReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMaxReconnectionDelayMillis,
+            queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
+            connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
+            readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
             connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory) = {
 
-    val config = CassandraConnectorConf(hosts, nativePort, rpcPort, authConf, connectionFactory)
+    val config = CassandraConnectorConf(
+      hosts = hosts,
+      nativePort = nativePort,
+      rpcPort = rpcPort,
+      authConf = authConf,
+      localDC = localDC,
+      keepAliveMillis = keepAliveMillis,
+      minReconnectionDelayMillis = minReconnectionDelayMillis,
+      maxReconnectionDelayMillis = maxReconnectionDelayMillis,
+      queryRetryCount = queryRetryCount,
+      connectTimeoutMillis = connectTimeoutMillis,
+      readTimeoutMillis = readTimeoutMillis,
+      connectionFactory = connectionFactory)
+
     new CassandraConnector(config)
   }
 
