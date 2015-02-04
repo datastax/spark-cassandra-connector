@@ -66,8 +66,13 @@ class CassandraRDD[R] private[connector] (
 
   private val connector = CassandraConnector(sc.getConf)
 
-  private def copy(columnNames: ColumnSelector = columnNames, where: CqlWhereClause = where): CassandraRDD[R] =
+  private def copy(columnNames: ColumnSelector = columnNames, where: CqlWhereClause = where): CassandraRDD[R] = {
+    require(sc != null,
+      "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
+      "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +
+      "RDD transformations are not allowed inside lambdas used in other RDD transformations.")
     new CassandraRDD(sc, keyspaceName, tableName, columnNames, where)
+  }
 
   /** Adds a CQL `WHERE` predicate(s) to the query.
     * Useful for leveraging secondary indexes in Cassandra.
