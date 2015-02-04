@@ -1,3 +1,7 @@
+1.2.0 (unreleased)
+ * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
+   the settings are automatically distributed to Spark Executors (SPARKC-28)
+
 1.2.0 alpha 1
  * Added support for TTL and timestamp in the writer (#153)
  * Added support for UDT column types (SPARKC-1)
