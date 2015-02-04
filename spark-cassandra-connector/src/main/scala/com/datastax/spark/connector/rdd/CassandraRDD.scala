@@ -79,8 +79,13 @@ class CassandraRDD[R] private[connector] (
 
   private def copy(columnNames: ColumnSelector = columnNames,
                    where: CqlWhereClause = where,
-                   readConf: ReadConf = readConf, connector: CassandraConnector = connector): CassandraRDD[R] =
+                   readConf: ReadConf = readConf, connector: CassandraConnector = connector): CassandraRDD[R] = {
+    require(sc != null,
+      "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
+      "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +
+      "RDD transformations are not allowed inside lambdas used in other RDD transformations.")
     new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+  }
 
   /** Returns a copy of this Cassandra RDD with specified connector */
   def withConnector(connector: CassandraConnector): CassandraRDD[R] =
