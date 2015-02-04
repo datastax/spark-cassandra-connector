@@ -32,7 +32,7 @@ class AsyncExecutorTest {
     }
 
     val underlyingExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
-    val asyncExecutor = new AsyncExecutor(underlyingExecutor.submit(_: Callable[String]), maxParallel)
+    val asyncExecutor = new AsyncExecutor(underlyingExecutor.submit(_: Callable[String]), maxParallel, None, None)
 
     for (i <- 1 to taskCount)
       asyncExecutor.executeAsync(task)

@@ -1,15 +1,18 @@
 package com.datastax.spark.connector.writer
 
 import java.io.IOException
+import java.util.concurrent.Semaphore
 
 import com.datastax.driver.core.BatchStatement.Type
-import com.datastax.driver.core.{BoundStatement, PreparedStatement, Session}
+import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
 import scala.collection._
+
+import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
 
 /** Writes RDD data into given Cassandra table.
   * Individual column values are extracted from RDD objects using given [[RowWriter]]
@@ -98,15 +101,27 @@ class TableWriter[T] private (
     }
   }
 
+  private def prepareUpdateMetricsFunction(taskContext: TaskContext): Option[(RichStatement) => Unit] = {
+    val outputMetrics = new OutputMetrics(DataWriteMethod.Hadoop)
+    taskContext.taskMetrics().outputMetrics = Some(outputMetrics)
+    val mutex = new Semaphore(1)
+
+    Some({ stmt: RichStatement =>
+      mutex.acquire()
+      outputMetrics.bytesWritten += stmt.bytesCount
+      mutex.release()
+    })
+  }
 
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
     connector.withSessionDo { session =>
       val t0 = System.nanoTime()
 
+      val updateMetricsFunction = prepareUpdateMetricsFunction(taskContext)
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel)
+      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, updateMetricsFunction, None)
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
       val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)

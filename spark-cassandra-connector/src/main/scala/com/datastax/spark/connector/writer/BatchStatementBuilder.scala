@@ -4,8 +4,6 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Logging
 
-import scala.collection.JavaConversions._
-
 class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
                                val rowWriter: RowWriter[T],
                                val preparedStmt: PreparedStatement,
@@ -19,9 +17,10 @@ class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
   private val buffer = Array.ofDim[Any](columnNames.size)
 
   /** Creates `BoundStatement` from the given data item */
-  def bind(row: T): BoundStatement = {
-    val boundStatement = preparedStmt.bind()
+  def bind(row: T): RichBoundStatement = {
+    val boundStatement = new RichBoundStatement(preparedStmt)
     rowWriter.readColumnValues(row, buffer)
+    var bytesCount = 0
     for (i <- 0 until columnNames.size) {
       val converter = converters(i)
       val columnName = columnNames(i)
@@ -30,14 +29,19 @@ class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
       val serializedValue =
         if (columnValue != null) columnType.serialize(columnValue, protocolVersion)
         else null
+
+      if (serializedValue != null)
+        bytesCount += serializedValue.remaining()
+
       boundStatement.setBytesUnsafe(columnName, serializedValue)
     }
+    boundStatement.bytesCount = bytesCount
     boundStatement
   }
 
   /** Converts a sequence of statements into a batch if its size is greater than 1.
     * Sets the routing key and consistency level. */
-  def maybeCreateBatch(stmts: Seq[BoundStatement]): Statement = {
+  def maybeCreateBatch(stmts: Seq[RichBoundStatement]): RichStatement = {
     require(stmts.size > 0, "Statements list cannot be empty")
     val stmt = stmts.head
     // for batch statements, it is enough to set routing key for the first statement
@@ -47,7 +51,7 @@ class BatchStatementBuilder[T](val batchType: BatchStatement.Type,
       stmt.setConsistencyLevel(consistencyLevel)
       stmt
     } else {
-      val batch = new BatchStatement(batchType).addAll(stmts)
+      val batch = new RichBatchStatement(batchType, stmts)
       batch.setConsistencyLevel(consistencyLevel)
       batch
     }

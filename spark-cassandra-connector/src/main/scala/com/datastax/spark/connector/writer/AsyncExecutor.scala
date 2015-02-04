@@ -10,7 +10,8 @@ import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
-class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int) extends Logging {
+class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
+    successHandler: Option[T => Unit] = None, failureHandler: Option[T => Unit]) extends Logging {
 
   private val _successCount = new AtomicInteger(0)
   private val _failureCount = new AtomicInteger(0)
@@ -36,12 +37,14 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
         _successCount.incrementAndGet()
         release()
         settable.set(result)
+        successHandler.foreach(_(task))
       }
       def onFailure(throwable: Throwable) {
         logError("Failed to execute: " + task, throwable)
         _failureCount.incrementAndGet()
         release()
         settable.setException(throwable)
+        failureHandler.foreach(_(task))
       }
     })
 

@@ -1,19 +1,21 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.BoundStatement
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 
 import scala.collection.mutable.ArrayBuffer
 
 /** A simple wrapper over a collection of bound statements. */
 private[writer] sealed trait Batch extends Ordered[Batch] {
+  protected[Batch] val buf: ArrayBuffer[RichBoundStatement]
+  protected[Batch] var _bytesCount = 0
+  
   /** Returns `true` if the element has been successfully added. Returns `false` if the element
     * cannot be added because adding it would violate the size limitation. If `force` is set to `true`,
     * it adds the item regardless of size limitations and always returns `true`. */
-  def add(stmt: BoundStatement, force: Boolean = false): Boolean
+  def add(stmt: RichBoundStatement, force: Boolean = false): Boolean
 
   /** Collected statements */
-  def statements: Seq[BoundStatement]
+  def statements: Seq[RichBoundStatement] = buf
 
   /** Only for internal use - batches are compared by this value. */
   protected[Batch] def size: Int
@@ -21,7 +23,13 @@ private[writer] sealed trait Batch extends Ordered[Batch] {
   override def compare(that: Batch): Int = size.compareTo(that.size)
 
   /** Removes all the collected statements and resets this batch to the initial state. */
-  def clear(): Unit
+  def clear(): Unit = {
+    _bytesCount = 0
+    buf.clear()
+  }
+
+  /** Returns bytes count of the batch */
+  def bytesCount: Int = _bytesCount
 }
 
 private[writer] object Batch {
@@ -38,47 +46,37 @@ private[writer] object Batch {
 
 /** The implementation which uses the number of items as a size constraint. */
 private[writer] class RowLimitedBatch(val maxRows: Int) extends Batch {
-  private val buf = new ArrayBuffer[BoundStatement](maxRows)
+  override protected[writer] val buf = new ArrayBuffer[RichBoundStatement](maxRows)
 
-  override def add(stmt: BoundStatement, force: Boolean = false): Boolean = {
+  override def add(stmt: RichBoundStatement, force: Boolean = false): Boolean = {
     if (!force && buf.size >= maxRows) {
       false
     } else {
       buf += stmt
+      _bytesCount += stmt.bytesCount
       true
     }
   }
 
   override def size = buf.size
 
-  override def statements: Seq[BoundStatement] = buf
-
-  override def clear(): Unit = buf.clear()
 }
 
 /** The implementation which uses length in bytes as a size constraint. */
 private[writer] class SizeLimitedBatch(val maxBytes: Int) extends Batch {
-  private val buf = new ArrayBuffer[BoundStatement](10)
-  private var _size = 0
+  override protected[writer] val buf = new ArrayBuffer[RichBoundStatement](10)
 
-  override def add(stmt: BoundStatement, force: Boolean = false): Boolean = {
-    val stmtSize = BatchStatementBuilder.calculateDataSize(stmt)
+  override def add(stmt: RichBoundStatement, force: Boolean = false): Boolean = {
     // buf.nonEmpty here is to allow adding at least a single statement regardless its size
-    if (!force && (_size + stmtSize) > maxBytes) {
+    if (!force && (_bytesCount + stmt.bytesCount) > maxBytes) {
       false
     } else {
       buf += stmt
-      _size += stmtSize
+      _bytesCount += stmt.bytesCount
       true
     }
   }
 
-  override def size = _size
+  override def size = _bytesCount
 
-  override def statements: Seq[BoundStatement] = buf
-
-  override def clear(): Unit = {
-    _size = 0
-    buf.clear()
-  }
 }
