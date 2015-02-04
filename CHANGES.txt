@@ -90,6 +90,9 @@
      Cluster, local or remote, to get started.
 
 ********************************************************************************
+1.0.7 (unreleased)
+ * Improved error message when attempting to transform CassandraRDD after deserialization (SPARKC-29)
+
 1.0.6
  * Upgraded Java Driver to 2.0.8 and added some logging in LocalNodeFirstLoadBalancingPolicy (SPARKC-18)
  
