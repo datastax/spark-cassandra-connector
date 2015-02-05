@@ -128,7 +128,7 @@ class TableWriter[T] private (
     CassandraConnectorSource.ensureInitialized
 
     connector.withSessionDo { session =>
-      val t0 = System.nanoTime()
+      val tc = CassandraConnectorSource.partitionWriteTimer.time()
 
       val (onSuccessful, onFailure) = prepareUpdateMetricsFunctions(taskContext)
       val rowIterator = new CountingIterator(data)
@@ -157,7 +157,7 @@ class TableWriter[T] private (
         writeConf.batchSize, writeConf.batchBufferSize, data)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
-      val t1 = System.nanoTime()
+
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite)
       }
@@ -167,10 +167,8 @@ class TableWriter[T] private (
       if (!queryExecutor.successful)
         throw new IOException(s"Failed to write statements to $keyspaceName.$tableName.")
 
-      val tEnd = System.nanoTime()
-      val duration1 = (t1 - t0) / 1000000000d
-      val duration2 = (tEnd - t1) / 1000000000.0
-      logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration2%.3f s (setup time was $duration1%.3f s).")
+      val duration = tc.stop() / 1000000000d
+      logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
 }

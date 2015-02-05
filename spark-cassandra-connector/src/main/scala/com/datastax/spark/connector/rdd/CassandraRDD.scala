@@ -1,17 +1,16 @@
 package com.datastax.spark.connector.rdd
 
 import java.io.IOException
-import java.nio.ByteBuffer
 
 import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
 import scala.language.existentials
 
-import org.apache.spark.executor.{InputMetrics, DataReadMethod}
+import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
-import com.datastax.driver.core.{Row, ProtocolVersion, Session, Statement}
+import com.datastax.driver.core._
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, CassandraPartition, CqlTokenRange}
@@ -373,31 +372,19 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
-  @inline private def updateMetrics(metrics: InputMetrics)(row: Row): Row = {
-    // want it to be super fast
-    var idx = 0
-    var bb: ByteBuffer = null
-    while (idx < selectedColumnNames.length) {
-      bb = row.getBytesUnsafe(idx)
-      if (bb != null)
-        metrics.bytesRead += bb.remaining().toLong
-
-      idx += 1
-    }
-    row
-  }
-
-  private def fetchTokenRange(session: Session, range: CqlTokenRange, inputMetrics: Option[InputMetrics]): Iterator[R] = {
+  private def fetchTokenRange(session: Session, range: CqlTokenRange, inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnNames.map(_.selectedAs).toArray
+
     try {
       implicit val pv = protocolVersion(session)
+      val tc = InputMetricsUpdater.resultSetFetchTimer.map(_.time())
       val rs = session.execute(stmt)
-      val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
-      val iteratorWithMetrics = inputMetrics.map(metrics => iterator.map(updateMetrics(metrics)))
-          .getOrElse(iterator)
+      tc.map(_.stop())
+      val iterator = new PrefetchingResultSetIterator(rs, fetchSize, InputMetricsUpdater.resultSetFetchTimer)
+      val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowTransformer.read(_, columnNamesArray))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")
       result
@@ -411,22 +398,17 @@ class CassandraRDD[R] private[connector] (
     val session = connector.openSession()
     val partition = split.asInstanceOf[CassandraPartition]
     val tokenRanges = partition.tokenRanges
-    val startTime = System.currentTimeMillis()
-
-    // Unfortunately there is no other suitable read method
-    val inputMetrics = new InputMetrics(DataReadMethod.Hadoop)
-    context.taskMetrics.inputMetrics = Some(inputMetrics)
+    val metricsUpdater = InputMetricsUpdater(context, 20)
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
     val rowIterator = tokenRanges.iterator.flatMap(
-      fetchTokenRange(session, _, context.taskMetrics().inputMetrics))
+      fetchTokenRange(session, _, metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator)
 
     context.addTaskCompletionListener { (context) =>
-      val endTime = System.currentTimeMillis()
-      val duration = (endTime - startTime) / 1000.0
+      val duration = metricsUpdater.finish() / 1000000000d
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")
       session.close()
     }
