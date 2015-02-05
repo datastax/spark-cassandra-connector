@@ -1,7 +1,10 @@
 package com.datastax.spark.connector.rdd.reader
 
+import java.util.concurrent.TimeUnit
+
 import com.codahale.metrics.Timer
 import com.datastax.driver.core.{Row, ResultSet}
+import com.google.common.util.concurrent.{ListenableFuture, FutureCallback, Futures}
 
 /** Allows to efficiently iterate over a large, paged ResultSet,
   * asynchronously prefetching the next page.
@@ -19,9 +22,16 @@ class PrefetchingResultSetIterator(resultSet: ResultSet, prefetchWindowSize: Int
 
   private[this] def maybePrefetch(): Unit = {
     if (!resultSet.isFullyFetched && resultSet.getAvailableWithoutFetching < prefetchWindowSize) {
-      val tc = timer.map(_.time())
-      resultSet.fetchMoreResults()
-      tc.map(_.stop())
+      val t0 = System.nanoTime()
+      val future: ListenableFuture[Void] = resultSet.fetchMoreResults()
+      if (timer.isDefined)
+        Futures.addCallback(future, new FutureCallback[Void] {
+          override def onSuccess(ignored: Void): Unit = {
+            timer.get.update(System.nanoTime() - t0, TimeUnit.NANOSECONDS)
+          }
+
+          override def onFailure(ignored: Throwable): Unit = { }
+        })
     }
   }
 

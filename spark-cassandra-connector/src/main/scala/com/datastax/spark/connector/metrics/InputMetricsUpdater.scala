@@ -2,14 +2,24 @@ package com.datastax.spark.connector.metrics
 
 import com.codahale.metrics.Timer
 import com.datastax.driver.core.Row
-import org.apache.spark.TaskContext
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.executor.{DataReadMethod, InputMetrics}
 import org.apache.spark.metrics.CassandraConnectorSource
 
-class InputMetricsUpdater private(metrics: InputMetrics, groupSize: Int) {
+private[connector] trait InputMetricsUpdater {
+  def resultSetFetchTimer: Option[Timer]
+
+  def updateMetrics(row: Row): Row
+
+  def finish(): Long
+}
+
+private class DetailedInputMetricsUpdater(metrics: InputMetrics, groupSize: Int) extends InputMetricsUpdater {
   require(groupSize > 0)
 
-  private val taskTimer = CassandraConnectorSource.partitionReadTimer.time()
+  val resultSetFetchTimer = Some(CassandraConnectorSource.readMoreRowsTimer)
+
+  private val taskTimer = CassandraConnectorSource.readTaskTimer.time()
 
   private var cnt = 0
   private var dataLength = metrics.bytesRead
@@ -26,8 +36,8 @@ class InputMetricsUpdater private(metrics: InputMetrics, groupSize: Int) {
 
   @inline
   private def update(): Unit = {
-    CassandraConnectorSource.rowsReadMeter.mark(cnt)
-    CassandraConnectorSource.bytesReadMeter.mark(metrics.bytesRead - dataLength)
+    CassandraConnectorSource.readRowMeter.mark(cnt)
+    CassandraConnectorSource.readByteMeter.mark(metrics.bytesRead - dataLength)
     dataLength = metrics.bytesRead
     cnt = 0
   }
@@ -38,15 +48,33 @@ class InputMetricsUpdater private(metrics: InputMetrics, groupSize: Int) {
   }
 }
 
+private class DummyInputMetricsUpdater extends InputMetricsUpdater {
+  private val taskTimer = System.nanoTime()
+
+  val resultSetFetchTimer = None
+
+  def updateMetrics(row: Row): Row = row
+
+  def finish(): Long = {
+    System.nanoTime() - taskTimer
+  }
+}
+
 object InputMetricsUpdater {
-  val resultSetFetchTimer: Option[Timer] = Some(CassandraConnectorSource.fetchMoreRowsTimer)
+  lazy val detailedMetricsEnabled =
+    SparkEnv.get.conf.getBoolean("spark.cassandra.input.metrics", defaultValue = true)
 
   def apply(taskContext: TaskContext, groupSize: Int): InputMetricsUpdater = {
     CassandraConnectorSource.ensureInitialized
 
-    if (taskContext.taskMetrics().inputMetrics.isEmpty || taskContext.taskMetrics().inputMetrics.get.readMethod != DataReadMethod.Hadoop)
-      taskContext.taskMetrics().inputMetrics = Some(new InputMetrics(DataReadMethod.Hadoop))
+    if (detailedMetricsEnabled) {
+      val tm = taskContext.taskMetrics()
+      if (tm.inputMetrics.isEmpty || tm.inputMetrics.get.readMethod != DataReadMethod.Hadoop)
+        tm.inputMetrics = Some(new InputMetrics(DataReadMethod.Hadoop))
 
-    new InputMetricsUpdater(taskContext.taskMetrics().inputMetrics.get, groupSize)
+      new DetailedInputMetricsUpdater(tm.inputMetrics.get, groupSize)
+    } else {
+      new DummyInputMetricsUpdater
+    }
   }
 }

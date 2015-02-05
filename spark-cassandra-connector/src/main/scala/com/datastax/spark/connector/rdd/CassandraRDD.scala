@@ -380,10 +380,10 @@ class CassandraRDD[R] private[connector] (
 
     try {
       implicit val pv = protocolVersion(session)
-      val tc = InputMetricsUpdater.resultSetFetchTimer.map(_.time())
+      val tc = inputMetricsUpdater.resultSetFetchTimer.map(_.time())
       val rs = session.execute(stmt)
       tc.map(_.stop())
-      val iterator = new PrefetchingResultSetIterator(rs, fetchSize, InputMetricsUpdater.resultSetFetchTimer)
+      val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowTransformer.read(_, columnNamesArray))
       logDebug(s"Row iterator for range ${range.cql} obtained successfully.")

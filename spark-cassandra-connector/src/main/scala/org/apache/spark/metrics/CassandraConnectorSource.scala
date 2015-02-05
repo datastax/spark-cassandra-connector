@@ -9,20 +9,19 @@ object CassandraConnectorSource extends Source {
 
   override val metricRegistry = new metrics.MetricRegistry
 
-  val rowsWriteMeter = metricRegistry.meter("write-row-meter")
-  val partitionWriteTimer = metricRegistry.timer("write-partition-meter")
-  val partitionReadTimer = metricRegistry.timer("read-partition-meter")
+  val writeByteMeter = metricRegistry.meter("write-byte-meter")
+  val writeRowMeter = metricRegistry.meter("write-row-meter")
+  val writeBatchTimer = metricRegistry.timer("write-batch-timer")
+  val writeBatchWaitTimer = metricRegistry.timer("write-batch-wait-timer")
+  val writeTaskTimer = metricRegistry.timer("write-task-timer")
+  
+  val writeSuccessCounter = metricRegistry.counter("write-success-counter")
+  val writeFailureCounter = metricRegistry.counter("write-failure-counter")
 
-  val bytesWriteMeter = metricRegistry.meter("write-byte-meter")
-  val batchesSuccessCounter = metricRegistry.counter("write-batch-success-counter")
-  val batchesFailureCounter = metricRegistry.counter("write-batch-failure-counter")
-  val batchesWriteTimer = metricRegistry.timer("write-batch-timer")
-  val batchesWaitingTimer = metricRegistry.timer("write-wait-batch-timer")
-
-  val fetchMoreRowsTimer = metricRegistry.timer("read-fetchMoreRows-timer")
-
-  val bytesReadMeter = metricRegistry.meter("read-byte-meter")
-  val rowsReadMeter = metricRegistry.meter("read-row-meter")
+  val readByteMeter = metricRegistry.meter("read-byte-meter")
+  val readRowMeter = metricRegistry.meter("read-row-meter")
+  val readMoreRowsTimer = metricRegistry.timer("read-more-rows-timer")
+  val readTaskTimer = metricRegistry.timer("read-task-timer")
 
   lazy val ensureInitialized = SparkEnv.get.metricsSystem.registerSource(this)
 }

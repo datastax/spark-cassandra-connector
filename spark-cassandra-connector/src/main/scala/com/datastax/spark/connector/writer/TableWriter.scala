@@ -1,19 +1,16 @@
 package com.datastax.spark.connector.writer
 
 import java.io.IOException
-import java.util.concurrent.{TimeUnit, Semaphore}
 
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.metrics.OutputMetricsUpdater
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
 import scala.collection._
-
-import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
-import org.apache.spark.metrics.CassandraConnectorSource
 
 /** Writes RDD data into given Cassandra table.
   * Individual column values are extracted from RDD objects using given [[RowWriter]]
@@ -102,38 +99,14 @@ class TableWriter[T] private (
     }
   }
 
-  private def prepareUpdateMetricsFunctions(taskContext: TaskContext) = {
-    val outputMetrics = new OutputMetrics(DataWriteMethod.Hadoop)
-    taskContext.taskMetrics().outputMetrics = Some(outputMetrics)
-    val mutex = new Semaphore(1)
-
-    (Some({ (stmt: RichStatement, submissionTimestamp: Long, executionTimestamp: Long) =>
-      val t = System.nanoTime()
-      CassandraConnectorSource.batchesWriteTimer.update(t - executionTimestamp, TimeUnit.NANOSECONDS)
-      CassandraConnectorSource.batchesWaitingTimer.update(executionTimestamp - submissionTimestamp, TimeUnit.NANOSECONDS)
-      CassandraConnectorSource.rowsWriteMeter.mark(stmt.rowsCount)
-      CassandraConnectorSource.bytesWriteMeter.mark(stmt.bytesCount)
-      CassandraConnectorSource.batchesSuccessCounter.inc()
-      mutex.acquire()
-      outputMetrics.bytesWritten += stmt.bytesCount
-      mutex.release()
-    }),
-    Some({ (stmt: RichStatement, submissionTimestamp: Long, executionTimestamp: Long) =>
-      CassandraConnectorSource.batchesFailureCounter.inc()
-    }))
-  }
-
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
-    CassandraConnectorSource.ensureInitialized
+    val updater = OutputMetricsUpdater(taskContext)
 
     connector.withSessionDo { session =>
-      val tc = CassandraConnectorSource.partitionWriteTimer.time()
-
-      val (onSuccessful, onFailure) = prepareUpdateMetricsFunctions(taskContext)
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, onSuccessful, onFailure)
+      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, Some(updater.batchSucceeded), Some(updater.batchFailed))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
       val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)
@@ -167,7 +140,7 @@ class TableWriter[T] private (
       if (!queryExecutor.successful)
         throw new IOException(s"Failed to write statements to $keyspaceName.$tableName.")
 
-      val duration = tc.stop() / 1000000000d
+      val duration = updater.finish() / 1000000000d
       logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
