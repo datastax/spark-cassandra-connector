@@ -26,7 +26,7 @@ private class DetailedInputMetricsUpdater(metrics: InputMetrics, groupSize: Int)
 
   def updateMetrics(row: Row): Row = {
     for (i <- 0 until row.getColumnDefinitions.size() if !row.isNull(i))
-      dataLength += row.getBytesUnsafe(i).remaining()
+      metrics.bytesRead += row.getBytesUnsafe(i).remaining()
 
     cnt += 1
     if (cnt == groupSize)
