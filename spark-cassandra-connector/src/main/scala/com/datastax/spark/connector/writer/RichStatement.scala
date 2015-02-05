@@ -32,10 +32,10 @@ class RichBatchStatement(batchType: BatchStatement.Type, stmts: Seq[RichBoundSta
 object RichBatchStatement {
   private val statementsField = classOf[BatchStatement].getDeclaredField("statements")
   private def ensureCapacity(batchStatement: BatchStatement, expectedCapacity: Int): Unit = {
+    // TODO remove this workaround when https://datastax-oss.atlassian.net/browse/JAVA-649 is fixed
     statementsField.setAccessible(true)
     statementsField.get(batchStatement)
         .asInstanceOf[util.ArrayList[Statement]]
         .ensureCapacity(expectedCapacity)
-    statementsField.setAccessible(false)
   }
 }
