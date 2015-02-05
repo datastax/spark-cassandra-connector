@@ -27,11 +27,9 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
 
   override def distance(host: Host): HostDistance =
     if (host.getDatacenter == dcToUse) {
-      logInfo(s"Adding host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
       sameDCHostDistance(host)
     } else {
       // this insures we keep remote hosts out of our list entirely, even when we get notified of newly joined nodes
-      logInfo(s"Ignoring remote host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
       HostDistance.IGNORED
     }
 
@@ -89,9 +87,16 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     // Therefore we want to really replace the object now, to get full information on DC:
     nodes -= host
     nodes += host
+    logInfo(s"Added host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
   }
-  override def onRemove(host: Host) { nodes -= host }
-  override def onSuspected(host: Host) = { nodes += host }
+  override def onRemove(host: Host) {
+    nodes -= host
+    logInfo(s"Removed host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
+  }
+  override def onSuspected(host: Host) = {
+    nodes += host
+    logInfo(s"Suspected host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
+  }
 
   override def onUp(host: Host) = { }
   override def onDown(host: Host) = { }

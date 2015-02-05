@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.writer
 
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicInteger
 
 import com.datastax.spark.connector.util.Logging
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
@@ -9,23 +8,26 @@ import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFut
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
+import AsyncExecutor.Handler
+
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
 class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
-    successHandler: Option[T => Unit] = None, failureHandler: Option[T => Unit]) extends Logging {
+    successHandler: Option[Handler[T]] = None, failureHandler: Option[Handler[T]]) extends Logging {
 
-  private val _successCount = new AtomicInteger(0)
-  private val _failureCount = new AtomicInteger(0)
+  @volatile private var _successful = true
 
   private val semaphore = new Semaphore(maxConcurrentTasks)
   private val pendingFutures = new TrieMap[ListenableFuture[R], Boolean]
 
   /** Executes task asynchronously or blocks if more than `maxConcurrentTasks` limit is reached */
   def executeAsync(task: T): ListenableFuture[R] = {
+    val submissionTimestamp = System.nanoTime()
     semaphore.acquire()
 
     val settable = SettableFuture.create[R]()
     pendingFutures.put(settable, true)
 
+    val executionTimestamp = System.nanoTime()
     val future = asyncAction(task)
 
     Futures.addCallback(future, new FutureCallback[R] {
@@ -34,17 +36,16 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
         pendingFutures.remove(settable)
       }
       def onSuccess(result: R) {
-        _successCount.incrementAndGet()
         release()
         settable.set(result)
-        successHandler.foreach(_(task))
+        successHandler.foreach(_(task, submissionTimestamp, executionTimestamp))
       }
       def onFailure(throwable: Throwable) {
         logError("Failed to execute: " + task, throwable)
-        _failureCount.incrementAndGet()
+        if (_successful) _successful = false
         release()
         settable.setException(throwable)
-        failureHandler.foreach(_(task))
+        failureHandler.foreach(_(task, submissionTimestamp, executionTimestamp))
       }
     })
 
@@ -59,7 +60,10 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
       Try(future.get())
   }
 
-  def successCount = _successCount.get()
-  def failureCount = _failureCount.get()
+  def successful = _successful
 
+}
+
+object AsyncExecutor {
+  type Handler[T] = (T, Long, Long) => Unit
 }

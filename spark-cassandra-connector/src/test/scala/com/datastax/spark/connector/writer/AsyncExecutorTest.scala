@@ -32,7 +32,7 @@ class AsyncExecutorTest {
     }
 
     val underlyingExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
-    val asyncExecutor = new AsyncExecutor(underlyingExecutor.submit(_: Callable[String]), maxParallel, None, None)
+    val asyncExecutor = new AsyncExecutor[Callable[String], String](underlyingExecutor.submit(_: Callable[String]), maxParallel, None, None)
 
     for (i <- 1 to taskCount)
       asyncExecutor.executeAsync(task)
@@ -40,8 +40,7 @@ class AsyncExecutorTest {
     asyncExecutor.waitForCurrentlyExecutingTasks()
     assertEquals(maxParallel, maxParallelCounter.get())
     assertEquals(taskCount, totalFinishedExecutionsCounter.get())
-    assertEquals(taskCount, asyncExecutor.successCount)
-    assertEquals(0, asyncExecutor.failureCount)
+    assertEquals(true, asyncExecutor.successful)
   }
 
 
