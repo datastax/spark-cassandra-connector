@@ -3,9 +3,10 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import com.datastax.driver.core.BatchStatement.Type
-import com.datastax.driver.core.{BoundStatement, PreparedStatement, Session}
+import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.metrics.OutputMetricsUpdater
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
@@ -98,15 +99,14 @@ class TableWriter[T] private (
     }
   }
 
-
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
-    connector.withSessionDo { session =>
-      val t0 = System.nanoTime()
+    val updater = OutputMetricsUpdater(taskContext)
 
+    connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel)
+      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, Some(updater.batchSucceeded), Some(updater.batchFailed))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
       val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)
@@ -130,20 +130,18 @@ class TableWriter[T] private (
         writeConf.batchSize, writeConf.batchBufferSize, data)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
-      val t1 = System.nanoTime()
+
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()
 
-      if (queryExecutor.failureCount > 0)
-        throw new IOException(s"Failed to write ${queryExecutor.failureCount} statements to $keyspaceName.$tableName.")
+      if (!queryExecutor.successful)
+        throw new IOException(s"Failed to write statements to $keyspaceName.$tableName.")
 
-      val tEnd = System.nanoTime()
-      val duration1 = (t1 - t0) / 1000000000d
-      val duration2 = (tEnd - t1) / 1000000000.0
-      logInfo(f"Wrote ${rowIterator.count} rows in ${queryExecutor.successCount} statements to $keyspaceName.$tableName in $duration2%.3f s (setup time was $duration1%.3f s).")
+      val duration = updater.finish() / 1000000000d
+      logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
     }
   }
 }

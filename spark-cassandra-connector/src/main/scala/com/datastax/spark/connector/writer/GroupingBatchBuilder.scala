@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.writer
 
-import java.util
-
 import com.datastax.driver.core._
 import com.datastax.spark.connector.BatchSize
 import com.datastax.spark.connector.util.PriorityHashMap
@@ -34,7 +32,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
                               batchKeyGenerator: BoundStatement => Any,
                               batchSize: BatchSize,
                               maxBatches: Int,
-                              data: Iterator[T]) extends AbstractIterator[Statement] with Iterator[Statement] {
+                              data: Iterator[T]) extends AbstractIterator[RichStatement] with Iterator[RichStatement] {
   require(maxBatches > 0)
 
   private[this] val batchMap = new PriorityHashMap[Any, Batch](maxBatches)
@@ -43,7 +41,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
     * If adding the statement would not fit into an existing batch or the new batch would not fit into
     * the buffer, the batch statement is created from the batch and it is returned and the given
     * bound statement is added to a fresh batch. */
-  private def processStatement(batchKey: Any, boundStatement: BoundStatement): Option[Statement] = {
+  private def processStatement(batchKey: Any, boundStatement: RichBoundStatement): Option[RichStatement] = {
     batchMap.get(batchKey) match {
       case Some(batch) =>
         updateBatchInMap(batchKey, batch, boundStatement)
@@ -55,7 +53,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
   /** Adds the given statement to the batch if possible; If there is no enough capacity in the batch,
     * a batch statement is created and returned; the batch is cleaned and the given statement is added
     * to it. */
-  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: BoundStatement): Option[Statement] = {
+  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: RichBoundStatement): Option[RichStatement] = {
     if (batch.add(newStatement, force = false)) {
       batchMap.put(batchKey, batch)
       None
@@ -66,7 +64,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
 
   /** Adds a new batch to the buffer and adds the given statement to it. Returns a statement which had
     * to be dequeued. */
-  private def addBatchToMap(batchKey: Any, newStatement: BoundStatement): Option[Statement] = {
+  private def addBatchToMap(batchKey: Any, newStatement: RichBoundStatement): Option[RichStatement] = {
     if (batchMap.size == maxBatches) {
       Some(replaceBatch(batchMap.dequeue(), newStatement, batchKey))
 
@@ -80,7 +78,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
 
   /** Creates a statement from the given batch and cleans the batch so that it can be reused. */
   @inline
-  private def createStmtAndReleaseBatch(batch: Batch): Statement = {
+  private def createStmtAndReleaseBatch(batch: Batch): RichStatement = {
     val stmt = batchStatementBuilder.maybeCreateBatch(batch.statements)
     batch.clear()
     stmt
@@ -89,7 +87,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
   /** Creates a statement from the given batch; cleans the batch and adds a given statement to it;
     * updates the entry in the buffer. */
   @inline
-  private def replaceBatch(batch: Batch, newStatement: BoundStatement, newBatchKey: Any): Statement = {
+  private def replaceBatch(batch: Batch, newStatement: RichBoundStatement, newBatchKey: Any): RichStatement = {
     val stmt = createStmtAndReleaseBatch(batch)
     batch.add(newStatement, force = true)
     batchMap.put(newBatchKey, batch)
@@ -97,7 +95,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
   }
 
   @tailrec
-  final override def computeNext(): Statement = {
+  final override def computeNext(): RichStatement = {
     if (data.hasNext) {
       val stmt = batchStatementBuilder.bind(data.next())
       val key = batchKeyGenerator(stmt)

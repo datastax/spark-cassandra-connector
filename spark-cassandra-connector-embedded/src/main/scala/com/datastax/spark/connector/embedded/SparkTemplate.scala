@@ -12,9 +12,11 @@ object SparkTemplate {
   val conf = new SparkConf(true)
     .set("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
     .set("spark.cleaner.ttl", "3600")
+    .set("spark.metrics.conf", this.getClass.getResource("/metrics.properties").getPath)
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[*]"))
     .setAppName(getClass.getSimpleName)
 
+  System.err.println("The Spark configuration is as follows:\n" + conf.toDebugString)
 
   val sc = new SparkContext(conf)
 
