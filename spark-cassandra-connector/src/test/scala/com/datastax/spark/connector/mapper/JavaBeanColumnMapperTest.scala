@@ -25,11 +25,11 @@ object JavaBeanColumnMapperTestClass {
 
 class JavaBeanColumnMapperTest {
 
-  private val c1 = ColumnDef("test", "table", "property_1", RegularColumn, IntType)
-  private val c2 = ColumnDef("test", "table", "camel_case_property", RegularColumn, IntType)
-  private val c3 = ColumnDef("test", "table", "flagged", RegularColumn, IntType)
-  private val c4 = ColumnDef("test", "table", "marked", RegularColumn, IntType)
-  private val c5 = ColumnDef("test", "table", "column", RegularColumn, IntType)
+  private val c1 = ColumnDef("property_1", RegularColumn, IntType)
+  private val c2 = ColumnDef("camel_case_property", RegularColumn, IntType)
+  private val c3 = ColumnDef("flagged", RegularColumn, IntType)
+  private val c4 = ColumnDef("marked", RegularColumn, IntType)
+  private val c5 = ColumnDef("column", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4, c5))
 
   @Test

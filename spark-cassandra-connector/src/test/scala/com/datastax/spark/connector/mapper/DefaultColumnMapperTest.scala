@@ -13,10 +13,10 @@ class DefaultColumnMapperTestClass2(var property1: String, var camelCaseProperty
 
 class DefaultColumnMapperTest {
 
-  private val c1 = ColumnDef("test", "table", "property_1", RegularColumn, IntType)
-  private val c2 = ColumnDef("test", "table", "camel_case_property", RegularColumn, IntType)
-  private val c3 = ColumnDef("test", "table", "UpperCaseColumn", RegularColumn, IntType)
-  private val c4 = ColumnDef("test", "table", "column", RegularColumn, IntType)
+  private val c1 = ColumnDef("property_1", RegularColumn, IntType)
+  private val c2 = ColumnDef("camel_case_property", RegularColumn, IntType)
+  private val c3 = ColumnDef("UpperCaseColumn", RegularColumn, IntType)
+  private val c4 = ColumnDef("column", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4))
 
   @Test

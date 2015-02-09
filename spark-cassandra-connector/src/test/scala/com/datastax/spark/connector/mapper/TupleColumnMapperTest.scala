@@ -9,9 +9,9 @@ import org.junit.Test
 
 class TupleColumnMapperTest {
 
-  private val c1 = ColumnDef("test", "table", "column1", RegularColumn, IntType)
-  private val c2 = ColumnDef("test", "table", "column2", RegularColumn, IntType)
-  private val c3 = ColumnDef("test", "table", "column3", RegularColumn, IntType)
+  private val c1 = ColumnDef("column1", RegularColumn, IntType)
+  private val c2 = ColumnDef("column2", RegularColumn, IntType)
+  private val c3 = ColumnDef("column3", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
 
   @Test
