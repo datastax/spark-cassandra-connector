@@ -23,6 +23,9 @@ trait ColumnType[T] extends Serializable {
   def scalaTypeName: String
     = scalaTypeTag.tpe.toString
 
+  /** Name of the CQL type. Useful for CQL generation.*/
+  def cqlTypeName: String
+
   def isCollection: Boolean
 }
 
@@ -62,7 +65,7 @@ object ColumnType {
       case (_, DataType.Name.LIST) => ListType(typeArgs(0))
       case (_, DataType.Name.SET)  => SetType(typeArgs(0))
       case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
-      case (userType: UserType, _) => UserDefinedType(fields(userType))
+      case (userType: UserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
       case _ => primitiveTypeMap(dataType)
     }
   }

@@ -7,15 +7,15 @@ import scala.reflect.runtime.universe._
 
 import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
 import com.datastax.spark.connector.UDTValue
-import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 case class FieldDef(fieldName: String, fieldType: ColumnType[_])
 
-case class UserDefinedType(fields: Seq[FieldDef]) extends ColumnType[UDTValue] {
+case class UserDefinedType(name: String, fields: Seq[FieldDef]) extends ColumnType[UDTValue] {
   lazy val fieldNames = fields.toIndexedSeq.map(_.fieldName)
   lazy val fieldTypes = fields.toIndexedSeq.map(_.fieldType)
-  override def isCollection = false
-  override def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
+  def isCollection = false
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
+  def cqlTypeName = name
 }
 
 
