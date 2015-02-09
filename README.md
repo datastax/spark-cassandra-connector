@@ -82,6 +82,7 @@ The documentation will be generated to:
   - [Spark Streaming with Cassandra](doc/8_streaming.md)
   - [About The Demos](doc/9_demos.md)
   - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
+  - [Performance monitoring](doc/11_metrics.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    
