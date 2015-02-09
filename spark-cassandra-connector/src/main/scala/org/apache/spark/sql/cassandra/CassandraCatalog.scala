@@ -22,12 +22,8 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
             }
           })
 
-  override def lookupRelation(
-    databaseName: Option[String],
-    tableName: String,
-    alias: Option[String] = None): LogicalPlan = {
-
-    val (cluster, database, table) = getClusterDBTableNames(databaseName, tableName)
+  override def lookupRelation(tableIdentifier: Seq[String], alias: Option[String]): LogicalPlan = {
+    val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
     val schema = schemas.get(cluster)
     val keyspaceDef = schema.keyspaceByName.getOrElse(database, throw new IOException(s"Keyspace not found: $database"))
     val tableDef = keyspaceDef.tableByName.getOrElse(table, throw new IOException(s"Table not found: $database.$table"))
@@ -35,28 +31,21 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     alias.map(a => Subquery(a, tableWithQualifiers)).getOrElse(tableWithQualifiers)
   }
 
-  private def getClusterDBTableNames(db: Option[String], tableName: String): (String, String, String) = {
-    lazy val defaultDatabase = db.getOrElse(cc.getKeyspace)
-    val defaultCluster = "default"
-    tableName.split("\\.") match {
-      case Array(t)       => (defaultCluster, defaultDatabase, t)
-      case Array(d, t)    => (defaultCluster, d, t)
-      case Array(c, d, t) => (c, d, t)
-      case _              => throw new IOException(s"Wrong table name: $tableName")
-    }
+  private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {
+    val id = processTableIdentifier(tableIdentifier).reverse.lift
+    (id(2).getOrElse("default"), id(1).getOrElse(cc.getKeyspace), id(0).getOrElse(throw new IOException(s"Missing table name")))
   }
 
-  override def registerTable(databaseName: Option[String], tableName: String, plan: LogicalPlan): Unit = ???
+  override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = ???
 
-  override def unregisterTable(databaseName: Option[String], tableName: String): Unit = ???
+  override def unregisterTable(tableIdentifier: Seq[String]): Unit = ???
 
   override def unregisterAllTables(): Unit = ???
 
-  override def tableExists(db: Option[String], tableName: String): Boolean = {
-    val (cluster, database, table) = getClusterDBTableNames(db, tableName)
+  override def tableExists(tableIdentifier: Seq[String]): Boolean = {
+    val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
     val schema = schemas.get(cluster)
-    val keyspaceDef = schema.keyspaceByName.getOrElse(database, return false)
-    val tableDef = keyspaceDef.tableByName.getOrElse(table, return false)
-    true
+    val tabDef = for (ksDef <- schema.keyspaceByName.get(database); tabDef <- ksDef.tableByName.get(table)) yield tabDef
+    tabDef.isDefined
   }
 }
