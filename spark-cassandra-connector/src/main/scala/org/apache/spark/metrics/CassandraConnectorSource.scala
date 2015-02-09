@@ -20,7 +20,7 @@ object CassandraConnectorSource extends Source {
 
   val readByteMeter = metricRegistry.meter("read-byte-meter")
   val readRowMeter = metricRegistry.meter("read-row-meter")
-  val readMoreRowsTimer = metricRegistry.timer("read-more-rows-timer")
+  val readPageWaitTimer = metricRegistry.timer("read-page-wait-timer")
   val readTaskTimer = metricRegistry.timer("read-task-timer")
 
   lazy val ensureInitialized = SparkEnv.get.metricsSystem.registerSource(this)

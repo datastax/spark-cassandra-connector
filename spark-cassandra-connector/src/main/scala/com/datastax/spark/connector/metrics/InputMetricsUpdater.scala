@@ -17,7 +17,7 @@ private[connector] trait InputMetricsUpdater {
 private class DetailedInputMetricsUpdater(metrics: InputMetrics, groupSize: Int) extends InputMetricsUpdater {
   require(groupSize > 0)
 
-  val resultSetFetchTimer = Some(CassandraConnectorSource.readMoreRowsTimer)
+  val resultSetFetchTimer = Some(CassandraConnectorSource.readPageWaitTimer)
 
   private val taskTimer = CassandraConnectorSource.readTaskTimer.time()
 
