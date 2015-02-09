@@ -121,7 +121,8 @@ object Settings extends Build {
     fork in Test := true,
     fork in IntegrationTest := true,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
+    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test),
+    javaOptions in IntegrationTest ++= Seq("-XX:MaxPermSize=256M", "-Xmx1g")
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
