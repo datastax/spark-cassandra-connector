@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
 import com.datastax.driver.core.{UserType, ProtocolVersion, DataType}
+import com.datastax.spark.connector.util.Symbols
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -67,6 +68,59 @@ object ColumnType {
       case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
       case (userType: UserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
       case _ => primitiveTypeMap(dataType)
+    }
+  }
+
+  /** Returns natural Cassandra type for representing data of the given Scala type */
+  def fromScalaType(dataType: Type): ColumnType[_] = {
+
+    def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
+
+    // can't use a HashMap, because there are more than one different Type objects for "real type":
+    if (dataType =:= typeOf[Int]) IntType
+    else if (dataType =:= typeOf[java.lang.Integer]) IntType
+    else if (dataType =:= typeOf[Long]) BigIntType
+    else if (dataType =:= typeOf[java.lang.Long]) BigIntType
+    else if (dataType =:= typeOf[Float]) FloatType
+    else if (dataType =:= typeOf[java.lang.Float]) FloatType
+    else if (dataType =:= typeOf[Double]) DoubleType
+    else if (dataType =:= typeOf[java.lang.Double]) DoubleType
+    else if (dataType =:= typeOf[BigInt]) VarIntType
+    else if (dataType =:= typeOf[java.math.BigInteger]) VarIntType
+    else if (dataType =:= typeOf[BigDecimal]) DecimalType
+    else if (dataType =:= typeOf[java.math.BigDecimal]) DecimalType
+    else if (dataType =:= typeOf[Boolean]) BooleanType
+    else if (dataType =:= typeOf[java.lang.Boolean]) BooleanType
+    else if (dataType =:= typeOf[String]) VarCharType
+    else if (dataType =:= typeOf[InetAddress]) InetType
+    else if (dataType =:= typeOf[Date]) TimestampType
+    else if (dataType =:= typeOf[java.sql.Date]) TimestampType
+    else if (dataType =:= typeOf[org.joda.time.DateTime]) TimestampType
+    else if (dataType =:= typeOf[UUID]) UUIDType
+    else if (dataType =:= typeOf[ByteBuffer]) BlobType
+    else if (dataType =:= typeOf[Array[Byte]]) BlobType
+    else {
+      dataType match {
+        case TypeRef(_, symbol, List(arg)) =>
+          val argType = fromScalaType(arg)
+          if (symbol == Symbols.OptionSymbol)
+            argType
+          else if (Symbols.ListSymbols contains symbol)
+            ListType(argType)
+          else if (Symbols.SetSymbols contains symbol)
+            SetType(argType)
+          else
+            unsupportedType()
+        case TypeRef(_, symbol, List(k, v)) =>
+          val keyType = fromScalaType(k)
+          val valueType = fromScalaType(v)
+          if (Symbols.MapSymbols contains symbol)
+            MapType(keyType, valueType)
+          else
+            unsupportedType()
+        case _ =>
+          unsupportedType()
+      }
     }
   }
 
