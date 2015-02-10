@@ -7,25 +7,37 @@ import org.joda.time.{DateTime, Duration => JodaDuration}
 
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
+sealed trait WriteOptionValue[+T]
+
+case class StaticWriteOptionValue[T](value: T) extends WriteOptionValue[T]
+
+case class PerRowWriteOptionValue[T](placeholder: String) extends WriteOptionValue[T]
+
 sealed trait WriteOption[+T]
 
-sealed trait TTLOption extends WriteOption[Int]
+case class TTLOption(value: WriteOptionValue[Int]) extends WriteOption[Int]
 
-sealed trait TimestampOption extends WriteOption[Long]
+case class TimestampOption(value: WriteOptionValue[Long]) extends WriteOption[Long]
 
-case class StaticWriteOption[T](value: T) extends WriteOption[T]
+case object DefaultValue extends WriteOptionValue[Nothing]
 
-case class PerRowWriteOption[T](placeholder: String) extends WriteOption[T]
+object WriteOption {
+  def unapply(writeOption: WriteOption[_]): Option[WriteOptionValue[_]] = writeOption match {
+    case TTLOption(value) => Some(value)
+    case TimestampOption(value) => Some(value)
+    case _ => None
+  }
+}
 
 object TTLOption {
 
-  case object auto extends TTLOption
+  val defaultValue = TTLOption(DefaultValue)
 
-  def forever: TTLOption = new StaticWriteOption[Int](0) with TTLOption
+  def forever: TTLOption = TTLOption(StaticWriteOptionValue[Int](0))
 
   def constant(ttl: Int): TTLOption = {
     require(ttl > 0, "Explicitly specified TTL must be greater than zero.")
-    new StaticWriteOption[Int](ttl) with TTLOption
+    TTLOption(StaticWriteOptionValue(ttl))
   }
 
   def constant(ttl: SparkDuration): TTLOption = constant((ttl.milliseconds / 1000L).toInt)
@@ -34,18 +46,17 @@ object TTLOption {
 
   def constant(ttl: ScalaDuration): TTLOption = if (ttl.isFinite()) constant(ttl.toSeconds.toInt) else forever
 
-  def perRow(placeholder: String): TTLOption =
-    new PerRowWriteOption[Int](placeholder) with TTLOption
+  def perRow(placeholder: String): TTLOption = TTLOption(PerRowWriteOptionValue[Int](placeholder))
 
 }
 
 object TimestampOption {
 
-  case object auto extends TimestampOption
+  val defaultValue = TimestampOption(DefaultValue)
 
   def constant(microseconds: Long): TimestampOption = {
     require(microseconds > 0, "Explicitly specified time must be greater than zero.")
-    new StaticWriteOption[Long](microseconds) with TimestampOption
+    TimestampOption(StaticWriteOptionValue(microseconds))
   }
 
   def constant(timestamp: Date): TimestampOption = constant(timestamp.getTime * 1000L)
@@ -53,5 +64,5 @@ object TimestampOption {
   def constant(timestamp: DateTime): TimestampOption = constant(timestamp.getMillis * 1000L)
 
   def perRow(placeholder: String): TimestampOption =
-    new PerRowWriteOption[Long](placeholder) with TimestampOption
+    TimestampOption(PerRowWriteOptionValue(placeholder))
 }

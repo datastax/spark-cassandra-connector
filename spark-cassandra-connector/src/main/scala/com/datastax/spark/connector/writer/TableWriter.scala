@@ -29,15 +29,13 @@ class TableWriter[T] private (
   implicit val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
 
   val defaultTTL = writeConf.ttl match {
-    case x: StaticWriteOption[Int] => Some(x.value)
-    case _: PerRowWriteOption[Int] => None
-    case TTLOption.auto => None
+    case TTLOption(StaticWriteOptionValue(value)) => Some(value)
+    case _ => None
   }
 
   val defaultTimestamp = writeConf.timestamp match {
-    case x: StaticWriteOption[Long] => Some(x.value)
-    case _: PerRowWriteOption[Long] => None
-    case TimestampOption.auto => None
+    case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
+    case _ => None
   }
 
   private def quote(name: String): String =
@@ -49,15 +47,15 @@ class TableWriter[T] private (
     val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
 
     val ttlSpec = writeConf.ttl match {
-      case x: PerRowWriteOption[Int] => Some(s"TTL :${x.placeholder}")
-      case x: StaticWriteOption[Int] => Some(s"TTL ${x.value}")
-      case TTLOption.auto => None
+      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
+      case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
+      case _ => None
     }
 
     val timestampSpec = writeConf.timestamp match {
-      case x: PerRowWriteOption[Long] => Some(s"TIMESTAMP :${x.placeholder}")
-      case x: StaticWriteOption[Long] => Some(s"TIMESTAMP ${x.value}")
-      case TimestampOption.auto => None
+      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
+      case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
+      case _ => None
     }
 
     val options = List(ttlSpec, timestampSpec).flatten

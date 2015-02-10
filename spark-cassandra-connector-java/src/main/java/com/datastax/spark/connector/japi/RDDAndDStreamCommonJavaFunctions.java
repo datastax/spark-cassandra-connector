@@ -306,7 +306,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withAutoTimestamp() {
-            return withTimestamp(TimestampOption.auto$.MODULE$);
+            return withTimestamp(TimestampOption.defaultValue());
         }
 
         /**
@@ -369,7 +369,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withAutoTTL() {
-            return withTTL(TTLOption.auto$.MODULE$);
+            return withTTL(TTLOption.defaultValue());
         }
 
         /**
