@@ -106,10 +106,12 @@ class TableWriter[T] private (
     connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, Some(updater.batchSucceeded), Some(updater.batchFailed))
+      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
+        Some(updater.batchSucceeded), Some(updater.batchFailed))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
-      val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)
+      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+      val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
 
       val batchKeyGenerator = writeConf.batchLevel match {
         case BatchLevel.All => bs: BoundStatement => 0
@@ -126,7 +128,7 @@ class TableWriter[T] private (
           bs.getRoutingKey.duplicate()
       }
 
-      val batchBuilder = new GroupingBatchBuilder(batchStmtBuilder, batchKeyGenerator,
+      val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchBufferSize, data)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
