@@ -3,6 +3,7 @@
    the settings are automatically distributed to Spark Executors (SPARKC-28)
  * Report Connector metrics to Spark metrics system (SPARKC-27)
  * Upgraded to Spark 1.2.1 (SPARKC-30)
+ * Add conversion from java.util.Date to java.sqlTimestamp for Spark SQL (#512)
 
 1.2.0 alpha 1
  * Added support for TTL and timestamp in the writer (#153)

@@ -1,5 +1,8 @@
 package org.apache.spark.sql.cassandra
 
+import java.sql.Timestamp
+import java.util.Date
+
 import com.datastax.driver.core.{Row, ProtocolVersion}
 import com.datastax.spark.connector.AbstractGettableData
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
@@ -38,8 +41,11 @@ object CassandraSQLRow {
 
   def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow = {
     val data = new Array[Object](columnNames.length)
-    for (i <- 0 until columnNames.length)
+    for (i <- 0 until columnNames.length) {
       data(i) = AbstractGettableData.get(row, i)
+      if (data(i).isInstanceOf[Date])
+        data(i) = new Timestamp(data(i).asInstanceOf[Date].getTime)
+    }
     new CassandraSQLRow(columnNames, data)
   }
 

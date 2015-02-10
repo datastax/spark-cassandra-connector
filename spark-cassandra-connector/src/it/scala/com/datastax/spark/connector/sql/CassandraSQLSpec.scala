@@ -296,4 +296,17 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     cc.setKeyspace("sql_test")
     cc.cassandraSql("select objectid, meterid, utcstamp  from export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
   }
+
+  it should "allow to min/max timestamp column" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.timestamp_conversion_bug (k int, v int, d timestamp, primary key(k,v))")
+      session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 1, '2015-01-03 15:13')")
+      session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 2, '2015-01-03 16:13')")
+      session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 3, '2015-01-03 17:13')")
+      session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 4, '2015-01-03 18:13')")
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+  }
 }
