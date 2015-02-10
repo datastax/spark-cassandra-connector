@@ -6,12 +6,10 @@ import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.executor.{DataReadMethod, InputMetrics}
 import org.apache.spark.metrics.CassandraConnectorSource
 
-private[connector] trait InputMetricsUpdater {
+private[connector] trait InputMetricsUpdater extends MetricsUpdater {
   def resultSetFetchTimer: Option[Timer]
 
   def updateMetrics(row: Row): Row
-
-  def finish(): Long
 }
 
 private class DetailedInputMetricsUpdater(metrics: InputMetrics, groupSize: Int) extends InputMetricsUpdater {
@@ -44,7 +42,9 @@ private class DetailedInputMetricsUpdater(metrics: InputMetrics, groupSize: Int)
 
   def finish(): Long = {
     update()
-    taskTimer.stop()
+    val t = taskTimer.stop()
+    forceReport()
+    t
   }
 }
 
