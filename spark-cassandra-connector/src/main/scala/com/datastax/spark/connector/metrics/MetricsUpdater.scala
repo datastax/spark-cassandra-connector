@@ -6,9 +6,6 @@ trait MetricsUpdater {
   def finish(): Long
 
   def forceReport(): Unit = {
-    val env = SparkEnv.get
-    if (env != null) {
-      env.metricsSystem.report()
-    }
+    Option(SparkEnv.get).foreach(_.metricsSystem.report())
   }
 }

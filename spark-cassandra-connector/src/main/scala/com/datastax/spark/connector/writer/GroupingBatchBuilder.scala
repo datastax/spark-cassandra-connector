@@ -36,7 +36,7 @@ private[connector] class GroupingBatchBuilder[T](
     maxBatches: Int,
     data: Iterator[T]) extends AbstractIterator[RichStatement] with Iterator[RichStatement] {
 
-  require(maxBatches > 0)
+  require(maxBatches > 0, "The maximum number of batches must be greater than 0")
 
   private[this] val batchMap = new PriorityHashMap[Any, Batch](maxBatches)
 
