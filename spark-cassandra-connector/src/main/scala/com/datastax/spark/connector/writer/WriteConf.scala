@@ -25,16 +25,16 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      batchLevel: BatchLevel = WriteConf.DefaultBatchLevel,
                      consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
                      parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
-                     ttl: TTLOption = TTLOption.auto,
-                     timestamp: TimestampOption = TimestampOption.auto) {
+                     ttl: TTLOption = TTLOption.defaultValue,
+                     timestamp: TimestampOption = TimestampOption.defaultValue) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
-    case PerRowWriteOption(placeholder) => placeholder
+    case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
   }
 
   private[writer] val optionsAsColumns: (String, String) => Seq[ColumnDef] = { (keyspace, table) =>
     def toRegularColDef(opt: WriteOption[_], dataType: DataType) = opt match {
-      case PerRowWriteOption(placeholder) =>
+      case WriteOption(PerRowWriteOptionValue(placeholder)) =>
         Some(ColumnDef(keyspace, table, placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
       case _ => None
     }

@@ -28,12 +28,15 @@ import scala.collection.Iterator
  * @param data                  data iterator
  * @tparam T                    data type
  */
-class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
-                              batchKeyGenerator: BoundStatement => Any,
-                              batchSize: BatchSize,
-                              maxBatches: Int,
-                              data: Iterator[T]) extends AbstractIterator[RichStatement] with Iterator[RichStatement] {
-  require(maxBatches > 0)
+private[connector] class GroupingBatchBuilder[T](
+    boundStatementBuilder: BoundStatementBuilder[T],
+    batchStatementBuilder: BatchStatementBuilder,
+    batchKeyGenerator: BoundStatement => Any,
+    batchSize: BatchSize,
+    maxBatches: Int,
+    data: Iterator[T]) extends AbstractIterator[RichStatement] with Iterator[RichStatement] {
+
+  require(maxBatches > 0, "The maximum number of batches must be greater than 0")
 
   private[this] val batchMap = new PriorityHashMap[Any, Batch](maxBatches)
 
@@ -78,7 +81,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
 
   /** Creates a statement from the given batch and cleans the batch so that it can be reused. */
   @inline
-  private def createStmtAndReleaseBatch(batch: Batch): RichStatement = {
+  final private def createStmtAndReleaseBatch(batch: Batch): RichStatement = {
     val stmt = batchStatementBuilder.maybeCreateBatch(batch.statements)
     batch.clear()
     stmt
@@ -97,7 +100,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
   @tailrec
   final override def computeNext(): RichStatement = {
     if (data.hasNext) {
-      val stmt = batchStatementBuilder.bind(data.next())
+      val stmt = boundStatementBuilder.bind(data.next())
       val key = batchKeyGenerator(stmt)
 
       processStatement(key, stmt) match {

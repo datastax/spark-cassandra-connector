@@ -66,7 +66,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         keyspaceName = "column_names_test",
         tableName = "key_value",
         columnNames = AllColumns,
-        writeConf = WriteConf(ttl = TTLOption.auto, timestamp = TimestampOption.auto)
+        writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.defaultValue)
       )
 
       writer.queryTemplateUsingInsert should endWith (""")""")
@@ -78,7 +78,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         keyspaceName = "column_names_test",
         tableName = "key_value",
         columnNames = AllColumns,
-        writeConf = WriteConf(ttl = TTLOption.constant(1234), timestamp = TimestampOption.auto)
+        writeConf = WriteConf(ttl = TTLOption.constant(1234), timestamp = TimestampOption.defaultValue)
       )
 
       writer.queryTemplateUsingInsert should endWith (""") USING TTL 1234""")
@@ -90,7 +90,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         keyspaceName = "column_names_test",
         tableName = "key_value",
         columnNames = AllColumns,
-        writeConf = WriteConf(ttl = TTLOption.auto, timestamp = TimestampOption.constant(1400000000000L))
+        writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.constant(1400000000000L))
       )
 
       writer.queryTemplateUsingInsert should endWith (""") USING TIMESTAMP 1400000000000""")
@@ -150,7 +150,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         keyspaceName = "column_names_test",
         tableName = "key_value",
         columnNames = AllColumns,
-        writeConf = WriteConf(ttl = TTLOption.perRow("ttl_column"), timestamp = TimestampOption.auto)
+        writeConf = WriteConf(ttl = TTLOption.perRow("ttl_column"), timestamp = TimestampOption.defaultValue)
       )
 
       writer.queryTemplateUsingInsert should endWith (""") USING TTL :ttl_column""")
@@ -162,7 +162,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
         keyspaceName = "column_names_test",
         tableName = "key_value",
         columnNames = AllColumns,
-        writeConf = WriteConf(ttl = TTLOption.auto, timestamp = TimestampOption.perRow("timestamp_column"))
+        writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.perRow("timestamp_column"))
       )
 
       writer.queryTemplateUsingInsert should endWith (""") USING TIMESTAMP :timestamp_column""")

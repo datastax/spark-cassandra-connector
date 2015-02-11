@@ -7,12 +7,10 @@ import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
 import org.apache.spark.metrics.CassandraConnectorSource
 import org.apache.spark.{SparkEnv, TaskContext}
 
-private[connector] trait OutputMetricsUpdater {
+private[connector] trait OutputMetricsUpdater extends MetricsUpdater {
   def batchSucceeded(stmt: RichStatement, submissionTimestamp: Long, executionTimestamp: Long)
 
   def batchFailed(stmt: RichStatement, submissionTimestamp: Long, executionTimestamp: Long)
-
-  def finish(): Long
 }
 
 private class DetailedOutputMetricsUpdater(outputMetrics: OutputMetrics) extends OutputMetricsUpdater {
@@ -36,7 +34,9 @@ private class DetailedOutputMetricsUpdater(outputMetrics: OutputMetrics) extends
   }
 
   def finish(): Long = {
-    taskTimer.stop()
+    val t = taskTimer.stop()
+    forceReport()
+    t
   }
 }
 

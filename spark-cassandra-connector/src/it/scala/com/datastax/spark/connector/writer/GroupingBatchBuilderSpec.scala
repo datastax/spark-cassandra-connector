@@ -27,8 +27,9 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
 
   def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
     val stmt = session.prepare("INSERT INTO batch_maker_test.tab (id, value) VALUES (:id, :value)")
-    val stmtBuilder = new BatchStatementBuilder(Type.UNLOGGED, rowWriter, stmt, protocolVersion, rkg, ConsistencyLevel.LOCAL_ONE)
-    new GroupingBatchBuilder[(Int, String)](stmtBuilder, _: BoundStatement => Any, _: BatchSize, _: Int, _: Iterator[(Int, String)])
+    val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+    val batchStmtBuilder = new BatchStatementBuilder(Type.UNLOGGED, rkg, ConsistencyLevel.LOCAL_ONE)
+    new GroupingBatchBuilder[(Int, String)](boundStmtBuilder, batchStmtBuilder, _: BoundStatement => Any, _: BatchSize, _: Int, _: Iterator[(Int, String)])
   }
 
   def staticBatchKeyGen(bs: BoundStatement): Int = 0
@@ -116,7 +117,7 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
       }
 
       stmtss.foreach(stmts => stmts.size should be > 0)
-      stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BatchStatementBuilder.calculateDataSize).sum should be <= 15)
+      stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BoundStatementBuilder.calculateDataSize).sum should be <= 15)
       stmtss.flatten.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsInOrderAs data
     }
   }
@@ -240,7 +241,7 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
         case s: BatchStatement => s.getStatements.map(_.asInstanceOf[BoundStatement]).toList
       }
       stmtss.foreach(stmts => stmts.size should be > 0)
-      stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BatchStatementBuilder.calculateDataSize).sum should be <= 15)
+      stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BoundStatementBuilder.calculateDataSize).sum should be <= 15)
       stmtss.flatten.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -266,12 +267,10 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
   it should "work with random data" in {
     conn.withSessionDo { session =>
       val bm = makeBatchBuilder(session)
-      val data = (1 to 1000000).map(x => (Random.nextInt().abs, Random.nextString(Random.nextInt(20))))
-      val t0 = System.nanoTime()
+      val size = 10000
+      val data = (1 to size).map(x => (Random.nextInt().abs, Random.nextString(Random.nextInt(20))))
       val statements = bm(dynamicBatchKeyGen5, RowsInBatch(10), 4, data.toIterator).toList
-      val t = (System.nanoTime() - t0) / 10000000L
       val batches = statements.collect { case bs: BatchStatement => bs.size() }
-      System.err.println(s"Processed ${data.size} rows in $t ms producing ${batches.size} batches of ${batches.sum.toDouble / batches.size.toDouble} and ${statements.size - batches.size} bound statements which is ${1000L * data.size / t} rows/sec")
       statements.flatMap {
         case s: BoundStatement => List(s)
         case s: BatchStatement =>

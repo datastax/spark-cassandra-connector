@@ -29,15 +29,13 @@ class TableWriter[T] private (
   implicit val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
 
   val defaultTTL = writeConf.ttl match {
-    case x: StaticWriteOption[Int] => Some(x.value)
-    case _: PerRowWriteOption[Int] => None
-    case TTLOption.auto => None
+    case TTLOption(StaticWriteOptionValue(value)) => Some(value)
+    case _ => None
   }
 
   val defaultTimestamp = writeConf.timestamp match {
-    case x: StaticWriteOption[Long] => Some(x.value)
-    case _: PerRowWriteOption[Long] => None
-    case TimestampOption.auto => None
+    case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
+    case _ => None
   }
 
   private def quote(name: String): String =
@@ -49,15 +47,15 @@ class TableWriter[T] private (
     val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
 
     val ttlSpec = writeConf.ttl match {
-      case x: PerRowWriteOption[Int] => Some(s"TTL :${x.placeholder}")
-      case x: StaticWriteOption[Int] => Some(s"TTL ${x.value}")
-      case TTLOption.auto => None
+      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
+      case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
+      case _ => None
     }
 
     val timestampSpec = writeConf.timestamp match {
-      case x: PerRowWriteOption[Long] => Some(s"TIMESTAMP :${x.placeholder}")
-      case x: StaticWriteOption[Long] => Some(s"TIMESTAMP ${x.value}")
-      case TimestampOption.auto => None
+      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
+      case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
+      case _ => None
     }
 
     val options = List(ttlSpec, timestampSpec).flatten
@@ -106,10 +104,12 @@ class TableWriter[T] private (
     connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, Some(updater.batchSucceeded), Some(updater.batchFailed))
+      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
+        Some(updater.batchSucceeded), Some(updater.batchFailed))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
-      val batchStmtBuilder = new BatchStatementBuilder(batchType, rowWriter, stmt, protocolVersion, routingKeyGenerator, writeConf.consistencyLevel)
+      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+      val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
 
       val batchKeyGenerator = writeConf.batchLevel match {
         case BatchLevel.All => bs: BoundStatement => 0
@@ -126,7 +126,7 @@ class TableWriter[T] private (
           bs.getRoutingKey.duplicate()
       }
 
-      val batchBuilder = new GroupingBatchBuilder(batchStmtBuilder, batchKeyGenerator,
+      val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchBufferSize, data)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
