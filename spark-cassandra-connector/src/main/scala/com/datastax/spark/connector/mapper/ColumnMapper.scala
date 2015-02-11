@@ -22,9 +22,8 @@ import scala.reflect.ClassTag
   *   }
   * }}}
   */
-trait ColumnMapper[T] extends Serializable {
+trait ColumnMapper[T] {
   def columnMap(tableDef: TableDef): ColumnMap
-
   def classTag: ClassTag[T]
 }
 

@@ -71,12 +71,6 @@ class JavaBeanColumnMapperTest {
   }
 
   @Test
-  def testSerializeColumnMapper() {
-    val mapper = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass]
-    SerializationUtils.roundtrip(mapper)
-  }
-
-  @Test
   def testSerializeColumnMap() {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass].columnMap(tableDef)
     SerializationUtils.roundtrip(columnMap)

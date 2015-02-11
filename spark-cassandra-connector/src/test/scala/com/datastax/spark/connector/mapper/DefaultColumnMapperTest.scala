@@ -104,12 +104,6 @@ class DefaultColumnMapperTest {
   }
 
   @Test
-  def testSerialize() {
-    val mapper = new DefaultColumnMapper[DefaultColumnMapperTestClass1]
-    SerializationUtils.roundtrip(mapper)
-  }
-
-  @Test
   def testImplicit() {
     val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass1]]
     assertTrue(mapper.isInstanceOf[DefaultColumnMapper[_]])
