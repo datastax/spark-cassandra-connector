@@ -1,4 +1,4 @@
-1.2.0 (unreleased)
+1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
    the settings are automatically distributed to Spark Executors (SPARKC-28)
  * Report Connector metrics to Spark metrics system (SPARKC-27)
