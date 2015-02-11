@@ -1,5 +1,13 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 
+## Important notice : Do NOT use GitHub issue tracker!
+We are going to disable it and no issues created there will be accessible.
+
+If you have problems and you are looking for help, please use a forum at: https://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user
+
+If you want to report bugs, improvement or feature requests, please use JIRA at:
+https://datastax-oss.atlassian.net/browse/
+
 ## Lightning-fast cluster computing with Spark and Cassandra
 
 This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
