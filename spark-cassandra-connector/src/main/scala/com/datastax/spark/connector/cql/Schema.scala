@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.util.Logging
 
 import scala.collection.JavaConversions._
@@ -69,6 +70,14 @@ case class TableDef(keyspaceName: String,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
   }
+}
+
+object TableDef {
+
+  /** Constructs a table definition based on the mapping provided by
+    * appropriate [[ColumnMapper]] for the given type. */
+  def fromType[T : ColumnMapper](keyspaceName: String, tableName: String): TableDef =
+    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */

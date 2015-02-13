@@ -71,7 +71,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     val value = ColumnDef("value", RegularColumn, TextType)
     val table = TableDef("write_test", "new_kv_table", Seq(pkey), Seq(group), Seq(value))
     val rows = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
-    sc.parallelize(rows).saveAsCassandraTable(table, SomeColumns("key", "group", "value"))
+    sc.parallelize(rows).saveAsCassandraTableEx(table, SomeColumns("key", "group", "value"))
     verifyKeyValueTable("new_kv_table")
   }
 
@@ -85,6 +85,12 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
     sc.parallelize(col).saveToCassandra("write_test", "key_value_3")
     verifyKeyValueTable("key_value_3")
+  }
+
+  it should "write RDD of case class objects to a new table using auto mapping" in {
+    val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
+    sc.parallelize(col).saveAsCassandraTable("write_test", "new_kv_table_from_case_class")
+    verifyKeyValueTable("new_kv_table_from_case_class")
   }
 
   it should "write RDD of case class objects applying proper data type conversions" in {

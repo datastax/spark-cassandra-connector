@@ -20,16 +20,6 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
   protected def constructorParamToColumnName(paramName: String, tableDef: TableDef): String
   protected def allowsNull: Boolean
 
-  protected final def camelCaseToUnderscore(str: String): String =
-    StringUtils.splitByCharacterTypeCamelCase(str).mkString("_").replaceAll("_+", "_").toLowerCase
-
-  protected final def columnNameForProperty(propertyName: String, tableDef: TableDef): String = {
-    val underscoreName = camelCaseToUnderscore(propertyName)
-    val candidateColumnNames = Seq(propertyName, underscoreName)
-    val columnRef = candidateColumnNames.iterator.map(tableDef.columnByName.get).find(_.isDefined).flatten
-    columnRef.fold(underscoreName)(_.columnName)
-  }
-
   override def columnMap(tableDef: TableDef): ColumnMap = {
 
     val cls = implicitly[ClassTag[T]].runtimeClass

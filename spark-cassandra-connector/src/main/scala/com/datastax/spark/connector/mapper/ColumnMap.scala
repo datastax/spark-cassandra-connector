@@ -5,7 +5,9 @@ import com.datastax.spark.connector.ColumnRef
 /** Associates constructor parameters and property accessors with Cassandra table columns. */
 trait ColumnMap extends Serializable {
 
-  /** A sequence of column references associated with parameters of the main constructor */
+  /** A sequence of column references associated with parameters of the main constructor.
+    * If the class contains multiple constructors, the main constructor is assumed to be the one with the
+    * highest number of parameters. Multiple constructors with the same number of parameters are not allowed. */
   def constructor: Seq[ColumnRef]
 
   /** Maps a getter method name to a column reference */

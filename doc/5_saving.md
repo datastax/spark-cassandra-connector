@@ -5,13 +5,19 @@ It is possible to save any `RDD` to Cassandra, not just `CassandraRDD`.
 The only requirement is that the object class of `RDD` is a tuple or has property names 
 corresponding to Cassandra column names. 
 
-To save an `RDD`, import `com.datastax.spark.connector._` and call the `saveToCassandra` method with the
+It is possible to save an `RDD` to an existing Cassandra table as well as to let the
+connector create appropriate table automatically based on the definition
+of the `RDD` item class.
+To save an `RDD` to an existing table, import `com.datastax.spark.connector._`
+and call the `saveToCassandra` method with the
 keyspace name, table name and a list of columns. Make sure to include at least all primary key columns.
+To save an `RDD` to a new table, instead of calling `saveToCassandra`, call `saveAsCassandraTable` or
+`saveAsCassandraTableEx` with the name of the table you want to create.
  
 ## Saving a collection of tuples
 
 ```scala
-collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
+val collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
 collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ```
     
@@ -33,7 +39,7 @@ to be saved. This example provides more information on property-column naming co
 
 ```scala
 case class WordCount(word: String, count: Long)
-collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))    
+val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
 collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ```
 
@@ -69,6 +75,31 @@ val address = UDTValue.fromMap("city" -> "Santa Clara", "street" -> "Freedom Cir
 val company = Company("DataStax", address)
 sc.parallelize(Seq(company)).saveToCassandra("test", "companies")
 ```
+
+## Saving RDDs as new tables
+Use `saveAsCassandraTable` method to automatically create a new table with given name
+and save the `RDD` into it. The keyspace you're saving to must exist.
+The following code will create a new table `words_new` in keyspace `test` with
+columns `word` and `count`, where `word` becomes a primary key:
+
+```scala
+case class WordCount(word: String, count: Long)
+val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
+collection.saveAsCassandraTable("test", "words_new", SomeColumns("word", "count"))
+```
+
+To customize the table definition, call `saveAsCassandraTableEx`. The following example
+demonstrates how to add another column of int type to the table definition:
+
+```scala
+case class WordCount(word: String, count: Long)
+val table1 = TableDef.fromType[WordCount]("test", "words_new")
+val table2 = TableDef("test", "words_new", table1.partitionKey, table1.clusteringColumns,
+  table1.regularColumns :+ ColumnDef("additional_column", RegularColumn, IntType))
+val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
+collection.saveAsCassandraTableEx(table2, SomeColumns("word", "count"))
+```
+
 
 ## Tuning
 The following properties set in `SparkConf` can be used to fine-tune the saving process:
