@@ -6,6 +6,7 @@
  * Added EmptyCassandraRDD (SPARKC-37)
  * Exposed authConf in CassandraConnector
  * Overridden count() implementation in CassandraRDD which uses native Cassandra count (SPARKC-52)
+ * Removed custom Logging class (SPARKC-54)
 
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and

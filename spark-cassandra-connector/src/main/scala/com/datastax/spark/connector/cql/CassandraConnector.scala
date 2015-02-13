@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
 import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.{Cluster, Host, Session}
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 
 /** Provides and manages connections to Cassandra.
