@@ -1,13 +1,11 @@
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.7.1")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
+// pulls in: sbt-pgp, sbt-release, sbt-mima-plugin, sbt-dependency-graph, sbt-buildinfo, sbt-sonatype
+// TODO use sbt-release plugin
+addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.3.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.2")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.6")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.3")
-
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
+addSbtPlugin("com.scalapenos" % "sbt-prompt" % "0.2.1")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")

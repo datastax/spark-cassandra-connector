@@ -25,14 +25,14 @@ object Versions {
   val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"
-  val JOpt            = "3.2"//4.7
-  val Kafka           = "0.8.0"//https://github.com/apache/spark/pull/3631
+  val JOpt            = "3.2"
+  val Kafka           = "0.8.2.0"//0.8.1.2,0.8.0
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
-  val Scala           = "2.10.4"
+  val crossScala      = Seq("2.11.5", "2.10.4")
+  val Scala           = crossScala.head
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
-  val Slf4j           = "1.7.7"
+  val Slf4j           = "1.6.1"//1.7.7"
   val Spark           = "1.2.1"
-  val SparkRepl       = "1.2.1"
 }

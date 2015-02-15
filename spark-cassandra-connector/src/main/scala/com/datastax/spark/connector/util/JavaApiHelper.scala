@@ -2,15 +2,15 @@ package com.datastax.spark.connector.util
 
 import java.util.{Map => JavaMap}
 
+import scala.reflect.runtime.universe._
+
+import scala.reflect._
+import scala.reflect.api.{Mirror, TypeCreator, _}
+import scala.collection.JavaConversions._
 import com.datastax.spark.connector.mapper.{ColumnMapper, JavaBeanColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
 import com.datastax.spark.connector.CassandraRow
-
-import scala.collection.JavaConversions._
-import scala.reflect._
-import scala.reflect.api.{Mirror, TypeCreator, _}
-import scala.reflect.runtime.universe._
 
 /** A helper class to make it possible to access components written in Scala from Java code.
   * INTERNAL API

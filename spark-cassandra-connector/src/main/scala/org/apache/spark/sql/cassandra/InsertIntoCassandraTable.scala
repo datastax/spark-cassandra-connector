@@ -12,7 +12,7 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 case class InsertIntoCassandraTable(cassandraRelation: CassandraRelation,
                                childPlan: SparkPlan,
                                overwrite: Boolean)
-                              (@transient cc: CassandraSQLContext) extends UnaryNode {
+                              (@transient val cc: CassandraSQLContext) extends UnaryNode {
   self: Product =>
 
   override def output: Seq[Attribute] = childPlan.output

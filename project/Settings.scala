@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import scala.collection.mutable
+import scala.language.postfixOps
+
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
@@ -23,41 +26,93 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
-
-import scala.collection.mutable
-import scala.language.postfixOps
-
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
+import com.scalapenos.sbt.prompt.PromptTheme
 
 object Settings extends Build {
 
-  lazy val buildSettings = Seq(
-    name := "DataStax Apache Cassandra connector for Apache Spark",
+  override lazy val settings = super.settings ++ Seq(
     normalizedName := "spark-cassandra-connector",
-    description := "A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to Cassandra tables, " +
-      "and executes CQL queries in Spark applications.",
+    name := "DataStax Apache Cassandra connector for Apache Spark",
+    description := """A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
+                  Cassandra tables, and executes CQL queries in Spark applications.""",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.2.0-alpha1",
-    scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
-    licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
+    licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
+    version in ThisBuild := "1.2.0-alpha1",
+
+    scalaVersion in GlobalScope := Versions.Scala,
+
+    crossScalaVersions in GlobalScope := Versions.crossScala,
+
+    crossVersion := CrossVersion.binary,
+
+    // when sbt release added: enableCrossBuild = true,
+
+    scalacOptions ++= compilerOptions ++ Seq(
+      s"-target:jvm-${Versions.JDK}",
+      "-deprecation",
+      "-feature",
+      "-language:_",
+      "-unchecked"
+      ,"-Xlint"
+      // TODO re-enable: "-Xfatal-warnings"
+      // [error] (vs a warn) Class org.apache.cassandra.io.util.DataOutputPlus not found - continuing with a stub.
+    ),
+
+    javacOptions ++= compilerOptions ++ Seq(
+      "-source", Versions.JDK,
+      "-target", Versions.JDK,
+      "-Xlint:unchecked",
+      "-Xlint:deprecation"
+    ),
+
+    incOptions := incOptions.value.withNameHashing(true),
+
+    promptTheme := theme
   )
 
-  val parentSettings = buildSettings ++ Seq(
-    publishArtifact := false,
-    publish := {}
+  def crossVersionArtifact(id: String, a: String, b: String): Def.Initialize[sbt.ModuleID] = Def.setting {
+    val version: String = scalaBinaryVersion.value match {
+          case "2.11" => a
+          case _      => b
+        }
+
+      val fullId = crossVersion.value match {
+        case _ : CrossVersion.Binary => id + "_" + scalaBinaryVersion.value
+        case _ : CrossVersion.Full => id + "_" + scalaVersion.value
+        case CrossVersion.Disabled => id
+      }
+      organization.value % fullId % version // the artifact to compare binary compatibility with
+  }
+
+
+  val parentSettings = noPublish ++ Seq(
+    (unmanagedSourceDirectories in Compile) := Nil,
+    (unmanagedSourceDirectories in Test) := Nil
   )
 
-  override lazy val settings = super.settings ++ buildSettings
+  lazy val noPublish = Seq(
+    publish := (),
+    publishLocal := (),
+    publishArtifact := false
+  )
+
+  val compilerOptions = Seq("-encoding", "UTF-8")
 
   lazy val moduleSettings = graphSettings ++ Seq(
-    scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
-    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
-    javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
-    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+    // TODO excludeFilter in unmanagedSources := "fu.scala"
+    scalacOptions in (Compile, doc) ++= Seq(
+      "-implicits",
+      "-doc-root-content",
+      "rootdoc.txt"
+    ),
+    javacOptions in (Compile, doc) := compilerOptions ++ Seq(
+      "-source", Versions.JDK
+    ),
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-    // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
     autoAPIMappings := true
@@ -65,7 +120,7 @@ object Settings extends Build {
 
   lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
 
-  lazy val demoSettings = moduleSettings ++ Seq(
+  lazy val demoSettings = moduleSettings ++ noPublish ++ Seq(
     publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
@@ -107,22 +162,26 @@ object Settings extends Build {
     artifactName in (IntegrationTest,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
       baseDirectory.value.name + "-it_" + sv.binary + "-" + module.revision + "." + artifact.extension
     },
+    publishArtifact in Test := false,
     publishArtifact in (Test,packageBin) := true,
     publishArtifact in (IntegrationTest,packageBin) := true,
-    publish in (Test,packageBin) := {},
-    publish in (IntegrationTest,packageBin) := {}
+    publish in (Test,packageBin) := (),
+    publish in (IntegrationTest,packageBin) := ()
   )
 
   lazy val testSettings = tests ++ testArtifacts ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
+    javaOptions in IntegrationTest ++= Seq(
+      "-XX:MaxPermSize=256M", "-Xmx1g"
+    ),
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
     fork in Test := true,
     fork in IntegrationTest := true,
+    managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test),
-    javaOptions in IntegrationTest ++= Seq("-XX:MaxPermSize=256M", "-Xmx1g")
+    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
@@ -138,12 +197,16 @@ object Settings extends Build {
     }
   )
 
-  /* By default, assembly is not enabled for the demos module, but it can be enabled with
-    `-Ddemos.assembly=true`. From the command line this would be:
-     sbt -Ddemos.assembly=true twitter/assembly */
-  lazy val demoAssemblySettings =
-    if (System.getProperty("demos.assembly", "true").toBoolean) sbtAssemblySettings
-    else Seq.empty
+  lazy val theme = PromptTheme(List(
+    text("[SBT] ", fg(magenta)),
+    userName(fg(000)),
+    text(":spark-cassandra-connector", fg(000)),
+    text(":", fg(000)),
+    currentProject(fg(000)),
+    text(":", fg(000)),
+    gitBranch(clean = fg(green), dirty = fg(20)),
+    text("> ", fg(000))
+  ))
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
@@ -158,24 +221,4 @@ object Settings extends Build {
       .setPreference(AlignSingleLineCaseStatements, true)
   }
 
-}
-
-object ShellPromptPlugin extends AutoPlugin {
-  override def trigger = allRequirements
-  override lazy val projectSettings = Seq(
-    shellPrompt := buildShellPrompt
-  )
-  val devnull: ProcessLogger = new ProcessLogger {
-    def info (s: => String) {}
-    def error (s: => String) { }
-    def buffer[T] (f: => T): T = f
-  }
-  def currBranch =
-    ("git status -sb" lines_! devnull headOption).
-      getOrElse("-").stripPrefix("## ")
-  val buildShellPrompt: State => String = {
-    case (state: State) =>
-      val currProject = Project.extract (state).currentProject.id
-      s"""$currProject:$currBranch> """
-  }
 }

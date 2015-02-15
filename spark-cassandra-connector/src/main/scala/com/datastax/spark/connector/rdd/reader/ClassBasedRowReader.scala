@@ -30,7 +30,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   @transient
   private val setterTypes: Map[String, Type] = {
     def argType(name: String) = {
-      val methodSymbol = tpe.declaration(newTermName(name)).asMethod
+      val methodSymbol = tpe.decl(TermName(name)).asMethod
       methodSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
     }
     columnMap.setters.keys.map(name => (name, argType(name))).toMap

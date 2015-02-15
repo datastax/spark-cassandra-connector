@@ -44,7 +44,15 @@ object CassandraSparkBuild extends Build {
   lazy val embedded = Project(
     id = s"$namespace-embedded",
     base = file(s"$namespace-embedded"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
+    settings = defaultSettings ++ Seq(
+      ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
+      libraryDependencies ++= Dependencies.embedded ++ Seq(
+        Dependencies.Compile.Embedded.kafkaExcludes(
+          "org.apache.kafka" %% "kafka" % (
+            CrossVersion.partialVersion(scalaVersion.value) match {
+              case Some((2, scalaMajor)) if scalaMajor >= 11 => "0.8.2.0"
+              case Some((2, 10)) => "0.8.0"
+            }))))
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
   lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
@@ -55,11 +63,35 @@ object CassandraSparkBuild extends Build {
     settings = demoSettings,
     dependencies = Seq(connector, jconnector, embedded))
 
-  lazy val kafkaStreaming = Project(
+  lazy val kafkaStreaming = project
+    /*Project(
     id = "kafka-streaming",
     base = demosPath / "kafka-streaming",
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.kafka),
-    dependencies = Seq(connector, embedded))
+    settings = demoSettings ++ Seq(
+      libraryDependencies ++= Dependencies.kafka,
+      libraryDependencies := {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, scalaMajor)) if scalaMajor >= 11 =>
+          libraryDependencies.value
+        case _ =>
+          //libraryDependencies.value :+ "org.scala-lang" % "scala-swing" % scalaVersion.value
+            libraryDependencies.value ++ Seq(
+            "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
+            "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
+            "org.scala-lang.modules" %% "scala-swing" % "1.0.1")
+      }
+    }
+    ),
+    dependencies = Seq(connector, embedded))*/
+
+  /*libraryDependencies ++= Dependencies.embedded ++ Seq(
+        Dependencies.Compile.Embedded.kafkaExcludes(
+          "org.apache.kafka" %% "kafka" % (
+            CrossVersion.partialVersion(scalaVersion.value) match {
+              case Some((2, scalaMajor)) if scalaMajor >= 11 => "0.8.2.0"
+              case Some((2, 10)) => "0.8.0"
+            }))*/
+
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
@@ -106,21 +138,23 @@ object Dependencies {
 
     object Embedded {
       val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"          % Akka                                      // ApacheV2
-      val kafka             = "org.apache.kafka"        %% "kafka"                 % Kafka exclude("org.slf4j", "slf4j-simple") // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"          % Cassandra exclude("ch.qos.logback", "logback-classic") exclude("ch.qos.logback", "logback-core") // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"            % JOpt // For kafka command line work
-      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % SparkRepl exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
+      val sparkRepl         = "org.apache.spark"        %% "spark-repl"            % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core_2.10") exclude("org.apache.spark", "spark-bagel_2.10") exclude("org.apache.spark", "spark-mllib_2.10") exclude("org.scala-lang", "scala-compiler") // ApacheV2
+
+      def kafkaExcludes(module: sbt.ModuleID): sbt.ModuleID = {
+        module exclude("org.slf4j", "slf4j-simple") exclude("com.sun.jmx", "jmxri") exclude("com.sun.jdmk", "jmxtools") exclude("net.sf.jopt-simple", "jopt-simple") // ApacheV2
+      }
     }
 
     object Demos {
-      val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka" % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
+      val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka"   % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
       val twitterStreaming  = "org.apache.spark"        %% "spark-streaming-twitter" % Spark exclude("com.google.guava", "guava") exclude("org.apache.spark", "spark-core") // ApacheV2
     }
 
     object Test {
       val akkaTestKit       = "com.typesafe.akka"       %% "akka-testkit"         % Akka            % "test,it"                   // ApacheV2
       val commonsIO         = "commons-io"              % "commons-io"            % CommonsIO       % "test,it"                   // ApacheV2
-      // Eventually migrate junit out in favor of the scala test APIs
       val junit             = "junit"                   % "junit"                 % "4.11"          % "test,it"                   // for now
       val junitInterface    = "com.novocode"            % "junit-interface"       % "0.10"          % "test,it"
       val scalatest         = "org.scalatest"           %% "scalatest"            % ScalaTest       % "test,it"                   // ApacheV2
@@ -148,8 +182,10 @@ object Dependencies {
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
 
+  // moving kafka dep out until v0.8.2.0 upgrade in spark
+  //excludeFilter in unmanagedSources := "EmbeddedKafka.scala"
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    Embedded.cassandraServer, Embedded.jopt, Embedded.kafka, Embedded.sparkRepl)
+    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl/*Embedded.kafka,*/)
 
   val kafka = Seq(Demos.kafkaStreaming)
 

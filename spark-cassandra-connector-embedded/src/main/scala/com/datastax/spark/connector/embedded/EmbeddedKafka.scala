@@ -4,9 +4,7 @@ import java.io.File
 import java.util.Properties
 
 import scala.concurrent.duration.{Duration, _}
-import kafka.producer._
-import kafka.admin.CreateTopicCommand
-import kafka.common.TopicAndPartition
+import kafka.admin.AdminUtils
 import kafka.producer.{KeyedMessage, ProducerConfig, Producer}
 import kafka.serializer.StringEncoder
 import kafka.server.{KafkaConfig, KafkaServer}
@@ -58,11 +56,11 @@ final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded 
   val producer = new Producer[String, String](producerConfig)
 
   def createTopic(topic: String, numPartitions: Int = 1, replicationFactor: Int = 1) {
-    CreateTopicCommand.createTopic(client, topic, numPartitions, replicationFactor, "0")
+    AdminUtils.createTopic(client, topic, numPartitions, replicationFactor)
     awaitPropagation(Seq(server), topic, 0, 2000.millis)
   }
 
-  def produceAndSendMessage(topic: String, sent: Map[String, Int]) {
+  def produceAndSendMessage(topic: String, sent: Map[String, Int]): Unit = {
     producer.send(createTestMessage(topic, sent): _*)
   }
 
@@ -71,9 +69,17 @@ final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded 
 
   def awaitPropagation(servers: Seq[KafkaServer], topic: String, partition: Int, timeout: Duration): Unit =
     awaitCond(
-      p = servers.forall(_.apis.leaderCache.keySet.contains(TopicAndPartition(topic, partition))),
+      servers.forall { server =>
+         val partitionStateOpt = server.apis.metadataCache.getPartitionInfo(topic, partition)
+         partitionStateOpt match {
+           case Some(partitionState) =>
+             partitionState.leaderIsrAndControllerEpoch.leaderAndIsr.leader >= 0 // is valid broker id
+           case _ => false
+         }
+       },
       max = timeout,
-      message = s"Partition [$topic, $partition] metadata not propagated after timeout")
+      message = s"Partition [$topic, $partition] metadata not propagated after timeout"
+    )
 
   def shutdown(): Unit = try {
     println(s"Shutting down Kafka server.")
