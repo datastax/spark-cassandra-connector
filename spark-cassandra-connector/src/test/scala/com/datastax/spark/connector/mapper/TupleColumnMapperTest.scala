@@ -3,7 +3,7 @@ package com.datastax.spark.connector.mapper
 import java.util.Date
 
 import com.datastax.spark.connector.ColumnIndex
-import com.datastax.spark.connector.cql.{TableDef, RegularColumn, ColumnDef}
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types._
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
@@ -11,8 +11,8 @@ import org.junit.Test
 
 class TupleColumnMapperTest {
 
-  private val c1 = ColumnDef("column1", RegularColumn, IntType)
-  private val c2 = ColumnDef("column2", RegularColumn, IntType)
+  private val c1 = ColumnDef("column1", PartitionKeyColumn, IntType)
+  private val c2 = ColumnDef("column2", ClusteringColumn(0), IntType)
   private val c3 = ColumnDef("column3", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
 

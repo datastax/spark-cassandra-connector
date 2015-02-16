@@ -53,7 +53,11 @@ case class TableDef(keyspaceName: String,
                     partitionKey: Seq[ColumnDef],
                     clusteringColumns: Seq[ColumnDef],
                     regularColumns: Seq[ColumnDef]) {
-  
+
+  require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
+  require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
+  require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
+
   lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
   lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
@@ -75,7 +79,7 @@ case class TableDef(keyspaceName: String,
 object TableDef {
 
   /** Constructs a table definition based on the mapping provided by
-    * appropriate [[ColumnMapper]] for the given type. */
+    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T : ColumnMapper](keyspaceName: String, tableName: String): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName)
 }

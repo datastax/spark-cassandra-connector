@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql.{RegularColumn, TableDef, ColumnDef}
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{VarCharType, IntType}
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
@@ -13,8 +13,8 @@ class DefaultColumnMapperTestClass2(var property1: String, var camelCaseProperty
 
 class DefaultColumnMapperTest {
 
-  private val c1 = ColumnDef("property_1", RegularColumn, IntType)
-  private val c2 = ColumnDef("camel_case_property", RegularColumn, IntType)
+  private val c1 = ColumnDef("property_1", PartitionKeyColumn, IntType)
+  private val c2 = ColumnDef("camel_case_property", ClusteringColumn(0), IntType)
   private val c3 = ColumnDef("UpperCaseColumn", RegularColumn, IntType)
   private val c4 = ColumnDef("column", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4))
