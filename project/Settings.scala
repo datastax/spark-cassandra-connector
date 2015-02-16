@@ -115,7 +115,8 @@ object Settings extends Build {
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
-    autoAPIMappings := true
+    autoAPIMappings := true,
+    compileOrder := CompileOrder.Mixed
   )
 
   lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings

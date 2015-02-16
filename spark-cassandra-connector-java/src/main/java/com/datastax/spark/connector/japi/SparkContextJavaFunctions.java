@@ -40,7 +40,7 @@ public class SparkContextJavaFunctions {
      */
     public <K, V> CassandraJavaPairRDD<K, V> toJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd,
                                                            Class<K> keyClass, Class<V> valueClass) {
-        return new CassandraJavaPairRDD<>(rdd, keyClass, valueClass);
+        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyClass), getClassTag(valueClass));
     }
 
 
@@ -116,7 +116,7 @@ public class SparkContextJavaFunctions {
         CassandraRDD<Tuple2<K, V>> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table,
                 getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
 
-        return new CassandraJavaPairRDD<>(rdd, keyRRF.targetClass(), valueRRF.targetClass());
+        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
     }
 
 
