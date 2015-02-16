@@ -2,12 +2,17 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import org.apache.spark.api.java.function.{Function => JFunction}
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.util.JavaApiHelper
+
 import org.apache.commons.lang3.tuple
 import org.scalatest._
 
@@ -306,4 +311,35 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     udtValue.getInt("zip") should be(11120)
   }
 
+  it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {
+
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+    }
+
+    val f: JFunction[CassandraRow, Int] = new JFunction[CassandraRow, Int]() {
+      override def call(row: CassandraRow) = row.getInt("key")
+    }
+
+    val results = javaFunctions(sc)
+      .cassandraTable("java_api_test", "wide_rows")
+      .select("key", "group", "value")
+      .spanBy[Int](f, JavaApiHelper.getClassTag(classOf[Int]))
+      .collect()
+      .toMap
+
+    results should have size 2
+    results should contain key 10
+    results should contain key 20
+    results(10).size should be(3)
+    results(10).map(_.getInt("group")).toSeq should be(Seq(10, 11, 12))
+    results(20).size should be(3)
+    results(20).map(_.getInt("group")).toSeq should be(Seq(20, 21, 22))
+  }
 }

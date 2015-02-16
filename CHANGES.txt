@@ -1,3 +1,6 @@
+1.2.0 (unreleased)
+ * Exposed spanBy and spanByKey in Java API (SPARKC-39)
+
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
    the settings are automatically distributed to Spark Executors (SPARKC-28)

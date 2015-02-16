@@ -6,7 +6,9 @@ import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
 import com.datastax.spark.connector.util.JavaApiHelper;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import scala.reflect.ClassTag;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
@@ -97,5 +99,15 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public CassandraJavaRDD<R> withReadConf(ReadConf config) {
         CassandraRDD<R> newRDD = rdd().withReadConf(config);
         return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
+     * Applies a function to each item, and groups consecutive items having the same value together.
+     * Contrary to `groupBy`, items from the same group must be already next to each other in the
+     * original collection. Works locally on each partition, so items from different
+     * partitions will never be placed in the same group.
+     */
+    public <K> JavaPairRDD<K, Iterable<R>> spanBy(Function<R, K> f, ClassTag<K> keyClassTag) {
+        return CassandraJavaUtil.javaFunctions(rdd()).spanBy(f, keyClassTag);
     }
 }
