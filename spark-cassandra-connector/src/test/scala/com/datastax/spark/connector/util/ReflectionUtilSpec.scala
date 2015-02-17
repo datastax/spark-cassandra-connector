@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.util
 
+import scala.reflect.runtime.universe._
+
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, DefaultConnectionFactory, CassandraConnectionFactory}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -41,4 +43,49 @@ class ReflectionUtilSpec extends FlatSpec with Matchers {
     }
   }
 
+  private class ClassWithConstructor(arg1: Int, arg2: List[String])
+
+  "ReflectionUtil.constructorParams" should "return proper constructor param names and types for a class with a single constructor" in {
+    val params = ReflectionUtil.constructorParams[ClassWithConstructor]
+    params should have size 2
+    params(0)._1 should be("arg1")
+    params(1)._1 should be("arg2")
+    assert(params(0)._2 =:= typeOf[Int])
+    assert(params(1)._2 =:= typeOf[List[String]])
+  }
+
+  private class ClassWithTwoConstructors(arg1: Int, arg2: List[String]) {
+    def this(arg1: Int) = this(arg1, List.empty)
+  }
+
+  it should "return main constructor's param names and types for a class with multiple constructors" in {
+    val params = ReflectionUtil.constructorParams[ClassWithTwoConstructors]
+    params should have size 2
+    params(0)._1 should be("arg1")
+    params(1)._1 should be("arg2")
+    assert(params(0)._2 =:= typeOf[Int])
+    assert(params(1)._2 =:= typeOf[List[String]])
+  }
+
+  private class ClassWithGetters(val arg1: Int, val arg2: List[String])
+
+  "ReflectionUtil.getters" should "return getter names and types" in {
+    val getters = ReflectionUtil.getters[ClassWithGetters]
+    getters should have size 2
+    getters(0)._1 should be("arg1")
+    getters(1)._1 should be("arg2")
+    assert(getters(0)._2 =:= typeOf[Int])
+    assert(getters(1)._2 =:= typeOf[List[String]])
+  }
+
+  private class ClassWithSetters(var arg1: Int, var arg2: List[String])
+
+  "ReflectionUtil.setters" should "return setter names and types" in {
+    val setters = ReflectionUtil.setters[ClassWithSetters]
+    setters should have size 2
+    setters(0)._1 should be("arg1_$eq")
+    setters(1)._1 should be("arg2_$eq")
+    assert(setters(0)._2 =:= typeOf[Int])
+    assert(setters(1)._2 =:= typeOf[List[String]])
+  }
 }

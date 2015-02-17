@@ -14,9 +14,9 @@ import scala.collection.JavaConversions._
 class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[String])
   extends RowWriter[T] {
 
-  private val columnMapper = implicitly[ColumnMapper[T]]
-  private val cls = columnMapper.classTag.runtimeClass.asInstanceOf[Class[T]]
-  private val columnMap = columnMapper.columnMap(table)
+  // do not save reference to ColumnMapper in a field, because it is non Serializable
+  private val cls = implicitly[ColumnMapper[T]].classTag.runtimeClass.asInstanceOf[Class[T]]
+  private val columnMap = implicitly[ColumnMapper[T]].columnMap(table)
   private val selectedColumnsSet = selectedColumns.toSet
   private val selectedColumnsIndexed = selectedColumns.toIndexedSeq
 

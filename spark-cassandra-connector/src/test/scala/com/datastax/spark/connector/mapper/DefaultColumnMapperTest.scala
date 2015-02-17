@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql.{RegularColumn, TableDef, ColumnDef}
-import com.datastax.spark.connector.types.IntType
+import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.types.{VarCharType, IntType}
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
@@ -13,10 +13,10 @@ class DefaultColumnMapperTestClass2(var property1: String, var camelCaseProperty
 
 class DefaultColumnMapperTest {
 
-  private val c1 = ColumnDef("test", "table", "property_1", RegularColumn, IntType)
-  private val c2 = ColumnDef("test", "table", "camel_case_property", RegularColumn, IntType)
-  private val c3 = ColumnDef("test", "table", "UpperCaseColumn", RegularColumn, IntType)
-  private val c4 = ColumnDef("test", "table", "column", RegularColumn, IntType)
+  private val c1 = ColumnDef("property_1", PartitionKeyColumn, IntType)
+  private val c2 = ColumnDef("camel_case_property", ClusteringColumn(0), IntType)
+  private val c3 = ColumnDef("UpperCaseColumn", RegularColumn, IntType)
+  private val c4 = ColumnDef("column", RegularColumn, IntType)
   private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4))
 
   @Test
@@ -104,15 +104,64 @@ class DefaultColumnMapperTest {
   }
 
   @Test
-  def testSerialize() {
-    val mapper = new DefaultColumnMapper[DefaultColumnMapperTestClass1]
-    SerializationUtils.roundtrip(mapper)
-  }
-
-  @Test
   def testImplicit() {
     val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass1]]
     assertTrue(mapper.isInstanceOf[DefaultColumnMapper[_]])
   }
 
+  @Test
+  def testNewTableForCaseClass(): Unit = {
+    val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass1]]
+    val table = mapper.newTable("keyspace", "table")
+
+    assertEquals("keyspace", table.keyspaceName)
+    assertEquals("table", table.tableName)
+    assertEquals(3, table.allColumns.size)
+    assertEquals(1, table.partitionKey.size)
+    assertEquals("property_1", table.allColumns(0).columnName)
+    assertEquals(VarCharType, table.allColumns(0).columnType)
+    assertEquals("camel_case_property", table.allColumns(1).columnName)
+    assertEquals(IntType, table.allColumns(1).columnType)
+    assertEquals("upper_case_column", table.allColumns(2).columnName)
+    assertEquals(IntType, table.allColumns(2).columnType)
+  }
+
+  @Test
+  def testNewTableForClassWithVars(): Unit = {
+    val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass2]]
+    val table = mapper.newTable("keyspace", "table")
+
+    assertEquals("keyspace", table.keyspaceName)
+    assertEquals("table", table.tableName)
+    assertEquals(3, table.allColumns.size)
+    assertEquals(1, table.partitionKey.size)
+    assertEquals("property_1", table.allColumns(0).columnName)
+    assertEquals(VarCharType, table.allColumns(0).columnType)
+    assertEquals("camel_case_property", table.allColumns(1).columnName)
+    assertEquals(IntType, table.allColumns(1).columnType)
+    assertEquals("upper_case_column", table.allColumns(2).columnName)
+    assertEquals(IntType, table.allColumns(2).columnType)
+  }
+
+  class Foo
+  case class ClassWithUnsupportedPropertyType(property1: Foo, property2: Int)
+
+  @Test
+  def testNewTableForClassWithUnsupportedPropertyType(): Unit = {
+    val mapper = implicitly[ColumnMapper[ClassWithUnsupportedPropertyType]]
+    val table = mapper.newTable("keyspace", "table")
+
+    assertEquals("keyspace", table.keyspaceName)
+    assertEquals("table", table.tableName)
+    assertEquals(1, table.allColumns.size)
+    assertEquals(1, table.partitionKey.size)
+    assertEquals("property_2", table.allColumns(0).columnName)
+    assertEquals(IntType, table.allColumns(0).columnType)
+  }
+
+  @Test(expected = classOf[IllegalArgumentException])
+  def testNewTableForEmptyClass(): Unit = {
+    val mapper = implicitly[ColumnMapper[Foo]]     // should fail, because there are no useful properties
+    mapper.newTable("keyspace", "table")
+  }
 }

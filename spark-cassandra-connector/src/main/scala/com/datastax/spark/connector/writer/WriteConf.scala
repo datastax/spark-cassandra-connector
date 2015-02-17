@@ -35,7 +35,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
   private[writer] val optionsAsColumns: (String, String) => Seq[ColumnDef] = { (keyspace, table) =>
     def toRegularColDef(opt: WriteOption[_], dataType: DataType) = opt match {
       case WriteOption(PerRowWriteOptionValue(placeholder)) =>
-        Some(ColumnDef(keyspace, table, placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
+        Some(ColumnDef(placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
       case _ => None
     }
 

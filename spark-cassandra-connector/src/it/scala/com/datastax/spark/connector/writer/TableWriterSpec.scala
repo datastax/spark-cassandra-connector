@@ -9,9 +9,9 @@ import scala.collection.JavaConversions._
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 
@@ -59,10 +59,20 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     }
   }
 
-  "A TableWriter" should "write RDD of tuples" in {
+  "A TableWriter" should "write RDD of tuples to an existing table" in {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     sc.parallelize(col).saveToCassandra("write_test", "key_value_1", SomeColumns("key", "group", "value"))
     verifyKeyValueTable("key_value_1")
+  }
+
+  it should "write RDD of tuples to a new table" in {
+    val pkey = ColumnDef("key", PartitionKeyColumn, IntType)
+    val group = ColumnDef("group", ClusteringColumn(0), BigIntType)
+    val value = ColumnDef("value", RegularColumn, TextType)
+    val table = TableDef("write_test", "new_kv_table", Seq(pkey), Seq(group), Seq(value))
+    val rows = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
+    sc.parallelize(rows).saveAsCassandraTableEx(table, SomeColumns("key", "group", "value"))
+    verifyKeyValueTable("new_kv_table")
   }
 
   it should "write RDD of tuples applying proper data type conversions" in {
@@ -75,6 +85,12 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
     sc.parallelize(col).saveToCassandra("write_test", "key_value_3")
     verifyKeyValueTable("key_value_3")
+  }
+
+  it should "write RDD of case class objects to a new table using auto mapping" in {
+    val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
+    sc.parallelize(col).saveAsCassandraTable("write_test", "new_kv_table_from_case_class")
+    verifyKeyValueTable("new_kv_table_from_case_class")
   }
 
   it should "write RDD of case class objects applying proper data type conversions" in {

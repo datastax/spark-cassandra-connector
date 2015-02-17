@@ -70,11 +70,11 @@ object ColumnDataType {
       StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
 
     cassandraType match {
-      case connector.types.SetType(et)             => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)            => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)         => catalyst.types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
-      case connector.types.UserDefinedType(fields) => catalyst.types.StructType(fields.map(catalystStructField))
-      case _                                       => primitiveTypeMap(cassandraType)
+      case connector.types.SetType(et)                => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.ListType(et)               => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.MapType(kt, vt)            => catalyst.types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.UserDefinedType(_, fields) => catalyst.types.StructType(fields.map(catalystStructField))
+      case _                                          => primitiveTypeMap(cassandraType)
     }
   }
 }

@@ -13,6 +13,8 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Vector[T]]]
   }
+
+  def cqlTypeName = s"list<${elemType.cqlTypeName}>"
 }
 
 case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[T]] {
@@ -21,6 +23,8 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Set[T]]]
   }
+
+  def cqlTypeName = s"set<${elemType.cqlTypeName}>"
 }
 
 case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) extends CollectionColumnType[Map[K, V]] {
@@ -30,5 +34,7 @@ case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) exten
     implicit val valueTypeTag = valueType.scalaTypeTag
     implicitly[TypeTag[Map[K, V]]]
   }
+
+  def cqlTypeName = s"map<${keyType.cqlTypeName}, ${valueType.cqlTypeName}>"
 }
 

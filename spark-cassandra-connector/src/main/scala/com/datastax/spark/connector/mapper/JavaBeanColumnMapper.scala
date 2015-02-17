@@ -29,20 +29,23 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
 
   override protected def getterToColumnName(getterName: String, tableDef: TableDef) = {
     val p = propertyName(getterName)
-    columnNameOverride.getOrElse(p, columnNameForProperty(p, tableDef))
+    columnNameOverride.getOrElse(p, ColumnMapperConvention.columnNameForProperty(p, tableDef))
   }
 
   override protected def setterToColumnName(setterName: String, tableDef: TableDef) = {
     val p = propertyName(setterName)
-    columnNameOverride.getOrElse(p, columnNameForProperty(p, tableDef))
+    columnNameOverride.getOrElse(p, ColumnMapperConvention.columnNameForProperty(p, tableDef))
   }
 
   override protected def constructorParamToColumnName(paramName: String, tableDef: TableDef) = {
-    columnNameOverride.getOrElse(paramName, columnNameForProperty(paramName, tableDef))
+    columnNameOverride.getOrElse(paramName, ColumnMapperConvention.columnNameForProperty(paramName, tableDef))
   }
 
   /** Java Beans allow nulls in property values */
   override protected def allowsNull = true
+
+  // TODO: Implement
+  override def newTable(keyspaceName: String, tableName: String): TableDef = ???
 }
 
 object JavaBeanColumnMapper {

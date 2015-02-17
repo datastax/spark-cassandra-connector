@@ -114,7 +114,7 @@ object AnyObjectFactory extends Logging {
   private[connector] val paranamer = new AdaptiveParanamer
 
   private[connector] def getDefaultConstructor[T](clazz: Class[T]): Constructor[T] = {
-    val ctor = clazz.getConstructors()(0)
+    val ctor = clazz.getConstructors.maxBy(_.getParameterTypes.length)
     paranamer.lookupParameterNames(ctor)
     ctor.asInstanceOf[Constructor[T]]
   }

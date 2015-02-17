@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.util.Logging
 
 import scala.collection.JavaConversions._
@@ -14,9 +15,7 @@ case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
 /** A Cassandra column metadata that can be serialized. */
-case class ColumnDef(keyspaceName: String,
-                     tableName: String,
-                     columnName: String,
+case class ColumnDef(columnName: String,
                      columnRole: ColumnRole,
                      columnType: ColumnType[_],
                      indexed : Boolean = false) {
@@ -33,15 +32,18 @@ case class ColumnDef(keyspaceName: String,
     case ClusteringColumn(i) => Some(i)
     case _ => None
   }
+
+  def cql = {
+    def quote(str: String) = "\"" + str + "\""
+    s"${quote(columnName)} ${columnType.cqlTypeName}"
+  }
 }
 
 object ColumnDef {
 
   def apply(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
-    val table = column.getTable
-    val keyspace = table.getKeyspace
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, column.getIndex != null)
+    ColumnDef(column.getName, columnRole, columnType, column.getIndex != null)
   }
 }
 
@@ -51,10 +53,35 @@ case class TableDef(keyspaceName: String,
                     partitionKey: Seq[ColumnDef],
                     clusteringColumns: Seq[ColumnDef],
                     regularColumns: Seq[ColumnDef]) {
-  
+
+  require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
+  require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
+  require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
+
   lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
   lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
+
+  def cql = {
+    def quote(str: String) = "\"" + str + "\""
+    val columnList = allColumns.map(_.cql).mkString(",\n  ")
+    val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
+    val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
+    val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
+
+    s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
+       |  $columnList,
+       |  PRIMARY KEY ($primaryKeyClause)
+       |)""".stripMargin
+  }
+}
+
+object TableDef {
+
+  /** Constructs a table definition based on the mapping provided by
+    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
+  def fromType[T : ColumnMapper](keyspaceName: String, tableName: String): TableDef =
+    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
@@ -76,20 +103,13 @@ case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
 
 object Schema extends Logging {
 
-  private def toColumnDef(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
-    val table = column.getTable
-    val keyspace = table.getKeyspace
-    val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(keyspace.getName, table.getName, column.getName, columnRole, columnType, column.getIndex != null)
-  }
-
   private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] =
     for (column <- table.getPartitionKey) yield
-      toColumnDef(column, PartitionKeyColumn)
+      ColumnDef(column, PartitionKeyColumn)
 
   private def fetchClusteringColumns(table: TableMetadata): Seq[ColumnDef] =
     for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
-      toColumnDef(column, ClusteringColumn(index))
+      ColumnDef(column, ClusteringColumn(index))
 
   private def fetchRegularColumns(table: TableMetadata) = {
     val primaryKey = table.getPrimaryKey.toSet

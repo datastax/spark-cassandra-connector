@@ -4,8 +4,10 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Calendar, GregorianCalendar, UUID, Date}
 
-import com.datastax.spark.connector.UDTValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
+import com.datastax.spark.connector.util.Symbols
+import Symbols._
+
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -632,24 +634,6 @@ object TypeConverter {
       case x => nestedConverter.convert(x).asInstanceOf[AnyRef]
     }
   }
-
-  private val OptionSymbol = typeOf[Option[Any]].asInstanceOf[TypeRef].sym
-  private val ListSymbol = typeOf[List[Any]].asInstanceOf[TypeRef].sym
-  private val VectorSymbol = typeOf[Vector[Any]].asInstanceOf[TypeRef].sym
-  private val SetSymbol = typeOf[Set[Any]].asInstanceOf[TypeRef].sym
-  private val TreeSetSymbol = typeOf[TreeSet[Any]].asInstanceOf[TypeRef].sym
-  private val SeqSymbol = typeOf[Seq[Any]].asInstanceOf[TypeRef].sym
-  private val IndexedSeqSymbol = typeOf[IndexedSeq[Any]].asInstanceOf[TypeRef].sym
-  private val IterableSymbol = typeOf[Iterable[Any]].asInstanceOf[TypeRef].sym
-  private val MapSymbol = typeOf[Map[Any, Any]].asInstanceOf[TypeRef].sym
-  private val TreeMapSymbol = typeOf[TreeMap[Any, Any]].asInstanceOf[TypeRef].sym
-
-  private val JavaListSymbol = typeOf[java.util.List[Any]].asInstanceOf[TypeRef].sym
-  private val JavaArrayListSymbol = typeOf[java.util.ArrayList[Any]].asInstanceOf[TypeRef].sym
-  private val JavaSetSymbol = typeOf[java.util.Set[Any]].asInstanceOf[TypeRef].sym
-  private val JavaHashSetSymbol = typeOf[java.util.HashSet[Any]].asInstanceOf[TypeRef].sym
-  private val JavaMapSymbol = typeOf[java.util.Map[Any, Any]].asInstanceOf[TypeRef].sym
-  private val JavaHashMapSymbol = typeOf[java.util.HashMap[Any, Any]].asInstanceOf[TypeRef].sym
 
   private def orderingFor(tpe: Type): Option[Ordering[_]] = {
     if      (tpe =:= typeOf[Boolean]) Some(implicitly[Ordering[Boolean]])
