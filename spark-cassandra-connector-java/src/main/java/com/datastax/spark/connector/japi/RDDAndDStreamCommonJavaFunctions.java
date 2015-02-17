@@ -174,8 +174,10 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withBatchSize(BatchSize batchSize) {
             if (!Objects.equals(writeConf.batchSize(), batchSize))
-                return withWriteConf(new WriteConf(batchSize, writeConf.batchBufferSize(), writeConf.batchLevel(),
-                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
+                return withWriteConf(
+                    new WriteConf(batchSize, writeConf.batchBufferSize(), writeConf.batchLevel(),
+                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.throughputMiBPS(),
+                        writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -190,8 +192,10 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withBatchBufferSize(int batchBufferSize) {
             if (writeConf.batchBufferSize() != batchBufferSize)
-                return withWriteConf(new WriteConf(writeConf.batchSize(), batchBufferSize, writeConf.batchLevel(),
-                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
+                return withWriteConf(
+                    new WriteConf(writeConf.batchSize(), batchBufferSize, writeConf.batchLevel(),
+                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.throughputMiBPS(),
+                        writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -206,8 +210,10 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withBatchLevel(BatchLevel batchLevel) {
             if (!Objects.equals(writeConf.batchLevel(), batchLevel))
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), batchLevel,
-                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
+                return withWriteConf(
+                    new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), batchLevel,
+                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), writeConf.throughputMiBPS(),
+                        writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -222,8 +228,10 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withConsistencyLevel(ConsistencyLevel consistencyLevel) {
             if (writeConf.consistencyLevel() != consistencyLevel)
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), writeConf.batchLevel(),
-                        consistencyLevel, writeConf.parallelismLevel(), writeConf.ttl(), writeConf.timestamp()));
+                return withWriteConf(
+                    new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), writeConf.batchLevel(),
+                        consistencyLevel, writeConf.parallelismLevel(), writeConf.throughputMiBPS(),
+                        writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
@@ -238,14 +246,35 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          */
         public WriterBuilder withParallelismLevel(int parallelismLevel) {
             if (writeConf.parallelismLevel() != parallelismLevel)
-                return withWriteConf(new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), writeConf.batchLevel(),
-                        writeConf.consistencyLevel(), parallelismLevel, writeConf.ttl(), writeConf.timestamp()));
+                return withWriteConf(
+                    new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), writeConf.batchLevel(),
+                        writeConf.consistencyLevel(), parallelismLevel, writeConf.throughputMiBPS(),
+                        writeConf.ttl(), writeConf.timestamp()));
             else
                 return this;
         }
 
+        /**
+         * Returns a copy of this builder with the new write configuration which has parallelism level changed to a
+         * specified one.
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
+        public WriterBuilder withThroughputMBPS(int throughputMBPS) {
+            if (writeConf.throughputMiBPS() != throughputMBPS)
+                return withWriteConf(
+                    new WriteConf(writeConf.batchSize(), writeConf.batchBufferSize(), writeConf.batchLevel(),
+                        writeConf.consistencyLevel(), writeConf.parallelismLevel(), throughputMBPS,
+                        writeConf.ttl(), writeConf.timestamp()));
+            else
+              return this;
+        }
 
-        private WriterBuilder withTimestamp(TimestampOption timestamp) {
+
+
+      private WriterBuilder withTimestamp(TimestampOption timestamp) {
             return Objects.equals(writeConf.timestamp(), timestamp)
                 ? this
                 : withWriteConf(new WriteConf(
@@ -254,6 +283,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
                     writeConf.batchLevel(),
                     writeConf.consistencyLevel(),
                     writeConf.parallelismLevel(),
+                    writeConf.throughputMiBPS(),
                     writeConf.ttl(),
                     timestamp));
         }
@@ -331,6 +361,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
                     writeConf.batchLevel(),
                     writeConf.consistencyLevel(),
                     writeConf.parallelismLevel(),
+                    writeConf.throughputMiBPS(),
                     ttl,
                     writeConf.timestamp()));
         }

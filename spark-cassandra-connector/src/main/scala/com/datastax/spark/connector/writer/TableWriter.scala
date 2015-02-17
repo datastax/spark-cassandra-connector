@@ -99,8 +99,7 @@ class TableWriter[T] private (
 
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
-    val updater = OutputMetricsUpdater(taskContext)
-
+    val updater = OutputMetricsUpdater(taskContext, writeConf)
     connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
@@ -128,11 +127,13 @@ class TableWriter[T] private (
 
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchBufferSize, data)
+      val rateLimiter = new RateLimiter(writeConf.throughputMiBPS * 1024 * 1024, 1024 * 1024)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
 
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite)
+        rateLimiter.maybeSleep(stmtToWrite.bytesCount)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()
