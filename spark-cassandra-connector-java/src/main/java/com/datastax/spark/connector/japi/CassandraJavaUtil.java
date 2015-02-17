@@ -16,6 +16,7 @@ import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
@@ -94,6 +95,13 @@ public class CassandraJavaUtil {
      */
     public static <T> RDDJavaFunctions<T> javaFunctions(JavaRDD<T> rdd) {
         return new RDDJavaFunctions<>(rdd.rdd());
+    }
+
+    /**
+     * A static factory method to create a {@link PairRDDJavaFunctions} based on an existing {@link JavaPairRDD} instance.
+     */
+    public static <K, V> PairRDDJavaFunctions<K, V> javaFunctions(JavaPairRDD<K, V> rdd) {
+        return new PairRDDJavaFunctions<>(rdd.rdd(), rdd.kClassTag());
     }
 
     /**

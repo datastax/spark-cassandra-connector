@@ -220,7 +220,7 @@ public class CassandraJavaUtilTest {
     public void testJavaFunctions4() throws Exception {
         RDD rdd = mock(RDD.class);
         RDDJavaFunctions rddjf = javaFunctions(rdd);
-        assertThat(rddjf.rdd, is(rdd));
+        assertThat(rddjf.rdd(), is(rdd));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class CassandraJavaUtilTest {
         JavaRDD jrdd = mock(JavaRDD.class);
         when(jrdd.rdd()).thenReturn(rdd);
         RDDJavaFunctions rddjf = javaFunctions(jrdd);
-        assertThat(rddjf.rdd, is(rdd));
+        assertThat(rddjf.rdd(), is(rdd));
     }
 
     @Test
