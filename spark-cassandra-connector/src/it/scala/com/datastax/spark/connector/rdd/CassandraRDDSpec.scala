@@ -581,6 +581,13 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results.head.ttlOfValue <= ttl
   }
 
+  it should "allow to specify rows number limit" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time").where("key=1").limit(2).collect()
+    results should have length 2
+    results(0)._3 shouldBe "value1"
+    results(1)._3 shouldBe "value2"
+  }
+
   it should "count the CassandraRDD items" in {
     val result = sc.cassandraTable("read_test", "big_table").count()
     result shouldBe bigTableRowCount

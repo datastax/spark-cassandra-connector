@@ -7,6 +7,7 @@
  * Exposed authConf in CassandraConnector
  * Overridden count() implementation in CassandraRDD which uses native Cassandra count (SPARKC-52)
  * Removed custom Logging class (SPARKC-54)
+ * Added support for passing the limit clause to CQL in order to fetch top n results (SPARKC-31)
 
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
