@@ -97,34 +97,36 @@ class TableWriter[T] private (
     }
   }
 
+  def batchRoutingKey(session: Session, routingKeyGenerator: RoutingKeyGenerator)(bs: BoundStatement): Any = {
+    writeConf.batchLevel match {
+      case BatchLevel.All => 0
+
+      case BatchLevel.ReplicaSet =>
+        if (bs.getRoutingKey == null)
+          bs.setRoutingKey(routingKeyGenerator(bs))
+        session.getCluster.getMetadata.getReplicas(keyspaceName, bs.getRoutingKey).hashCode() // hash code is enough
+
+      case BatchLevel.Partition =>
+        if (bs.getRoutingKey == null) {
+          bs.setRoutingKey(routingKeyGenerator(bs))
+        }
+        bs.getRoutingKey.duplicate()
+    }
+  }
+
   /** Main entry point */
   def write(taskContext: TaskContext, data: Iterator[T]) {
     val updater = OutputMetricsUpdater(taskContext, writeConf)
     connector.withSessionDo { session =>
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
-      val queryExecutor: QueryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
+      val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
         Some(updater.batchSucceeded), Some(updater.batchFailed))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
       val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
-
-      val batchKeyGenerator = writeConf.batchLevel match {
-        case BatchLevel.All => bs: BoundStatement => 0
-
-        case BatchLevel.ReplicaSet => bs: BoundStatement =>
-          if (bs.getRoutingKey == null)
-            bs.setRoutingKey(routingKeyGenerator(bs))
-          session.getCluster.getMetadata.getReplicas(keyspaceName, bs.getRoutingKey).hashCode() // hash code is enough
-
-        case BatchLevel.Partition => bs: BoundStatement =>
-          if (bs.getRoutingKey == null) {
-            bs.setRoutingKey(routingKeyGenerator(bs))
-          }
-          bs.getRoutingKey.duplicate()
-      }
-
+      val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchBufferSize, data)
       val rateLimiter = new RateLimiter(writeConf.throughputMiBPS * 1024 * 1024, 1024 * 1024)
