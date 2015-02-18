@@ -54,7 +54,8 @@ class CassandraRDD[R] private[connector] (
     val tableName: String,
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
-    val readConf: ReadConf = ReadConf())(
+    val readConf: ReadConf = ReadConf(),
+    val empty: Boolean = false)(
   implicit
     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
@@ -80,12 +81,14 @@ class CassandraRDD[R] private[connector] (
 
   private def copy(columnNames: ColumnSelector = columnNames,
                    where: CqlWhereClause = where,
-                   readConf: ReadConf = readConf, connector: CassandraConnector = connector): CassandraRDD[R] = {
+                   readConf: ReadConf = readConf,
+                   empty: Boolean = empty,
+                   connector: CassandraConnector = connector): CassandraRDD[R] = {
     require(sc != null,
       "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
       "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +
       "RDD transformations are not allowed inside lambdas used in other RDD transformations.")
-    new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, readConf, empty)
   }
 
   /** Returns a copy of this Cassandra RDD with specified connector */
@@ -107,7 +110,9 @@ class CassandraRDD[R] private[connector] (
 
   /** Produces the empty CassandraRDD which has the same signature and properties, but it does not
     * perform any validation and it does not even try to return any rows. */
-  def toEmptyCassandraRDD = new EmptyCassandraRDD[R](sc, connector, keyspaceName, tableName)
+  def toEmptyCassandraRDD = {
+    copy(empty = true)
+  }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
   private def checkColumnsAvailable(columns: Seq[NamedColumnRef], availableColumns: Seq[NamedColumnRef]) {
@@ -331,12 +336,16 @@ class CassandraRDD[R] private[connector] (
   private def quote(name: String) = "\"" + name + "\""
 
   override def getPartitions: Array[Partition] = {
-    verify // let's fail fast
-    val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
-    logDebug(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
-    logTrace("Partitions: \n" + partitions.mkString("\n"))
-    partitions
+    if (empty) {
+      Array.empty
+    } else {
+      verify // let's fail fast
+      val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
+      val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
+      logDebug(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
+      logTrace("Partitions: \n" + partitions.mkString("\n"))
+      partitions
+    }
   }
 
   override def getPreferredLocations(split: Partition) =
