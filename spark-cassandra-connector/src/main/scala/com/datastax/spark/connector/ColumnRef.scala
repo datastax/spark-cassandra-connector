@@ -47,7 +47,7 @@ case class WriteTime(columnName: String) extends NamedColumnRef {
   override def toString: String = selectedAs
 }
 
-case object CountColumn extends SelectableColumnRef {
+case object RowCountRef extends SelectableColumnRef {
   override def selectedAs: String = "count"
   override def cql: String = "count(*)"
 }

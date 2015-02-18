@@ -161,7 +161,7 @@ class CassandraRDD[R] private[connector] (
       case SomeColumns(_) => logWarning("You are about to count rows but an explicit projection has been specified.")
       case _ =>
     }
-    new CassandraRDD[Long](sc, connector, keyspaceName, tableName, SomeColumns(CountColumn), where, readConf).reduce(_ + _)
+    new CassandraRDD[Long](sc, connector, keyspaceName, tableName, SomeColumns(RowCountRef), where, readConf).reduce(_ + _)
   }
 
   /** Maps each row into object of a different type using provided function taking column value(s) as argument(s).
