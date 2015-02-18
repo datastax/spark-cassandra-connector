@@ -25,6 +25,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      batchLevel: BatchLevel = WriteConf.DefaultBatchLevel,
                      consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
                      parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
+                     throughputMiBPS: Int = WriteConf.DefaultThroughputMiBPS,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue) {
 
@@ -42,6 +43,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
     Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
   }
 
+  val throttlingEnabled = throughputMiBPS < WriteConf.DefaultThroughputMiBPS
 }
 
 
@@ -51,6 +53,7 @@ object WriteConf {
   val DefaultParallelismLevel = 8
   val DefaultBatchBufferSize = 1000
   val DefaultBatchLevel = BatchLevel.Partition
+  val DefaultThroughputMiBPS = Int.MaxValue
 
   def fromSparkConf(conf: SparkConf): WriteConf = {
 
@@ -83,10 +86,14 @@ object WriteConf {
     val parallelismLevel = conf.getInt(
       "spark.cassandra.output.concurrent.writes", DefaultParallelismLevel)
 
+    val throughputMiBPS = conf.getInt(
+      "spark.cassandra.output.throughput_mb_per_sec", DefaultThroughputMiBPS)
+
     WriteConf(
       batchSize = batchSize,
       consistencyLevel = consistencyLevel,
-      parallelismLevel = parallelismLevel)
+      parallelismLevel = parallelismLevel,
+      throughputMiBPS = throughputMiBPS)
 
   }
 
