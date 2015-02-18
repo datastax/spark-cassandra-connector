@@ -44,8 +44,8 @@ rdd.toArray.foreach(println)
 In some cases there may be a need to use an empty RDD which is an instance of `CassandraRDD` but it
 does not perform any validation for the existence of the provided table and columns and it does not
 even try to fetch the results from the database. Such an RDD can represent a table which does not
-exists. To create one, just initialize `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
-method on it. The method will return the `EmptyCassandraRDD` instance.
+exist. To create one, either initialize `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
+method on it or call `emptyCassandraTable` method on Spark context.
 
 Example:
 
@@ -53,6 +53,8 @@ Example:
 // validation is deferred, so it is not triggered during rdd creation
 val rdd = sc.cassandraTable[SomeType]("ks", "not_existing_table")
 val emptyRDD = rdd.toEmptyCassandraRDD
+
+val emptyRDD2 = sc.emptyCassandraTable[SomeType]("ks", "not_existing_table"))
 ```
 
 ### Reading primitive column values
