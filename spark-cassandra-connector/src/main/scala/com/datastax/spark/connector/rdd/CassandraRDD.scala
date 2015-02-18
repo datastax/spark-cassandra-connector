@@ -105,6 +105,10 @@ class CassandraRDD[R] private[connector] (
     copy(readConf = readConf)
   }
 
+  /** Produces the empty CassandraRDD which has the same signature and properties, but it does not
+    * perform any validation and it does not even try to return any rows. */
+  def toEmptyCassandraRDD = new EmptyCassandraRDD[R](sc, connector, keyspaceName, tableName)
+
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
   private def checkColumnsAvailable(columns: Seq[NamedColumnRef], availableColumns: Seq[NamedColumnRef]) {
     val availableColumnsSet = availableColumns.collect {

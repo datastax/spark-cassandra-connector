@@ -99,4 +99,13 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
         return new CassandraJavaPairRDD<>(newRDD, kClassTag(), vClassTag());
     }
 
+    /**
+     * Produces the empty CassandraRDD which has the same signature and properties, but it does not
+     * perform any validation and it does not even try to return any rows.
+     */
+    public CassandraJavaPairRDD<K, V> toEmptyCassandraRDD() {
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().toEmptyCassandraRDD();
+        return new CassandraJavaPairRDD<>(newRDD, kClassTag(), vClassTag());
+    }
+
 }

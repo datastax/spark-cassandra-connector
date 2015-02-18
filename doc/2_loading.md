@@ -39,6 +39,22 @@ rdd.toArray.foreach(println)
 // CassandraRow{word: foo, count: 20}   
 ```
 
+### Using fake CassandraRDD implementation
+
+In some cases there may be a need to use an empty RDD which is an instance of `CassandraRDD` but it
+does not perform any validation for the existence of the provided table and columns and it does not
+even try to fetch the results from the database. Such an RDD can represent a table which does not
+exists. To create one, just initialize `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
+method on it. The method will return the `EmptyCassandraRDD` instance.
+
+Example:
+
+```scala
+// validation is deferred, so it is not triggered during rdd creation
+val rdd = sc.cassandraTable[SomeType]("ks", "not_existing_table")
+val emptyRDD = rdd.toEmptyCassandraRDD
+```
+
 ### Reading primitive column values
 
 You can read columns in a Cassandra table using the get methods of the `CassandraRow` object. 
