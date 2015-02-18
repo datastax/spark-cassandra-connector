@@ -41,53 +41,52 @@ object Settings extends Build {
     organizationHomepage := Some(url("http://www.datastax.com/")),
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
-    version in ThisBuild := "1.2.0-alpha1",
 
-    scalaVersion in GlobalScope := Versions.Scala,
+    version in ThisBuild := "1.2.0-alpha1-SNAPSHOT",
+
+    scalaVersion in GlobalScope := Versions.detectedScala,
 
     crossScalaVersions in GlobalScope := Versions.crossScala,
 
-    crossVersion := CrossVersion.binary,
+    crossVersion := {
+      println(s"""
+           |Running:
+           |  Scala: ${scalaVersion.value} ${Versions.hint}
+           |  Scala Binary: ${scalaBinaryVersion.value}
+           |  Java: target=${Versions.JDK} user=${Versions.userJava}
+         """.stripMargin)
+      CrossVersion.binary
+    },
 
-    // when sbt release added: enableCrossBuild = true,
+    // when sbt-release enabled: enableCrossBuild = true,
 
-    scalacOptions ++= compilerOptions ++ Seq(
+    /* Can not use -Xfatal-warnings until this known issue fixed:
+      org.apache.cassandra.io.util.DataOutputPlus not found - continuing with a stub. */
+    scalacOptions ++= encoding ++ Seq(
       s"-target:jvm-${Versions.JDK}",
       "-deprecation",
       "-feature",
       "-language:_",
-      "-unchecked"
-      ,"-Xlint"
-      // TODO re-enable: "-Xfatal-warnings"
-      // [error] (vs a warn) Class org.apache.cassandra.io.util.DataOutputPlus not found - continuing with a stub.
-    ),
+      "-unchecked",
+      "-Xlint")
+    ,
 
-    javacOptions ++= compilerOptions ++ Seq(
+    scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature"), // 2.11
+
+    javacOptions ++= encoding ++ Seq(
       "-source", Versions.JDK,
       "-target", Versions.JDK,
       "-Xlint:unchecked",
       "-Xlint:deprecation"
     ),
 
-    incOptions := incOptions.value.withNameHashing(true),
+    evictionWarningOptions in update := EvictionWarningOptions.default
+      .withWarnTransitiveEvictions(true)
+      .withWarnDirectEvictions(false)
+      .withWarnScalaVersionEviction(true),
 
     promptTheme := theme
   )
-
-  def crossVersionArtifact(id: String, a: String, b: String): Def.Initialize[sbt.ModuleID] = Def.setting {
-    val version: String = scalaBinaryVersion.value match {
-          case "2.11" => a
-          case _      => b
-        }
-
-      val fullId = crossVersion.value match {
-        case _ : CrossVersion.Binary => id + "_" + scalaBinaryVersion.value
-        case _ : CrossVersion.Full => id + "_" + scalaVersion.value
-        case CrossVersion.Disabled => id
-      }
-      organization.value % fullId % version // the artifact to compare binary compatibility with
-  }
-
 
   val parentSettings = noPublish ++ Seq(
     (unmanagedSourceDirectories in Compile) := Nil,
@@ -100,16 +99,18 @@ object Settings extends Build {
     publishArtifact := false
   )
 
-  val compilerOptions = Seq("-encoding", "UTF-8")
-
+  val encoding = Seq("-encoding", "UTF-8")
+ 
   lazy val moduleSettings = graphSettings ++ Seq(
-    // TODO excludeFilter in unmanagedSources := "fu.scala"
+    ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
+
     scalacOptions in (Compile, doc) ++= Seq(
       "-implicits",
       "-doc-root-content",
       "rootdoc.txt"
     ),
-    javacOptions in (Compile, doc) := compilerOptions ++ Seq(
+
+    javacOptions in (Compile, doc) := encoding ++ Seq(
       "-source", Versions.JDK
     ),
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
@@ -130,7 +131,7 @@ object Settings extends Build {
     previousArtifact := None
   )
 
-  val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
+  val testConfigs = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
   val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
@@ -170,7 +171,7 @@ object Settings extends Build {
     publish in (IntegrationTest,packageBin) := ()
   )
 
-  lazy val testSettings = tests ++ testArtifacts ++ graphSettings ++ Seq(
+  lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     javaOptions in IntegrationTest ++= Seq(

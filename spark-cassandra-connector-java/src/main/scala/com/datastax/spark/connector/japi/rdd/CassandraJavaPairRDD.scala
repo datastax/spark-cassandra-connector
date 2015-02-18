@@ -11,7 +11,7 @@ import org.apache.spark.api.java.JavaPairRDD
  * @author Jacek Lewandowski
  */
 class CassandraJavaPairRDD[K: ClassTag, V: ClassTag](override val rdd: CassandraRDD[(K, V)])
-    extends JavaPairRDD[K, V](rdd) with ICassandraJavaPairRDD[K, V, CassandraJavaPairRDD[K, V]] {
+    extends JavaPairRDD[K, V](rdd) with CassandraJavaPairRDDLike[K, V, CassandraJavaPairRDD[K, V]] {
 
   override def select(columnNames: String*): CassandraJavaPairRDD[K, V] = {
     new CassandraJavaPairRDD(rdd.select(columnNames.map(ColumnName.apply): _*))

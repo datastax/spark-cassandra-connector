@@ -13,8 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 object Versions {
+
+  val crossScala = Seq("2.11.5", "2.10.4")
+
+  /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
+  lazy val detectedScala = sys.props.get("scala-2.11") match {
+    case Some(is) if is.nonEmpty && is.toBoolean => crossScala.head
+    case crossBuildFor                           => crossScala.last
+  }
+
+  /* For `scalaBinaryVersion.value outside an sbt task. */
+  lazy val scalaBinary = detectedScala.dropRight(2)
+
+  val hint = if (scalaBinary == "2.10") "To build against Scala 2.11: -Dscala-2.11=true" else ""
+
+  /* val Array(major, minor, _) = userJava.split("\\.", 3) */
+  lazy val userJava = scala.util.Properties.javaVersion
+
   val Akka            = "2.3.4"
   val Cassandra       = "2.1.2"
   val CassandraDriver = "2.1.3"
@@ -26,11 +42,10 @@ object Versions {
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val JOpt            = "3.2"
-  val Kafka           = "0.8.2.0"//0.8.1.2,0.8.0
+  val Kafka           = "0.8.2.0"
+  val Kafka210        = "0.8.1.1"
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
-  val crossScala      = Seq("2.11.5", "2.10.4")
-  val Scala           = crossScala.head
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"

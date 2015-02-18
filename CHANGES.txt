@@ -4,6 +4,7 @@
  * Report Connector metrics to Spark metrics system (SPARKC-27)
  * Upgraded to Spark 1.2.1 (SPARKC-30)
  * Add conversion from java.util.Date to java.sqlTimestamp for Spark SQL (#512)
+ * Upgraded to Scala 2.11 and scala version cross build (SPARKC-22)
 
 1.2.0 alpha 1
  * Added support for TTL and timestamp in the writer (#153)

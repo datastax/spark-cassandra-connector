@@ -1,6 +1,5 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 
-
 ## Lightning-fast cluster computing with Spark and Cassandra
 
 This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
@@ -10,6 +9,7 @@ execute arbitrary CQL queries in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5 (see table below)
  - Compatible with Apache Spark 1.0 and 1.1 (see table below)
+ - Compatible with Scala 2.10 and 2.11
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
@@ -44,30 +44,41 @@ If you want to access the functionality of Connector from Java, you may want to 
 
 ## Building
 
+### Scala Cross Versions
+You can build, assembly, test and run Spark and the Spark Cassandra Connector against Scala 2.10 or 2.11.
+Running the following builds against Scala 2.11 and the generated artifact paths coincide with
+the `binary.version` thereof:
+
+    sbt -Dscala-2.11=true
+
+For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/1.2.0/building-spark.html)
+
 ### Building The Assembly Jar
 In the root directory run
 
     sbt assembly
 
 A fat jar will be generated to both of these directories:
-   - `spark-cassandra-connector/target/scala-2.10/`
-   - `spark-cassandra-connector-java/target/scala-2.10/`
+   - `spark-cassandra-connector/target/scala-2.{binary.version}/`
+   - `spark-cassandra-connector-java/target/scala-2.{binary.version}/`
 
 Select the former for Scala apps, the later for Java.
 
 ### Building General Artifacts
+All artifacts are generated to the standard output directories.
+
 In the root directory run:
 
     sbt package
     sbt doc
     
-The library package jars will be placed in:
-  - `spark-cassandra-connector/target/scala-2.10/`
-  - `spark-cassandra-connector-java/target/scala-2.10/`
+The library package jars will be generated to:
+  - `spark-cassandra-connector/target/scala-2.{binary.version}/`
+  - `spark-cassandra-connector-java/target/scala-2.{binary.version}/`
 
-The documentation will be generated to: 
-  - `spark-cassandra-connector/target/scala-2.10/api/`    
-  - `spark-cassandra-connector-java/target/scala-2.10/api/`    
+The documentation will be generated to:
+  - `spark-cassandra-connector/target/scala-2.{binary.version}/api/`
+  - `spark-cassandra-connector-java/target/scala-2.{binary.version}/api/`
      
 ## Documentation
 

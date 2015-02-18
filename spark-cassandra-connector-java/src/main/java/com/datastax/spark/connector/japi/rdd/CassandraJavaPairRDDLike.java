@@ -1,17 +1,12 @@
 package com.datastax.spark.connector.japi.rdd;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.NamedColumnRef;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
-import com.datastax.spark.connector.util.JavaApiHelper;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import scala.Tuple2;
 import scala.reflect.ClassTag;
 
-import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 
 /**
@@ -21,7 +16,7 @@ import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
  * <p>The wrapper can be obtained by one of the methods of {@link com.datastax.spark.connector.japi.SparkContextJavaFunctions}
  * or {@link com.datastax.spark.connector.japi.StreamingContextJavaFunctions}.</p>
  */
-public interface ICassandraJavaPairRDD<K, V, ThisType extends ICassandraJavaPairRDD<K, V, ThisType>> {
+public interface CassandraJavaPairRDDLike<K, V, ThisType extends CassandraJavaPairRDDLike<K, V, ThisType>> {
 
     public abstract ClassTag<K> kClassTag();
     public abstract ClassTag<V> vClassTag();

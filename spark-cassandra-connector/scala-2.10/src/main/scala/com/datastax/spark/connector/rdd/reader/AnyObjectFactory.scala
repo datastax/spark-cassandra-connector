@@ -47,7 +47,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
-    tpe.decl(termNames.CONSTRUCTOR).asTerm.alternatives.map { term =>
+    tpe.declaration(nme.CONSTRUCTOR).asTerm.alternatives.map { term =>
       val ctorSymbol = term.asMethod
       val ctorType = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
       val ctorParams = ctorType.params.map(_.asTerm.typeSignature).toArray
