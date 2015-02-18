@@ -39,12 +39,11 @@ rdd.toArray.foreach(println)
 // CassandraRow{word: foo, count: 20}   
 ```
 
-### Using fake CassandraRDD implementation
+### Using emptyCassandraRDD implementation
 
-In some cases there may be a need to use an empty RDD which is an instance of `CassandraRDD` but it
-does not perform any validation for the existence of the provided table and columns and it does not
-even try to fetch the results from the database. Such an RDD can represent a table which does not
-exist. To create one, either initialize `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
+To create an instance of `CassandraRDD` for a table which does exist use the emptyCassandraRDD method. 
+EmptyCassandraRDDs do not perform validation or create partitions so they can be used to represent absent
+tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
 method on it or call `emptyCassandraTable` method on Spark context.
 
 Example:
