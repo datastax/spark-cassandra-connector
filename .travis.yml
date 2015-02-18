@@ -3,6 +3,8 @@ jdk: oraclejdk7
 sudo: false
 scala:
   - 2.10.4
+  - 2.11.5
+
 script:
   - "sbt ++$TRAVIS_SCALA_VERSION test:compile"
   - "sbt ++$TRAVIS_SCALA_VERSION it:compile"
