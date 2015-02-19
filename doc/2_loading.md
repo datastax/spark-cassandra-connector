@@ -39,6 +39,23 @@ rdd.toArray.foreach(println)
 // CassandraRow{word: foo, count: 20}   
 ```
 
+### Using emptyCassandraRDD implementation
+
+To create an instance of `CassandraRDD` for a table which does exist use the emptyCassandraRDD method. 
+`emptyCassandraRDD`s do not perform validation or create partitions so they can be used to represent absent
+tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
+method on it or call `emptyCassandraTable` method on Spark context.
+
+Example:
+
+```scala
+// validation is deferred, so it is not triggered during rdd creation
+val rdd = sc.cassandraTable[SomeType]("ks", "not_existing_table")
+val emptyRDD = rdd.toEmptyCassandraRDD
+
+val emptyRDD2 = sc.emptyCassandraTable[SomeType]("ks", "not_existing_table"))
+```
+
 ### Reading primitive column values
 
 You can read columns in a Cassandra table using the get methods of the `CassandraRow` object. 

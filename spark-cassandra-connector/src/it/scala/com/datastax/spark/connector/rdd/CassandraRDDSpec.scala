@@ -581,4 +581,14 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results.head.ttlOfValue <= ttl
   }
 
+  it should "allow to use empty RDD on undefined table" in {
+    val result = sc.cassandraTable("unknown_ks", "unknown_table").toEmptyCassandraRDD.collect()
+    result should have length 0
+  }
+
+  it should "allow to use empty RDD on defined table" in {
+    val result = sc.cassandraTable("read_test", "simple_kv").toEmptyCassandraRDD.collect()
+    result should have length 0
+  }
+
 }

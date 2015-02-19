@@ -3,6 +3,7 @@
  * Added automatic generation of Cassandra table schema from a Scala type and
    saving an RDD to a new Cassandra table by saveAsCassandraTable method (SPARKC-38)
  * Added support for write throughput limiting (SPARKC-57)
+ * Added EmptyCassandraRDD (SPARKC-37)
 
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and

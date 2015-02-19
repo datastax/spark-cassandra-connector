@@ -110,4 +110,13 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public <K> JavaPairRDD<K, Iterable<R>> spanBy(Function<R, K> f, ClassTag<K> keyClassTag) {
         return CassandraJavaUtil.javaFunctions(rdd()).spanBy(f, keyClassTag);
     }
+
+    /**
+     * Produces the empty CassandraRDD which has the same signature and properties, but it does not
+     * perform any validation and it does not even try to return any rows.
+     */
+    public CassandraJavaRDD<R> toEmptyCassandraRDD() {
+        CassandraRDD<R> newRDD = rdd().toEmptyCassandraRDD();
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
 }
