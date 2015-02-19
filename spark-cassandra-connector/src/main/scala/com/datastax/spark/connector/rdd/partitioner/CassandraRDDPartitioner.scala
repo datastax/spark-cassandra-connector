@@ -157,13 +157,19 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
     connector.withCassandraClientDo {
       client =>
-        val tokenRanges = describeRing(client)
-        val endpointCount = tokenRanges.map(_.endpoints).reduce(_ ++ _).size
-        val splitter = createSplitterFor(tokenRanges)
-        val splits = splitsOf(tokenRanges, splitter).toSeq
-        val maxGroupSize = tokenRanges.size / endpointCount
-        val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
-        val groups = clusterer.group(splits).toArray
+        val tokenRanges: Seq[TokenRange] = describeRing(client)
+        var groups: Array[Seq[TokenRange]] = null
+
+        if (splitSize != 0) {
+          val endpointCount = tokenRanges.map(_.endpoints).reduce(_ ++ _).size
+          val splitter = createSplitterFor(tokenRanges)
+          val splits = splitsOf(tokenRanges, splitter).toSeq
+          val maxGroupSize = tokenRanges.size / endpointCount
+          val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
+          groups = clusterer.group(splits).toArray
+        }
+        else
+          groups = tokenRanges.map(Seq(_)).toArray
 
         if (containsPartitionKey(whereClause)) {
           val endpoints = tokenRanges.flatMap(_.endpoints)
@@ -174,7 +180,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
           for ((group, index) <- groups.zipWithIndex) yield {
             val cqlPredicates = group.flatMap(splitToCqlClause)
             val endpoints = group.map(_.endpoints).reduce(_ intersect _)
-            val rowCount = group.map(_.rowCount.get).sum
+            val rowCount = group.map(_.rowCount.getOrElse(0L)).sum
             CassandraPartition(index, endpoints.flatMap(_.allAddresses), cqlPredicates, rowCount)
           }
     }
