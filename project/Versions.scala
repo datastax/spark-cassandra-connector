@@ -1,3 +1,5 @@
+import scala.util.Properties
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,18 +20,13 @@ object Versions {
   val crossScala = Seq("2.11.5", "2.10.4")
 
   /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
-  lazy val detectedScala = sys.props.get("scala-2.11") match {
+  lazy val scalaVersion = sys.props.get("scala-2.11") match {
     case Some(is) if is.nonEmpty && is.toBoolean => crossScala.head
     case crossBuildFor                           => crossScala.last
   }
 
   /* For `scalaBinaryVersion.value outside an sbt task. */
-  lazy val scalaBinary = detectedScala.dropRight(2)
-
-  val hint = if (scalaBinary == "2.10") "To build against Scala 2.11: -Dscala-2.11=true" else ""
-
-  /* val Array(major, minor, _) = userJava.split("\\.", 3) */
-  lazy val userJava = scala.util.Properties.javaVersion
+  lazy val scalaBinary = scalaVersion.dropRight(2)
 
   val Akka            = "2.3.4"
   val Cassandra       = "2.1.2"
@@ -50,4 +47,13 @@ object Versions {
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
   val Spark           = "1.2.1"
+
+  val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
+
+  val status = (versionInReapply: String, binaryInReapply: String) =>
+    println(s"""
+        |  Scala: $versionInReapply ${hint(binaryInReapply)}
+        |  Scala Binary: $binaryInReapply
+        |  Java: target=$JDK user=${Properties.javaVersion}
+        """.stripMargin)
 }

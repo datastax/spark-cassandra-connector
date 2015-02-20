@@ -47,3 +47,4 @@ read-row-meter         | Number of rows read from Cassandra
 read-page-wait-timer   | The Time spent by the driver waiting for rows to be paged in from C*
 read-task-timer        | Timer to measure time of reading a single partition
 
+[Next - Building And Artifacts](doc/12_building_and_artifacts.md)

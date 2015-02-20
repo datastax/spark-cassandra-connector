@@ -28,23 +28,17 @@ object CassandraSparkBuild extends Build {
 
   lazy val root = RootProject("root", file("."), Seq(embedded, connector, jconnector, demos))
 
-  lazy val embedded = Project(
-    id = s"$namespace-embedded",
-    base = file(s"$namespace-embedded"),
-    settings = defaultSettings ++ Seq(
-      libraryDependencies ++= Dependencies.embedded,
-      unmanagedSourceDirectories in Compile += crossBuildPath(baseDirectory.value)
-    )
+  lazy val embedded = CrossScalaVersionsProject(
+    name = s"$namespace-embedded",
+    conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  lazy val connector = Project(
-    id = namespace,
-    base = file(namespace),
-    dependencies = Seq(embedded % "test->test;it->it,test;"),
-    settings = assembledSettings ++ Seq(
-      libraryDependencies ++= Dependencies.connector,
-      unmanagedSourceDirectories in Compile += crossBuildPath(baseDirectory.value)
-    )
+  lazy val connector = CrossScalaVersionsProject(
+    name = namespace,
+    conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
+        "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
+    ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
   lazy val jconnector = Project(
@@ -54,12 +48,7 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  /* Spark does not support/publish Kafka streaming in their Scala 2.11 cross build. */
-
-  lazy val demos = RootProject("demos", demosPath, scalaBinary match {
-    case "2.11" => Seq(simpleDemos, twitterStreaming)
-    case _ => Seq(simpleDemos, kafkaStreaming, twitterStreaming)
-  })
+  lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
 
   lazy val simpleDemos = Project(
     id = "simple-demos",
@@ -68,12 +57,18 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector, jconnector, embedded)
   )
 
-  lazy val kafkaStreaming = Project(
-    id = "kafka-streaming",
-    base = demosPath / "kafka-streaming",
-    dependencies = Seq(connector, embedded),
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.kafka)
-  )
+  lazy val kafkaStreaming = CrossScalaVersionsProject(
+    name = "kafka-streaming",
+    conf = demoSettings ++ Seq(
+      excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
+        case _ => HiddenFileFilter || "*WordCountApp*"
+      }),
+      libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, minor)) if minor < 11 => Dependencies.kafka
+        case _ => Seq.empty
+      }))
+  ).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
@@ -82,8 +77,20 @@ object CassandraSparkBuild extends Build {
     dependencies = Seq(connector)
   )
 
-  def crossBuildPath(base: sbt.File): sbt.File =
-    base / s"scala-$scalaBinary" / "src"
+  def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
+
+  /* templates */
+  def CrossScalaVersionsProject(name: String,
+                                conf: Seq[Def.Setting[_]],
+                                reliesOn: Seq[ClasspathDep[ProjectReference]] = Seq.empty) =
+    Project(id = name, base = file(name), dependencies = reliesOn, settings = conf ++ Seq(
+      unmanagedSourceDirectories in (Compile, packageBin) +=
+        crossBuildPath(baseDirectory.value, scalaBinaryVersion.value),
+      unmanagedSourceDirectories in (Compile, doc) +=
+        crossBuildPath(baseDirectory.value, scalaBinaryVersion.value),
+      unmanagedSourceDirectories in Compile +=
+        crossBuildPath(baseDirectory.value, scalaBinaryVersion.value)
+    ))
 
   def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
     Project(id = name, base = dir, settings = parentSettings, aggregate = contains)
@@ -130,10 +137,8 @@ object Dependencies {
     val jodaC               = "org.joda"                % "joda-convert"           % JodaC
     val jodaT               = "joda-time"               % "joda-time"              % JodaT
     val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
-    val reflect             = "org.scala-lang"          % "scala-reflect"          % detectedScala                // BSD-3-Clause
     val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
-    /* To allow spark artifact inclusion in the demo module at runtime, we set 'provided'
-      scope on the connector below, specifically, versus globally here. */
+    /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
     val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark guavaExclude           // ApacheV2
     val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark sparkExclusions        // ApacheV2
@@ -149,35 +154,36 @@ object Dependencies {
       val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"           % Akka                        // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"           % Cassandra logbackExclude    // ApacheV2
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt
-      val kafka             = "org.apache.kafka"        % s"kafka_$scalaBinary"     % Kafka     kafkaExclusions   // ApacheV2
+      val kafka             = "org.apache.kafka"        %% "kafka"                  % Kafka     kafkaExclusions   // ApacheV2
       val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark     replExclusions    // ApacheV2
     }
 
     object Demos {
-      val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka"   % Spark    sparkExclusions // ApacheV2
-      val twitterStreaming  = "org.apache.spark"        %% "spark-streaming-twitter" % Spark    sparkExclusions // ApacheV2
+      val kafka             = "org.apache.kafka"        % "kafka_2.10"               % Kafka    kafkaExclusions   // ApacheV2
+      val kafkaStreaming    = "org.apache.spark"        % "spark-streaming-kafka_2.10" % Spark  sparkExclusions   // ApacheV2
+      val twitterStreaming  = "org.apache.spark"        %% "spark-streaming-twitter" % Spark    sparkExclusions   // ApacheV2
     }
 
     object Test {
       val akkaTestKit       = "com.typesafe.akka"       %% "akka-testkit"           % Akka      % "test,it"       // ApacheV2
       val commonsIO         = "commons-io"              % "commons-io"              % CommonsIO % "test,it"       // ApacheV2
-      val junit             = "junit"                   % "junit"                   % "4.11"    % "test,it"
-      val junitInterface    = "com.novocode"            % "junit-interface"         % "0.10"    % "test,it"
       val scalatest         = "org.scalatest"           %% "scalatest"              % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"              % Scalactic % "test,it"       // ApacheV2
-      val scalaCompiler     = "org.scala-lang"          % "scala-compiler"          % detectedScala % "test,it"   // BSD-3-Clause
       val mockito           = "org.mockito"             % "mockito-all"             % "1.10.19" % "test,it"       // MIT
+      val junit             = "junit"                   % "junit"                   % "4.11"    % "test,it"
+      val junitInterface    = "com.novocode"            % "junit-interface"         % "0.10"    % "test,it"
     }
   }
 
   import Compile._
+
 
   val logging = Seq(slf4jApi)
 
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
   val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-   Test.junitInterface, Test.scalatest, Test.scalaCompiler, Test.scalactic, Test.mockito)
+   Test.junitInterface, Test.scalatest, Test.scalactic, Test.mockito)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
@@ -186,12 +192,12 @@ object Dependencies {
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-   commonsLang3, config, guava, jodaC, jodaT, lzf, reflect)
+    commonsLang3, config, guava, jodaC, jodaT, lzf)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
     Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka)
 
-  val kafka = Seq(Demos.kafkaStreaming)
+  val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
   val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
 }

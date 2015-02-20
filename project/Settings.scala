@@ -32,31 +32,48 @@ import com.scalapenos.sbt.prompt.PromptTheme
 
 object Settings extends Build {
 
-  override lazy val settings = super.settings ++ Seq(
+  val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
+
+  lazy val buildSettings = Seq(
+    organization         := "com.datastax.spark",
+    version in ThisBuild := "1.2.0-alpha1-SNAPSHOT",
+    scalaVersion         := Versions.scalaVersion,
+    crossScalaVersions   := Versions.crossScala,
+    crossVersion         := CrossVersion.binary,
+    versionStatus        := Versions.status(scalaVersion.value, scalaBinaryVersion.value)
+  )
+
+  override lazy val settings = super.settings ++ buildSettings ++ Seq(
     normalizedName := "spark-cassandra-connector",
     name := "DataStax Apache Cassandra connector for Apache Spark",
-    description := """A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
-                  Cassandra tables, and executes CQL queries in Spark applications.""",
     organization := "com.datastax.spark",
-    organizationHomepage := Some(url("http://www.datastax.com/")),
+    description  := """
+                  |A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
+                  |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
+    promptTheme := theme
+  )
 
-    version in ThisBuild := "1.2.0-alpha1-SNAPSHOT",
+  val parentSettings = noPublish ++ Seq(
+    managedSourceDirectories := Nil,
+    (unmanagedSourceDirectories in Compile) := Nil,
+    (unmanagedSourceDirectories in Test) := Nil
+  )
 
-    scalaVersion in GlobalScope := Versions.detectedScala,
+  lazy val noPublish = Seq(
+    publish := {},
+    publishLocal := {},
+    publishArtifact := false
+  )
 
-    crossScalaVersions in GlobalScope := Versions.crossScala,
+  val encoding = Seq("-encoding", "UTF-8")
 
-    crossVersion := {
-      println(s"""
-           |Running:
-           |  Scala: ${scalaVersion.value} ${Versions.hint}
-           |  Scala Binary: ${scalaBinaryVersion.value}
-           |  Java: target=${Versions.JDK} user=${Versions.userJava}
-         """.stripMargin)
-      CrossVersion.binary
-    },
+  lazy val projectSettings = graphSettings ++ Seq(
+
+    incOptions := incOptions.value.withNameHashing(true),
+
+    ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
 
     // when sbt-release enabled: enableCrossBuild = true,
 
@@ -68,8 +85,7 @@ object Settings extends Build {
       "-feature",
       "-language:_",
       "-unchecked",
-      "-Xlint")
-    ,
+      "-Xlint"),
 
     scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature"), // 2.11
 
@@ -80,30 +96,6 @@ object Settings extends Build {
       "-Xlint:deprecation"
     ),
 
-    evictionWarningOptions in update := EvictionWarningOptions.default
-      .withWarnTransitiveEvictions(true)
-      .withWarnDirectEvictions(false)
-      .withWarnScalaVersionEviction(true),
-
-    promptTheme := theme
-  )
-
-  val parentSettings = noPublish ++ Seq(
-    (unmanagedSourceDirectories in Compile) := Nil,
-    (unmanagedSourceDirectories in Test) := Nil
-  )
-
-  lazy val noPublish = Seq(
-    publish := (),
-    publishLocal := (),
-    publishArtifact := false
-  )
-
-  val encoding = Seq("-encoding", "UTF-8")
- 
-  lazy val moduleSettings = graphSettings ++ Seq(
-    ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
-
     scalacOptions in (Compile, doc) ++= Seq(
       "-implicits",
       "-doc-root-content",
@@ -113,6 +105,12 @@ object Settings extends Build {
     javacOptions in (Compile, doc) := encoding ++ Seq(
       "-source", Versions.JDK
     ),
+
+    evictionWarningOptions in update := EvictionWarningOptions.default
+      .withWarnTransitiveEvictions(false)
+      .withWarnDirectEvictions(false)
+      .withWarnScalaVersionEviction(false),
+
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
@@ -120,15 +118,16 @@ object Settings extends Build {
     compileOrder := CompileOrder.Mixed
   )
 
-  lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
-
-  lazy val demoSettings = moduleSettings ++ noPublish ++ Seq(
-    publishArtifact in (Test,packageBin) := false,
-    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
+  lazy val mimaSettings = mimaDefaultSettings ++ Seq(
+    previousArtifact := None, //Some("a" % "b_2.10.4" % "1.2"),
+    binaryIssueFilters ++= Seq.empty
   )
 
-  lazy val mimaSettings = mimaDefaultSettings ++ Seq(
-    previousArtifact := None
+  lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+
+  lazy val demoSettings = projectSettings ++ noPublish ++ Seq(
+    publishArtifact in (Test,packageBin) := false,
+    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
 
   val testConfigs = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)

@@ -35,7 +35,7 @@ The connector project has several branches, each of which map into different sup
 This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
-                                                                                                                           
+
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.2.0-alpha1"
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
@@ -43,43 +43,8 @@ If you want to access the functionality of Connector from Java, you may want to 
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.2.0-alpha1"
 
 ## Building
-
-### Scala Cross Versions
-You can build, assembly, test and run Spark and the Spark Cassandra Connector against Scala 2.10 or 2.11.
-Running the following builds against Scala 2.11 and the generated artifact paths coincide with
-the `binary.version` thereof:
-
-    sbt -Dscala-2.11=true
-
-For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/1.2.0/building-spark.html)
-
-### Building The Assembly Jar
-In the root directory run
-
-    sbt assembly
-
-A fat jar will be generated to both of these directories:
-   - `spark-cassandra-connector/target/scala-2.{binary.version}/`
-   - `spark-cassandra-connector-java/target/scala-2.{binary.version}/`
-
-Select the former for Scala apps, the later for Java.
-
-### Building General Artifacts
-All artifacts are generated to the standard output directories.
-
-In the root directory run:
-
-    sbt package
-    sbt doc
-    
-The library package jars will be generated to:
-  - `spark-cassandra-connector/target/scala-2.{binary.version}/`
-  - `spark-cassandra-connector-java/target/scala-2.{binary.version}/`
-
-The documentation will be generated to:
-  - `spark-cassandra-connector/target/scala-2.{binary.version}/api/`
-  - `spark-cassandra-connector-java/target/scala-2.{binary.version}/api/`
-     
+See [Building And Artifacts](doc/12_building_and_artifacts.md)
+ 
 ## Documentation
 
   - [Quick-start guide](doc/0_quick_start.md)
@@ -94,6 +59,7 @@ The documentation will be generated to:
   - [About The Demos](doc/9_demos.md)
   - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
   - [Performance monitoring](doc/11_metrics.md)
+  - [Building And Artifacts](doc/12_building_and_artifacts.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    

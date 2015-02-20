@@ -17,43 +17,22 @@ Configure a new Scala project with the following dependencies:
  - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
  - DataStax Cassandra driver for your Cassandra version 
  
-This driver does not depend on the Cassandra server code.   
-- For a detailed dependency list, see project dependencies in the `project/CassandraSparkBuild.scala` file.
-- For dependency versions, see `project/Versions.scala` file.
+This driver does not depend on the Cassandra server code.
 
-Add the `spark-cassandra-connector` jar and its dependency jars to the following classpaths:
+ - For a detailed dependency list, see [project/CassandraSparkBuild.scala](../project/CassandraSparkBuild.scala)
+ - For dependency versions, see [project/Versions.scala](../project/Versions.scala)
 
-    Note: The version must match the version of spark, i.e. spark-core-1.2.x => spark-cassandra-connector-1.2.x
+Add the `spark-cassandra-connector` jar and its dependency jars to the following classpaths.
+**Make sure the Connector version you use coincides with your Spark version (i.e. Spark 1.2.x with Connector 1.2.x)**:
+
     "com.datastax.spark" %% "spark-cassandra-connector" % Version
 
  - the classpath of your project
  - the classpath of every Spark cluster node
 
-#### Building
-You can build, assembly, test and run Spark and the Spark Cassandra Connector against Scala 2.10 or 2.11.
-Running the following builds against Scala 2.11 and the generated artifact paths coincide with
-the `binary.version` thereof:
+### Building
+See [Building And Artifacts](doc/12_building_and_artifacts.md)
 
-    sbt -Dscala-2.11=true
-
-For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/1.2.0/building-spark.html)
-
-
-The easiest way to do this is to make the assembled connector jar using
-
-     sbt assembly
-     
-This will generate a jar file with all of the required dependencies in 
-
-     spark-cassandra-connector/spark-cassandra-connector/target/scala-{binary.version}/spark-cassandra-connector-assembly-*.jar
-     
-Then add this jar to your Spark executor classpath by adding the following line to your spark-default.conf
-
-     spark.executor.extraClassPath  spark-cassandra-connector/spark-cassandra-connector/target/scala-{binary.version}/spark-cassandra-connector-assembly-$CurrentVersion-SNAPSHOT.jar
- 
-This driver is also compatible with Spark distribution provided in 
-[DataStax Enterprise 4.5](http://www.datastax.com/documentation/datastax_enterprise/4.5/datastax_enterprise/newFeatures.html).
- 
 ### Preparing example Cassandra schema
 Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
 
@@ -110,6 +89,5 @@ Add two more rows to the table:
 val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
 collection.saveToCassandra("test", "kv", SomeColumns("key", "value"))       
 ```
-
 
 [Next - Connecting to Cassandra](1_connecting.md)
