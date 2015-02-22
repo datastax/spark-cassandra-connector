@@ -52,7 +52,7 @@ object Settings extends Build {
                   |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
-    promptTheme := theme
+    promptTheme := ScalapenosTheme
   )
 
   val parentSettings = noPublish ++ Seq(
@@ -197,17 +197,6 @@ object Settings extends Build {
       }
     }
   )
-
-  lazy val theme = PromptTheme(List(
-    text("[SBT] ", fg(magenta)),
-    userName(fg(000)),
-    text(":spark-cassandra-connector", fg(000)),
-    text(":", fg(000)),
-    currentProject(fg(000)),
-    text(":", fg(000)),
-    gitBranch(clean = fg(green), dirty = fg(20)),
-    text("> ", fg(000))
-  ))
 
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
