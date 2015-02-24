@@ -52,6 +52,21 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
       writer.columnNames should be (Vector("key", "group"))
     }
 
+    "distinguish and use only specified column names if provided, when aliases are specified" in {
+      val subset = Seq[NamedColumnRef]("key" as "keyAlias", "group" as "groupAlias")
+
+      val writer = TableWriter(
+        conn,
+        keyspaceName = "column_names_test",
+        tableName = "key_value",
+        columnNames = SomeColumns(subset: _*),
+        writeConf = WriteConf()
+      )
+
+      writer.columnNames.size should be (subset.size)
+      writer.columnNames should be (Vector("key", "group"))
+    }
+
     "fail in the RowWriter if provided specified column names do not include primary keys" in {
       import com.datastax.spark.connector._
 

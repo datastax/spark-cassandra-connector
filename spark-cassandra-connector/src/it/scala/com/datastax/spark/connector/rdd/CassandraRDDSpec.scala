@@ -23,6 +23,7 @@ case class KeyGroup(key: Int, group: Int)
 case class Value(value: String)
 case class WriteTimeClass(id: Int, value: String, writeTimeOfValue: Long)
 case class TTLClass(id: Int, value: String, ttlOfValue: Int)
+case class ClassWithWeirdProps(devil: Int, cat: Long, value: String)
 
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
@@ -179,6 +180,15 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result should have length 3
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
+    result.head.value should startWith("000")
+  }
+
+  it should "allow to read a Cassandra table as Array of user-defined case class objects with custom mapping specified by aliases" in {
+    val result = sc.cassandraTable[ClassWithWeirdProps]("read_test", "key_value")
+      .select("key" as "devil", "group" as "cat", "value").collect()
+    result should have length 3
+    result.head.devil should (be >= 1 and be <= 3)
+    result.head.cat should (be >= 100L and be <= 300L)
     result.head.value should startWith("000")
   }
 
@@ -577,7 +587,7 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
       session.execute("TRUNCATE read_test.write_time_ttl_test")
       session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime")
     }
-    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedAs))
+    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedFromCassandraAs))
     val results = sc.cassandraTable[WriteTimeClass]("read_test", "write_time_ttl_test")
       .select("id", "value", "value".writeTime).collect().headOption
     results.isDefined should be (true)
@@ -590,9 +600,36 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
       session.execute("TRUNCATE read_test.write_time_ttl_test")
       session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl")
     }
-    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedAs))
+    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedFromCassandraAs))
     val results = sc.cassandraTable[TTLClass]("read_test", "write_time_ttl_test")
       .select("id", "value", "value".ttl).collect().headOption
+    results.isDefined should be (true)
+    results.head.id should be (1)
+    results.head.value should be ("test")
+    results.head.ttlOfValue > (ttl - 10)
+    results.head.ttlOfValue <= ttl
+  }
+
+  it should "allow to fetch writetime of a specified column and map it to a class field with aliases" in {
+    val writeTime = System.currentTimeMillis() * 1000L
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime")
+    }
+    val results = sc.cassandraTable[WriteTimeClass]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".writeTime as "writeTimeOfValue").collect().headOption
+    results.isDefined should be (true)
+    results.head should be (WriteTimeClass(1, "test", writeTime))
+  }
+
+  it should "allow to fetch ttl of a specified column and map it to a class field with aliases" in {
+    val ttl = 1000
+    conn.withSessionDo { session =>
+      session.execute("TRUNCATE read_test.write_time_ttl_test")
+      session.execute(s"INSERT INTO read_test.write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl")
+    }
+    val results = sc.cassandraTable[TTLClass]("read_test", "write_time_ttl_test")
+      .select("id", "value", "value".ttl as "ttlOfValue").collect().headOption
     results.isDefined should be (true)
     results.head.id should be (1)
     results.head.value should be ("test")

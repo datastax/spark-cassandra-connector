@@ -19,6 +19,18 @@ class JavaBeanColumnMapperTestClass {
   def setFlagged(flag: Boolean): Unit = ???
 }
 
+class JavaBeanWithWeirdProps {
+  def getDevil: Int = ???
+  def setDevil(value: Int): Unit = ???
+
+  def getCat: Int = ???
+  def setCat(value: Int): Unit = ???
+
+  def getEye: Int = ???
+  def setEye(value: Int): Unit = ???
+}
+
+
 object JavaBeanColumnMapperTestClass {
   implicit object Mapper extends JavaBeanColumnMapper[JavaBeanColumnMapperTestClass]()
 }
@@ -80,6 +92,28 @@ class JavaBeanColumnMapperTest {
   def testImplicit() {
     val mapper = implicitly[ColumnMapper[JavaBeanColumnMapperTestClass]]
     assertTrue(mapper.isInstanceOf[JavaBeanColumnMapper[_]])
+  }
+
+  @Test
+  def testWorkWithAliases() {
+    val mapper = new JavaBeanColumnMapper[ClassWithWeirdProps]()
+    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
+    val expectedConstructor: Seq[ColumnName] = Seq(
+      ColumnName(c1.columnName),
+      ColumnName(c2.columnName),
+      ColumnName(c5.columnName))
+    assertEquals(expectedConstructor, map.constructor)
+  }
+
+  @Test
+  def testWorkWithAliasesAndHonorOverrides() {
+    val mapper = new JavaBeanColumnMapper[ClassWithWeirdProps](Map("cat" -> "marked"))
+    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
+    val expectedConstructor: Seq[ColumnName] = Seq(
+      ColumnName(c1.columnName),
+      ColumnName(c4.columnName),
+      ColumnName(c5.columnName))
+    assertEquals(expectedConstructor, map.constructor)
   }
 
 }

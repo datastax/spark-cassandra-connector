@@ -280,7 +280,10 @@ class CassandraRDD[R] private[connector] (
     }
   }
 
-  private lazy val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
+  private lazy val aliasToColumnName = columnNames.aliases
+
+  private lazy val rowTransformer = implicitly[RowReaderFactory[R]]
+    .rowReader(tableDef, RowReaderOptions(aliasToColumnName = aliasToColumnName))
 
   private def checkColumnsExistence(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
     val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
@@ -291,14 +294,14 @@ class CassandraRDD[R] private[connector] (
         throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
 
       column match {
-        case ColumnName(_) =>
+        case ColumnName(_, _) =>
 
-        case TTL(columnName) =>
+        case TTL(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
 
-        case WriteTime(columnName) =>
+        case WriteTime(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
@@ -323,7 +326,7 @@ class CassandraRDD[R] private[connector] (
       }
 
     (rowTransformer.columnNames, rowTransformer.requiredColumns) match {
-      case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedAs))
+      case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedFromCassandraAs))
       case (_, _) => providedColumnRefs
     }
   }
@@ -339,7 +342,7 @@ class CassandraRDD[R] private[connector] (
 
     rowTransformer.columnNames match {
       case Some(names) =>
-        val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedAs).toSet
+        val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedFromCassandraAs).toSet
         assert(missingColumns.isEmpty, s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
       case None =>
     }
@@ -416,7 +419,7 @@ class CassandraRDD[R] private[connector] (
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedFromCassandraAs).toArray
 
     try {
       implicit val pv = protocolVersion(session)

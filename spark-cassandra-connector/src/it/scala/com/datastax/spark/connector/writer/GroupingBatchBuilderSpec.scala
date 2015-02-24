@@ -8,6 +8,7 @@ import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable.Map
 import scala.util.Random
 
 class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra {
@@ -22,7 +23,7 @@ class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfte
 
   val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
   val schema = Schema.fromCassandra(conn, Some("batch_maker_test"), Some("tab"))
-  val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, Seq("id", "value"))
+  val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, Seq("id", "value"), Map.empty)
   val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
   def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {

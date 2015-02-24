@@ -24,9 +24,7 @@ import scala.reflect.ClassTag
   * }}}
   */
 trait ColumnMapper[T] {
-
-  /** Creates a mapping between the properties of type `T` and given table */
-  def columnMap(tableDef: TableDef): ColumnMap
+  def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String] = Map.empty): ColumnMap
 
   /** Provides a definition of the table that class `T` could be saved to. */
   def newTable(keyspaceName: String, tableName: String): TableDef

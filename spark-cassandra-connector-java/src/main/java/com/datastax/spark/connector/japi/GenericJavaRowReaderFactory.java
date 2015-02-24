@@ -18,7 +18,7 @@ public class GenericJavaRowReaderFactory {
 
         @Override
         public RowReaderOptions rowReader$default$2() {
-            return new RowReaderOptions(RowReaderOptions.apply$default$1());
+            return new RowReaderOptions(RowReaderOptions.apply$default$1(), RowReaderOptions.apply$default$2());
         }
 
         @Override

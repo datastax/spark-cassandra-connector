@@ -15,6 +15,7 @@ import com.datastax.spark.connector.SomeColumns$;
 import com.datastax.spark.connector.TTL;
 import com.datastax.spark.connector.WriteTime;
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.datastax.spark.connector.mapper.*;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
@@ -468,7 +469,7 @@ public class CassandraJavaUtil {
     public static ColumnSelector someColumns(String... columnNames) {
         NamedColumnRef[] columnsSelection = new NamedColumnRef[columnNames.length];
         for (int i = 0; i < columnNames.length; i++) {
-            columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i]);
+            columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i], Option.<String>empty());
         }
 
         return SomeColumns$.MODULE$.apply(JAPI.<SelectableColumnRef>seq(columnsSelection));
@@ -477,22 +478,22 @@ public class CassandraJavaUtil {
     public static NamedColumnRef[] convert(String... columnNames) {
         NamedColumnRef[] columnsSelection = new NamedColumnRef[columnNames.length];
         for (int i = 0; i < columnNames.length; i++) {
-            columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i]);
+            columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i], Option.<String>empty());
         }
 
         return columnsSelection;
     }
 
-    public static ColumnName plain(String columnName) {
-        return new ColumnName(columnName);
+    public static ColumnName column(String columnName) {
+        return new ColumnName(columnName, Option.<String>empty());
     }
 
     public static TTL ttl(String columnName) {
-        return new TTL(columnName);
+        return new TTL(columnName, Option.<String>empty());
     }
 
     public static WriteTime writeTime(String columnName) {
-        return new WriteTime(columnName);
+        return new WriteTime(columnName, Option.<String>empty());
     }
 
     // -------------------------------------------------------------------------

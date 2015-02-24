@@ -64,5 +64,5 @@ package object connector {
     def ttl: TTL = TTL(columnName)
   }
 
-  implicit def toNamedColumnRef(columnName: String): NamedColumnRef = ColumnName(columnName)
+  implicit def toNamedColumnRef(columnName: String): ColumnName = ColumnName(columnName)
 }

@@ -19,6 +19,7 @@ case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
 case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp: Long)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
+case class ClassWithWeirdProps(devil: String, cat: Int, value: String)
 case class CustomerId(id: String)
 
 class SuperKeyValue(val key: Int, val value: String) extends Serializable
@@ -34,7 +35,7 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     session.execute("DROP KEYSPACE IF EXISTS write_test")
     session.execute("CREATE KEYSPACE IF NOT EXISTS write_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    for (x <- 1 to 17) {
+    for (x <- 1 to 18) {
       session.execute(s"CREATE TABLE IF NOT EXISTS write_test.key_value_$x (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
     }
 
@@ -400,14 +401,26 @@ class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with Sh
     }
   }
 
+  it should "write RDD of case class objects applying proper data type conversions and aliases" in {
+    val col = Seq(
+      ClassWithWeirdProps("1", 1, "value1"),
+      ClassWithWeirdProps("2", 2, "value2"),
+      ClassWithWeirdProps("3", 3, "value3")
+    )
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_17", columns = SomeColumns(
+      "key" as "devil", "group" as "cat", "value"
+    ))
+    verifyKeyValueTable("key_value_17")
+  }
+
   it should "write RDD of objects with inherited fields" in {
     val col = Seq(
       new SubKeyValue(1, "value1", 1L),
       new SubKeyValue(2, "value2", 2L),
       new SubKeyValue(3, "value3", 3L)
     )
-    sc.parallelize(col).saveToCassandra("write_test", "key_value_17")
-    verifyKeyValueTable("key_value_17")
+    sc.parallelize(col).saveToCassandra("write_test", "key_value_18")
+    verifyKeyValueTable("key_value_18")
   }
 
 }

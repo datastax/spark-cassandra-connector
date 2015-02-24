@@ -3,13 +3,14 @@ package com.datastax.spark.connector.mapper
 import com.datastax.spark.connector.ColumnName
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{VarCharType, IntType}
-import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
 
 case class DefaultColumnMapperTestClass1(property1: String, camelCaseProperty: Int, UpperCaseColumn: Int)
 
 class DefaultColumnMapperTestClass2(var property1: String, var camelCaseProperty: Int, var UpperCaseColumn: Int)
+
+case class ClassWithWeirdProps(devil: String, cat: Int, eye: Double)
 
 class DefaultColumnMapperTest {
 
@@ -164,4 +165,27 @@ class DefaultColumnMapperTest {
     val mapper = implicitly[ColumnMapper[Foo]]     // should fail, because there are no useful properties
     mapper.newTable("keyspace", "table")
   }
+
+  @Test
+  def testWorkWithAliases() {
+    val mapper = new DefaultColumnMapper[ClassWithWeirdProps]()
+    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
+    val expectedConstructor: Seq[ColumnName] = Seq(
+      ColumnName(c1.columnName),
+      ColumnName(c2.columnName),
+      ColumnName(c4.columnName))
+    assertEquals(expectedConstructor, map.constructor)
+  }
+
+  @Test
+  def testWorkWithAliasesAndHonorOverrides() {
+    val mapper = new DefaultColumnMapper[ClassWithWeirdProps](Map("cat" -> "UpperCaseColumn"))
+    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
+    val expectedConstructor: Seq[ColumnName] = Seq(
+      ColumnName(c1.columnName),
+      ColumnName(c3.columnName),
+      ColumnName(c4.columnName))
+    assertEquals(expectedConstructor, map.constructor)
+  }
+
 }

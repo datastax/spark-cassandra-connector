@@ -1,6 +1,8 @@
 Unreleased
  * More Spark SQL predicate push (SPARKC-72)
  * Fixed some Java API problems and refactored its internals (SPARKC-77)
+ * Allowing specification of column to property map (aliases) for reading and writing objects
+   (SPARKC-9)
 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)

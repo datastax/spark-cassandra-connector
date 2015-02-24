@@ -2,22 +2,20 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.spark.connector.rdd.ClusteringOrder.{Descending, Ascending}
-import org.apache.spark.api.java.function.{Function => JFunction}
+import scala.collection.JavaConversions._
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraRow
-import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.japi.CassandraJavaUtil._
+import com.datastax.spark.connector.rdd.ClusteringOrder.{Descending, Ascending}
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
 
 import org.apache.commons.lang3.tuple
+import org.apache.spark.api.java.function.{Function => JFunction}
 import org.scalatest._
-
-import scala.collection.JavaConversions._
-import CassandraJavaUtil._
 
 class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
 with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
@@ -81,6 +79,17 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1 && bean.getSubClassField == "a"))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2 && bean.getSubClassField == "b"))
     assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3 && bean.getSubClassField == "c"))
+  }
+
+  it should "allow to read data as Java beans with custom mapping defined by aliases" in {
+    val beans = javaFunctions(sc)
+      .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleWeirdJavaBean]))
+      .selectRefs(column("key").as("devil"), column("value").as("cat"))
+      .collect()
+    assert(beans.size == 3)
+    assert(beans.exists(bean ⇒ bean.getCat == "one" && bean.getDevil == 1))
+    assert(beans.exists(bean ⇒ bean.getCat == "two" && bean.getDevil == 2))
+    assert(beans.exists(bean ⇒ bean.getCat == null && bean.getDevil == 3))
   }
 
   it should "allow to read data as Java beans (with multiple constructors)" in {
