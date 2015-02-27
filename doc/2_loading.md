@@ -41,7 +41,7 @@ rdd.toArray.foreach(println)
 
 ### Using emptyCassandraRDD implementation
 
-To create an instance of `CassandraRDD` for a table which does exist use the emptyCassandraRDD method. 
+To create an instance of `CassandraRDD` for a table which does **not** exist use the emptyCassandraRDD method. 
 `emptyCassandraRDD`s do not perform validation or create partitions so they can be used to represent absent
 tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
 method on it or call `emptyCassandraTable` method on Spark context.
