@@ -121,7 +121,8 @@ private[cassandra] trait CassandraStrategies {
         val eqPredicates = eqColumns.flatMap(eqPredicatesByName)
         val optionalNonEqPredicate = for {
           c <- otherColumns.headOption.toSeq
-          p <- firstNonEmptySeq(rangePredicatesByName(c), inPredicatesByName(c).filter(_ => eqColumns.nonEmpty))
+          p <- firstNonEmptySeq(rangePredicatesByName(c), inPredicatesByName(c).filter(
+            _ => eqColumns.nonEmpty && c==clusteringColumns.last))
         } yield p
 
         eqPredicates ++ optionalNonEqPredicate
@@ -138,7 +139,9 @@ private[cassandra] trait CassandraStrategies {
         val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
         val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
         val nonIndexedPredicates = for {
-          c <- allColumns if !eqIndexedColumns.contains(c)
+          c <- allColumns if !partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) ||
+                              partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) &&
+                               !partitionKeyColumns.contains(c)
           p <- firstNonEmptySeq(eqPredicatesByName(c), rangePredicatesByName(c))
         } yield p
 
