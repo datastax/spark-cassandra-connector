@@ -125,7 +125,7 @@ object Dependencies {
       val junitInterface    = "com.novocode"            % "junit-interface"       % "0.10"          % "test,it"
       val scalatest         = "org.scalatest"           %% "scalatest"            % ScalaTest       % "test,it"                   // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"            % Scalactic       % "test,it"                   // ApacheV2
-      val scalaCompiler     = "org.scala-lang"          % "scala-compiler"        % Scala
+      val scalaCompiler     = "org.scala-lang"          % "scala-compiler"        % Scala           % "test"
       val mockito           = "org.mockito"             % "mockito-all"           % "1.10.19"       % "test,it"                   // MIT
     }
   }
