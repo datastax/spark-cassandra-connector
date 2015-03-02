@@ -197,6 +197,11 @@ object CassandraConnector extends Logging {
   }))
 
   /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
+  def apply(conf: SparkConf, cluster: Option[String]): CassandraConnector = {
+    new CassandraConnector(CassandraConnectorConf(conf, cluster))
+  }
+
+  /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
   def apply(conf: SparkConf): CassandraConnector = {
     new CassandraConnector(CassandraConnectorConf(conf))
   }
