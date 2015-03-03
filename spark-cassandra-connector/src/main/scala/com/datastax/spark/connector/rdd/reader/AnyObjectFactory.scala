@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd.reader
 
 import java.lang.reflect.Constructor
 
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
 import org.apache.commons.lang3.reflect.ConstructorUtils

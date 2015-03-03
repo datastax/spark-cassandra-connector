@@ -4,7 +4,7 @@ import java.net.InetAddress
 import scala.util.control.NonFatal
 
 import org.apache.spark.SparkConf
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */

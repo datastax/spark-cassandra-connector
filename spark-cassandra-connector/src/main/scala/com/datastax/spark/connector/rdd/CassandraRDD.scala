@@ -8,7 +8,7 @@ import scala.language.existentials
 
 import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
@@ -17,7 +17,7 @@ import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, Ca
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
-import com.datastax.spark.connector.util.{Logging, CountingIterator}
+import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector._
 
 
@@ -59,21 +59,6 @@ class CassandraRDD[R] private[connector] (
   implicit
     ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
-
-  /* Logging classes inheritance conflict fix. */
-  override def log = super[Logging].log
-  override def logName = super[Logging].logName
-  override def logInfo(msg: => String) = super[Logging].logInfo(msg)
-  override def logDebug(msg: => String) = super[Logging].logDebug(msg)
-  override def logTrace(msg: => String) = super[Logging].logTrace(msg)
-  override def logWarning(msg: => String) = super[Logging].logWarning(msg)
-  override def logError(msg: => String) = super[Logging].logError(msg)
-  override def logInfo(msg: => String, throwable: Throwable) = super[Logging].logInfo(msg, throwable)
-  override def logDebug(msg: => String, throwable: Throwable) = super[Logging].logDebug(msg, throwable)
-  override def logTrace(msg: => String, throwable: Throwable) = super[Logging].logTrace(msg, throwable)
-  override def logWarning(msg: => String, throwable: Throwable) = super[Logging].logWarning(msg, throwable)
-  override def logError(msg: => String, throwable: Throwable) = super[Logging].logError(msg, throwable)
-  override def isTraceEnabled() = super[Logging].isTraceEnabled()
 
   private def fetchSize = readConf.fetchSize
   private def splitSize = readConf.splitSize

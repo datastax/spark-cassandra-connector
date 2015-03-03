@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import java.util.concurrent.Semaphore
 
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
 
 import scala.collection.concurrent.TrieMap

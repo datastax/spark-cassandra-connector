@@ -7,8 +7,8 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.metrics.OutputMetricsUpdater
-import com.datastax.spark.connector.util.{CountingIterator, Logging}
-import org.apache.spark.TaskContext
+import com.datastax.spark.connector.util.CountingIterator
+import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
 

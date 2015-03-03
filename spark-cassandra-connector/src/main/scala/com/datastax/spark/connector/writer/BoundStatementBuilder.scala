@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 private[connector] class BoundStatementBuilder[T](
     val rowWriter: RowWriter[T],

@@ -10,7 +10,7 @@ import org.apache.cassandra.thrift.CfSplit
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, Token, TokenFactory, TokenRange}
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 /** Delegates token range splitting to Cassandra server. */
 class ServerSideTokenRangeSplitter[V, T <: Token[V]](
