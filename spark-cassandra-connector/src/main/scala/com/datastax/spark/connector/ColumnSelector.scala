@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 
 sealed trait ColumnSelector
 case object AllColumns extends ColumnSelector
-case class SomeColumns(columns: NamedColumnRef*) extends ColumnSelector
+case class SomeColumns(columns: SelectableColumnRef*) extends ColumnSelector
 
 object SomeColumns {
   @deprecated("Use com.datastax.spark.connector.rdd.SomeColumns instead of Seq", "1.0")

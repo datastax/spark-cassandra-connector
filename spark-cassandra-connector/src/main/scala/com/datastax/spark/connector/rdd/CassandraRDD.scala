@@ -115,13 +115,11 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
-  private def checkColumnsAvailable(columns: Seq[NamedColumnRef], availableColumns: Seq[NamedColumnRef]) {
-    val availableColumnsSet = availableColumns.collect {
-      case ColumnName(columnName) => columnName
-    }.toSet
+  private def checkColumnsAvailable(columns: Seq[SelectableColumnRef], availableColumns: Seq[SelectableColumnRef]) {
+    val availableColumnsSet = availableColumns.toSet
 
-    val notFound = columns.collectFirst {
-      case ColumnName(columnName) if !availableColumnsSet.contains(columnName) => columnName
+    val notFound = columns.find {
+      case column => !availableColumnsSet.contains(column)
     }
 
     if (notFound.isDefined)
@@ -131,7 +129,7 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Filters currently selected set of columns with a new set of columns */
-  private def narrowColumnSelection(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
+  private def narrowColumnSelection(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
     columnNames match {
       case SomeColumns(cs @ _*) =>
         checkColumnsAvailable(columns, cs)
@@ -154,8 +152,16 @@ class CassandraRDD[R] private[connector] (
     * just column names (which is also backward compatible) and optional add `.ttl` or `.writeTime`
     * suffix in order to create an appropriate [[NamedColumnRef]] instance.
     */
-  def select(columns: NamedColumnRef*): CassandraRDD[R] = {
+  def select(columns: SelectableColumnRef*): CassandraRDD[R] = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
+  }
+
+  override def count(): Long = {
+    columnNames match {
+      case SomeColumns(_) => logWarning("You are about to count rows but an explicit projection has been specified.")
+      case _ =>
+    }
+    new CassandraRDD[Long](sc, connector, keyspaceName, tableName, SomeColumns(RowCountRef), where, readConf).reduce(_ + _)
   }
 
   /** Maps each row into object of a different type using provided function taking column value(s) as argument(s).
@@ -260,7 +266,7 @@ class CassandraRDD[R] private[connector] (
 
   private lazy val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
 
-  private def checkColumnsExistence(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
+  private def checkColumnsExistence(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
     val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
 
@@ -285,21 +291,24 @@ class CassandraRDD[R] private[connector] (
       column
     }
 
-    columns.map(checkSingleColumn)
+    columns.map {
+      case namedColumnRef: NamedColumnRef => checkSingleColumn(namedColumnRef)
+      case columnRef => columnRef
+    }
   }
 
 
   /** Returns the names of columns to be selected from the table.*/
-  lazy val selectedColumnNames: Seq[NamedColumnRef] = {
-    val providedColumnNames =
+  lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
+    val providedColumnRefs =
       columnNames match {
         case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef).toSeq
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 
     (rowTransformer.columnNames, rowTransformer.requiredColumns) match {
-      case (Some(cs), None) => providedColumnNames.filter(columnName => cs.toSet(columnName.selectedAs))
-      case (_, _) => providedColumnNames
+      case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedAs))
+      case (_, _) => providedColumnRefs
     }
   }
 
@@ -314,15 +323,15 @@ class CassandraRDD[R] private[connector] (
 
     rowTransformer.columnNames match {
       case Some(names) =>
-        val missingColumns = names.toSet -- selectedColumnNames.map(_.selectedAs).toSet
+        val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedAs).toSet
         assert(missingColumns.isEmpty, s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
       case None =>
     }
 
     rowTransformer.requiredColumns match {
       case Some(count) =>
-        assert(selectedColumnNames.size >= count,
-        s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")
+        assert(selectedColumnRefs.size >= count,
+        s"Not enough columns selected for the target row type $targetType: ${selectedColumnRefs.size} < $count")
       case None =>
     }
   }
@@ -353,7 +362,7 @@ class CassandraRDD[R] private[connector] (
       .endpoints.map(_.getHostName).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
-    val columns = selectedColumnNames.map(_.cql).mkString(", ")
+    val columns = selectedColumnRefs.map(_.cql).mkString(", ")
     val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
@@ -389,7 +398,7 @@ class CassandraRDD[R] private[connector] (
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnNames.map(_.selectedAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
 
     try {
       implicit val pv = protocolVersion(session)
