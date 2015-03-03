@@ -76,6 +76,20 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     }
 
     /**
+     * Adds the limit clause to CQL select statement. The limit will be applied for each created
+     * Spark partition. In other words, unless the data are fetched from a single Cassandra partition
+     * the number of results is unpredictable.
+     * <p/>
+     * The main purpose of passing limit clause is to fetch top n rows from a single Cassandra
+     * partition when the table is designed so that it uses clustering keys and a partition key
+     * predicate is passed to the where clause.
+     */
+    public CassandraJavaPairRDD<K, V> limit(Long rowsNumber) {
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().limit(rowsNumber);
+        return new CassandraJavaPairRDD<>(newRDD, kClassTag(), vClassTag());
+    }
+
+    /**
      * Returns the names of columns to be selected from the table.
      */
     public String[] selectedColumnNames() {
