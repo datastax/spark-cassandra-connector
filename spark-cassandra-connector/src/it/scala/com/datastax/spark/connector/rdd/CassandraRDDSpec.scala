@@ -581,6 +581,18 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results.head.ttlOfValue <= ttl
   }
 
+  it should "allow to specify ascending ordering" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key=1").withAscOrder.collect()
+    results.map(_._3).toList shouldBe List("value1", "value2", "value3")
+  }
+
+  it should "allow to specify descending ordering" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key=1").withDescOrder.collect()
+    results.map(_._3).toList shouldBe List("value3", "value2", "value1")
+  }
+
   it should "allow to specify rows number limit" in {
     val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time").where("key=1").limit(2).collect()
     results should have length 2

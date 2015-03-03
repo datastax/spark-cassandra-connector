@@ -78,6 +78,24 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     }
 
     /**
+     * Forces the rows within a selected Cassandra partition to be returned in ascending order
+     * (if possible).
+     */
+    public CassandraJavaRDD<R> withAscOrder() {
+        CassandraRDD<R> newRDD = rdd().withAscOrder();
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
+     * Forces the rows within a selected Cassandra partition to be returned in descending order
+     * (if possible).
+     */
+    public CassandraJavaRDD<R> withDescOrder() {
+        CassandraRDD<R> newRDD = rdd().withAscOrder();
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
      * Returns the names of columns to be selected from the table.
      */
     public NamedColumnRef[] selectedColumnNames() {
