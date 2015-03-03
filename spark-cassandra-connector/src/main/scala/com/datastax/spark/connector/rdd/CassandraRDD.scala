@@ -438,6 +438,12 @@ class CassandraRDD[R] private[connector] (
     countingIterator
   }
 
+  override def take(num: Int): Array[R] = {
+    limit match {
+      case Some(_) => super.take(num)
+      case None => limit(num).take(num)
+    }
+  }
 }
 
 object CassandraRDD {
