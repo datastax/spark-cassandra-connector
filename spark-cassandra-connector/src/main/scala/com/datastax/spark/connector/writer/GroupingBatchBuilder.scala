@@ -78,7 +78,7 @@ class GroupingBatchBuilder[T](batchStatementBuilder: BatchStatementBuilder[T],
 
   /** Creates a statement from the given batch and cleans the batch so that it can be reused. */
   @inline
-  protected def createStmtAndReleaseBatch(batch: Batch): RichStatement = {
+  final private def createStmtAndReleaseBatch(batch: Batch): RichStatement = {
     val stmt = batchStatementBuilder.maybeCreateBatch(batch.statements)
     batch.clear()
     stmt
