@@ -58,8 +58,11 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Configured thrift client port */
   def rpcPort = _config.rpcPort
 
+  /** Configured authentication options */
+  def authConf = _config.authConf
+
   /** Connection configurator */
-  def configurator = _config.connectionFactory
+  def connectionFactory = _config.connectionFactory
 
   /** Returns a shared session to Cassandra and increases the internal open
     * reference counter. It does not release the session automatically,
