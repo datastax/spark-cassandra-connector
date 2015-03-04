@@ -36,7 +36,7 @@ object Settings extends Build {
 
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := "1.2.0-alpha1-SNAPSHOT",
+    version in ThisBuild := "1.2.0-SNAPSHOT",
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
@@ -47,8 +47,6 @@ object Settings extends Build {
     normalizedName := "spark-cassandra-connector",
     name := "DataStax Apache Cassandra connector for Apache Spark",
     organization := "com.datastax.spark",
-    organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.2.0-SNAPSHOT",
     description  := """
                   |A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
                   |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
