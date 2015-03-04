@@ -1,6 +1,5 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 
-
 ## Lightning-fast cluster computing with Spark and Cassandra
 
 This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
@@ -10,6 +9,7 @@ execute arbitrary CQL queries in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5 (see table below)
  - Compatible with Apache Spark 1.0 and 1.1 (see table below)
+ - Compatible with Scala 2.10 and 2.11
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
@@ -43,32 +43,8 @@ If you want to access the functionality of Connector from Java, you may want to 
     libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.2.0-alpha2"
 
 ## Building
-
-### Building The Assembly Jar
-In the root directory run
-
-    sbt assembly
-
-A fat jar will be generated to both of these directories:
-   - `spark-cassandra-connector/target/scala-2.10/`
-   - `spark-cassandra-connector-java/target/scala-2.10/`
-
-Select the former for Scala apps, the later for Java.
-
-### Building General Artifacts
-In the root directory run:
-
-    sbt package
-    sbt doc
-    
-The library package jars will be placed in:
-  - `spark-cassandra-connector/target/scala-2.10/`
-  - `spark-cassandra-connector-java/target/scala-2.10/`
-
-The documentation will be generated to: 
-  - `spark-cassandra-connector/target/scala-2.10/api/`    
-  - `spark-cassandra-connector-java/target/scala-2.10/api/`    
-     
+See [Building And Artifacts](doc/12_building_and_artifacts.md)
+ 
 ## Documentation
 
   - [Quick-start guide](doc/0_quick_start.md)
@@ -83,6 +59,7 @@ The documentation will be generated to:
   - [About The Demos](doc/9_demos.md)
   - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
   - [Performance monitoring](doc/11_metrics.md)
+  - [Building And Artifacts](doc/12_building_and_artifacts.md)
     
 ## License
 This software is available under the [Apache License, Version 2.0](LICENSE).    

@@ -23,5 +23,5 @@ class CassandraStreamingRDD[R] private[connector] (
     readConf: ReadConf = ReadConf())(
   implicit
     ct : ClassTag[R],
-    @transient rrf: RowReaderFactory[R])
+    @transient val rrf: RowReaderFactory[R])
   extends CassandraRDD[R](sctx.sparkContext, connector, keyspace, table, columns, where, empty, limit, clusteringOrder, readConf)

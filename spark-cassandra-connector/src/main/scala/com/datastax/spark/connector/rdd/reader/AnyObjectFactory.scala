@@ -15,7 +15,7 @@ import scala.util.{Failure, Success, Try}
   * and can be safely passed along with Spark tasks. */
 class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
 
-  import com.datastax.spark.connector.rdd.reader.AnyObjectFactory._
+  import AnyObjectFactory._
 
   @transient
   private val tpe = implicitly[TypeTag[T]].tpe
@@ -47,7 +47,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
-    tpe.declaration(nme.CONSTRUCTOR).asTerm.alternatives.map { term =>
+    Reflect.constructor(tpe).asTerm.alternatives.map { term =>
       val ctorSymbol = term.asMethod
       val ctorType = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
       val ctorParams = ctorType.params.map(_.asTerm.typeSignature).toArray
@@ -180,7 +180,7 @@ object AnyObjectFactory extends Logging {
    * class in their constructors, and therefore they need to be treated as normal, top level classes.
    */
   def isRealMemberClass[T](clazz: Class[T]) = {
-    clazz.isMemberClass && 
+    clazz.isMemberClass &&
       clazz.getConstructors.headOption.exists(_.getParameterTypes.headOption.exists(_ == clazz.getEnclosingClass))
   }
 

@@ -62,6 +62,10 @@ To run from SBT read on.
 On the command line at the root of `spark-cassandra-connector`:
     
     sbt simple-demos/run
+
+Against Scala 2.11:
+
+    sbt -Dscala-2.11=true simple-demos/run
     
 And then select which demo you want:
     
@@ -75,10 +79,12 @@ And then select which demo you want:
      [6] com.datastax.spark.connector.demo.SQLDemo
  
 #### Running The Kafka Streaming Demo
+Spark does not support kafka streaming or publish the `spark-streaming-kafka`
+artifact in their Scala 2.11 build yet. Until then this is only available against Scala 2.10.
 On the command line at the root of `spark-cassandra-connector`:
 
     sbt kafka-streaming/run
-      
+
 #### Running The Twitter Streaming Demo
 First you need to set your Twitter auth credentials. This is required by Twitter.
 The Twitter streaming sample expects these values to either already exist in the 
