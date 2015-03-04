@@ -14,25 +14,23 @@ import com.datastax.spark.connector.util.JavaApiHelper
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-abstract class AbstractClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0) extends RowReader[R] {
+class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0) extends RowReader[R] {
 
   private[connector] val factory = new AnyObjectFactory[R]
 
   private val columnMap = implicitly[ColumnMapper[R]].columnMap(table)
 
   @transient
-  protected[reader] val tpe = implicitly[TypeTag[R]].tpe
+  private val tpe = implicitly[TypeTag[R]].tpe
 
   // This must be  serialized:
   val constructorArgConverters: Array[TypeConverter[_]] =
     factory.constructorParamTypes.map(t => TypeConverter.forType(t))
 
-  protected[reader] def methodSymbol(name: String): MethodSymbol
-
   @transient
   private val setterTypes: Map[String, Type] = {
     def argType(name: String) = {
-      methodSymbol(name).typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
+      Reflect.method(tpe, name).typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
     }
     columnMap.setters.keys.map(name => (name, argType(name))).toMap
   }

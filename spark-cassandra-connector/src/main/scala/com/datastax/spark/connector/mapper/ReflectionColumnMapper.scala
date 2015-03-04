@@ -4,14 +4,14 @@ import java.lang.reflect.{Constructor, Method}
 
 import com.datastax.spark.connector.{ColumnRef, ColumnName}
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.rdd.reader.AbstractObjectFactory
+import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
 import org.apache.commons.lang.StringUtils
 
 import scala.reflect.ClassTag
 
 abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
-  import AbstractObjectFactory._
+  import AnyObjectFactory._
 
   protected def isSetter(method: Method): Boolean
   protected def isGetter(method: Method): Boolean

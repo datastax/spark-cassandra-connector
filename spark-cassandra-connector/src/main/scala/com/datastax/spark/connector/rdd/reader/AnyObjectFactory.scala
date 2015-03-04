@@ -14,12 +14,12 @@ import scala.util.{Failure, Success, Try}
 /** Factory for creating objects of any type by invoking their primary constructor.
   * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
   * and can be safely passed along with Spark tasks. */
-abstract class AbstractObjectFactory [T: TypeTag] extends Logging with Serializable {
+class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
 
-  import AbstractObjectFactory._
+  import AnyObjectFactory._
 
   @transient
-  protected[reader] val tpe = implicitly[TypeTag[T]].tpe
+  private val tpe = implicitly[TypeTag[T]].tpe
 
   @transient
   lazy val rm: RuntimeMirror =
@@ -43,14 +43,12 @@ abstract class AbstractObjectFactory [T: TypeTag] extends Logging with Serializa
 
   val argOffset: Int = oneIfMemberClass(javaClass)
 
-  def constructorDecl: Symbol
-
   @transient
   lazy val constructorParamTypes: Array[Type] = {
     val requiredParamClasses = javaConstructor.getParameterTypes
-      .drop(AbstractObjectFactory.oneIfMemberClass(javaClass))
+      .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
-    constructorDecl.asTerm.alternatives.map { term =>
+    Reflect.constructor(tpe).asTerm.alternatives.map { term =>
       val ctorSymbol = term.asMethod
       val ctorType = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
       val ctorParams = ctorType.params.map(_.asTerm.typeSignature).toArray
@@ -111,7 +109,7 @@ abstract class AbstractObjectFactory [T: TypeTag] extends Logging with Serializa
   }
 }
 
-object AbstractObjectFactory extends Logging {
+object AnyObjectFactory extends Logging {
   private[connector] type ParamType = Either[Class[_], String]
 
   private[connector] val paranamer = new AdaptiveParanamer
