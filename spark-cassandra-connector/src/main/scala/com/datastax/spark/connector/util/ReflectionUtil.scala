@@ -78,8 +78,7 @@ object ReflectionUtil {
   /** Returns a list of names and return types of 0-argument public methods of a Scala type */
   def getters(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod
-    val getters = for (m <- methods if m.paramss.size == 0 && m.typeParams.size == 0) yield m
-    for (g <- getters if g.isGetter) yield {
+    for (g <- methods if g.isGetter) yield {
       // the reason we're using typeSignatureIn is because the getter might be a generic type
       // and we don't really want to get generic type here, but a concrete one:
       val returnType = g.typeSignatureIn(tpe).asInstanceOf[NullaryMethodType].resultType
@@ -95,8 +94,7 @@ object ReflectionUtil {
     * returning no result (Unit) */
   def setters(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod
-    val setters = for (m <- methods if m.paramss.size == 1 && m.paramss(0).size == 1 && m.returnType =:= typeOf[Unit]) yield m
-    for (s <- setters if s.isSetter) yield {
+    for (s <- methods if s.isSetter) yield {
       // need a concrete type, not a generic one:
       val paramType = s.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
       (s.name.toString, paramType)

@@ -67,7 +67,11 @@ class ReflectionUtilSpec extends FlatSpec with Matchers {
     assert(params(1)._2 =:= typeOf[List[String]])
   }
 
-  private class ClassWithGetters(val arg1: Int, val arg2: List[String])
+  private class ClassWithGetters(val arg1: Int, val arg2: List[String]) {
+    def getterLikeMethod: String = null
+
+    def otherMethod(x: String): String = null
+  }
 
   "ReflectionUtil.getters" should "return getter names and types" in {
     val getters = ReflectionUtil.getters[ClassWithGetters].toMap
@@ -78,7 +82,11 @@ class ReflectionUtilSpec extends FlatSpec with Matchers {
     assert(getters("arg2") =:= typeOf[List[String]])
   }
 
-  private class ClassWithSetters(var arg1: Int, var arg2: List[String])
+  private class ClassWithSetters(var arg1: Int, var arg2: List[String]) {
+    def setterLikeMethod_=(x: String): Unit = {}
+
+    def otherMethod(x: String): Unit = {}
+  }
 
   "ReflectionUtil.setters" should "return setter names and types" in {
     val setters = ReflectionUtil.setters[ClassWithSetters].toMap
