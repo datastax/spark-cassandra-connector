@@ -9,6 +9,7 @@ import java.net.InetAddress
 trait EmbeddedCassandra {
 
   def cassandraHost = EmbeddedCassandra.cassandraHost
+  def secondCassandraHost = SecondEmbeddedCassandra.cassandraHost
 
   /** Implementation hook. */
   def clearCache(): Unit
@@ -24,16 +25,34 @@ trait EmbeddedCassandra {
       if (currentConfigTemplate != configTemplate || forceReload) {
         clearCache()
         cassandra.map(_.destroy())
-        cassandra = Some(new CassandraRunner(configTemplate))
+        cassandra = Some(new CassandraRunner(configTemplate, DefaultHost, DefaultNativePort))
         currentConfigTemplate = configTemplate
       }
     }
   }
 }
 
+/** A utility trait for integration testing.
+  * It is only used for Spark SQL cross cluster testing as second cluster.*/
+trait SecondEmbeddedCassandra {
+
+  def cassandraHost2 = SecondEmbeddedCassandra.cassandraHost
+
+  /** Switches the Cassandra server to use the new configuration if the requested configuration is different
+    * than the currently used configuration. When the configuration is switched, all the state (including data) of
+    * the previously running cassandra cluster is lost.
+    * @param configTemplate name of the cassandra.yaml template resource */
+  def useCassandraConfig2(configTemplate: String) {
+    import SecondEmbeddedCassandra._
+    cassandra.map(_.destroy())
+    cassandra = Some(new CassandraRunner(configTemplate, DefaultHost, DefaultNativePort))
+  }
+}
+
 object EmbeddedCassandra {
 
   val DefaultHost = "127.0.0.1"
+  final val DefaultNativePort = 9042
 
   // TODO change to CASSANDRA_HOST
   val HostProperty = "IT_TEST_CASSANDRA_HOST"
@@ -50,14 +69,29 @@ object EmbeddedCassandra {
 
 }
 
-private[connector] class CassandraRunner(val configTemplate: String) extends Embedded {
+object SecondEmbeddedCassandra {
+
+  val DefaultHost = "127.0.0.2"
+  final val DefaultNativePort = 9043
+
+  val HostProperty = "IT_TEST_CASSANDRA_HOST2"
+
+  private[connector] var cassandra: Option[CassandraRunner] = None
+
+  val cassandraHost = InetAddress.getByName(sys.env.getOrElse(HostProperty, DefaultHost))
+
+  Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
+    override def run() = cassandra.map(_.destroy())
+  }))
+
+}
+
+private[connector] class CassandraRunner(val configTemplate: String, host: String, nativePort: Integer) extends Embedded {
 
   import java.io.{File, FileOutputStream, IOException}
   import org.apache.cassandra.io.util.FileUtils
   import com.google.common.io.Files
-  import EmbeddedCassandra._
 
-  final val DefaultNativePort = 9042
   val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
   val dataDir = mkdir(new File(workDir, "data"))
@@ -89,7 +123,7 @@ private[connector] class CassandraRunner(val configTemplate: String) extends Emb
     .inheritIO()
     .start()
 
-  if (!waitForPortOpen(InetAddress.getByName(DefaultHost), DefaultNativePort, 10000))
+  if (!waitForPortOpen(InetAddress.getByName(host), nativePort, 100000))
     throw new IOException("Failed to start Cassandra.")
 
   def destroy() {
