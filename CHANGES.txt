@@ -10,6 +10,7 @@
  * Added support for passing the limit clause to CQL in order to fetch top n results (SPARKC-31)
  * Added support for pushing down order by clause for explicitly specifying an order of rows within
    Cassandra partition (SPARKC-32)
+ * Fixed problems when rows are mapped to classes with inherited fields (SPARKC-70)
 
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and

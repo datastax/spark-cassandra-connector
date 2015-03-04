@@ -3,12 +3,12 @@ package com.datastax.spark.connector
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.rdd.RDD
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions._
-import CassandraJavaUtil._
 
 class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
 
@@ -18,8 +18,11 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
   before {
     conn.withSessionDo { session =>
       session.execute("CREATE KEYSPACE IF NOT EXISTS java_api_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
-      session.execute("CREATE TABLE IF NOT EXISTS java_api_test.test_table (key INT, value TEXT, PRIMARY KEY (key))")
-      session.execute("TRUNCATE java_api_test.test_table")
+
+      session.execute("DROP TABLE IF EXISTS java_api_test.test_table")
+      session.execute("CREATE TABLE java_api_test.test_table (key INT, value TEXT, PRIMARY KEY (key))")
+      session.execute("DROP TABLE IF EXISTS java_api_test.test_table2")
+      session.execute("CREATE TABLE java_api_test.test_table2 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
     }
   }
 
@@ -69,6 +72,29 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
   }
 
 
+  it should "allow to save beans with inherited fields to Cassandra" in {
+    assert(conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table2")).all().isEmpty)
+
+    val beansRdd = sc.parallelize(Seq(
+      SampleJavaBeanSubClass.newInstance(1, "one", "a"),
+      SampleJavaBeanSubClass.newInstance(2, "two", "b"),
+      SampleJavaBeanSubClass.newInstance(3, "three", "c")
+    ))
+
+    CassandraJavaUtil.javaFunctions(beansRdd)
+      .writerBuilder("java_api_test", "test_table2", mapToRow(classOf[SampleJavaBeanSubClass]))
+      .saveToCassandra()
+
+    val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table2"))
+    val rows = results.all()
+
+    rows should have size 3
+    rows.map(row => (row.getString("value"), row.getInt("key"), row.getString("sub_class_field"))).toSet shouldBe Set(
+      ("one", 1, "a"),
+      ("two", 2, "b"),
+      ("three", 3, "c")
+    )
+  }
 
   it should "allow to save nested beans to Cassandra" in {
     assert(conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table")).all().isEmpty)

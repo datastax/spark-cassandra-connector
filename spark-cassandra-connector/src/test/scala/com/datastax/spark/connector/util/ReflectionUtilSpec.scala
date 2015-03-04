@@ -70,22 +70,22 @@ class ReflectionUtilSpec extends FlatSpec with Matchers {
   private class ClassWithGetters(val arg1: Int, val arg2: List[String])
 
   "ReflectionUtil.getters" should "return getter names and types" in {
-    val getters = ReflectionUtil.getters[ClassWithGetters]
+    val getters = ReflectionUtil.getters[ClassWithGetters].toMap
     getters should have size 2
-    getters(0)._1 should be("arg1")
-    getters(1)._1 should be("arg2")
-    assert(getters(0)._2 =:= typeOf[Int])
-    assert(getters(1)._2 =:= typeOf[List[String]])
+    getters.keySet should contain ("arg1")
+    getters.keySet should contain ("arg2")
+    assert(getters("arg1") =:= typeOf[Int])
+    assert(getters("arg2") =:= typeOf[List[String]])
   }
 
   private class ClassWithSetters(var arg1: Int, var arg2: List[String])
 
   "ReflectionUtil.setters" should "return setter names and types" in {
-    val setters = ReflectionUtil.setters[ClassWithSetters]
+    val setters = ReflectionUtil.setters[ClassWithSetters].toMap
     setters should have size 2
-    setters(0)._1 should be("arg1_$eq")
-    setters(1)._1 should be("arg2_$eq")
-    assert(setters(0)._2 =:= typeOf[Int])
-    assert(setters(1)._2 =:= typeOf[List[String]])
+    setters.keySet should contain ("arg1_$eq")
+    setters.keySet should contain ("arg2_$eq")
+    assert(setters("arg1_$eq") =:= typeOf[Int])
+    assert(setters("arg2_$eq") =:= typeOf[List[String]])
   }
 }
