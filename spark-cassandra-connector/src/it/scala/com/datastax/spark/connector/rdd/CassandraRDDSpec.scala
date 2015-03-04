@@ -32,6 +32,15 @@ class MutableKeyValueWithConversion(var key: String, var group: Int) extends Ser
   var value: Long = 0L
 }
 
+class SuperKeyValue extends Serializable {
+  var key: Int = 0
+  var value: String = ""
+}
+
+class SubKeyValue extends SuperKeyValue {
+  var group: Long = 0L
+}
+
 class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
@@ -113,6 +122,16 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
     result.head.value should startWith("000")
+  }
+
+  "A CassandraRDD" should "allow to read a Cassandra table as Array of user-defined objects with inherited fields" in {
+    val result = sc.cassandraTable[SubKeyValue]("read_test", "key_value").collect()
+    result should have length 3
+    result.map(kv => (kv.key, kv.group, kv.value)).toSet shouldBe Set(
+      (1, 100, "0001"),
+      (2, 100, "0002"),
+      (3, 300, "0003")
+    )
   }
 
   it should "allow to read a Cassandra table as Array of user-defined class objects" in {

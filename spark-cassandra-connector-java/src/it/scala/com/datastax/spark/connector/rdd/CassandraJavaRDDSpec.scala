@@ -41,6 +41,11 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (2, 'two')")
     session.execute("INSERT INTO java_api_test.test_table2 (some_key, some_value) VALUES (3, null)")
 
+    session.execute("CREATE TABLE java_api_test.test_table3 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
+    session.execute("INSERT INTO java_api_test.test_table3 (key, value, sub_class_field) VALUES (1, 'one', 'a')")
+    session.execute("INSERT INTO java_api_test.test_table3 (key, value, sub_class_field) VALUES (2, 'two', 'b')")
+    session.execute("INSERT INTO java_api_test.test_table3 (key, value, sub_class_field) VALUES (3,  null, 'c')")
+
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
     session.execute("INSERT INTO java_api_test.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
     session.execute("INSERT INTO java_api_test.collections (key, l, s, m) VALUES (2, null, null, null)")
@@ -68,6 +73,14 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
     assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
     assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
+  }
+
+  it should "allow to read data as Java beans with inherited fields" in {
+    val beans = javaFunctions(sc).cassandraTable("java_api_test", "test_table3", mapRowTo(classOf[SampleJavaBeanSubClass])).collect()
+    assert(beans.size == 3)
+    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1 && bean.getSubClassField == "a"))
+    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2 && bean.getSubClassField == "b"))
+    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3 && bean.getSubClassField == "c"))
   }
 
   it should "allow to read data as Java beans (with multiple constructors)" in {

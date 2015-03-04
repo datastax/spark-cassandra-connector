@@ -41,7 +41,7 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
     val missingPrimaryKeyColumns = primaryKeyColumnNames.toSet -- columnNames
     if (missingPrimaryKeyColumns.nonEmpty)
       throw new IllegalArgumentException(
-        s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")}")
+        s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")} (required primary key columns are: $primaryKeyColumnNames and all columns are $columnNames, table is: $table)")
   }
 
   private def columnNameByRef(columnRef: ColumnRef): Option[String] = {

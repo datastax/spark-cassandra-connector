@@ -30,8 +30,11 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   @transient
   private val setterTypes: Map[String, Type] = {
     def argType(name: String) = {
-      val methodSymbol = tpe.declaration(newTermName(name)).asMethod
-      methodSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
+      val symbol = tpe.member(newTermName(name))
+      if (symbol.isMethod)
+        symbol.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
+      else
+        throw new IllegalArgumentException(s"The provided type $tpe does not implement the method $name")
     }
     columnMap.setters.keys.map(name => (name, argType(name))).toMap
   }
