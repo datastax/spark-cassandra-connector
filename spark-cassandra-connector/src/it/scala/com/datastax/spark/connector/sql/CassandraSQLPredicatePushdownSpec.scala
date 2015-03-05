@@ -43,26 +43,30 @@ class CassandraSQLPredicatePushdownSpec extends FlatSpec with Matchers with Shar
   }
 
   it should "allow predicate pushdown if all partition columns have EQ predicate.  a=1 and b=1 and c=1 and d =1 are pushed down" in {
-    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=1").collect()
-    result should have length 5
+    val plan = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=1").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "allow predicate pushdown if all partition columns have EQ predicate except for last partition column has IN predicates." +
     " a=1 and b=1 and c=1 and d in (1, 2, 3, 4) are pushed down" in {
-    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4)").collect()
-    result should have length 5
+    val plan = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4)").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "allow predicate pushdown if partition column predicates can be pushed down and last cluster column has EQ predicate." +
     " a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1 are pushed down" in {
-    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1").collect()
-    result should have length 2
+    val plan = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "allow predicate pushdown if partition column predicates can be pushed down and last cluster column has range predicate." +
     " a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1 and f>1 are pushed down" in {
-    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1 and f>1").collect()
-    result should have length 1
+    val plan = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d in (1, 2, 3, 4) and e=1 and f>1").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "not allow predicate pushdown if partition column predicates can be pushed down and none-last cluster column has IN predicate." +
@@ -70,9 +74,21 @@ class CassandraSQLPredicatePushdownSpec extends FlatSpec with Matchers with Shar
     val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=3 and e=1 and f in (1, 2, 3)").collect()
   }
 
+  it should "not allow predicate pushdown if partition column predicates can be pushed down and none-last cluster column has IN predicate." +
+    " a=1 and b=1 and c=1 and d=3 are pushed down" in {
+    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=3 and h in (1, 2, 3)").collect()
+  }
+
+  it should "not allow predicate pushdown if partition column predicates can be pushed down and none-last cluster column has IN predicate." +
+    " a=1 and b=1 and c=1 and d=3 and e in (1, 2, 3) are pushed down" in {
+    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=3 and e in (1, 2, 3)").collect()
+  }
+
   it should "allow predicate pushdown if there is only cluster column predicates." +
     " e=1 and f=3 are pushed down" in {
-    val result = cc.sql("select * from test_pd where e=1 and f=3").collect()
+    val plan = cc.sql("select * from test_pd where e=1 and f=3").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "not allow predicate pushdown if previous cluster column has None-EQ predicate." +
@@ -87,7 +103,9 @@ class CassandraSQLPredicatePushdownSpec extends FlatSpec with Matchers with Shar
 
   it should "allow predicate pushdown if partition column predicates can be pushed down and only last cluster column has IN predicate." +
     " a=1 and b=1 and c=1 and d=3 and e=1 and f=1 and g=2 and h in (1, 2, 3) are pushed down" in {
-    val result = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=3 and e=1 and f=1 and g=2 and h in (1, 2, 3)").collect()
+    val plan = cc.sql("select * from test_pd where a=1 and b=1 and c=1 and d=3 and e=1 and f=1 and g=2 and h in (1, 2, 3)").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "not allow predicate pushdown if previous cluster column has None-EQ predicate." +
@@ -97,7 +115,9 @@ class CassandraSQLPredicatePushdownSpec extends FlatSpec with Matchers with Shar
 
   it should "allow predicate pushdown if there is EQ indexed column predicate. restriction on partition columns and cluster columns " +
     " can be loosed up. f=5 and i=4 are pushed down" in {
-    val result = cc.sql("select * from test_pd where f=5 and i=4").collect()
+    val plan = cc.sql("select * from test_pd where f=5 and i=4").queryExecution.sparkPlan
+    plan.nodeName shouldBe "CassandraTableScan"
+    plan.children should have size 0
   }
 
   it should "not allow to push down cluster column IN predicate if there is EQ indexed column predicate. " +
