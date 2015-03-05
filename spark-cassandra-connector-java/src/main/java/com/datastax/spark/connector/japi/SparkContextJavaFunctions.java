@@ -2,6 +2,7 @@ package com.datastax.spark.connector.japi;
 
 import com.datastax.spark.connector.SparkContextFunctions;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD;
+import com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDDImpl;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD$;
@@ -38,9 +39,8 @@ public class SparkContextJavaFunctions {
     /**
      * Converts {@code CassandraRDD} of {@code Tuple2} into {@code CassandraJavaPairRDD}.
      */
-    public <K, V> CassandraJavaPairRDD<K, V> toJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd,
-                                                           Class<K> keyClass, Class<V> valueClass) {
-        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyClass), getClassTag(valueClass));
+    public <K, V> CassandraJavaPairRDD<K, V> toJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd, Class<K> keyClass, Class<V> valueClass) {
+        return new CassandraJavaPairRDDImpl<>(rdd, getClassTag(keyClass), getClassTag(valueClass));
     }
 
 
@@ -116,7 +116,7 @@ public class SparkContextJavaFunctions {
         CassandraRDD<Tuple2<K, V>> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table,
                 getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
 
-        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
+        return new CassandraJavaPairRDDImpl<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
     }
 
 
