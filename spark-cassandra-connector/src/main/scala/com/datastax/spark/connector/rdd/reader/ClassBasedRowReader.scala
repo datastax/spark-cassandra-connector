@@ -10,6 +10,7 @@ import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
 import com.datastax.spark.connector.util.JavaApiHelper
+import com.datastax.spark.connector.util.Reflect
 
 import scala.reflect.runtime.universe._
 
@@ -30,7 +31,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   @transient
   private val setterTypes: Map[String, Type] = {
     def argType(name: String) = {
-      val symbol = tpe.member(newTermName(name))
+      val symbol = Reflect.member(tpe, name)
       if (symbol.isMethod)
         symbol.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
       else
@@ -86,7 +87,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
       case e: Exception =>
         throw new TypeConversionException(
           s"Failed to convert column $columnName of table ${table.keyspaceName}.${table.tableName} " +
-          s"to ${converter.targetTypeName}: $columnValue", e)
+            s"to ${converter.targetTypeName}: $columnValue", e)
     }
   }
 

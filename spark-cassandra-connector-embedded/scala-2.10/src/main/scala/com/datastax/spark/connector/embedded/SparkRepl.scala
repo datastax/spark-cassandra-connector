@@ -7,8 +7,10 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.repl.SparkILoop
 
 trait SparkRepl {
+
   def runInterpreter(master: String, input: String): String = {
     System.setProperty("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
+
     val in = new BufferedReader(new StringReader(input + "\n"))
     val out = new StringWriter()
     val cl = getClass.getClassLoader
@@ -22,6 +24,7 @@ trait SparkRepl {
         }
       case _ =>
     }
+
     val interp = new SparkILoop(in, new PrintWriter(out), master)
     org.apache.spark.repl.Main.interp = interp
     val separator = System.getProperty("path.separator")

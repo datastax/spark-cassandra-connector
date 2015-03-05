@@ -50,7 +50,7 @@ import com.datastax.spark.connector._
   * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
   */
 class CassandraRDD[R] private[connector] (
-    @transient sc: SparkContext,
+    @transient val sc: SparkContext,
     val connector: CassandraConnector,
     val keyspaceName: String,
     val tableName: String,
@@ -61,7 +61,7 @@ class CassandraRDD[R] private[connector] (
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())(
   implicit
-    ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
+    ct : ClassTag[R], @transient val rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
 
   require(limit.isEmpty || limit.get > 0, "Limit must be greater than 0")

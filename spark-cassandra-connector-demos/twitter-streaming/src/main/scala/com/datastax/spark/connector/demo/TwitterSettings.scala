@@ -23,7 +23,8 @@ final class TwitterSettings {
 
   val SparkExecutorMemory = config.getBytes("spark.executor.memory")
 
-  val SparkCoresMax = sys.props.get("spark.cores.max").getOrElse(config.getInt("spark.cores.max"))
+  val SparkCoresMax = sys.props.get("spark.cores.max")
+    .map(_.toInt).getOrElse(config.getInt("spark.cores.max"))
 
   val DeployJars: Seq[String] = immutableSeq(
     config.getStringList("spark.jars")).filter(new java.io.File(_).exists)

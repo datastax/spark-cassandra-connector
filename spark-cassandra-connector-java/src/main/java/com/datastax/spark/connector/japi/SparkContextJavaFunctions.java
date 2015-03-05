@@ -1,5 +1,8 @@
 package com.datastax.spark.connector.japi;
 
+import scala.Tuple2;
+
+import org.apache.spark.SparkContext;
 import com.datastax.spark.connector.SparkContextFunctions;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaRDD;
@@ -7,8 +10,6 @@ import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD$;
 import com.datastax.spark.connector.rdd.reader.KeyValueRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
-import org.apache.spark.SparkContext;
-import scala.Tuple2;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 
@@ -38,9 +39,8 @@ public class SparkContextJavaFunctions {
     /**
      * Converts {@code CassandraRDD} of {@code Tuple2} into {@code CassandraJavaPairRDD}.
      */
-    public <K, V> CassandraJavaPairRDD<K, V> toJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd,
-                                                           Class<K> keyClass, Class<V> valueClass) {
-        return new CassandraJavaPairRDD<>(rdd, keyClass, valueClass);
+    public <K, V> CassandraJavaPairRDD<K, V> toJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd, Class<K> keyClass, Class<V> valueClass) {
+        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyClass), getClassTag(valueClass));
     }
 
 
@@ -93,7 +93,7 @@ public class SparkContextJavaFunctions {
     }
 
     /**
-     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD}.
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDDLike}.
      *
      * <p>With this method, each row is converted to a pair of two objects of types {@code K} and {@code V}
      * respectively. For each conversion a separate row reader factory is specified. Row reader factories can be easily
@@ -106,7 +106,7 @@ public class SparkContextJavaFunctions {
      * @param <K>      key type
      * @param <V>      value type
      *
-     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD} of ({@code K}, {@code V}) pairs
+     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDDLike} of ({@code K}, {@code V}) pairs
      *
      * @since 1.1.0
      */
@@ -116,7 +116,7 @@ public class SparkContextJavaFunctions {
         CassandraRDD<Tuple2<K, V>> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table,
                 getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
 
-        return new CassandraJavaPairRDD<>(rdd, keyRRF.targetClass(), valueRRF.targetClass());
+        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
     }
 
 

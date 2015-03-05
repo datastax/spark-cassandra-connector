@@ -3,15 +3,12 @@ package com.datastax.spark.connector.embedded
 import java.io.File
 import java.util.Properties
 
+import scala.util.Try
 import scala.concurrent.duration.{Duration, _}
-import kafka.producer._
-import kafka.admin.CreateTopicCommand
-import kafka.common.TopicAndPartition
+import kafka.admin.AdminUtils
 import kafka.producer.{KeyedMessage, ProducerConfig, Producer}
 import kafka.serializer.StringEncoder
 import kafka.server.{KafkaConfig, KafkaServer}
-import kafka.utils.ZKStringSerializer
-import org.I0Itec.zkclient.ZkClient
 
 final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded {
 
@@ -26,18 +23,24 @@ final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded 
   private val zookeeper = new EmbeddedZookeeper()
   awaitCond(zookeeper.isRunning, 2000.millis)
 
-  val client = new ZkClient(ZookeeperConnectionString, 6000, 6000, ZKStringSerializer)
-  println(s"ZooKeeper Client connected.")
-
   val kafkaConfig: KafkaConfig = {
+    import scala.collection.JavaConversions._
+    val map = Map(
+      "broker.id" -> "0",
+      "host.name" -> "127.0.0.1",
+      "port" -> "9092",
+      "advertised.host.name" -> "127.0.0.1",
+      "advertised.port" -> "9092",
+      "log.dir" -> createTempDir.getAbsolutePath,
+      "zookeeper.connect" -> ZookeeperConnectionString,
+      "replica.high.watermark.checkpoint.interval.ms" -> "5000",
+      "log.flush.interval.messages" -> "1",
+      "replica.socket.timeout.ms" -> "500",
+      "controlled.shutdown.enable" -> "false",
+      "auto.leader.rebalance.enable" -> "false"
+    )
     val props = new Properties()
-    props.put("broker.id", "0")
-    props.put("host.name", "localhost")
-    props.put("port", "9092")
-    props.put("log.dir", createTempDir.getAbsolutePath)
-    props.put("zookeeper.connect", ZookeeperConnectionString)
-    props.put("log.flush.interval.messages", "1")
-    props.put("replica.socket.timeout.ms", "1500")
+    props.putAll(map)
     new KafkaConfig(props)
   }
 
@@ -58,30 +61,33 @@ final class EmbeddedKafka(val kafkaParams: Map[String,String]) extends Embedded 
   val producer = new Producer[String, String](producerConfig)
 
   def createTopic(topic: String, numPartitions: Int = 1, replicationFactor: Int = 1) {
-    CreateTopicCommand.createTopic(client, topic, numPartitions, replicationFactor, "0")
-    awaitPropagation(Seq(server), topic, 0, 2000.millis)
+    AdminUtils.createTopic(server.zkClient, topic, numPartitions, replicationFactor)
+    awaitPropagation(topic, 0, 2000.millis)
   }
 
-  def produceAndSendMessage(topic: String, sent: Map[String, Int]) {
+  def produceAndSendMessage(topic: String, sent: Map[String, Int]): Unit = {
     producer.send(createTestMessage(topic, sent): _*)
   }
 
   private def createTestMessage(topic: String, send: Map[String, Int]): Seq[KeyedMessage[String, String]] =
     (for ((s, freq) <- send; i <- 0 until freq) yield new KeyedMessage[String, String](topic, s)).toSeq
 
-  def awaitPropagation(servers: Seq[KafkaServer], topic: String, partition: Int, timeout: Duration): Unit =
+  def awaitPropagation(topic: String, partition: Int, timeout: Duration): Unit =
     awaitCond(
-      p = servers.forall(_.apis.leaderCache.keySet.contains(TopicAndPartition(topic, partition))),
+      server.apis.metadataCache.getPartitionInfo(topic, partition)
+        .exists(_.leaderIsrAndControllerEpoch.leaderAndIsr.leader >= 0),
       max = timeout,
-      message = s"Partition [$topic, $partition] metadata not propagated after timeout")
+      message = s"Partition [$topic, $partition] metadata not propagated after timeout"
+    )
 
   def shutdown(): Unit = try {
     println(s"Shutting down Kafka server.")
-    client.close()
-
-    server.shutdown()
+    Option(producer).map(_.close())
+    //https://issues.apache.org/jira/browse/KAFKA-1887
+    Try(server.kafkaController.shutdown())
+    Try(server.shutdown())
+    server.awaitShutdown()
     server.config.logDirs.foreach(f => deleteRecursively(new File(f)))
-
     zookeeper.shutdown()
     awaitCond(!zookeeper.isRunning, 2000.millis)
     println(s"ZooKeeper server shut down.")

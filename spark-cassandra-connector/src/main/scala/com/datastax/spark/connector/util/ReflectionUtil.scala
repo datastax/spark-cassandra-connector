@@ -57,13 +57,7 @@ object ReflectionUtil {
     * The main constructor is assumed to be the one that has the highest number of parameters.
     * In case on ambiguity, this method throws IllegalArgumentException.*/
   def constructorParams(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
-    val constructors = tpe.declaration(nme.CONSTRUCTOR).asTerm.alternatives.map(_.asMethod)
-    val paramCount = constructors.map(_.paramss.flatten.size).max
-    val ctorSymbol = constructors.filter(_.paramss.flatten.size == paramCount) match {
-      case List(onlyOne) => onlyOne
-      case _             => throw new IllegalArgumentException(
-        "Multiple constructors with the same number of parameters not allowed.")
-    }
+    val ctorSymbol = Reflect.methodSymbol(tpe)
     // the reason we're using typeSignatureIn is because the constructor might be a generic type
     // and we don't really want to get generic type parameters here, but concrete ones:
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]

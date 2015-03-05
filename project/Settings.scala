@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import scala.collection.mutable
+import scala.language.postfixOps
+
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
@@ -23,58 +26,111 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
-
-import scala.collection.mutable
-import scala.language.postfixOps
-
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
+import com.scalapenos.sbt.prompt.PromptTheme
 
 object Settings extends Build {
 
+  val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
+
   lazy val buildSettings = Seq(
-    name := "DataStax Apache Cassandra connector for Apache Spark",
-    normalizedName := "spark-cassandra-connector",
-    description := "A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to Cassandra tables, " +
-      "and executes CQL queries in Spark applications.",
-    organization := "com.datastax.spark",
-    organizationHomepage := Some(url("http://www.datastax.com/")),
+    organization         := "com.datastax.spark",
     version in ThisBuild := "1.2.0-SNAPSHOT",
-    scalaVersion := Versions.Scala,
+    scalaVersion         := Versions.scalaVersion,
+    crossScalaVersions   := Versions.crossScala,
+    crossVersion         := CrossVersion.binary,
+    versionStatus        := Versions.status(scalaVersion.value, scalaBinaryVersion.value)
+  )
+
+  override lazy val settings = super.settings ++ buildSettings ++ Seq(
+    normalizedName := "spark-cassandra-connector",
+    name := "DataStax Apache Cassandra connector for Apache Spark",
+    organization := "com.datastax.spark",
+    description  := """
+                  |A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
+                  |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
-    licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
+    licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
+    promptTheme := ScalapenosTheme
   )
 
-  val parentSettings = buildSettings ++ Seq(
-    publishArtifact := false,
-    publish := {}
+  val parentSettings = noPublish ++ Seq(
+    managedSourceDirectories := Nil,
+    (unmanagedSourceDirectories in Compile) := Nil,
+    (unmanagedSourceDirectories in Test) := Nil
   )
 
-  override lazy val settings = super.settings ++ buildSettings
+  lazy val noPublish = Seq(
+    publish := {},
+    publishLocal := {},
+    publishArtifact := false
+  )
 
-  lazy val moduleSettings = graphSettings ++ Seq(
-    scalacOptions in (Compile, doc) ++= Seq("-implicits","-doc-root-content", "rootdoc.txt"),
-    scalacOptions ++= Seq("-encoding", "UTF-8", s"-target:jvm-${Versions.JDK}", "-deprecation", "-feature", "-language:_", "-unchecked", "-Xlint"),
-    javacOptions in (Compile, doc) := Seq("-encoding", "UTF-8", "-source", Versions.JDK),
-    javacOptions in Compile ++= Seq("-encoding", "UTF-8", "-source", Versions.JDK, "-target", Versions.JDK, "-Xlint:unchecked", "-Xlint:deprecation"),
+  val encoding = Seq("-encoding", "UTF-8")
+
+  lazy val projectSettings = graphSettings ++ Seq(
+
+    incOptions := incOptions.value.withNameHashing(true),
+
+    ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
+
+    // when sbt-release enabled: enableCrossBuild = true,
+
+    /* Can not use -Xfatal-warnings until this known issue fixed:
+      org.apache.cassandra.io.util.DataOutputPlus not found - continuing with a stub. */
+    scalacOptions ++= encoding ++ Seq(
+      s"-target:jvm-${Versions.JDK}",
+      "-deprecation",
+      "-feature",
+      "-language:_",
+      "-unchecked",
+      "-Xlint"),
+
+    scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature"), // 2.11
+
+    javacOptions ++= encoding ++ Seq(
+      "-source", Versions.JDK,
+      "-target", Versions.JDK,
+      "-Xlint:unchecked",
+      "-Xlint:deprecation"
+    ),
+
+    scalacOptions in (Compile, doc) ++= Seq(
+      "-implicits",
+      "-doc-root-content",
+      "rootdoc.txt"
+    ),
+
+    javacOptions in (Compile, doc) := encoding ++ Seq(
+      "-source", Versions.JDK
+    ),
+
+    evictionWarningOptions in update := EvictionWarningOptions.default
+      .withWarnTransitiveEvictions(false)
+      .withWarnDirectEvictions(false)
+      .withWarnScalaVersionEviction(false),
+
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-    // tbd: crossVersion := CrossVersion.binary,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
-    autoAPIMappings := true
+    autoAPIMappings := true,
+    compileOrder := CompileOrder.Mixed
   )
 
-  lazy val defaultSettings = moduleSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+  lazy val mimaSettings = mimaDefaultSettings ++ Seq(
+    previousArtifact := None, //Some("a" % "b_2.10.4" % "1.2"),
+    binaryIssueFilters ++= Seq.empty
+  )
 
-  lazy val demoSettings = moduleSettings ++ Seq(
+  lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+
+  lazy val demoSettings = projectSettings ++ noPublish ++ Seq(
     publishArtifact in (Test,packageBin) := false,
     javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
   )
 
-  lazy val mimaSettings = mimaDefaultSettings ++ Seq(
-    previousArtifact := None
-  )
-
-  val tests = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
+  val testConfigs = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
   val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
@@ -107,22 +163,26 @@ object Settings extends Build {
     artifactName in (IntegrationTest,packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
       baseDirectory.value.name + "-it_" + sv.binary + "-" + module.revision + "." + artifact.extension
     },
+    publishArtifact in Test := false,
     publishArtifact in (Test,packageBin) := true,
     publishArtifact in (IntegrationTest,packageBin) := true,
-    publish in (Test,packageBin) := {},
-    publish in (IntegrationTest,packageBin) := {}
+    publish in (Test,packageBin) := (),
+    publish in (IntegrationTest,packageBin) := ()
   )
 
-  lazy val testSettings = tests ++ testArtifacts ++ graphSettings ++ Seq(
+  lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
+    javaOptions in IntegrationTest ++= Seq(
+      "-XX:MaxPermSize=256M", "-Xmx1g"
+    ),
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
     fork in Test := true,
     fork in IntegrationTest := true,
+    managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test),
-    javaOptions in IntegrationTest ++= Seq("-XX:MaxPermSize=256M", "-Xmx1g")
+    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
@@ -138,13 +198,6 @@ object Settings extends Build {
     }
   )
 
-  /* By default, assembly is not enabled for the demos module, but it can be enabled with
-    `-Ddemos.assembly=true`. From the command line this would be:
-     sbt -Ddemos.assembly=true twitter/assembly */
-  lazy val demoAssemblySettings =
-    if (System.getProperty("demos.assembly", "true").toBoolean) sbtAssemblySettings
-    else Seq.empty
-
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile  := formattingPreferences,
     ScalariformKeys.preferences in Test     := formattingPreferences
@@ -158,24 +211,4 @@ object Settings extends Build {
       .setPreference(AlignSingleLineCaseStatements, true)
   }
 
-}
-
-object ShellPromptPlugin extends AutoPlugin {
-  override def trigger = allRequirements
-  override lazy val projectSettings = Seq(
-    shellPrompt := buildShellPrompt
-  )
-  val devnull: ProcessLogger = new ProcessLogger {
-    def info (s: => String) {}
-    def error (s: => String) { }
-    def buffer[T] (f: => T): T = f
-  }
-  def currBranch =
-    ("git status -sb" lines_! devnull headOption).
-      getOrElse("-").stripPrefix("## ")
-  val buildShellPrompt: State => String = {
-    case (state: State) =>
-      val currProject = Project.extract (state).currentProject.id
-      s"""$currProject:$currBranch> """
-  }
 }
