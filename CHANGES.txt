@@ -1,4 +1,4 @@
-1.2.0 (unreleased)
+1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
  * Added automatic generation of Cassandra table schema from a Scala type and
    saving an RDD to a new Cassandra table by saveAsCassandraTable method (SPARKC-38)
@@ -11,6 +11,7 @@
  * Added support for pushing down order by clause for explicitly specifying an order of rows within
    Cassandra partition (SPARKC-32)
  * Fixed problems when rows are mapped to classes with inherited fields (SPARKC-70)
+ * Support for compiling with Scala 2.10 and 2.11 (SPARKC-22)
 
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
