@@ -150,7 +150,7 @@ class CassandraTableScanRDD[R] private[connector](
     // than all of the rows returned by the previous query have been consumed
     val rowIterator = tokenRanges.iterator.flatMap(
       fetchTokenRange(session, _, metricsUpdater))
-    val countingIterator = new CountingIterator(rowIterator)
+    val countingIterator = new CountingIterator(rowIterator, limit)
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d

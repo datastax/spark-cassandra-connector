@@ -47,6 +47,14 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
     }
   }
 
+  override def count(): Long = {
+    columnNames match {
+      case SomeColumns(_) => logWarning("You are about to count rows but an explicit projection has been specified.")
+      case _ =>
+    }
+    new CassandraJoinRDD[Left, Long](prev, keyspaceName, tableName, connector, SomeColumns(RowCountRef), joinColumns, where, limit, clusteringOrder, readConf).map(_._2).reduce(_ + _)
+  }
+
   protected def checkValidJoin(columns: Seq[SelectableColumnRef]): Seq[NamedColumnRef] = {
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
     val partitionKeyColumnNames = tableDef.partitionKey.map(_.columnName).toSet

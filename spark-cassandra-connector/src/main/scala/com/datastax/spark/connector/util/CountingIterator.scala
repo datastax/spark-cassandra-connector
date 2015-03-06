@@ -8,7 +8,7 @@ class CountingIterator[T](iterator: Iterator[T], limit: Option[Long] = None) ext
   def count = _count
 
   def hasNext = limit match {
-    case Some(l) => _count <= l && iterator.hasNext
+    case Some(l) => _count < l && iterator.hasNext
     case _ => iterator.hasNext
   }
 

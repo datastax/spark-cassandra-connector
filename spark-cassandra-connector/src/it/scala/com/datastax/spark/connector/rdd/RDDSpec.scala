@@ -244,6 +244,20 @@ class RDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with S
     checkLeftSide(leftSide, result)
   }
 
+  it should "be be able to be limited" in {
+    val source = sc.parallelize(keys).map(x => (x, x * 100))
+    val someCass = source.joinWithCassandraTable(keyspace, wideTable).on(SomeColumns("key", "group")).limit(3)
+    val result = someCass.collect
+    result should have size (3 * someCass.partitions.size)
+  }
+
+  it should "have be able to be counted" in {
+    val source = sc.parallelize(keys).map(x => (x, x * 100))
+    val someCass = source.joinWithCassandraTable(keyspace, wideTable).on(SomeColumns("key", "group")).count()
+    someCass should be (201)
+
+  }
+
 
   "A CassandraRDD " should "be joinable with Cassandra" in {
     val source = sc.cassandraTable(keyspace, otherTable)
