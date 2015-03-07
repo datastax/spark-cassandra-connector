@@ -3,7 +3,6 @@ package com.datastax.spark.connector.japi;
 import scala.Tuple2;
 
 import org.apache.spark.SparkContext;
-import com.datastax.spark.connector.SparkContextFunctions;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD;
@@ -22,11 +21,9 @@ import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
 @SuppressWarnings("UnusedDeclaration")
 public class SparkContextJavaFunctions {
     public final SparkContext sparkContext;
-    private final SparkContextFunctions scf;
 
     SparkContextJavaFunctions(SparkContext sparkContext) {
         this.sparkContext = sparkContext;
-        this.scf = new SparkContextFunctions(sparkContext);
     }
 
     /**
