@@ -1,6 +1,6 @@
-Unrelease
+Unreleased
  * More Spark SQL predicate push (SPARKC-72)
-
+ * Fixed some Java API problems and refactored its internals (SPARKC-77)
 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)

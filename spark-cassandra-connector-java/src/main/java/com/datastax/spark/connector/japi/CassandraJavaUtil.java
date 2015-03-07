@@ -1,10 +1,21 @@
 package com.datastax.spark.connector.japi;
 
 import akka.japi.JAPI;
-import com.datastax.spark.connector.*;
+import com.datastax.spark.connector.AllColumns$;
+import com.datastax.spark.connector.BatchSize;
+import com.datastax.spark.connector.BatchSize$;
+import com.datastax.spark.connector.BytesInBatch$;
+import com.datastax.spark.connector.ColumnName;
+import com.datastax.spark.connector.ColumnName$;
+import com.datastax.spark.connector.ColumnSelector;
+import com.datastax.spark.connector.NamedColumnRef;
+import com.datastax.spark.connector.RowsInBatch$;
+import com.datastax.spark.connector.SelectableColumnRef;
+import com.datastax.spark.connector.SomeColumns$;
+import com.datastax.spark.connector.TTL;
+import com.datastax.spark.connector.WriteTime;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.mapper.*;
-import com.datastax.spark.connector.rdd.*;
+import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
@@ -32,7 +43,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.datastax.spark.connector.util.JavaApiHelper.*;
+import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFactory;
+import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
+import static com.datastax.spark.connector.util.JavaApiHelper.getRuntimeClass;
+import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
 
 /**
  * The main entry point to Spark Cassandra Connector Java API.

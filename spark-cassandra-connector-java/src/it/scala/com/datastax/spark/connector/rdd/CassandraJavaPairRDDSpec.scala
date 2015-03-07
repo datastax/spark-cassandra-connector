@@ -1,25 +1,16 @@
 package com.datastax.spark.connector.rdd
 
-import java.io.IOException
 import java.util
 
-import org.apache.spark.api.java.JavaPairRDD
-import org.apache.spark.api.java.function.{Function => JFunction, Function2}
-
-import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
-import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.spark.connector.util.JavaApiHelper
-
-import org.apache.commons.lang3.tuple
+import org.apache.spark.api.java.function.{Function => JFunction, Function2}
 import org.scalatest._
 
 import scala.collection.JavaConversions._
-import CassandraJavaUtil._
 
 case class SimpleClass(value: Integer)
 
@@ -62,5 +53,70 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     result should contain (("y", SimpleClass(15)))
     result should contain (("z", SimpleClass(18)))
   }
+
+  it should "allow to use spanBy method" in {
+
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+    }
+
+    val f = new JFunction[(Integer, Integer), Integer]() {
+      override def call(row: (Integer, Integer)) = row._1
+    }
+
+    val results = javaFunctions(sc)
+      .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
+      .select("key", "group")
+      .spanBy(f, classOf[Integer])
+      .collect()
+      .toMap
+
+    results should have size 2
+    results should contain key 10
+    results should contain key 20
+    results(10).size should be(3)
+    results(10).map(_._2).toSeq should be(Seq(10, 11, 12))
+    results(20).size should be(3)
+    results(20).map(_._2).toSeq should be(Seq(20, 21, 22))
+  }
+
+  it should "allow to use spanByKey method" in {
+
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+    }
+
+    val f = new JFunction[(Integer, Integer), Integer]() {
+      override def call(row: (Integer, Integer)) = row._1
+    }
+
+    val results = javaFunctions(sc)
+      .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
+      .select("key", "group")
+      .spanByKey()
+      .collect()
+      .toMap
+
+    results should have size 2
+    results should contain key 10
+    results should contain key 20
+    results(10).size should be(3)
+    results(10).toSeq should be(Seq(10, 11, 12))
+    results(20).size should be(3)
+    results(20).toSeq should be(Seq(20, 21, 22))
+  }
+
 
 }
