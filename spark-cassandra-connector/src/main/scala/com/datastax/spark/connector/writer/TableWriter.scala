@@ -128,7 +128,7 @@ class TableWriter[T] private (
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
-        writeConf.batchSize, writeConf.batchBufferSize, data)
+        writeConf.batchSize, writeConf.batchBufferSize, rowIterator)
       val rateLimiter = new RateLimiter(writeConf.throughputMiBPS * 1024 * 1024, 1024 * 1024)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
