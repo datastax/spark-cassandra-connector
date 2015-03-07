@@ -39,6 +39,24 @@ are currently allowed by the Cassandra engine. This limitation is going to be ad
 Cassandra releases. Currently, `ALLOW FILTERING` works well 
 with columns indexed by secondary indexes or clustering columns.  
 
+### Ordering rows
+
+CQL allows for requesting ascending or descending order of rows within a single Cassandra partition.
+It is allowed to pass the ordering direction by `withAscOrder` or `withDescOrder` methods of
+`CassandraRDD`. Note that it will work only if there is at least one clustering column in the table
+and a partition key predicate is specified by `where` clause.
+
+### Limiting rows
+
+When a table is designed so that it include clustering keys and the use case is that only the first
+`n` rows from an explicitly specified Cassandra partition are supposed to be fetched, one can find
+useful the `limit` method. It allows to add the `LIMIT` clause to each CQL executed for a particular
+RDD.
+
+Note that, when you specify the limit without specifying a partition key predicate for the where
+clause, you will get unpredictable amount of rows because the limit will be applied on each Spark
+partition which is created for the RDD.
+
 ### Grouping rows by partition key
 
 Physically, cassandra stores data already grouped by Cassandra partition key and ordered by clustering

@@ -43,7 +43,7 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
   private def createRandomValueMap: PriorityHashMap[Int, Int] = {
     val m = new PriorityHashMap[Int, Int](capacity)
     val keys = 1 to maxKey
-    val values = random.shuffle(0 to maxKey).toSeq
+    val values = random.shuffle(1 to maxKey).toSeq
     putItems(m, keys, values)
     m
   }

@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.japi.rdd;
 
 import com.datastax.spark.connector.NamedColumnRef;
+import com.datastax.spark.connector.SelectableColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.rdd.CassandraRDD;
@@ -46,7 +47,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public CassandraJavaRDD<R> select(String... columnNames) {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
-        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<NamedColumnRef>toScalaSeq(CassandraJavaUtil.convert(columnNames)));
+        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<SelectableColumnRef>toScalaSeq(CassandraJavaUtil.convert(columnNames)));
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
@@ -57,10 +58,10 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      * times, it selects the subset of the already selected columns, so after a column was removed by the previous
      * {@code select} call, it is not possible to add it back.</p>
      */
-    public CassandraJavaRDD<R> select(NamedColumnRef... selectionColumns) {
+    public CassandraJavaRDD<R> select(SelectableColumnRef... selectionColumns) {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
-        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<NamedColumnRef>toScalaSeq(selectionColumns));
+        CassandraRDD<R> newRDD = rdd().select(JavaApiHelper.<SelectableColumnRef>toScalaSeq(selectionColumns));
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
@@ -77,12 +78,30 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     }
 
     /**
+     * Forces the rows within a selected Cassandra partition to be returned in ascending order
+     * (if possible).
+     */
+    public CassandraJavaRDD<R> withAscOrder() {
+        CassandraRDD<R> newRDD = rdd().withAscOrder();
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
+     * Forces the rows within a selected Cassandra partition to be returned in descending order
+     * (if possible).
+     */
+    public CassandraJavaRDD<R> withDescOrder() {
+        CassandraRDD<R> newRDD = rdd().withAscOrder();
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
      * Returns the names of columns to be selected from the table.
      */
     public NamedColumnRef[] selectedColumnNames() {
         // explicit type cast is intentional and required here
         //noinspection RedundantCast
-        return (NamedColumnRef[]) rdd().selectedColumnNames().<NamedColumnRef>toArray(getClassTag(NamedColumnRef.class));
+        return (NamedColumnRef[]) rdd().selectedColumnRefs().<NamedColumnRef>toArray(getClassTag(NamedColumnRef.class));
     }
 
     /**
@@ -98,6 +117,20 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      */
     public CassandraJavaRDD<R> withReadConf(ReadConf config) {
         CassandraRDD<R> newRDD = rdd().withReadConf(config);
+        return new CassandraJavaRDD<>(newRDD, classTag());
+    }
+
+    /**
+     * Adds the limit clause to CQL select statement. The limit will be applied for each created
+     * Spark partition. In other words, unless the data are fetched from a single Cassandra partition
+     * the number of results is unpredictable.
+     * <p/>
+     * The main purpose of passing limit clause is to fetch top n rows from a single Cassandra
+     * partition when the table is designed so that it uses clustering keys and a partition key
+     * predicate is passed to the where clause.
+     */
+    public CassandraJavaRDD<R> limit(Long rowsNumber) {
+        CassandraRDD<R> newRDD = rdd().limit(rowsNumber);
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 

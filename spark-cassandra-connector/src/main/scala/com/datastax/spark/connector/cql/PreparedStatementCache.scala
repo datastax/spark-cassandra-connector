@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.{RegularStatement, Session, Cluster, PreparedStatement}
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 import scala.collection.concurrent.TrieMap
 

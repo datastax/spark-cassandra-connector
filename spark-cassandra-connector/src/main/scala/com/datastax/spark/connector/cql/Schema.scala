@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.language.existentials

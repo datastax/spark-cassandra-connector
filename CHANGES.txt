@@ -1,16 +1,29 @@
-1.2.0 (unreleased)
+Unrelease
+ * More Spark SQL predicate push (SPARKC-72)
+
+
+1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
  * Added automatic generation of Cassandra table schema from a Scala type and
    saving an RDD to a new Cassandra table by saveAsCassandraTable method (SPARKC-38)
  * Added support for write throughput limiting (SPARKC-57)
  * Added EmptyCassandraRDD (SPARKC-37)
- * More Spark SQL predicate push (SPARKC-72)
+ * Exposed authConf in CassandraConnector
+ * Overridden count() implementation in CassandraRDD which uses native Cassandra count (SPARKC-52)
+ * Removed custom Logging class (SPARKC-54)
+ * Added support for passing the limit clause to CQL in order to fetch top n results (SPARKC-31)
+ * Added support for pushing down order by clause for explicitly specifying an order of rows within
+   Cassandra partition (SPARKC-32)
+ * Fixed problems when rows are mapped to classes with inherited fields (SPARKC-70)
+ * Support for compiling with Scala 2.10 and 2.11 (SPARKC-22)
+
 1.2.0 alpha 2
  * All connection properties can be set on SparkConf / CassandraConnectorConf objects and
    the settings are automatically distributed to Spark Executors (SPARKC-28)
  * Report Connector metrics to Spark metrics system (SPARKC-27)
  * Upgraded to Spark 1.2.1 (SPARKC-30)
  * Add conversion from java.util.Date to java.sqlTimestamp for Spark SQL (#512)
+ * Upgraded to Scala 2.11 and scala version cross build (SPARKC-22)
 
 1.2.0 alpha 1
  * Added support for TTL and timestamp in the writer (#153)

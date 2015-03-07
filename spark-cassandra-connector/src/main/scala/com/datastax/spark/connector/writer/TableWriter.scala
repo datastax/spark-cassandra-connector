@@ -7,8 +7,8 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.metrics.OutputMetricsUpdater
-import com.datastax.spark.connector.util.{CountingIterator, Logging}
-import org.apache.spark.TaskContext
+import com.datastax.spark.connector.util.CountingIterator
+import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
 
@@ -128,7 +128,7 @@ class TableWriter[T] private (
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
-        writeConf.batchSize, writeConf.batchBufferSize, data)
+        writeConf.batchSize, writeConf.batchBufferSize, rowIterator)
       val rateLimiter = new RateLimiter(writeConf.throughputMiBPS * 1024 * 1024, 1024 * 1024)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")

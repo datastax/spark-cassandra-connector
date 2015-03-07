@@ -3,14 +3,13 @@ package com.datastax.spark.connector.demo
 import scala.sys.process._
 import scala.util.Try
 import kafka.serializer.StringDecoder
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{Logging, SparkContext, SparkConf}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.SparkContext._
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.streaming.kafka._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.streaming._

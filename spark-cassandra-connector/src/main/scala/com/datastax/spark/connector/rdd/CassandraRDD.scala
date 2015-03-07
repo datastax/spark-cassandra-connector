@@ -2,13 +2,15 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import com.datastax.spark.connector.rdd.ClusteringOrder.{Descending, Ascending}
+
 import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
 import scala.language.existentials
 
 import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.{SomeColumns, AllColumns, ColumnSelector}
@@ -17,7 +19,7 @@ import com.datastax.spark.connector.rdd.partitioner.{CassandraRDDPartitioner, Ca
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
-import com.datastax.spark.connector.util.{Logging, CountingIterator}
+import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector._
 
 
@@ -48,47 +50,38 @@ import com.datastax.spark.connector._
   * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
   */
 class CassandraRDD[R] private[connector] (
-    @transient sc: SparkContext,
+    @transient val sc: SparkContext,
     val connector: CassandraConnector,
     val keyspaceName: String,
     val tableName: String,
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
-    val readConf: ReadConf = ReadConf(),
-    val empty: Boolean = false)(
+    val empty: Boolean = false,
+    val limit: Option[Long] = None,
+    val clusteringOrder: Option[ClusteringOrder] = None,
+    val readConf: ReadConf = ReadConf())(
   implicit
-    ct : ClassTag[R], @transient rtf: RowReaderFactory[R])
+    ct : ClassTag[R], @transient val rtf: RowReaderFactory[R])
   extends RDD[R](sc, Seq.empty) with Logging {
 
-  /* Logging classes inheritance conflict fix. */
-  override def log = super[Logging].log
-  override def logName = super[Logging].logName
-  override def logInfo(msg: => String) = super[Logging].logInfo(msg)
-  override def logDebug(msg: => String) = super[Logging].logDebug(msg)
-  override def logTrace(msg: => String) = super[Logging].logTrace(msg)
-  override def logWarning(msg: => String) = super[Logging].logWarning(msg)
-  override def logError(msg: => String) = super[Logging].logError(msg)
-  override def logInfo(msg: => String, throwable: Throwable) = super[Logging].logInfo(msg, throwable)
-  override def logDebug(msg: => String, throwable: Throwable) = super[Logging].logDebug(msg, throwable)
-  override def logTrace(msg: => String, throwable: Throwable) = super[Logging].logTrace(msg, throwable)
-  override def logWarning(msg: => String, throwable: Throwable) = super[Logging].logWarning(msg, throwable)
-  override def logError(msg: => String, throwable: Throwable) = super[Logging].logError(msg, throwable)
-  override def isTraceEnabled() = super[Logging].isTraceEnabled()
+  require(limit.isEmpty || limit.get > 0, "Limit must be greater than 0")
 
   private def fetchSize = readConf.fetchSize
   private def splitSize = readConf.splitSize
   private def consistencyLevel = readConf.consistencyLevel
 
   private def copy(columnNames: ColumnSelector = columnNames,
+                   clusteringOrder: Option[ClusteringOrder] = clusteringOrder,
                    where: CqlWhereClause = where,
-                   readConf: ReadConf = readConf,
                    empty: Boolean = empty,
+                   limit: Option[Long] = limit,
+                   readConf: ReadConf = readConf,
                    connector: CassandraConnector = connector): CassandraRDD[R] = {
     require(sc != null,
       "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
       "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +
       "RDD transformations are not allowed inside lambdas used in other RDD transformations.")
-    new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, readConf, empty)
+    new CassandraRDD(sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   /** Returns a copy of this Cassandra RDD with specified connector */
@@ -103,6 +96,18 @@ class CassandraRDD[R] private[connector] (
     copy(where = where and CqlWhereClause(Seq(cql), values))
   }
 
+  /** Adds a CQL `ORDER BY` clause to the query.
+    * It can be applied only in case there are clustering columns and primary key predicate is
+    * pushed down in `where`.
+    * It is useful when the default direction of ordering rows within a single Cassandra partition
+    * needs to be changed. */
+  def clusteringOrder(order: ClusteringOrder): CassandraRDD[R] = {
+    copy(clusteringOrder = Some(order))
+  }
+
+  def withAscOrder: CassandraRDD[R] = clusteringOrder(Ascending)
+  def withDescOrder: CassandraRDD[R] = clusteringOrder(Descending)
+
   /** Allows to set custom read configuration, e.g. consistency level or fetch size. */
   def withReadConf(readConf: ReadConf) = {
     copy(readConf = readConf)
@@ -115,13 +120,11 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
-  private def checkColumnsAvailable(columns: Seq[NamedColumnRef], availableColumns: Seq[NamedColumnRef]) {
-    val availableColumnsSet = availableColumns.collect {
-      case ColumnName(columnName) => columnName
-    }.toSet
+  private def checkColumnsAvailable(columns: Seq[SelectableColumnRef], availableColumns: Seq[SelectableColumnRef]) {
+    val availableColumnsSet = availableColumns.toSet
 
-    val notFound = columns.collectFirst {
-      case ColumnName(columnName) if !availableColumnsSet.contains(columnName) => columnName
+    val notFound = columns.find {
+      case column => !availableColumnsSet.contains(column)
     }
 
     if (notFound.isDefined)
@@ -131,7 +134,7 @@ class CassandraRDD[R] private[connector] (
   }
 
   /** Filters currently selected set of columns with a new set of columns */
-  private def narrowColumnSelection(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
+  private def narrowColumnSelection(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
     columnNames match {
       case SomeColumns(cs @ _*) =>
         checkColumnsAvailable(columns, cs)
@@ -154,8 +157,27 @@ class CassandraRDD[R] private[connector] (
     * just column names (which is also backward compatible) and optional add `.ttl` or `.writeTime`
     * suffix in order to create an appropriate [[NamedColumnRef]] instance.
     */
-  def select(columns: NamedColumnRef*): CassandraRDD[R] = {
+  def select(columns: SelectableColumnRef*): CassandraRDD[R] = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
+  }
+
+  override def count(): Long = {
+    columnNames match {
+      case SomeColumns(_) => logWarning("You are about to count rows but an explicit projection has been specified.")
+      case _ =>
+    }
+    new CassandraRDD[Long](sc, connector, keyspaceName, tableName, SomeColumns(RowCountRef), where, empty, limit, clusteringOrder, readConf).reduce(_ + _)
+  }
+
+  /** Adds the limit clause to CQL select statement. The limit will be applied for each created
+    * Spark partition. In other words, unless the data are fetched from a single Cassandra partition
+    * the number of results is unpredictable.
+    *
+    * The main purpose of passing limit clause is to fetch top n rows from a single Cassandra
+    * partition when the table is designed so that it uses clustering keys and a partition key
+    * predicate is passed to the where clause. */
+  def limit(rowLimit: Long): CassandraRDD[R] = {
+    copy(limit = Some(rowLimit))
   }
 
   /** Maps each row into object of a different type using provided function taking column value(s) as argument(s).
@@ -169,69 +191,69 @@ class CassandraRDD[R] private[connector] (
     * }}}*/
   def as[B : ClassTag, A0 : TypeConverter](f: A0 => B): CassandraRDD[B] = {
     implicit val ft = new FunctionBasedRowReader1(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter](f: (A0, A1) => B) = {
     implicit val ft = new FunctionBasedRowReader2(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter](f: (A0, A1, A2) => B) = {
     implicit val ft = new FunctionBasedRowReader3(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter,
   A3 : TypeConverter](f: (A0, A1, A2, A3) => B) = {
     implicit val ft = new FunctionBasedRowReader4(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter](f: (A0, A1, A2, A3, A4) => B) = {
     implicit val ft = new FunctionBasedRowReader5(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter](f: (A0, A1, A2, A3, A4, A5) => B) = {
     implicit val ft = new FunctionBasedRowReader6(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6) => B) = {
     implicit val ft = new FunctionBasedRowReader7(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter,
   A7 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7) => B) = {
     implicit val ft = new FunctionBasedRowReader8(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
   A8 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8) => B) = {
     implicit val ft = new FunctionBasedRowReader9(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter,
   A8 : TypeConverter, A9 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9) => B) = {
     implicit val ft = new FunctionBasedRowReader10(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
   A4 : TypeConverter, A5 : TypeConverter, A6 : TypeConverter, A7: TypeConverter, A8: TypeConverter,
   A9 : TypeConverter, A10 : TypeConverter](f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10) => B) = {
     implicit val ft = new FunctionBasedRowReader11(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   def as[B : ClassTag, A0 : TypeConverter, A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter,
@@ -239,7 +261,7 @@ class CassandraRDD[R] private[connector] (
   A9 : TypeConverter, A10: TypeConverter, A11 : TypeConverter](
   f: (A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) => B) = {
     implicit val ft = new FunctionBasedRowReader12(f)
-    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, readConf)
+    new CassandraRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, empty, limit, clusteringOrder, readConf)
   }
 
   // ===================================================================
@@ -260,7 +282,7 @@ class CassandraRDD[R] private[connector] (
 
   private lazy val rowTransformer = implicitly[RowReaderFactory[R]].rowReader(tableDef)
 
-  private def checkColumnsExistence(columns: Seq[NamedColumnRef]): Seq[NamedColumnRef] = {
+  private def checkColumnsExistence(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
     val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
 
@@ -285,21 +307,24 @@ class CassandraRDD[R] private[connector] (
       column
     }
 
-    columns.map(checkSingleColumn)
+    columns.map {
+      case namedColumnRef: NamedColumnRef => checkSingleColumn(namedColumnRef)
+      case columnRef => columnRef
+    }
   }
 
 
   /** Returns the names of columns to be selected from the table.*/
-  lazy val selectedColumnNames: Seq[NamedColumnRef] = {
-    val providedColumnNames =
+  lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
+    val providedColumnRefs =
       columnNames match {
         case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef).toSeq
         case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
       }
 
     (rowTransformer.columnNames, rowTransformer.requiredColumns) match {
-      case (Some(cs), None) => providedColumnNames.filter(columnName => cs.toSet(columnName.selectedAs))
-      case (_, _) => providedColumnNames
+      case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedAs))
+      case (_, _) => providedColumnRefs
     }
   }
 
@@ -314,15 +339,15 @@ class CassandraRDD[R] private[connector] (
 
     rowTransformer.columnNames match {
       case Some(names) =>
-        val missingColumns = names.toSet -- selectedColumnNames.map(_.selectedAs).toSet
+        val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedAs).toSet
         assert(missingColumns.isEmpty, s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
       case None =>
     }
 
     rowTransformer.requiredColumns match {
       case Some(count) =>
-        assert(selectedColumnNames.size >= count,
-        s"Not enough columns selected for the target row type $targetType: ${selectedColumnNames.size} < $count")
+        assert(selectedColumnRefs.size >= count,
+        s"Not enough columns selected for the target row type $targetType: ${selectedColumnRefs.size} < $count")
       case None =>
     }
   }
@@ -353,11 +378,13 @@ class CassandraRDD[R] private[connector] (
       .endpoints.map(_.getHostName).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
-    val columns = selectedColumnNames.map(_.cql).mkString(", ")
-    val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ") + " ALLOW FILTERING"
+    val columns = selectedColumnRefs.map(_.cql).mkString(", ")
+    val filter = (range.cql +: where.predicates ).filter(_.nonEmpty).mkString(" AND ")
+    val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
+    val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
-    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter", range.values ++ where.values)
+    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter $orderBy $limitClause ALLOW FILTERING", range.values ++ where.values)
   }
 
   def protocolVersion(session: Session): ProtocolVersion = {
@@ -389,7 +416,7 @@ class CassandraRDD[R] private[connector] (
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnNames.map(_.selectedAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
 
     try {
       implicit val pv = protocolVersion(session)
@@ -428,6 +455,12 @@ class CassandraRDD[R] private[connector] (
     countingIterator
   }
 
+  override def take(num: Int): Array[R] = {
+    limit match {
+      case Some(_) => super.take(num)
+      case None => limit(num).take(num)
+    }
+  }
 }
 
 object CassandraRDD {

@@ -41,7 +41,7 @@ rdd.toArray.foreach(println)
 
 ### Using emptyCassandraRDD implementation
 
-To create an instance of `CassandraRDD` for a table which does exist use the emptyCassandraRDD method. 
+To create an instance of `CassandraRDD` for a table which does **not** exist use the emptyCassandraRDD method. 
 `emptyCassandraRDD`s do not perform validation or create partitions so they can be used to represent absent
 tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
 method on it or call `emptyCassandraTable` method on Spark context.
@@ -212,10 +212,10 @@ val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
 The following options can be specified in the SparkConf object or as a jvm
 -Doption to adjust the read parameters of a Cassandra table.
 
-| Environment Variable                    | Controls                                   | Default
-|-----------------------------------------|--------------------------------------------|---------
-| spark.cassandra.input.split.size        | approx number of rows in a Spark partition | 100000
-| spark.cassandra.input.page.row.size     | number of rows fetched per roundtrip       | 1000
-| spark.cassandra.input.consistency.level | consistency level to use when reading      | LOCAL_ONE
+| Environment Variable                    | Controls                                                   | Default
+|-----------------------------------------|------------------------------------------------------------|---------
+| spark.cassandra.input.split.size        | approx number of Cassandra partitions in a Spark partition | 100000
+| spark.cassandra.input.page.row.size     | number of CQL rows fetched per driver request              | 1000
+| spark.cassandra.input.consistency.level | consistency level to use when reading                      | LOCAL_ONE
 
 [Next - Server-side data selection and filtering](3_selection.md)

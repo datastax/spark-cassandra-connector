@@ -32,6 +32,15 @@ class MutableKeyValueWithConversion(var key: String, var group: Int) extends Ser
   var value: Long = 0L
 }
 
+class SuperKeyValue extends Serializable {
+  var key: Int = 0
+  var value: String = ""
+}
+
+class SubKeyValue extends SuperKeyValue {
+  var group: Long = 0L
+}
+
 class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
 
   useCassandraConfig("cassandra-default.yaml.template")
@@ -113,6 +122,16 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     result.head.key should (be >= 1 and be <= 3)
     result.head.group should (be >= 100L and be <= 300L)
     result.head.value should startWith("000")
+  }
+
+  "A CassandraRDD" should "allow to read a Cassandra table as Array of user-defined objects with inherited fields" in {
+    val result = sc.cassandraTable[SubKeyValue]("read_test", "key_value").collect()
+    result should have length 3
+    result.map(kv => (kv.key, kv.group, kv.value)).toSet shouldBe Set(
+      (1, 100, "0001"),
+      (2, 100, "0002"),
+      (3, 300, "0003")
+    )
   }
 
   it should "allow to read a Cassandra table as Array of user-defined class objects" in {
@@ -579,6 +598,42 @@ class CassandraRDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     results.head.value should be ("test")
     results.head.ttlOfValue > (ttl - 10)
     results.head.ttlOfValue <= ttl
+  }
+
+  it should "allow to specify ascending ordering" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key=1").withAscOrder.collect()
+    results.map(_._3).toList shouldBe List("value1", "value2", "value3")
+  }
+
+  it should "allow to specify descending ordering" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time")
+      .where("key=1").withDescOrder.collect()
+    results.map(_._3).toList shouldBe List("value3", "value2", "value1")
+  }
+
+  it should "allow to specify rows number limit" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time").where("key=1").limit(2).collect()
+    results should have length 2
+    results(0)._3 shouldBe "value1"
+    results(1)._3 shouldBe "value2"
+  }
+
+  it should "allow to specify rows number with take" in {
+    val results = sc.cassandraTable[(Int, Date, String)]("read_test", "clustering_time").where("key=1").take(2)
+    results should have length 2
+    results(0)._3 shouldBe "value1"
+    results(1)._3 shouldBe "value2"
+  }
+
+  it should "count the CassandraRDD items" in {
+    val result = sc.cassandraTable("read_test", "big_table").count()
+    result shouldBe bigTableRowCount
+  }
+
+  it should "count the CassandraRDD items with where predicate" in {
+    val result = sc.cassandraTable("read_test", "big_table").where("key=1").count()
+    result shouldBe 1
   }
 
   it should "allow to use empty RDD on undefined table" in {

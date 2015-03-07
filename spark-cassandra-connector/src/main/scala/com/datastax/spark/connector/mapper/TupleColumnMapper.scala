@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.types.ColumnType
-
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 
 import com.datastax.spark.connector.{ColumnRef, ColumnIndex}
 import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
+import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.util.Reflect
 
 class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[T] {
 
@@ -36,7 +36,7 @@ class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[
 
   override def newTable(keyspaceName: String, tableName: String): TableDef = {
     val tpe = implicitly[TypeTag[T]].tpe
-    val ctorSymbol = tpe.declaration(nme.CONSTRUCTOR).asMethod
+    val ctorSymbol = Reflect.constructor(tpe).asMethod
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
     val ctorParamTypes = ctorMethod.params.map(_.typeSignature)
     require(ctorParamTypes.nonEmpty, "Expected a constructor with at least one parameter")

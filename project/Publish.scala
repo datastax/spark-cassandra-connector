@@ -26,6 +26,9 @@ object Publish extends Build {
   } yield Seq(credentials += Credentials(publish))).getOrElse(Seq.empty)
 
   override lazy val settings = creds ++ Seq(
+    organizationName := "DataStax",
+    organizationHomepage := Some(url("http://www.datastax.com/")),
+
     publishTo <<= version { v: String =>
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))

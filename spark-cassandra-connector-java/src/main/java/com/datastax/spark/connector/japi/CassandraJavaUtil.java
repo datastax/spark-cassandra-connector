@@ -457,7 +457,7 @@ public class CassandraJavaUtil {
             columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i]);
         }
 
-        return SomeColumns$.MODULE$.apply(JAPI.seq(columnsSelection));
+        return SomeColumns$.MODULE$.apply(JAPI.<SelectableColumnRef>seq(columnsSelection));
     }
 
     public static NamedColumnRef[] convert(String... columnNames) {
