@@ -11,7 +11,6 @@ import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.spark.connector.util.JavaApiHelper
 
 import org.apache.commons.lang3.tuple
 import org.scalatest._
@@ -127,7 +126,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .select("key")
     assert(rdd.selectedColumnNames().size === 1)
-    assert(rdd.selectedColumnNames().contains(new ColumnName("key")))
+    assert(rdd.selectedColumnNames().contains("key"))
   }
 
   it should "allow to use where clause to filter records" in {
@@ -343,7 +342,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows")
       .select("key", "group", "value")
-      .spanBy[Int](f, JavaApiHelper.getClassTag(classOf[Int]))
+      .spanBy[Int](f, classOf[Int])
       .collect()
       .toMap
 

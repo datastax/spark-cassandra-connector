@@ -1,12 +1,10 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.rdd.CassandraRDD;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 import scala.reflect.ClassTag;
-
-import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.NamedColumnRef;
-import com.datastax.spark.connector.rdd.CassandraRDD;
-import com.datastax.spark.connector.rdd.ReadConf;
 
 /**
  * A Java API wrapper over {@link com.datastax.spark.connector.rdd.CassandraRDD} of tuples to provide Spark Cassandra
@@ -15,73 +13,30 @@ import com.datastax.spark.connector.rdd.ReadConf;
  * <p>The wrapper can be obtained by one of the methods of {@link com.datastax.spark.connector.japi.SparkContextJavaFunctions}
  * or {@link com.datastax.spark.connector.japi.StreamingContextJavaFunctions}.</p>
  */
-public interface CassandraJavaPairRDDLike<K, V, ThisType extends CassandraJavaPairRDDLike<K, V, ThisType>> {
+public interface CassandraJavaPairRDDLike<K, V, ThisType extends CassandraJavaPairRDDLike<K, V, ThisType>>
+        extends CassandraCommonJavaRDDLike<ThisType> {
 
-    public abstract ClassTag<K> kClassTag();
-    public abstract ClassTag<V> vClassTag();
-    public abstract CassandraRDD<Tuple2<K, V>> rdd();
+    ClassTag<K> kClassTag();
 
-    /**
-     * Narrows down the selected set of columns.
-     *
-     * <p>Use this for better performance, when you don't need all the columns in the result RDD. When called multiple
-     * times, it selects the subset of the already selected columns, so after a column was removed by the previous
-     * {@code select} call, it is not possible to add it back.</p>
-     */
-    public abstract ThisType select(String... columnNames);
+    ClassTag<V> vClassTag();
 
-    public abstract ThisType selectRefs(NamedColumnRef... selectionColumns);
+    CassandraRDD<Tuple2<K, V>> rdd();
 
     /**
-     * Adds a CQL {@code WHERE} predicate(s) to the query.
-     *
-     * <p>Useful for leveraging secondary indexes in Cassandra. Implicitly adds an {@code ALLOW FILTERING} clause to the
-     * {@code WHERE} clause, however beware that some predicates might be rejected by Cassandra, particularly in cases
-     * when they filter on an unindexed, non-clustering column.</p>
+     * Applies a function to each item, and groups consecutive items having the same value together.
+     * Contrary to `groupBy`, items from the same group must be already next to each other in the
+     * original collection. Works locally on each partition, so items from different
+     * partitions will never be placed in the same group.
      */
-    public abstract ThisType where(String cqlWhereClause, Object... args);
+    <K2> JavaPairRDD<K2, Iterable<Tuple2<K, V>>> spanBy(Function<Tuple2<K, V>, K2> f, Class<K2> keyClass);
 
     /**
-     * Forces the rows within a selected Cassandra partition to be returned in ascending order
-     * (if possible).
+     * Groups items with the same key, assuming the items with the same key are next to each other
+     * in the collection. It does not perform shuffle, therefore it is much faster than using
+     * much more universal Spark RDD `groupByKey`. For this method to be useful with Cassandra tables,
+     * the key must represent a prefix of the primary key, containing at least the partition key of the
+     * Cassandra table.
      */
-    public abstract ThisType withAscOrder();
+    JavaPairRDD<K, Iterable<V>> spanByKey();
 
-    /**
-     * Forces the rows within a selected Cassandra partition to be returned in descending order
-     * (if possible).
-     */
-    public abstract ThisType withDescOrder();
-
-    /**
-     * Adds the limit clause to CQL select statement. The limit will be applied for each created
-     * Spark partition. In other words, unless the data are fetched from a single Cassandra partition
-     * the number of results is unpredictable.
-     * <p/>
-     * The main purpose of passing limit clause is to fetch top n rows from a single Cassandra
-     * partition when the table is designed so that it uses clustering keys and a partition key
-     * predicate is passed to the where clause.
-     */
-    public abstract ThisType limit(long rowsNumber);
-
-    /**
-     * Returns the names of columns to be selected from the table.
-     */
-    public abstract String[] selectedColumnNames();
-
-    /**
-     * Returns a copy of this RDD with connector changed to the specified one.
-     */
-    public abstract ThisType withCassandraConnector(CassandraConnector connector);
-
-    /**
-     * Returns a copy of this RDD with read configuration changed to the specified one.
-     */
-    public abstract ThisType withReadConf(ReadConf config);
-
-    /**
-     * Produces the empty CassandraRDD which has the same signature and properties, but it does not
-     * perform any validation and it does not even try to return any rows.
-     */
-    public abstract ThisType toEmptyCassandraRDD();
 }
