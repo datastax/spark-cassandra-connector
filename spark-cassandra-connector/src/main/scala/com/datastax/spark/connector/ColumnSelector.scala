@@ -2,9 +2,19 @@ package com.datastax.spark.connector
 
 import scala.language.implicitConversions
 
-sealed trait ColumnSelector
-case object AllColumns extends ColumnSelector
-case class SomeColumns(columns: SelectableColumnRef*) extends ColumnSelector
+sealed trait ColumnSelector {
+  def aliases: Map[String, String]
+}
+
+case object AllColumns extends ColumnSelector {
+  override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
+}
+
+case class SomeColumns(columns: SelectableColumnRef*) extends ColumnSelector {
+  override def aliases: Map[String, String] = columns.map {
+    case ref => (ref.alias.getOrElse(ref.selectedFromCassandraAs), ref.selectedFromCassandraAs)
+  }.toMap
+}
 
 object SomeColumns {
   @deprecated("Use com.datastax.spark.connector.rdd.SomeColumns instead of Seq", "1.0")

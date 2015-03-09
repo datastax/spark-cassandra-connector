@@ -12,7 +12,7 @@ import com.datastax.spark.connector.util.MagicalTypeTricks.{DoesntHaveImplicit, 
 import scala.annotation.implicitNotFound
 import scala.reflect.runtime.universe._
 
-case class RowReaderOptions(offset: Int = 0)
+case class RowReaderOptions(offset: Int = 0, aliasToColumnName: Map[String, String] = Map.empty)
 
 object RowReaderOptions {
   val Default = RowReaderOptions()

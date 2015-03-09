@@ -3,8 +3,6 @@ package com.datastax.spark.connector.writer
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
 
-import scala.reflect.ClassTag
-
 /** Creates instances of [[RowWriter]] objects for the given row type `T`.
   * `RowWriterFactory` is the trait you need to implement if you want to support row representations
   * which cannot be simply mapped by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].*/
@@ -12,8 +10,9 @@ trait RowWriterFactory[T] {
 
   /** Creates a new `RowWriter` instance.
     * @param table target table the user wants to write into
-    * @param columnNames columns selected by the user; the user might wish to write only a subset of columns */
-  def rowWriter(table: TableDef, columnNames: Seq[String]): RowWriter[T]
+    * @param columnNames columns selected by the user; the user might wish to write only a subset of columns
+    * @param aliasToColumnName custom mappings for some properties */
+  def rowWriter(table: TableDef, columnNames: Seq[String], aliasToColumnName: Map[String, String]): RowWriter[T]
 }
 
 /** Provides a low-priority implicit `RowWriterFactory` able to write objects of any class for which

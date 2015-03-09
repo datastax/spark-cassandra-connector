@@ -18,7 +18,7 @@ class CassandraRowWriter(table: TableDef, selectedColumns: Seq[String]) extends 
 object CassandraRowWriter {
 
   object Factory extends RowWriterFactory[CassandraRow] {
-    override def rowWriter(table: TableDef, columnNames: Seq[String]) =
+    override def rowWriter(table: TableDef, columnNames: Seq[String], aliasToColumnName: Map[String, String]) =
       new CassandraRowWriter(table, columnNames)
   }
 

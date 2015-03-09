@@ -163,8 +163,8 @@ object TableWriter {
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames match {
       case SomeColumns(names @ _*) => names.map {
-        case ColumnName(columnName) => columnName
-        case TTL(_) | WriteTime(_) =>
+        case ColumnName(columnName, _) => columnName
+        case TTL(_, _) | WriteTime(_, _) =>
           throw new IllegalArgumentException(
             s"Neither TTL nor WriteTime fields are supported for writing. " +
             s"Use appropriate write configuration settings to specify TTL or WriteTime.")
@@ -174,7 +174,7 @@ object TableWriter {
 
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
-      selectedColumns ++ writeConf.optionPlaceholders)
+      selectedColumns ++ writeConf.optionPlaceholders, columnNames.aliases)
     new TableWriter[T](connector, tableDef, rowWriter, writeConf)
   }
 }

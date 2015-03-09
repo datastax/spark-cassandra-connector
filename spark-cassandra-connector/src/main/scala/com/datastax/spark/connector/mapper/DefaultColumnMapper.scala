@@ -43,29 +43,32 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
   private val getters = ReflectionUtil.getters[T]
   private val setters = ReflectionUtil.setters[T]
 
-  def constructorParamToColumnName(paramName: String, tableDef: TableDef): String =
-    columnNameOverride.getOrElse(paramName, ColumnMapperConvention.columnNameForProperty(paramName, tableDef))
+  def resolve(name: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
+    columnNameOverride orElse aliasToColumnName applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, tableDef))
 
-  def getterToColumnName(getterName: String, tableDef: TableDef): String =
-    columnNameOverride.getOrElse(getterName, ColumnMapperConvention.columnNameForProperty(getterName, tableDef))
+  def constructorParamToColumnName(paramName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
+    resolve(paramName, tableDef, aliasToColumnName)
 
-  def setterToColumnName(setterName: String, tableDef: TableDef): String = {
+  def getterToColumnName(getterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
+    resolve(getterName, tableDef, aliasToColumnName)
+
+  def setterToColumnName(setterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String = {
     val propertyName = setterNameToPropertyName(setterName)
-    columnNameOverride.getOrElse(propertyName, ColumnMapperConvention.columnNameForProperty(propertyName, tableDef))
+    resolve(propertyName, tableDef, aliasToColumnName)
   }
 
-  override def columnMap(tableDef: TableDef): ColumnMap = {
+  override def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String]): ColumnMap = {
     val constructor =
       for ((paramName, _) <- constructorParams)
-      yield ColumnName(constructorParamToColumnName(paramName, tableDef))
+      yield ColumnName(constructorParamToColumnName(paramName, tableDef, aliasToColumnName))
 
     val getterMap =
       for ((getterName, _) <- getters)
-      yield (getterName, ColumnName(getterToColumnName(getterName, tableDef)))
+      yield (getterName, ColumnName(getterToColumnName(getterName, tableDef, aliasToColumnName)))
 
     val setterMap =
       for ((setterName, _) <- setters)
-      yield (setterName, ColumnName(setterToColumnName(setterName, tableDef)))
+      yield (setterName, ColumnName(setterToColumnName(setterName, tableDef, aliasToColumnName)))
 
     SimpleColumnMap(constructor, getterMap.toMap, setterMap.toMap, allowsNull = false)
   }

@@ -15,11 +15,12 @@ import com.datastax.spark.connector.util.Reflect
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0) extends RowReader[R] {
+class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0, aliasToColumnName: Map[String, String] = Map.empty)
+  extends RowReader[R] {
 
   private[connector] val factory = new AnyObjectFactory[R]
 
-  private val columnMap = implicitly[ColumnMapper[R]].columnMap(table)
+  private val columnMap = implicitly[ColumnMapper[R]].columnMap(table, aliasToColumnName)
 
   @transient
   private val tpe = implicitly[TypeTag[R]].tpe
@@ -125,7 +126,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
   }
 
   private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
-    columnRefs.collect{ case ColumnName(name) => name }.toSeq
+    columnRefs.collect{ case ColumnName(name, _) => name }.toSeq
 
   private def extractColumnIndexes(columnRefs: Iterable[ColumnRef]): Seq[Int] =
     columnRefs.collect{ case ColumnIndex(index) => index }.toSeq
@@ -143,7 +144,7 @@ class ClassBasedRowReader[R : TypeTag : ColumnMapper](table: TableDef, skipColum
 
 class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
   override def rowReader(tableDef: TableDef, options: RowReaderOptions) =
-    new ClassBasedRowReader[R](tableDef, options.offset)
+    new ClassBasedRowReader[R](tableDef, options.offset, options.aliasToColumnName)
 
   override def targetClass: Class[R] = JavaApiHelper.getRuntimeClass(typeTag[R])
 }

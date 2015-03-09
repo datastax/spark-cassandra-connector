@@ -57,6 +57,19 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 The driver will execute a CQL `INSERT` statement for every object in the `RDD`, 
 grouped in unlogged batches. The consistency level for writes is `ONE`. 
 
+It is possible to specify custom column to property mapping with `SomeColumns`. If the property
+names in objects, which are supposed to be saved, do not correspond to the column names in the
+destination table, use `as` method on the column names which you want to override the mapping for.
+
+Example:
+Say you want to save `WordCount` objects to the table which has column `word TEXT` and `num INT`.
+
+```scala
+case class WordCount(word: String, count: Long)
+collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
+collection.saveToCassandra("test", "words2", SomeColumns("word", "count" as "num"))
+```
+
 ## Saving objects of Cassandra User Defined Types
 To save structures consisting of many fields, use `com.datastax.spark.connector.UDTValue`
 class. An instance of this class can be easily obtained from a Scala `Map` by calling `fromMap`

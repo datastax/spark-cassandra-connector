@@ -58,6 +58,29 @@ class WordCount extends Serializable {
 }
 ```       
 
+### Using explicitly specified property names
+It is possible to specify property names explicitly when rows are mapped to objects. In order to
+do this, you need to use `as` method on a selected column name.
+
+Example:
+Say, we have a table with columns `word TEXT` and `num INT`. We would like to map rows from this
+table to the objects of class with fields `word: String` and `count: Int`:
+
+```scala
+case class WordCount(word: String, count: Int)
+val result = sc.cassandraTable[WordCount]]("test", "words").select("word", "num" as "count").collect()
+```
+
+The `as` method can be used for any type of projected value: normal column, TTL or write time:
+
+```scala
+sc.cassandraTable[SomeClass]("test", "table").select(
+    "no_alias",
+    "simple" as "simpleProp",
+    "simple".ttl as "simplePropTTL",
+    "simple".writeTime as "simpleWriteTime")
+```
+
 ### Mapping rows to pairs of objects
 You can also map rows to pairs of objects or tuples so that it resemble a mapping key to values.
 It is convenient to represent data from Cassandra as an RDD of pairs where the first component is

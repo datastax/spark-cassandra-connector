@@ -138,6 +138,30 @@ is also one overloaded `mapRowTo` methods which allows to specify a custom `Colu
 mapper can be found in [Working with user-defined case classes and tuples](4_mapper.md) and
 [Customizing the mapping between Scala and Cassandra](6_advanced_mapper.md).
 
+Since 1.2, it is possible to easily provide custom column name to property name translation by
+`select` method.
+
+Example:
+Say we have a table `people2` with columns `id INT`, `last_name TEXT`, `date_of_birth TIMESTAMP` and
+we want to map the rows of this table to objects of `Person` class.
+
+```java
+CassandraJavaRDD<Person> rdd = javaFunctions(sc).cassandraTable("ks", "people2", mapRowTo(Person.class)).select(
+        column("id"),
+        column("last_name").as("name"),
+        column("date_of_birth").as("birthDate"));
+```
+
+`as` method can be used for any type of projected value: normal column, TTL or write time:
+
+```java
+javaFunctions(sc).cassandraTable("test", "table", mapRowTo(SomeClass.class)).select(
+        column("no_alias"),
+        column("simple").as("simpleProp"),
+        ttl("simple").as("simplePropTTL"),
+        writeTime("simple").as("simpleWriteTime"))
+```
+
 #### Obtaining CassandraJavaPairRDD
 
 Since 1.1.0 one can directly obtain a *CassandraJavaPairRDD*, which is an extension of *JavaPairRDD*. This can be done
