@@ -87,7 +87,8 @@ trait CassandraTableRowReaderProvider[R] {
     val providedColumnRefs =
       columnNames match {
         case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef).toSeq
-        case SomeColumns(cs @ _*) => checkColumnsExistence(cs)
+        case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef).toSeq
+        case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
 
     (rowReader.columnNames, rowReader.requiredColumns) match {
