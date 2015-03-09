@@ -96,7 +96,11 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
 
   lazy val rowWriter = implicitly[RowWriterFactory[Left]].rowWriter(
     tableDef,
-    joinColumnNames.map { case c: NamedColumnRef => c.columnName})
+    joinColumnNames.map {
+      _.columnName
+    },
+    joinColumns.aliases
+  )
 
   def on(joinColumns: ColumnSelector): CassandraJoinRDD[Left, Right] = {
     new CassandraJoinRDD[Left, Right](prev, keyspaceName, tableName, connector, columnNames, joinColumns, where, limit, clusteringOrder, readConf).asInstanceOf[this.type]
@@ -151,7 +155,7 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
   }
 
   private def fetchIterator(session: Session, bsb: BoundStatementBuilder[Left], lastIt: Iterator[Left]): Iterator[(Left, Right)] = {
-    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedFromCassandraAs).toArray
     implicit val pv = protocolVersion(session)
     for (leftSide <- lastIt;
          rightSide <- {

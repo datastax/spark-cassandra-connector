@@ -91,7 +91,9 @@ object ReplicaMapper {
     val selectedColumns = tableDef.partitionKey.map(_.columnName).toSeq
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef,
-      selectedColumns)
+      selectedColumns,
+      Map.empty.withDefault(x => x)
+    )
     new ReplicaMapper[T](connector, tableDef, rowWriter)
   }
 

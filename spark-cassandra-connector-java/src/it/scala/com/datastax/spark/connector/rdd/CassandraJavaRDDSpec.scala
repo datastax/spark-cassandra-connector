@@ -2,20 +2,18 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import scala.collection.JavaConversions._
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
-import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
-import com.datastax.spark.connector.rdd.ClusteringOrder.{Descending, Ascending}
+import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
-
 import org.apache.commons.lang3.tuple
 import org.apache.spark.api.java.function.{Function => JFunction}
 import org.scalatest._
+
+import scala.collection.JavaConversions._
 
 class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
 with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
@@ -366,17 +364,20 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   }
 
   it should "allow to set limit" in {
-    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").limit(10)
-    rdd.rdd.limit shouldBe Some(10L)
+    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").limit(1)
+    val result = rdd.collect
+    result should have size (1)
   }
 
   it should "allow to set ascending ordering" in {
-    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").withAscOrder
-    rdd.rdd.clusteringOrder shouldBe Some(Ascending)
+    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "wide_rows").where("key=10").withAscOrder
+    val result = rdd.collect
+    result(0).getInt("group") should be(10)
   }
 
   it should "allow to set descending ordering" in {
-    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").withDescOrder
-    rdd.rdd.clusteringOrder shouldBe Some(Descending)
+    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "wide_rows").where("key=20").withDescOrder
+    val result = rdd.collect
+    result(0).getInt("group") should be(22)
   }
 }

@@ -40,7 +40,7 @@ trait CassandraTableRowReaderProvider[R] {
    */
   protected val rtf: RowReaderFactory[R]
   protected val rct: ClassTag[R]
-  protected lazy val rowReader: RowReader[R] = rtf.rowReader(tableDef)
+  protected lazy val rowReader: RowReader[R] = rtf.rowReader(tableDef, RowReaderOptions(aliasToColumnName = aliasToColumnName))
 
   private lazy val aliasToColumnName = columnNames.aliases
 
@@ -60,14 +60,14 @@ trait CassandraTableRowReaderProvider[R] {
         throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
 
       column match {
-        case ColumnName(_) =>
+        case ColumnName(_, _) =>
 
-        case TTL(columnName) =>
+        case TTL(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
 
-        case WriteTime(columnName) =>
+        case WriteTime(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
@@ -113,11 +113,11 @@ trait CassandraTableRowReaderProvider[R] {
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
   private def checkColumnsAvailable(columns: Seq[SelectableColumnRef], availableColumns: Seq[SelectableColumnRef]) {
     val availableColumnsSet = availableColumns.collect {
-      case ColumnName(columnName) => columnName
+      case ColumnName(columnName, _) => columnName
     }.toSet
 
     val notFound = columns.collectFirst {
-      case ColumnName(columnName) if !availableColumnsSet.contains(columnName) => columnName
+      case ColumnName(columnName, _) if !availableColumnsSet.contains(columnName) => columnName
     }
 
     if (notFound.isDefined)
