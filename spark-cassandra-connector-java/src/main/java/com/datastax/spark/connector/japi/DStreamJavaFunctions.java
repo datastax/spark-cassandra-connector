@@ -7,6 +7,7 @@ import com.datastax.spark.connector.writer.RowWriterFactory;
 import com.datastax.spark.connector.writer.WriteConf;
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.dstream.DStream;
+import scala.Option$;
 
 /**
  * A Java API wrapper over {@link org.apache.spark.streaming.dstream.DStream} to provide Spark Cassandra Connector
@@ -38,6 +39,12 @@ public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T>
     @Override
     protected void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
                                    ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
-        dsf.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
+        saveToCassandra(keyspace, table, null, rowWriterFactory, columnNames, conf, connector);
+    }
+
+    @Override
+    protected void saveToCassandra(String keyspace, String table, String cluster, RowWriterFactory<T> rowWriterFactory,
+                                   ColumnSelector columnNames, WriteConf conf, CassandraConnector connector) {
+        dsf.saveToCassandra(keyspace, table, columnNames, conf, Option$.MODULE$.apply(cluster), connector, rowWriterFactory);
     }
 }

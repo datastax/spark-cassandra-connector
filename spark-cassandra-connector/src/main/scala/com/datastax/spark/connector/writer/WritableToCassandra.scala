@@ -39,12 +39,13 @@ abstract class WritableToCassandra[T] {
    * @param columnNames The list of column names to save data to.
    *                Uses only the unique column names, and you must select at least all primary key
    *                columns. All other fields are discarded. Non-selected property/column names are left unchanged.
-   * @param writeConf additional configuration object allowing to set consistency level, batch size, etc.
+   * @param clusterName the name of the Cluster to use
    */
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
                       columnNames: ColumnSelector,
-                      writeConf: WriteConf)
+                      writeConf: WriteConf,
+                      clusterName: Option[String])
                      (implicit connector: CassandraConnector, rwf: RowWriterFactory[T])
 
 }

@@ -44,10 +44,17 @@ class CassandraSQLClusterLevelJoinSpec extends FlatSpec with Matchers with Share
     session.execute("INSERT INTO sql_test2.test2 (a, d, e) VALUES (6, 1, 6)")
     session.execute("INSERT INTO sql_test2.test2 (a, d, e) VALUES (4, 1, 4)")
     session.execute("INSERT INTO sql_test2.test2 (a, d, e) VALUES (5, 1, 5)")
+    session.execute("CREATE TABLE IF NOT EXISTS sql_test2.test3 (a INT PRIMARY KEY, d INT, e INT)")
   }
 
   it should "allow to join tables from different clusters" in {
     val result = cc.sql("SELECT * FROM cluster1.sql_test1.test1 AS test1 Join cluster2.sql_test2.test2 AS test2 where test1.a=test2.a").collect()
     result should have length 2
+  }
+
+  it should "allow to write data to another cluster" in {
+    val insert = cc.sql("INSERT INTO cluster2.sql_test2.test3 SELECT * FROM cluster1.sql_test1.test1 AS t1").collect()
+    val result = cc.sql("SELECT * FROM cluster2.sql_test2.test3 AS test3").collect()
+    result should have length 5
   }
 }

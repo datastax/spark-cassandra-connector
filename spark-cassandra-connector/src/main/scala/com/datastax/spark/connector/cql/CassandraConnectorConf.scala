@@ -60,9 +60,9 @@ object CassandraConnectorConf extends Logging {
     }
   }
 
-  private def processProperty(property: String, cluster: Option[String] = None): String = {
+  def processProperty(property: String, cluster: Option[String] = None): String = {
     cluster match {
-      case Some(c) => property.replaceFirst("spark.cassandra", "spark." + c + ".cassandra")
+      case Some(c) => property.replaceFirst("spark.cassandra", s"spark.$c.cassandra")
       case None => property
     }
   }
@@ -80,7 +80,7 @@ object CassandraConnectorConf extends Logging {
 
     val rpcPort = conf.getInt(processProperty(CassandraConnectionRpcPortProperty, cluster), DefaultRpcPort)
     val nativePort = conf.getInt(processProperty(CassandraConnectionNativePortProperty, cluster), DefaultNativePort)
-    val authConf = AuthConf.fromSparkConf(conf)
+    val authConf = AuthConf.fromSparkConf(conf, cluster)
     val keepAlive = conf.getInt(processProperty(CassandraConnectionKeepAliveProperty, cluster), DefaultKeepAliveMillis)
     
     val localDC = conf.getOption(processProperty(CassandraConnectionLocalDCProperty, cluster))

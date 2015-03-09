@@ -74,6 +74,33 @@ public class SparkContextJavaFunctions {
     /**
      * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD}.
      *
+     * <p>With this method, each row is converted to a {@code CassandraRow} object.</p>
+     *
+     * <p>Example:
+     * <pre>
+     * CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+     * CREATE TABLE test.words (word text PRIMARY KEY, count int);
+     * INSERT INTO test.words (word, count) VALUES ('foo', 20);
+     * INSERT INTO test.words (word, count) VALUES ('bar', 20);
+     * ...
+     *
+     * // Obtaining RDD of CassandraRow objects:
+     * CassandraJavaRDD<CassandraRow> rdd = CassandraJavaUtil.javaFunctions(jsc).cassandraTable("test", "words", "cluster");
+     * rdd.first().getString("word");     // foo
+     * rdd.first().getInt("count");       // 20
+     * </pre>
+     * </p>
+     *
+     * @since 1.0.0
+     */
+    public CassandraJavaRDD<CassandraRow> cassandraTable(String keyspace, String table, String cluster) {
+        RowReaderFactory<CassandraRow> rtf = GenericJavaRowReaderFactory.instance;
+        return cassandraTable(keyspace, table, cluster, rtf);
+    }
+
+    /**
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD}.
+     *
      * <p>With this method, each row is converted to a object of type {@code T} by a specified row reader factory
      * {@code rrf}. Row reader factories can be easily obtained with one of utility methods in {@link
      * com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
@@ -89,6 +116,29 @@ public class SparkContextJavaFunctions {
      */
     public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rrf) {
         CassandraRDD<T> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table, getClassTag(rrf.targetClass()), rrf);
+        return new CassandraJavaRDD<>(rdd, rrf.targetClass());
+    }
+
+    /**
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD}.
+     *
+     * <p>With this method, each row is converted to a object of type {@code T} by a specified row reader factory
+     * {@code rrf}. Row reader factories can be easily obtained with one of utility methods in {@link
+     * com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
+     *
+     * @param keyspace the name of the keyspace which contains the accessed table
+     * @param table    the accessed Cassandra table name
+     * @param cluster  the accessed Cassandra cluster name
+     * @param rrf      a row reader factory to convert rows into target values
+     * @param <T>      target value type
+     *
+     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaRDD} of type {@code T}
+     *
+     * @since 1.1.0
+     */
+
+    public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, String cluster, RowReaderFactory<T> rrf) {
+        CassandraRDD<T> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table, cluster, getClassTag(rrf.targetClass()), rrf);
         return new CassandraJavaRDD<>(rdd, rrf.targetClass());
     }
 
@@ -119,5 +169,32 @@ public class SparkContextJavaFunctions {
         return new CassandraJavaPairRDD<>(rdd, keyRRF.targetClass(), valueRRF.targetClass());
     }
 
+    /**
+     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD}.
+     *
+     * <p>With this method, each row is converted to a pair of two objects of types {@code K} and {@code V}
+     * respectively. For each conversion a separate row reader factory is specified. Row reader factories can be easily
+     * obtained with one of utility methods in {@link com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
+     *
+     * @param keyspace the name of the keyspace which contains the accessed table
+     * @param table    the accessed Cassandra table
+     * @param cluster  the accessed Cassandra cluster name
+     * @param keyRRF   a row reader factory to convert rows into keys of type {@code K}
+     * @param valueRRF a row reader factory to convert rows into values of type {@code V}
+     * @param <K>      key type
+     * @param <V>      value type
+     *
+     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD} of ({@code K}, {@code V}) pairs
+     *
+     * @since 1.1.0
+     */
+    public <K, V> CassandraJavaPairRDD<K, V> cassandraTable(String keyspace, String table, String cluster, RowReaderFactory<K> keyRRF, RowReaderFactory<V> valueRRF) {
+        KeyValueRowReaderFactory<K, V> rrf = new KeyValueRowReaderFactory<>(keyRRF, valueRRF);
+
+        CassandraRDD<Tuple2<K, V>> rdd = CassandraRDD$.MODULE$.apply(sparkContext, keyspace, table, cluster,
+                getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
+
+        return new CassandraJavaPairRDD<>(rdd, keyRRF.targetClass(), valueRRF.targetClass());
+    }
 
 }

@@ -83,11 +83,8 @@ object CassandraConnectionFactory {
   val ConnectionFactoryProperty = "spark.cassandra.connection.factory"
 
   def fromSparkConf(conf: SparkConf, cluster: Option[String] = None): CassandraConnectionFactory = {
-    val factory = cluster match {
-      case Some(c) => conf.getOption("spark." + c + ".cassandra.connection.factory")
-      case None    => conf.getOption(ConnectionFactoryProperty)
-    }
-    factory.map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
+    conf.getOption(CassandraConnectorConf.processProperty(ConnectionFactoryProperty, cluster))
+      .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
       .getOrElse(DefaultConnectionFactory)
   }
 }

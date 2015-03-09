@@ -41,6 +41,17 @@ class RDDJavaFunctions[T](val rdd: RDD[T]) extends RDDAndDStreamCommonJavaFuncti
     rdd.saveToCassandra(keyspace, table, columnNames, conf)(connector, rowWriterFactory)
   }
 
+  override def saveToCassandra(keyspace: String,
+                               table: String,
+                               cluster: String,
+                               rowWriterFactory: RowWriterFactory[T],
+                               columnNames: ColumnSelector,
+                               conf: WriteConf,
+                               connector: CassandraConnector) = {
+
+    rdd.saveToCassandra(keyspace, table, columnNames, conf, Option(cluster))(connector, rowWriterFactory)
+  }
+
   /** Applies a function to each item, and groups consecutive items having the same value together.
     * Contrary to `groupBy`, items from the same group must be already next to each other in the
     * original collection. Works locally on each partition, so items from different

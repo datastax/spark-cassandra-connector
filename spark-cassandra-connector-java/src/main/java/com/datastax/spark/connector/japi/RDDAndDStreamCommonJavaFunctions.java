@@ -4,10 +4,12 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.spark.connector.BatchSize;
 import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.datastax.spark.connector.cql.CassandraConnector$;
 import com.datastax.spark.connector.writer.*;
 import org.apache.spark.SparkConf;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import scala.Option$;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -39,10 +41,21 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      * @return an instance of {@link com.datastax.spark.connector.writer.WriteConf}
      */
     public WriteConf defaultWriteConf() {
-        return WriteConf.fromSparkConf(getConf());
+       return defaultWriteConf(null);
+    }
+
+    public WriteConf defaultWriteConf(String cluster) {
+        return WriteConf.fromSparkConf(getConf(), Option$.MODULE$.apply(cluster));
+    }
+
+    public CassandraConnector defaultConnector(String cluster) {
+        return CassandraConnector$.MODULE$.apply(getConf(), Option$.MODULE$.apply(cluster));
     }
 
     protected abstract void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory,
+                                            ColumnSelector columnNames, WriteConf conf, CassandraConnector connector);
+
+    protected abstract void saveToCassandra(String keyspace, String table, String cluster, RowWriterFactory<T> rowWriterFactory,
                                             ColumnSelector columnNames, WriteConf conf, CassandraConnector connector);
 
     /**
@@ -52,6 +65,15 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
     @Deprecated
     public void saveToCassandra(String keyspace, String table, RowWriterFactory<T> rowWriterFactory, ColumnSelector columnNames) {
         new WriterBuilder(keyspace, table, rowWriterFactory, columnNames, defaultConnector(), defaultWriteConf()).saveToCassandra();
+    }
+
+    /**
+     * @deprecated this method will be removed in future release, please use {@link #writerBuilder(String, String,
+     * com.datastax.spark.connector.writer.RowWriterFactory)}
+     */
+    @Deprecated
+    public void saveToCassandra(String keyspace, String table, String cluster, RowWriterFactory<T> rowWriterFactory, ColumnSelector columnNames) {
+        new WriterBuilder(keyspace, table, rowWriterFactory, columnNames, defaultConnector(cluster), defaultWriteConf(cluster)).saveToCassandra();
     }
 
     /**
@@ -76,6 +98,31 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      */
     public WriterBuilder writerBuilder(String keyspaceName, String tableName, RowWriterFactory<T> rowWriterFactory) {
         return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, allColumns, defaultConnector(), defaultWriteConf());
+    }
+
+    /**
+     * Creates a writer builder object with specified parameters.
+     *
+     * <p>Writer builder is used to configure parameters write operation and eventually save the data to Cassandra. By
+     * default the builder is configured to save all the columns with default connector and Spark Cassandra Connector
+     * default parameters.</p>
+     *
+     * <p>To obtain an instance of {@link com.datastax.spark.connector.writer.RowWriterFactory} use one of utility
+     * methods in {@link com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
+     *
+     * @param keyspaceName     the target keyspace name
+     * @param tableName        the target table name
+     * @param clusterName      the target cluster name
+     * @param rowWriterFactory a row writer factory to be used to save objects from RDD or DStream
+     *
+     * @return an instance of {@link com.datastax.spark.connector.japi.RDDAndDStreamCommonJavaFunctions.WriterBuilder}
+     *
+     * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(com.datastax.spark.connector.mapper.ColumnMapper)
+     * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(Class, java.util.Map)
+     * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(Class, org.apache.commons.lang3.tuple.Pair[])
+     */
+    public WriterBuilder writerBuilder(String keyspaceName, String tableName, String clusterName, RowWriterFactory<T> rowWriterFactory) {
+        return new WriterBuilder(keyspaceName, tableName, rowWriterFactory, allColumns, defaultConnector(clusterName), defaultWriteConf(clusterName));
     }
 
     /**

@@ -19,10 +19,15 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
                       columnNames: ColumnSelector = AllColumns,
-                      writeConf: WriteConf = WriteConf.fromSparkConf(conf))
-                     (implicit connector: CassandraConnector = CassandraConnector(conf),
+                      writeConf: WriteConf = WriteConf.fromSparkConf(conf, None),
+                      cluster: Option[String] = None)
+                     (implicit connector: CassandraConnector = CassandraConnector(conf, cluster),
                       rwf: RowWriterFactory[T]): Unit = {
-    val writer = TableWriter(connector, keyspaceName, tableName, columnNames, writeConf)
+    val writeConfig = cluster match {
+      case Some(c) => WriteConf.fromSparkConf(sparkContext.getConf, cluster)
+      case _ => writeConf
+    }
+    val writer = TableWriter(connector, keyspaceName, tableName, columnNames, writeConfig)
     dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.write _))
   }
 }
