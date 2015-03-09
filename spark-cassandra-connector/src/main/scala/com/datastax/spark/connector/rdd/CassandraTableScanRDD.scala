@@ -56,11 +56,14 @@ class CassandraTableScanRDD[R] private[connector](
                                                    val readConf: ReadConf = ReadConf())
                                                  (implicit val rct: ClassTag[R],
                                                   @transient val rtf: RowReaderFactory[R])
-  extends CassandraRDD[R](sc, Seq.empty) with CassandraTableRowReader[R] {
+  extends CassandraRDD[R](sc, Seq.empty) with CassandraTableRowReaderProvider[R] {
 
   override protected def copy(columnNames: ColumnSelector = columnNames,
-                              where: CqlWhereClause = where, limit: Option[Long] = limit, clusteringOrder: Option[ClusteringOrder] = None,
-                              readConf: ReadConf = readConf, connector: CassandraConnector = connector) = {
+                              where: CqlWhereClause = where,
+                              limit: Option[Long] = limit,
+                              clusteringOrder: Option[ClusteringOrder] = None,
+                              readConf: ReadConf = readConf,
+                              connector: CassandraConnector = connector) = {
     require(sc != null,
       "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
         "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +

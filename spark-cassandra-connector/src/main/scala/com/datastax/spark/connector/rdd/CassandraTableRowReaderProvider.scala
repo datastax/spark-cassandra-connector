@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
  * @see [[CassandraTableScanRDD]]
  * @see [[CassandraJoinRDD]]
  */
-trait CassandraTableRowReader[R] {
+trait CassandraTableRowReaderProvider[R] {
 
   protected def connector: CassandraConnector
 
@@ -94,18 +94,6 @@ trait CassandraTableRowReader[R] {
       case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedFromCassandraAs))
       case (_, _) => providedColumnRefs
     }
-  }
-
-  lazy val providedColumnNames =
-    columnNames match {
-      case AllColumns => tableDef.allColumns.map(col => col.columnName: SelectableColumnRef).toSeq
-      case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: SelectableColumnRef).toSeq
-      case SomeColumns(cs@_*) => checkColumnsExistence(cs)
-    }
-
-  (rowReader.columnNames, rowReader.requiredColumns) match {
-    case (Some(cs), None) => providedColumnNames.filter(columnName => cs.toSet(columnName.selectedAs))
-    case (_, _) => providedColumnNames
   }
 
   /** Filters currently selected set of columns with a new set of columns */

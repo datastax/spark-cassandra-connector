@@ -5,13 +5,17 @@ import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.{ColumnSelector, NamedColumnRef, SomeColumns, _}
-import org.apache.spark.{Dependency, SparkContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{Dependency, SparkContext}
 
 import scala.language.existentials
 import scala.reflect.ClassTag
 
 abstract class CassandraRDD[R](_sc: SparkContext, dep: Seq[Dependency[_]])(implicit ct: ClassTag[R]) extends RDD[R](_sc, dep) {
+
+  protected def keyspaceName: String
+
+  protected def tableName: String
 
   protected def columnNames: ColumnSelector
 
@@ -35,8 +39,11 @@ abstract class CassandraRDD[R](_sc: SparkContext, dep: Seq[Dependency[_]])(impli
   }
 
   protected def copy(columnNames: ColumnSelector = columnNames,
-                     where: CqlWhereClause = where, limit: Option[Long] = limit, clusteringOrder: Option[ClusteringOrder] = None,
-                     readConf: ReadConf = readConf, connector: CassandraConnector = connector): CassandraRDD[R]
+                     where: CqlWhereClause = where,
+                     limit: Option[Long] = limit,
+                     clusteringOrder: Option[ClusteringOrder] = None,
+                     readConf: ReadConf = readConf,
+                     connector: CassandraConnector = connector): CassandraRDD[R]
 
   /** Returns a copy of this Cassandra RDD with specified connector */
   def withConnector(connector: CassandraConnector): CassandraRDD[R] = {

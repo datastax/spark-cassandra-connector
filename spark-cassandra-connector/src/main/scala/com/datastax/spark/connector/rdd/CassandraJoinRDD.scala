@@ -30,7 +30,7 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
                                                 val readConf: ReadConf = ReadConf())
                                                       (implicit oldTag: ClassTag[Left], val rct: ClassTag[Right],
                                                        @transient val rwf: RowWriterFactory[Left], @transient val rtf: RowReaderFactory[Right])
-  extends CassandraRDD[(Left, Right)](prev.sparkContext, prev.dependencies) with CassandraTableRowReader[Right] {
+  extends CassandraRDD[(Left, Right)](prev.sparkContext, prev.dependencies) with CassandraTableRowReaderProvider[Right] {
 
   //Make sure copy operations make new CJRDDs and not CRDDs
   override protected def copy(columnNames: ColumnSelector = columnNames,
@@ -43,7 +43,10 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
     case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef).toSeq
     case SomeColumns(cs@_*) => {
       checkColumnsExistence(cs)
-      checkValidJoin(cs)
+      cs.map {
+        case c: NamedColumnRef => c
+        case _ => throw new IllegalArgumentException("Unable to join against unnamed columns. No CQL Functions allowed.")
+      }
     }
   }
 
@@ -55,16 +58,17 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
     new CassandraJoinRDD[Left, Long](prev, keyspaceName, tableName, connector, SomeColumns(RowCountRef), joinColumns, where, limit, clusteringOrder, readConf).map(_._2).reduce(_ + _)
   }
 
-  protected def checkValidJoin(columns: Seq[SelectableColumnRef]): Seq[NamedColumnRef] = {
+  /**
+   * This method will create the RowWriter required before the RDD is serialized. This is called during getPartitions
+   */
+  protected def checkValidJoin(): Seq[NamedColumnRef] = {
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
     val partitionKeyColumnNames = tableDef.partitionKey.map(_.columnName).toSet
+    val colNames = joinColumnNames.map(_.columnName).toSet
 
-    val joinColumns = columns.map {
-      case c: NamedColumnRef => c
-      case _ => throw new IllegalArgumentException("Unable to join against unnamed columns. No CQL Functions allowed.")
-    }
-
-    val joinColumnNames = joinColumns.map(_.columnName).toSet
+    //Initialize RowWriter and Query to be used for accessing Cassandra
+    rowWriter.columnNames
+    singleKeyCqlQuery.size
 
     def checkSingleColumn(column: NamedColumnRef): Unit = {
       if (regularColumnNames.contains(column.columnName))
@@ -73,24 +77,24 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
 
     //Make sure we have all of the clustering indexes between the 0th position and the max requested in the join
     val chosenClusteringColumns = tableDef.clusteringColumns
-      .filter(cc => joinColumnNames.contains(cc.columnName))
+      .filter(cc => colNames.contains(cc.columnName))
     if (!tableDef.clusteringColumns.startsWith(chosenClusteringColumns)) {
       val maxCol = chosenClusteringColumns.last
       val maxIndex = maxCol.componentIndex.get
       val requiredColumns = tableDef.clusteringColumns.takeWhile(_.componentIndex.get <= maxIndex)
-      val missingColumns = requiredColumns.toSet -- chosenClusteringColumns
+      val missingColumns = requiredColumns.toSet -- chosenClusteringColumns.toSet
       if (!missingColumns.isEmpty)
         throw new IllegalArgumentException(s"Can't pushdown join on column $maxCol without also specifying [ $missingColumns ]")
       }
-    val missingPartitionKeys = partitionKeyColumnNames -- joinColumnNames
+    val missingPartitionKeys = partitionKeyColumnNames -- colNames
     if (missingPartitionKeys.size != 0) {
       throw new IllegalArgumentException(s"Can't join without the full partition key. Missing: [ ${missingPartitionKeys} ]")
     }
-    joinColumns.foreach { case c: NamedColumnRef => checkSingleColumn(c)}
-    joinColumns
+    joinColumnNames.foreach { case c: NamedColumnRef => checkSingleColumn(c)}
+    joinColumnNames
   }
 
-  val rowWriter = implicitly[RowWriterFactory[Left]].rowWriter(
+  lazy val rowWriter = implicitly[RowWriterFactory[Left]].rowWriter(
     tableDef,
     joinColumnNames.map { case c: NamedColumnRef => c.columnName})
 
@@ -100,7 +104,7 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
 
   //We need to make sure we get selectedColumnRefs before serialization so that our RowReader is
   //built
-  private val singleKeyCqlQuery: (String) = {
+  lazy val singleKeyCqlQuery: (String) = {
     val whereClauses = where.predicates.flatMap(CqlWhereParser.parse)
     val partitionKeys = tableDef.partitionKey.map(_.columnName)
     val partitionKeyPredicates = whereClauses.collect {
@@ -157,7 +161,11 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
          }) yield (leftSide, rightSide)
   }
 
-  override protected def getPartitions: Array[Partition] = prev.partitions
+  override protected def getPartitions: Array[Partition] = {
+    verify()
+    checkValidJoin()
+    prev.partitions
+  }
 
   override def getPreferredLocations(split: Partition): Seq[String] = prev.preferredLocations(split)
 

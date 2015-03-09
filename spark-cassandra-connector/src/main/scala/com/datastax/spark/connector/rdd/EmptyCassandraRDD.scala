@@ -17,9 +17,13 @@ class EmptyCassandraRDD[R](@transient sc: SparkContext,
                            val readConf: ReadConf = ReadConf())
                           (implicit val rct: ClassTag[R])
   extends CassandraRDD[R](sc, Seq.empty) {
+
   override protected def copy(columnNames: ColumnSelector = columnNames,
-                              where: CqlWhereClause = where, limit: Option[Long] = limit, clusteringOrder: Option[ClusteringOrder] = None,
-                              readConf: ReadConf = readConf, connector: CassandraConnector = connector) =
+                              where: CqlWhereClause = where,
+                              limit: Option[Long] = limit,
+                              clusteringOrder: Option[ClusteringOrder] = None,
+                              readConf: ReadConf = readConf,
+                              connector: CassandraConnector = connector) =
     new EmptyCassandraRDD[R](sc, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf).asInstanceOf[this.type]
 
   override protected def getPartitions: Array[Partition] = Array.empty

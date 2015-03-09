@@ -320,43 +320,84 @@ class RDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with S
     results should have length (keys.filter(_ >= 5).length)
   }
 
-  it should " throw an exception if you try to filter on a column in the Partition key" in {
+  it should " throw an exception if using where on a column in the Partition key" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new KVRow(x)).joinWithCassandraTable(keyspace, tableName).where("key = 200")
+      val someCass = sc.parallelize(keys)
+        .map(x => new KVRow(x))
+        .joinWithCassandraTable(keyspace, tableName)
+        .where("key = 200")
+        .collect()
     }
   }
 
   it should " throw an exception if you don't have all Partition Keys available" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new NotWholePartKey(x)).joinWithCassandraTable(keyspace, manyColsTable)
+      val someCass = sc.parallelize(keys)
+        .map(x => new NotWholePartKey(x))
+        .joinWithCassandraTable(keyspace, manyColsTable)
+        .collect()
     }
   }
 
   it should " throw an exception if you try to join on later clustering columns without earlier ones" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new MissingClustering(x, x, x, x)).joinWithCassandraTable(keyspace, manyColsTable).on(SomeColumns("pk1", "pk2", "pk3", "cc2"))
+      val someCass = sc.parallelize(keys)
+        .map(x => new MissingClustering(x, x, x, x))
+        .joinWithCassandraTable(keyspace, manyColsTable)
+        .on(SomeColumns("pk1", "pk2", "pk3", "cc2"))
+        .collect()
     }
   }
 
   it should " throw an exception if you try to join on later clustering columns without earlier ones even when out of order" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new MissingClustering2(x, x, x, x, x)).joinWithCassandraTable(keyspace, manyColsTable).on(SomeColumns("pk1", "pk2", "pk3", "cc3", "cc1"))
+      val someCass = sc.parallelize(keys)
+        .map(x => new MissingClustering2(x, x, x, x, x))
+        .joinWithCassandraTable(keyspace, manyColsTable)
+        .on(SomeColumns("pk1", "pk2", "pk3", "cc3", "cc1"))
+        .collect()
     }
-
   }
 
   it should " throw an exception if you try to join on later clustering columns without earlier ones even when reversed" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new MissingClustering3(x, x, x, x, x)).joinWithCassandraTable(keyspace, manyColsTable).on(SomeColumns("pk1", "pk2", "pk3", "cc1", "cc3"))
+      val someCass = sc.parallelize(keys)
+        .map(x => new MissingClustering3(x, x, x, x, x))
+        .joinWithCassandraTable(keyspace, manyColsTable)
+        .on(SomeColumns("pk1", "pk2", "pk3", "cc1", "cc3"))
+        .collect()
     }
-
   }
 
   it should " throw an exception if you try to join with a data column" in {
     intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys).map(x => new DataCol(x, x, x, x)).joinWithCassandraTable(keyspace, manyColsTable).on(SomeColumns("pk1", "pk2", "pk3", "d1"))
+      val someCass = sc.parallelize(keys)
+        .map(x => new DataCol(x, x, x, x))
+        .joinWithCassandraTable(keyspace, manyColsTable)
+        .on(SomeColumns("pk1", "pk2", "pk3", "d1")).collect()
     }
   }
+
+  it should "allow to use empty RDD on undefined table" in {
+    val result = sc.parallelize(keys)
+      .joinWithCassandraTable("unknown_ks", "unknown_table")
+      .toEmptyCassandraRDD
+      .collect()
+    result should have length 0
+  }
+
+  it should "allow to use empty RDD on defined table" in {
+    val result = sc.parallelize(keys)
+      .joinWithCassandraTable(keyspace, manyColsTable)
+      .toEmptyCassandraRDD
+      .collect()
+    result should have length 0
+  }
+
+  it should " be lazy and not throw an exception if the table is not found at initializaiton time" in {
+    val someCass = sc.parallelize(keys).map(x => new DataCol(x, x, x, x)).joinWithCassandraTable("unknown_keyspace", "unknown_table")
+  }
+
 
 
 }
