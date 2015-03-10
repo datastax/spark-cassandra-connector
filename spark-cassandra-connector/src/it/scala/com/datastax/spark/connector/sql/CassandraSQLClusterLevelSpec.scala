@@ -1,24 +1,16 @@
 package com.datastax.spark.connector.sql
 
+import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SecondEmbeddedCassandra, SparkTemplate}
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest._
 
-class CassandraSQLClusterLevelJoinSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SecondEmbeddedCassandra with SparkTemplate {
+class CassandraSQLClusterLevelSpec extends SparkCassandraITSpecBase with SecondEmbeddedCassandra {
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))
-  conf.set("spark.cluster1.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
-    .set("spark.cluster1.cassandra.connection.native.port", "9042")
-    .set("spark.cluster1.cassandra.connection.rpc.port", "9160")
-    .set("spark.cluster2.cassandra.connection.host", SecondEmbeddedCassandra.cassandraHost.getHostAddress)
-    .set("spark.cluster2.cassandra.connection.native.port", "9043")
-    .set("spark.cluster2.cassandra.connection.rpc.port", "9161")
-    .set("spark.driver.allowMultipleContexts", "true")
-  val sparkContext = new SparkContext(conf)
-  val cc = new CassandraSQLContext(sparkContext)
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test1 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -45,6 +37,20 @@ class CassandraSQLClusterLevelJoinSpec extends FlatSpec with Matchers with Share
     session.execute("INSERT INTO sql_test2.test2 (a, d, e) VALUES (4, 1, 4)")
     session.execute("INSERT INTO sql_test2.test2 (a, d, e) VALUES (5, 1, 5)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test2.test3 (a INT PRIMARY KEY, d INT, e INT)")
+  }
+
+  var cc: CassandraSQLContext = null
+
+  override def beforeAll(configMap: ConfigMap) {
+    conf.set("spark.cluster1.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
+      .set("spark.cluster1.cassandra.connection.native.port", "9042")
+      .set("spark.cluster1.cassandra.connection.rpc.port", "9160")
+      .set("spark.cluster2.cassandra.connection.host", SecondEmbeddedCassandra.cassandraHost.getHostAddress)
+      .set("spark.cluster2.cassandra.connection.native.port", "9043")
+      .set("spark.cluster2.cassandra.connection.rpc.port", "9161")
+      //.set("spark.driver.allowMultipleContexts", "true")
+    sc = new SparkContext(conf)
+    cc = new CassandraSQLContext(sc)
   }
 
   it should "allow to join tables from different clusters" in {

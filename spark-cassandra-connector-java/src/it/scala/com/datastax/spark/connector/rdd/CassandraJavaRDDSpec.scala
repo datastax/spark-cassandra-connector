@@ -19,8 +19,7 @@ import org.scalatest._
 import scala.collection.JavaConversions._
 import CassandraJavaUtil._
 
-class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
-with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraJavaRDDSpec extends SparkCassandraITSpecBase with BeforeAndAfter with ShouldMatchers {
 
   useCassandraConfig("cassandra-default.yaml.template")
 

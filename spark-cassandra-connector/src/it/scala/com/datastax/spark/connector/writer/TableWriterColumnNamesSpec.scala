@@ -5,8 +5,10 @@ import com.datastax.spark.connector.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
+import org.apache.spark.SparkContext
+import org.scalatest.{BeforeAndAfterAll, ConfigMap}
 
-class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
+class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate with BeforeAndAfterAll {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))
@@ -18,6 +20,18 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
       session.execute("CREATE KEYSPACE IF NOT EXISTS column_names_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
       session.execute("CREATE TABLE IF NOT EXISTS column_names_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
       session.execute("TRUNCATE column_names_test.key_value")
+    }
+  }
+
+  var sc: SparkContext = null
+
+  override def beforeAll(configMap: ConfigMap) {
+    sc = new SparkContext(conf)
+  }
+
+  override def afterAll(configMap: ConfigMap) {
+    if (sc != null) {
+      sc.stop()
     }
   }
 
