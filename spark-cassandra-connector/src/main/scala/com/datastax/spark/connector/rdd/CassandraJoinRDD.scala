@@ -34,8 +34,11 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
 
   //Make sure copy operations make new CJRDDs and not CRDDs
   override protected def copy(columnNames: ColumnSelector = columnNames,
-                              where: CqlWhereClause = where, limit: Option[Long] = limit, clusteringOrder: Option[ClusteringOrder] = None,
-                              readConf: ReadConf = readConf, connector: CassandraConnector = connector) =
+                              where: CqlWhereClause = where,
+                              limit: Option[Long] = limit,
+                              clusteringOrder: Option[ClusteringOrder] = None,
+                              readConf: ReadConf = readConf,
+                              connector: CassandraConnector = connector) =
     new CassandraJoinRDD[Left, Right](prev, keyspaceName, tableName, connector, columnNames, joinColumns, where, limit, clusteringOrder, readConf).asInstanceOf[this.type]
 
   lazy val joinColumnNames: Seq[NamedColumnRef] = joinColumns match {

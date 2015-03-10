@@ -381,7 +381,7 @@ class RDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with S
   it should "allow to use empty RDD on undefined table" in {
     val result = sc.parallelize(keys)
       .joinWithCassandraTable("unknown_ks", "unknown_table")
-      .toEmptyCassandraRDD
+      .RDDtoEmptyCassandra
       .collect()
     result should have length 0
   }
