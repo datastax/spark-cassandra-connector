@@ -8,12 +8,13 @@ import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.writer.WriteConf
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import org.scalatest.{ConfigMap, BeforeAndAfterAll}
 
-class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
+class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender with BeforeAndAfterAll {
   import com.datastax.spark.connector.testkit.TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
@@ -21,6 +22,12 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
     session.execute("CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("TRUNCATE demo.streaming_wordcount")
+  }
+
+  override def afterAll(configMap: ConfigMap) {
+    if (ssc.sparkContext != null) {
+      ssc.sparkContext.stop()
+    }
   }
 
   "actorStream" must {
@@ -64,7 +71,7 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
-  def this() = this (new StreamingContext(SparkTemplate.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+  def this() = this (new StreamingContext(new SparkContext(SparkTemplate.conf), Milliseconds(300)), SparkEnv.get.actorSystem)
 
 }
 

@@ -21,7 +21,7 @@ case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class CustomerId(id: String)
 
-class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
+class TableWriterSpec extends SparkCassandraITSpecBase with BeforeAndAfter {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))

@@ -5,7 +5,7 @@ import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import com.datastax.spark.connector.embedded._
 import org.scalatest.{FlatSpec, Matchers}
 
-class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraPartitionKeyWhereSpec extends SparkCassandraITSpecBase {
 
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))

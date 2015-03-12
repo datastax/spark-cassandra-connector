@@ -18,7 +18,8 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
        .build(
           new CacheLoader[String, Schema] {
             def load(cluster: String) : Schema = {
-              Schema.fromCassandra(CassandraConnector(cc.conf))
+              val clusterOpt = toOption(cluster)
+              Schema.fromCassandra(CassandraConnector(cc.getCassandraConnConf(clusterOpt)))
             }
           })
 
@@ -27,8 +28,16 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     val schema = schemas.get(cluster)
     val keyspaceDef = schema.keyspaceByName.getOrElse(database, throw new IOException(s"Keyspace not found: $database"))
     val tableDef = keyspaceDef.tableByName.getOrElse(table, throw new IOException(s"Table not found: $database.$table"))
-    val tableWithQualifiers = Subquery(table, CassandraRelation(tableDef, alias)(cc))
+    val clusterOpt = toOption(cluster)
+    val tableWithQualifiers = Subquery(table, CassandraRelation(tableDef, alias, clusterOpt)(cc))
     alias.map(a => Subquery(a, tableWithQualifiers)).getOrElse(tableWithQualifiers)
+  }
+
+  private def toOption(cluster: String): Option[String] = {
+    cluster match {
+      case "default" => None
+      case _         => Option(cluster)
+    }
   }
 
   private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {

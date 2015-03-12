@@ -1,16 +1,17 @@
 package com.datastax.spark.connector.sql
 
+import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ConfigMap, FlatSpec, Matchers}
 
-class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraSQLSpec extends SparkCassandraITSpecBase {
   useCassandraConfig("cassandra-default.yaml.template")
   val conn = CassandraConnector(Set(cassandraHost))
-  val cc = new CassandraSQLContext(sc)
-  cc.setKeyspace("sql_test")
+  var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -67,6 +68,12 @@ class CassandraSQLSpec extends FlatSpec with Matchers with SharedEmbeddedCassand
     session.execute("CREATE TYPE sql_test.address (street text, city text, zip int)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+  }
+
+  override def beforeAll(configMap: ConfigMap) {
+    super.beforeAll(configMap)
+    cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
   }
 
   it should "allow to select all rows" in {

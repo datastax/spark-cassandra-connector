@@ -4,7 +4,6 @@ import org.apache.spark.{SparkEnv, SparkConf, SparkContext}
 
 trait SparkTemplate {
   val conf = SparkTemplate.conf
-  val sc = SparkTemplate.sc
 }
 
 object SparkTemplate {
@@ -17,8 +16,6 @@ object SparkTemplate {
     .setAppName(getClass.getSimpleName)
 
   System.err.println("The Spark configuration is as follows:\n" + conf.toDebugString)
-
-  val sc = new SparkContext(conf)
 
   lazy val actorSystem = SparkEnv.get.actorSystem
 

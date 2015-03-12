@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.repl
 
+import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 
-class CassandraRDDReplSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate with SparkRepl {
+class CassandraRDDReplSpec extends SparkCassandraITSpecBase with SparkRepl {
   useCassandraConfig("cassandra-default.yaml.template")
 
   val conn = CassandraConnector(Set(cassandraHost))
