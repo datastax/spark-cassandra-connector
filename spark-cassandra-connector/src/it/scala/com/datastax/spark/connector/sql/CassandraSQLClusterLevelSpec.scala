@@ -2,15 +2,14 @@ package com.datastax.spark.connector.sql
 
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SecondEmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.scalatest._
 
-class CassandraSQLClusterLevelSpec extends SparkCassandraITSpecBase with SecondEmbeddedCassandra {
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+class CassandraSQLClusterLevelSpec extends SparkCassandraITSpecBase {
+  useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test1 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -24,8 +23,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITSpecBase with SecondE
     session.execute("INSERT INTO sql_test1.test1 (a, b, c) VALUES (5, 1, 5)")
   }
 
-  useCassandraConfig2("cassandra-default.yaml.template")
-  val conn2 = CassandraConnector(Set(cassandraHost2), 9043)
+  val conn2 = CassandraConnector(Set(getHost(1)), getNativePort(1))
   conn2.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test2 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
@@ -44,18 +42,20 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITSpecBase with SecondE
   override def beforeAll(configMap: ConfigMap) {
     sc = new SparkContext(conf)
     cc = new CassandraSQLContext(sc)
-    val conf1 = new SparkConf(true).set("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
-      .set("spark.cassandra.connection.native.port", "9042")
-      .set("spark.cassandra.connection.rpc.port", "9160")
-    val conf2 = new SparkConf(true).set("spark.cassandra.connection.host", SecondEmbeddedCassandra.cassandraHost.getHostAddress)
-      .set("spark.cassandra.connection.native.port", "9043")
-      .set("spark.cassandra.connection.rpc.port", "9161")
+    val conf1 = new SparkConf(true)
+      .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
+      .set("spark.cassandra.connection.native.port", getNativePort(0).toString)
+      .set("spark.cassandra.connection.rpc.port", getRpcPort(0).toString)
+    val conf2 = new SparkConf(true)
+      .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
+      .set("spark.cassandra.connection.native.port", getNativePort(1).toString)
+      .set("spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
     cc.addClusterLevelCassandraConnConf("cluster1", conf1)
-    cc.addClusterLevelCassandraConnConf("cluster2", conf2)
-    cc.addClusterLevelReadConf("cluster1", conf)
-    cc.addClusterLevelWriteConf("cluster1", conf)
-    cc.addClusterLevelReadConf("cluster2", conf)
-    cc.addClusterLevelWriteConf("cluster2", conf)
+      .addClusterLevelCassandraConnConf("cluster2", conf2)
+      .addClusterLevelReadConf("cluster1", conf)
+      .addClusterLevelWriteConf("cluster1", conf)
+      .addClusterLevelReadConf("cluster2", conf)
+      .addClusterLevelWriteConf("cluster2", conf)
   }
 
   it should "allow to join tables from different clusters" in {

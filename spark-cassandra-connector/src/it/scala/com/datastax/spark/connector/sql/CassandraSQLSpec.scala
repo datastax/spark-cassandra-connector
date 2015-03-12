@@ -2,15 +2,15 @@ package com.datastax.spark.connector.sql
 
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate
+import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.scalatest.{ConfigMap, FlatSpec, Matchers}
 
 class CassandraSQLSpec extends SparkCassandraITSpecBase {
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
   var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>

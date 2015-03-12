@@ -1,9 +1,8 @@
 package com.datastax.spark.connector
 
-import com.datastax.spark.connector.embedded.{SecondEmbeddedCassandra, SparkTemplate}
+import com.datastax.spark.connector.embedded.{SparkTemplate}
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.scalatest.{Matchers, FlatSpec, ConfigMap, BeforeAndAfterAll}
 
 
