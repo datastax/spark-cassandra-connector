@@ -34,8 +34,8 @@ class MutableKeyValueWithConversion(var key: String, var group: Int) extends Ser
 
 class CassandraRDDSpec extends SparkCassandraITSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
   val bigTableRowCount = 100000
 
 

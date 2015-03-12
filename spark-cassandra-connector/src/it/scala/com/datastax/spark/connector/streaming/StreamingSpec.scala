@@ -38,7 +38,7 @@ trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with Spark
 
   val duration = 10.seconds
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
   def ssc: StreamingContext
 

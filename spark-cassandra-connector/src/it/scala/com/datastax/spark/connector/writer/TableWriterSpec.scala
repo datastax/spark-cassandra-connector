@@ -23,8 +23,8 @@ case class CustomerId(id: String)
 
 class TableWriterSpec extends SparkCassandraITSpecBase with BeforeAndAfter {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS write_test")

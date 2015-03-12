@@ -7,9 +7,9 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 
 class CassandraRDDReplSpec extends SparkCassandraITSpecBase with SparkRepl {
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  val conn = CassandraConnector(Set(cassandraHost))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS read_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")

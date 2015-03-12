@@ -12,8 +12,8 @@ import CassandraJavaUtil._
 
 class CassandraJavaUtilSpec extends SparkCassandraITSpecBase with BeforeAndAfter {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   before {
     conn.withSessionDo { session =>
