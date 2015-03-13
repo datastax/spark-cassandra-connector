@@ -20,8 +20,11 @@ import scala.language.postfixOps
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
-import sbtassembly.Plugin._
-import AssemblyKeys._
+import sbtassembly._
+import sbtassembly.AssemblyPlugin._
+import sbtassembly.AssemblyKeys._
+import sbtsparkpackage.SparkPackagePlugin._
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
@@ -47,6 +50,8 @@ object Settings extends Build {
     normalizedName := "spark-cassandra-connector",
     name := "DataStax Apache Cassandra connector for Apache Spark",
     organization := "com.datastax.spark",
+    sparkPackageName := "datastax/spark-cassandra-connector",
+    sparkVersion := Versions.Spark,
     description  := """
                   |A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
                   |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
