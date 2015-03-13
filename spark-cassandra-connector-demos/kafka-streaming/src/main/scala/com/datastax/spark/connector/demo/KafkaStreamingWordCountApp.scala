@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.demo
 
+import com.datastax.spark.connector.embedded.Event.WordCount
+
 import scala.sys.process._
 import scala.util.Try
 import kafka.serializer.StringDecoder
@@ -89,9 +91,9 @@ object KafkaStreamingWordCountApp extends App with Logging with Assertions {
   }
 
   def validate(): Unit = {
-    val rdd = ssc.cassandraTable("kafka_streaming", "wordcount")
+    val rdd = ssc.cassandraTable[WordCount]("kafka_streaming", "wordcount")
     import scala.concurrent.duration._
     awaitCond(rdd.toLocalIterator.size > 100, 5.seconds)
-    log.info("Assertions successful.")
+    rdd.collect foreach println
   }
 }
