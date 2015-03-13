@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.types.{BigIntType, MapType, VarCharType, IntType}
+import com.datastax.spark.connector.{PartitionKeyColumns, TTL, SomeColumns, AllColumns}
+import com.datastax.spark.connector.types._
 import org.scalatest.{WordSpec, Matchers}
 
 class TableDefSpec extends WordSpec with Matchers {
 
-  "A TableDef" should {
+  "A TableDef#cql method" should {
     "produce valid CQL" when {
       "it contains no clustering columns" in {
         val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
@@ -69,4 +70,41 @@ class TableDefSpec extends WordSpec with Matchers {
     }
   }
 
+  "A TableDef#select method" should {
+    val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
+    val column2 = ColumnDef("c2", PartitionKeyColumn, VarCharType)
+    val column3 = ColumnDef("c3", ClusteringColumn(0), VarCharType)
+    val column4 = ColumnDef("c4", ClusteringColumn(1), VarCharType)
+    val column5 = ColumnDef("c5", RegularColumn, VarCharType)
+    val column6 = ColumnDef("c6", RegularColumn, TimestampType)
+
+    val tableDef = TableDef("keyspace", "table", Seq(column1, column2), Seq(column3, column4), Seq(column5, column6))
+
+    "return all columns" in {
+      val columns = tableDef.select(AllColumns)
+      columns should equal(tableDef.allColumns)
+    }
+
+    "return partition key columns" in {
+      val columns = tableDef.select(PartitionKeyColumns)
+      columns should equal(tableDef.partitionKey)
+    }
+
+    "return some columns" in {
+      val columns = tableDef.select(SomeColumns("c1", "c3", "c5"))
+      columns.map(_.columnName) should be equals Seq("c1", "c3", "c5")
+    }
+
+    "throw a NoSuchElementException when selected column name is invalid" in {
+      a[NoSuchElementException] should be thrownBy {
+        tableDef.select(SomeColumns("c1", "c3", "unknown_column"))
+      }
+    }
+
+    "throw an IllegalArgumentException when selected column with invalid selector, e.g. TTL" in {
+      an[IllegalArgumentException] should be thrownBy {
+        tableDef.select(SomeColumns("c1", TTL("c3")))
+      }
+    }
+  }
 }
