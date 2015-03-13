@@ -6,6 +6,7 @@ import com.datastax.driver.core.{ProtocolVersion, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.reader._
+import com.datastax.spark.connector.util.NameTools
 
 import scala.reflect.ClassTag
 
@@ -47,7 +48,11 @@ trait CassandraTableRowReaderProvider[R] {
   lazy val tableDef = {
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
-      case None => throw new IOException(s"Table not found: $keyspaceName.$tableName")
+      case None => {
+        val suggestions = NameTools.getSuggestions(connector.withClusterDo(_.getMetadata), keyspaceName, tableName)
+        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
+        throw new IOException(errorMessage)
+      }
     }
   }
 
