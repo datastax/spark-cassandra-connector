@@ -101,7 +101,7 @@ object EmbeddedCassandra {
 
   def getProps(index: Integer): Map[String, String] = {
     if (hosts.isEmpty || index < hosts.size) {
-      val host = if (hosts.isEmpty) s"127.0.0.${index + 1}" else hosts(index).getHostAddress
+      val host = if (hosts.isEmpty) "127.0.0.1" else hosts(index).getHostAddress
       Map("seeds"               -> host,
         "storage_port"          -> s"700$index",
         "ssl_storage_port"      -> s"700${index + 1}",
@@ -117,7 +117,7 @@ object EmbeddedCassandra {
 
   def getHost(index: Integer): InetAddress = {
     if (hosts.isEmpty) {
-      InetAddress.getByName(s"127.0.0.${index + 1}")
+      InetAddress.getByName("127.0.0.1")
     } else if (index < hosts.size) {
       hosts(index)
     } else {
