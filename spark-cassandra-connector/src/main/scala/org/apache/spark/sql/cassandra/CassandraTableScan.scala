@@ -1,6 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.rdd.CassandraRDD
 import org.apache.spark.Logging
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
@@ -10,27 +11,36 @@ import org.apache.spark.sql.execution.LeafNode
 
 @DeveloperApi
 case class CassandraTableScan(
-  attributes: Seq[Attribute],
-  relation: CassandraRelation,
-  pushdownPred: Seq[Expression])(
-  @transient val context: CassandraSQLContext)
-  extends LeafNode with Logging{
+                               attributes: Seq[Attribute],
+                               relation: CassandraRelation,
+                               pushdownPred: Seq[Expression])(
+                               @transient val context: CassandraSQLContext)
+  extends LeafNode with Logging {
+
+  private type RDDType = CassandraRDD[CassandraSQLRow]
+
+  private val maybeSelect = if (attributes.nonEmpty) { rdd: RDDType =>
+    rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): NamedColumnRef): _*)
+  } else { rdd: RDDType =>
+    rdd
+  }
+
+  private val maybePushdownPredicates = whereClause(pushdownPred) match {
+    case (cql, values) if values.nonEmpty => rdd: RDDType => rdd.where(cql, values: _*)
+    case _ => rdd: RDDType => rdd
+  }
 
   private def inputRdd = {
     logInfo(s"attributes : ${attributes.map(_.name).mkString(",")}")
     //TODO: cluster level CassandraConnector, read configuration settings
-    var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)
-    if (attributes.map(_.name).size > 0)
-      rdd = rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): NamedColumnRef): _*)
-    if (pushdownPred.nonEmpty) {
-      val(cql, values) = whereClause(pushdownPred)
-      rdd = rdd.where(cql, values: _*)
-    }
 
-    rdd
+    val rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)
+
+    // let me make it in more functional way, perhaps introducing a little of Scala-ism :)
+    maybeSelect andThen maybePushdownPredicates apply rdd
   }
 
-  private[this] def whereClause(pushdownPred: Seq[Expression]) : (String, Seq[Any]) = {
+  private[this] def whereClause(pushdownPred: Seq[Expression]): (String, Seq[Any]) = {
     val cql = pushdownPred.map(predicateToCql).mkString(" AND ")
     val args = pushdownPred.flatMap(predicateRhsValue)
     (cql, args)
@@ -65,7 +75,7 @@ case class CassandraTableScan(
       case in: In =>
         in.value.references.head.name + " IN " + in.list.map(_ => "?").mkString("(", ", ", ")")
       case inset: InSet =>
-        inset.value.references.head.name + " IN " + inset.hset.toSeq.map(_ => "?").mkString("(", ", " , ")")
+        inset.value.references.head.name + " IN " + inset.hset.toSeq.map(_ => "?").mkString("(", ", ", ")")
       case _ =>
         throw new UnsupportedOperationException(
           "It's not a valid predicate to be pushed down, only >, <, >=, <= and In are allowed: " + predicate)
@@ -79,6 +89,7 @@ case class CassandraTableScan(
    * cast CassandraRDD to RDD[ROW]
    */
   override def execute() = inputRdd.asInstanceOf[RDD[Row]]
+
   override def output = if (attributes.isEmpty) relation.output else attributes
 
 }

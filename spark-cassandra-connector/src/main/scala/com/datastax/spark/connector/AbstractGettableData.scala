@@ -60,6 +60,15 @@ trait AbstractGettableData {
     .mkString("{", ", ", "}")
 
   override def toString = dataAsString
+
+  override def equals(o: Any) = o match {
+    case o: AbstractGettableData =>
+      if (this.fieldValues.length == o.length) {
+        this.fieldValues.zip(o.fieldValues).forall { case (mine, yours) => mine == yours}
+      } else
+        false
+    case _ => false
+  }
 }
 
 object AbstractGettableData {

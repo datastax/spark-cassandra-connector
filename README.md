@@ -14,6 +14,8 @@ execute arbitrary CQL queries in your Spark applications.
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
  - Saves RDDs back to Cassandra by implicit `saveToCassandra` call
+ - Join with a subset of Cassandra data using `joinWithCassandraTable` call
+ - Partition RDDs according to Cassandra replication using `repartitionByCassandraReplica` call
  - Converts data types between Cassandra and Scala
  - Supports all Cassandra data types including collections
  - Filters rows on the server side via the CQL `WHERE` clause 
