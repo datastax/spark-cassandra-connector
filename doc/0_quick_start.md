@@ -31,7 +31,7 @@ Add the `spark-cassandra-connector` jar and its dependency jars to the following
  - the classpath of every Spark cluster node
 
 ### Building
-See [Building And Artifacts](doc/12_building_and_artifacts.md)
+See [Building And Artifacts](12_building_and_artifacts.md)
 
 ### Preparing example Cassandra schema
 Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
