@@ -9,10 +9,9 @@ import org.apache.spark.{Partition, Partitioner}
 case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends EndpointPartition
 
 /**
- * The replica partitioner will work on an RDD which is keyed on sets of InetAdresses representing Cassandra
+ * The replica partitioner will work on an RDD which is keyed on sets of InetAddresses representing Cassandra
  * Hosts . It will group keys which share a common IP address into partitionsPerReplicaSet Partitions.
  * @param partitionsPerReplicaSet The number of Spark Partitions to make Per Unique Endpoint
- * @param connector
  */
 class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConnector) extends Partitioner {
   /* TODO We Need JAVA-312 to get sets of replicas instead of single endpoints. Once we have that we'll be able to
@@ -27,6 +26,9 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
   // 0->IP1, 1-> IP1, ...
   val rand = new java.util.Random()
 
+  private def randomHost: InetAddress =
+    hosts(rand.nextInt(numHosts))
+
   /**
    * Given a set of endpoints, pick a random endpoint, and then a random partition owned by that endpoint. If the
    * requested host doesn't exist chose another random host.
@@ -35,12 +37,13 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
    */
   override def getPartition(key: Any): Int = {
     key match {
-      case key: Set[InetAddress] => {
+      case key: Set[_] if key.size > 0 && key.forall(_.isInstanceOf[InetAddress]) =>
         val replicaSet = key.asInstanceOf[Set[InetAddress]].toVector
         val endpoint = replicaSet(rand.nextInt(replicaSet.size))
-        hostMap.getOrElse(endpoint, hostMap(hosts(rand.nextInt(numHosts))))(rand.nextInt(partitionsPerReplicaSet))
-      }
-      case _ => throw new IllegalArgumentException("ReplicaPartitioner can only determine the partition of tuples whose keys that are of type Set[InetAddress]")
+        hostMap.getOrElse(endpoint, hostMap(randomHost))(rand.nextInt(partitionsPerReplicaSet))
+      case _ => throw new IllegalArgumentException(
+        "ReplicaPartitioner can only determine the partition of a tuple whose key is a non-empty Set[InetAddress]. " +
+          s"Invalid key: $key")
     }
   }
 
@@ -48,7 +51,7 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
 
   def getEndpointPartition(partition: Partition): ReplicaPartition = {
     val endpoints = indexMap.getOrElse(partition.index,
-      throw new RuntimeException(s"${indexMap} : Can't get an endpoint for Partition $partition.index"))
+      throw new RuntimeException(s"$indexMap : Can't get an endpoint for Partition $partition.index"))
     new ReplicaPartition(index = partition.index, endpoints = Set(endpoints))
   }
 
