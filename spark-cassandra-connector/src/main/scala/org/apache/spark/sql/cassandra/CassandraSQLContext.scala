@@ -1,13 +1,14 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.{Strategy, SQLContext, SchemaRDD}
 
-import collection.mutable.Map
+import collection.mutable
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * [[org.apache.spark.sql.SchemaRDD]] collections.
@@ -42,22 +43,18 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   val conf = sc.getConf
 
   @transient
-  private val clusterReadConf: Map[String, SparkConf] = Map()
+  private val clusterReadConf = mutable.Map[String, ReadConf]()
   @transient
-  private val keyspaceReadConf: Map[Seq[String], SparkConf] = Map()
+  private val keyspaceReadConf = mutable.Map[Seq[String], ReadConf]()
   @transient
-  private val tableReadConf: Map[Seq[String], SparkConf] = Map()
+  private val tableReadConf = mutable.Map[Seq[String], ReadConf]()
 
   /** Add table level read configuration settings */
   def addTableReadConf(keyspace: String, table: String, conf: SparkConf, cluster: Option[String]) = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          tableReadConf += Seq(table, keyspace, c) -> conf
-        }
-      case _ => tableReadConf += Seq(table, keyspace) -> conf
+      case Some(c) => validateClusterName(c)
+                      tableReadConf += Seq(table, keyspace, c) -> ReadConf.fromSparkConf(conf)
+      case _       => tableReadConf += Seq(table, keyspace) -> ReadConf.fromSparkConf(conf)
     }
     this
   }
@@ -65,59 +62,45 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   /** Add keyspace level read configuration settings */
   def addKeyspaceLevelReadConf(keyspace: String, conf: SparkConf, cluster: Option[String] = None) = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          keyspaceReadConf += Seq(keyspace, c) -> conf
-        }
-      case _ => keyspaceReadConf += Seq(keyspace) -> conf
+      case Some(c) => validateClusterName(c)
+                      keyspaceReadConf += Seq(keyspace, c) -> ReadConf.fromSparkConf(conf)
+      case _       => keyspaceReadConf += Seq(keyspace) -> ReadConf.fromSparkConf(conf)
     }
     this
   }
 
   /** Add cluster level read configuration settings */
   def addClusterLevelReadConf(cluster: String, conf: SparkConf) = {
-    if (StringUtils.isEmpty(cluster)) {
-      throw new IllegalArgumentException("cluster name can't be null or empty")
-    }
-    clusterReadConf += cluster -> conf
+    validateClusterName(cluster)
+    clusterReadConf += cluster -> ReadConf.fromSparkConf(conf)
     this
   }
 
   /** Get read configuration settings by the order of table level, keyspace level, cluster level, default settings */
-  def getReadConf(keyspace: String, table: String, cluster: Option[String]): SparkConf = {
+  def getReadConf(keyspace: String, table: String, cluster: Option[String]): ReadConf = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          tableReadConf.get(Seq(table, keyspace, c)).getOrElse(
-            keyspaceReadConf.get(Seq(keyspace, c)).getOrElse(
-              clusterReadConf.get(c).getOrElse(conf)))
-        }
-      case _ => tableReadConf.get(Seq(table, keyspace)).getOrElse(
-        keyspaceReadConf.get(Seq(keyspace)).getOrElse(conf))
+      case Some(c) => validateClusterName(c)
+                      tableReadConf.get(Seq(table, keyspace, c)).getOrElse(
+                        keyspaceReadConf.get(Seq(keyspace, c)).getOrElse(
+                          clusterReadConf.get(c).getOrElse(ReadConf.fromSparkConf(conf))))
+      case _       => tableReadConf.get(Seq(table, keyspace)).getOrElse(
+                        keyspaceReadConf.get(Seq(keyspace)).getOrElse(ReadConf.fromSparkConf(conf)))
     }
   }
 
   @transient
-  private val clusterWriteConf: Map[String, SparkConf] = Map()
+  private val clusterWriteConf = mutable.Map[String, WriteConf]()
   @transient
-  private val keyspaceWriteConf: Map[Seq[String], SparkConf] = Map()
+  private val keyspaceWriteConf = mutable.Map[Seq[String], WriteConf]()
   @transient
-  private val tableWriteConf: Map[Seq[String], SparkConf] = Map()
+  private val tableWriteConf = mutable.Map[Seq[String], WriteConf]()
 
   /** Add table level write configuration settings */
   def addTableWriteConf(keyspace: String, table: String, conf: SparkConf, cluster: Option[String]) = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          tableWriteConf += Seq(table, keyspace, c) -> conf
-        }
-      case _ => tableWriteConf += Seq(table, keyspace) -> conf
+      case Some(c) => validateClusterName(c)
+                      tableWriteConf += Seq(table, keyspace, c) -> WriteConf.fromSparkConf(conf)
+      case _       => tableWriteConf += Seq(table, keyspace) -> WriteConf.fromSparkConf(conf)
     }
     this
   }
@@ -125,50 +108,38 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   /** Add keyspace level write configuration settings */
   def addKeyspaceLevelWriteConf(keyspace: String, conf: SparkConf, cluster: Option[String] = None) = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          keyspaceWriteConf += Seq(keyspace, c) -> conf
-        }
-      case _ => keyspaceWriteConf += Seq(keyspace) -> conf
+      case Some(c) => validateClusterName(c)
+                      keyspaceWriteConf += Seq(keyspace, c) -> WriteConf.fromSparkConf(conf)
+      case _       => keyspaceWriteConf += Seq(keyspace) -> WriteConf.fromSparkConf(conf)
     }
     this
   }
 
   /** Add cluster level write configuration settings */
   def addClusterLevelWriteConf(cluster: String, conf: SparkConf) = {
-    if (StringUtils.isEmpty(cluster)) {
-      throw new IllegalArgumentException("cluster name can't be null or empty")
-    }
-    clusterWriteConf += cluster -> conf
+    validateClusterName(cluster)
+    clusterWriteConf += cluster -> WriteConf.fromSparkConf(conf)
     this
   }
 
   /** Get write configuration settings by the order of table level, keyspace level, cluster level, default settings */
-  def getWriteConf(keyspace: String, table: String, cluster: Option[String]): SparkConf = {
+  def getWriteConf(keyspace: String, table: String, cluster: Option[String]): WriteConf = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          tableWriteConf.get(Seq(table, keyspace, c)).getOrElse(
-            keyspaceWriteConf.get(Seq(keyspace, c)).getOrElse(
-              clusterWriteConf.get(c).getOrElse(conf)))
-        }
-      case _ => tableWriteConf.get(Seq(table, keyspace)).getOrElse(
-        keyspaceWriteConf.get(Seq(keyspace)).getOrElse(conf))
+      case Some(c) => validateClusterName(c)
+                      tableWriteConf.get(Seq(table, keyspace, c)).getOrElse(
+                        keyspaceWriteConf.get(Seq(keyspace, c)).getOrElse(
+                          clusterWriteConf.get(c).getOrElse(WriteConf.fromSparkConf(conf))))
+      case _       => tableWriteConf.get(Seq(table, keyspace)).getOrElse(
+                        keyspaceWriteConf.get(Seq(keyspace)).getOrElse(WriteConf.fromSparkConf(conf)))
     }
   }
 
   @transient
-  private val clusterCassandraConnConf: Map[String, SparkConf] = Map()
+  private val clusterCassandraConnConf = mutable.Map[String, SparkConf]()
 
   /** Add cluster level write configuration settings */
   def addClusterLevelCassandraConnConf(cluster: String, conf: SparkConf) = {
-    if (StringUtils.isEmpty(cluster)) {
-      throw new IllegalArgumentException("cluster name can't be null or empty")
-    }
+    validateClusterName(cluster)
     clusterCassandraConnConf += cluster -> conf
     this
   }
@@ -176,14 +147,15 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   /** Get Cassandra connection configuration settings by the order of cluster level, default settings */
   def getCassandraConnConf(cluster: Option[String]): SparkConf = {
     cluster match {
-      case Some(c) =>
-        if (StringUtils.isEmpty(c)) {
-          throw new IllegalArgumentException("cluster name can't be null or empty")
-        } else {
-          clusterCassandraConnConf.get(c).getOrElse(
-            throw new RuntimeException(s"Missing cluster $c Cassandra connection conf"))
-        }
-      case _ => conf
+      case Some(c) => validateClusterName(c)
+                      clusterCassandraConnConf.get(c).getOrElse(throw new RuntimeException(s"Missing cluster $c Cassandra connection conf"))
+      case _       => conf
+    }
+  }
+
+  private def validateClusterName(cluster: String) {
+    if (StringUtils.isEmpty(cluster)) {
+      throw new IllegalArgumentException("cluster name can't be null or empty")
     }
   }
 

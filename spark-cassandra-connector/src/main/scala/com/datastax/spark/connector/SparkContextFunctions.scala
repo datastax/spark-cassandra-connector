@@ -43,16 +43,18 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
     *   rdd3.first.word  // foo
     *   rdd3.first.count // 20
     * }}}*/
-  def cassandraTable[T](keyspace: String, table: String, readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf))
+  def cassandraTable[T](keyspace: String, table: String)
                        (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
+                        readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
                         ct: ClassTag[T], rrf: RowReaderFactory[T],
                         ev: ValidRDDType[T]) =
     new CassandraRDD[T](sc, connector, keyspace, table, readConf = readConf)
 
   /** Produces the empty CassandraRDD which does not perform any validation and it does not even
     * try to return any rows. */
-  def emptyCassandraTable[T](keyspace: String, table: String, readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf))
+  def emptyCassandraTable[T](keyspace: String, table: String)
                             (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
+                             readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
                              ct: ClassTag[T], rrf: RowReaderFactory[T],
                              ev: ValidRDDType[T]) =
     new CassandraRDD[T](sc, connector, keyspace, table, readConf = readConf, empty = true)

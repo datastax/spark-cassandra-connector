@@ -17,9 +17,10 @@ import scala.reflect.ClassTag
 class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunctions(ssc.sparkContext) {
   import scala.reflect.ClassTag
 
-  override def cassandraTable[T](keyspace: String, table: String, readConf: ReadConf = ReadConf.fromSparkConf(ssc.sparkContext.getConf))(
+  override def cassandraTable[T](keyspace: String, table: String)(
     implicit
       connector: CassandraConnector = CassandraConnector(ssc.sparkContext.getConf),
+      readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
       ct: ClassTag[T],
       rrf: RowReaderFactory[T],
       ev: ValidRDDType[T]): CassandraStreamingRDD[T] = {
