@@ -17,14 +17,14 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
   /* TODO We Need JAVA-312 to get sets of replicas instead of single endpoints. Once we have that we'll be able to
   build a map of Set[ip,ip,...] => Index before looking at our data and give the all options for the preferred location
    for a partition*/
-  val hosts = connector.hosts.toVector
-  val numHosts = hosts.size
-  val partitionIndexes = (0 until partitionsPerReplicaSet * numHosts).grouped(partitionsPerReplicaSet).toList
-  val hostMap = (hosts zip partitionIndexes).toMap
+  private val hosts = connector.hosts.toVector
+  private val numHosts = hosts.size
+  private val partitionIndexes = (0 until partitionsPerReplicaSet * numHosts).grouped(partitionsPerReplicaSet).toList
+  private val hostMap = (hosts zip partitionIndexes).toMap
   // Ip1 -> (0,1,2,..), Ip2 -> (11,12,13...)
-  val indexMap = for ((ip, partitions) <- hostMap; partition <- partitions) yield (partition, ip)
+  private val indexMap = for ((ip, partitions) <- hostMap; partition <- partitions) yield (partition, ip)
   // 0->IP1, 1-> IP1, ...
-  val rand = new java.util.Random()
+  private val rand = new java.util.Random()
 
   private def randomHost: InetAddress =
     hosts(rand.nextInt(numHosts))
