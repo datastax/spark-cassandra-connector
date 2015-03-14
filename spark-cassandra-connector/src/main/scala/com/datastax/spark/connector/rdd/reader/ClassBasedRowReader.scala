@@ -66,7 +66,7 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
 
   private def getColumnValue(row: Row, columnRef: ColumnRef)(implicit protocolVersion: ProtocolVersion) = {
     columnRef match {
-      case NamedColumnRef(_, selectedAs) =>
+      case SelectableColumnRef(selectedAs) =>
         AbstractGettableData.get(row, selectedAs)
       case ColumnIndex(index) =>
         AbstractGettableData.get(row, index + skipColumns)
@@ -75,7 +75,7 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
 
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
     columnRef match {
-      case NamedColumnRef(_, selectedAs) => selectedAs
+      case SelectableColumnRef(selectedAs) => selectedAs
       case ColumnIndex(index) => row.getColumnDefinitions.getName(index + skipColumns)
     }
   }

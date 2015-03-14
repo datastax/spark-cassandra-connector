@@ -182,18 +182,7 @@ object TableWriter {
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = columnNames match {
-      case SomeColumns(names @ _*) => names.map {
-        case ColumnName(columnName, _) => columnName
-        case TTL(_, _) | WriteTime(_, _) =>
-          throw new IllegalArgumentException(
-            s"Neither TTL nor WriteTime fields are supported for writing. " +
-            s"Use appropriate write configuration settings to specify TTL or WriteTime.")
-      }
-      case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
-      case PartitionKeyColumns => tableDef.partitionKey.map(_.columnName)
-    }
-
+    val selectedColumns = tableDef.select(columnNames).map(_.columnName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
       selectedColumns ++ writeConf.optionPlaceholders, columnNames.aliases)

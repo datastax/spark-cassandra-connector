@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import org.apache.spark.Logging
 
@@ -60,7 +61,10 @@ case class TableDef(keyspaceName: String,
 
   lazy val primaryKey = partitionKey ++ clusteringColumns
   lazy val allColumns = primaryKey ++ regularColumns
-  lazy val columnByName = allColumns.map(c => (c.columnName, c)).toMap
+  lazy val columnByName = allColumns.map(c => (c.columnName, c))
+    .toMap.withDefault {
+      name => throw new NoSuchElementException(s"Column not found $name in table $keyspaceName.$tableName")
+    }
 
   def cql = {
     def quote(str: String) = "\"" + str + "\""
@@ -73,6 +77,21 @@ case class TableDef(keyspaceName: String,
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
+  }
+
+  /** Selects a subset of columns.
+    * Columns are returned in the order specified in the `ColumnSelector`. */
+  def select(columns: ColumnSelector): Seq[ColumnDef] = {
+    columns match {
+      case AllColumns => allColumns
+      case PartitionKeyColumns => partitionKey
+      case SomeColumns(names @ _*) => names.map {
+        case ColumnName(columnName, _) =>
+          columnByName(columnName)
+        case columnRef =>
+          throw new IllegalArgumentException(s"Invalid column reference $columnRef for table $keyspaceName.$tableName")
+      }
+    }
   }
 }
 

@@ -16,15 +16,15 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
     * @param columnNames column names available in the `row` */
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): T = {
     columnRef match {
+      case SelectableColumnRef(selectedAs) => converter.convert(AbstractGettableData.get(row, selectedAs))
       case ColumnIndex(idx) => converter.convert(AbstractGettableData.get(row, idx))
-      case NamedColumnRef(_, selectedAs) => converter.convert(AbstractGettableData.get(row, selectedAs))
     }
   }
 
   /** List of columns this `RowReader` is going to read.
     * Useful to avoid fetching the columns that are not needed. */
   override def columnNames: Option[Seq[String]] = columnRef match {
-    case NamedColumnRef(_, selectedAs) => Some(Seq(selectedAs))
+    case SelectableColumnRef(selectedAs) => Some(Seq(selectedAs))
     case _ => None
   }
 

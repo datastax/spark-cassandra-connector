@@ -5,6 +5,7 @@ import scala.language.implicitConversions
 /** Unambiguous reference to a column in the query result set row. */
 sealed trait ColumnRef
 
+/** A column that can be selected from CQL results set by name */
 sealed trait SelectableColumnRef extends ColumnRef {
   /** Returns a CQL phrase which has to be passed to the `SELECT` clause with appropriate quotation
     * marks. */
@@ -18,6 +19,11 @@ sealed trait SelectableColumnRef extends ColumnRef {
   def alias: Option[String]
 }
 
+object SelectableColumnRef {
+  def unapply(columnRef: SelectableColumnRef) = Some(columnRef.selectedFromCassandraAs)
+}
+
+/** A selectable column based on a real, non-virtual column with a name in the table */
 sealed trait NamedColumnRef extends SelectableColumnRef {
   /** Returns the column name which this selection bases on. In case of a function, such as `ttl` or
     * `writetime`, it returns the column name passed to that function. */
