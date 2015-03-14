@@ -25,11 +25,10 @@ case class CassandraTableScan(
 
   private def inputRdd = {
     logInfo(s"attributes : ${attributes.map(_.name).mkString(",")}")
-    val readConf = ReadConf.fromSparkConf(context.getReadConf(relation.keyspaceName, relation.tableName, relation.cluster))
-    var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](
-      relation.keyspaceName, relation.tableName, readConf)(
-      CassandraConnector(context.getCassandraConnConf(relation.cluster)), ClassTag(CassandraSQLRow.getClass),
-      CassandraSQLRowReader, SqlValidRDDType)
+    val readConf = context.getReadConf(relation.keyspaceName, relation.tableName, relation.cluster)
+    var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)(
+      CassandraConnector(context.getCassandraConnConf(relation.cluster)), readConf,
+      implicitly[ClassTag[CassandraSQLRow]], CassandraSQLRowReader, implicitly[ValidRDDType[CassandraSQLRow]])
     if (attributes.map(_.name).size > 0)
       rdd = rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): NamedColumnRef): _*)
     if (pushdownPred.nonEmpty) {
@@ -93,4 +92,3 @@ case class CassandraTableScan(
 
 }
 
-object SqlValidRDDType extends ValidRDDType[CassandraSQLRow]

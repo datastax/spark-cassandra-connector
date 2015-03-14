@@ -142,6 +142,11 @@ object EmbeddedCassandra {
       rpcPorts(index)
     } else {
       throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
+
+  val hosts: Seq[InetAddress] = {
+    sys.env.get(HostProperty) match {
+      case Some(h) => h.split(",").map(host => InetAddress.getByName(host.trim)).toSeq
+      case None => Seq()
     }
   }
 
