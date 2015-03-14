@@ -8,6 +8,7 @@ import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.writer.WriteConf
+import com.datastax.spark.connector._
 import org.apache.spark.SparkEnv
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
@@ -20,7 +21,13 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
   CassandraConnector(SparkTemplate.conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
+    session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
+    for (word <- data) {
+      session.execute("UPDATE demo.streaming_join set count = count + 10 where word = ?", word.trim)
+    }
+    session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("TRUNCATE demo.streaming_wordcount")
+    session.execute("TRUNCATE demo.streaming_join_output")
   }
 
   "actorStream" must {
@@ -49,6 +56,37 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
         rdd.collect.size should be (data.size)
       }
     }
+    "be able to utilize joinWithCassandra during transforms " in {
+
+      val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
+        .flatMap(_.split("\\s+"))
+
+      val wc = stream
+        .map(x => (x, 1))
+        .reduceByKey(_ + _)
+        .saveToCassandra("demo", "streaming_wordcount")
+
+      val jc = stream
+        .map(new Tuple1(_))
+        .transform(rdd => rdd.joinWithCassandraTable("demo", "streaming_join"))
+        .map(_._2)
+        .saveToCassandra("demo", "streaming_join_output")
+
+      ssc.start()
+
+      system.eventStream.subscribe(self, classOf[StreamingEvent.ReceiverStarted])
+
+      expectMsgPF(duration) { case ReceiverStarted(receiver) =>
+        watch(receiver)
+        system.actorOf(Props(new TestProducer(data.toArray, receiver)))
+      }
+
+      expectMsgPF(duration) { case Terminated(ref) =>
+        val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
+        awaitCond(rdd.collect.nonEmpty && rdd.collect.size == data.size)
+        sc.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
+      }
+    }
   }
 }
 
@@ -61,10 +99,15 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
   }
 }
 
-abstract class ActorSpec(val ssc: StreamingContext, _system: ActorSystem)
+abstract class ActorSpec(var ssc: StreamingContext, _system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
   def this() = this (new StreamingContext(SparkTemplate.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+
+  before {
+    //We can't re-use streaming contexts
+    ssc = new StreamingContext(SparkTemplate.sc, Milliseconds(300))
+  }
 
 }
 
