@@ -91,6 +91,8 @@ object WriteConf {
 
     WriteConf(
       batchSize = batchSize,
+      batchBufferSize = batchBufferSize,
+      batchLevel = batchLevel,
       consistencyLevel = consistencyLevel,
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS)
