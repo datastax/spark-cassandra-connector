@@ -15,7 +15,6 @@ import com.datastax.spark.connector.SomeColumns$;
 import com.datastax.spark.connector.TTL;
 import com.datastax.spark.connector.WriteTime;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.mapper.*;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
@@ -450,7 +449,7 @@ public class CassandraJavaUtil {
         return BytesInBatch$.MODULE$.apply(batchSizeInBytes);
     }
 
-    public static final BatchLevel batchLevelAll = BatchLevel.All$.MODULE$;
+    public static final BatchLevel batchLevelAll = BatchLevel.Any$.MODULE$;
     public static final BatchLevel batchLevelPartition = BatchLevel.Partition$.MODULE$;
     public static final BatchLevel batchLevelReplicaSet = BatchLevel.ReplicaSet$.MODULE$;
 
