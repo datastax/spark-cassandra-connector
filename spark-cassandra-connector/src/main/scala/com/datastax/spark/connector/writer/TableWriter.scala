@@ -98,15 +98,15 @@ class TableWriter[T] private (
   }
 
   def batchRoutingKey(session: Session, routingKeyGenerator: RoutingKeyGenerator)(bs: BoundStatement): Any = {
-    writeConf.batchLevel match {
-      case BatchLevel.All => 0
+    writeConf.batchGroupingKey match {
+      case BatchGroupingKey.None => 0
 
-      case BatchLevel.ReplicaSet =>
+      case BatchGroupingKey.ReplicaSet =>
         if (bs.getRoutingKey == null)
           bs.setRoutingKey(routingKeyGenerator(bs))
         session.getCluster.getMetadata.getReplicas(keyspaceName, bs.getRoutingKey).hashCode() // hash code is enough
 
-      case BatchLevel.Partition =>
+      case BatchGroupingKey.Partition =>
         if (bs.getRoutingKey == null) {
           bs.setRoutingKey(routingKeyGenerator(bs))
         }
@@ -128,7 +128,7 @@ class TableWriter[T] private (
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
-        writeConf.batchSize, writeConf.batchBufferSize, rowIterator)
+        writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
       val rateLimiter = new RateLimiter(writeConf.throughputMiBPS * 1024 * 1024, 1024 * 1024)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")

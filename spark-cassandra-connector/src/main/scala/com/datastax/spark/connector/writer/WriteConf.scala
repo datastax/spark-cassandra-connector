@@ -11,9 +11,9 @@ import org.apache.spark.SparkConf
   *
   * @param batchSize approx. number of bytes to be written in a single batch or
   *                  exact number of rows to be written in a single batch;
-  * @param batchBufferSize the number of distinct batches that can be buffered before
+  * @param batchGroupingBufferSize the number of distinct batches that can be buffered before
   *                        they are written to Cassandra
-  * @param batchLevel which rows can be grouped into a single batch
+  * @param batchGroupingKey which rows can be grouped into a single batch
   * @param consistencyLevel consistency level for writes, default LOCAL_ONE
   * @param parallelismLevel number of batches to be written in parallel
   * @param ttl       the default TTL value which is used when it is defined (in seconds)
@@ -21,8 +21,8 @@ import org.apache.spark.SparkConf
   */
 
 case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
-                     batchBufferSize: Int = WriteConf.DefaultBatchBufferSize,
-                     batchLevel: BatchLevel = WriteConf.DefaultBatchLevel,
+                     batchGroupingBufferSize: Int = WriteConf.DefaultBatchGroupingBufferSize,
+                     batchGroupingKey: BatchGroupingKey = WriteConf.DefaultBatchGroupingKey,
                      consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
                      parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
                      throughputMiBPS: Int = WriteConf.DefaultThroughputMiBPS,
@@ -51,8 +51,8 @@ object WriteConf {
   val DefaultConsistencyLevel = ConsistencyLevel.LOCAL_ONE
   val DefaultBatchSizeInBytes = 16 * 1024
   val DefaultParallelismLevel = 8
-  val DefaultBatchBufferSize = 1000
-  val DefaultBatchLevel = BatchLevel.Partition
+  val DefaultBatchGroupingBufferSize = 1000
+  val DefaultBatchGroupingKey = BatchGroupingKey.Partition
   val DefaultThroughputMiBPS = Int.MaxValue
 
   def fromSparkConf(conf: SparkConf): WriteConf = {
@@ -78,10 +78,10 @@ object WriteConf {
     }
 
     val batchBufferSize = conf.getInt(
-      "spark.cassandra.output.batch.buffer.size", DefaultBatchBufferSize)
+      "spark.cassandra.output.batch.grouping.buffer.size", DefaultBatchGroupingBufferSize)
 
-    val batchLevel = conf.getOption(
-      "spark.cassandra.output.batch.level").map(BatchLevel.apply).getOrElse(DefaultBatchLevel)
+    val batchGroupingKey = conf.getOption(
+      "spark.cassandra.output.batch.grouping.key").map(BatchGroupingKey.apply).getOrElse(DefaultBatchGroupingKey)
 
     val parallelismLevel = conf.getInt(
       "spark.cassandra.output.concurrent.writes", DefaultParallelismLevel)
@@ -91,8 +91,8 @@ object WriteConf {
 
     WriteConf(
       batchSize = batchSize,
-      batchBufferSize = batchBufferSize,
-      batchLevel = batchLevel,
+      batchGroupingBufferSize = batchBufferSize,
+      batchGroupingKey = batchGroupingKey,
       consistencyLevel = consistencyLevel,
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS)
