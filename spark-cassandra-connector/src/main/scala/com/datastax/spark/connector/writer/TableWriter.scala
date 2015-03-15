@@ -99,7 +99,7 @@ class TableWriter[T] private (
 
   def batchRoutingKey(session: Session, routingKeyGenerator: RoutingKeyGenerator)(bs: BoundStatement): Any = {
     writeConf.batchLevel match {
-      case BatchLevel.All => 0
+      case BatchLevel.Any => 0
 
       case BatchLevel.ReplicaSet =>
         if (bs.getRoutingKey == null)

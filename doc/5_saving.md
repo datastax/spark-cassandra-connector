@@ -121,8 +121,8 @@ The following properties set in `SparkConf` can be used to fine-tune the saving 
      will adjust the number of rows based on the amount of data in each row  
   - `spark.cassandra.output.batch.size.bytes`: maximum total size of the batch in bytes; defaults to 16 kB.
   - `spark.cassandra.output.batch.level`: determines how insert statements are grouped into batches; available values are:
-     - `all`: all statements are appended to a single batch until it reaches its maximum size
-     - `replicaset`: a batch may contain only statements to be written to the same replica set
+     - `any`: a batch may contain any statements
+     - `replica_set`: a batch may contain only statements to be written to the same replica set
      - `partition` (default): a batch may contain only statements for rows sharing the same partition key value
   - `spark.cassandra.output.batch.buffer.size`: how many batches per single Spark task can be stored in memory before sending to Cassandra; default 1000
   - `spark.cassandra.output.concurrent.writes`: maximum number of batches executed in parallel by a single Spark task; defaults to 5
