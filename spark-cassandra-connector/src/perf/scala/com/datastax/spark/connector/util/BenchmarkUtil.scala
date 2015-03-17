@@ -63,4 +63,15 @@ object BenchmarkUtil {
   def timeIt[T](code: => T): T =
     timeIt(1)(code)
 
+
+  def printTime[T](message: String)(code: => T): T = {
+    val start = System.nanoTime()
+    val result = code
+    val end = System.nanoTime()
+    println(message + ": " + formatTime((end - start) / 1000000000.0))
+    result
+  }
+
+  def printTime[T](code: => T): T =
+    printTime("elapsed")(code)
 }

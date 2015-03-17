@@ -15,7 +15,6 @@ import com.datastax.spark.connector.SomeColumns$;
 import com.datastax.spark.connector.TTL;
 import com.datastax.spark.connector.WriteTime;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.mapper.*;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
@@ -23,7 +22,7 @@ import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
 import com.datastax.spark.connector.types.TypeConverter;
 import com.datastax.spark.connector.types.TypeConverter$;
 import com.datastax.spark.connector.util.JavaApiHelper;
-import com.datastax.spark.connector.writer.BatchLevel;
+import com.datastax.spark.connector.writer.BatchGroupingKey;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -450,9 +449,9 @@ public class CassandraJavaUtil {
         return BytesInBatch$.MODULE$.apply(batchSizeInBytes);
     }
 
-    public static final BatchLevel batchLevelAll = BatchLevel.All$.MODULE$;
-    public static final BatchLevel batchLevelPartition = BatchLevel.Partition$.MODULE$;
-    public static final BatchLevel batchLevelReplicaSet = BatchLevel.ReplicaSet$.MODULE$;
+    public static final BatchGroupingKey BATCH_GROUPING_KEY_NONE = BatchGroupingKey.None$.MODULE$;
+    public static final BatchGroupingKey BATCH_GROUPING_KEY_PARTITION = BatchGroupingKey.Partition$.MODULE$;
+    public static final BatchGroupingKey BATCH_GROUPING_KEY_REPLICA_SET = BatchGroupingKey.ReplicaSet$.MODULE$;
 
     // -------------------------------------------------------------------------
     //              Column selector factory methods and constants 
