@@ -42,7 +42,7 @@ A fat jar will be generated to both of these directories:
 Select the former for Scala apps, the later for Java.
 
 ### Building General Artifacts 
-In the root directory run:
+In the root directory run:l
 
     sbt package
     sbt doc
@@ -67,9 +67,6 @@ The documentation will be generated to:
   - [Using Connector in Java](doc/7_java_api.md)
   - [Spark Streaming with Cassandra](doc/8_streaming.md)
     
-## License
-This software is available under the [Apache License, Version 2.0](LICENSE).    
-
 ## Community
 ### Reporting Bugs
 New issues should be reported using [JIRA](https://datastax-oss.atlassian.net/browse/SPARKC/).
