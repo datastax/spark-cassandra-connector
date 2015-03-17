@@ -72,9 +72,6 @@ The documentation will be generated to:
   - [About The Demos](doc/9_demos.md)
   - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
     
-## License
-This software is available under the [Apache License, Version 2.0](LICENSE).    
-
 ## Community
 ### Reporting Bugs
 New issues should be reported using [JIRA](https://datastax-oss.atlassian.net/browse/SPARKC/).
