@@ -42,7 +42,7 @@ A fat jar will be generated to both of these directories:
 Select the former for Scala apps, the later for Java.
 
 ### Building General Artifacts 
-In the root directory run:l
+In the root directory run:
 
     sbt package
     sbt doc
