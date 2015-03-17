@@ -71,6 +71,27 @@ class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter w
     assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
+  it should "allow to save beans with transient fields to Cassandra" in {
+    assert(conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table")).all().isEmpty)
+
+    val beansRdd = sc.parallelize(Seq(
+      SampleJavaBeanWithTransientFields.newInstance(1, "one"),
+      SampleJavaBeanWithTransientFields.newInstance(2, "two"),
+      SampleJavaBeanWithTransientFields.newInstance(3, "three")
+    ))
+
+    CassandraJavaUtil.javaFunctions(beansRdd)
+      .writerBuilder("java_api_test", "test_table", mapToRow(classOf[SampleJavaBeanWithTransientFields]))
+      .saveToCassandra()
+
+    val results = conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table"))
+
+    val rows = results.all()
+    assert(rows.size() == 3)
+    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+  }
 
   it should "allow to save beans with inherited fields to Cassandra" in {
     assert(conn.withSessionDo(_.execute("SELECT * FROM java_api_test.test_table2")).all().isEmpty)
