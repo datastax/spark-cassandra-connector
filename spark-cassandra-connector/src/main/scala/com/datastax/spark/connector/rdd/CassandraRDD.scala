@@ -4,6 +4,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.util.ConfigCheck
 import com.datastax.spark.connector.{ColumnSelector, NamedColumnRef, SomeColumns, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
@@ -12,6 +13,9 @@ import scala.language.existentials
 import scala.reflect.ClassTag
 
 abstract class CassandraRDD[R](_sc: SparkContext, dep: Seq[Dependency[_]])(implicit ct: ClassTag[R]) extends RDD[R](_sc, dep) {
+
+  //Check for valid Spark configuration
+  ConfigCheck.checkConfig(_sc.getConf)
 
   protected def keyspaceName: String
 
