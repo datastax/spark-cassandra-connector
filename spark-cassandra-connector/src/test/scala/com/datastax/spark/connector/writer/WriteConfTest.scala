@@ -56,4 +56,20 @@ class WriteConfTest extends FlatSpec with Matchers {
 
     writeConf.batchSize should be(RowsInBatch(12345))
   }
+
+  it should "allow to set batch level" in {
+    val conf = new SparkConf(false)
+      .set("spark.cassandra.output.batch.grouping.key", "none")
+    val writeConf = WriteConf.fromSparkConf(conf)
+    writeConf.batchGroupingKey should be(BatchGroupingKey.None)
+  }
+
+  it should "allow to set batch buffer size" in {
+    val conf = new SparkConf(false)
+      .set("spark.cassandra.output.batch.grouping.buffer.size", "30000")
+    val writeConf = WriteConf.fromSparkConf(conf)
+    writeConf.batchGroupingBufferSize should be(30000)
+  }
+
+
 }

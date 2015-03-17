@@ -120,6 +120,11 @@ The following properties set in `SparkConf` can be used to fine-tune the saving 
   - `spark.cassandra.output.batch.size.rows`: number of rows per single batch; default is 'auto' which means the connector 
      will adjust the number of rows based on the amount of data in each row  
   - `spark.cassandra.output.batch.size.bytes`: maximum total size of the batch in bytes; defaults to 16 kB.
+  - `spark.cassandra.output.batch.grouping.key`: determines how insert statements are grouped into batches; available values are:
+     - `none`: a batch may contain any statements
+     - `replica_set`: a batch may contain only statements to be written to the same replica set
+     - `partition` (default): a batch may contain only statements for rows sharing the same partition key value
+  - `spark.cassandra.output.batch.buffer.size`: how many batches per single Spark task can be stored in memory before sending to Cassandra; default 1000
   - `spark.cassandra.output.concurrent.writes`: maximum number of batches executed in parallel by a single Spark task; defaults to 5
   - `spark.cassandra.output.consistency.level`: consistency level for writing; defaults to LOCAL_ONE.
   - `spark.cassandra.output.throughput_mb_per_sec`: maximum write throughput allowed per single core in MB/s;
