@@ -175,9 +175,7 @@ class CassandraTableScanRDD[R] private[connector](
 
     try {
       implicit val pv = protocolVersion(session)
-      val tc = inputMetricsUpdater.resultSetFetchTimer.map(_.time())
       val rs = session.execute(stmt)
-      tc.map(_.stop())
       val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, columnNamesArray))
@@ -193,7 +191,7 @@ class CassandraTableScanRDD[R] private[connector](
     val session = connector.openSession()
     val partition = split.asInstanceOf[CassandraPartition]
     val tokenRanges = partition.tokenRanges
-    val metricsUpdater = InputMetricsUpdater(context, 20)
+    val metricsUpdater = InputMetricsUpdater(context, readConf)
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
@@ -258,6 +256,7 @@ object CassandraTableScanRDD {
       connector = CassandraConnector(sc.getConf),
       keyspaceName = keyspaceName,
       tableName = tableName,
+      readConf = ReadConf.fromSparkConf(sc.getConf),
       columnNames = AllColumns,
       where = CqlWhereClause.empty)
   }
@@ -276,6 +275,7 @@ object CassandraTableScanRDD {
       connector = CassandraConnector(sc.getConf),
       keyspaceName = keyspaceName,
       tableName = tableName,
+      readConf = ReadConf.fromSparkConf(sc.getConf),
       columnNames = AllColumns,
       where = CqlWhereClause.empty)
   }

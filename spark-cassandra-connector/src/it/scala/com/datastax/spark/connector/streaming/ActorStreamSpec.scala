@@ -2,12 +2,10 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorSystem, Props, Terminated}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.datastax.spark.connector.{RowsInBatch, SomeColumns}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector.writer.WriteConf
 import com.datastax.spark.connector._
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.storage.StorageLevel
@@ -19,7 +17,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
   import com.datastax.spark.connector.testkit.TestEvent._
 
   /* Initializations - does not work in the actor test context in a static before() */
-  CassandraConnector(SparkTemplate.conf).withSessionDo { session =>
+  CassandraConnector(SparkTemplate.defaultConf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
@@ -103,11 +101,11 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 abstract class ActorSpec(var ssc: StreamingContext, _system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
-  def this() = this (new StreamingContext(new SparkContext(SparkTemplate.conf), Milliseconds(300)), SparkEnv.get.actorSystem)
+  def this() = this (new StreamingContext(SparkTemplate.useSparkConf(), Milliseconds(300)), SparkTemplate.actorSystem)
 
   before {
     //We can't re-use streaming contexts
-    ssc = new StreamingContext(ssc.sparkContext, Milliseconds(300))
+    ssc = new StreamingContext(sc, Milliseconds(300))
   }
 }
 

@@ -28,6 +28,10 @@ object CassandraSparkBuild extends Build {
 
   val demosPath = file(s"$namespace-demos")
 
+  autoAPIMappings := true
+
+//  apiMappings += (unmanagedBase.value / "spark-core_2.10-1.2.1.jar" -> url(s"http://spark.apache.org/docs/1.2.1/api/scala/"))
+
   lazy val root = RootProject("root", file("."), Seq(embedded, connector, jconnector, demos))
 
   lazy val embedded = CrossScalaVersionsProject(

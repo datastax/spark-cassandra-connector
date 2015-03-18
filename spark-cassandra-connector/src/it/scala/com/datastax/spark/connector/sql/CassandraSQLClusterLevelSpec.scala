@@ -3,7 +3,7 @@ package com.datastax.spark.connector.sql
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.scalatest._
 
@@ -40,7 +40,6 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   var cc: CassandraSQLContext = null
 
   override def beforeAll(configMap: ConfigMap) {
-    sc = new SparkContext(conf)
     cc = new CassandraSQLContext(sc)
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
@@ -52,10 +51,10 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
       .set("spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
     cc.addClusterLevelCassandraConnConf("cluster1", conf1)
       .addClusterLevelCassandraConnConf("cluster2", conf2)
-      .addClusterLevelReadConf("cluster1", conf)
-      .addClusterLevelWriteConf("cluster1", conf)
-      .addClusterLevelReadConf("cluster2", conf)
-      .addClusterLevelWriteConf("cluster2", conf)
+      .addClusterLevelReadConf("cluster1", sc.getConf)
+      .addClusterLevelWriteConf("cluster1", sc.getConf)
+      .addClusterLevelReadConf("cluster2", sc.getConf)
+      .addClusterLevelWriteConf("cluster2", sc.getConf)
   }
 
   it should "allow to join tables from different clusters" in {
