@@ -10,6 +10,7 @@ Unreleased
    - Renamed output.batch.buffer.size to output.batch.grouping.buffer.size.
    - Renamed batch grouping key option "all" to "none".
  * Error out on invalid config properties (SPARKC-90)
+ * Set Java driver version to 2.1.5 and Cassandra to 2.1.3 (SPARKC-92)
 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
