@@ -20,8 +20,7 @@ import scala.language.postfixOps
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
-import sbtassembly.Plugin._
-import AssemblyKeys._
+import sbtassembly.AssemblyPlugin.autoImport._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import com.typesafe.sbt.SbtScalariform
@@ -185,12 +184,12 @@ object Settings extends Build {
     managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
 
-  lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+  lazy val sbtAssemblySettings = Seq(
     parallelExecution in assembly := false,
-    jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
+    assemblyJarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)),
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
-    mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+    assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) {
       (old) => {
         case PathList("com", "google", xs @ _*) => MergeStrategy.last
         case x => old(x)
