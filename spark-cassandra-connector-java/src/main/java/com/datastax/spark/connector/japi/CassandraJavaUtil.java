@@ -31,10 +31,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.streaming.StreamingContext;
-import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.dstream.DStream;
 import scala.Option;
 import scala.reflect.api.TypeTags;
 
@@ -51,8 +47,8 @@ import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapp
 /**
  * The main entry point to Spark Cassandra Connector Java API.
  *
- * <p>There are several helpful static factory methods which build useful wrappers around Spark Context, Streaming Context
- * and RDD. There are also helper methods to build reader and writer factories which configure their parameters.</p>
+ * <p>There are several helpful static factory methods which build useful wrappers around Spark Context, and RDD.
+ * There are also helper methods to build reader and writer factories which configure their parameters.</p>
  */
 @SuppressWarnings("UnusedDeclaration")
 public class CassandraJavaUtil {
@@ -82,22 +78,6 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * A static factory method to create a {@link StreamingContextJavaFunctions} based on an existing {@link
-     * StreamingContext} instance.
-     */
-    public static StreamingContextJavaFunctions javaFunctions(StreamingContext streamingContext) {
-        return new StreamingContextJavaFunctions(streamingContext);
-    }
-
-    /**
-     * A static factory method to create a {@link StreamingContextJavaFunctions} based on an existing {@link
-     * JavaStreamingContext} instance.
-     */
-    public static StreamingContextJavaFunctions javaFunctions(JavaStreamingContext streamingContext) {
-        return new StreamingContextJavaFunctions(streamingContext.ssc());
-    }
-
-    /**
      * A static factory method to create a {@link RDDJavaFunctions} based on an existing {@link RDD} instance.
      */
     public static <T> RDDJavaFunctions<T> javaFunctions(RDD<T> rdd) {
@@ -116,21 +96,6 @@ public class CassandraJavaUtil {
      */
     public static <K, V> PairRDDJavaFunctions<K, V> javaFunctions(JavaPairRDD<K, V> rdd) {
         return new PairRDDJavaFunctions<>(rdd.rdd(), rdd.kClassTag());
-    }
-
-    /**
-     * A static factory method to create a {@link DStreamJavaFunctions} based on an existing {@link DStream} instance.
-     */
-    public static <T> DStreamJavaFunctions<T> javaFunctions(DStream<T> dStream) {
-        return new DStreamJavaFunctions<>(dStream);
-    }
-
-    /**
-     * A static factory method to create a {@link DStreamJavaFunctions} based on an existing {@link JavaDStream}
-     * instance.
-     */
-    public static <T> DStreamJavaFunctions<T> javaFunctions(JavaDStream<T> dStream) {
-        return new DStreamJavaFunctions<>(dStream.dstream());
     }
 
     // -------------------------------------------------------------------------
