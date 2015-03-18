@@ -27,6 +27,8 @@ class SubKeyValue(k: Int, v: String, val group: Long) extends SuperKeyValue(k, v
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useSparkConf(defaultSparkConf)
+
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>

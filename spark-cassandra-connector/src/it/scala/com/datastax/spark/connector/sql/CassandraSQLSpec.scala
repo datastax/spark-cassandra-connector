@@ -10,6 +10,8 @@ import org.scalatest.{ConfigMap, FlatSpec, Matchers}
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useSparkConf(defaultSparkConf)
+
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
   var cc: CassandraSQLContext = null
 
