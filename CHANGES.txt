@@ -6,6 +6,7 @@ Unreleased
  * Added interface for doing primary key joins between arbitrary RDDs and Cassandra (SPARKC-25)
  * Added method for repartitioning an RDD based upon the replication of a Cassandra Table (SPARKC-25)
  * Fixed setting batch.level and batch.buffer.size in SparkConf (SPARKC-84)
+ * Error out on invalid config properties (SPARKC-90)
 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
