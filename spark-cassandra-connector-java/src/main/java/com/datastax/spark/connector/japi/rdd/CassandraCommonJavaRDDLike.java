@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.japi.rdd;
 
 import com.datastax.spark.connector.NamedColumnRef;
+import com.datastax.spark.connector.SelectableColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.rdd.ReadConf;
 
@@ -8,29 +9,17 @@ public interface CassandraCommonJavaRDDLike<ThisType> {
     /**
      * Narrows down the selected set of columns.
      *
-     * <p>Use this for better performance, when you don't need all the columns in the result RDD. When called multiple
-     * times, it selects the subset of the already selected columns, so after a column was removed by the previous
-     * {@code select} call, it is not possible to add it back.</p>
+     * <p>Use this for better performance, when you don't need all the columns in the result RDD. When
+     * called multiple times, it selects the subset of the already selected columns, so after a column
+     * was removed by the previous {@code select} call, it is not possible to add it back.</p>
      */
-    ThisType select(String columnName1, String columnName2, String... columnNames);
+    ThisType select(String[] columnNames);
 
     /**
      * Narrows down the selected set of columns.
-     * @see #select(String, String, String...)
+     * @see #select(String[])
      */
-    ThisType select(String columnName);
-
-    /**
-     * Narrows down the selected set of columns.
-     * @see #select(String, String, String...)
-     */
-    ThisType selectRefs(NamedColumnRef columnRef1, NamedColumnRef columnRef2, NamedColumnRef... columnRefs);
-
-    /**
-     * Narrows down the selected set of columns.
-     * @see #select(String, String, String...)
-     */
-    ThisType selectRefs(NamedColumnRef columnRef);
+    ThisType selectRefs(SelectableColumnRef[] columnRefs);
 
     /**
      * Adds a CQL {@code WHERE} predicate(s) to the query.
@@ -39,17 +28,10 @@ public interface CassandraCommonJavaRDDLike<ThisType> {
      * {@code WHERE} clause, however beware that some predicates might be rejected by Cassandra, particularly in cases
      * when they filter on an unindexed, non-clustering column.</p>
      */
-    ThisType where(String cqlWhereClause, Object arg1, Object arg2, Object... args);
+    ThisType where(String cqlWhereClause, Object[] args);
 
     /**
-     * Adds a CQL {@code WHERE} predicate(s) to the query.
-     * @see #where(String, Object, Object, Object...)
-     */
-    ThisType where(String cqlWhereClause, Object arg);
-
-    /**
-     * Adds a CQL {@code WHERE} predicate(s) to the query.
-     * @see #where(String, Object, Object, Object...)
+     * @see {@link #where(String, Object[])}
      */
     ThisType where(String cqlWhereClause);
 

@@ -37,7 +37,7 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
 
   "CassandraJavaPairRDD" should "allow to reduce by key " in {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table_2",
-      mapColumnTo(classOf[java.lang.String]), mapRowTo(classOf[SimpleClass])).select("key2", "value")
+      mapColumnTo(classOf[java.lang.String]), mapRowTo(classOf[SimpleClass])).select(Array("key2", "value"))
 
     val reduced = rows.reduceByKey(new Function2[SimpleClass, SimpleClass, SimpleClass] {
       override def call(v1: SimpleClass, v2: SimpleClass): SimpleClass = SimpleClass(v1.value + v2.value)
@@ -69,7 +69,7 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
 
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
-      .select("key", "group")
+      .select(Array("key", "group"))
       .spanBy(f, classOf[Integer])
       .collect()
       .toMap
@@ -101,7 +101,7 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
 
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
-      .select("key", "group")
+      .select(Array("key", "group"))
       .spanByKey()
       .collect()
       .toMap

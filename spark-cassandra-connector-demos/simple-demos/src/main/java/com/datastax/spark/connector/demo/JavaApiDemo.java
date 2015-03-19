@@ -12,9 +12,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 
 /**
  * This Spark application demonstrates how to use Spark Cassandra Connector with Java.
@@ -75,7 +73,7 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to filter rows on the database side with use of the where clause
         JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", mapRowTo(Person.class))
-                .where("name=?", "Anna").map(new Function<Person, String>() {
+                .where("name=?", new Object[] {"Anna"}).map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
                         return person.toString();
@@ -85,7 +83,7 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to explicitly set a projection on the column set
         JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people")
-                .select("id").map(new Function<CassandraRow, String>() {
+                .select(new String[] {"id"}).map(new Function<CassandraRow, String>() {
                     @Override
                     public String call(CassandraRow cassandraRow) throws Exception {
                         return cassandraRow.toString();

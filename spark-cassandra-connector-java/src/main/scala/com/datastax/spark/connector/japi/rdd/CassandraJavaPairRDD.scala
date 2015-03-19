@@ -2,7 +2,7 @@ package com.datastax.spark.connector.japi.rdd
 
 import java.lang.Iterable
 
-import com.datastax.spark.connector.NamedColumnRef
+import com.datastax.spark.connector.{SelectableColumnRef, NamedColumnRef}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.rdd.{ReadConf, CassandraRDD}
@@ -25,33 +25,20 @@ class CassandraJavaPairRDD[K, V](override val rdd: CassandraRDD[(K, V)])
     new CassandraJavaPairRDD[K, V](rdd)
   }
 
-  override def select(columnName1: String, columnName2: String, columnNames: String*) = {
-    wrap(rdd.select(
-      (columnName1 :: columnName2 :: columnNames.toList).map(c => c: NamedColumnRef): _*))
+  override def select(columnNames: Array[String]) = {
+    wrap(rdd.select(columnNames.map(c => c: NamedColumnRef): _*))
   }
 
-  override def select(columnName: String) = {
-    wrap(rdd.select(columnName))
+  override def selectRefs(columnRefs: Array[SelectableColumnRef]) = {
+    wrap(rdd.select(columnRefs: _*))
   }
 
-  override def selectRefs(columnRef1: NamedColumnRef, columnRef2: NamedColumnRef, columnRefs: NamedColumnRef*) = {
-    wrap(rdd.select(columnRef1 :: columnRef2 :: columnRefs.toList: _*))
-  }
-
-  override def selectRefs(columnRef: NamedColumnRef) = {
-    wrap(rdd.select(columnRef))
-  }
-
-  override def where(cqlWhereClause: String, arg1: Any, arg2: Any, args: AnyRef*) = {
-    wrap(rdd.where(cqlWhereClause, arg1 :: arg2 :: args.toList: _*))
-  }
-
-  override def where(cqlWhereClause: String, arg: Any) = {
-    wrap(rdd.where(cqlWhereClause, arg))
+  override def where(cqlWhereClause: String, args: Array[AnyRef]) = {
+    wrap(rdd.where(cqlWhereClause, args: _*))
   }
 
   override def where(cqlWhereClause: String) = {
-    wrap(rdd.where(cqlWhereClause))
+    wrap(rdd.where(cqlWhereClause, Nil))
   }
 
   override def withAscOrder = {

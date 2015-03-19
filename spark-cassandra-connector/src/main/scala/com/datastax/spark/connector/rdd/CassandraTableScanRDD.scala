@@ -163,9 +163,8 @@ class CassandraTableScanRDD[R] private[connector](
     countingIterator
   }
 
-  override def toEmptyCassandraRDD(): EmptyCassandraRDD[R] = {
+  override def toEmptyCassandraRDD: EmptyCassandraRDD[R] =
     new EmptyCassandraRDD[R](sc, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf)
-  }
 
   override def count(): Long = {
     columnNames match {

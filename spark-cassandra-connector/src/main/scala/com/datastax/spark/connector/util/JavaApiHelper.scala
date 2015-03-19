@@ -54,6 +54,9 @@ object JavaApiHelper {
   /** Converts an array to a Scala `Seq`. */
   def toScalaSeq[T](array: Array[T]): Seq[T] = array
 
+  /** Converts an array to a Scala `Seq`. */
+  def toScalaImmutableSeq[T](array: Array[T]): scala.collection.immutable.Seq[T] = array.toIndexedSeq
+
   /** Converts a Java `Iterable` to Scala `Seq`. */
   def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
 

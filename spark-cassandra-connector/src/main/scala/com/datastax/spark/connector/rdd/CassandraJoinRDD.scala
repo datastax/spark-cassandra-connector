@@ -176,5 +176,6 @@ class CassandraJoinRDD[Left, Right] private[connector](prev: RDD[Left],
 
   override def getPreferredLocations(split: Partition): Seq[String] = prev.preferredLocations(split)
 
-  override def toEmptyCassandraRDD(): EmptyCassandraRDD[(Left, Right)] = new EmptyCassandraRDD[(Left, Right)](prev.sparkContext, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf)
+  override def toEmptyCassandraRDD: EmptyCassandraRDD[(Left, Right)] =
+    new EmptyCassandraRDD[(Left, Right)](prev.sparkContext, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf)
 }

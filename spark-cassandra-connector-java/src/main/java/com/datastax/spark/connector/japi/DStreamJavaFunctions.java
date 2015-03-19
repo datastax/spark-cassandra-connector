@@ -9,11 +9,10 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.dstream.DStream;
 
 /**
- * A Java API wrapper over {@link org.apache.spark.streaming.dstream.DStream} to provide Spark Cassandra Connector
- * functionality.
- *
- * <p>To obtain an instance of this wrapper, use one of the factory methods in {@link
- * com.datastax.spark.connector.japi.CassandraJavaUtil} class.</p>
+ * A Java API wrapper over {@link DStream} to provide Spark Cassandra Connector functionality.
+ * <p/>
+ * To obtain an instance of this wrapper, use one of the factory methods in {@link CassandraJavaUtil}
+ * class.
  */
 @SuppressWarnings("UnusedDeclaration")
 public class DStreamJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
