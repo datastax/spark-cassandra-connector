@@ -1,9 +1,7 @@
 package com.datastax.spark.connector;
 
-import com.datastax.spark.connector.japi.DStreamJavaFunctions;
 import com.datastax.spark.connector.japi.RDDJavaFunctions;
 import com.datastax.spark.connector.japi.SparkContextJavaFunctions;
-import com.datastax.spark.connector.japi.StreamingContextJavaFunctions;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
@@ -15,10 +13,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.streaming.StreamingContext;
-import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.dstream.DStream;
 import org.junit.Test;
 import scala.reflect.api.TypeTags;
 
@@ -201,22 +195,6 @@ public class CassandraJavaUtilTest {
     }
 
     @Test
-    public void testJavaFunctions2() throws Exception {
-        StreamingContext ssc = mock(StreamingContext.class);
-        StreamingContextJavaFunctions scjf = javaFunctions(ssc);
-        assertThat(scjf.ssc, is(ssc));
-    }
-
-    @Test
-    public void testJavaFunctions3() throws Exception {
-        JavaStreamingContext jsc = mock(JavaStreamingContext.class);
-        StreamingContext ssc = mock(StreamingContext.class);
-        when(jsc.ssc()).thenReturn(ssc);
-        StreamingContextJavaFunctions scjf = javaFunctions(jsc);
-        assertThat(scjf.ssc, is(ssc));
-    }
-
-    @Test
     public void testJavaFunctions4() throws Exception {
         RDD rdd = mock(RDD.class);
         RDDJavaFunctions rddjf = javaFunctions(rdd);
@@ -232,19 +210,4 @@ public class CassandraJavaUtilTest {
         assertThat(rddjf.rdd(), is(rdd));
     }
 
-    @Test
-    public void testJavaFunctions6() throws Exception {
-        DStream ds = mock(DStream.class);
-        DStreamJavaFunctions dsjf = javaFunctions(ds);
-        assertThat(dsjf.dstream, is(ds));
-    }
-
-    @Test
-    public void testJavaFunctions7() throws Exception {
-        JavaDStream jds = mock(JavaDStream.class);
-        DStream dstream = mock(DStream.class);
-        when(jds.dstream()).thenReturn(dstream);
-        DStreamJavaFunctions dsjf = javaFunctions(jds);
-        assertThat(dsjf.dstream, is(jds.dstream()));
-    }
 }
