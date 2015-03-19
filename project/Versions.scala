@@ -43,6 +43,7 @@ object Versions {
   val Kafka210        = "0.8.1.1"
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
+  val ScalaMock       = "3.2"
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"

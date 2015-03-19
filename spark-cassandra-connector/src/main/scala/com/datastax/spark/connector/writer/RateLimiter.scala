@@ -15,8 +15,18 @@ import scala.annotation.tailrec
   * amount of time proportional to the amount of the overflow.
   *
   * This class is thread safe and lockless.
+  *
+  * @param rate maximum allowed long-term rate per 1000 units of time
+  * @param bucketSize maximum acceptable "burst"
+  * @param time source of time; typically 1 unit = 1 ms
+  * @param sleep a function to call to slow down the calling thread;
+  *              must use the same time units as `time`
   */
-class RateLimiter(rate: Long, bucketSize: Long) {
+class RateLimiter(
+    rate: Long,
+    bucketSize: Long,
+    time: () => Long = System.currentTimeMillis,
+    sleep: Long => Any = Thread.sleep) {
 
   private val bucketFill = new AtomicLong(0L)
   private val lastTime = new AtomicLong(0L)
@@ -30,7 +40,7 @@ class RateLimiter(rate: Long, bucketSize: Long) {
   }
 
   private def leak(): Unit = {
-    val currentTime = System.currentTimeMillis()
+    val currentTime = time()
     val prevTime = lastTime.getAndSet(currentTime)
     val elapsedTime = currentTime - prevTime
     leak(elapsedTime * rate / 1000)
@@ -47,6 +57,6 @@ class RateLimiter(rate: Long, bucketSize: Long) {
     val overflow = currentFill - bucketSize
     val delay = 1000 * overflow / rate
     if (delay > 0)
-      Thread.sleep(delay)
+      sleep(delay)
   }
 }
