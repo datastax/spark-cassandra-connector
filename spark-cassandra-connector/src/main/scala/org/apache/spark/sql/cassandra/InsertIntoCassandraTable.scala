@@ -32,7 +32,7 @@ case class InsertIntoCassandraTable(cassandraRelation: CassandraRelation,
     val writeConf = cc.getWriteConf(cassandraRelation.keyspaceName, cassandraRelation.tableName, cassandraRelation.cluster)
 
     childRdd.saveToCassandra(cassandraRelation.keyspaceName, cassandraRelation.tableName, AllColumns, writeConf)(
-        CassandraConnector(cc.getCassandraConnConf(cassandraRelation.cluster)), SqlRowWriter.Factory)
+        new CassandraConnector(cc.getCassandraConnConf(cassandraRelation.cluster)), SqlRowWriter.Factory)
 
     cc.sparkContext.makeRDD(Nil, 1)
   }

@@ -1,5 +1,6 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.cql.CassandraConnectorConf
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.lang.StringUtils
@@ -165,21 +166,26 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   }
 
   @transient
-  private val clusterCassandraConnConf = mutable.Map[String, SparkConf]()
+  private val clusterCassandraConnConf = mutable.Map[String, CassandraConnectorConf]()
 
   /** Add cluster level write configuration settings */
-  def addClusterLevelCassandraConnConf(cluster: String, conf: SparkConf) = {
+  def addClusterLevelCassandraConnConf(cluster: String, conf: SparkConf): CassandraSQLContext = {
+    addClusterLevelCassandraConnConf(cluster, CassandraConnectorConf(conf))
+  }
+
+  /** Add cluster level write configuration settings */
+  def addClusterLevelCassandraConnConf(cluster: String, conf: CassandraConnectorConf) = {
     validateClusterName(cluster)
     clusterCassandraConnConf += cluster -> conf
     this
   }
 
   /** Get Cassandra connection configuration settings by the order of cluster level, default settings */
-  def getCassandraConnConf(cluster: Option[String]): SparkConf = {
+  def getCassandraConnConf(cluster: Option[String]): CassandraConnectorConf = {
     cluster match {
       case Some(c) => validateClusterName(c)
                       clusterCassandraConnConf.get(c).getOrElse(throw new RuntimeException(s"Missing cluster $c Cassandra connection conf"))
-      case _       => conf
+      case _       => CassandraConnectorConf(conf)
     }
   }
 

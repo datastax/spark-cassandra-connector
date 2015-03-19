@@ -24,7 +24,7 @@ trait EmbeddedCassandra {
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
       "Configuration templates can't be more than the number of specified hosts")
 
-    if (getProperty(hostProperty).isEmpty) {
+    if (getProperty(HostProperty).isEmpty) {
       clearCache()
 
       val templatePairs = configTemplates.zipAll(currentConfigTemplates, "missing value", null)
@@ -42,27 +42,22 @@ trait EmbeddedCassandra {
   }
 }
 
-abstract class NodeProperty
-
-case class HostProperty(propertyName: String) extends NodeProperty
-case class NativePortProperty(propertyName: String) extends NodeProperty
-case class RpcPortProperty(propertyName: String) extends NodeProperty
-
 object UserDefinedProperty {
-  type propertyType = NodeProperty {val propertyName: String}
-  final val hostProperty = HostProperty("IT_TEST_CASSANDRA_HOSTS")
-  final val nativePortProperty = NativePortProperty("IT_TEST_CASSANDRA_NATIVE_PORTS")
-  final val rpcPortProperty = RpcPortProperty("IT_TEST_CASSANDRA_RPC_PORTS")
+  abstract class NodeProperty(val propertyName: String)
+  type PropertyType = NodeProperty {val propertyName: String}
+  case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS")
+  case object NativePortProperty extends NodeProperty("IT_TEST_CASSANDRA_NATIVE_PORTS")
+  case object RpcPortProperty extends NodeProperty("IT_TEST_CASSANDRA_RPC_PORTS")
 
-  val hosts = getNodePropertySeq(hostProperty).asInstanceOf[IndexedSeq[InetAddress]]
-  val nativePorts = getNodePropertySeq(nativePortProperty).asInstanceOf[IndexedSeq[Int]]
-  val rpcPorts = getNodePropertySeq(rpcPortProperty).asInstanceOf[IndexedSeq[Int]]
+  val hosts = getNodePropertySeq(HostProperty).asInstanceOf[IndexedSeq[InetAddress]]
+  val nativePorts = getNodePropertySeq(NativePortProperty).asInstanceOf[IndexedSeq[Int]]
+  val rpcPorts = getNodePropertySeq(RpcPortProperty).asInstanceOf[IndexedSeq[Int]]
 
   private def getNodePropertySeq(nodeProperty: NodeProperty): IndexedSeq[Any] = {
     nodeProperty match {
-      case NativePortProperty(p) => getValueSeq(p).map(e => e.toInt)
-      case RpcPortProperty(p) => getValueSeq(p).map(e => e.toInt)
-      case HostProperty(p) => getValueSeq(p).map(e => InetAddress.getByName(e))
+      case NativePortProperty => getValueSeq(NativePortProperty.propertyName).map(e => e.toInt)
+      case RpcPortProperty => getValueSeq(RpcPortProperty.propertyName).map(e => e.toInt)
+      case HostProperty => getValueSeq(HostProperty.propertyName).map(e => InetAddress.getByName(e))
       case _ => throw new RuntimeException("Wrong node input property")
     }
   }
@@ -76,7 +71,7 @@ object UserDefinedProperty {
 
   def getProperty(nodeProperty: NodeProperty) = {
     nodeProperty match {
-      case p: propertyType => sys.env.get(p.propertyName)
+      case p: PropertyType => sys.env.get(p.propertyName)
       case _ => throw new RuntimeException("Wrong node input property")
     }
   }
@@ -86,14 +81,14 @@ object EmbeddedCassandra {
 
   import UserDefinedProperty._
 
-  getProperty(hostProperty) match {
+  getProperty(HostProperty) match {
     case Some(h) =>
       val hostSize = h.split(",").size
-      getProperty(nativePortProperty) match {
+      getProperty(NativePortProperty) match {
         case Some(np) =>
           val nativePortSize = np.split(",").size
           require(hostSize == nativePortSize, "IT_TEST_CASSANDRA_HOSTS must have same size as IT_TEST_CASSANDRA_NATIVE_PORTS")
-          getProperty(rpcPortProperty) match {
+          getProperty(RpcPortProperty) match {
             case Some(rp) =>
               val rpcPortSize = rp.split(",").size
               require(hostSize == rpcPortSize, "IT_TEST_CASSANDRA_HOSTS must have same size as IT_TEST_CASSANDRA_RPC_PORTS")
@@ -125,27 +120,27 @@ object EmbeddedCassandra {
   def getSslStoragePort(index: Integer) = 7100 + index
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
-  def getHost(index: Integer) = getNodeProperty(index, hostProperty) match {
+  def getHost(index: Integer) = getNodeProperty(index, HostProperty) match {
     case host: InetAddress => host
     case _ => throw new RuntimeException("Wrong data type, it should be InetAddress")
   }
-  def getNativePort(index: Integer) = getNodeProperty(index, nativePortProperty) match {
+  def getNativePort(index: Integer) = getNodeProperty(index, NativePortProperty) match {
     case port: Int => port
     case _ => throw new RuntimeException("Wrong data type, it should be Int")
   }
-  def getRpcPort(index: Integer) = getNodeProperty(index, rpcPortProperty) match {
+  def getRpcPort(index: Integer) = getNodeProperty(index, RpcPortProperty) match {
     case port: Int => port
     case _ => throw new RuntimeException("Wrong data type, it should be Int")
   }
 
   private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): Any = {
     nodeProperty match {
-      case NativePortProperty(_) if (nativePorts.isEmpty) => 9042 + index
-      case NativePortProperty(_) if (index < hosts.size) => nativePorts(index)
-      case RpcPortProperty(_) if (rpcPorts.isEmpty) => 9160 + index
-      case RpcPortProperty(_) if (index < hosts.size) => rpcPorts(index)
-      case HostProperty(_) if (hosts.isEmpty) => InetAddress.getByName("127.0.0.1")
-      case HostProperty(_) if (index < hosts.size) => hosts(index)
+      case NativePortProperty if (nativePorts.isEmpty) => 9042 + index
+      case NativePortProperty if (index < hosts.size) => nativePorts(index)
+      case RpcPortProperty if (rpcPorts.isEmpty) => 9160 + index
+      case RpcPortProperty if (index < hosts.size) => rpcPorts(index)
+      case HostProperty if (hosts.isEmpty) => InetAddress.getByName("127.0.0.1")
+      case HostProperty if (index < hosts.size) => hosts(index)
       case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
     }
   }

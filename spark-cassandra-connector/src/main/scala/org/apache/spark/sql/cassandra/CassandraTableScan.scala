@@ -41,7 +41,7 @@ case class CassandraTableScan(
 
     val readConf = context.getReadConf(relation.keyspaceName, relation.tableName, relation.cluster)
     var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)(
-      CassandraConnector(context.getCassandraConnConf(relation.cluster)), readConf,
+      new CassandraConnector(context.getCassandraConnConf(relation.cluster)), readConf,
       implicitly[ClassTag[CassandraSQLRow]], CassandraSQLRowReader, implicitly[ValidRDDType[CassandraSQLRow]])
 
     // let me make it in more functional way, perhaps introducing a little of Scala-ism :)

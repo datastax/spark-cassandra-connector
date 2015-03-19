@@ -19,7 +19,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
           new CacheLoader[String, Schema] {
             def load(cluster: String) : Schema = {
               val clusterOpt = toOption(cluster)
-              Schema.fromCassandra(CassandraConnector(cc.getCassandraConnConf(clusterOpt)))
+              Schema.fromCassandra(new CassandraConnector(cc.getCassandraConnConf(clusterOpt)))
             }
           })
 
