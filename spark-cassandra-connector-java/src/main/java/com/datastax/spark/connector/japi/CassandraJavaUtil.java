@@ -1,19 +1,7 @@
 package com.datastax.spark.connector.japi;
 
 import akka.japi.JAPI;
-import com.datastax.spark.connector.AllColumns$;
-import com.datastax.spark.connector.BatchSize;
-import com.datastax.spark.connector.BatchSize$;
-import com.datastax.spark.connector.BytesInBatch$;
-import com.datastax.spark.connector.ColumnName;
-import com.datastax.spark.connector.ColumnName$;
-import com.datastax.spark.connector.ColumnSelector;
-import com.datastax.spark.connector.NamedColumnRef;
-import com.datastax.spark.connector.RowsInBatch$;
-import com.datastax.spark.connector.SelectableColumnRef;
-import com.datastax.spark.connector.SomeColumns$;
-import com.datastax.spark.connector.TTL;
-import com.datastax.spark.connector.WriteTime;
+import com.datastax.spark.connector.*;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.mapper.ColumnMapper;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
@@ -22,6 +10,7 @@ import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
 import com.datastax.spark.connector.types.TypeConverter;
 import com.datastax.spark.connector.types.TypeConverter$;
 import com.datastax.spark.connector.util.JavaApiHelper;
+import com.datastax.spark.connector.util.JavaApiHelper$;
 import com.datastax.spark.connector.writer.BatchGroupingKey;
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import org.apache.commons.lang3.ArrayUtils;
@@ -32,6 +21,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import scala.Option;
+import scala.collection.immutable.Seq;
+import scala.reflect.ClassTag;
+import scala.reflect.ClassTag$;
 import scala.reflect.api.TypeTags;
 
 import java.util.HashMap;
@@ -39,10 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.datastax.spark.connector.util.JavaApiHelper.defaultRowWriterFactory;
-import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
-import static com.datastax.spark.connector.util.JavaApiHelper.getRuntimeClass;
-import static com.datastax.spark.connector.util.JavaApiHelper.javaBeanColumnMapper;
+import static com.datastax.spark.connector.util.JavaApiHelper.*;
 
 /**
  * The main entry point to Spark Cassandra Connector Java API.
@@ -95,12 +84,25 @@ public class CassandraJavaUtil {
      * A static factory method to create a {@link PairRDDJavaFunctions} based on an existing {@link JavaPairRDD} instance.
      */
     public static <K, V> PairRDDJavaFunctions<K, V> javaFunctions(JavaPairRDD<K, V> rdd) {
-        return new PairRDDJavaFunctions<>(rdd.rdd(), rdd.kClassTag());
+        return new PairRDDJavaFunctions<>(rdd.rdd());
     }
 
     // -------------------------------------------------------------------------
     //              Type tag resolvers 
     // -------------------------------------------------------------------------
+
+    public static <T> ClassTag<T> getClassTag(Class<T> cls) {
+        return JavaApiHelper$.MODULE$.getClassTag(cls);
+    }
+
+    public static <T> ClassTag<T> getUncheckedClassTag(Class<?> cls) {
+        return JavaApiHelper$.MODULE$.getClassTag2(cls);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> ClassTag<T> getAnyClassTag() {
+        return (ClassTag<T>) ClassTag$.MODULE$.AnyRef();
+    }
 
     /**
      * Creates a type tag representing a given class type without any type parameters.
@@ -439,15 +441,6 @@ public class CassandraJavaUtil {
         return SomeColumns$.MODULE$.apply(JAPI.<SelectableColumnRef>seq(columnsSelection));
     }
 
-    public static NamedColumnRef[] convert(String... columnNames) {
-        NamedColumnRef[] columnsSelection = new NamedColumnRef[columnNames.length];
-        for (int i = 0; i < columnNames.length; i++) {
-            columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i], Option.<String>empty());
-        }
-
-        return columnsSelection;
-    }
-
     public static ColumnName column(String columnName) {
         return new ColumnName(columnName, Option.<String>empty());
     }
@@ -458,6 +451,15 @@ public class CassandraJavaUtil {
 
     public static WriteTime writeTime(String columnName) {
         return new WriteTime(columnName, Option.<String>empty());
+    }
+
+    public static SelectableColumnRef[] toSelectableColumnRefs(String... columnNames) {
+        ColumnName[] refs = new ColumnName[columnNames.length];
+        for (int i = 0; i < columnNames.length; i++) {
+            refs[i] = column(columnNames[i]);
+        }
+
+        return refs;
     }
 
     // -------------------------------------------------------------------------

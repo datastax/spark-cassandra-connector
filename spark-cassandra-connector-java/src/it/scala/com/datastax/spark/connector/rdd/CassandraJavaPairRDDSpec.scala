@@ -9,6 +9,7 @@ import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import org.apache.spark.api.java.function.{Function => JFunction, Function2}
 
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
 
 case class SimpleClass(value: Integer)
 

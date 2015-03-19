@@ -125,6 +125,8 @@ abstract class CassandraRDD[R : ClassTag](
   // Needed to be public for JavaAPI
   val selectedColumnRefs: Seq[SelectableColumnRef]
 
+  def selectedColumnNames: Seq[String] = selectedColumnRefs.map(_.selectedFromCassandraAs)
+
   // convertTo must be implemented for classes which wish to support `.as`
   protected def convertTo[B : ClassTag : RowReaderFactory]: CassandraRDD[B] =
     throw new NotImplementedError(s"convertTo not implemented for this class")

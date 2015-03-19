@@ -31,8 +31,8 @@ class CassandraJoinRDD[Left, Right] private[connector](
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())(
   implicit
-    leftClassTag: ClassTag[Left],
-    rightClassTag: ClassTag[Right],
+    val leftClassTag: ClassTag[Left],
+    val rightClassTag: ClassTag[Right],
     @transient val rowWriterFactory: RowWriterFactory[Left],
     @transient val rowReaderFactory: RowReaderFactory[Right])
   extends CassandraRDD[(Left, Right)](left.sparkContext, left.dependencies)

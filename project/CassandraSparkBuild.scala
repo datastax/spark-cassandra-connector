@@ -47,11 +47,12 @@ object CassandraSparkBuild extends Build {
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
-  lazy val jconnector = Project(
-    id = s"$namespace-java",
-    base = file(s"$namespace-java"),
-    settings = connector.settings,
-    dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
+  lazy val jconnector = CrossScalaVersionsProject(
+    name = s"$namespace-java",
+    conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
+        "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"), compileOrder in Compile := CompileOrder.ScalaThenJava)
+    ).copy(dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
   lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
@@ -179,6 +180,8 @@ object Dependencies {
       val mockito           = "org.mockito"             % "mockito-all"             % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                   % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"         % "0.10"    % "test,it"
+      val powerMock         = "org.powermock"           % "powermock-module-junit4" % "1.6.2"   % "test,it"       // ApacheV2
+      val powerMockMockito  = "org.powermock"           % "powermock-api-mockito"   % "1.6.2"   % "test,it"       // ApacheV2
     }
   }
 
@@ -190,7 +193,8 @@ object Dependencies {
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
   val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-   Test.junitInterface, Test.scalaMock, Test.scalaTest, Test.scalactic, Test.mockito)
+   Test.junitInterface, Test.scalaMock, Test.scalaTest, Test.scalactic, Test.mockito,
+   Test.powerMock, Test.powerMockMockito)
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
