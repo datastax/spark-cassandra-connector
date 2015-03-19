@@ -1,16 +1,16 @@
 package com.datastax.spark.connector.cql
 
 
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.SparkCassandraITWordSpecBase
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import com.datastax.spark.connector.types._
-import org.scalatest.{WordSpec, Matchers}
 import org.scalatest.Inspectors._
 
 
-class SchemaSpec extends WordSpec with Matchers with SharedEmbeddedCassandra {
+class SchemaSpec extends SparkCassandraITWordSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute(

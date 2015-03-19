@@ -9,8 +9,7 @@ import org.apache.spark.repl.SparkILoop
 trait SparkRepl {
 
   def runInterpreter(master: String, input: String): String = {
-    System.setProperty("spark.cassandra.connection.host", EmbeddedCassandra.cassandraHost.getHostAddress)
-
+    System.setProperty("spark.cassandra.connection.host", EmbeddedCassandra.getHost(0).getHostAddress)
     val in = new BufferedReader(new StringReader(input + "\n"))
     val out = new StringWriter()
     val cl = getClass.getClassLoader
