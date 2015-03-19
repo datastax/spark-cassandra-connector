@@ -1,13 +1,19 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.rdd.CassandraRDD
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.ValidRDDType
 import org.apache.spark.Logging
+import com.datastax.spark.connector.rdd.CassandraRDD
+
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.types.DataType
 import org.apache.spark.sql.execution.LeafNode
+
+import scala.reflect.ClassTag
 
 @DeveloperApi
 case class CassandraTableScan(
@@ -32,9 +38,11 @@ case class CassandraTableScan(
 
   private def inputRdd = {
     logInfo(s"attributes : ${attributes.map(_.name).mkString(",")}")
-    //TODO: cluster level CassandraConnector, read configuration settings
 
-    val rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)
+    val readConf = context.getReadConf(relation.keyspaceName, relation.tableName, relation.cluster)
+    var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)(
+      CassandraConnector(context.getCassandraConnConf(relation.cluster)), readConf,
+      implicitly[ClassTag[CassandraSQLRow]], CassandraSQLRowReader, implicitly[ValidRDDType[CassandraSQLRow]])
 
     // let me make it in more functional way, perhaps introducing a little of Scala-ism :)
     maybeSelect andThen maybePushdownPredicates apply rdd
@@ -93,3 +101,4 @@ case class CassandraTableScan(
   override def output = if (attributes.isEmpty) relation.output else attributes
 
 }
+
