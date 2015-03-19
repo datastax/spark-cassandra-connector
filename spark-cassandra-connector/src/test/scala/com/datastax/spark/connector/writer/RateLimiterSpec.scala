@@ -1,47 +1,41 @@
 package com.datastax.spark.connector.writer
 
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Matchers}
 
-class RateLimiterSpec extends FlatSpec with Matchers {
-
-  // Warning, this test is timing-based.
-  // It may fail if run on a heavily loaded system with unpredictable performance.
-  // Increase allowedSystemInducedPause if you encounter any problems:
-  val allowedSystemInducedPause = 250 // ms
+class RateLimiterSpec extends FlatSpec with Matchers with MockFactory {
 
   "RateLimiter" should "not cause delays if rate is not exceeded" in {
-    val limiter = new RateLimiter(Long.MaxValue, 1000)
-    val start1 = System.currentTimeMillis()
-    for (i <- 1 to 1000000)
-      limiter.maybeSleep(0)
-    val end1 = System.currentTimeMillis()
-    val referenceElapsed = end1 - start1
+    var now: Long = 0
+    val sleep = mockFunction[Long, Any]("sleep")
+    sleep.expects(*).never()
 
-    val start2 = System.currentTimeMillis()
-    for (i <- 1 to 1000000)
+    val limiter = new RateLimiter(Long.MaxValue, 1000, () => now, sleep)
+    for (i <- 1 to 1000000) {
+      now += 1
       limiter.maybeSleep(1000)
-    val end2 = System.currentTimeMillis()
-    val testElapsed = end2 - start2
-    testElapsed should be <= referenceElapsed + allowedSystemInducedPause
-
+    }
   }
 
   it should "sleep to not exceed the target rate" in {
+    var now: Long = 0
+    var sleepTime: Long = 0
+
+    def sleep(delay: Long) = {
+      sleepTime += delay
+      now += delay
+    }
+
     // 10 units per second + 5 units burst allowed
     val bucketSize = 5
     val rate = 10
-    val limiter = new RateLimiter(rate, bucketSize)
+    val limiter = new RateLimiter(rate, bucketSize, () => now, sleep)
 
-    val start = System.currentTimeMillis()
     val iterations = 25
     for (i <- 1 to iterations)
       limiter.maybeSleep(1)
-    val end = System.currentTimeMillis()
 
-    val elapsedMillis = end - start
-    val expectedRunTime = (iterations - bucketSize) * 1000L / rate
-    elapsedMillis should be > expectedRunTime
-    elapsedMillis should be < expectedRunTime + allowedSystemInducedPause
+    sleepTime should be ((iterations - bucketSize) * 1000L / rate)
   }
 
 }
