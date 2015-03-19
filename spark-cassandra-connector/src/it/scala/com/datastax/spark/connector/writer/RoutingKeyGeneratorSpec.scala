@@ -1,17 +1,16 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.CassandraRow
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, CassandraRow}
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import org.apache.cassandra.dht.IPartitioner
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.immutable.Map
 
-class RoutingKeyGeneratorSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra {
+class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS routing_key_gen_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")

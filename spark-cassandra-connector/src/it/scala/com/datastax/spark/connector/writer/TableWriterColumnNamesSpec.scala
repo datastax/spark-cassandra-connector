@@ -1,15 +1,13 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.{SomeColumns, AllColumns}
-import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 
-class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
+class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   case class KeyValue(key: Int, group: Long)
 

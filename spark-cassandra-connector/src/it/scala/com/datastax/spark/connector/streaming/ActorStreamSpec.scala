@@ -9,10 +9,11 @@ import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.writer.WriteConf
 import com.datastax.spark.connector._
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import org.scalatest.ConfigMap
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import com.datastax.spark.connector.testkit.TestEvent._
@@ -84,7 +85,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
         awaitCond(rdd.collect.nonEmpty && rdd.collect.size == data.size)
-        sc.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
+        ssc.sparkContext.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
       }
     }
   }
@@ -102,13 +103,12 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 abstract class ActorSpec(var ssc: StreamingContext, _system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
-  def this() = this (new StreamingContext(SparkTemplate.sc, Milliseconds(300)), SparkEnv.get.actorSystem)
+  def this() = this (new StreamingContext(new SparkContext(SparkTemplate.conf), Milliseconds(300)), SparkEnv.get.actorSystem)
 
   before {
     //We can't re-use streaming contexts
-    ssc = new StreamingContext(SparkTemplate.sc, Milliseconds(300))
+    ssc = new StreamingContext(ssc.sparkContext, Milliseconds(300))
   }
-
 }
 
 

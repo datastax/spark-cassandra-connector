@@ -6,13 +6,10 @@ import com.datastax.spark.connector.mapper.DefaultColumnMapper
 
 import scala.collection.JavaConversions._
 
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
-import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
@@ -27,10 +24,10 @@ class SuperKeyValue(val key: Int, val value: String) extends Serializable
 
 class SubKeyValue(k: Int, v: String, val group: Long) extends SuperKeyValue(k, v)
 
-class TableWriterSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
+class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS write_test")

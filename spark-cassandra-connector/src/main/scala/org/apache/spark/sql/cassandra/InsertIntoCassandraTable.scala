@@ -2,7 +2,8 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.writer.SqlRowWriter
+import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Row}
@@ -28,9 +29,10 @@ case class InsertIntoCassandraTable(cassandraRelation: CassandraRelation,
    */
   private lazy val result: RDD[Row] = {
     val childRdd = child.execute()
+    val writeConf = cc.getWriteConf(cassandraRelation.keyspaceName, cassandraRelation.tableName, cassandraRelation.cluster)
 
-    //TODO: cluster level CassandraConnector, write configuration settings
-    childRdd.saveToCassandra(cassandraRelation.keyspaceName, cassandraRelation.tableName)(CassandraConnector(sparkContext.getConf), SqlRowWriter.Factory)
+    childRdd.saveToCassandra(cassandraRelation.keyspaceName, cassandraRelation.tableName, AllColumns, writeConf)(
+        CassandraConnector(cc.getCassandraConnConf(cassandraRelation.cluster)), SqlRowWriter.Factory)
 
     cc.sparkContext.makeRDD(Nil, 1)
   }
