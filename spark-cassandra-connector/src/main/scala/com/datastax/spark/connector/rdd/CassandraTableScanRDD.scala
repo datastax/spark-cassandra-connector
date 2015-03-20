@@ -2,6 +2,12 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import scala.collection.JavaConversions._
+import scala.language.existentials
+import scala.reflect.ClassTag
+
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
@@ -11,81 +17,110 @@ import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, Cassand
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
-import org.apache.spark.{Partition, SparkContext, TaskContext}
-
-import scala.collection.JavaConversions._
-import scala.language.existentials
-import scala.reflect.ClassTag
 
 
 /** RDD representing a Table Scan of A Cassandra table.
+  *
   * This class is the main entry point for analyzing data in Cassandra database with Spark.
-  * Obtain objects of this class by calling [[com.datastax.spark.connector.SparkContextFunctions#cassandraTablecassandraTable]].
+  * Obtain objects of this class by calling
+  * [[com.datastax.spark.connector.SparkContextFunctions#cassandraTablecassandraTable]].
   *
   * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
-  * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate connection property values
-  * to be present in `SparkConf`. For the list of required and available properties, see
-  * [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
+  * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate
+  * connection property values to be present in `SparkConf`. For the list of required and available
+  * properties, see [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
   *
-  * `CassandraRDD` divides the dataset into smaller partitions, processed locally on every cluster node.
-  * A data partition consists of one or more contiguous token ranges.
-  * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches. The following
-  * properties control the number of partitions and the fetch size:
+  * `CassandraRDD` divides the data set into smaller partitions, processed locally on every
+  * cluster node. A data partition consists of one or more contiguous token ranges.
+  * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
-  * - spark.cassandra.input.split.size:        approx number of Cassandra partitions in a Spark partition, default 100000
-  * - spark.cassandra.input.page.row.size:     number of CQL rows fetched per roundtrip, default 1000
+  * The following properties control the number of partitions and the fetch size:
+  * - spark.cassandra.input.split.size: approx number of Cassandra partitions in a Spark partition,
+  *   default 100000
+  * - spark.cassandra.input.page.row.size:  number of CQL rows fetched per roundtrip,
+  *   default 1000
   *
-  * A `CassandraRDD` object gets serialized and sent to every Spark executor.
+  * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then
+  * calls the `compute` method to fetch the data on every node. The `getPreferredLocations`
+  * method tells Spark the preferred nodes to fetch a partition from, so that the data for
+  * the partition are at the same node the task was sent to. If Cassandra nodes are collocated
+  * with Spark nodes, the queries are always sent to the Cassandra process running on the same
+  * node as the Spark Executor process, hence data are not transferred between nodes.
+  * If a Cassandra node fails or gets overloaded during read, the queries are retried
+  * to a different node.
   *
-  * By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality and minimize network traffic.
-  * This read consistency level is controlled by the following property:
-  *
-  * - spark.cassandra.input.consistency.level: consistency level for RDD reads, string matching the ConsistencyLevel enum name.
-  *
-  * If a Cassandra node fails or gets overloaded during read, queries are retried to a different node.
+  * By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality
+  * and minimize network traffic. This read consistency level is controlled by the
+  * spark.cassandra.input.consistency.level property.
   */
 class CassandraTableScanRDD[R] private[connector](
-                                                   @transient sc: SparkContext,
-                                                   val connector: CassandraConnector,
-                                                   val keyspaceName: String,
-                                                   val tableName: String,
-                                                   val columnNames: ColumnSelector = AllColumns,
-                                                   val where: CqlWhereClause = CqlWhereClause.empty,
-                                                   val limit: Option[Long] = None,
-                                                   val clusteringOrder: Option[ClusteringOrder] = None,
-                                                   val readConf: ReadConf = ReadConf())
-                                                 (implicit val rct: ClassTag[R],
-                                                  @transient val rtf: RowReaderFactory[R])
-  extends CassandraRDD[R](sc, Seq.empty) with CassandraTableRowReaderProvider[R] {
+    @transient val sc: SparkContext,
+    val connector: CassandraConnector,
+    val keyspaceName: String,
+    val tableName: String,
+    val columnNames: ColumnSelector = AllColumns,
+    val where: CqlWhereClause = CqlWhereClause.empty,
+    val limit: Option[Long] = None,
+    val clusteringOrder: Option[ClusteringOrder] = None,
+    val readConf: ReadConf = ReadConf())(
+  implicit
+    val classTag: ClassTag[R],
+    @transient val rowReaderFactory: RowReaderFactory[R])
+  extends CassandraRDD[R](sc, Seq.empty)
+  with CassandraTableRowReaderProvider[R] {
 
-  override protected def copy(columnNames: ColumnSelector = columnNames,
-                              where: CqlWhereClause = where,
-                              limit: Option[Long] = limit,
-                              clusteringOrder: Option[ClusteringOrder] = None,
-                              readConf: ReadConf = readConf,
-                              connector: CassandraConnector = connector) = {
+  override type Self = CassandraTableScanRDD[R]
+
+  override protected def copy(
+    columnNames: ColumnSelector = columnNames,
+    where: CqlWhereClause = where,
+    limit: Option[Long] = limit,
+    clusteringOrder: Option[ClusteringOrder] = None,
+    readConf: ReadConf = readConf,
+    connector: CassandraConnector = connector): Self = {
+
     require(sc != null,
-      "RDD transformation requires a non-null SparkContext. Unfortunately SparkContext in this CassandraRDD is null. " +
-        "This can happen after CassandraRDD has been deserialized. SparkContext is not Serializable, therefore it deserializes to null." +
+      "RDD transformation requires a non-null SparkContext. " +
+        "Unfortunately SparkContext in this CassandraRDD is null. " +
+        "This can happen after CassandraRDD has been deserialized. " +
+        "SparkContext is not Serializable, therefore it deserializes to null." +
         "RDD transformations are not allowed inside lambdas used in other RDD transformations.")
-    new CassandraTableScanRDD[R](sc, connector, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf).asInstanceOf[this.type]
+
+    new CassandraTableScanRDD[R](
+      sc = sc,
+      connector = connector,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      columnNames = columnNames,
+      where = where,
+      limit = limit,
+      clusteringOrder = clusteringOrder,
+      readConf = readConf)
   }
 
-  override protected def convertTo[B](implicit ct: ClassTag[B], rrf: RowReaderFactory[B]): CassandraRDD[B] = {
-    new CassandraTableScanRDD[B](sc, connector, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf)
+  override protected def convertTo[B : ClassTag : RowReaderFactory]: CassandraTableScanRDD[B] = {
+    new CassandraTableScanRDD[B](
+      sc = sc,
+      connector = connector,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      columnNames = columnNames,
+      where = where,
+      limit = limit,
+      clusteringOrder = clusteringOrder,
+      readConf = readConf)
   }
-
 
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
     val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
     val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
-    logDebug(s"Created total ${partitions.size} partitions for $keyspaceName.$tableName.")
+    logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
 
-  override def getPreferredLocations(split: Partition) =
+  override def getPreferredLocations(split: Partition): Seq[String] =
     split.asInstanceOf[CassandraPartition]
       .endpoints.map(_.getHostName).toSeq
 
@@ -96,7 +131,12 @@ class CassandraTableScanRDD[R] private[connector](
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
-    (s"SELECT $columns FROM $quotedKeyspaceName.$quotedTableName WHERE $filter $orderBy $limitClause ALLOW FILTERING", range.values ++ where.values)
+    val queryTemplate =
+      s"SELECT $columns " +
+        s"FROM $quotedKeyspaceName.$quotedTableName " +
+        s"WHERE $filter $orderBy $limitClause ALLOW FILTERING"
+    val queryParamValues = range.values ++ where.values
+    (queryTemplate, queryParamValues)
   }
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
@@ -120,9 +160,16 @@ class CassandraTableScanRDD[R] private[connector](
     }
   }
 
-  private def fetchTokenRange(session: Session, range: CqlTokenRange, inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
+  private def fetchTokenRange(
+    session: Session,
+    range: CqlTokenRange,
+    inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
+
     val (cql, values) = tokenRangeToCqlQuery(range)
-    logDebug(s"Fetching data for range ${range.cql} with $cql with params ${values.mkString("[", ",", "]")}")
+    logDebug(
+      s"Fetching data for range ${range.cql} " +
+        s"with $cql " +
+        s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
     val columnNamesArray = selectedColumnRefs.map(_.selectedFromCassandraAs).toArray
 
@@ -157,33 +204,79 @@ class CassandraTableScanRDD[R] private[connector](
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
-      logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName for partition ${partition.index} in $duration%.3f s.")
+      logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
+        f"for partition ${partition.index} in $duration%.3f s.")
       session.close()
     }
     countingIterator
   }
 
-  override def toEmptyCassandraRDD(): EmptyCassandraRDD[R] = {
-    new EmptyCassandraRDD[R](sc, keyspaceName, tableName, columnNames, where, limit, clusteringOrder, readConf)
+  override def toEmptyCassandraRDD: EmptyCassandraRDD[R] = {
+    new EmptyCassandraRDD[R](
+      sc = sc,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      columnNames = columnNames,
+      where = where,
+      limit = limit,
+      clusteringOrder = clusteringOrder,
+      readConf = readConf)
   }
 
   override def count(): Long = {
     columnNames match {
-      case SomeColumns(_) => logWarning("You are about to count rows but an explicit projection has been specified.")
+      case SomeColumns(_) =>
+        logWarning("You are about to count rows but an explicit projection has been specified.")
       case _ =>
     }
-    new CassandraTableScanRDD[Long](sc, connector, keyspaceName, tableName, SomeColumns(RowCountRef), where, limit, clusteringOrder, readConf).reduce(_ + _)
+
+    val counts =
+      new CassandraTableScanRDD[Long](
+        sc = sc,
+        connector = connector,
+        keyspaceName = keyspaceName,
+        tableName = tableName,
+        columnNames = SomeColumns(RowCountRef),
+        where = where,
+        limit = limit,
+        clusteringOrder = clusteringOrder,
+        readConf = readConf)
+
+    counts.reduce(_ + _)
   }
 }
 
 object CassandraTableScanRDD {
-  def apply[T](sc: SparkContext, keyspaceName: String, tableName: String)
-              (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraTableScanRDD[T] =
-    new CassandraTableScanRDD[T](
-      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
 
-  def apply[K, V](sc: SparkContext, keyspaceName: String, tableName: String)
-                 (implicit keyCT: ClassTag[K], valueCT: ClassTag[V], rrf: RowReaderFactory[(K, V)]): CassandraTableScanRDD[(K, V)] =
+  def apply[T : ClassTag : RowReaderFactory](
+    sc: SparkContext,
+    keyspaceName: String,
+    tableName: String): CassandraTableScanRDD[T] = {
+
+    new CassandraTableScanRDD[T](
+      sc = sc,
+      connector = CassandraConnector(sc.getConf),
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      columnNames = AllColumns,
+      where = CqlWhereClause.empty)
+  }
+
+  def apply[K, V](
+      sc: SparkContext,
+      keyspaceName: String,
+      tableName: String)(
+    implicit
+      keyCT: ClassTag[K],
+      valueCT: ClassTag[V],
+      rrf: RowReaderFactory[(K, V)]): CassandraTableScanRDD[(K, V)] = {
+
     new CassandraTableScanRDD[(K, V)](
-      sc, CassandraConnector(sc.getConf), keyspaceName, tableName, AllColumns, CqlWhereClause.empty)
+      sc = sc,
+      connector = CassandraConnector(sc.getConf),
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      columnNames = AllColumns,
+      where = CqlWhereClause.empty)
+  }
 }
