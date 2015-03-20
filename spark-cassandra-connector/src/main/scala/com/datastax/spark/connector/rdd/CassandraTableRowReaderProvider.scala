@@ -2,9 +2,9 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{ProtocolVersion, Session}
+import com.datastax.driver.core.{Metadata, ConsistencyLevel, ProtocolVersion, Session}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.{TableDef, CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.util.NameTools
 
@@ -25,34 +25,36 @@ trait CassandraTableRowReaderProvider[R] {
 
   protected def tableName: String
 
-  protected def readConf: ReadConf
-
   protected def columnNames: ColumnSelector
 
-  protected def fetchSize = readConf.fetchSize
+  protected def readConf: ReadConf
 
-  protected def splitSize = readConf.splitSize
+  protected def fetchSize: Int = readConf.fetchSize
 
-  protected def consistencyLevel = readConf.consistencyLevel
+  protected def splitSize: Int = readConf.splitSize
 
-  /**
-   * rtf:RowReaderFactory and rct should be included as implict parameters in the constructor
-   * of the class implementing this trait see [[CassandraTableScanRDD]]
-   */
-  protected val rtf: RowReaderFactory[R]
-  protected val rct: ClassTag[R]
-  protected lazy val rowReader: RowReader[R] = rtf.rowReader(tableDef, RowReaderOptions(aliasToColumnName = aliasToColumnName))
+  protected def consistencyLevel: ConsistencyLevel = readConf.consistencyLevel
+
+  /** RowReaderFactory and ClassTag should be provided from implicit parameters in the constructor
+    * of the class implementing this trait
+    * @see CassandraTableScanRDD */
+  protected val rowReaderFactory: RowReaderFactory[R]
+
+  protected val classTag: ClassTag[R]
+
+  protected lazy val rowReader: RowReader[R] =
+    rowReaderFactory.rowReader(tableDef, RowReaderOptions(aliasToColumnName = aliasToColumnName))
 
   private lazy val aliasToColumnName = columnNames.aliases
 
-  lazy val tableDef = {
+  lazy val tableDef: TableDef = {
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
-      case None => {
-        val suggestions = NameTools.getSuggestions(connector.withClusterDo(_.getMetadata), keyspaceName, tableName)
+      case None =>
+        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
+        val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
         val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
         throw new IOException(errorMessage)
-      }
     }
   }
 
@@ -91,14 +93,17 @@ trait CassandraTableRowReaderProvider[R] {
   lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
     val providedColumnRefs =
       columnNames match {
-        case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef).toSeq
-        case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef).toSeq
+        case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef)
+        case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef)
         case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
 
     (rowReader.columnNames, rowReader.requiredColumns) match {
-      case (Some(cs), None) => providedColumnRefs.filter(columnName => cs.toSet(columnName.selectedFromCassandraAs))
-      case (_, _) => providedColumnRefs
+      case (Some(cs), None) =>
+        val columnSet = cs.toSet
+        providedColumnRefs.filter(columnName => columnSet.contains(columnName.selectedFromCassandraAs))
+      case (_, _) =>
+        providedColumnRefs
     }
   }
 
@@ -116,7 +121,10 @@ trait CassandraTableRowReaderProvider[R] {
   }
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
-  private def checkColumnsAvailable(columns: Seq[SelectableColumnRef], availableColumns: Seq[SelectableColumnRef]) {
+  private def checkColumnsAvailable(
+      columns: Seq[SelectableColumnRef],
+      availableColumns: Seq[SelectableColumnRef]) {
+
     val availableColumnsSet = availableColumns.collect {
       case ColumnName(columnName, _) => columnName
     }.toSet
@@ -144,25 +152,27 @@ trait CassandraTableRowReaderProvider[R] {
     session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
   }
 
-  /** Checks for existence of keyspace, table, columns and whether the number of selected columns corresponds to
-    * the number of the columns expected by the target type constructor.
+  /** Checks for existence of keyspace, table, columns and whether the number of selected columns
+    * corresponds to the number of the columns expected by the target type constructor.
     * If successful, does nothing, otherwise throws appropriate `IOException` or `AssertionError`. */
   def verify() = {
-    val targetType = rct
+    val targetType = classTag
 
     tableDef.allColumns // will throw IOException if table does not exist
 
     rowReader.columnNames match {
       case Some(names) =>
         val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedFromCassandraAs).toSet
-        assert(missingColumns.isEmpty, s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
+        assert(missingColumns.isEmpty,
+          s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
       case None =>
     }
 
     rowReader.requiredColumns match {
       case Some(count) =>
         assert(selectedColumnRefs.size >= count,
-          s"Not enough columns selected for the target row type $targetType: ${selectedColumnRefs.size} < $count")
+          s"Not enough columns selected for the target row type $targetType: " +
+            s"${selectedColumnRefs.size} < $count")
       case None =>
     }
   }
