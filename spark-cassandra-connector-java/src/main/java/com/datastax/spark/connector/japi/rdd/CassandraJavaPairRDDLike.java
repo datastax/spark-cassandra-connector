@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.japi.SparkContextJavaFunctions;
+import com.datastax.spark.connector.japi.StreamingContextJavaFunctions;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -7,11 +9,11 @@ import scala.Tuple2;
 import scala.reflect.ClassTag;
 
 /**
- * A Java API wrapper over {@link com.datastax.spark.connector.rdd.CassandraRDD} of tuples to provide Spark Cassandra
- * Connector functionality in Java.
- *
- * <p>The wrapper can be obtained by one of the methods of {@link com.datastax.spark.connector.japi.SparkContextJavaFunctions}
- * or {@link com.datastax.spark.connector.japi.StreamingContextJavaFunctions}.</p>
+ * A Java API wrapper over {@link CassandraRDD} of tuples to provide Spark Cassandra Connector
+ * functionality in Java.
+ * <p/>
+ * The wrapper can be obtained by one of the methods of {@link SparkContextJavaFunctions} or
+ * {@link StreamingContextJavaFunctions}.
  */
 public interface CassandraJavaPairRDDLike<K, V, ThisType extends CassandraJavaPairRDDLike<K, V, ThisType>>
         extends CassandraCommonJavaRDDLike<ThisType> {

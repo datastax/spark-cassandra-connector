@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.japi.*;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -8,11 +9,11 @@ import scala.reflect.ClassTag;
 /**
  * A Java API wrapper over {@link com.datastax.spark.connector.rdd.CassandraRDD} to provide Spark Cassandra
  * Connector functionality in Java.
- *
- * <p>The wrapper can be obtained by one of the methods of {@link com.datastax.spark.connector.japi.SparkContextJavaFunctions}
- * or {@link com.datastax.spark.connector.japi.StreamingContextJavaFunctions}.</p>
+ * <p/>
+ * The wrapper can be obtained by one of the methods of {@link SparkContextJavaFunctions} or
+ * {@link StreamingContextJavaFunctions}.
  */
-public interface CassandraJavaRDDLike<R, ThisType extends CassandraJavaRDDLike<R, ThisType>> 
+public interface CassandraJavaRDDLike<R, ThisType extends CassandraJavaRDDLike<R, ThisType>>
         extends CassandraCommonJavaRDDLike<ThisType> {
 
     ClassTag<R> classTag();

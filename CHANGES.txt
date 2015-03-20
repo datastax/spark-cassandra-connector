@@ -1,3 +1,5 @@
+ * Cross cluster table join and write for Spark SQL (SPARKC-73)
+
 1.2.0 rc 1
  * More Spark SQL predicate push (SPARKC-72)
  * Fixed some Java API problems and refactored its internals (SPARKC-77)

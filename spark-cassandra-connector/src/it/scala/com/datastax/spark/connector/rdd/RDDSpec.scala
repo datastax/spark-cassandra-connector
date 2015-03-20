@@ -22,11 +22,11 @@ case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
-class RDDSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+class RDDSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  val conn = CassandraConnector(Set(cassandraHost))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
   implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
   val keyspace = "rdd_test"
   val tableName = "key_value"

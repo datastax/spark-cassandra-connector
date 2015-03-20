@@ -35,7 +35,7 @@ abstract class CassandraRDD[R](_sc: SparkContext, dep: Seq[Dependency[_]])(impli
 
   protected def connector: CassandraConnector
 
-  def toEmptyCassandraRDD(): EmptyCassandraRDD[R]
+  def toEmptyCassandraRDD: EmptyCassandraRDD[R]
 
   /** Allows to set custom read configuration, e.g. consistency level or fetch size. */
   def withReadConf(readConf: ReadConf) = {

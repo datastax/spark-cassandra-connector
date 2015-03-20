@@ -1,17 +1,16 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import org.apache.spark.SparkConf
-import org.scalatest.{FlatSpec, Matchers}
-import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
-class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra {
+class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   val createKeyspaceCql = "CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"
 
@@ -24,13 +23,13 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
 
   it should "connect to Cassandra with thrift" in {
     conn.withCassandraClientDo { client =>
-      assert(client.describe_cluster_name() === "Test Cluster")
+      assert(client.describe_cluster_name() === "Test Cluster0")
     }
   }
 
   it should "give access to cluster metadata" in {
     conn.withClusterDo { cluster =>
-      assert(cluster.getMetadata.getClusterName === "Test Cluster")
+      assert(cluster.getMetadata.getClusterName === "Test Cluster0")
       assert(cluster.getMetadata.getAllHosts.size > 0)
     }
   }
@@ -81,7 +80,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
+    val conn2 = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()
@@ -96,7 +95,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "be configurable from SparkConf" in {
-    val host = EmbeddedCassandra.cassandraHost.getHostAddress
+    val host = EmbeddedCassandra.getHost(0).getHostAddress
     val conf = new SparkConf(loadDefaults = true)
       .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
 
@@ -106,7 +105,7 @@ class CassandraConnectorSpec extends FlatSpec with Matchers with SharedEmbeddedC
   }
 
   it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
-    val goodHost = EmbeddedCassandra.cassandraHost.getHostAddress
+    val goodHost = EmbeddedCassandra.getHost(0).getHostAddress
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = new SparkConf(loadDefaults = true)

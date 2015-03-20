@@ -20,11 +20,11 @@ class StreamingContextFunctions (ssc: StreamingContext) extends SparkContextFunc
   override def cassandraTable[T](keyspace: String, table: String)(
     implicit
       connector: CassandraConnector = CassandraConnector(ssc.sparkContext.getConf),
+      readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
       ct: ClassTag[T],
       rrf: RowReaderFactory[T],
       ev: ValidRDDType[T]): CassandraStreamingRDD[T] = {
 
-    val readConf = ReadConf.fromSparkConf(ssc.sparkContext.getConf)
     new CassandraStreamingRDD[T](ssc, connector, keyspace, table, readConf = readConf)
   }
 }

@@ -15,12 +15,11 @@ import org.scalatest._
 
 import scala.collection.JavaConversions._
 
-class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
-with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS java_api_test")
@@ -82,7 +81,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read data as Java beans with custom mapping defined by aliases" in {
     val beans = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleWeirdJavaBean]))
-      .selectRefs(column("key").as("devil"), column("value").as("cat"))
+      .selectRefs(Array(column("key").as("devil"), column("value").as("cat")))
       .collect()
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getCat == "one" && bean.getDevil == 1))
@@ -123,7 +122,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
   it should "allow to select a subset of columns" in {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .select("key").collect()
+      .select(Array("key")).collect()
     assert(rows.size == 3)
     assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 1))
     assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 2))
@@ -132,14 +131,14 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
   it should "return selected columns" in {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .select("key")
+      .select(Array("key"))
     assert(rdd.selectedColumnNames().size === 1)
     assert(rdd.selectedColumnNames().contains("key"))
   }
 
   it should "allow to use where clause to filter records" in {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
-      .where("value = ?", "two").collect()
+      .where("value = ?", Array("two")).collect()
     assert(rows.size === 1)
     assert(rows.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
   }
@@ -147,7 +146,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read rows as an array of a single-column type supported by TypeConverter" in {
     val rows1 = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.String]))
-      .select("value")
+      .select(Array("value"))
       .collect()
     rows1 should have size 3
     rows1 should contain("one")
@@ -156,7 +155,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
     val rows2 = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.Integer]))
-      .select("key")
+      .select(Array("key"))
       .collect()
 
     rows2 should have size 3
@@ -166,7 +165,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
     val rows3 = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.Double]))
-      .select("key")
+      .select(Array("key"))
       .collect()
 
     rows3 should have size 3
@@ -178,7 +177,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read rows as an array of a single-column list" in {
     val rows = javaFunctions(sc)
       .cassandraTable("java_api_test", "collections", mapColumnToListOf(classOf[String]))
-      .select("l")
+      .select(Array("l"))
       .collect().map(_.toList)
 
     rows should have size 2
@@ -189,7 +188,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read rows as an array of a single-column set" in {
     val rows = javaFunctions(sc)
       .cassandraTable("java_api_test", "collections", mapColumnToSetOf(classOf[String]))
-      .select("s")
+      .select(Array("s"))
       .collect().map(_.toSet)
 
     rows should have size 2
@@ -200,7 +199,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read rows as an array of a single-column map" in {
     val rows = javaFunctions(sc)
       .cassandraTable("java_api_test", "collections", mapColumnToMapOf(classOf[String], classOf[String]))
-      .select("m")
+      .select(Array("m"))
       .collect().map(_.toMap)
 
     rows should have size 2
@@ -282,7 +281,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read Cassandra data as array of Integer" in {
     val rows = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapColumnTo(TypeConverter.JavaIntConverter))
-      .select("key").collect()
+      .select(Array("key")).collect()
 
     rows should have size 3
     rows should contain(1)
@@ -295,7 +294,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     javaFunctions(sc).cassandraTable("java_api_test", "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.cassandraHost), nativePort = 9999, rpcPort = 9998)
+    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), nativePort = 9999, rpcPort = 9998)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable("java_api_test", "test_table").withConnector(invalidConnector).collect()
     }
@@ -304,7 +303,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to read null columns" in {
     val row = javaFunctions(sc)
       .cassandraTable("java_api_test", "nulls")
-      .select("i", "vi", "t", "d", "l")
+      .select(Array("i", "vi", "t", "d", "l"))
       .first()
 
     row.getInt(0) should be (null)
@@ -317,7 +316,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "allow to fetch UDT columns" in {
     val result = javaFunctions(sc)
       .cassandraTable("java_api_test", "udts")
-      .select("key", "name", "addr").collect()
+      .select(Array("key", "name", "addr")).collect()
 
     result should have length 1
     val row = result.head
@@ -349,7 +348,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows")
-      .select("key", "group", "value")
+      .select(Array("key", "group", "value"))
       .spanBy[Int](f, classOf[Int])
       .collect()
       .toMap

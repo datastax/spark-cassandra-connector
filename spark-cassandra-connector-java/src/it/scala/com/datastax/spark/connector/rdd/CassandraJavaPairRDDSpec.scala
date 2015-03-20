@@ -2,24 +2,21 @@ package com.datastax.spark.connector.rdd
 
 import java.util
 
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
-import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
-import com.datastax.spark.connector.testkit._
 import org.apache.spark.api.java.function.{Function => JFunction, Function2}
-import org.scalatest._
 
 import scala.collection.JavaConversions._
 
 case class SimpleClass(value: Integer)
 
-class CassandraJavaPairRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
-with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS java_api_test")
@@ -40,7 +37,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
   "CassandraJavaPairRDD" should "allow to reduce by key " in {
     val rows = javaFunctions(sc).cassandraTable("java_api_test", "test_table_2",
-      mapColumnTo(classOf[java.lang.String]), mapRowTo(classOf[SimpleClass])).select("key2", "value")
+      mapColumnTo(classOf[java.lang.String]), mapRowTo(classOf[SimpleClass])).select(Array("key2", "value"))
 
     val reduced = rows.reduceByKey(new Function2[SimpleClass, SimpleClass, SimpleClass] {
       override def call(v1: SimpleClass, v2: SimpleClass): SimpleClass = SimpleClass(v1.value + v2.value)
@@ -72,7 +69,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
-      .select("key", "group")
+      .select(Array("key", "group"))
       .spanBy(f, classOf[Integer])
       .collect()
       .toMap
@@ -104,7 +101,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
 
     val results = javaFunctions(sc)
       .cassandraTable("java_api_test", "wide_rows", mapColumnTo(classOf[Integer]), mapColumnTo(classOf[Integer]))
-      .select("key", "group")
+      .select(Array("key", "group"))
       .spanByKey()
       .collect()
       .toMap
