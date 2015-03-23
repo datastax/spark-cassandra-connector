@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.CassandraConnectorConf
+import com.datastax.spark.connector.cql.{AuthConf, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
@@ -19,7 +19,8 @@ object ConfigCheck {
   val validProps =
     WriteConf.Properties ++
     ReadConf.Properties ++
-    CassandraConnectorConf.Properties
+    CassandraConnectorConf.Properties ++
+    AuthConf.Properties
 
 
   /**
