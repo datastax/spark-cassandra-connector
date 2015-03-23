@@ -63,6 +63,10 @@ object DefaultAuthConfFactory extends AuthConfFactory {
 object AuthConf {
   val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
 
+  val Properties = Seq(
+    AuthConfFactoryProperty
+  )
+
   def fromSparkConf(conf: SparkConf) = {
     val authConfFactory = conf
       .getOption(AuthConfFactoryProperty)
