@@ -4,16 +4,15 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import org.apache.spark.rdd.RDD
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.scalatest.BeforeAndAfter
 
 import scala.collection.JavaConversions._
 
-class CassandraJavaUtilSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndAfter {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   before {
     conn.withSessionDo { session =>

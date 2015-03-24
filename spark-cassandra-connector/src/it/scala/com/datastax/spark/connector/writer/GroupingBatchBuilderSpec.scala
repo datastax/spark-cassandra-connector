@@ -3,18 +3,19 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core.{BatchStatement, BoundStatement, ConsistencyLevel, Session}
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, BatchSize, BytesInBatch, RowsInBatch}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.Map
 import scala.util.Random
 
-class GroupingBatchBuilderSpec extends FlatSpec with Matchers with BeforeAndAfter with SharedEmbeddedCassandra {
+class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS batch_maker_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")

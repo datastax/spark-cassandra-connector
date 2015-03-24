@@ -2,6 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
+import org.scalatest.{ConfigMap, BeforeAndAfterAll}
 
 /**
  * Usages: Create the [[org.apache.spark.streaming.StreamingContext]] then write async to the stream.
@@ -32,13 +33,13 @@ import com.datastax.spark.connector.embedded._
  *
  * etc.
  */
-trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
+trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate with BeforeAndAfterAll {
   import org.apache.spark.streaming.StreamingContext
   import scala.concurrent.duration._
 
   val duration = 10.seconds
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
   def ssc: StreamingContext
 
@@ -46,4 +47,11 @@ trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with Spark
     // Spark Context is shared among all integration test so we don't want to stop it here
     ssc.stop(stopSparkContext = false, stopGracefully = true)
   }
+
+  override def afterAll(configMap: ConfigMap) {
+    if (ssc.sparkContext != null) {
+      ssc.sparkContext.stop()
+    }
+  }
+
 }

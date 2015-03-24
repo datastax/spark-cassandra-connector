@@ -1,14 +1,12 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import com.datastax.spark.connector.embedded._
-import org.scalatest.{FlatSpec, Matchers}
 
-class CassandraPartitionKeyWhereSpec extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
-  val conn = CassandraConnector(Set(cassandraHost))
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS where_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")

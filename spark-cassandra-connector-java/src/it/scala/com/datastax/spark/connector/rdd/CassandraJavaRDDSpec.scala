@@ -15,12 +15,11 @@ import org.scalatest._
 
 import scala.collection.JavaConversions._
 
-class CassandraJavaRDDSpec extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll
-with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
+class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig("cassandra-default.yaml.template")
+  useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.cassandraHost))
+  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS java_api_test")
@@ -295,7 +294,7 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
     javaFunctions(sc).cassandraTable("java_api_test", "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.cassandraHost), nativePort = 9999, rpcPort = 9998)
+    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), nativePort = 9999, rpcPort = 9998)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable("java_api_test", "test_table").withConnector(invalidConnector).collect()
     }
