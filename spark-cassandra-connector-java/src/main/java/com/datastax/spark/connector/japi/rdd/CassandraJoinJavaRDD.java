@@ -2,7 +2,7 @@ package com.datastax.spark.connector.japi.rdd;
 
 import scala.reflect.ClassTag;
 
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.getClassTag;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.safeClassTag;
 
 import com.datastax.spark.connector.ColumnSelector;
 import com.datastax.spark.connector.rdd.CassandraJoinRDD;
@@ -18,7 +18,7 @@ public class CassandraJoinJavaRDD<K, V> extends CassandraJavaPairRDD<K, V> {
     public CassandraJoinJavaRDD(CassandraJoinRDD<K, V> rdd,
                                 Class<K> keyClass, Class<V> valueClass) {
 
-        super(rdd, getClassTag(keyClass), getClassTag(valueClass));
+        super(rdd, safeClassTag(keyClass), safeClassTag(valueClass));
     }
 
     private CassandraJoinJavaRDD<K, V> wrap(CassandraJoinRDD<K, V> newRDD) {

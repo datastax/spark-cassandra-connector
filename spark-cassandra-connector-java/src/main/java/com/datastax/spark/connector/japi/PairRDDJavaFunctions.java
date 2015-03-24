@@ -10,7 +10,7 @@ import scala.reflect.ClassTag;
 
 import java.util.Collection;
 
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.getUncheckedClassTag;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.classTag;
 
 public class PairRDDJavaFunctions<K, V> extends RDDJavaFunctions<Tuple2<K, V>> {
 
@@ -29,8 +29,8 @@ public class PairRDDJavaFunctions<K, V> extends RDDJavaFunctions<Tuple2<K, V>> {
      * table.
      */
     public JavaPairRDD<K, Collection<V>> spanByKey(ClassTag<K> keyClassTag) {
-        ClassTag<Tuple2<K, Collection<V>>> tupleClassTag = getUncheckedClassTag(Tuple2.class);
-        ClassTag<Collection<V>> vClassTag = getUncheckedClassTag(Collection.class);
+        ClassTag<Tuple2<K, Collection<V>>> tupleClassTag = classTag(Tuple2.class);
+        ClassTag<Collection<V>> vClassTag = classTag(Collection.class);
         RDD<Tuple2<K, Collection<V>>> newRDD = pairRDDFunctions.spanByKey()
                 .map(JavaApiHelper.<K, V, Seq<V>>valuesAsJavaCollection(), tupleClassTag);
 

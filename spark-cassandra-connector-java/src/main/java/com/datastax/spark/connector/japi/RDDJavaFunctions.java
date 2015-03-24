@@ -4,7 +4,7 @@ import scala.Option;
 import scala.Tuple2;
 import scala.reflect.ClassTag;
 
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.getUncheckedClassTag;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.classTag;
 import static com.datastax.spark.connector.util.JavaApiHelper.toScalaFunction1;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -65,8 +65,8 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
      * never be placed in the same group.
      */
     public <U> JavaPairRDD<U, Iterable<T>> spanBy(final Function<T, U> f, ClassTag<U> keyClassTag) {
-        ClassTag<Tuple2<U, Iterable<T>>> tupleClassTag = getUncheckedClassTag(Tuple2.class);
-        ClassTag<Iterable<T>> iterableClassTag = CassandraJavaUtil.getUncheckedClassTag(Iterable.class);
+        ClassTag<Tuple2<U, Iterable<T>>> tupleClassTag = classTag(Tuple2.class);
+        ClassTag<Iterable<T>> iterableClassTag = CassandraJavaUtil.classTag(Iterable.class);
 
         RDD<Tuple2<U, Iterable<T>>> newRDD = rddFunctions.spanBy(toScalaFunction1(f))
                 .map(JavaApiHelper.<U, T, scala.collection.Iterable<T>>valuesAsJavaIterable(), tupleClassTag);

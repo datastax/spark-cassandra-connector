@@ -1,5 +1,25 @@
 package com.datastax.spark.connector;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import scala.reflect.api.TypeTags;
+
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.rdd.RDD;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.datastax.spark.connector.japi.RDDJavaFunctions;
 import com.datastax.spark.connector.japi.SparkContextJavaFunctions;
 import com.datastax.spark.connector.mapper.ColumnMapper;
@@ -8,29 +28,9 @@ import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
 import com.datastax.spark.connector.types.TypeConverter;
 import com.datastax.spark.connector.util.JavaApiHelper;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.rdd.RDD;
-import org.junit.Test;
-import scala.reflect.api.TypeTags;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class CassandraJavaUtilTest {
-
 
     @Test
     public void testTypeTag1() throws Exception {
