@@ -36,6 +36,7 @@ import collection.mutable
   *
   * }}} */
 class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
+  import CassandraSQLContext._
 
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
     new this.QueryExecution { val logical = plan }
@@ -195,7 +196,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     }
   }
 
-  private var keyspaceName = conf.getOption("spark.cassandra.keyspace")
+  private var keyspaceName = conf.getOption(CassandraSQLKeyspaceNameProperty)
 
   /** Sets default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) {
@@ -235,4 +236,12 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       BroadcastNestedLoopJoin
     )
   }
+}
+
+object CassandraSQLContext {
+  val CassandraSQLKeyspaceNameProperty = "spark.cassandra.keyspace"
+
+  val Properties = Seq(
+    CassandraSQLKeyspaceNameProperty
+  )
 }
