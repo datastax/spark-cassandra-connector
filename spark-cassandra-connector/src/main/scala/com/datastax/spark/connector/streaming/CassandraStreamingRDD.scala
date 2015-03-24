@@ -24,4 +24,13 @@ class CassandraStreamingRDD[R] private[connector] (
   implicit
     ct : ClassTag[R],
     @transient val rrf: RowReaderFactory[R])
-  extends CassandraTableScanRDD[R](sctx.sparkContext, connector, keyspace, table, columns, where, limit, clusteringOrder, readConf)
+  extends CassandraTableScanRDD[R](
+    sc = sctx.sparkContext,
+    connector = connector,
+    keyspaceName = keyspace,
+    tableName = table,
+    columnNames = columns,
+    where = where,
+    limit = limit,
+    clusteringOrder = clusteringOrder,
+    readConf = readConf)
