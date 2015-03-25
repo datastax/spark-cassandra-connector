@@ -71,6 +71,8 @@ object Settings extends Build {
 
   lazy val projectSettings = graphSettings ++ Seq(
 
+    aggregate in update := false,
+
     incOptions := incOptions.value.withNameHashing(true),
 
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },

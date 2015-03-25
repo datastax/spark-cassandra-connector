@@ -20,20 +20,14 @@ import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
   import Settings._
-
-  aggregate in update := false
+  import Versions.scalaBinary
 
   val namespace = "spark-cassandra-connector"
 
   val demosPath = file(s"$namespace-demos")
 
-  val scala211 = sys.props.get("scala-2.11") match {
-    case Some(is) if is.nonEmpty && is.toBoolean => true
-    case _ => false
-  }
-
   lazy val root = RootProject("root", file("."),
-    if (scala211) Seq(embedded, connector, demos)
+    if (scalaBinary == "2.11") Seq(embedded, connector, demos)
     else Seq(embedded, connector, demos, jconnector)
   )
 
@@ -64,9 +58,11 @@ object CassandraSparkBuild extends Build {
       id = "simple-demos",
       base = demosPath / "simple-demos",
       settings = demoSettings ++ Seq(
-        excludeFilter in unmanagedSources := (if (scala211)
-          HiddenFileFilter || "*.java" else HiddenFileFilter)),
-      dependencies = if (scala211)
+        excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, minor)) if minor < 11 => HiddenFileFilter
+          case _ => HiddenFileFilter || "*.java"
+        })),
+      dependencies = if (scalaBinary == "2.11")
         Seq(connector, embedded) else Seq(connector, jconnector, embedded)
   )
 
