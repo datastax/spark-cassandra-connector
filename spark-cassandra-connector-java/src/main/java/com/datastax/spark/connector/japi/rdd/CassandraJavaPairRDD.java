@@ -22,15 +22,19 @@ import com.datastax.spark.connector.util.JavaApiHelper;
 @SuppressWarnings("UnusedDeclaration")
 public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
 
-    public CassandraJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd,
-            ClassTag<K> keyClassTag, ClassTag<V> valueClassTag) {
-
+    public CassandraJavaPairRDD(
+            CassandraRDD<Tuple2<K, V>> rdd,
+            ClassTag<K> keyClassTag,
+            ClassTag<V> valueClassTag
+    ) {
         super(rdd, keyClassTag, valueClassTag);
     }
 
-    public CassandraJavaPairRDD(CassandraRDD<Tuple2<K, V>> rdd,
-            Class<K> keyClass, Class<V> valueClass) {
-
+    public CassandraJavaPairRDD(
+            CassandraRDD<Tuple2<K, V>> rdd,
+            Class<K> keyClass,
+            Class<V> valueClass
+    ) {
         super(rdd, getClassTag(keyClass), getClassTag(valueClass));
     }
 
@@ -181,12 +185,18 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
      * original collection. Works locally on each partition, so items from different partitions will
      * never be placed in the same group.
      */
-    public <U> JavaPairRDD<U, Iterable<Tuple2<K, V>>> spanBy(Function<Tuple2<K, V>, U> function, ClassTag<U> uClassTag) {
+    public <U> JavaPairRDD<U, Iterable<Tuple2<K, V>>> spanBy(
+            Function<Tuple2<K, V>, U> function,
+            ClassTag<U> uClassTag
+    ) {
         return new PairRDDJavaFunctions<>(rdd()).spanBy(function, uClassTag);
     }
 
     /** @see {@link #spanBy(Function, ClassTag)} */
-    public <U> JavaPairRDD<U, Iterable<Tuple2<K, V>>> spanBy(Function<Tuple2<K, V>, U> function, Class<U> uClass) {
+    public <U> JavaPairRDD<U, Iterable<Tuple2<K, V>>> spanBy(
+            Function<Tuple2<K, V>, U> function,
+            Class<U> uClass
+    ) {
         return new PairRDDJavaFunctions<>(rdd()).spanBy(function, getClassTag(uClass));
     }
 }

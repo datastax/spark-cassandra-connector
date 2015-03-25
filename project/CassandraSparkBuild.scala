@@ -199,9 +199,18 @@ object Dependencies {
 
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
-  val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-   Test.junitInterface, Test.scalaMock, Test.scalaTest, Test.scalactic, Test.mockito,
-   Test.powerMock, Test.powerMockMockito)
+  val testKit = Seq(
+    Test.akkaTestKit,
+    Test.commonsIO,
+    Test.junit,
+    Test.junitInterface,
+    Test.scalaMock,
+    Test.scalaTest,
+    Test.scalactic,
+    Test.mockito,
+    Test.powerMock,
+    Test.powerMockMockito
+  )
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 

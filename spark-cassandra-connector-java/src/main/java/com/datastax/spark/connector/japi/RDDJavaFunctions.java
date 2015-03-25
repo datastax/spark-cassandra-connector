@@ -86,10 +86,13 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
      * parameter or the {@code on()} method.
      */
     public <R> CassandraJavaPairRDD<T, R> joinWithCassandraTable(
-            String keyspaceName, String tableName,
-            ColumnSelector selectedColumns, ColumnSelector joinColumns,
-            RowReaderFactory<R> rowReaderFactory, RowWriterFactory<T> rowWriterFactory) {
-
+            String keyspaceName,
+            String tableName,
+            ColumnSelector selectedColumns,
+            ColumnSelector joinColumns,
+            RowReaderFactory<R> rowReaderFactory,
+            RowWriterFactory<T> rowWriterFactory
+    ) {
         ClassTag<T> classTagT = rdd.toJavaRDD().classTag();
         ClassTag<R> classTagR = JavaApiHelper.getClassTag(rowReaderFactory.targetClass());
 
@@ -99,9 +102,21 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         CqlWhereClause whereClause = CqlWhereClause.empty();
         ReadConf readConf = ReadConf.fromSparkConf(rdd.conf());
 
-        CassandraJoinRDD<T, R> joinRDD = new CassandraJoinRDD<>(rdd, keyspaceName, tableName,
-                connector, selectedColumns, joinColumns, whereClause, limit, clusteringOrder,
-                readConf, classTagT, classTagR, rowWriterFactory, rowReaderFactory);
+        CassandraJoinRDD<T, R> joinRDD = new CassandraJoinRDD<>(
+                rdd,
+                keyspaceName,
+                tableName,
+                connector,
+                selectedColumns,
+                joinColumns,
+                whereClause,
+                limit,
+                clusteringOrder,
+                readConf,
+                classTagT,
+                classTagR,
+                rowWriterFactory,
+                rowReaderFactory);
 
         return new CassandraJavaPairRDD<>(joinRDD, classTagT, classTagR);
     }
@@ -113,14 +128,22 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
      * Partitions that will be created in this repartitioning event. The calling RDD must have rows that
      * can be converted into the partition key of the given Cassandra Table.
      */
-    public JavaRDD<T> repartitionByCassandraReplica(String keyspaceName, String tableName,
-            int partitionsPerHost, RowWriterFactory<T> rowWriterFactory) {
-
+    public JavaRDD<T> repartitionByCassandraReplica(
+            String keyspaceName,
+            String tableName,
+            int partitionsPerHost,
+            RowWriterFactory<T> rowWriterFactory
+    ) {
         CassandraConnector connector = defaultConnector();
         ClassTag<T> ctT = rdd.toJavaRDD().classTag();
 
         CassandraPartitionedRDD<T> newRDD = rddFunctions.repartitionByCassandraReplica(
-                keyspaceName, tableName, partitionsPerHost, connector, ctT, rowWriterFactory);
+                keyspaceName,
+                tableName,
+                partitionsPerHost,
+                connector,
+                ctT,
+                rowWriterFactory);
 
         return new JavaRDD<>(newRDD, ctT);
     }

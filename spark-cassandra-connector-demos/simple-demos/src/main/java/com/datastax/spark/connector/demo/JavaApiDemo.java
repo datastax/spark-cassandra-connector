@@ -73,7 +73,7 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to filter rows on the database side with use of the where clause
         JavaRDD<String> rdd3 = javaFunctions(sc).cassandraTable("test", "people", mapRowTo(Person.class))
-                .where("name=?", new Object[] {"Anna"}).map(new Function<Person, String>() {
+                .where("name=?", "Anna").map(new Function<Person, String>() {
                     @Override
                     public String call(Person person) throws Exception {
                         return person.toString();
@@ -83,7 +83,7 @@ public class JavaApiDemo implements Serializable {
 
         // use case: we want to explicitly set a projection on the column set
         JavaRDD<String> rdd4 = javaFunctions(sc).cassandraTable("test", "people")
-                .select(new String[] {"id"}).map(new Function<CassandraRow, String>() {
+                .select("id").map(new Function<CassandraRow, String>() {
                     @Override
                     public String call(CassandraRow cassandraRow) throws Exception {
                         return cassandraRow.toString();
