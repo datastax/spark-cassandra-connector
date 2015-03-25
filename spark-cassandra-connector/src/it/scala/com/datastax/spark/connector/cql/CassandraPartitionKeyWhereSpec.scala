@@ -6,6 +6,8 @@ import com.datastax.spark.connector.embedded._
 class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useSparkConf(defaultSparkConf)
+
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>

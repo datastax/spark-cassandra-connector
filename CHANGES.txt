@@ -1,4 +1,5 @@
  * Cross cluster table join and write for Spark SQL (SPARKC-73)
+ * Enabling / disabling metrics in metrics configuration file and other metrics fixes (SPARKC-91)
 
 1.2.0 rc 1
  * More Spark SQL predicate push (SPARKC-72)
@@ -15,7 +16,7 @@
  * Set Java driver version to 2.1.5 and Cassandra to 2.1.3 (SPARKC-92)
  * Moved Spark streaming related methods from CassandraJavaUtil to CassandraStreamingJavaUtil 
    (SPARKC-80)
-
+ 
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
  * Added automatic generation of Cassandra table schema from a Scala type and

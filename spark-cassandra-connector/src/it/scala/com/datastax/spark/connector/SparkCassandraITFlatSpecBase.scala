@@ -13,15 +13,4 @@ trait SparkCassandraITWordSpecBase extends WordSpec with SparkCassandraITSpecBas
 trait SparkCassandraITAbstractSpecBase extends AbstractSpec with SparkCassandraITSpecBase
 
 trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCassandra with SparkTemplate with BeforeAndAfterAll {
-  var sc: SparkContext = null
-
-  override def beforeAll(configMap: ConfigMap) {
-    sc = new SparkContext(conf)
-  }
-
-  override def afterAll(configMap: ConfigMap) {
-    if (sc != null) {
-      sc.stop()
-    }
-  }
 }

@@ -3,6 +3,7 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.util.ConfigCheck
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
@@ -18,6 +19,7 @@ import org.apache.spark.SparkConf
   * @param parallelismLevel number of batches to be written in parallel
   * @param ttl       the default TTL value which is used when it is defined (in seconds)
   * @param timestamp the default timestamp value which is used when it is defined (in microseconds)
+  * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+)
   */
 
 case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
@@ -27,7 +29,8 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
                      throughputMiBPS: Int = WriteConf.DefaultThroughputMiBPS,
                      ttl: TTLOption = TTLOption.defaultValue,
-                     timestamp: TimestampOption = TimestampOption.defaultValue) {
+                     timestamp: TimestampOption = TimestampOption.defaultValue,
+                     taskMetricsEnabled: Boolean = WriteConf.DefaultWriteTaskMetricsEnabled) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
@@ -56,6 +59,7 @@ object WriteConf {
   val WriteBatchLevelProperty = "spark.cassandra.output.batch.grouping.key"
   val WriteParallelismLevelProperty = "spark.cassandra.output.concurrent.writes"
   val WriteThroughputMiBPS = "spark.cassandra.output.throughput_mb_per_sec"
+  val WriteTaskMetricsProperty = "spark.cassandra.output.metrics"
 
   // Whitelist for allowed Write environment variables
   val Properties = Seq(
@@ -65,7 +69,8 @@ object WriteConf {
     WriteBatchBufferSizeProperty,
     WriteBatchLevelProperty,
     WriteParallelismLevelProperty,
-    WriteThroughputMiBPS
+    WriteThroughputMiBPS,
+    WriteTaskMetricsProperty
   )
 
   val DefaultConsistencyLevel = ConsistencyLevel.LOCAL_ONE
@@ -74,8 +79,11 @@ object WriteConf {
   val DefaultBatchGroupingBufferSize = 1000
   val DefaultBatchGroupingKey = BatchGroupingKey.Partition
   val DefaultThroughputMiBPS = Int.MaxValue
+  val DefaultWriteTaskMetricsEnabled = true
 
   def fromSparkConf(conf: SparkConf): WriteConf = {
+
+    ConfigCheck.checkConfig(conf)
 
     val batchSizeInBytes = conf.getInt(
       WriteBatchSizeInBytesProperty, DefaultBatchSizeInBytes)
@@ -109,14 +117,17 @@ object WriteConf {
     val throughputMiBPS = conf.getInt(
       WriteThroughputMiBPS, DefaultThroughputMiBPS)
 
+    val metricsEnabled = conf.getBoolean(
+      WriteTaskMetricsProperty, DefaultWriteTaskMetricsEnabled)
+    
     WriteConf(
       batchSize = batchSize,
       batchGroupingBufferSize = batchBufferSize,
       batchGroupingKey = batchGroupingKey,
       consistencyLevel = consistencyLevel,
       parallelismLevel = parallelismLevel,
-      throughputMiBPS = throughputMiBPS)
-
+      throughputMiBPS = throughputMiBPS,
+      taskMetricsEnabled = metricsEnabled)
   }
 
 }

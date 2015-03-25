@@ -121,7 +121,7 @@ class TableWriter[T] private (
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
-        Some(updater.batchSucceeded), Some(updater.batchFailed))
+        Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
       val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
@@ -135,6 +135,7 @@ class TableWriter[T] private (
 
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite)
+        assert(stmtToWrite.bytesCount > 0)
         rateLimiter.maybeSleep(stmtToWrite.bytesCount)
       }
 
