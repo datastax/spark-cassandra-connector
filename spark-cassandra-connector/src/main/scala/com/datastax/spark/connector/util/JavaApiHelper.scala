@@ -59,10 +59,12 @@ object JavaApiHelper {
   }
 
   /** Returns a runtime class of a given `TypeTag`. */
-  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
+  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] =
+    mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
 
   /** Returns a runtime class of a given `ClassTag`. */
-  def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
+  def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] =
+    classTag.runtimeClass.asInstanceOf[Class[T]]
 
   /** Converts a Java `Map` to a Scala immutable `Map`. */
   def toScalaMap[K, V](map: JMap[K, V]): Map[K, V] = Map(map.toSeq: _*)
@@ -82,7 +84,10 @@ object JavaApiHelper {
   }
 
   /** Returns the `JavaBeanColumnMapper` instance for the given `ClassTag` and column mapping. */
-  def javaBeanColumnMapper[T](classTag: ClassTag[T], columnNameOverride: JMap[String, String]): ColumnMapper[T] =
+  def javaBeanColumnMapper[T](
+    classTag: ClassTag[T],
+    columnNameOverride: JMap[String, String]
+  ): ColumnMapper[T] =
     new JavaBeanColumnMapper[T](toScalaMap(columnNameOverride))(classTag)
 
   /** Returns the default `RowReaderFactory`. */

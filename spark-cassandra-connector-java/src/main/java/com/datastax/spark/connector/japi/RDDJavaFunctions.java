@@ -48,13 +48,14 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         return rdd.conf();
     }
 
-    public void saveToCassandra(String keyspace,
-                                String table,
-                                RowWriterFactory<T> rowWriterFactory,
-                                ColumnSelector columnNames,
-                                WriteConf conf,
-                                CassandraConnector connector) {
-
+    public void saveToCassandra(
+            String keyspace,
+            String table,
+            RowWriterFactory<T> rowWriterFactory,
+            ColumnSelector columnNames,
+            WriteConf conf,
+            CassandraConnector connector
+    ) {
         rddFunctions.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }
 
