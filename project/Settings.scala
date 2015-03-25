@@ -111,6 +111,9 @@ object Settings extends Build {
       .withWarnDirectEvictions(false)
       .withWarnScalaVersionEviction(false),
 
+    cleanKeepFiles ++= Seq("resolution-cache", "streams").map(target.value / _),
+    updateOptions := updateOptions.value.withCachedResolution(cachedResoluton = true),
+
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
