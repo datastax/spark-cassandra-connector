@@ -26,10 +26,7 @@ object CassandraSparkBuild extends Build {
 
   val demosPath = file(s"$namespace-demos")
 
-  lazy val root = RootProject("root", file("."),
-    if (scalaBinary == "2.11") Seq(embedded, connector, demos)
-    else Seq(embedded, connector, demos, jconnector)
-  )
+  lazy val root = RootProject("root", file("."), Seq(embedded, connector, demos, jconnector))
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
@@ -47,37 +44,26 @@ object CassandraSparkBuild extends Build {
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
-    settings = connector.settings,
+    settings = japiSettings ++ connector.settings,
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
   lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
 
-  lazy val simpleDemos =
-    Project(
-      id = "simple-demos",
-      base = demosPath / "simple-demos",
-      settings = demoSettings ++ Seq(
-        excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, minor)) if minor < 11 => HiddenFileFilter
-          case _ => HiddenFileFilter || "*.java"
-        })),
-      dependencies = if (scalaBinary == "2.11")
-        Seq(connector, embedded) else Seq(connector, jconnector, embedded)
+  lazy val simpleDemos = Project(
+    id = "simple-demos",
+    base = demosPath / "simple-demos",
+    settings = japiSettings ++ demoSettings,
+    dependencies = Seq(connector, jconnector, embedded)
   )
 
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
-    conf = demoSettings ++ Seq(
-      excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
-        case _ => HiddenFileFilter || "*WordCountApp*"
-      }),
+    conf = demoSettings ++ kafkaDemoSettings ++ Seq(
       libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
-      }))
-  ).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
+   }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",

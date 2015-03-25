@@ -190,6 +190,19 @@ object Settings extends Build {
     managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
 
+  lazy val japiSettings = Seq(
+    excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 => HiddenFileFilter
+      case _ => HiddenFileFilter || "*.java"
+    })
+  )
+
+  lazy val kafkaDemoSettings = Seq(
+    excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
+      case _ => HiddenFileFilter || "*WordCountApp*"
+    }))
+
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     parallelExecution in assembly := false,
     jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
