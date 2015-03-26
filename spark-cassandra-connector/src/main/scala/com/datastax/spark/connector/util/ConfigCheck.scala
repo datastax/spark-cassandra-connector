@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, AuthConf, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
@@ -41,8 +41,8 @@ object ConfigCheck {
       val suggestions =
         for {
           unknownVar <- unknownProps
-          suggestedVar <- getSuggestedVars(unknownVar)
-        } yield (unknownVar, suggestedVar)
+          suggestedVars = getSuggestedVars(unknownVar)
+        } yield (unknownVar, suggestedVars)
       throw new ConnectorConfigurationException(unknownProps, suggestions.toMap)
     }
   }
@@ -64,10 +64,10 @@ object ConfigCheck {
    *
    * Fuzziness is determined by MatchThreshold
    */
-  def getSuggestedVars(unknownProp: String, extraProps: Set[String] = Set.empty): Option[Seq[String]] = {
+  def getSuggestedVars(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
     val validProps = validStaticProperties ++ extraProps
     val unknownFragments = unknownProp.stripPrefix(Prefix).split("\\.")
-    val suggestions = validProps.toSeq.filter { knownProp =>
+    validProps.toSeq.filter { knownProp =>
       val knownFragments = knownProp.stripPrefix(Prefix).split("\\.")
       unknownFragments.forall { unknown =>
         knownFragments.exists { known =>
@@ -76,7 +76,6 @@ object ConfigCheck {
         }
       }
     }
-    if (suggestions.nonEmpty) Some(suggestions) else None
   }
 
   /**
@@ -94,7 +93,7 @@ object ConfigCheck {
         "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
       val body = unknownProps.map { unknown =>
         suggestionMap.get(unknown) match {
-          case None =>
+          case Some(Seq()) | None =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
                           |No likely matches found.""".stripMargin
           case Some(suggestions) =>
