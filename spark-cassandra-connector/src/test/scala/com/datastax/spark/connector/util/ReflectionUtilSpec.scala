@@ -1,16 +1,37 @@
 package com.datastax.spark.connector.util
 
+import org.scalatest.concurrent.Conductors
+
 import scala.reflect.runtime.universe._
 
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, DefaultConnectionFactory, CassandraConnectionFactory}
 import org.scalatest.{FlatSpec, Matchers}
 
-class ReflectionUtilSpec extends FlatSpec with Matchers {
+class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
 
   "ReflectionUtil.findGlobalObject" should "be able to find DefaultConnectionFactory" in {
     val factory = ReflectionUtil.findGlobalObject[CassandraConnectionFactory](
       "com.datastax.spark.connector.cql.DefaultConnectionFactory")
     factory should be(DefaultConnectionFactory)
+  }
+
+  it should "be able to find CustomConnectionFactory in a multi-threaded context" in {
+    val conductor = new Conductor
+    import conductor._
+
+    thread("ThreadA") {
+      val factory = ReflectionUtil.findGlobalObject[CassandraConnectionFactory](
+      "com.datastax.spark.connector.util.CustomConnectionFactory")
+      factory should be(CustomConnectionFactory)
+    }
+    thread("ThreadB") {
+      val factory = ReflectionUtil.findGlobalObject[CassandraConnectionFactory](
+        "com.datastax.spark.connector.util.CustomConnectionFactory")
+      factory should be(CustomConnectionFactory)
+
+    }
+    conduct()
+
   }
 
   it should "be able to instantiate a singleton object based on Java class name" in {

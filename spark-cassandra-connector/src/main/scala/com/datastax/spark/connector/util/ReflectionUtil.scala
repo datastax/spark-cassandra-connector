@@ -8,7 +8,7 @@ object ReflectionUtil {
   private val rm = runtimeMirror(getClass.getClassLoader)
   private val singletonCache = TrieMap[String, Any]()
 
-  private def findScalaObject[T : TypeTag](objectName: String): Try[T] = {
+  private def findScalaObject[T : TypeTag](objectName: String): Try[T] = TypeTag.synchronized {
     Try {
       val targetType = implicitly[TypeTag[T]].tpe
       val module = rm.staticModule(objectName)
@@ -20,7 +20,7 @@ object ReflectionUtil {
     }
   }
 
-  private def findSingletonClassInstance[T : TypeTag](className: String): Try[T] = {
+  private def findSingletonClassInstance[T : TypeTag](className: String): Try[T] = TypeTag.synchronized {
     Try {
       val targetType = implicitly[TypeTag[T]].tpe
       val targetClass = rm.runtimeClass(targetType.typeSymbol.asClass)
