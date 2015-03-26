@@ -190,16 +190,19 @@ object Settings extends Build {
   )
 
   lazy val japiSettings = Seq(
-    skip := (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor < 11 => false
-      case _ => true
+    skip in Compile := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 ⇒ false
+      case _ ⇒ true
     }),
     testOptions in IntegrationTest ++= Seq(
       Tests.Filter(CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, minor)) if minor < 11 ⇒ _ ⇒ true
         case _ ⇒ _ ⇒ false
-      })
-    )
+      })),
+    publishArtifact := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 ⇒ true
+      case _ ⇒ false
+    })
   )
 
   lazy val kafkaDemoSettings = Seq(
