@@ -12,9 +12,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
 
 /**
  * This Spark application demonstrates how to use Spark Cassandra Connector with Java.

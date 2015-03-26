@@ -28,7 +28,6 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
-import com.scalapenos.sbt.prompt.PromptTheme
 
 object Settings extends Build {
 
@@ -70,6 +69,8 @@ object Settings extends Build {
   val encoding = Seq("-encoding", "UTF-8")
 
   lazy val projectSettings = graphSettings ++ Seq(
+
+    aggregate in update := false,
 
     incOptions := incOptions.value.withNameHashing(true),
 
@@ -187,6 +188,28 @@ object Settings extends Build {
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
     managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
   )
+
+  lazy val japiSettings = Seq(
+    skip in Compile := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 ⇒ false
+      case _ ⇒ true
+    }),
+    testOptions in IntegrationTest ++= Seq(
+      Tests.Filter(CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, minor)) if minor < 11 ⇒ _ ⇒ true
+        case _ ⇒ _ ⇒ false
+      })),
+    publishArtifact := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 ⇒ true
+      case _ ⇒ false
+    })
+  )
+
+  lazy val kafkaDemoSettings = Seq(
+    excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
+      case _ => HiddenFileFilter || "*WordCountApp*"
+    }))
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     parallelExecution in assembly := false,

@@ -19,20 +19,14 @@ import sbt._
 import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
-  import Versions.scalaBinary
   import Settings._
-
-  aggregate in update := false
+  import Versions.scalaBinary
 
   val namespace = "spark-cassandra-connector"
 
   val demosPath = file(s"$namespace-demos")
 
-  autoAPIMappings := true
-
-//  apiMappings += (unmanagedBase.value / "spark-core_2.10-1.2.1.jar" -> url(s"http://spark.apache.org/docs/1.2.1/api/scala/"))
-
-  lazy val root = RootProject("root", file("."), Seq(embedded, connector, jconnector, demos))
+  lazy val root = RootProject("root", file("."), Seq(embedded, connector, demos, jconnector))
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
@@ -50,7 +44,7 @@ object CassandraSparkBuild extends Build {
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
-    settings = connector.settings,
+    settings = japiSettings ++ connector.settings,
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs (IntegrationTest, ClusterIntegrationTest)
 
@@ -59,22 +53,17 @@ object CassandraSparkBuild extends Build {
   lazy val simpleDemos = Project(
     id = "simple-demos",
     base = demosPath / "simple-demos",
-    settings = demoSettings,
+    settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
   )
 
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
-    conf = demoSettings ++ Seq(
-      excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
-        case _ => HiddenFileFilter || "*WordCountApp*"
-      }),
+    conf = demoSettings ++ kafkaDemoSettings ++ Seq(
       libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
-      }))
-  ).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
+   }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
@@ -179,6 +168,8 @@ object Dependencies {
       val mockito           = "org.mockito"             % "mockito-all"             % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                   % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"         % "0.10"    % "test,it"
+      val powerMock         = "org.powermock"           % "powermock-module-junit4" % "1.6.2"   % "test,it"       // ApacheV2
+      val powerMockMockito  = "org.powermock"           % "powermock-api-mockito"   % "1.6.2"   % "test,it"       // ApacheV2
     }
   }
 
@@ -189,8 +180,18 @@ object Dependencies {
 
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
-  val testKit = Seq(Test.akkaTestKit, Test.commonsIO, Test.junit,
-   Test.junitInterface, Test.scalaMock, Test.scalaTest, Test.scalactic, Test.mockito)
+  val testKit = Seq(
+    Test.akkaTestKit,
+    Test.commonsIO,
+    Test.junit,
+    Test.junitInterface,
+    Test.scalaMock,
+    Test.scalaTest,
+    Test.scalactic,
+    Test.mockito,
+    Test.powerMock,
+    Test.powerMockMockito
+  )
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
