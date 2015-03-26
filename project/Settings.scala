@@ -28,7 +28,6 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
-import com.scalapenos.sbt.prompt.PromptTheme
 
 object Settings extends Build {
 
@@ -191,10 +190,16 @@ object Settings extends Build {
   )
 
   lazy val japiSettings = Seq(
-    excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor < 11 => HiddenFileFilter
-      case _ => HiddenFileFilter || "*.java"
-    })
+    skip := (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, minor)) if minor < 11 => false
+      case _ => true
+    }),
+    testOptions in IntegrationTest ++= Seq(
+      Tests.Filter(CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, minor)) if minor < 11 ⇒ _ ⇒ true
+        case _ ⇒ _ ⇒ false
+      })
+    )
   )
 
   lazy val kafkaDemoSettings = Seq(
