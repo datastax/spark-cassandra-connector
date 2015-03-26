@@ -62,6 +62,11 @@ object DefaultAuthConfFactory extends AuthConfFactory {
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
+  val Properties = Seq(
+    CassandraUserNameProperty,
+    CassandraPasswordProperty
+  )
+
   def authConf(conf: SparkConf): AuthConf = {
     val credentials =
       for (username <- conf.getOption(CassandraUserNameProperty);
