@@ -36,18 +36,15 @@ object ConfigCheck {
     val authConfFactory = AuthConfFactory.fromSparkConf(conf)
     val extraProps = connectionFactory.properties ++ authConfFactory.properties
 
-    val unknownProps = getUnknownProperties(conf, extraProps)
+    val unknownProps = unknownProperties(conf, extraProps)
     if (unknownProps.nonEmpty) {
       val suggestions =
-        for {
-          unknownVar <- unknownProps
-          suggestedVars = getSuggestedVars(unknownVar)
-        } yield (unknownVar, suggestedVars)
+        for (u <- unknownProps) yield (u, suggestedProperties(u))
       throw new ConnectorConfigurationException(unknownProps, suggestions.toMap)
     }
   }
 
-  def getUnknownProperties(conf: SparkConf, extraProps: Set[String] = Set.empty): Seq[String] = {
+  def unknownProperties(conf: SparkConf, extraProps: Set[String] = Set.empty): Seq[String] = {
     val validProps = validStaticProperties ++ extraProps
     val scEnv = for ((key, value) <- conf.getAll if key.startsWith(Prefix)) yield key
     for (key <- scEnv if !validProps.contains(key)) yield key
@@ -64,7 +61,7 @@ object ConfigCheck {
    *
    * Fuzziness is determined by MatchThreshold
    */
-  def getSuggestedVars(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
+  def suggestedProperties(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
     val validProps = validStaticProperties ++ extraProps
     val unknownFragments = unknownProp.stripPrefix(Prefix).split("\\.")
     validProps.toSeq.filter { knownProp =>
