@@ -286,6 +286,6 @@ A longer example (with source code) of the Connector Java API is on the DataStax
 
 ### Scala 2.11
 
-Java API 1.2.0 is not compiled against Scala 2.11 because of [SPARK-3266](https://issues.apache.org/jira/browse/SPARK-3266)
+Java API 1.2.0 is not yet supported for Scala 2.11 because of [SPARK-3266](https://issues.apache.org/jira/browse/SPARK-3266)
 
 [Next - Spark Streaming with Cassandra](8_streaming.md)
