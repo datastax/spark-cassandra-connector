@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{CassandraConnectionFactory, AuthConfFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.cassandra.CassandraSQLContext
 
 /**
  * Helper class to throw exceptions if there are environment variables in the spark.cassandra
@@ -22,8 +23,9 @@ object ConfigCheck {
     WriteConf.Properties ++
     ReadConf.Properties ++
     CassandraConnectorConf.Properties ++
+    AuthConfFactory.Properties ++
     CassandraConnectionFactory.Properties ++
-    AuthConfFactory.Properties
+    CassandraSQLContext.Properties
 
 
   /**

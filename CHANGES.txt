@@ -1,8 +1,7 @@
  * Cross cluster table join and write for Spark SQL (SPARKC-73)
  * Enabling / disabling metrics in metrics configuration file and other metrics fixes (SPARKC-91)
- * Fixed setting custom connection factory.
-   Provided a way to set custom auth config and connection factory properties (SPARKC-105)
- * Enabling / disabling metrics in metrics configuration file and other metrics fixes (SPARKC-91)
+ * Provided a way to set custom auth config and connection factory properties (SPARKC-105)
+ * Fixed setting custom connection factory and other properties (SPAKRC-102)
 
 1.2.0 rc 1
  * More Spark SQL predicate push (SPARKC-72)
