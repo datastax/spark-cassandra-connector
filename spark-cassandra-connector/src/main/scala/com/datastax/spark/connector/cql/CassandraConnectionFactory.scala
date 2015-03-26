@@ -25,6 +25,8 @@ trait CassandraConnectionFactory extends Serializable {
   /** Creates and configures native Cassandra connection */
   def createCluster(conf: CassandraConnectorConf): Cluster
 
+  /** List of allowed custom property names passed in SparkConf */
+  def properties: Set[String] = Set.empty
 }
 
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
@@ -81,6 +83,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
   val ConnectionFactoryProperty = "spark.cassandra.connection.factory"
+  val Properties = Set(ConnectionFactoryProperty)
 
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
     conf.getOption(ConnectionFactoryProperty)

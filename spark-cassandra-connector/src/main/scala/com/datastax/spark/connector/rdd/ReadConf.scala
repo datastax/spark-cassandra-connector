@@ -22,7 +22,7 @@ object ReadConf {
   val ReadConsistencyLevelProperty = "spark.cassandra.input.consistency.level"
 
   //Whitelist for allowed Read environment variables
-  val Properties = Seq(
+  val Properties = Set(
     ReadFetchSizeProperty,
     ReadSplitSizeProperty,
     ReadConsistencyLevelProperty

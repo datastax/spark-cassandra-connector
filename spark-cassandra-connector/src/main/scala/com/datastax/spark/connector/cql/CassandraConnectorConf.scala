@@ -52,7 +52,7 @@ object CassandraConnectorConf extends Logging {
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
 
   //Whitelist for allowed CassandraConnector environment variables
-  val Properties = Seq(
+  val Properties = Set(
     CassandraConnectionHostProperty,
     CassandraConnectionRpcPortProperty,
     CassandraConnectionNativePortProperty,

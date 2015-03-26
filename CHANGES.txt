@@ -1,4 +1,6 @@
  * Cross cluster table join and write for Spark SQL (SPARKC-73)
+ * Fixed setting custom connection factory.
+   Provided a way to set custom auth config and connection factory properties (SPARKC-105)
 
 1.2.0 rc 1
  * More Spark SQL predicate push (SPARKC-72)
