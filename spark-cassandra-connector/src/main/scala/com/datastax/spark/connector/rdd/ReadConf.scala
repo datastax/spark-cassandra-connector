@@ -26,7 +26,7 @@ object ReadConf {
   val ReadTaskMetricsProperty = "spark.cassandra.input.metrics"
 
   //Whitelist for allowed Read environment variables
-  val Properties = Seq(
+  val Properties = Set(
     ReadFetchSizeProperty,
     ReadSplitSizeProperty,
     ReadConsistencyLevelProperty,

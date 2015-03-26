@@ -35,7 +35,23 @@ case class PasswordAuthConf(user: String, password: String) extends AuthConf {
 
 /** Obtains authentication configuration by reading  `SparkConf` object. */
 trait AuthConfFactory {
+
   def authConf(conf: SparkConf): AuthConf
+
+  /** List of extra properties allowed in SparkConf passed to `authConf` method */
+  def properties: Set[String] = Set.empty
+}
+
+object AuthConfFactory {
+  val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
+  val Properties = Set(AuthConfFactoryProperty)
+
+  def fromSparkConf(conf: SparkConf): AuthConfFactory = {
+    conf
+      .getOption(AuthConfFactoryProperty)
+      .map(ReflectionUtil.findGlobalObject[AuthConfFactory])
+      .getOrElse(DefaultAuthConfFactory)
+  }
 }
 
 /** Default `AuthConfFactory` that supports no authentication or password authentication.
@@ -61,19 +77,9 @@ object DefaultAuthConfFactory extends AuthConfFactory {
 /** Entry point for obtaining `AuthConf` object from `SparkConf`, used when establishing connections to Cassandra.
   * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory` property. */
 object AuthConf {
-  val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
-
-  val Properties = Seq(
-    AuthConfFactoryProperty
-  )
 
   def fromSparkConf(conf: SparkConf) = {
-    val authConfFactory = conf
-      .getOption(AuthConfFactoryProperty)
-      .map(ReflectionUtil.findGlobalObject[AuthConfFactory])
-      .getOrElse(DefaultAuthConfFactory)
-
-    authConfFactory.authConf(conf)
+    AuthConfFactory.fromSparkConf(conf).authConf(conf)
   }
 }
 

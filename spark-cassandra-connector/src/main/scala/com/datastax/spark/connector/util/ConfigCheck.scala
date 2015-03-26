@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.{AuthConf, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
@@ -16,11 +16,14 @@ object ConfigCheck {
   val MatchThreshold = 0.85
   val Prefix = "spark.cassandra."
 
-  val validProps =
+  /** Set of valid static properties hardcoded in the connector.
+    * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
+  val validStaticProperties =
     WriteConf.Properties ++
     ReadConf.Properties ++
     CassandraConnectorConf.Properties ++
-    AuthConf.Properties
+    CassandraConnectionFactory.Properties ++
+    AuthConfFactory.Properties
 
 
   /**
@@ -29,18 +32,20 @@ object ConfigCheck {
    * @param conf SparkConf object to check
    */
   def checkConfig(conf: SparkConf): Unit = {
-    val unknownProps = getUnknownProperties(conf)
+    val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
+    val authConfFactory = AuthConfFactory.fromSparkConf(conf)
+    val extraProps = connectionFactory.properties ++ authConfFactory.properties
+
+    val unknownProps = unknownProperties(conf, extraProps)
     if (unknownProps.nonEmpty) {
       val suggestions =
-        for {
-          unknownVar <- unknownProps
-          suggestedVar <- getSuggestedVars(unknownVar)
-        } yield (unknownVar, suggestedVar)
+        for (u <- unknownProps) yield (u, suggestedProperties(u))
       throw new ConnectorConfigurationException(unknownProps, suggestions.toMap)
     }
   }
 
-  def getUnknownProperties(conf: SparkConf): Seq[String] = {
+  def unknownProperties(conf: SparkConf, extraProps: Set[String] = Set.empty): Seq[String] = {
+    val validProps = validStaticProperties ++ extraProps
     val scEnv = for ((key, value) <- conf.getAll if key.startsWith(Prefix)) yield key
     for (key <- scEnv if !validProps.contains(key)) yield key
   }
@@ -56,9 +61,10 @@ object ConfigCheck {
    *
    * Fuzziness is determined by MatchThreshold
    */
-  def getSuggestedVars(unknownProp: String): Option[Seq[String]] = {
+  def suggestedProperties(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
+    val validProps = validStaticProperties ++ extraProps
     val unknownFragments = unknownProp.stripPrefix(Prefix).split("\\.")
-    val suggestions = validProps.filter { knownProp =>
+    validProps.toSeq.filter { knownProp =>
       val knownFragments = knownProp.stripPrefix(Prefix).split("\\.")
       unknownFragments.forall { unknown =>
         knownFragments.exists { known =>
@@ -67,7 +73,6 @@ object ConfigCheck {
         }
       }
     }
-    if (suggestions.nonEmpty) Some(suggestions) else None
   }
 
   /**
@@ -85,7 +90,7 @@ object ConfigCheck {
         "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
       val body = unknownProps.map { unknown =>
         suggestionMap.get(unknown) match {
-          case None =>
+          case Some(Seq()) | None =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
                           |No likely matches found.""".stripMargin
           case Some(suggestions) =>

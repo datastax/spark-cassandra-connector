@@ -22,6 +22,8 @@ object CassandraSparkBuild extends Build {
   import Versions.scalaBinary
   import Settings._
 
+  aggregate in update := false
+
   val namespace = "spark-cassandra-connector"
 
   val demosPath = file(s"$namespace-demos")

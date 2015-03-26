@@ -62,7 +62,7 @@ object WriteConf {
   val WriteTaskMetricsProperty = "spark.cassandra.output.metrics"
 
   // Whitelist for allowed Write environment variables
-  val Properties = Seq(
+  val Properties = Set(
     WriteBatchSizeInBytesProperty,
     WriteConsistencyLevelProperty,
     WriteBatchSizeInRowsProperty,
