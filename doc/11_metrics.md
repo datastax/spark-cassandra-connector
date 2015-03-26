@@ -19,18 +19,18 @@ driver. To access these metrics add a new source called cassandra-connector in y
 `metrics.properties` file. Example:
 
 ```
-cassandra-connector.sink.csv.class=org.apache.spark.metrics.sink.CsvSink
-cassandra-connector.sink.csv.period=5
-cassandra-connector.sink.csv.unit=seconds
-cassandra-connector.sink.csv.directory=/tmp/spark/sink
+executor.source.cassandra-connector.class=org.apache.spark.metrics.CassandraConnectorSource
+driver.source.cassandra-connector.class=org.apache.spark.metrics.CassandraConnectorSource
 ```
 
 ### Performance impact
 While there should be a minimal performance effect from collecting metrics, Metric collection can be
-disabled by setting the following options in the Spark configuration:
+disabled. Codahale metrics are not collected if CassandraConnectorSource is not specified in the
+metrics configuration file. In order to disable task metrics, use these properties in Spark
+configuration:
 
-- `spark.cassandra.input.metrics` - set to `false` to disable collection of input metrics
-- `spark.cassandra.output.metrics` - set to `false` to disable collection of output metrics
+- `spark.cassandra.input.metrics` - set to `false` to disable collection of input task metrics
+- `spark.cassandra.output.metrics` - set to `false` to disable collection of output task metrics
 
 ### Available metrics
 Metric name            | Unit description
@@ -44,7 +44,11 @@ write-success-counter  | Number successfully written batches
 write-failure-counter  | Number of failed batches
 read-byte-meter        | Number of bytes read from Cassandra
 read-row-meter         | Number of rows read from Cassandra
-read-page-wait-timer   | The Time spent by the driver waiting for rows to be paged in from C*
 read-task-timer        | Timer to measure time of reading a single partition
+
+### Compatibility
+Codahale based metrics should work with either Spark 1.1.x or Spark 1.2.x. However task metrics
+works only with Spark 1.2.x. Therefore, if this version of Spark Cassandra Connector is to be used with
+Spark 1.1.x, task based metrics have to be disabled.
 
 [Next - Building And Artifacts](doc/12_building_and_artifacts.md)

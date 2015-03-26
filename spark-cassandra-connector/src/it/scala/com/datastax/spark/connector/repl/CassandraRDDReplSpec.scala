@@ -6,6 +6,7 @@ import com.datastax.spark.connector.embedded._
 
 class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with SparkRepl {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
