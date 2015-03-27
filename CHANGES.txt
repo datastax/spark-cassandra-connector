@@ -1,3 +1,4 @@
+1.2.x (unreleased)
  * Cross cluster table join and write for Spark SQL (SPARKC-73)
  * Enabling / disabling metrics in metrics configuration file and other metrics fixes (SPARKC-91)
  * Provided a way to set custom auth config and connection factory properties (SPARKC-105)
@@ -55,6 +56,10 @@
  * Added support for INSET predicate pushdown (patch by granturing)
 
 ********************************************************************************
+
+1.1.x (unreleased)
+ * Synchronized ReflectionUtil findScalaObject and findSingletonClassInstance methods
+   to avoid problems with Scala 2.10 lack thread safety in the reflection subsystem (SPARKC-107)
 
 1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
