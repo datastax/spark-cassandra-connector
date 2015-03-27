@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
  * RDD created by repartitionByCassandraReplica with preferred locations mapping to the CassandraReplicas
  * each partition was created for.
  */
-protected[connector] class CassandraPartitionedRDD[T](prev: RDD[T])(implicit ct: ClassTag[T]) extends RDD[T](prev) {
+class CassandraPartitionedRDD[T](prev: RDD[T])(implicit ct: ClassTag[T]) extends RDD[T](prev) {
 
   //We aren't going to change the data
   override def compute(split: Partition, context: TaskContext): Iterator[T] = prev.iterator(split, context)

@@ -7,11 +7,9 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
-import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.commons.lang3.tuple
 import org.apache.spark.api.java.function.{Function => JFunction}
-import org.scalatest._
 
 import scala.collection.JavaConversions._
 
@@ -53,6 +51,14 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
     session.execute("INSERT INTO java_api_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
 
+    session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+    session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+
   }
 
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
@@ -82,7 +88,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "allow to read data as Java beans with custom mapping defined by aliases" in {
     val beans = javaFunctions(sc)
       .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleWeirdJavaBean]))
-      .selectRefs(column("key").as("devil"), column("value").as("cat"))
+      .select(column("key").as("devil"), column("value").as("cat"))
       .collect()
     assert(beans.size == 3)
     assert(beans.exists(bean ⇒ bean.getCat == "one" && bean.getDevil == 1))
@@ -333,16 +339,6 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {
 
-    conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 12, '1012')")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 20, '2020')")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 21, '2021')")
-      session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (20, 22, '2022')")
-    }
-
     val f = new JFunction[CassandraRow, Int]() {
       override def call(row: CassandraRow) = row.getInt("key")
     }
@@ -364,20 +360,20 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to set limit" in {
-    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").limit(1)
-    val result = rdd.collect
-    result should have size (1)
+    val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table").limit(1L)
+    val result = rdd.collect()
+    result should have size 1
   }
 
   it should "allow to set ascending ordering" in {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "wide_rows").where("key=10").withAscOrder
-    val result = rdd.collect
+    val result = rdd.collect()
     result(0).getInt("group") should be(10)
   }
 
   it should "allow to set descending ordering" in {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "wide_rows").where("key=20").withDescOrder
-    val result = rdd.collect
+    val result = rdd.collect()
     result(0).getInt("group") should be(22)
   }
 }

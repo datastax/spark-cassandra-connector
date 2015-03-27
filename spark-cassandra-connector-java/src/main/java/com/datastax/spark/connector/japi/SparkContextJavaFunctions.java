@@ -30,7 +30,7 @@ public class SparkContextJavaFunctions {
      * Converts {@code CassandraRDD} into {@code CassandraJavaRDD}.
      */
     public <T> CassandraJavaRDD<T> toJavaRDD(CassandraRDD<T> rdd, Class<T> targetClass) {
-        return new CassandraJavaRDD<>(rdd, targetClass);
+        return new CassandraJavaRDD<>(rdd, getClassTag(targetClass));
     }
 
     /**
@@ -87,7 +87,7 @@ public class SparkContextJavaFunctions {
     public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rrf) {
         CassandraRDD<T> rdd = CassandraTableScanRDD$.MODULE$
                 .apply(sparkContext, keyspace, table, getClassTag(rrf.targetClass()), rrf);
-        return new CassandraJavaRDD<>(rdd, rrf.targetClass());
+        return new CassandraJavaRDD<>(rdd, getClassTag(rrf.targetClass()));
     }
 
     /**

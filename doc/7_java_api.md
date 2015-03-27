@@ -284,4 +284,8 @@ Cassandra all the *RDDs* in that *DStream*.
 A longer example (with source code) of the Connector Java API is on the DataStax tech blog:
 [Accessing Cassandra from Spark in Java](http://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java).
 
+### Scala 2.11
+
+Java API 1.2.0 is not yet supported for Scala 2.11 because of [SPARK-3266](https://issues.apache.org/jira/browse/SPARK-3266)
+
 [Next - Spark Streaming with Cassandra](8_streaming.md)
