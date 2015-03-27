@@ -35,7 +35,7 @@ object Settings extends Build {
 
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := "1.2.0-SNAPSHOT",
+    version in ThisBuild := "1.2.0-rc2",
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
