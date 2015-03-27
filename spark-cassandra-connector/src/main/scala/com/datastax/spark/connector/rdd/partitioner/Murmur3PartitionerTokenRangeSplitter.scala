@@ -24,7 +24,7 @@ class Murmur3PartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) 
       new TokenRange[Long, LongToken](
         new LongToken(l),
         new LongToken(r),
-        range.endpoints,
+        range.replicas,
         Some((estimatedRows / n).toInt))
   }
 }

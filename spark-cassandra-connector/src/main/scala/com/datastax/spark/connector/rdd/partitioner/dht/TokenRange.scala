@@ -3,18 +3,8 @@ package com.datastax.spark.connector.rdd.partitioner.dht
 import java.net.InetAddress
 
 
-case class CassandraNode(rpcAddress: InetAddress, localAddress: InetAddress) {
-  require(rpcAddress != InetAddress.getByName("0.0.0.0"), "rpcAddress must not be 0.0.0.0")
-  require(localAddress != InetAddress.getByName("0.0.0.0"), "localAddress must not be 0.0.0.0")
-  def allAddresses = Set(rpcAddress, localAddress)
-}
-
-object CassandraNode {
-  implicit def ordering: Ordering[CassandraNode] = Ordering.by(_.rpcAddress.toString)
-}
-
 case class TokenRange[V, T <: Token[V]] (
-    start: T, end: T, endpoints: Set[CassandraNode], rowCount: Option[Long]) {
+    start: T, end: T, replicas: Set[InetAddress], rowCount: Option[Long]) {
 
   def isWrapAround: Boolean =
     start >= end
@@ -23,8 +13,8 @@ case class TokenRange[V, T <: Token[V]] (
     val minToken = tokenFactory.minToken
     if (isWrapAround)
       Seq(
-        TokenRange(start, minToken, endpoints, rowCount.map(_ / 2)),
-        TokenRange(minToken, end, endpoints, rowCount.map(_ / 2)))
+        TokenRange(start, minToken, replicas, rowCount.map(_ / 2)),
+        TokenRange(minToken, end, replicas, rowCount.map(_ / 2)))
     else
       Seq(this)
   }

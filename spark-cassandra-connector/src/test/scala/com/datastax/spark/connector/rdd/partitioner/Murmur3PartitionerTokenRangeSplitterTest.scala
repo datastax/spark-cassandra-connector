@@ -2,10 +2,11 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, LongToken}
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.Murmur3TokenFactory
 import org.junit.Assert._
 import org.junit.Test
+
+import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.Murmur3TokenFactory
 
 class Murmur3PartitionerTokenRangeSplitterTest {
 
@@ -18,7 +19,7 @@ class Murmur3PartitionerTokenRangeSplitterTest {
 
   @Test
   def testSplit() {
-    val node = CassandraNode(InetAddress.getLocalHost, InetAddress.getLocalHost)
+    val node = InetAddress.getLocalHost
     val splitter = new Murmur3PartitionerTokenRangeSplitter(2.0)
     val range = new TokenRange(
       new com.datastax.spark.connector.rdd.partitioner.dht.LongToken(0),
@@ -31,7 +32,7 @@ class Murmur3PartitionerTokenRangeSplitterTest {
     assertEquals(0L, out.head.start.value)
     assertEquals(100L, out.last.end.value)
     assertTrue(out.forall(s => s.end.value - s.start.value == 10))
-    assertTrue(out.forall(_.endpoints == Set(node)))
+    assertTrue(out.forall(_.replicas == Set(node)))
     assertNoHoles(out)
   }
 

@@ -29,7 +29,7 @@ class RandomPartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) e
       new TokenRange[BigInt, BigIntToken](
         new BigIntToken(l.bigInteger),
         new BigIntToken(r.bigInteger),
-        range.endpoints,
+        range.replicas,
         Some((estimatedRows / n).toInt))
   }
 }
