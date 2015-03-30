@@ -6,6 +6,8 @@ import org.apache.spark.{Logging, SparkConf}
 
 import scala.util.control.NonFatal
 
+import com.datastax.spark.connector.util.ConfigCheck
+
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
 case class CassandraConnectorConf(
@@ -75,6 +77,7 @@ object CassandraConnectorConf extends Logging {
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
+    ConfigCheck.checkConfig(conf)
     val hostsStr = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
