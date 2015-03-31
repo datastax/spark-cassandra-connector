@@ -20,7 +20,10 @@ case class CassandraConnectorConf(
   queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
   connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
   readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
-  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory
+  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
+  sslEnabled: Boolean = CassandraConnectorConf.DefaultSecure,
+  sslTrustStorePath: Option[String] = None,
+  sslTrustStorePassword: Option[String] = None
 )
 
 /** A factory for `CassandraConnectorConf` objects.
@@ -39,6 +42,8 @@ object CassandraConnectorConf extends Logging {
   val DefaultConnectTimeoutMillis = 5000
   val DefaultReadTimeoutMillis = 12000
 
+  val DefaultSecure = false
+
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
   val CassandraConnectionNativePortProperty = "spark.cassandra.connection.native.port"
@@ -51,6 +56,10 @@ object CassandraConnectorConf extends Logging {
   val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
 
+  val CassandraConnectionSSLEnabledProperty = "spark.cassandra.connection.ssl.enabled"
+  val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trust_store.path"
+  val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trust_store.password"
+
   //Whitelist for allowed CassandraConnector environment variables
   val Properties = Set(
     CassandraConnectionHostProperty,
@@ -62,7 +71,10 @@ object CassandraConnectorConf extends Logging {
     CassandraMinReconnectionDelayProperty,
     CassandraMaxReconnectionDelayProperty,
     CassandraQueryRetryCountProperty,
-    CassandraReadTimeoutProperty
+    CassandraReadTimeoutProperty,
+    CassandraConnectionSSLEnabledProperty,
+    CassandraConnectionSSLTrustStorePathProperty,
+    CassandraConnectionSSLTrustStorePasswordProperty
   )
   
   private def resolveHost(hostName: String): Option[InetAddress] = {
@@ -95,6 +107,10 @@ object CassandraConnectorConf extends Logging {
 
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
 
+    val sslEnabled = conf.getBoolean(CassandraConnectionSSLEnabledProperty, DefaultSecure)
+    val sslTrustStorePath = conf.getOption(CassandraConnectionSSLTrustStorePathProperty)
+    val sslTrustStorePassword = conf.getOption(CassandraConnectionSSLTrustStorePasswordProperty)
+
     CassandraConnectorConf(
       hosts = hosts,
       nativePort = nativePort,
@@ -107,6 +123,9 @@ object CassandraConnectorConf extends Logging {
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
-      connectionFactory = connectionFactory)
+      connectionFactory = connectionFactory,
+      sslEnabled = sslEnabled,
+      sslTrustStorePath = sslTrustStorePath,
+      sslTrustStorePassword = sslTrustStorePassword)
   }
 }
