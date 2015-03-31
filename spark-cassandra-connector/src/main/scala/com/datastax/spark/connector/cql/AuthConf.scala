@@ -62,7 +62,7 @@ object DefaultAuthConfFactory extends AuthConfFactory {
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
-  val Properties = Seq(
+  override val properties = Set(
     CassandraUserNameProperty,
     CassandraPasswordProperty
   )
