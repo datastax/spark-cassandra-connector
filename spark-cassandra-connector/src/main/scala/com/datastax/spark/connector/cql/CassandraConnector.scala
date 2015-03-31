@@ -41,6 +41,9 @@ import org.apache.spark.Logging
   *   - `spark.cassandra.auth.password`:                 password for password authentication
   *   - `spark.cassandra.auth.conf.factory`:             name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
   *   - `spark.cassandra.query.retry.count`:             how many times to reattempt a failed query (default 10)
+  *   - `spark.cassandra.connection.ssl.enabled`:        enable secure connection to Cassandra cluster
+  *   - `spark.cassandra.connection.ssl.trust_store.path`:      path for the trust store being used
+  *   - `spark.cassandra.connection.ssl.trust_store.password`:  trust store password
   */
 class CassandraConnector(conf: CassandraConnectorConf)
   extends Serializable with Logging {
@@ -216,7 +219,10 @@ object CassandraConnector extends Logging {
             queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
             connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
             readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
-            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory) = {
+            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
+            sslEnabled: Boolean = CassandraConnectorConf.DefaultSSLEnabled,
+            sslTrustStorePath: Option[String] = None,
+            sslTrustStorePassword: Option[String] = None) = {
 
     val config = CassandraConnectorConf(
       hosts = hosts,
@@ -230,7 +236,10 @@ object CassandraConnector extends Logging {
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeoutMillis,
       readTimeoutMillis = readTimeoutMillis,
-      connectionFactory = connectionFactory)
+      connectionFactory = connectionFactory,
+      sslEnabled = sslEnabled,
+      sslTrustStorePath = sslTrustStorePath,
+      sslTrustStorePassword = sslTrustStorePassword)
 
     new CassandraConnector(config)
   }

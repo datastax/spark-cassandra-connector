@@ -21,7 +21,7 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
   readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  sslEnabled: Boolean = CassandraConnectorConf.DefaultSecure,
+  sslEnabled: Boolean = CassandraConnectorConf.DefaultSSLEnabled,
   sslTrustStorePath: Option[String] = None,
   sslTrustStorePassword: Option[String] = None
 )
@@ -42,7 +42,7 @@ object CassandraConnectorConf extends Logging {
   val DefaultConnectTimeoutMillis = 5000
   val DefaultReadTimeoutMillis = 12000
 
-  val DefaultSecure = false
+  val DefaultSSLEnabled = false
 
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
@@ -107,7 +107,7 @@ object CassandraConnectorConf extends Logging {
 
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
 
-    val sslEnabled = conf.getBoolean(CassandraConnectionSSLEnabledProperty, DefaultSecure)
+    val sslEnabled = conf.getBoolean(CassandraConnectionSSLEnabledProperty, DefaultSSLEnabled)
     val sslTrustStorePath = conf.getOption(CassandraConnectionSSLTrustStorePathProperty)
     val sslTrustStorePassword = conf.getOption(CassandraConnectionSSLTrustStorePasswordProperty)
 
