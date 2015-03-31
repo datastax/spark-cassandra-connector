@@ -7,7 +7,7 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-ssl.yaml.template"))
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)),
-    sslEnabled = true, sslTrustStorePath = "truststore", sslTrustStorePassword = "connector")
+    sslEnabled = true, sslTrustStorePath = Some("truststore"), sslTrustStorePassword = Some("connector"))
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)
