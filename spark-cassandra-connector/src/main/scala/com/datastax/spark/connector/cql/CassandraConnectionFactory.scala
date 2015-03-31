@@ -1,14 +1,18 @@
 package com.datastax.spark.connector.cql
 
+import java.io.FileInputStream
 import java.net.InetAddress
+import java.security.{SecureRandom, KeyStore}
+import javax.net.ssl.{TrustManagerFactory, SSLContext}
 
-import org.apache.cassandra.thrift.{AuthenticationRequest, TFramedTransportFactory, Cassandra}
+import org.apache.cassandra.thrift._
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TTransport
+import org.apache.cassandra.thrift.SSLTransportFactory
 
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{Cluster, SocketOptions}
+import com.datastax.driver.core.{SSLOptions, Cluster, SocketOptions}
 import com.datastax.spark.connector.util.ReflectionUtil
 
 import scala.collection.JavaConversions._
@@ -35,9 +39,28 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   /** Creates and configures a Thrift client.
     * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
-    var transport: TTransport = null
+    var transport: TTransport= null
     try {
-      val transportFactory = new TFramedTransportFactory()
+      val transportFactory: ITransportFactory = conf.sslEnabled match {
+      case false => new TFramedTransportFactory()
+        case true => {
+          val options = scala.collection.mutable.Map[String, String]()
+          conf.sslTrustStorePath match {
+            case None => Unit
+            case path: Some[String] => {
+              options.put(SSLTransportFactory.TRUSTSTORE, path.get)
+              conf.sslTrustStorePassword match {
+                case None => Unit
+                case password: Some[String] => options.put(SSLTransportFactory.TRUSTSTORE_PASSWORD, password.get)
+              }
+            }
+          }
+          options.put(SSLTransportFactory.CIPHER_SUITES, Array(SSLOptions.DEFAULT_SSL_CIPHER_SUITES).mkString(","))
+          val factory: ITransportFactory = new SSLTransportFactory()
+          factory.setOptions(options)
+          factory
+        }
+      }
       transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
       val client = new Cassandra.Client(new TBinaryProtocol(transport))
       val creds = conf.authConf.thriftCredentials
@@ -74,9 +97,36 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withCompression(conf.compression)
   }
 
+  /** Returns the Cluster.Builder object used to setup Cluster instance. */
+  def clusterSSLBuilder(conf: CassandraConnectorConf, builder: Cluster.Builder): Cluster.Builder = conf.sslEnabled match {
+    case false => builder
+    case true => clusterSSLBuilderOptions(conf, builder)
+  }
+
+  private def clusterSSLBuilderOptions(conf: CassandraConnectorConf, builder: Cluster.Builder): Cluster.Builder = conf.sslTrustStorePath match {
+    case None => builder.withSSL()
+    case path: Some[String] => {
+      val trustStoreFile = new FileInputStream(path.get)
+      val context = SSLContext.getInstance("SSL")
+      val keyStore = KeyStore.getInstance("JKS")
+      conf.sslTrustStorePassword match {
+        case None => keyStore.load(trustStoreFile, null)
+        case password: Some[String] => keyStore.load(trustStoreFile, password.get.toCharArray)
+      }
+      val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+      tmf.init(keyStore)
+      context.init(null, tmf.getTrustManagers, new SecureRandom)
+      val sslOptions = new SSLOptions(context, SSLOptions.DEFAULT_SSL_CIPHER_SUITES)
+      builder.withSSL(sslOptions)
+    }
+  }
+
   /** Creates and configures native Cassandra connection */
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
-    clusterBuilder(conf).build()
+  override def createCluster(conf: CassandraConnectorConf): Cluster = {
+    val builder = clusterBuilder(conf)
+    clusterSSLBuilder(conf, builder)
+    builder.build()
+  }
 
 }
 
