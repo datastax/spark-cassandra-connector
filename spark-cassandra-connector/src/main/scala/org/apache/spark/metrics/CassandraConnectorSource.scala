@@ -37,20 +37,19 @@ class CassandraConnectorSource extends Source {
 }
 
 object CassandraConnectorSource {
-  @volatile
-  private var _instance: Option[CassandraConnectorSource] = None
-  @volatile
-  private var _env: SparkEnv = null
+  private var _state: (Option[CassandraConnectorSource], Option[SparkEnv]) = (None, None)
 
   /** Returns an active instance of [[CassandraConnectorSource]] if it has been associated with the
     * current [[org.apache.spark.SparkEnv SparkEnv]] and the current [[org.apache.spark.SparkEnv SparkEnv]]
     * is running.
     */
   def instance = {
-    val curEnv = SparkEnv.get
+    val curEnv = Option(SparkEnv.get)
+    val (_instance, _env) = _state
     // this simple check allows to control whether the CassandraConnectorSource was created for this
     // particular SparkEnv. If not - we do not report it as enabled.
-    if (curEnv != null && !curEnv.isStopped && (curEnv eq _env))
+    // if we are in the executor environment (_env == None) we do not check for the current env
+    if (_env.isEmpty || (curEnv.isDefined && !curEnv.get.isStopped && (curEnv.orNull eq _env.orNull)))
       _instance
     else
       None
@@ -58,16 +57,39 @@ object CassandraConnectorSource {
 
   /** This method sets the given instance of [[CassandraConnectorSource]] as the current active instance.
     * It is allowed to call this method only once for the same `SparkEnv` instance which is currently
-    * up and running.
+    * up and running or this is the executor environment.
     */
   private def maybeSetInstance(ccs: CassandraConnectorSource): Unit = synchronized {
-    val curEnv = SparkEnv.get
+    val curEnv = Option(SparkEnv.get)
+    val (_instance, _env) = _state
     assert(ccs != null, "ccs cannot be null")
-    assert(curEnv != null && !curEnv.isStopped, "SparkEnv must be up and running")
-    assert(curEnv ne _env, "instance has been already set for the current SparkEnv")
 
-    CassandraConnectorSource._instance = Some(ccs)
-    CassandraConnectorSource._env = curEnv
+    // when it is initialized in the executor environment, SparkEnv is not set when this method is called
+    // therefore, we have to consider two cases:
+    //  - when it is called from executor for the first time, curEnv is null so _instance is set to some
+    //    and _env is set to null - this combination of (_env, _instance) == (null, Some) may only exist
+    //    in the executor environment where only one instance of this metrics source can be created
+    //
+    //  - when it is called from the driver, curEnv always references the current SparkEnv and it cannot
+    //    be null. Therefore the pair (_env, _instance) == (not null, Some) is possible only in the
+    //    driver environment
+
+    if (_env.isEmpty && _instance.isEmpty) { // called for the first time
+      curEnv.foreach(env ⇒ assert(!env.isStopped, "SparkEnv must be up and running"))
+      // when it is initialised in the executor env, SparkEnv is not yet set - nothing to be asserted
+    } else {
+      // if we are in the driver env and the method is not called for the first time, _env is not null
+      // if we are in the executor env, this method can be called only once - therefore assertion fail
+      assert(_env.isDefined, "instance has been already set for this environment")
+      curEnv.foreach(env ⇒ assert(!env.isStopped, "SparkEnv must be up and running"))
+      assert(curEnv.orNull ne _env.orNull, "instance has been already set for the current SparkEnv")
+    }
+
+    _state = (Some(ccs), curEnv)
   }
 
+  /** This method should be used only for testing. Never call it in production. */
+  private[metrics] def reset(): Unit = synchronized {
+    _state = (None, None)
+  }
 }
