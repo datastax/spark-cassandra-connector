@@ -1,4 +1,4 @@
-1.2.x (unreleased)
+1.2.0 RC 3
  * Select aliases are no longer ignored in CassandraRow objects (SPARKC-109)
  * Fix picking up username and password from SparkConf (SPARKC-108)
  * Fix creating CassandraConnectorSource in the executor environment (SPARKC-111)
