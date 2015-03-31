@@ -200,6 +200,15 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result.head.value should startWith("000")
   }
 
+  it should "allow to read a Cassandra table into CassandraRow objects with custom mapping specified by aliases" in {
+    val result = sc.cassandraTable("read_test", "key_value")
+      .select("key" as "devil", "group" as "cat", "value").collect()
+    result should have length 3
+    result.head.getInt("devil") should (be >= 1 and be <= 3)
+    result.head.getLong("cat") should (be >= 100L and be <= 300L)
+    result.head.getString("value") should startWith("000")
+  }
+
   it should "apply proper data type conversions for tuples" in {
     val result = sc.cassandraTable[(String, Int, Long)]("read_test", "key_value").collect()
     result should have length 3

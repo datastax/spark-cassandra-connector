@@ -15,8 +15,10 @@ sealed trait SelectableColumnRef extends ColumnRef {
     * used when providing custom column name to field name mapping. */
   def selectedFromCassandraAs: String
 
-  /** Returns an alias for the referenced column */
-  def alias: Option[String]
+  /** Returns the name of the column to be used by the user in the RDD item object.
+    * If the column is selected into a CassandraRow, this name should be used to get the
+    * column value. Also this name will be matched to an object property by column mappers */
+  def selectedAs: String
 }
 
 object SelectableColumnRef {
@@ -38,6 +40,7 @@ object NamedColumnRef {
 case class ColumnName(columnName: String, alias: Option[String] = None) extends NamedColumnRef {
   val cql = s""""$columnName""""
   val selectedFromCassandraAs = columnName
+  def selectedAs = alias.getOrElse(columnName)
 
   def as(alias: String) = copy(alias = Some(alias))
 
@@ -47,6 +50,7 @@ case class ColumnName(columnName: String, alias: Option[String] = None) extends 
 case class TTL(columnName: String, alias: Option[String] = None) extends NamedColumnRef {
   val cql = s"""TTL("$columnName")"""
   val selectedFromCassandraAs = s"ttl($columnName)"
+  def selectedAs = alias.getOrElse(selectedFromCassandraAs)
 
   def as(alias: String) = copy(alias = Some(alias))
 
@@ -56,6 +60,7 @@ case class TTL(columnName: String, alias: Option[String] = None) extends NamedCo
 case class WriteTime(columnName: String, alias: Option[String] = None) extends NamedColumnRef {
   val cql = s"""WRITETIME("$columnName")"""
   val selectedFromCassandraAs = s"writetime($columnName)"
+  def selectedAs = alias.getOrElse(selectedFromCassandraAs)
 
   def as(alias: String) = copy(alias = Some(alias))
 
@@ -64,8 +69,8 @@ case class WriteTime(columnName: String, alias: Option[String] = None) extends N
 
 case object RowCountRef extends SelectableColumnRef {
   override def selectedFromCassandraAs: String = "count"
+  override def selectedAs: String = "count"
   override def cql: String = "count(*)"
-  override def alias: Option[String] = None
 }
 
 /** References a column by its index in the row. Useful for tuples. */

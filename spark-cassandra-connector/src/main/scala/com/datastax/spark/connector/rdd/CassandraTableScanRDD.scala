@@ -171,7 +171,7 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnRefs.map(_.selectedFromCassandraAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
 
     try {
       implicit val pv = protocolVersion(session)
