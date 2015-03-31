@@ -48,7 +48,8 @@ object InputMetricsUpdater {
   def apply(
     taskContext: TaskContext,
     readConf: ReadConf,
-    groupSize: Int = DefaultGroupSize): InputMetricsUpdater = {
+    groupSize: Int = DefaultGroupSize
+  ): InputMetricsUpdater = {
 
     val source = CassandraConnectorSource.instance
 

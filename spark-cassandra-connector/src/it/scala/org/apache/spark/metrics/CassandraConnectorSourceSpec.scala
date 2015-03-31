@@ -4,7 +4,7 @@ import java.io.File
 
 import com.datastax.spark.connector.embedded.SparkTemplate
 import org.apache.commons.io.FileUtils
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkEnv, SparkConf}
 import org.scalatest.{FlatSpec, Matchers}
 
 class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemplate {
@@ -40,7 +40,7 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
     CassandraConnectorSource.instance.isDefined shouldBe false
   }
 
-  "CassandraConnectorSource" should "not be initialized when it wasn't specified in metrics properties" in {
+  it should "not be initialized when it wasn't specified in metrics properties" in {
     val metricsPropertiesContent =
       s"""
        """.stripMargin
@@ -57,6 +57,23 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
       CassandraConnectorSource.instance.isDefined shouldBe false
     } finally {
       sc.stop()
+    }
+  }
+
+  it should "be able to create a new instance in the executor environment only once" in {
+    val env = SparkEnv.get
+    if (env != null && !env.isStopped) {
+      sc.stop()
+    }
+    SparkEnv.set(null)
+    CassandraConnectorSource.reset()
+
+    CassandraConnectorSource.instance shouldBe None
+    val ccs = new CassandraConnectorSource
+    CassandraConnectorSource.instance should not be ccs
+
+    a [AssertionError] should be thrownBy {
+      new CassandraConnectorSource
     }
   }
 

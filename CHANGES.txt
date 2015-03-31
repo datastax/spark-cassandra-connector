@@ -1,6 +1,7 @@
 1.2.x (unreleased)
  * Select aliases are no longer ignored in CassandraRow objects (SPARKC-109)
  * Fix picking up username and password from SparkConf (SPARKC-108)
+ * Fix creating CassandraConnectorSource in the executor environment (SPARKC-111)
 
 1.2.0 RC 2
  * Cross cluster table join and write for Spark SQL (SPARKC-73)
