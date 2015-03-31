@@ -223,7 +223,7 @@ class CassandraJoinRDD[Left, Right] private[connector](
     bsb: BoundStatementBuilder[Left],
     lastIt: Iterator[Left]): Iterator[(Left, Right)] = {
 
-    val columnNamesArray = selectedColumnRefs.map(_.selectedFromCassandraAs).toArray
+    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
     implicit val pv = protocolVersion(session)
     for (leftSide <- lastIt;
          rightSide <- {

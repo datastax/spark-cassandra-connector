@@ -16,7 +16,7 @@ case object PartitionKeyColumns extends ColumnSelector {
 
 case class SomeColumns(columns: SelectableColumnRef*) extends ColumnSelector {
   override def aliases: Map[String, String] = columns.map {
-    case ref => (ref.alias.getOrElse(ref.selectedFromCassandraAs), ref.selectedFromCassandraAs)
+    case ref => (ref.selectedAs, ref.selectedFromCassandraAs)
   }.toMap
 }
 

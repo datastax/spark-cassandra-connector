@@ -4,9 +4,10 @@
 In this section, you'll learn how to reduce the amount of data transferred from Cassandra to Spark
 to speed up processing.
 
-### Selecting a subset of columns
+### Selecting columns
 
-For performance reasons, you should not fetch columns you don't need. You can achieve this with the `select` method.
+For performance reasons, you should not fetch columns you don't need. 
+You can achieve this with the `select` method.
 
 ```scala
 sc.cassandraTable("test", "users").select("username").toArray.foreach(println)
@@ -16,6 +17,22 @@ sc.cassandraTable("test", "users").select("username").toArray.foreach(println)
 
 The `select` method can be chained. Every next call can be used to select a subset of columns already selected.
 Selecting a non-existing column would result in throwing an exception.
+
+The `select` method allows querying for TTL and timestamp of the table cell. 
+
+```scala
+val row = rdd.select("column", "column".ttl, "column".writeTime).first
+val ttl = row.getLong("ttl(column)")
+val timestamp = row.getLong("writetime(column)")         
+```
+
+The selected columns can be given aliases by calling `as` on the column selector, 
+which is particularly handy when fetching TTLs and timestamps.
+
+```scala
+rdd.select("column".ttl as "column_ttl").first
+val ttl = row.getLong("column_ttl")         
+```
 
 ### Filtering rows
 
