@@ -55,8 +55,9 @@ object InputMetricsUpdater {
 
     if (readConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()
-      if (tm.inputMetrics.isEmpty || tm.inputMetrics.get.readMethod != DataReadMethod.Hadoop)
-        tm.inputMetrics = Some(new InputMetrics(DataReadMethod.Hadoop))
+      // TODO setInputMetrics is private
+      //if (tm.inputMetrics.isEmpty || tm.inputMetrics.get.readMethod != DataReadMethod.Hadoop)
+      //  tm.inputMetrics = Some(new InputMetrics(DataReadMethod.Hadoop))
 
       if (source.isDefined)
         new CodahaleAndTaskMetricsUpdater(groupSize, source.get, tm.inputMetrics.get)
@@ -127,7 +128,10 @@ object InputMetricsUpdater {
     val inputMetrics: InputMetrics
 
     @inline
-    override def updateTaskMetrics(dataLength: Int): Unit = inputMetrics.bytesRead += dataLength
+    override def updateTaskMetrics(dataLength: Int): Unit = {
+      // TODO can't set the bytes
+      //inputMetrics.bytesRead += dataLength
+    }
   }
 
   /** The implementation of [[InputMetricsUpdater]] which does not update anything. */
