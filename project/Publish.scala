@@ -20,21 +20,45 @@ import sbtrelease.ReleasePlugin._
 
 object Publish extends Build {
 
-  lazy val creds = (for {
-    publish <- Option(Path.userHome / ".ivy2" / ".credentials")
-    if publish.exists
-  } yield Seq(credentials += Credentials(publish))).getOrElse(Seq.empty)
+  val altReleaseDeploymentRepository = sys.props.get("publish.repository.releases")
+  val altSnapshotDeploymentRepository = sys.props.get("publish.repository.snapshots")
+
+  val nexus = "https://oss.sonatype.org"
+  val defaultReleaseDeploymentRepository = nexus + "/service/local/staging/deploy/maven2"
+  val defaultSnapshotDeploymentRepository = nexus + "/content/repositories/snapshots"
+
+  val releasesDeploymentRepository =
+    "releases" at (altReleaseDeploymentRepository getOrElse defaultReleaseDeploymentRepository)
+  val snapshotsDeploymentRepository =
+    "snapshots" at (altSnapshotDeploymentRepository getOrElse defaultSnapshotDeploymentRepository)
+
+  val altCredentialsLocation = sys.props.get("publish.repository.credentials.file").map(new File(_))
+  val defaultCredentialsLocation = Path.userHome / ".ivy2" / ".credentials"
+  val credentialsLocation = altCredentialsLocation getOrElse defaultCredentialsLocation
+
+  val inlineCredentials = for (
+    realm ← sys.props.get("publish.repository.credentials.realm");
+    host ← sys.props.get("publish.repository.credentials.host");
+    user ← sys.props.get("publish.repository.credentials.user");
+    password ← sys.props.get("publish.repository.credentials.password")
+  ) yield Credentials(realm, host, user, password)
+
+  val resolvedCredentials = inlineCredentials getOrElse Credentials(credentialsLocation)
+
+  println(s"Using $releasesDeploymentRepository for releases")
+  println(s"Using $snapshotsDeploymentRepository for snapshots")
+
+  lazy val creds = Seq(credentials += resolvedCredentials)
 
   override lazy val settings = creds ++ Seq(
     organizationName := "DataStax",
     organizationHomepage := Some(url("http://www.datastax.com/")),
 
     publishTo <<= version { v: String =>
-      val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("snapshots" at nexus + "content/repositories/snapshots")
+        Some(snapshotsDeploymentRepository)
       else
-        Some("releases" at nexus + "service/local/staging/deploy/maven2")
+        Some(releasesDeploymentRepository)
     },
     publishMavenStyle := true,
     publishArtifact in Test := false,
