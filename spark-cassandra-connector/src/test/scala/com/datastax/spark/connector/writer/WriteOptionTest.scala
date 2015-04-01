@@ -29,12 +29,6 @@ class WriteOptionTest extends FlatSpec with Matchers {
     option.value.asInstanceOf[StaticWriteOptionValue[Int]].value should be(0)
   }
 
-  it should "properly create constant write option with org.apache.spark.streaming.Duration" in {
-    val option = TTLOption.constant(SparkDuration.apply(5123L))
-    option.value shouldBe a[StaticWriteOptionValue[_]]
-    option.value.asInstanceOf[StaticWriteOptionValue[Int]].value should be(5)
-  }
-
   it should "properly create constant write option with org.joda.time.Duration" in {
     val option = TTLOption.constant(JodaDuration.millis(5123L))
     option.value shouldBe a[StaticWriteOptionValue[_]]
