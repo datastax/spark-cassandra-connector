@@ -2,10 +2,9 @@ package com.datastax.spark.connector.writer
 
 import java.util.Date
 
-import org.apache.spark.streaming.{Duration => SparkDuration}
-import org.joda.time.{DateTime, Duration => JodaDuration}
+import scala.concurrent.duration.{Duration ⇒ ScalaDuration}
 
-import scala.concurrent.duration.{Duration => ScalaDuration}
+import org.joda.time.{DateTime, Duration ⇒ JodaDuration}
 
 sealed trait WriteOptionValue[+T]
 
@@ -35,12 +34,11 @@ object TTLOption {
 
   def forever: TTLOption = TTLOption(StaticWriteOptionValue[Int](0))
 
+  /** @param ttl TTL in seconds */
   def constant(ttl: Int): TTLOption = {
     require(ttl > 0, "Explicitly specified TTL must be greater than zero.")
     TTLOption(StaticWriteOptionValue(ttl))
   }
-
-  def constant(ttl: SparkDuration): TTLOption = constant((ttl.milliseconds / 1000L).toInt)
 
   def constant(ttl: JodaDuration): TTLOption = constant(ttl.getStandardSeconds.toInt)
 
