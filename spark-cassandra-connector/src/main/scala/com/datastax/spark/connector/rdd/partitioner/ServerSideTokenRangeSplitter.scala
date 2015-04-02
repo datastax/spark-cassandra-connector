@@ -21,8 +21,8 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
   extends TokenRangeSplitter[V, T] with Logging {
 
   private def unthriftify(cfSplit: CfSplit, endpoints: Set[InetAddress]): TokenRange[V, T] = {
-    val left = tokenFactory.fromString(cfSplit.start_token)
-    val right = tokenFactory.fromString(cfSplit.end_token)
+    val left = tokenFactory.tokenFromString(cfSplit.start_token)
+    val right = tokenFactory.tokenFromString(cfSplit.end_token)
     TokenRange(left, right, endpoints, Some(cfSplit.row_count))
   }
 
@@ -31,8 +31,8 @@ class ServerSideTokenRangeSplitter[V, T <: Token[V]](
       endpoint: InetAddress,
       splitSize: Long): Seq[TokenRange[V, T]] = {
 
-    val startToken = tokenFactory.toString(range.start)
-    val endToken = tokenFactory.toString(range.end)
+    val startToken = tokenFactory.tokenToString(range.start)
+    val endToken = tokenFactory.tokenToString(range.end)
 
     connector.withCassandraClientDo(endpoint) {
       client =>

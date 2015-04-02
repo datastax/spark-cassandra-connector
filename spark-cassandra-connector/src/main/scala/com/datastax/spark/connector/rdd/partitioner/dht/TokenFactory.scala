@@ -6,8 +6,8 @@ trait TokenFactory[V, T <: Token[V]] {
   def minToken: T
   def maxToken: T
   def totalTokenCount: BigInt
-  def fromString(string: String): T
-  def toString(token: T): String
+  def tokenFromString(string: String): T
+  def tokenToString(token: T): String
 }
 
 object TokenFactory {
@@ -19,16 +19,16 @@ object TokenFactory {
     override val minToken = LongToken(Long.MinValue)
     override val maxToken = LongToken(Long.MaxValue)
     override val totalTokenCount = BigInt(maxToken.value) - BigInt(minToken.value)
-    override def fromString(string: String) = LongToken(string.toLong)
-    override def toString(token: LongToken) = token.value.toString
+    override def tokenFromString(string: String) = LongToken(string.toLong)
+    override def tokenToString(token: LongToken) = token.value.toString
   }
 
   implicit object RandomPartitionerTokenFactory extends TokenFactory[BigInt, BigIntToken] {
     override val minToken = BigIntToken(-1)
     override val maxToken = BigIntToken(BigInt(2).pow(127))
     override val totalTokenCount = maxToken.value - minToken.value
-    override def fromString(string: String) = BigIntToken(BigInt(string))
-    override def toString(token: BigIntToken) = token.value.toString()
+    override def tokenFromString(string: String) = BigIntToken(BigInt(string))
+    override def tokenToString(token: BigIntToken) = token.value.toString()
   }
 
   def forCassandraPartitioner(partitionerClassName: String): TokenFactory[V, T] = {

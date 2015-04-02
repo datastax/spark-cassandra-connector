@@ -30,8 +30,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private val tableName = tableDef.tableName
 
   def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
-    val startToken = tokenFactory.fromString(range.getStart.getValue.toString)
-    val endToken = tokenFactory.fromString(range.getEnd.getValue.toString)
+    val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
+    val endToken = tokenFactory.tokenFromString(range.getEnd.getValue.toString)
     val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
     new TokenRange(startToken, endToken, replicas, None)
   }
@@ -69,8 +69,8 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 
   /** This works only for numeric tokens */
   private def tokenCount(range: TokenRange): BigInt = {
-    val start = BigInt(tokenFactory.toString(range.start))
-    val end = BigInt(tokenFactory.toString(range.end))
+    val start = BigInt(tokenFactory.tokenToString(range.start))
+    val end = BigInt(tokenFactory.tokenToString(range.end))
     if (start < end)
       end - start
     else
