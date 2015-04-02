@@ -32,18 +32,20 @@ object Publish extends Build {
   val snapshotsDeploymentRepository =
     "snapshots" at (altSnapshotDeploymentRepository getOrElse defaultSnapshotDeploymentRepository)
 
-  val altCredentialsLocation = sys.props.get("publish.repository.credentials.file").map(new File(_))
-  val defaultCredentialsLocation = Path.userHome / ".ivy2" / ".credentials"
-  val credentialsLocation = altCredentialsLocation getOrElse defaultCredentialsLocation
-
-  val inlineCredentials = for (
+  lazy val inlineCredentials = for (
     realm ← sys.props.get("publish.repository.credentials.realm");
     host ← sys.props.get("publish.repository.credentials.host");
     user ← sys.props.get("publish.repository.credentials.user");
     password ← sys.props.get("publish.repository.credentials.password")
   ) yield Credentials(realm, host, user, password)
 
-  val resolvedCredentials = inlineCredentials getOrElse Credentials(credentialsLocation)
+  lazy val resolvedCredentials = inlineCredentials getOrElse {
+    val altCredentialsLocation = sys.props.get("publish.repository.credentials.file").map(new File(_))
+    val defaultCredentialsLocation = Path.userHome / ".ivy2" / ".credentials"
+    val credentialsLocation = altCredentialsLocation getOrElse defaultCredentialsLocation
+
+    Credentials(credentialsLocation)
+  }
 
   println(s"Using $releasesDeploymentRepository for releases")
   println(s"Using $snapshotsDeploymentRepository for snapshots")
