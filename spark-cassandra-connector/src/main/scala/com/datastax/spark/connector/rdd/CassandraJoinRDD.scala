@@ -1,9 +1,10 @@
 package com.datastax.spark.connector.rdd
 
+import org.apache.spark.metrics.InputMetricsUpdater
+
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
