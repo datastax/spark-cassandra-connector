@@ -6,12 +6,12 @@ import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
 
+import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
 import com.datastax.spark.connector.rdd.reader._
