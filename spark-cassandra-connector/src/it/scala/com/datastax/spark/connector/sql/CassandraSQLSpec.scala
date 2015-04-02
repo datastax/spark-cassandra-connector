@@ -212,13 +212,13 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to insert into another table" in {
-    val result = cc.sql("INSERT INTO test3 SELECT a, b, c FROM test2").collect()
+    val result = cc.sql("INSERT INTO TABLE test3 SELECT a, b, c FROM test2").collect()
     val result2 = cc.sql("SELECT a, b, c FROM test3").collect()
     result2 should have length 9
   }
 
   it should "allow to insert into another table in different keyspace" in {
-    val result = cc.sql("INSERT INTO sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
+    val result = cc.sql("INSERT INTO TABLE sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
     val result2 = cc.sql("SELECT test3.a, test3.b, test3.c FROM sql_test2.test3 as test3").collect()
     result2 should have length 9
   }
@@ -282,7 +282,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
-    val result = cc.sql("INSERT INTO test_data_type1 SELECT * FROM test_data_type").collect()
+    val result = cc.sql("INSERT INTO TABLE test_data_type1 SELECT * FROM test_data_type").collect()
     val result1 = cc.sql("SELECT * FROM test_data_type1").collect()
     result1 should have length 1
   }
