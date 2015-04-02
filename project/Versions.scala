@@ -48,6 +48,7 @@ object Versions {
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
   val Spark           = "1.3.0"
+  val SparkJetty      = "8.1.14.v20131031"
 
   val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
 

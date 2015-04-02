@@ -1,11 +1,12 @@
-package com.datastax.spark.connector.metrics
+package org.apache.spark.metrics
 
-import com.datastax.driver.core.RowMock
-import com.datastax.spark.connector.rdd.ReadConf
-import org.apache.spark.executor.{DataReadMethod, InputMetrics, TaskMetrics}
-import org.apache.spark.metrics.CassandraConnectorSource
+import org.apache.spark.executor.{DataReadMethod, TaskMetrics}
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+
+import com.datastax.driver.core.RowMock
+import com.datastax.spark.connector.metrics.{SparkEnvMock, TaskContextMock}
+import com.datastax.spark.connector.rdd.ReadConf
 
 class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
@@ -15,7 +16,7 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter
 
   "InputMetricsUpdater" should "initialize task metrics properly when they are empty" in {
     val tc = new TaskContextMock
-    tc.metrics.inputMetrics = None
+    tc.metrics.setInputMetrics(None)
 
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.input.metrics", "true")
@@ -26,26 +27,12 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter
     tc.metrics.inputMetrics.isDefined shouldBe true
     tc.metrics.inputMetrics.get.readMethod shouldBe DataReadMethod.Hadoop
     tc.metrics.inputMetrics.get.bytesRead shouldBe 0L
-  }
-
-  it should "initialize task metrics properly when they are defined" in {
-    val tc = new TaskContextMock
-    tc.metrics.inputMetrics = Some(new InputMetrics(DataReadMethod.Disk))
-
-    val conf = new SparkConf(loadDefaults = false)
-    conf.set("spark.cassandra.input.metrics", "true")
-
-    SparkEnv.set(new SparkEnvMock(conf))
-    val updater = InputMetricsUpdater(tc, ReadConf.fromSparkConf(conf), 3)
-
-    tc.metrics.inputMetrics.isDefined shouldBe true
-    tc.metrics.inputMetrics.get.readMethod shouldBe DataReadMethod.Hadoop
-    tc.metrics.inputMetrics.get.bytesRead shouldBe 0L
+    tc.metrics.inputMetrics.get.recordsRead shouldBe 0L
   }
 
   it should "create updater which uses task metrics" in {
     val tc = new TaskContextMock
-    tc.metrics.inputMetrics = None
+    tc.metrics.setInputMetrics(None)
 
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.input.metrics", "true")
@@ -56,11 +43,13 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter
     val row = new RowMock(Some(1), Some(2), Some(3), None, Some(4))
     updater.updateMetrics(row)
     tc.metrics.inputMetrics.get.bytesRead shouldBe 10L
+    tc.metrics.inputMetrics.get.recordsRead shouldBe 1L
 
     updater.updateMetrics(row)
     updater.updateMetrics(row)
     updater.updateMetrics(row)
     tc.metrics.inputMetrics.get.bytesRead shouldBe 40L
+    tc.metrics.inputMetrics.get.recordsRead shouldBe 4L
   }
 
   it should "create updater which does not use task metrics" in {
@@ -122,6 +111,5 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter
 
     updater.finish()
   }
-
 
 }

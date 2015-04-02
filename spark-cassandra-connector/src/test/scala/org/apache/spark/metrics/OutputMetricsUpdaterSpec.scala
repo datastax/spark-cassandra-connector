@@ -1,12 +1,13 @@
-package com.datastax.spark.connector.metrics
+package org.apache.spark.metrics
 
 import java.util.concurrent.CountDownLatch
 
-import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
-import org.apache.spark.metrics.CassandraConnectorSource
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+
+import com.datastax.spark.connector.metrics.{RichStatementMock, SparkEnvMock, TaskContextMock}
+import com.datastax.spark.connector.writer.WriteConf
 
 class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
@@ -29,6 +30,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     tc.metrics.outputMetrics.isDefined shouldBe true
     tc.metrics.outputMetrics.get.writeMethod shouldBe DataWriteMethod.Hadoop
     tc.metrics.outputMetrics.get.bytesWritten shouldBe 0L
+    tc.metrics.outputMetrics.get.recordsWritten shouldBe 0L
   }
 
   it should "initialize task metrics properly when they are defined" in {
@@ -44,6 +46,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     tc.metrics.outputMetrics.isDefined shouldBe true
     tc.metrics.outputMetrics.get.writeMethod shouldBe DataWriteMethod.Hadoop
     tc.metrics.outputMetrics.get.bytesWritten shouldBe 0L
+    tc.metrics.outputMetrics.get.recordsWritten shouldBe 0L
   }
 
   it should "create updater which uses task metrics" in {
@@ -59,9 +62,11 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val rc = new RichStatementMock(100, 10)
     updater.batchFinished(success = true, rc, ts, ts)
     tc.metrics.outputMetrics.get.bytesWritten shouldBe 100L // change registered when success
+    tc.metrics.outputMetrics.get.recordsWritten shouldBe 10L
 
     updater.batchFinished(success = false, rc, ts, ts)
     tc.metrics.outputMetrics.get.bytesWritten shouldBe 100L // change not regsitered when failure
+    tc.metrics.outputMetrics.get.recordsWritten shouldBe 10L
   }
 
   it should "create updater which does not use task metrics" in {
@@ -152,6 +157,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     threads.foreach(_.join())
 
     tc.metrics.outputMetrics.get.bytesWritten shouldBe 320000000L
+    tc.metrics.outputMetrics.get.recordsWritten shouldBe 32000000L
   }
 
 }

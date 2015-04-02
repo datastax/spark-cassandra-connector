@@ -2,11 +2,12 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import org.apache.spark.metrics.OutputMetricsUpdater
+
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.OutputMetricsUpdater
 import com.datastax.spark.connector.util.CountingIterator
 import org.apache.spark.{Logging, TaskContext}
 

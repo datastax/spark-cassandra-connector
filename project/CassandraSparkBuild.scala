@@ -145,6 +145,11 @@ object Dependencies {
       val metricsJson       = "com.codahale.metrics"    % "metrics-json"            % CodaHaleMetrics % "provided"
     }
 
+    object Jetty {
+      val jettyServer       = "org.eclipse.jetty"       % "jetty-server"            % SparkJetty % "provided"
+      val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
+    }
+
     object Embedded {
       val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"           % Akka                        // ApacheV2
       val cassandraServer   = "org.apache.cassandra"    % "cassandra-all"           % Cassandra logbackExclude    // ApacheV2
@@ -180,6 +185,8 @@ object Dependencies {
 
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
+  val jetty = Seq(Jetty.jettyServer, Jetty.jettyServlet)
+
   val testKit = Seq(
     Test.akkaTestKit,
     Test.commonsIO,
@@ -199,7 +206,7 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 
-  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
+  val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
