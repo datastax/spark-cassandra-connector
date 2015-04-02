@@ -36,7 +36,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     new TokenRange(startToken, endToken, replicas, None)
   }
 
-  private def describeRing(client: Cassandra.Iface): Seq[TokenRange] = {
+  private def describeRing: Seq[TokenRange] = {
     connector.withClusterDo { cluster =>
       val metadata = cluster.getMetadata
       for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
@@ -77,28 +77,16 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       end - start + tokenFactory.totalTokenCount
   }
 
-  /** Rows per token average is required for fast local range splitting.
-    * Used only for Murmur3Partitioner and RandomPartitioner.  */
-  private def estimateCassandraPartitionsPerToken(tokenRanges: Seq[TokenRange]): Double = {
-    val random = new scala.util.Random(0)
-    val tokenRangeSample = random.shuffle(tokenRanges).take(CassandraRDDPartitioner.TokenRangeSampleSize)
-    val splitter = new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
-    val splits = splitsOf(tokenRangeSample, splitter)
-    val tokenCountSum = splits.map(tokenCount).sum
-    val rowCountSum = splits.map(_.rowCount.get).sum
-    rowCountSum.toDouble / tokenCountSum.toDouble
-  }
-
-  private def createSplitterFor(tokenRanges: Seq[TokenRange]): TokenRangeSplitter[V, T] = {
+  private def createTokenRangeSplitter: TokenRangeSplitter[V, T] = {
+    val dataSizeEstimates = new DataSizeEstimates(connector, keyspaceName, tableName)
+    val dataSize = dataSizeEstimates.dataSizeInBytes
     tokenFactory.asInstanceOf[TokenFactory[_, _]] match {
       case TokenFactory.RandomPartitionerTokenFactory =>
-        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
-        new RandomPartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        new RandomPartitionerTokenRangeSplitter(dataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case TokenFactory.Murmur3TokenFactory =>
-        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
-        new Murmur3PartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        new Murmur3PartitionerTokenRangeSplitter(dataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case _ =>
-        new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
+        throw new UnsupportedOperationException(s"Unsupported TokenFactory $tokenFactory")
     }
   }
 
@@ -130,9 +118,9 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
     connector.withCassandraClientDo {
       client =>
-        val tokenRanges = describeRing(client)
+        val tokenRanges = describeRing
         val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
-        val splitter = createSplitterFor(tokenRanges)
+        val splitter = createTokenRangeSplitter
         val splits = splitsOf(tokenRanges, splitter).toSeq
         val maxGroupSize = tokenRanges.size / endpointCount
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)

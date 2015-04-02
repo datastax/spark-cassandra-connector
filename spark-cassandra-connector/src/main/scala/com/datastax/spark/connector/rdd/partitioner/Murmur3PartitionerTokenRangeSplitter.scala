@@ -2,27 +2,33 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import com.datastax.spark.connector.rdd.partitioner.dht.{LongToken, TokenFactory, TokenRange}
 
-import scala.math.BigDecimal.RoundingMode
-
-/** Fast token range splitter assuming that data are spread out evenly in the whole range. */
-class Murmur3PartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) extends TokenRangeSplitter[Long, LongToken] {
+/** Fast token range splitter assuming that data are spread out evenly in the whole range.
+  * @param dataSize estimate of the size of the data in the whole ring */
+class Murmur3PartitionerTokenRangeSplitter(dataSize: Long)
+  extends TokenRangeSplitter[Long, LongToken] {
 
   private val tokenFactory =
     TokenFactory.Murmur3TokenFactory
 
-  def split(range: TokenRange[Long, LongToken], splitSize: Long) = {
+  private type TR = TokenRange[Long, LongToken]
+
+  /** Splits the token range uniformly into sub-ranges.
+    * @param splitSize requested sub-split size, given in the same units as `dataSize` */
+  def split(range: TR, splitSize: Long): Seq[TR] = {
+    val rangeSize = dataSize * tokenFactory.ringFraction(range.start, range.end)
+    val rangeTokenCount = tokenFactory.distance(range.start, range.end)
+    val n = math.max(1, math.round(rangeSize / splitSize).toInt)
+
     val left = range.start.value
     val right = range.end.value
-    val rangeSize = BigDecimal(tokenFactory.distance(range.start, range.end))
-    val estimatedRows = rangeSize * cassandraPartitionsPerToken
-    val n = math.max(1, (estimatedRows / splitSize).setScale(0, RoundingMode.HALF_UP).toInt)
     val splitPoints =
-      (for (i <- 0 until n) yield left + (rangeSize * i.toDouble / n).toLong) :+ right
+      (for (i <- 0 until n) yield left + (rangeTokenCount * i / n).toLong) :+ right
+
     for (Seq(l, r) <- splitPoints.sliding(2).toSeq) yield
       new TokenRange[Long, LongToken](
         new LongToken(l),
         new LongToken(r),
         range.replicas,
-        Some((estimatedRows / n).toInt))
+        Some((rangeSize / n).toInt))
   }
 }
