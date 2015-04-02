@@ -108,8 +108,7 @@ object OutputMetricsUpdater extends Logging {
     override private[metrics] def updateTaskMetrics(success: Boolean, dataLength: Int): Unit = {
       if (success) {
         atomicCounter.add(dataLength)
-        //TODO: can't set it
-        //outputMetrics.bytesWritten = atomicCounter.longValue()
+        outputMetrics.bytesWritten = atomicCounter.longValue()
       }
     }
   }

@@ -33,7 +33,7 @@ final class CassandraSQLRow(columnNames: IndexedSeq[String], val fieldValues: In
   override def getShort(i: Int) = get[Short](i)
   override def getInt(i: Int) = get[Int](i)
   override def getString(i: Int) = get[String](i)
-  override def toSeq: Seq[Any] = fieldValues
+  override def iterator = fieldValues.iterator
 }
 
 
