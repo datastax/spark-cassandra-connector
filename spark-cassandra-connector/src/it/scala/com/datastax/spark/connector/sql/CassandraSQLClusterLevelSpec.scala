@@ -39,7 +39,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
 
   var cc: CassandraSQLContext = null
 
-  override def beforeAll(configMap: ConfigMap) {
+  override def beforeAll() {
     cc = new CassandraSQLContext(sc)
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)

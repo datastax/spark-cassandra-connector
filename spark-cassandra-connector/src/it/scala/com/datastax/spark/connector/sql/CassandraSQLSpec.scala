@@ -72,8 +72,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
-  override def beforeAll(configMap: ConfigMap) {
-    super.beforeAll(configMap)
+  override def beforeAll() {
+    super.beforeAll()
     cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
   }

@@ -7,7 +7,7 @@ import org.apache.commons.lang.StringUtils
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.{Strategy, SQLContext, SchemaRDD}
+import org.apache.spark.sql.{DataFrame, Strategy, SQLContext, SchemaRDD}
 
 import collection.mutable
 
@@ -208,11 +208,11 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   def getKeyspace: String = keyspaceName.getOrElse(
     throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace."))
 
-  /** Executes SQL query against Cassandra and returns SchemaRDD representing the result. */
-  def cassandraSql(cassandraQuery: String): SchemaRDD = new SchemaRDD(this, super.parseSql(cassandraQuery))
+  /** Executes SQL query against Cassandra and returns DataFrame representing the result. */
+  def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, super.parseSql(cassandraQuery))
 
   /** Delegates to [[cassandraSql]] */
-  override def sql(cassandraQuery: String): SchemaRDD = cassandraSql(cassandraQuery)
+  override def sql(cassandraQuery: String): DataFrame = cassandraSql(cassandraQuery)
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
