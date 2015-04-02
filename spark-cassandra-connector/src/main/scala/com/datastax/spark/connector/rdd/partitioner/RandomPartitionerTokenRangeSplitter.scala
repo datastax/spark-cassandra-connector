@@ -18,9 +18,7 @@ class RandomPartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) e
   def split(range: TokenRange[BigInt, BigIntToken], splitSize: Long) = {
     val left = range.start.value
     val right = range.end.value
-    val rangeSize =
-      if (right > left) BigDecimal(right - left)
-      else BigDecimal(right - left + tokenFactory.totalTokenCount)
+    val rangeSize = BigDecimal(tokenFactory.distance(range.start, range.end))
     val estimatedRows = rangeSize * cassandraPartitionsPerToken
     val n = math.max(1, (estimatedRows / splitSize).setScale(0, RoundingMode.HALF_UP).toInt)
     val splitPoints =

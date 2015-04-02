@@ -13,9 +13,7 @@ class Murmur3PartitionerTokenRangeSplitter(cassandraPartitionsPerToken: Double) 
   def split(range: TokenRange[Long, LongToken], splitSize: Long) = {
     val left = range.start.value
     val right = range.end.value
-    val rangeSize =
-      if (right > left) BigDecimal(right) - BigDecimal(left)
-      else BigDecimal(right) - BigDecimal(left) + BigDecimal(tokenFactory.totalTokenCount)
+    val rangeSize = BigDecimal(tokenFactory.distance(range.start, range.end))
     val estimatedRows = rangeSize * cassandraPartitionsPerToken
     val n = math.max(1, (estimatedRows / splitSize).setScale(0, RoundingMode.HALF_UP).toInt)
     val splitPoints =
