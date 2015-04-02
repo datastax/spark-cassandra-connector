@@ -3,11 +3,12 @@ package com.datastax.spark.connector.metrics
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.Timer.Context
-import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
-import com.google.common.cache.LongAdderBuilder.LongAdderWrapper
+import com.twitter.jsr166e.LongAdder
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
 import org.apache.spark.metrics.CassandraConnectorSource
 import org.apache.spark.{Logging, TaskContext}
+
+import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
 
 /** A trait that provides a method to update write metrics which are collected for connector related tasks.
   * The appropriate instance is created by the companion object.
@@ -101,7 +102,7 @@ object OutputMetricsUpdater extends Logging {
   private trait TaskMetricsSupport extends OutputMetricsUpdater {
     val outputMetrics: OutputMetrics
 
-    val atomicCounter = new LongAdderWrapper
+    val atomicCounter = new LongAdder
     atomicCounter.add(outputMetrics.bytesWritten)
 
     override private[metrics] def updateTaskMetrics(success: Boolean, dataLength: Int): Unit = {

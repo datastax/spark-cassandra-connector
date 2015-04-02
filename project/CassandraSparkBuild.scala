@@ -133,6 +133,8 @@ object Dependencies {
     val jodaT               = "joda-time"               % "joda-time"              % JodaT
     val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
     val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
+    val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
+
     /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
     val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark guavaExclude           // ApacheV2
@@ -200,7 +202,7 @@ object Dependencies {
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 
   val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    commonsLang3, config, guava, jodaC, jodaT, lzf)
+    commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
     Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka)
