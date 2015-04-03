@@ -39,7 +39,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
 
   var cc: CassandraSQLContext = null
 
-  override def beforeAll(configMap: ConfigMap) {
+  override def beforeAll() {
     cc = new CassandraSQLContext(sc)
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
@@ -63,7 +63,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to write data to another cluster" in {
-    val insert = cc.sql("INSERT INTO cluster2.sql_test2.test3 SELECT * FROM cluster1.sql_test1.test1 AS t1").collect()
+    val insert = cc.sql("INSERT INTO TABLE cluster2.sql_test2.test3 SELECT * FROM cluster1.sql_test1.test1 AS t1").collect()
     val result = cc.sql("SELECT * FROM cluster2.sql_test2.test3 AS test3").collect()
     result should have length 5
   }

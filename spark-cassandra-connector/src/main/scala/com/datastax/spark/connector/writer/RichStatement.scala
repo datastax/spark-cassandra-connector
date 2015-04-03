@@ -4,7 +4,7 @@ import java.util
 
 import com.datastax.driver.core.{BatchStatement, BoundStatement, PreparedStatement, Statement}
 
-private[connector] trait RichStatement {
+trait RichStatement {
   def bytesCount: Int
   def rowsCount: Int
 }

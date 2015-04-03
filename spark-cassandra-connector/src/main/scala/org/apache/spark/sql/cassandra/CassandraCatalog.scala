@@ -14,7 +14,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   val schemas = CacheBuilder.newBuilder
        .maximumSize(100)
-       .expireAfterWrite(cc.conf.getLong("schema.expire.in.minutes", 10), TimeUnit.MINUTES)
+       .expireAfterWrite(cc.sparkConf.getLong("schema.expire.in.minutes", 10), TimeUnit.MINUTES)
        .build(
           new CacheLoader[String, Schema] {
             def load(cluster: String) : Schema = {
@@ -57,4 +57,9 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     val tabDef = for (ksDef <- schema.keyspaceByName.get(database); tabDef <- ksDef.tableByName.get(table)) yield tabDef
     tabDef.isDefined
   }
+
+  override def getTables(databaseName: Option[String]): Seq[(String, Boolean)] = ???
+
+  def refreshTable(databaseName: String, tableName: String): Unit = ???
+
 }
