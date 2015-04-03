@@ -4,7 +4,6 @@ import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
 
-import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
 
 import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
@@ -116,28 +115,25 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 
   /** Computes Spark partitions of the given table. Called by [[CassandraTableScanRDD]]. */
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
-    connector.withCassandraClientDo {
-      client =>
-        val tokenRanges = describeRing
-        val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
-        val splitter = createTokenRangeSplitter
-        val splits = splitsOf(tokenRanges, splitter).toSeq
-        val maxGroupSize = tokenRanges.size / endpointCount
-        val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
-        val groups = clusterer.group(splits).toArray
+    val tokenRanges = describeRing
+    val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
+    val splitter = createTokenRangeSplitter
+    val splits = splitsOf(tokenRanges, splitter).toSeq
+    val maxGroupSize = tokenRanges.size / endpointCount
+    val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
+    val groups = clusterer.group(splits).toArray
 
-        if (containsPartitionKey(whereClause)) {
-          val replicas = tokenRanges.flatMap(_.replicas)
-          Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
-        }
-        else
-          for ((group, index) <- groups.zipWithIndex) yield {
-            val cqlPredicates = group.flatMap(splitToCqlClause)
-            val replicas = group.map(_.replicas).reduce(_ intersect _)
-            val rowCount = group.map(_.rowCount.get).sum
-            CassandraPartition(index, replicas, cqlPredicates, rowCount)
-          }
+    if (containsPartitionKey(whereClause)) {
+      val replicas = tokenRanges.flatMap(_.replicas)
+      Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
     }
+    else
+      for ((group, index) <- groups.zipWithIndex) yield {
+        val cqlPredicates = group.flatMap(splitToCqlClause)
+        val replicas = group.map(_.replicas).reduce(_ intersect _)
+        val rowCount = group.map(_.rowCount.get).sum
+        CassandraPartition(index, replicas, cqlPredicates, rowCount)
+      }
   }
 
 }

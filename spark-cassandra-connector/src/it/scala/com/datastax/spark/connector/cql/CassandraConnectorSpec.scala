@@ -21,12 +21,6 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "connect to Cassandra with thrift" in {
-    conn.withCassandraClientDo { client =>
-      assert(client.describe_cluster_name() === "Test Cluster0")
-    }
-  }
-
   it should "give access to cluster metadata" in {
     conn.withClusterDo { cluster =>
       assert(cluster.getMetadata.getClusterName === "Test Cluster0")

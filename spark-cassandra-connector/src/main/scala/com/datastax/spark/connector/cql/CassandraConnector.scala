@@ -4,11 +4,12 @@ import java.io.IOException
 import java.net.InetAddress
 
 import scala.collection.JavaConversions._
+import scala.language.reflectiveCalls
 
+import org.apache.spark.Logging
 import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.{Cluster, Host, Session}
-import org.apache.spark.Logging
 
 
 /** Provides and manages connections to Cassandra.
@@ -30,8 +31,7 @@ import org.apache.spark.Logging
   * can be either given explicitly or automatically configured from [[org.apache.spark.SparkConf SparkConf]].
   * The connection options are:
   *   - `spark.cassandra.connection.host`:               contact point to connect to the Cassandra cluster, defaults to spark master host
-  *   - `spark.cassandra.connection.rpc.port`:           Cassandra thrift port, defaults to 9160
-  *   - `spark.cassandra.connection.native.port`:        Cassandra native port, defaults to 9042
+  *   - `spark.cassandra.connection.port`:               Cassandra native port, defaults to 9042
   *   - `spark.cassandra.connection.factory`:            name of a Scala module or class implementing [[CassandraConnectionFactory]] that allows to plugin custom code for connecting to Cassandra
   *   - `spark.cassandra.connection.keep_alive_ms`:      how long to keep unused connection before closing it (default 250 ms)
   *   - `spark.cassandra.connection.timeout_ms`:         how long to wait for connection to the Cassandra cluster (default 5 s)
@@ -56,11 +56,8 @@ class CassandraConnector(conf: CassandraConnectorConf)
     withSessionDo { _ => _config.hosts }
 
   /** Configured native port */
-  def nativePort = _config.nativePort
-
-  /** Configured thrift client port */
-  def rpcPort = _config.rpcPort
-
+  def port = _config.port
+  
   /** Configured authentication options */
   def authConf = _config.authConf
 
@@ -127,29 +124,6 @@ class CassandraConnector(conf: CassandraConnectorConf)
     }
   }
 
-  /** Opens a Thrift client to the given host. Don't use it unless you really know what you are doing. */
-  def createThriftClient(host: InetAddress): CassandraClientProxy = {
-    try {
-      logDebug(s"Attempting to open thrift connection to Cassandra at ${host.getHostAddress}:$rpcPort")
-      val (client, transport) = conf.connectionFactory.createThriftClient(conf, host)
-      CassandraClientProxy.wrap(client, transport)
-    }
-    catch {
-      case e: Throwable =>
-        throw new IOException(
-          s"Failed to open thrift connection to Cassandra at ${host.getHostAddress}:$rpcPort", e)
-    }
-  }
-
-  def createThriftClient(): CassandraClientProxy =
-    createThriftClient(closestLiveHost.getAddress)
-
-  def withCassandraClientDo[T](host: InetAddress)(code: CassandraClientProxy => T): T =
-    closeResourceAfterUse(createThriftClient(host))(code)
-
-  def withCassandraClientDo[T](code: CassandraClientProxy => T): T =
-    closeResourceAfterUse(createThriftClient())(code)
-
   /** Automatically closes resource after use. Handy for closing streams, files, sessions etc.
     * Similar to try-with-resources in Java 7. */
   def closeResourceAfterUse[T, C <: { def close() }](closeable: C)(code: C => T): T =
@@ -167,7 +141,7 @@ object CassandraConnector extends Logging {
     createSession, destroySession, alternativeConnectionConfigs)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
-    lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.nativePort
+    lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.port
     logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
     val cluster = conf.connectionFactory.createCluster(conf)
     try {
@@ -211,8 +185,7 @@ object CassandraConnector extends Logging {
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */
   def apply(hosts: Set[InetAddress],
-            nativePort: Int = CassandraConnectorConf.DefaultNativePort,
-            rpcPort: Int = CassandraConnectorConf.DefaultRpcPort,
+            port: Int = CassandraConnectorConf.DefaultPort,
             authConf: AuthConf = NoAuthConf,
             localDC: Option[String] = None,
             keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
@@ -225,8 +198,7 @@ object CassandraConnector extends Logging {
 
     val config = CassandraConnectorConf(
       hosts = hosts,
-      nativePort = nativePort,
-      rpcPort = rpcPort,
+      port = port,
       authConf = authConf,
       localDC = localDC,
       keepAliveMillis = keepAliveMillis,

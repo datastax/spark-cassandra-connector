@@ -25,7 +25,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test1.test1 (a, b, c) VALUES (5, 1, 5)")
   }
 
-  val conn2 = CassandraConnector(Set(getHost(1)), getNativePort(1))
+  val conn2 = CassandraConnector(Set(getHost(1)), getPort(1))
   conn2.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test2 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
@@ -45,12 +45,10 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
     cc = new CassandraSQLContext(sc)
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
-      .set("spark.cassandra.connection.native.port", getNativePort(0).toString)
-      .set("spark.cassandra.connection.rpc.port", getRpcPort(0).toString)
+      .set("spark.cassandra.connection.port", getPort(0).toString)
     val conf2 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
-      .set("spark.cassandra.connection.native.port", getNativePort(1).toString)
-      .set("spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
+      .set("spark.cassandra.connection.port", getPort(1).toString)
     cc.addClusterLevelCassandraConnConf("cluster1", conf1)
       .addClusterLevelCassandraConnConf("cluster2", conf2)
       .addClusterLevelReadConf("cluster1", sc.getConf)

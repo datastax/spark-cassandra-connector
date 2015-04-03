@@ -75,8 +75,7 @@ object UserDefinedProperty {
 
   abstract sealed class NodeProperty(val propertyName: String) extends TypedProperty
   case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS") with InetAddressProperty
-  case object NativePortProperty extends NodeProperty("IT_TEST_CASSANDRA_NATIVE_PORTS") with IntProperty
-  case object RpcPortProperty extends NodeProperty("IT_TEST_CASSANDRA_RPC_PORTS") with IntProperty
+  case object PortProperty extends NodeProperty("IT_TEST_CASSANDRA_PORTS") with IntProperty
 
   private def getValueSeq(propertyName: String): Seq[String] = {
     sys.env.get(propertyName) match {
@@ -89,8 +88,7 @@ object UserDefinedProperty {
     getValueSeq(nodeProperty.propertyName).map(x => nodeProperty.convertValueFromString(x))
 
   val hosts = getValueSeq(HostProperty)
-  val nativePorts = getValueSeq(NativePortProperty)
-  val rpcPorts = getValueSeq(RpcPortProperty)
+  val ports = getValueSeq(PortProperty)
 
   def getProperty(nodeProperty: NodeProperty): Option[String] =
     sys.env.get(nodeProperty.propertyName)
@@ -112,15 +110,10 @@ object EmbeddedCassandra {
     case Some(hostsStr) =>
       val hostCount = countCommaSeparatedItemsIn(hostsStr)
 
-      val nativePortsStr = getPropertyOrThrowIfNotFound(NativePortProperty)
+      val nativePortsStr = getPropertyOrThrowIfNotFound(PortProperty)
       val nativePortCount = countCommaSeparatedItemsIn(nativePortsStr)
       require(hostCount == nativePortCount,
         "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_NATIVE_PORTS")
-
-      val rpcPortsStr = getPropertyOrThrowIfNotFound(RpcPortProperty)
-      val rpcPortCount = countCommaSeparatedItemsIn(rpcPortsStr)
-      require(hostCount == rpcPortCount,
-        "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_RPC_PORTS")
   }
 
   private[connector] var cassandraRunners: IndexedSeq[Option[CassandraRunner]] = IndexedSeq(None)
@@ -133,9 +126,8 @@ object EmbeddedCassandra {
     Map("seeds"               -> host,
       "storage_port"          -> getStoragePort(index).toString,
       "ssl_storage_port"      -> getSslStoragePort(index).toString,
-      "native_transport_port" -> getNativePort(index).toString,
+      "native_transport_port" -> getPort(index).toString,
       "rpc_address"           -> host,
-      "rpc_port"              -> getRpcPort(index).toString,
       "listen_address"        -> host,
       "cluster_name"          -> getClusterName(index))
   }
@@ -145,16 +137,13 @@ object EmbeddedCassandra {
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
   def getHost(index: Integer): InetAddress = getNodeProperty(index, HostProperty)
-  def getNativePort(index: Integer) = getNodeProperty(index, NativePortProperty)
-  def getRpcPort(index: Integer) = getNodeProperty(index, RpcPortProperty)
+  def getPort(index: Integer) = getNodeProperty(index, PortProperty)
 
   private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): nodeProperty.ValueType = {
     nodeProperty.checkValueType {
       nodeProperty match {
-        case NativePortProperty if nativePorts.isEmpty => 9042 + index
-        case NativePortProperty if index < hosts.size => nativePorts(index)
-        case RpcPortProperty if rpcPorts.isEmpty => 9160 + index
-        case RpcPortProperty if index < hosts.size => rpcPorts(index)
+        case PortProperty if ports.isEmpty => 9042 + index
+        case PortProperty if index < hosts.size => ports(index)
         case HostProperty if hosts.isEmpty => InetAddress.getByName("127.0.0.1")
         case HostProperty if index < hosts.size => hosts(index)
         case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
