@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
-import org.apache.cassandra.utils.ByteBufferUtil
+import com.datastax.spark.connector.util.ByteBufferUtil
 
 
 /** Estimates amount of memory required to serialize Java/Scala objects */
@@ -13,7 +13,7 @@ object ObjectSizeEstimator {
 
   private def makeSerializable(obj: Any): AnyRef = {
     obj match {
-      case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
+      case bb: ByteBuffer => ByteBufferUtil.toArray(bb)
       case list: java.util.List[_] => list.map(makeSerializable)
       case list: List[_] => list.map(makeSerializable)
       case set: java.util.Set[_] => set.map(makeSerializable)
