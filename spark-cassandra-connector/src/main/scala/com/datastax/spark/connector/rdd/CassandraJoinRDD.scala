@@ -18,9 +18,12 @@ import scala.reflect.ClassTag
  * This will perform individual selects to retrieve the rows from Cassandra and will take
  * advantage of RDDs that have been partitioned with the
  * [[com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner]]
+ *
+ * @tparam L item type on the left side of the join (any RDD)
+ * @tparam R item type on the right side of the join (fetched from Cassandra)
  */
-class CassandraJoinRDD[Left, Right] private[connector](
-    left: RDD[Left],
+class CassandraJoinRDD[L, R] private[connector](
+    left: RDD[L],
     val keyspaceName: String,
     val tableName: String,
     val connector: CassandraConnector,
@@ -31,14 +34,14 @@ class CassandraJoinRDD[Left, Right] private[connector](
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())(
   implicit
-    val leftClassTag: ClassTag[Left],
-    val rightClassTag: ClassTag[Right],
-    @transient val rowWriterFactory: RowWriterFactory[Left],
-    @transient val rowReaderFactory: RowReaderFactory[Right])
-  extends CassandraRDD[(Left, Right)](left.sparkContext, left.dependencies)
-  with CassandraTableRowReaderProvider[Right] {
+    val leftClassTag: ClassTag[L],
+    val rightClassTag: ClassTag[R],
+    @transient val rowWriterFactory: RowWriterFactory[L],
+    @transient val rowReaderFactory: RowReaderFactory[R])
+  extends CassandraRDD[(L, R)](left.sparkContext, left.dependencies)
+  with CassandraTableRowReaderProvider[R] {
 
-  override type Self = CassandraJoinRDD[Left, Right]
+  override type Self = CassandraJoinRDD[L, R]
 
   override protected val classTag = rightClassTag
 
@@ -50,7 +53,7 @@ class CassandraJoinRDD[Left, Right] private[connector](
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self = {
 
-    new CassandraJoinRDD[Left, Right](
+    new CassandraJoinRDD[L, R](
       left = left,
       keyspaceName = keyspaceName,
       tableName = tableName,
@@ -85,7 +88,7 @@ class CassandraJoinRDD[Left, Right] private[connector](
     }
 
     val counts =
-      new CassandraJoinRDD[Left, Long](
+      new CassandraJoinRDD[L, Long](
         left = left,
         connector = connector,
         keyspaceName = keyspaceName,
@@ -138,7 +141,7 @@ class CassandraJoinRDD[Left, Right] private[connector](
     joinColumnNames
   }
 
-  lazy val rowWriter = implicitly[RowWriterFactory[Left]].rowWriter(
+  lazy val rowWriter = implicitly[RowWriterFactory[L]].rowWriter(
     tableDef,
     joinColumnNames.map {
       _.columnName
@@ -146,8 +149,8 @@ class CassandraJoinRDD[Left, Right] private[connector](
     joinColumns.aliases
   )
 
-  def on(joinColumns: ColumnSelector): CassandraJoinRDD[Left, Right] = {
-    new CassandraJoinRDD[Left, Right](
+  def on(joinColumns: ColumnSelector): CassandraJoinRDD[L, R] = {
+    new CassandraJoinRDD[L, R](
       left = left,
       connector = connector,
       keyspaceName = keyspaceName,
@@ -198,11 +201,11 @@ class CassandraJoinRDD[Left, Right] private[connector](
    * from the specified C* Keyspace and Table. This will be preformed on whatever data is
    * available in the previous RDD in the chain.
    */
-  override def compute(split: Partition, context: TaskContext): Iterator[(Left, Right)] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[(L, R)] = {
     val session = connector.openSession()
     implicit val pv = protocolVersion(session)
     val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
-    val bsb = new BoundStatementBuilder[Left](rowWriter, stmt, pv)
+    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, pv)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, limit)
@@ -220,8 +223,8 @@ class CassandraJoinRDD[Left, Right] private[connector](
 
   private def fetchIterator(
     session: Session,
-    bsb: BoundStatementBuilder[Left],
-    lastIt: Iterator[Left]): Iterator[(Left, Right)] = {
+    bsb: BoundStatementBuilder[L],
+    lastIt: Iterator[L]): Iterator[(L, R)] = {
 
     val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
     implicit val pv = protocolVersion(session)
@@ -241,8 +244,8 @@ class CassandraJoinRDD[Left, Right] private[connector](
 
   override def getPreferredLocations(split: Partition): Seq[String] = left.preferredLocations(split)
 
-  override def toEmptyCassandraRDD: EmptyCassandraRDD[(Left, Right)] =
-    new EmptyCassandraRDD[(Left, Right)](
+  override def toEmptyCassandraRDD: EmptyCassandraRDD[(L, R)] =
+    new EmptyCassandraRDD[(L, R)](
       sc = left.sparkContext,
       keyspaceName = keyspaceName,
       tableName = tableName,
