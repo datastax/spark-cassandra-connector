@@ -6,17 +6,15 @@ import org.apache.spark.metrics.CassandraConnectorSource
 
 /** The base trait for metrics updaters implementations. The metrics updater is an object which provides
   * a unified way to update all the relevant metrics which are collected for the particular type of
-  * activity. The connector provides [[InputMetricsUpdater]] and [[OutputMetricsUpdater]] which are aimed
-  * to update all the read and write metrics respectively.
-  */
+  * activity. The connector provides InputMetricsUpdater and [[OutputMetricsUpdater]] which are aimed
+  * to update all the read and write metrics respectively. */
 trait MetricsUpdater {
   /** A method to be called when the task is finished. It stops the task timer and flushes data. */
   def finish(): Long
 }
 
 /** Timer mixin allows to measure the time of a task - or, in other words - the time from creating an
-  * instance to calling [[com.codahale.metrics.Timer.Context.stopTimer()]] method.
-  */
+  * instance to calling `com.codahale.metrics.Timer.Context.stop` method. */
 trait Timer {
   def stopTimer(): Long
 }

@@ -12,8 +12,7 @@ import org.apache.spark.sql.{Strategy, SQLContext, SchemaRDD}
 import collection.mutable
 
 /** Allows to execute SQL queries against Cassandra and access results as
-  * [[org.apache.spark.sql.SchemaRDD]] collections.
-  * Predicate pushdown to Cassandra is supported.
+  * `SchemaRDD` collections. Predicate pushdown to Cassandra is supported.
   *
   * Example:
   * {{{

@@ -23,7 +23,7 @@ import com.datastax.spark.connector.util.CountingIterator
   *
   * This class is the main entry point for analyzing data in Cassandra database with Spark.
   * Obtain objects of this class by calling
-  * [[com.datastax.spark.connector.SparkContextFunctions#cassandraTablecassandraTable]].
+  * [[com.datastax.spark.connector.SparkContextFunctions.cassandraTable]].
   *
   * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
   * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate

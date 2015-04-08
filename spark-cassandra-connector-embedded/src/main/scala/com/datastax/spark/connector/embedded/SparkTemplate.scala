@@ -4,13 +4,13 @@ import akka.actor.ActorSystem
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 
 trait SparkTemplate {
-  /** Obtains the active [[org.apache.spark.SparkContext]] object. */
+  /** Obtains the active `SparkContext` object. */
   def sc: SparkContext = SparkTemplate.sc
 
-  /** Obtains the [[akka.actor.ActorSystem]] associated with the active [[org.apache.spark.SparkEnv]]. */
+  /** Obtains the `ActorSystem` associated with the active `SparkEnv`. */
   def actorSystem: ActorSystem = SparkTemplate.actorSystem
 
-  /** Ensures that the currently running [[org.apache.spark.SparkContext]] uses the provided configuration.
+  /** Ensures that the currently running `SparkContext` uses the provided configuration.
     * If the configurations are different or force is `true` Spark context is stopped and started again
     * with the given configuration. */
   def useSparkConf(conf: SparkConf, force: Boolean = false): SparkContext =
@@ -21,7 +21,7 @@ trait SparkTemplate {
 
 object SparkTemplate {
 
-  /** Default configuration for [[org.apache.spark.SparkContext]]. */
+  /** Default configuration for `SparkContext`. */
   val defaultConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", EmbeddedCassandra.getHost(0).getHostAddress)
     .set("spark.cleaner.ttl", "3600")
@@ -30,7 +30,7 @@ object SparkTemplate {
 
   private var _sc: SparkContext = _
 
-  /** Ensures that the currently running [[org.apache.spark.SparkContext]] uses the provided configuration.
+  /** Ensures that the currently running `SparkContext` uses the provided configuration.
     * If the configurations are different or force is `true` Spark context is stopped and started again
     * with the given configuration. */
   def useSparkConf(conf: SparkConf = SparkTemplate.defaultConf, force: Boolean = false): SparkContext = {
@@ -49,10 +49,10 @@ object SparkTemplate {
     _sc
   }
 
-  /** Obtains the active [[org.apache.spark.SparkContext]] object. */
+  /** Obtains the active `SparkContext` object. */
   def sc: SparkContext = _sc
 
-  /** Obtains the [[akka.actor.ActorSystem]] associated with the active [[org.apache.spark.SparkEnv]]. */
+  /** Obtains the `ActorSystem` associated with the active `SparkEnv`. */
   def actorSystem: ActorSystem = SparkEnv.get.actorSystem
 
   resetSparkContext(defaultConf)

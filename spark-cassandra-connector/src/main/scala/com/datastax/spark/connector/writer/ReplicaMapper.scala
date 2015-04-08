@@ -12,14 +12,14 @@ import scala.collection.JavaConversions._
 import scala.collection._
 
 /**
- * A utility class for determining the Replica Set (Ip Addresses) of a particular Cassaandra Row. Used
- * by the [[com.datastax.spark.connector.RDDFunctions.keyByCassandraReplica()]] method. Uses the Java
+ * A utility class for determining the Replica Set (Ip Addresses) of a particular Cassandra Row. Used
+ * by the [[com.datastax.spark.connector.RDDFunctions.keyByCassandraReplica]] method. Uses the Java
  * Driver to obtain replica information.
  */
 class ReplicaMapper[T] private(
-                                connector: CassandraConnector,
-                                tableDef: TableDef,
-                                rowWriter: RowWriter[T]) extends Serializable with Logging {
+    connector: CassandraConnector,
+    tableDef: TableDef,
+    rowWriter: RowWriter[T]) extends Serializable with Logging {
 
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
@@ -81,9 +81,9 @@ class ReplicaMapper[T] private(
  */
 object ReplicaMapper {
   def apply[T: RowWriterFactory](
-                                  connector: CassandraConnector,
-                                  keyspaceName: String,
-                                  tableName: String): ReplicaMapper[T] = {
+      connector: CassandraConnector,
+      keyspaceName: String,
+      tableName: String): ReplicaMapper[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
