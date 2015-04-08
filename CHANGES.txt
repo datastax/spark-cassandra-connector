@@ -1,5 +1,6 @@
  * Removed conversion method rom WriteOption which accepted object of Duration type 
    from Spark Streaming (SPARKC-106)
+ * Fixed compilation warnings (SPARKC-76)
 
 1.2.0 RC 3
  * Select aliases are no longer ignored in CassandraRow objects (SPARKC-109)
