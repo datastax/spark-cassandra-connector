@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
-import org.apache.cassandra.utils.ByteBufferUtil
+import com.datastax.spark.connector.util.ByteBufferUtil
 
 
 /** Estimates amount of memory required to serialize Java/Scala objects */

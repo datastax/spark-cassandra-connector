@@ -4,9 +4,10 @@ import java.nio.ByteBuffer
 
 import com.datastax.driver.core.{ProtocolVersion, Row, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-import org.apache.cassandra.utils.ByteBufferUtil
 
 import scala.collection.JavaConversions._
+
+import com.datastax.spark.connector.util.ByteBufferUtil
 
 trait AbstractGettableData {
 

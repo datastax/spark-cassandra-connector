@@ -10,7 +10,8 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{catalyst, types}
 
 private[cassandra] case class CassandraRelation
-  (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)(@transient cc: CassandraSQLContext)
+    (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)
+    (@transient val cc: CassandraSQLContext)
   extends LeafNode {
 
   val keyspaceName          = tableDef.keyspaceName

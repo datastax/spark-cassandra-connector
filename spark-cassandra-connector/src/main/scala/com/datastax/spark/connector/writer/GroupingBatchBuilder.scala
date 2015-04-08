@@ -34,7 +34,7 @@ private[connector] class GroupingBatchBuilder[T](
     batchKeyGenerator: BoundStatement => Any,
     batchSize: BatchSize,
     maxBatches: Int,
-    data: Iterator[T]) extends AbstractIterator[RichStatement] with Iterator[RichStatement] {
+    data: Iterator[T]) extends Iterator[RichStatement] {
 
   require(maxBatches > 0, "The maximum number of batches must be greater than 0")
 
@@ -97,22 +97,24 @@ private[connector] class GroupingBatchBuilder[T](
     stmt
   }
 
+  final override def hasNext: Boolean =
+    data.hasNext || batchMap.nonEmpty
+
   @tailrec
-  final override def computeNext(): RichStatement = {
+  final override def next(): RichStatement = {
     if (data.hasNext) {
       val stmt = boundStatementBuilder.bind(data.next())
       val key = batchKeyGenerator(stmt)
 
       processStatement(key, stmt) match {
         case Some(batchStmt) => batchStmt
-        case _ => computeNext()
+        case _ => next()
       }
 
     } else if (batchMap.nonEmpty) {
       createStmtAndReleaseBatch(batchMap.dequeue())
-
     } else {
-      endOfData()
+      throw new NoSuchElementException("Called next() on empty iterator")
     }
   }
 
