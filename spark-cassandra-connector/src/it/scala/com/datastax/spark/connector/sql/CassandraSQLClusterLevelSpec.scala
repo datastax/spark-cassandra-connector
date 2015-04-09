@@ -9,6 +9,8 @@ import org.scalatest._
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
+  useSparkConf(defaultSparkConf)
+
   val conn = CassandraConnector(Set(getHost(0)))
 
   conn.withSessionDo { session =>
