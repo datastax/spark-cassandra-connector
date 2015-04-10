@@ -52,7 +52,8 @@ object AkkaStreamingDemo extends App {
     * Unfortunately Spark does not allow users to pass in existing ActorSystems. */
   val system = ActorSystem("AkkaStreamingDemo")
 
-  /** Creates the root supervisor of this simple Akka `ActorSystem` node that you might deploy across a cluster. */
+  /** Creates the root supervisor of this simple Akka [[akka.actor.ActorSystem$ ActorSystem]] node that
+    * you might deploy across a cluster. */
   val guardian = system.actorOf(Props(new NodeGuardian(ssc, settings, Data)), "node-guardian")
 
 }

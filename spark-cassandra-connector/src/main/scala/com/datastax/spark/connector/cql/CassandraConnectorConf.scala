@@ -25,10 +25,11 @@ case class CassandraConnectorConf(
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory
 )
 
-/** A factory for `CassandraConnectorConf` objects.
-  * Allows for manually setting connection properties or reading them from `SparkConf` object.
-  * By embedding connection information in `SparkConf`, `SparkContext` can offer Cassandra specific methods
-  * which require establishing connections to a Cassandra cluster.*/
+/** A factory for [[CassandraConnectorConf]] objects.
+  * Allows for manually setting connection properties or reading them from [[org.apache.spark.SparkConf SparkConf]]
+  * object. By embedding connection information in [[org.apache.spark.SparkConf SparkConf]],
+  * [[org.apache.spark.SparkContext SparkContext]] can offer Cassandra specific methods which require establishing
+  * connections to a Cassandra cluster.*/
 object CassandraConnectorConf extends Logging {
 
   val DefaultRpcPort = 9160
