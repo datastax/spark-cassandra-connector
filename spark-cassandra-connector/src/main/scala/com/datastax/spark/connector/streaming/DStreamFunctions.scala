@@ -51,7 +51,7 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
   }
 
   /**
-   * Transforms RDDs with [[com.datastax.spark.connector.RDDFunctions.joinWithCassandraTable()]]
+   * Transforms RDDs with [[com.datastax.spark.connector.RDDFunctions.joinWithCassandraTable]]
    * for each produced RDD
    */
   def joinWithCassandraTable[R](

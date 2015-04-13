@@ -11,7 +11,7 @@ abstract class WritableToCassandra[T] {
   private[connector] lazy val connector = CassandraConnector(sparkContext.getConf)
 
   /**
-   * Saves the data from `RDD` to a Cassandra table.
+   * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a Cassandra table.
    * By default, it saves all properties that have corresponding Cassandra columns.
    *
    * Example:

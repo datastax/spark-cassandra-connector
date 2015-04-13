@@ -23,12 +23,14 @@ import com.datastax.spark.connector.util.CountingIterator
   *
   * This class is the main entry point for analyzing data in Cassandra database with Spark.
   * Obtain objects of this class by calling
-  * [[com.datastax.spark.connector.SparkContextFunctions#cassandraTablecassandraTable]].
+  * [[com.datastax.spark.connector.SparkContextFunctions.cassandraTable]].
   *
-  * Configuration properties should be passed in the `SparkConf` configuration of `SparkContext`.
+  * Configuration properties should be passed in the [[org.apache.spark.SparkConf SparkConf]]
+  * configuration of [[org.apache.spark.SparkContext SparkContext]].
   * `CassandraRDD` needs to open connection to Cassandra, therefore it requires appropriate
-  * connection property values to be present in `SparkConf`. For the list of required and available
-  * properties, see [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
+  * connection property values to be present in [[org.apache.spark.SparkConf SparkConf]].
+  * For the list of required and available properties, see
+  * [[com.datastax.spark.connector.cql.CassandraConnector CassandraConnector]].
   *
   * `CassandraRDD` divides the data set into smaller partitions, processed locally on every
   * cluster node. A data partition consists of one or more contiguous token ranges.

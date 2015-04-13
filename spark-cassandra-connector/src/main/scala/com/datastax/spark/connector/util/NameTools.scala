@@ -10,7 +10,8 @@ object NameTools {
 
   val MinJWScore = 0.85
 
-  /** Example JaroWinklerScores
+  /* Example JaroWinklerScores
+  {{{
   val wordpairs = Seq(
   ("banana","bananastand"),
   ("apple","bananastand"),
@@ -21,14 +22,14 @@ object NameTools {
   ("test","testt"))
   wordpairs.foreach( p =>
     println(s"${p._1} ~ ${p._2} = ${StringUtils.getJaroWinklerDistance(p._1,p._2)}"))
-
+  }}}
   banana ~ bananastand = 0.91
   apple ~ bananastand = 0.43
   customer_id ~ customerid = 0.98
   custid ~ customerid = 0.4
   liberty ~ freedom = 0.36
   spark ~ spork = 0.89
-  test ~ testt = 0.96 **/
+  test ~ testt = 0.96 */
 
   sealed trait Suggestions
 

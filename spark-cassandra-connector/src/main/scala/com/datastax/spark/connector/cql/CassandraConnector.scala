@@ -27,7 +27,7 @@ import org.apache.spark.Logging
   * than `spark.cassandra.connection.keep_alive_ms` property value.
   *
   * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
-  * can be either given explicitly or automatically configured from `SparkConf`.
+  * can be either given explicitly or automatically configured from [[org.apache.spark.SparkConf SparkConf]].
   * The connection options are:
   *   - `spark.cassandra.connection.host`:               contact point to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.rpc.port`:           Cassandra thrift port, defaults to 9160
@@ -199,7 +199,7 @@ object CassandraConnector extends Logging {
     }
   }))
 
-  /** Returns a CassandraConnector created from properties found in the `SparkConf` object */
+  /** Returns a CassandraConnector created from properties found in the [[org.apache.spark.SparkConf SparkConf]] object */
   def apply(conf: SparkConf): CassandraConnector = {
     new CassandraConnector(CassandraConnectorConf(conf))
   }

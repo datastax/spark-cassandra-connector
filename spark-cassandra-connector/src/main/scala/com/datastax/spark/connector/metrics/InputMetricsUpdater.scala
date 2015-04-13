@@ -13,7 +13,7 @@ import org.apache.spark.metrics.CassandraConnectorSource
   * created for each Cassandra read task. This remains valid as long as Cassandra read tasks are
   * single-threaded.
   */
-private[connector] trait InputMetricsUpdater extends MetricsUpdater {
+trait InputMetricsUpdater extends MetricsUpdater {
   /** Updates the metrics being collected for the connector after reading each single row. This method
     * is not thread-safe.
     *
@@ -31,13 +31,15 @@ private[connector] trait InputMetricsUpdater extends MetricsUpdater {
 object InputMetricsUpdater {
   val DefaultGroupSize = 100
 
-  /** Creates the appropriate instance of [[InputMetricsUpdater]].
+  /** Creates the appropriate instance of `InputMetricsUpdater`.
     *
-    * If [[ReadConf.taskMetricsEnabled]] is `true`, the created instance will be updating task metrics so
+    * If [[com.datastax.spark.connector.rdd.ReadConf.taskMetricsEnabled ReadConf.taskMetricsEnabled]]
+    * is `true`, the created instance will be updating task metrics so
     * that Spark will report them in the UI. Remember that this is supported for Spark 1.2+.
     *
-    * If [[CassandraConnectorSource]] is registered in Spark metrics system, the created instance will be
-    * updating the included Codahale metrics. In order to register [[CassandraConnectorSource]] you need
+    * If [[org.apache.spark.metrics.CassandraConnectorSource CassandraConnectorSource]]
+    * is registered in Spark metrics system, the created instance will be
+    * updating the included Codahale metrics. In order to register `CassandraConnectorSource` you need
     * to add it to the metrics configuration file.
     *
     * @param taskContext task context of a task for which this metrics updater is created

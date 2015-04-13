@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.util
 
+import scala.language.implicitConversions
+
 object MagicalTypeTricks {
 
   trait DoesntHaveImplicit[A, B]
@@ -23,22 +25,16 @@ object MagicalTypeTricks {
   /**
    * Example of how disjunction can be used:
    * {{{
-   * scala> import com.datastax.spark.connector.util.MagicalTypeTricks._
    * import com.datastax.spark.connector.util.MagicalTypeTricks._
    *
-   * scala> def function[T](t: T)(implicit ev: (λ[T] <:< (Int ∪ String))) = { println(s"t = $t") }
-   * function: [T](t: T)(implicit ev: <:<[(T => Nothing) => Nothing,Int => Nothing with String => Nothing => Nothing])Unit
+   * def function[T](t: T)(implicit ev: (λ[T] <:< (Int ∪ String))) = {
+   *   println("t = " + t)
+   * }
    *
-   * scala> function(5)
-   * t = 5
-   *
-   * scala> function("five")
-   * t = five
-   *
-   * scala> function(5d)
-   * <console>:13: error: Cannot prove that (Double => Nothing) => Nothing <:< Int => Nothing with String => Nothing => Nothing.
-   * function(5d)
-   * ^
+   * function(5)      // t = 5
+   * function("five") // t = five
+   * function(5d)     // error: Cannot prove that
+   *                  // (Double => Nothing) => Nothing <:< Int => Nothing with String => Nothing => Nothing.
    * }}}
    *
    * Based on [[http://www.chuusai.com/2011/06/09/scala-union-types-curry-howard/ this article]].

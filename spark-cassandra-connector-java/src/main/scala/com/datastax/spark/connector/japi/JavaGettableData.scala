@@ -74,7 +74,8 @@ trait JavaGettableData extends AbstractGettableData {
     * Recommended to use with `bigint` and `counter` CQL types
     * It can also read other column types as `int`, `varint`, `timestamp` and `string`.
     * The string must represent a valid integer number.
-    * The number must be within 64-bit integer range or [[com.datastax.spark.connector.types.TypeConversionException]]
+    * The number must be within 64-bit integer range or
+    * `com.datastax.spark.connector.types.TypeConversionException`
     * will be thrown. When used with timestamps, returns a number of milliseconds since epoch.*/
   def getLong(index: Int) = _get[JLong](index)
   def getLong(name: String) = _get[JLong](name)

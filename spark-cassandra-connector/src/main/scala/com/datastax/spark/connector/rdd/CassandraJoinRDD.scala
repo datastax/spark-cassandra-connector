@@ -14,8 +14,8 @@ import org.apache.spark.{Partition, TaskContext}
 import scala.reflect.ClassTag
 
 /**
- * An `RDD` that will do a selecting join between `left` RDD and the specified Cassandra Table
- * This will perform individual selects to retrieve the rows from Cassandra and will take
+ * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
+ * Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
  * advantage of RDDs that have been partitioned with the
  * [[com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner]]
  */
