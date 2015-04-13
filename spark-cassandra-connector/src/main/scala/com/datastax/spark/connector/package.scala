@@ -7,12 +7,15 @@ import scala.language.implicitConversions
 
 /**
  * The root package of Cassandra connector for Apache Spark.
- * Offers handy implicit conversions that add Cassandra-specific methods to `SparkContext` and `RDD`.
+ * Offers handy implicit conversions that add Cassandra-specific methods to
+ * [[org.apache.spark.SparkContext SparkContext]] and [[org.apache.spark.rdd.RDD RDD]].
  *
- * Call [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]] method on the `SparkContext` object
- * to create a [[com.datastax.spark.connector.rdd.CassandraTableScanRDD CassandraRDD]] exposing Cassandra tables as Spark RDDs.
+ * Call [[com.datastax.spark.connector.SparkContextFunctions#cassandraTable cassandraTable]] method on
+ * the [[org.apache.spark.SparkContext SparkContext]] object
+ * to create a [[com.datastax.spark.connector.rdd.CassandraTableScanRDD CassandraRDD]] exposing
+ * Cassandra tables as Spark RDDs.
  *
- * Call [[com.datastax.spark.connector.RDDFunctions]] `saveToCassandra`
+ * Call [[com.datastax.spark.connector.RDDFunctions RDDFunctions]] `saveToCassandra`
  * function on any `RDD` to save distributed collection to a Cassandra table.
  *
  * Example:

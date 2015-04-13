@@ -79,7 +79,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
 }
 
-/** Entry point for obtaining `CassandraConnectionFactory` object from `SparkConf`,
+/** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
   val ConnectionFactoryProperty = "spark.cassandra.connection.factory"
