@@ -1,6 +1,7 @@
 (1.1.x unreleased)
  * Synchronized ReflectionUtil findScalaObject and findSingletonClassInstance methods
    to avoid problems with Scala 2.10 lack thread safety in the reflection subsystem (SPARKC-107)
+ * Fixed populating ReadConf with properties from SparkConf (SPARKC-121)
 
 1.1.1
  * Fixed NoSuchElementException in SparkSQL predicate pushdown code (SPARKC-7, #454)
