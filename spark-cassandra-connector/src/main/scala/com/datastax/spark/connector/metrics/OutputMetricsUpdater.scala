@@ -16,7 +16,7 @@ import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
   * Instances of `OutputMetricsUpdater` are thread-safe, because the Cassandra write task implementation
   * is multi-threaded.
   */
-trait OutputMetricsUpdater extends MetricsUpdater {
+private[connector] trait OutputMetricsUpdater extends MetricsUpdater {
   /** Updates the metrics being collected for the connector after writing each single statement.
     * This method is thread-safe.
     *
