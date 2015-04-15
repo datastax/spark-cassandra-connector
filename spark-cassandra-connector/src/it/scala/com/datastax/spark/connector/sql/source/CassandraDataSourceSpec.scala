@@ -1,19 +1,17 @@
-package com.datastax.spark.connector.sql
+package com.datastax.spark.connector.sql.source
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{ConfigMap, FlatSpec, Matchers}
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.cassandra.DefaultSource._
 
-class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
+class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
-  var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -72,10 +70,22 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
+  var sqlContext: SQLContext = null
+  var scanType: String = null
+
+  def setScanType() = {
+    scanType = CassandraDataSourcePrunedFilteredScanTypeName
+  }
+
   override def beforeAll() {
-    super.beforeAll()
-    cc = new CassandraSQLContext(sc)
-    cc.setKeyspace("sql_test")
+    sqlContext = new SQLContext(sc)
+    setScanType()
+    createTempTable("sql_test", "test1", "ddlTable")
+    createTempTable("sql_test", "test2", "ddlTable2")
+    createTempTable("sql_test2", "test3", "ddlTable3")
+    createTempTable("sql_test", "test_collection", "test_collection")
+    createTempTable("sql_test", "test_data_type", "test_data_type")
+    createTempTable("sql_test", "test_data_type1", "test_data_type1")
   }
 
   override def afterAll() {
@@ -84,223 +94,224 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("DROP KEYSPACE sql_test")
       session.execute("DROP KEYSPACE sql_test2")
     }
+    sqlContext.dropTempTable("ddlTable")
+    sqlContext.dropTempTable("ddlTable2")
+    sqlContext.dropTempTable("ddlTable3")
+    sqlContext.dropTempTable("test_collection")
+    sqlContext.dropTempTable("test_data_type")
+    sqlContext.dropTempTable("test_data_type1")
+  }
+
+  def createTempTable(keyspace: String, table: String, tmpTable: String) = {
+    sqlContext.sql(
+      s"""
+        |CREATE TEMPORARY TABLE $tmpTable
+        |USING org.apache.spark.sql.cassandra
+        |OPTIONS (
+        | c_table "$table",
+        | keyspace "$keyspace",
+        | scan_type "$scanType"
+        | )
+      """.stripMargin.replaceAll("\n", " "))
   }
 
   it should "allow to select all rows" in {
-    val result = cc.sql("SELECT * FROM test1").collect()
+    val result = sqlContext.cassandraTable("test1", "sql_test").select("a").collect()
     result should have length 8
+    result.head should have length 1
+  }
+
+  it should "allow to register as a temp table" in {
+    val result = sqlContext.cassandraTable("test1", "sql_test")
+    result.registerTempTable("test1")
+    val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
+    temp should have length 8
+    temp.head should have length 1
+    sqlContext.dropTempTable("test1")
+  }
+
+  it should "allow to create a temp table" in {
+    sqlContext.sql("SELECT * FROM ddlTable").collect() should have length 8
+  }
+
+  it should "allow to insert data into a cassandra table" in {
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert (a INT PRIMARY KEY, b INT)")
+    }
+    createTempTable("sql_test", "test_insert", "insertTable")
+    sqlContext.sql("SELECT * FROM insertTable").collect() should have length 0
+
+    sqlContext.sql(
+      s"""
+        |INSERT OVERWRITE TABLE insertTable SELECT a, b FROM ddlTable
+      """.stripMargin)
+    sqlContext.sql("SELECT * FROM insertTable").collect() should have length 1
+    sqlContext.dropTempTable("insertTable")
+  }
+
+  it should "allow to filter a table" in {
+    sqlContext.sql("SELECT a, b FROM ddlTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
+  }
+
+  it should "allow to filter a table with a function for a column alias" in {
+    sqlContext.sql("SELECT * FROM (SELECT (a + b + c) AS x, d FROM ddlTable) " +
+      "AS ddlTable41 WHERE x= 3").collect() should have length 4
+  }
+
+  it should "allow to filter a table with alias" in {
+    sqlContext.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
+      " FROM ddlTable) AS ddlTable51 WHERE  a1=1 and b1=2 and c1=1 and e1=1 ").collect() should have length 2
+  }
+
+  it should "allow to filter a table with alias2" in {
+    sqlContext.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
+      " FROM ddlTable) AS ddlTable51 WHERE  a1=1 and b1=2 and c1=1 and e1 in (1,2) ").collect() should have length 4
   }
 
   it should "allow to select rows with index columns" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE g = 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE g = 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with >= clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b >= 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b >= 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with > clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b > 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b > 2").collect()
     result should have length 0
   }
 
   it should "allow to select rows with < clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b < 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b < 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with <= clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b <= 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b <= 2").collect()
     result should have length 8
   }
 
   it should "allow to select rows with in clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b in (1,2)").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b in (1,2)").collect()
     result should have length 8
   }
 
   it should "allow to select rows with in clause pushed down" in {
-    val query = cc.sql("SELECT * FROM test2 WHERE a in (1,2)")
-    query.queryExecution.sparkPlan.nodeName should be ("CassandraTableScan")
+    val query = sqlContext.sql("SELECT * FROM ddlTable2 WHERE a in (1,2)")
     val result = query.collect()
     result should have length 6
   }
 
   it should "allow to select rows with or clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b = 2 or b = 1").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b = 2 or b = 1").collect()
     result should have length 8
   }
 
   it should "allow to select rows with != clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b != 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b != 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with <> clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b <> 2").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b <> 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with not in clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b not in (1,2)").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b not in (1,2)").collect()
     result should have length 0
   }
 
   it should "allow to select rows with is not null clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE b is not null").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable WHERE b is not null").collect()
     result should have length 8
   }
 
   it should "allow to select rows with like clause" in {
-    val result = cc.sql("SELECT * FROM test2 WHERE name LIKE '%om' ").collect()
+    val result = sqlContext.sql("SELECT * FROM ddlTable2 WHERE name LIKE '%om' ").collect()
     result should have length 1
-  }
-
-  //BETWEEN is not supported yet in Spark SQL
-  ignore should "allow to select rows with between clause" in {
-    val result = cc.sql("SELECT * FROM test2 WHERE a BETWEEN 1 AND 3 ").collect()
-    result should have length 6
-  }
-
-  it should "allow to select rows with alias" in {
-    val result = cc.sql("SELECT a AS a_column, b AS b_column FROM test2").collect()
-    result should have length 9
-  }
-
-  it should "allow to select rows with distinct column" in {
-    val result = cc.sql("SELECT DISTINCT a FROM test2").collect()
-    result should have length 3
-  }
-
-  it should "allow to select rows with limit clause" in {
-    val result = cc.sql("SELECT * FROM test1 limit 2").collect()
-    result should have length 2
-  }
-
-  it should "allow to select rows with order by clause" in {
-    val result = cc.sql("SELECT * FROM test1 order by d").collect()
-    result should have length 8
-  }
-
-  it should "allow to select rows with group by clause" in {
-    val result = cc.sql("SELECT count(*) FROM test1 GROUP BY b").collect()
-    result should have length 2
-  }
-
-  it should "allow to select rows with union clause" in {
-    val result = cc.sql("SELECT test1.a FROM sql_test.test1 AS test1 UNION DISTINCT SELECT test2.a FROM sql_test.test2 AS test2").collect()
-    result should have length 3
-  }
-
-  it should "allow to select rows with union distinct clause" in {
-    val result = cc.sql("SELECT test1.a FROM sql_test.test1 AS test1 UNION DISTINCT SELECT test2.a FROM sql_test.test2 AS test2").collect()
-    result should have length 3
-  }
-
-  it should "allow to select rows with union all clause" in {
-    val result = cc.sql("SELECT test1.a FROM sql_test.test1 AS test1 UNION ALL SELECT test2.a FROM sql_test.test2 AS test2").collect()
-    result should have length 17
-  }
-
-  it should "allow to select rows with having clause" in {
-    val result = cc.sql("SELECT count(*) FROM test1 GROUP BY b HAVING count(b) > 4").collect()
-    result should have length 0
-  }
-
-  it should "allow to select rows with partition column clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE a = 1 and b = 1 and c = 1").collect()
-    result should have length 4
-  }
-
-  it should "allow to select rows with partition column and cluster column clause" in {
-    val result = cc.sql("SELECT * FROM test1 WHERE a = 1 and b = 1 and c = 1 and d = 1 and e = 1").collect()
-    result should have length 1
-  }
-
-  it should "allow to insert into another table" in {
-    val result = cc.sql("INSERT INTO TABLE test3 SELECT a, b, c FROM test2").collect()
-    val result2 = cc.sql("SELECT a, b, c FROM test3").collect()
-    result2 should have length 9
   }
 
   it should "allow to insert into another table in different keyspace" in {
-    val result = cc.sql("INSERT INTO TABLE sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
-    val result2 = cc.sql("SELECT test3.a, test3.b, test3.c FROM sql_test2.test3 as test3").collect()
+    val result = sqlContext.sql("INSERT INTO TABLE ddlTable3 SELECT test2.a, test2.b, test2.c FROM ddlTable2 as test2").collect()
+    val result2 = sqlContext.sql("SELECT test3.a, test3.b, test3.c FROM ddlTable3 as test3").collect()
     result2 should have length 9
   }
 
   it should "allow to join two tables" in {
-    val result = cc.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM sql_test.test1 AS test1 " +
-      "JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM ddlTable AS test1 " +
+      "JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to join two tables from different keyspaces" in {
-    val result = cc.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM sql_test.test1 AS test1 " +
-      "JOIN sql_test2.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM ddlTable AS test1 " +
+      "JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to inner join two tables" in {
-    val result = cc.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM sql_test.test1 AS test1 " +
-      "INNER JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test1.a, test1.b, test1.c, test2.a FROM ddlTable AS test1 " +
+      "INNER JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to left join two tables" in {
-    val result = cc.sql("SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM sql_test.test1 AS test1 " +
-      "LEFT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ddlTable AS test1 " +
+      "LEFT JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 8
   }
 
   it should "allow to left outer join two tables" in {
-    val result = cc.sql("SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM sql_test.test1 AS test1 " +
-      "LEFT OUTER JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ddlTable AS test1 " +
+      "LEFT OUTER JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 8
   }
 
   it should "allow to right join two tables" in {
-    val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.test1 AS test1 " +
-      "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test2.a, test2.b, test2.c FROM ddlTable AS test1 " +
+      "RIGHT JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
   }
 
   it should "allow to right outer join two tables" in {
-    val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.test1 AS test1 " +
-      "RIGHT OUTER JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test2.a, test2.b, test2.c FROM ddlTable AS test1 " +
+      "RIGHT OUTER JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
   }
 
   it should "allow to full join two tables" in {
-    val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.test1 AS test1 " +
-      "FULL JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    val result = sqlContext.sql("SELECT test2.a, test2.b, test2.c FROM ddlTable AS test1 " +
+      "FULL JOIN ddlTable2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 16
   }
 
   it should "allow to select rows for collection columns" in {
-    val result = cc.sql("SELECT * FROM test_collection").collect()
+    val result = sqlContext.sql("SELECT * FROM test_collection").collect()
     result should have length 1
   }
 
   it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
-    val result = cc.sql("SELECT * FROM test_data_type").collect()
+    val result = sqlContext.sql("SELECT * FROM test_data_type").collect()
     result should have length 1
   }
 
   it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
-    val result = cc.sql("INSERT INTO TABLE test_data_type1 SELECT * FROM test_data_type").collect()
-    val result1 = cc.sql("SELECT * FROM test_data_type1").collect()
+    val result = sqlContext.sql("INSERT INTO TABLE test_data_type1 SELECT * FROM test_data_type").collect()
+    val result1 = sqlContext.sql("SELECT * FROM test_data_type1").collect()
     result1 should have length 1
   }
 
   it should "allow to select specified non-UDT columns from a table containing some UDT columns" in {
-    val result = cc.sql("SELECT key, name FROM udts").collect()
+    createTempTable("sql_test", "udts", "udts")
+    val result = sqlContext.sql("SELECT key, name FROM udts").collect()
     result should have length 1
     val row = result.head
     row.getInt(0) should be(1)
     row.getString(1) should be ("name")
+    sqlContext.dropTempTable("udts")
   }
 
   // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
@@ -309,9 +320,9 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("create table sql_test.export_table(objectid int, utcstamp timestamp, service_location_id int, " +
         "service_location_name text, meterid int, primary key(meterid, utcstamp))")
     }
-    val cc = new CassandraSQLContext(sc)
-    cc.setKeyspace("sql_test")
-    cc.cassandraSql("select objectid, meterid, utcstamp  from export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
+    createTempTable("sql_test", "export_table", "export_table")
+    sqlContext.sql("select objectid, meterid, utcstamp  from export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
+    sqlContext.dropTempTable("export_table")
   }
 
   it should "allow to min/max timestamp column" in {
@@ -322,8 +333,10 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 3, '2015-01-03 17:13')")
       session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 4, '2015-01-03 18:13')")
     }
-    val cc = new CassandraSQLContext(sc)
-    cc.setKeyspace("sql_test")
-    cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+
+    createTempTable("sql_test", "timestamp_conversion_bug", "timestamp_conversion_bug")
+    sqlContext.sql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+    sqlContext.dropTempTable("timestamp_conversion_bug")
   }
+
 }

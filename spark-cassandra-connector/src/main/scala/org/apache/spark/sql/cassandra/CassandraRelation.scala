@@ -42,7 +42,7 @@ private[cassandra] case class CassandraRelation
 
 object ColumnDataType {
 
-  private val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
+  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
     connector.types.TextType       -> types.StringType,
     connector.types.AsciiType      -> types.StringType,
     connector.types.VarCharType    -> types.StringType,

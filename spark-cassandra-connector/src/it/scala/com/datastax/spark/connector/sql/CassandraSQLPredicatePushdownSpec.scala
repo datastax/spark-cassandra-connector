@@ -18,6 +18,13 @@ class CassandraSQLPredicatePushdownSpec extends SparkCassandraITFlatSpecBase {
     cc.setKeyspace("sql_test")
   }
 
+  override def afterAll() {
+    super.afterAll()
+    conn.withSessionDo { session =>
+      session.execute("DROP KEYSPACE sql_test")
+    }
+  }
+
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 

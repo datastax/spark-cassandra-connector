@@ -1,10 +1,13 @@
 package com.datastax.spark.connector
 
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, EmptyCassandraRDD, ReadConf, ValidRDDType}
+import com.datastax.spark.connector.writer.WriteConf
+import org.apache.commons.lang.StringUtils
 import org.apache.spark.SparkContext
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Provides Cassandra-specific methods on `SparkContext` */
