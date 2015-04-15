@@ -8,9 +8,9 @@ import org.apache.spark.metrics.source.Source
   * automatically instantiated and registered by Spark metrics system if this source is specified in
   * metrics configuration file.
   *
-  * Spark instantiates this class when [[org.apache.spark.SparkEnv SparkEnv]] is started. There can be
-  * only a single instance of [[org.apache.spark.SparkEnv SparkEnv]] so there can be at most a single
-  * active instance of [[CassandraConnectorSource]]. The active instance is assigned to
+  * Spark instantiates this class when `SparkEnv` is started. There can be
+  * only a single instance of `SparkEnv` so there can be at most a single
+  * active instance of `CassandraConnectorSource`. The active instance is assigned to
   * `CassandraConnectorSource._instance` so that it can be retrieved from anywhere by
   * [[CassandraConnectorSource.instance]] method. We need this because we have to access the meters from
   * the task execution.
@@ -39,9 +39,8 @@ class CassandraConnectorSource extends Source {
 object CassandraConnectorSource {
   private var _state: (Option[CassandraConnectorSource], Option[SparkEnv]) = (None, None)
 
-  /** Returns an active instance of [[CassandraConnectorSource]] if it has been associated with the
-    * current [[org.apache.spark.SparkEnv SparkEnv]] and the current [[org.apache.spark.SparkEnv SparkEnv]]
-    * is running.
+  /** Returns an active instance of `CassandraConnectorSource` if it has been associated with the
+    * current `SparkEnv` and the current `SparkEnv` is running.
     */
   def instance = {
     val curEnv = Option(SparkEnv.get)
@@ -55,7 +54,7 @@ object CassandraConnectorSource {
       None
   }
 
-  /** This method sets the given instance of [[CassandraConnectorSource]] as the current active instance.
+  /** This method sets the given instance of `CassandraConnectorSource` as the current active instance.
     * It is allowed to call this method only once for the same `SparkEnv` instance which is currently
     * up and running or this is the executor environment.
     */

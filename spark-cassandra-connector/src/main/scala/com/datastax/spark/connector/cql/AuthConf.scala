@@ -33,7 +33,7 @@ case class PasswordAuthConf(user: String, password: String) extends AuthConf {
   override def thriftCredentials: Map[String, String] = Map("username" -> user, "password" -> password)
 }
 
-/** Obtains authentication configuration by reading  `SparkConf` object. */
+/** Obtains authentication configuration by reading  [[org.apache.spark.SparkConf SparkConf]] object. */
 trait AuthConfFactory {
 
   def authConf(conf: SparkConf): AuthConf
@@ -56,7 +56,7 @@ object AuthConfFactory {
 
 /** Default `AuthConfFactory` that supports no authentication or password authentication.
   * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
-  * options are present in `SparkConf`.*/
+  * options are present in [[org.apache.spark.SparkConf SparkConf]].*/
 object DefaultAuthConfFactory extends AuthConfFactory {
 
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
@@ -79,7 +79,7 @@ object DefaultAuthConfFactory extends AuthConfFactory {
   }
 }
 
-/** Entry point for obtaining `AuthConf` object from `SparkConf`, used when establishing connections to Cassandra.
+/** Entry point for obtaining `AuthConf` object from [[org.apache.spark.SparkConf SparkConf]], used when establishing connections to Cassandra.
   * The actual `AuthConf` creation is delegated to the [[AuthConfFactory]] pointed by `spark.cassandra.auth.conf.factory` property. */
 object AuthConf {
 

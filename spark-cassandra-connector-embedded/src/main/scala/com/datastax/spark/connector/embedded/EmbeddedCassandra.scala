@@ -2,6 +2,8 @@ package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
 
+import org.apache.commons.configuration.ConfigurationException
+
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -9,15 +11,15 @@ import java.net.InetAddress
   * because they will "steal" the server.*/
 trait EmbeddedCassandra {
 
-
   /** Implementation hook. */
   def clearCache(): Unit
 
-  /** Switches the Cassandra server to use the new configuration if the requested configuration is different
-    * than the currently used configuration. When the configuration is switched, all the state (including data) of
-    * the previously running cassandra cluster is lost.
+  /** Switches the Cassandra server to use the new configuration if the requested configuration
+    * is different than the currently used configuration. When the configuration is switched, all
+    * the state (including data) of the previously running cassandra cluster is lost.
     * @param configTemplates name of the cassandra.yaml template resources
-    * @param forceReload if set to true, the server will be reloaded fresh even if the configuration didn't change */
+    * @param forceReload if set to true, the server will be reloaded fresh
+    *   even if the configuration didn't change */
   def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
     import EmbeddedCassandra._
     import UserDefinedProperty._
@@ -33,8 +35,9 @@ trait EmbeddedCassandra {
           "Configuration template can't be null or empty")
 
         if (templatePairs(i)._2 != templatePairs(i)._1 || forceReload) {
-          cassandraRunners.lift(i).map(_.map(_.destroy()))
-          cassandraRunners = cassandraRunners.patch(i, Seq(Some(new CassandraRunner(configTemplates(i), getProps(i)))), 1)
+          cassandraRunners.lift(i).flatten.foreach(_.destroy())
+          cassandraRunners = cassandraRunners.patch(i,
+            Seq(Some(new CassandraRunner(configTemplates(i), getProps(i)))), 1)
           currentConfigTemplates = currentConfigTemplates.patch(i, Seq(configTemplates(i)), 1)
         }
       }
@@ -43,60 +46,81 @@ trait EmbeddedCassandra {
 }
 
 object UserDefinedProperty {
-  abstract class NodeProperty(val propertyName: String)
-  type PropertyType = NodeProperty {val propertyName: String}
-  case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS")
-  case object NativePortProperty extends NodeProperty("IT_TEST_CASSANDRA_NATIVE_PORTS")
-  case object RpcPortProperty extends NodeProperty("IT_TEST_CASSANDRA_RPC_PORTS")
 
-  val hosts = getNodePropertySeq(HostProperty).asInstanceOf[IndexedSeq[InetAddress]]
-  val nativePorts = getNodePropertySeq(NativePortProperty).asInstanceOf[IndexedSeq[Int]]
-  val rpcPorts = getNodePropertySeq(RpcPortProperty).asInstanceOf[IndexedSeq[Int]]
-
-  private def getNodePropertySeq(nodeProperty: NodeProperty): IndexedSeq[Any] = {
-    nodeProperty match {
-      case NativePortProperty => getValueSeq(NativePortProperty.propertyName).map(e => e.toInt)
-      case RpcPortProperty => getValueSeq(RpcPortProperty.propertyName).map(e => e.toInt)
-      case HostProperty => getValueSeq(HostProperty.propertyName).map(e => InetAddress.getByName(e))
-      case _ => throw new RuntimeException("Wrong node input property")
-    }
+  trait TypedProperty {
+    type ValueType
+    def convertValueFromString(str: String): ValueType
+    def checkValueType(obj: Any): ValueType
   }
 
-  private def getValueSeq(propertyName: String) = {
+  trait IntProperty extends TypedProperty {
+    type ValueType = Int
+    def convertValueFromString(str: String) = str.toInt
+    def checkValueType(obj: Any) =
+      obj match {
+        case x: Int => x
+        case _ => throw new ClassCastException (s"Expected Int but found ${obj.getClass.getName}")
+      }
+  }
+
+  trait InetAddressProperty extends TypedProperty {
+    type ValueType = InetAddress
+    def convertValueFromString(str: String) = InetAddress.getByName(str)
+    def checkValueType(obj: Any) =
+      obj match {
+        case x: InetAddress => x
+        case _ => throw new ClassCastException (s"Expected InetAddress but found ${obj.getClass.getName}")
+      }
+  }
+
+  abstract sealed class NodeProperty(val propertyName: String) extends TypedProperty
+  case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS") with InetAddressProperty
+  case object NativePortProperty extends NodeProperty("IT_TEST_CASSANDRA_NATIVE_PORTS") with IntProperty
+  case object RpcPortProperty extends NodeProperty("IT_TEST_CASSANDRA_RPC_PORTS") with IntProperty
+
+  private def getValueSeq(propertyName: String): Seq[String] = {
     sys.env.get(propertyName) match {
       case Some(p) => p.split(",").map(e => e.trim).toIndexedSeq
       case None => IndexedSeq()
     }
   }
 
-  def getProperty(nodeProperty: NodeProperty) = {
-    nodeProperty match {
-      case p: PropertyType => sys.env.get(p.propertyName)
-      case _ => throw new RuntimeException("Wrong node input property")
-    }
-  }
+  private def getValueSeq(nodeProperty: NodeProperty): Seq[nodeProperty.ValueType] =
+    getValueSeq(nodeProperty.propertyName).map(x => nodeProperty.convertValueFromString(x))
+
+  val hosts = getValueSeq(HostProperty)
+  val nativePorts = getValueSeq(NativePortProperty)
+  val rpcPorts = getValueSeq(RpcPortProperty)
+
+  def getProperty(nodeProperty: NodeProperty): Option[String] =
+    sys.env.get(nodeProperty.propertyName)
+  
+  def getPropertyOrThrowIfNotFound(nodeProperty: NodeProperty): String =
+    getProperty(nodeProperty).getOrElse(
+      throw new ConfigurationException(s"Missing ${nodeProperty.propertyName} in system environment"))
 }
 
 object EmbeddedCassandra {
 
   import UserDefinedProperty._
-
+  
+  private def countCommaSeparatedItemsIn(s: String): Int = 
+    s.count(_ == ',')
+  
   getProperty(HostProperty) match {
-    case Some(h) =>
-      val hostSize = h.split(",").size
-      getProperty(NativePortProperty) match {
-        case Some(np) =>
-          val nativePortSize = np.split(",").size
-          require(hostSize == nativePortSize, "IT_TEST_CASSANDRA_HOSTS must have same size as IT_TEST_CASSANDRA_NATIVE_PORTS")
-          getProperty(RpcPortProperty) match {
-            case Some(rp) =>
-              val rpcPortSize = rp.split(",").size
-              require(hostSize == rpcPortSize, "IT_TEST_CASSANDRA_HOSTS must have same size as IT_TEST_CASSANDRA_RPC_PORTS")
-            case None => throw new RuntimeException("Missing IT_TEST_CASSANDRA_RPC_PORTS settings in system environment")
-          }
-        case None => throw new RuntimeException("Missing IT_TEST_CASSANDRA_NATIVE_PORTS settings in system environment")
-      }
     case None =>
+    case Some(hostsStr) =>
+      val hostCount = countCommaSeparatedItemsIn(hostsStr)
+
+      val nativePortsStr = getPropertyOrThrowIfNotFound(NativePortProperty)
+      val nativePortCount = countCommaSeparatedItemsIn(nativePortsStr)
+      require(hostCount == nativePortCount,
+        "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_NATIVE_PORTS")
+
+      val rpcPortsStr = getPropertyOrThrowIfNotFound(RpcPortProperty)
+      val rpcPortCount = countCommaSeparatedItemsIn(rpcPortsStr)
+      require(hostCount == rpcPortCount,
+        "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_RPC_PORTS")
   }
 
   private[connector] var cassandraRunners: IndexedSeq[Option[CassandraRunner]] = IndexedSeq(None)
@@ -104,7 +128,7 @@ object EmbeddedCassandra {
   private[connector] var currentConfigTemplates: IndexedSeq[String] = IndexedSeq()
 
   def getProps(index: Integer): Map[String, String] = {
-    require(hosts.isEmpty || index < hosts.size, s"$index index is overflow the size of ${hosts.size}")
+    require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
     Map("seeds"               -> host,
       "storage_port"          -> getStoragePort(index).toString,
@@ -120,37 +144,31 @@ object EmbeddedCassandra {
   def getSslStoragePort(index: Integer) = 7100 + index
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
-  def getHost(index: Integer) = getNodeProperty(index, HostProperty) match {
-    case host: InetAddress => host
-    case _ => throw new RuntimeException("Wrong data type, it should be InetAddress")
-  }
-  def getNativePort(index: Integer) = getNodeProperty(index, NativePortProperty) match {
-    case port: Int => port
-    case _ => throw new RuntimeException("Wrong data type, it should be Int")
-  }
-  def getRpcPort(index: Integer) = getNodeProperty(index, RpcPortProperty) match {
-    case port: Int => port
-    case _ => throw new RuntimeException("Wrong data type, it should be Int")
-  }
+  def getHost(index: Integer): InetAddress = getNodeProperty(index, HostProperty)
+  def getNativePort(index: Integer) = getNodeProperty(index, NativePortProperty)
+  def getRpcPort(index: Integer) = getNodeProperty(index, RpcPortProperty)
 
-  private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): Any = {
-    nodeProperty match {
-      case NativePortProperty if (nativePorts.isEmpty) => 9042 + index
-      case NativePortProperty if (index < hosts.size) => nativePorts(index)
-      case RpcPortProperty if (rpcPorts.isEmpty) => 9160 + index
-      case RpcPortProperty if (index < hosts.size) => rpcPorts(index)
-      case HostProperty if (hosts.isEmpty) => InetAddress.getByName("127.0.0.1")
-      case HostProperty if (index < hosts.size) => hosts(index)
-      case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
+  private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): nodeProperty.ValueType = {
+    nodeProperty.checkValueType {
+      nodeProperty match {
+        case NativePortProperty if nativePorts.isEmpty => 9042 + index
+        case NativePortProperty if index < hosts.size => nativePorts(index)
+        case RpcPortProperty if rpcPorts.isEmpty => 9160 + index
+        case RpcPortProperty if index < hosts.size => rpcPorts(index)
+        case HostProperty if hosts.isEmpty => InetAddress.getByName("127.0.0.1")
+        case HostProperty if index < hosts.size => hosts(index)
+        case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
+      }
     }
-  }
+  }   
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-    override def run() = cassandraRunners.map(_.map(_.destroy()))
+    override def run() = cassandraRunners.flatten.foreach(_.destroy())
   }))
 }
 
-private[connector] class CassandraRunner(val configTemplate: String, props: Map[String, String]) extends Embedded {
+private[connector] class CassandraRunner(val configTemplate: String, props: Map[String, String])
+  extends Embedded {
 
   import java.io.{File, FileOutputStream, IOException}
   import org.apache.cassandra.io.util.FileUtils

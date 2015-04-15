@@ -4,9 +4,10 @@ import java.nio.ByteBuffer
 
 import com.datastax.driver.core.{ProtocolVersion, Row, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
-import org.apache.cassandra.utils.ByteBufferUtil
 
 import scala.collection.JavaConversions._
+
+import com.datastax.spark.connector.util.ByteBufferUtil
 
 trait AbstractGettableData {
 
@@ -77,7 +78,7 @@ object AbstractGettableData {
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
   private[connector] def convert(obj: Any)(implicit protocolVersion: ProtocolVersion): AnyRef = {
     obj match {
-      case bb: ByteBuffer => ByteBufferUtil.getArray(bb)
+      case bb: ByteBuffer => ByteBufferUtil.toArray(bb)
       case list: java.util.List[_] => list.view.map(convert).toList
       case set: java.util.Set[_] => set.view.map(convert).toSet
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap

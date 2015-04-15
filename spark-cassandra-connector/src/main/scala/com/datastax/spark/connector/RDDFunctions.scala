@@ -16,13 +16,13 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 
 
-/** Provides Cassandra-specific methods on `RDD` */
+/** Provides Cassandra-specific methods on [[org.apache.spark.rdd.RDD RDD]] */
 class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
 
   override val sparkContext: SparkContext = rdd.sparkContext
 
   /**
-   * Saves the data from `RDD` to a Cassandra table. Uses the specified column names.
+   * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a Cassandra table. Uses the specified column names.
    * @see [[com.datastax.spark.connector.writer.WritableToCassandra]]
    */
   def saveToCassandra(keyspaceName: String,
@@ -37,7 +37,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   }
 
   /**
-   * Saves the data from `RDD` to a new table defined by the given `TableDef`.
+   * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a new table defined by the given `TableDef`.
    *
    * First it creates a new table with all columns from the `TableDef`
    * and then it saves RDD content in the same way as [[saveToCassandra]].
@@ -51,7 +51,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * @param writeConf additional configuration object allowing to set consistency level, batch size, etc.
    * @param connector optional, implicit connector to Cassandra
    * @param rwf factory for obtaining the row writer to be used to extract column values
-   *            from items of the `RDD`
+   *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    */
   def saveAsCassandraTableEx(table: TableDef,
                              columns: ColumnSelector = AllColumns,
@@ -64,7 +64,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   }
 
   /**
-   * Saves the data from `RDD` to a new table with definition taken from the
+   * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a new table with definition taken from the
    * `ColumnMapper` for this class.
    *
    * @param keyspaceName keyspace where to create a new table
@@ -76,7 +76,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * @param writeConf additional configuration object allowing to set consistency level, batch size, etc.
    * @param connector optional, implicit connector to Cassandra
    * @param rwf factory for obtaining the row writer to be used to extract column values
-   *            from items of the `RDD`
+   *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    * @param columnMapper a column mapper determining the definition of the table
    */
   def saveAsCassandraTable(keyspaceName: String,
@@ -99,7 +99,8 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     new SpannedRDD[U, T](rdd, f)
 
   /**
-   * Uses the data from `RDD` to join with a Cassandra table without retrieving the entire table.
+   * Uses the data from [[org.apache.spark.rdd.RDD RDD]] to join with a Cassandra table without
+   * retrieving the entire table.
    * Any RDD which can be used to saveToCassandra can be used to joinWithCassandra as well as any
    * RDD which only specifies the partition Key of a Cassandra Table. This method executes single
    * partition requests against the Cassandra Table and accepts the functional modifiers that a

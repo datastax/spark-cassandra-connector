@@ -181,7 +181,7 @@ object Dependencies {
   }
 
   import Compile._
-
+  import BuildUtil._
 
   val logging = Seq(slf4jApi)
 
@@ -217,4 +217,14 @@ object Dependencies {
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
   val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
+
+  val documentationMappings = Seq(
+    DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
+      sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive
+    ),
+    DocumentationMapping(url(s"http://doc.akka.io/api/akka/${Versions.Akka}/"),
+      akkaActor, akkaRemote, akkaSlf4j
+    )
+  )
+
 }

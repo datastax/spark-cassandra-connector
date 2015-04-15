@@ -12,7 +12,7 @@ import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
 /** A trait that provides a method to update write metrics which are collected for connector related tasks.
   * The appropriate instance is created by the companion object.
   *
-  * Instances of [[OutputMetricsUpdater]] are thread-safe, because the Cassandra write task implementation
+  * Instances of `OutputMetricsUpdater` are thread-safe, because the Cassandra write task implementation
   * is multi-threaded.
   */
 sealed trait OutputMetricsUpdater extends MetricsUpdater {
@@ -47,13 +47,15 @@ sealed trait OutputMetricsUpdater extends MetricsUpdater {
 
 object OutputMetricsUpdater extends Logging {
 
-  /** Creates the appropriate instance of [[OutputMetricsUpdater]].
+  /** Creates the appropriate instance of `OutputMetricsUpdater`.
     *
-    * If [[WriteConf.taskMetricsEnabled]] is `true`, the created instance will be updating task metrics so
+    * If [[com.datastax.spark.connector.writer.WriteConf.taskMetricsEnabled WriteConf.taskWriteMetricsEnabled]]
+    * is `true`, the created instance will be updating task metrics so
     * that Spark will report them in the UI. Remember that this is supported for Spark 1.2+.
     *
-    * If [[CassandraConnectorSource]] is registered in Spark metrics system, the created instance will be
-    * updating the included Codahale metrics. In order to register [[CassandraConnectorSource]] you need
+    * If [[org.apache.spark.metrics.CassandraConnectorSource CassandraConnectorSource]] is registered
+    * in Spark metrics system, the created instance will be
+    * updating the included Codahale metrics. In order to register `CassandraConnectorSource` you need
     * to add it to the metrics configuration file.
     *
     * @param taskContext task context of a task for which this metrics updater is created

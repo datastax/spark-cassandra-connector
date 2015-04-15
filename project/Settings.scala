@@ -31,6 +31,8 @@ import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 
 object Settings extends Build {
 
+  import BuildUtil._
+
   val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
 
   lazy val buildSettings = Seq(
@@ -118,8 +120,9 @@ object Settings extends Build {
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
     parallelExecution in ThisBuild := false,
     parallelExecution in Global := false,
-    autoAPIMappings := true,
-    compileOrder := CompileOrder.Mixed
+    apiMappings ++= DocumentationMapping.mapJarToDocURL(
+      (managedClasspath in (Compile, doc)).value,
+      Dependencies.documentationMappings)
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
