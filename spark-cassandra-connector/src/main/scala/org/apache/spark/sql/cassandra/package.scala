@@ -32,13 +32,8 @@ package object cassandra {
                               scanType: ScanType = PrunedFilteredScanType,
                               cluster: Option[String] = None,
                               userSpecifiedSchema: Option[StructType] = None) = {
-      scanType match {
-        case BaseScanType => CSBaseScanRelation(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
-        case PrunedScanType => CSPrunedScanRelation(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
-        case PrunedFilteredScanType => CSPrunedFilteredScanRelation(table,
-          keyspace, cluster, userSpecifiedSchema, sqlContext)
-        case CatalystScanType => CSCatalystScanRelation(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
-      }
+      scanType.makeRelation(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
+
     }
 
     /** Add table level read configuration settings. Set cluster to None for a single cluster */
@@ -94,22 +89,25 @@ package object cassandra {
     def getCassandraConnConf(cluster: Option[String]) =
       ConfCache.getCassandraConnConf(cluster, CassandraConnectorConf(sqlContext.sparkContext.getConf))
 
+    import CassandraSchemaCache._
     val schemas = CacheBuilder.newBuilder
       .maximumSize(100)
-      .expireAfterWrite(sqlContext.sparkContext.getConf.getLong("schema.expire.in.minutes", 10), TimeUnit.MINUTES)
+      .expireAfterWrite(sqlContext.sparkContext.getConf.getLong(CassandraSchemaExpireInMinutesProperty, DefaultCassandraSchemaExpireInMinutes), TimeUnit.MINUTES)
       .build(
         new CacheLoader[String, Schema] {
           def load(cluster: String) : Schema = {
-            val clusterOpt = toOption(cluster)
+            val clusterOpt = if("default".eq(cluster)) None else Option(cluster)
             Schema.fromCassandra(new CassandraConnector(sqlContext.getCassandraConnConf(clusterOpt)))
           }
         })
+  }
 
-    private def toOption(cluster: String): Option[String] = {
-      cluster match {
-        case "default" => None
-        case _         => Option(cluster)
-      }
-    }
+  object CassandraSchemaCache {
+    val CassandraSchemaExpireInMinutesProperty = "spark.cassandra.schema.expire.in.minutes"
+    val DefaultCassandraSchemaExpireInMinutes = 10
+
+    val Properties = Seq(
+      CassandraSchemaExpireInMinutesProperty
+    )
   }
 }
