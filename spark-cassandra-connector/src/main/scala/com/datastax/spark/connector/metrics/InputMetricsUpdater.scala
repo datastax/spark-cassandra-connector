@@ -13,7 +13,7 @@ import org.apache.spark.metrics.CassandraConnectorSource
   * created for each Cassandra read task. This remains valid as long as Cassandra read tasks are
   * single-threaded.
   */
-trait InputMetricsUpdater extends MetricsUpdater {
+private[connector] trait InputMetricsUpdater extends MetricsUpdater {
   /** Updates the metrics being collected for the connector after reading each single row. This method
     * is not thread-safe.
     *

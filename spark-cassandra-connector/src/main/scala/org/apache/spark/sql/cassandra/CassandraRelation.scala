@@ -9,7 +9,8 @@ import org.apache.spark.sql.catalyst.plans.logical.{Statistics, LeafNode}
 import org.apache.spark.sql.{StructField, catalyst}
 
 private[cassandra] case class CassandraRelation
-  (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)(@transient cc: CassandraSQLContext)
+    (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)
+    (@transient val cc: CassandraSQLContext)
   extends LeafNode {
 
   val keyspaceName          = tableDef.keyspaceName

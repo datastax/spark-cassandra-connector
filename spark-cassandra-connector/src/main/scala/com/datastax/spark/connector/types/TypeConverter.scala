@@ -4,17 +4,15 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Calendar, GregorianCalendar, UUID, Date}
 
-import com.datastax.spark.connector.UDTValue.UDTValueConverter
-import com.datastax.spark.connector.util.Symbols
-import Symbols._
-
-
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
 
-import org.apache.cassandra.utils.ByteBufferUtil
 import org.joda.time.DateTime
+
+import com.datastax.spark.connector.UDTValue.UDTValueConverter
+import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
+import Symbols._
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
@@ -278,7 +276,7 @@ object TypeConverter {
     def targetTypeTag = ByteArrayTypeTag
     def convertPF = {
       case x: Array[Byte] => x
-      case x: ByteBuffer => ByteBufferUtil.getArray(x)
+      case x: ByteBuffer => ByteBufferUtil.toArray(x)
     }
   }
 
