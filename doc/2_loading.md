@@ -239,7 +239,7 @@ and a Cassandra Table can be preformed without doing a full table scan. . When p
 between two Cassandra Tables which share the same partition key this will *not* require movement of data between machines.
 In all cases this method will use the source RDD's partitioning and placement for data locality.
 
-`joinWithCassandraTable` is not effected by `cassandra.input.split.size` since partitions are automatically inherited from
+`joinWithCassandraTable` is not affected by `cassandra.input.split.size` since partitions are automatically inherited from
 the source RDD. The other input properties have their normal effects.
 
 ####Join between two Cassandra Tables Sharing a Partition Key

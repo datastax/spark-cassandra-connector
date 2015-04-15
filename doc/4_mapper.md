@@ -68,7 +68,7 @@ table to the objects of class with fields `word: String` and `count: Int`:
 
 ```scala
 case class WordCount(word: String, count: Int)
-val result = sc.cassandraTable[WordCount]]("test", "words").select("word", "num" as "count").collect()
+val result = sc.cassandraTable[WordCount]("test", "words").select("word", "num" as "count").collect()
 ```
 
 The `as` method can be used for any type of projected value: normal column, TTL or write time:
@@ -103,14 +103,15 @@ INSERT INTO test.users (user_name, domain, password_hash, last_visit) VALUES ('j
 We can access map the rows of this table into pair in the following ways:
 
 ```scala
+import org.joda.time.DateTime
 case class UserId(userName: String, domain: String)
 case class UserData(passwordHash: String, lastVisit: DateTime)
 
-sc.cassandraTable[KV[UserId, UserData]]("test", "users")
+sc.cassandraTable[(UserId, UserData)]("test", "users")
 
-sc.cassandraTable[KV[(String, String), UserData]]("test", "users")
+sc.cassandraTable[((String, String), UserData)]("test", "users")
 
-sc.cassandraTable[KV[(String, String), (String, DateTime)]]("test", "users")
+sc.cassandraTable[((String, String), (String, DateTime))]("test", "users")
 ```
 
 [Next - Saving data](5_saving.md)

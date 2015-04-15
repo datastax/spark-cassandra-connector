@@ -16,6 +16,11 @@ To save an `RDD` to a new table, instead of calling `saveToCassandra`, call `sav
  
 ## Saving a collection of tuples
 
+Assume the following table definition:
+```sql
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+```
+
 ```scala
 val collection = sc.parallelize(Seq(("cat", 30), ("fox", 40)))
 collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
@@ -35,7 +40,8 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 ## Saving a collection of objects
 When saving a collection of objects of a user-defined class, the items to be saved
 must provide appropriately named public property accessors for getting every column
-to be saved. This example provides more information on property-column naming conventions is described [here](4_mapper.md).
+to be saved. This example provides more information on property-column naming 
+conventions as described [here](4_mapper.md).
 
 ```scala
 case class WordCount(word: String, count: Long)
@@ -58,16 +64,17 @@ The driver will execute a CQL `INSERT` statement for every object in the `RDD`,
 grouped in unlogged batches. The consistency level for writes is `ONE`. 
 
 It is possible to specify custom column to property mapping with `SomeColumns`. If the property
-names in objects, which are supposed to be saved, do not correspond to the column names in the
-destination table, use `as` method on the column names which you want to override the mapping for.
+names in objects to be saved do not correspond to the column names in the destination table, use
+the `as` method on the column names you want to override. The parameter order is table column
+name first, then object property name.
 
 Example:
-Say you want to save `WordCount` objects to the table which has column `word TEXT` and `num INT`.
+Say you want to save `WordCount` objects to the table which has columns `word TEXT` and `num INT`.
 
 ```scala
 case class WordCount(word: String, count: Long)
-collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
-collection.saveToCassandra("test", "words2", SomeColumns("word", "count" as "num"))
+val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
+collection.saveToCassandra("test", "words2", SomeColumns("word", "num" as "count"))
 ```
 
 ## Saving objects of Cassandra User Defined Types
@@ -83,8 +90,9 @@ CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
 
 To create a new row in the `test.companies` table:
 ```scala
+import com.datastax.spark.connector.UDTValue
 case class Company(name: String, address: UDTValue)
-val address = UDTValue.fromMap("city" -> "Santa Clara", "street" -> "Freedom Circle", number -> 3975)
+val address = UDTValue.fromMap(Map("city" -> "Santa Clara", "street" -> "Freedom Circle", "number" -> 3975))
 val company = Company("DataStax", address)
 sc.parallelize(Seq(company)).saveToCassandra("test", "companies")
 ```
@@ -102,12 +110,15 @@ collection.saveAsCassandraTable("test", "words_new", SomeColumns("word", "count"
 ```
 
 To customize the table definition, call `saveAsCassandraTableEx`. The following example
-demonstrates how to add another column of int type to the table definition:
+demonstrates how to add another column of int type to the table definition, creating new
+table `words_new_2`:
 
 ```scala
+import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn, TableDef}
+import com.datastax.spark.connector.types.IntType
 case class WordCount(word: String, count: Long)
 val table1 = TableDef.fromType[WordCount]("test", "words_new")
-val table2 = TableDef("test", "words_new", table1.partitionKey, table1.clusteringColumns,
+val table2 = TableDef("test", "words_new_2", table1.partitionKey, table1.clusteringColumns,
   table1.regularColumns :+ ColumnDef("additional_column", RegularColumn, IntType))
 val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
 collection.saveAsCassandraTableEx(table2, SomeColumns("word", "count"))

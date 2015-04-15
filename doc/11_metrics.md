@@ -48,7 +48,7 @@ read-task-timer        | Timer to measure time of reading a single partition
 
 ### Compatibility
 Codahale based metrics should work with either Spark 1.1.x or Spark 1.2.x. However task metrics
-works only with Spark 1.2.x. Therefore, if this version of Spark Cassandra Connector is to be used with
+work only with Spark 1.2.x. Therefore, if this version of Spark Cassandra Connector is to be used with
 Spark 1.1.x, task based metrics have to be disabled.
 
-[Next - Building And Artifacts](doc/12_building_and_artifacts.md)
+[Next - Building And Artifacts](12_building_and_artifacts.md)

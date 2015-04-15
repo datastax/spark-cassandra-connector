@@ -9,11 +9,11 @@ and [Spark documentation](https://spark.apache.org/docs/0.9.1/).
 
 ### Prerequisites
 
-Install and launch a Cassandra 2.0 cluster and a Spark cluster.   
+Install and launch a Cassandra cluster and a Spark cluster.   
 
 Configure a new Scala project with the following dependencies:
 
- - Apache Spark 0.9 or 1.0 and its dependencies
+ - Apache Spark and its dependencies
  - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
  - DataStax Cassandra driver for your Cassandra version 
  

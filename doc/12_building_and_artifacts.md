@@ -19,6 +19,8 @@ For Scala 2.11 tasks:
     sbt -Dscala-2.11=true package
     sbt -Dscala-2.11=true assembly
 
+**Note:** The Spark Java API is currently not buildable with Scala 2.11; see [SPARKC-130](https://datastax-oss.atlassian.net/browse/SPARKC-130).
+
 #### Scala 2.10
 To use Scala 2.10 nothing extra is required.
 
@@ -82,4 +84,4 @@ Then add this jar to your Spark executor classpath by adding the following line 
      spark.executor.extraClassPath  spark-cassandra-connector/spark-cassandra-connector/target/scala-{binary.version}/spark-cassandra-connector-assembly-$CurrentVersion-SNAPSHOT.jar
 
 This driver is also compatible with Spark distribution provided in
-[DataStax Enterprise 4.5](http://www.datastax.com/documentation/datastax_enterprise/4.5/datastax_enterprise/newFeatures.html).
+[DataStax Enterprise](http://datastax.com/docs/latest-dse/).
