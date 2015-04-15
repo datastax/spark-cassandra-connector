@@ -18,7 +18,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   import com.datastax.spark.connector.rdd.reader.AnyObjectFactory._
 
   @transient
-  private val tpe = implicitly[TypeTag[T]].tpe
+  private val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
 
   @transient
   lazy val rm: RuntimeMirror =
@@ -43,7 +43,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   val argOffset: Int = oneIfMemberClass(javaClass)
 
   @transient
-  lazy val constructorParamTypes: Array[Type] = {
+  lazy val constructorParamTypes: Array[Type] = TypeTag.synchronized{
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
