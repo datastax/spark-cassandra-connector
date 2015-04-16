@@ -7,6 +7,8 @@ import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.JavaApiHelper
 
+import scala.reflect.ClassTag
+
 class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T] {
 
   private val converter = implicitly[TypeConverter[T]]
@@ -44,5 +46,5 @@ class ValueRowReaderFactory[T: TypeConverter]
     new ValueRowReader[T](ColumnIndex(options.offset))
   }
 
-  override def targetClass: Class[T] = JavaApiHelper.getRuntimeClass(implicitly[TypeConverter[T]].targetTypeTag)
+  override val classTag: ClassTag[T] = JavaApiHelper.typeToClassTag(implicitly[TypeConverter[T]].targetTypeTag)
 }

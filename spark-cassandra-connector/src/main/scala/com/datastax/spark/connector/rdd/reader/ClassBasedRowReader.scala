@@ -12,6 +12,7 @@ import com.datastax.spark.connector.types.{TypeConversionException, TypeConverte
 import com.datastax.spark.connector.util.JavaApiHelper
 import com.datastax.spark.connector.util.Reflect
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
@@ -146,5 +147,5 @@ class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFa
   override def rowReader(tableDef: TableDef, options: RowReaderOptions) =
     new ClassBasedRowReader[R](tableDef, options.offset, options.aliasToColumnName)
 
-  override def targetClass: Class[R] = JavaApiHelper.getRuntimeClass(typeTag[R])
+  override val classTag: ClassTag[R] = JavaApiHelper.typeToClassTag(implicitly[TypeTag[R]])
 }

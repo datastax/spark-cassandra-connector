@@ -42,6 +42,10 @@ object JavaApiHelper {
     })
   }
 
+  def typeToClassTag[T: TypeTag]: ClassTag[T] = {
+    ClassTag[T]( typeTag[T].mirror.runtimeClass( typeTag[T].tpe ) )
+  }
+
   /** Returns a `ClassTag` of a given runtime class. */
   def getClassTag[T](clazz: Class[T]): ClassTag[T] = ClassTag(clazz)
 

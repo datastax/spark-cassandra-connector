@@ -93,35 +93,35 @@ public class CassandraJavaUtilTest {
     public void testMapColumnTo1() throws Exception {
         RowReaderFactory<Integer> rrf = mapColumnTo(Integer.class);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(Integer.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(Integer.class.getName()));
     }
 
     @Test
     public void testMapColumnTo2() throws Exception {
         RowReaderFactory<Integer> rrf = mapColumnTo(TypeConverter.JavaIntConverter$.MODULE$);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(Integer.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(Integer.class.getName()));
     }
 
     @Test
     public void testMapColumnTo3() throws Exception {
         RowReaderFactory<List<Integer>> rrf = mapColumnTo(List.class, Integer.class);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(List.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(List.class.getName()));
     }
 
     @Test
     public void testMapColumnToListOf() throws Exception {
         RowReaderFactory<List<Integer>> rrf = mapColumnToListOf(Integer.class);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(List.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(List.class.getName()));
     }
 
     @Test
     public void testMapColumnToSetOf() throws Exception {
         RowReaderFactory<Set<Integer>> rrf = mapColumnToSetOf(Integer.class);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(Set.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(Set.class.getName()));
 
     }
 
@@ -129,7 +129,7 @@ public class CassandraJavaUtilTest {
     public void testMapColumnToMapOf() throws Exception {
         RowReaderFactory<Map<Integer, Double>> rrf = mapColumnToMapOf(Integer.class, Double.class);
         assertThat(rrf, instanceOf(ValueRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(Map.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(Map.class.getName()));
     }
 
 
@@ -137,7 +137,7 @@ public class CassandraJavaUtilTest {
     public void testMapRowTo1() throws Exception {
         RowReaderFactory<SampleJavaBean> rrf = mapRowTo(SampleJavaBean.class);
         assertThat(rrf, instanceOf(ClassBasedRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(SampleJavaBean.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(SampleJavaBean.class.getName()));
     }
 
     @Test
@@ -147,14 +147,14 @@ public class CassandraJavaUtilTest {
         mappings.put("two", "2");
         RowReaderFactory<SampleJavaBean> rrf = mapRowTo(SampleJavaBean.class, mappings);
         assertThat(rrf, instanceOf(ClassBasedRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(SampleJavaBean.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(SampleJavaBean.class.getName()));
     }
 
     @Test
     public void testMapRowTo3() throws Exception {
         RowReaderFactory<SampleJavaBean> rrf = mapRowTo(SampleJavaBean.class, Pair.of("a", "b"), Pair.of("c", "d"));
         assertThat(rrf, instanceOf(ClassBasedRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(SampleJavaBean.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(SampleJavaBean.class.getName()));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class CassandraJavaUtilTest {
         when(mapper.classTag()).thenReturn(JavaApiHelper.getClassTag(SampleJavaBean.class));
         RowReaderFactory<SampleJavaBean> rrf = mapRowTo(mapper);
         assertThat(rrf, instanceOf(ClassBasedRowReaderFactory.class));
-        assertThat(rrf.targetClass().getName(), is(SampleJavaBean.class.getName()));
+        assertThat(rrf.classTag().runtimeClass().getName(), is(SampleJavaBean.class.getName()));
     }
 
     @Test

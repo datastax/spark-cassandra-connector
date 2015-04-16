@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 
 trait FunctionBasedRowReader[R] extends RowReader[R] with ThisRowReaderAsFactory[R] {
   def ct: ClassTag[R]
-  override val targetClass: Class[R] = ct.runtimeClass.asInstanceOf[Class[R]]
+  override val classTag = ct
 }
 
 class FunctionBasedRowReader1[R, A0](f: A0 => R)(
