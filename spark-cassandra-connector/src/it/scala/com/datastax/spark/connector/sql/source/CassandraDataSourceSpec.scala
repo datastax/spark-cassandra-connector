@@ -4,6 +4,7 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.cassandra.DefaultSource._
 
@@ -122,8 +123,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to register as a temp table" in {
-    val result = sqlContext.cassandraTable("test1", "sql_test")
-    result.registerTempTable("test1")
+    sqlContext.cassandraTable("test1", "sql_test").registerTempTable("test1")
     val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
@@ -147,6 +147,41 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
       """.stripMargin)
     sqlContext.sql("SELECT * FROM insertTable").collect() should have length 1
     sqlContext.dropTempTable("insertTable")
+  }
+
+  it should "allow to save data to a cassandra table" in {
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert1 (a INT PRIMARY KEY, b INT)")
+    }
+
+    sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
+      ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_test"))
+
+    sqlContext.cassandraTable("test_insert1", "sql_test").collect() should have length 1
+
+    val message = intercept[UnsupportedOperationException] {
+      sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
+        ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_test"))
+    }.getMessage
+
+    assert(
+      message.contains("Writing to a none-empty Cassandra Table is not allowed."),
+      "We should complain that 'Writing to a none-empty Cassandra Table is not allowed.'")
+  }
+
+  it should "not allow to overwrite a cassandra table" in {
+    conn.withSessionDo { session =>
+      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert2 (a INT PRIMARY KEY, b INT)")
+    }
+
+    val message = intercept[UnsupportedOperationException] {
+      sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
+        Overwrite, Map("c_table" -> "test_insert2", "keyspace" -> "sql_test"))
+    }.getMessage
+
+    assert(
+      message.contains("Overwriting a Cassandra Table is not allowed."),
+      "We should complain that 'Overwriting a Cassandra Table is not allowed.'")
   }
 
   it should "allow to filter a table" in {
