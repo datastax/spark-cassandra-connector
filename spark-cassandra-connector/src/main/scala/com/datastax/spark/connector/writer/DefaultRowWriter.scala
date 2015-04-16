@@ -6,6 +6,7 @@ import com.datastax.spark.connector.mapper.ColumnMapper
 
 import scala.collection.Seq
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
 
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
   * Can save case class objects, java beans and tuples. */
@@ -71,6 +72,7 @@ object DefaultRowWriter {
     override def rowWriter(tableDef: TableDef, columnNames: Seq[String], aliasToColumnName: Predef.Map[String, String]) = {
       new DefaultRowWriter[T](tableDef, columnNames, aliasToColumnName)
     }
+    override def classTag: ClassTag[T] = implicitly[ColumnMapper[T]].classTag
   }
 }
 
