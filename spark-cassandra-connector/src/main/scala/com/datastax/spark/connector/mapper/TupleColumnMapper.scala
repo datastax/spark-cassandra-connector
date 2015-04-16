@@ -35,7 +35,7 @@ class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[
   }
 
   override def newTable(keyspaceName: String, tableName: String): TableDef = {
-    val tpe = implicitly[TypeTag[T]].tpe
+    val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
     val ctorSymbol = Reflect.constructor(tpe).asMethod
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
     val ctorParamTypes = ctorMethod.params.map(_.typeSignature)
