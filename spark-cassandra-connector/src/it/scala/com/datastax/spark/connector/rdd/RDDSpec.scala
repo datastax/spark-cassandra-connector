@@ -4,8 +4,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.scalatest.{FlatSpec, Matchers}
 
 
 case class KVRow(key: Int)
@@ -21,6 +19,8 @@ case class MissingClustering2(pk1: Int, pk2: Int, pk3: Int, cc3: Int, cc1: Int)
 case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
+
+case class SameNameAsTablePartitonKey(key: Int, whatever: String)
 
 class RDDSpec extends SparkCassandraITFlatSpecBase {
 
@@ -129,8 +129,41 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(Tuple1(_))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost =  10)
     repart.partitions.length should be(conn.hosts.size * 10)
+    val someCass = repart.joinWithCassandraTable(keyspace, tableName)
+    someCass.partitions.foreach {
+      case e: EndpointPartition =>
+        conn.hosts should contain(e.endpoints.head)
+      case _ =>
+        fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
+    }
+    val result = someCass.collect
+    checkArrayCassandraRow(result)
+  }
+
+  it should "be repartitionable with partitionKeyExtractor returning tuple" in {
+    val source = sc.parallelize(keys.map(key => (key,"whatever")))
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, couple => new Tuple1(couple._1), 10)
+    repart.partitions.length should be(conn.hosts.size * 10)
+
+    val someCass = repart.joinWithCassandraTable(keyspace, tableName)
+    someCass.partitions.foreach {
+      case e: EndpointPartition =>
+        conn.hosts should contain(e.endpoints.head)
+      case _ =>
+        fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
+    }
+    val result = someCass.collect
+    checkArrayCassandraRow(result)
+  }
+
+  it should "be repartitionable with object mapper" in {
+
+    val source = sc.parallelize(keys.map(key => SameNameAsTablePartitonKey(key,"whatever")))
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
+    repart.partitions.length should be(conn.hosts.size * 10)
+
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
@@ -171,7 +204,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(x => new KVRow(x))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost =  10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -214,7 +247,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -296,7 +329,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.cassandraTable(keyspace, otherTable)
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -398,7 +431,4 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   it should " be lazy and not throw an exception if the table is not found at initializaiton time" in {
     val someCass = sc.parallelize(keys).map(x => new DataCol(x, x, x, x)).joinWithCassandraTable("unknown_keyspace", "unknown_table")
   }
-
-
-
 }
