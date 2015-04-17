@@ -10,7 +10,6 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, SpannedRDD, ValidRDDType}
 import com.datastax.spark.connector.writer.{ReplicaMapper, _}
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -137,27 +136,31 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * local. `partitionsPerHost` Controls the number of Spark Partitions that will be created in this repartitioning
    * event.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
+   * You can provide a custom `partitionKeyExtractor` function (returning Tuples) to extract from the source RDD
+   * the exact columns to be used for repartition that match the target partition keys
    **/
-  def repartitionByCassandraReplica(keyspaceName: String, tableName: String, partitionsPerHost: Int = 10)
-                                   (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                                    currentType: ClassTag[T], rwf: RowWriterFactory[T]) = {
+  def repartitionByCassandraReplica[U : ClassTag : RowWriterFactory](keyspaceName: String, tableName: String, partitionKeyExtractor: T => U = identity[T] _, partitionsPerHost: Int = 10)
+                                      (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+                                       currentType: ClassTag[T], rwf: RowWriterFactory[T]) = {
+    val partitionKeyRWF = implicitly[RowWriterFactory[U]]
     val part = new ReplicaPartitioner(partitionsPerHost, connector)
-    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName).partitionBy(part)
+    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName, partitionKeyExtractor).partitionBy(part)
     val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
     new CassandraPartitionedRDD[T](output)
   }
 
   /**
-   * Key every row in the RDD by with the IP Adresses of all of the Cassandra nodes which a contain a replica
+   * Key every row in the RDD with the IP Adresses of all of the Cassandra nodes which a contain a replica
    * of the data specified by that row.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
+   * You can provide a custom `partitionKeyExtractor` function (returning Tuples) to extract from the source RDD
+   * the exact columns to be used for IP addresses pairing
    */
-  def keyByCassandraReplica(keyspaceName: String, tableName: String)
-                           (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                            currentType: ClassTag[T], rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName)
+  def keyByCassandraReplica[U : ClassTag : RowWriterFactory](keyspaceName: String, tableName: String, partitionKeyExtractor: T => U)
+                           (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf)): RDD[(Set[InetAddress], T)] = {
+    val converter = ReplicaMapper[U](connector, keyspaceName, tableName)
     rdd.mapPartitions(primaryKey =>
-      converter.keyByReplicas(primaryKey)
+      converter.keyByReplicas(primaryKey, partitionKeyExtractor)
     )
   }
 

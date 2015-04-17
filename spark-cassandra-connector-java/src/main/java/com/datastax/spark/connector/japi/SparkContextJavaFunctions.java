@@ -86,8 +86,8 @@ public class SparkContextJavaFunctions {
      */
     public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rrf) {
         CassandraRDD<T> rdd = CassandraTableScanRDD$.MODULE$
-                .apply(sparkContext, keyspace, table, getClassTag(rrf.targetClass()), rrf);
-        return new CassandraJavaRDD<>(rdd, getClassTag(rrf.targetClass()));
+                .apply(sparkContext, keyspace, table, rrf.classTag(), rrf);
+        return new CassandraJavaRDD<>(rdd, rrf.classTag());
     }
 
     /**
@@ -112,9 +112,9 @@ public class SparkContextJavaFunctions {
         KeyValueRowReaderFactory<K, V> rrf = new KeyValueRowReaderFactory<>(keyRRF, valueRRF);
 
         CassandraRDD<Tuple2<K, V>> rdd = CassandraTableScanRDD$.MODULE$.apply(sparkContext, keyspace, table,
-                getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
+                keyRRF.classTag(), valueRRF.classTag(), rrf);
 
-        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
+        return new CassandraJavaPairRDD<>(rdd, keyRRF.classTag(), valueRRF.classTag());
     }
 
 

@@ -135,13 +135,30 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
             int partitionsPerHost,
             RowWriterFactory<T> rowWriterFactory
     ) {
+        return repartitionByCassandraReplica(keyspaceName,tableName,identityFunction,partitionsPerHost,rowWriterFactory,rowWriterFactory);
+    }
+
+    /**
+     * Same as {@link com.datastax.spark.connector.japi.RDDJavaFunctions#repartitionByCassandraReplica(String, String, int, RowWriterFactory)}
+     * but with an additional function to extract the partition key from the source RDD and the corresponding RowWriterFactory
+     */
+    public <U> JavaRDD<T> repartitionByCassandraReplica(
+            String keyspaceName,
+            String tableName,
+            final Function<T,U> partitionKeyExtractor,
+            int partitionsPerHost,
+            RowWriterFactory<T> rowWriterFactory,
+            RowWriterFactory<U> partitionRowWriterFactory
+    ) {
         CassandraConnector connector = defaultConnector();
         ClassTag<T> ctT = rdd.toJavaRDD().classTag();
-
         CassandraPartitionedRDD<T> newRDD = rddFunctions.repartitionByCassandraReplica(
                 keyspaceName,
                 tableName,
+                JavaApiHelper.toScalaFunction1(partitionKeyExtractor),
                 partitionsPerHost,
+                partitionRowWriterFactory.classTag(),
+                partitionRowWriterFactory,
                 connector,
                 ctT,
                 rowWriterFactory);
@@ -149,5 +166,12 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         return new JavaRDD<>(newRDD, ctT);
     }
 
+
+    private final Function<T,T> identityFunction = new Function<T,T>() {
+        @Override
+        public T call(T t) throws Exception {
+            return t;
+        }
+    };
 }
 

@@ -3,7 +3,9 @@ package com.datastax.spark.connector.writer
 import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.catalyst.expressions.Row
 
-/** A [[RowWriter]] that can write SparkSQL `Row` objects. */
+import scala.reflect.ClassTag
+
+/** A [[RowWriter]] that can write SparkSQL [[Row]] objects. */
 class SqlRowWriter(val table: TableDef, val columnNames: Seq[String]) extends RowWriter[Row] {
 
   /** Extracts column values from `data` object and writes them into the given buffer
@@ -21,6 +23,8 @@ object SqlRowWriter {
   object Factory extends RowWriterFactory[Row] {
     override def rowWriter(table: TableDef, columnNames: Seq[String], aliasToColumnName: Map[String, String]) =
       new SqlRowWriter(table, columnNames)
+
+    override def classTag: ClassTag[Row] = ClassTag[Row](Row.getClass)
   }
 
 }

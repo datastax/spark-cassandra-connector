@@ -9,6 +9,8 @@ import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReade
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.spark.sql.catalyst.expressions.{Row => SparkRow}
 
+import scala.reflect.ClassTag
+
 final class CassandraSQLRow(columnNames: IndexedSeq[String], val fieldValues: IndexedSeq[AnyRef])
   extends AbstractGettableData with SparkRow with Serializable {
 
@@ -56,6 +58,6 @@ object CassandraSQLRow {
 
     override def requiredColumns = None
     override def columnNames = None
-    override def targetClass = classOf[CassandraSQLRow]
+    override val classTag: ClassTag[CassandraSQLRow] = ClassTag[CassandraSQLRow](CassandraSQLRow.getClass)
   }
 }

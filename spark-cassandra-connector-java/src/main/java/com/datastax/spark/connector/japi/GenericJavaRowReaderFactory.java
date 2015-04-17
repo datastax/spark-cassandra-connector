@@ -6,11 +6,18 @@ import com.datastax.spark.connector.cql.TableDef;
 import com.datastax.spark.connector.rdd.reader.RowReader;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderOptions;
+import com.datastax.spark.connector.util.JavaApiHelper;
 import scala.Option;
 import scala.collection.Seq;
+import scala.reflect.ClassTag;
 
 public class GenericJavaRowReaderFactory {
     public final static RowReaderFactory<CassandraRow> instance = new RowReaderFactory<CassandraRow>() {
+        @Override
+        public ClassTag<CassandraRow> classTag() {
+            return JavaApiHelper.getClassTag(CassandraRow.class);
+        }
+
         @Override
         public RowReader<CassandraRow> rowReader(TableDef table, RowReaderOptions options) {
             return JavaRowReader.instance;
@@ -21,10 +28,7 @@ public class GenericJavaRowReaderFactory {
             return new RowReaderOptions(RowReaderOptions.apply$default$1(), RowReaderOptions.apply$default$2());
         }
 
-        @Override
-        public Class<CassandraRow> targetClass() {
-            return CassandraRow.class;
-        }
+
     };
 
 

@@ -10,6 +10,7 @@ import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.MagicalTypeTricks.{DoesntHaveImplicit, IsNotSubclassOf}
 
 import scala.annotation.implicitNotFound
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 case class RowReaderOptions(offset: Int = 0, aliasToColumnName: Map[String, String] = Map.empty)
@@ -22,7 +23,7 @@ object RowReaderOptions {
 @implicitNotFound("No RowReaderFactory can be found for this type")
 trait RowReaderFactory[T] {
   def rowReader(table: TableDef, options: RowReaderOptions = RowReaderOptions.Default): RowReader[T]
-  def targetClass: Class[T]
+  val classTag: ClassTag[T]
 }
 
 /** Helper for implementing `RowReader` objects that can be used as `RowReaderFactory` objects. */
@@ -61,8 +62,6 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
   implicit object GenericRowReader$
     extends RowReader[CassandraRow] with ThisRowReaderAsFactory[CassandraRow] {
 
-    override def targetClass: Class[CassandraRow] = classOf[CassandraRow]
-
     override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) = {
       assert(row.getColumnDefinitions.size() == columnNames.size,
         "Number of columns in a row must match the number of columns in the table metadata")
@@ -72,6 +71,8 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
     override def requiredColumns: Option[Int] = None
 
     override def columnNames: Option[Seq[String]] = None
+
+    override val classTag: ClassTag[CassandraRow] = ClassTag[CassandraRow](CassandraRow.getClass)
   }
 
 }

@@ -37,9 +37,10 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
    * Transforms RDDs with [[com.datastax.spark.connector.RDDFunctions.repartitionByCassandraReplica]]
    * for each produced RDD.
    */
-  def repartitionByCassandraReplica(
+  def repartitionByCassandraReplica[U : ClassTag : RowWriterFactory](
     keyspaceName: String,
     tableName: String,
+    partitionKeyExtractor: T => U = identity[T] _,
     partitionsPerHost: Int = 10)(
   implicit
     connector: CassandraConnector = CassandraConnector(conf),
@@ -47,7 +48,7 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     rwf: RowWriterFactory[T]): DStream[T] = {
 
     dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionsPerHost))
+      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionKeyExtractor,partitionsPerHost))
   }
 
   /**

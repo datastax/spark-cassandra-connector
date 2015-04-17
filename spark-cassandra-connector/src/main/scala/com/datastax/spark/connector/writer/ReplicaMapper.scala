@@ -59,19 +59,19 @@ class ReplicaMapper[T] private(
    * @param data A source of data which can be bound to a statement by BatchStatementBuilder
    * @return an Iterator over the same data keyed by the replica's ip addresses
    */
-  def keyByReplicas(data: Iterator[T]): Iterator[(scala.collection.immutable.Set[InetAddress], T)] = {
-      connector.withSessionDo { session =>
-        val stmt = prepareDummyStatement(session)
-        val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
-        val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
-        val clusterMetadata = session.getCluster.getMetadata
-        data.map { row =>
-          val hosts = clusterMetadata
-            .getReplicas(keyspaceName, routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
-            .map(_.getAddress)
-            .toSet[InetAddress]
-          (hosts, row)
-        }
+  def keyByReplicas[U](data: Iterator[U], partitionKeyExtractor: U => T = identity[T] _ ): Iterator[(scala.collection.immutable.Set[InetAddress], U)] = {
+    connector.withSessionDo { session =>
+      val stmt = prepareDummyStatement(session)
+      val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
+      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+      val clusterMetadata = session.getCluster.getMetadata
+      data.map { row =>
+        val hosts = clusterMetadata
+          .getReplicas(keyspaceName, routingKeyGenerator.apply(boundStmtBuilder.bind(partitionKeyExtractor(row))))
+          .map(_.getAddress)
+          .toSet[InetAddress]
+        (hosts, row)
+      }
     }
   }
 }

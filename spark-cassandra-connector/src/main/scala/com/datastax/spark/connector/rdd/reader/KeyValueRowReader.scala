@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.util.JavaApiHelper
 
 class KeyValueRowReaderFactory[K, V](keyRRF: RowReaderFactory[K], valueRRF: RowReaderFactory[V])
   extends RowReaderFactory[(K, V)] {
@@ -13,7 +14,7 @@ class KeyValueRowReaderFactory[K, V](keyRRF: RowReaderFactory[K], valueRRF: RowR
     new KeyValueRowReader(keyReader, valueReader)
   }
 
-  override def targetClass: Class[(K, V)] = classOf[(K, V)]
+  override val classTag = JavaApiHelper.getClassTag(classOf[(K, V)])
 }
 
 class KeyValueRowReader[K, V](keyReader: RowReader[K], valueReader: RowReader[V]) extends RowReader[(K, V)] {
