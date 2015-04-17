@@ -8,7 +8,7 @@
  * Removed conversion method rom WriteOption which accepted object of Duration type 
    from Spark Streaming (SPARKC-106)
  * Fixed compilation warnings (SPARKC-76)
- * Fixed ScalaDoc wanings (SPARKC-119)
+ * Fixed ScalaDoc warnings (SPARKC-119)
  * Synchronized TypeTag access in various places (SPARKC-123)
 
 1.2.0 RC 3
