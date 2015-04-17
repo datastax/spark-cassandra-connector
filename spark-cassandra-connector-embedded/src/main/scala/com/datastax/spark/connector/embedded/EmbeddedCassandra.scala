@@ -123,7 +123,8 @@ object EmbeddedCassandra {
   def getProps(index: Integer): Map[String, String] = {
     require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
-    Map("seeds"               -> host,
+    Map(
+      "seeds"                 -> host,
       "storage_port"          -> getStoragePort(index).toString,
       "ssl_storage_port"      -> getSslStoragePort(index).toString,
       "native_transport_port" -> getPort(index).toString,
@@ -171,7 +172,6 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val confDir = mkdir(new File(tempDir, "conf"))
   val confFile = new File(confDir, "cassandra.yaml")
 
-  assert(props != null)
   private val properties = Map("cassandra_dir" -> workDir.toString) ++ props
   closeAfterUse(ClassLoader.getSystemResourceAsStream(configTemplate)) { input =>
     closeAfterUse(new FileOutputStream(confFile)) { output =>

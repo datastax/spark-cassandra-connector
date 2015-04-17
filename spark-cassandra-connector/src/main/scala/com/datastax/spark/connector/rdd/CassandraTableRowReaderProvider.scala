@@ -29,9 +29,11 @@ trait CassandraTableRowReaderProvider[R] {
 
   protected def readConf: ReadConf
 
-  protected def fetchSize: Int = readConf.fetchSizeInRows
+  protected def splitCount: Option[Int] = readConf.splitCount
 
   protected def splitSizeInMB: Int = readConf.splitSizeInMB
+
+  protected def fetchSize: Int = readConf.fetchSizeInRows
 
   protected def consistencyLevel: ConsistencyLevel = readConf.consistencyLevel
 

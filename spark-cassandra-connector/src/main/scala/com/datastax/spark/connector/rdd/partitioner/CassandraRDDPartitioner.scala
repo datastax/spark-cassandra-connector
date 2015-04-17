@@ -18,6 +18,7 @@ import com.datastax.spark.connector.util.Quote._
 class CassandraRDDPartitioner[V, T <: Token[V]](
     connector: CassandraConnector,
     tableDef: TableDef,
+    splitCount: Option[Int],
     splitSize: Long)(
   implicit
     tokenFactory: TokenFactory[V, T]) {
@@ -28,11 +29,23 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
+  private val totalDataSize: Long = {
+    // If we know both the splitCount and splitSize, we should pretend the total size of the data is
+    // their multiplication. TokenRangeSplitter will try to produce splits of desired size, and this way
+    // their number will be close to desired splitCount. Otherwise, if splitCount is not set,
+    // we just go to C* and read the estimated data size from an appropriate system table
+    splitCount match {
+      case Some(c) => c * splitSize
+      case None => new DataSizeEstimates(connector, keyspaceName, tableName).dataSizeInBytes
+    }
+  }
+
   def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
     val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
     val endToken = tokenFactory.tokenFromString(range.getEnd.getValue.toString)
     val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
-    new TokenRange(startToken, endToken, replicas, None)
+    val dataSize = (tokenFactory.ringFraction(startToken, endToken) * totalDataSize).toLong
+    new TokenRange(startToken, endToken, replicas, dataSize)
   }
 
   private def describeRing: Seq[TokenRange] = {
@@ -42,7 +55,10 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
     }
   }
 
-  private def splitsOf(tokenRanges: Iterable[TokenRange], splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
+  private def splitsOf(
+      tokenRanges: Iterable[TokenRange],
+      splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
+
     val parTokenRanges = tokenRanges.par
     parTokenRanges.tasksupport = new ForkJoinTaskSupport(CassandraRDDPartitioner.pool)
     (for (tokenRange <- parTokenRanges;
@@ -66,24 +82,12 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         CqlTokenRange(s"token($pk) <= ?", endToken))
   }
 
-  /** This works only for numeric tokens */
-  private def tokenCount(range: TokenRange): BigInt = {
-    val start = BigInt(tokenFactory.tokenToString(range.start))
-    val end = BigInt(tokenFactory.tokenToString(range.end))
-    if (start < end)
-      end - start
-    else
-      end - start + tokenFactory.totalTokenCount
-  }
-
   private def createTokenRangeSplitter: TokenRangeSplitter[V, T] = {
-    val dataSizeEstimates = new DataSizeEstimates(connector, keyspaceName, tableName)
-    val dataSize = dataSizeEstimates.dataSizeInBytes
     tokenFactory.asInstanceOf[TokenFactory[_, _]] match {
       case TokenFactory.RandomPartitionerTokenFactory =>
-        new RandomPartitionerTokenRangeSplitter(dataSize).asInstanceOf[TokenRangeSplitter[V, T]]
+        new RandomPartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case TokenFactory.Murmur3TokenFactory =>
-        new Murmur3PartitionerTokenRangeSplitter(dataSize).asInstanceOf[TokenRangeSplitter[V, T]]
+        new Murmur3PartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case _ =>
         throw new UnsupportedOperationException(s"Unsupported TokenFactory $tokenFactory")
     }
@@ -131,7 +135,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       for ((group, index) <- groups.zipWithIndex) yield {
         val cqlPredicates = group.flatMap(splitToCqlClause)
         val replicas = group.map(_.replicas).reduce(_ intersect _)
-        val rowCount = group.map(_.rowCount.get).sum
+        val rowCount = group.map(_.dataSize).sum
         CassandraPartition(index, replicas, cqlPredicates, rowCount)
       }
   }
@@ -147,4 +151,25 @@ object CassandraRDDPartitioner {
   val TokenRangeSampleSize = 16
 
   private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
+
+  type V = t forSome { type t }
+  type T = t forSome { type t <: Token[V] }
+
+  /** Creates a `CassandraRDDPartitioner` for the given cluster and table.
+    * Unlike the class constructor, this method does not take the generic `V` and `T` parameters,
+    * and therefore you don't need to specify the ones proper for the partitioner used in the
+    * Cassandra cluster. */
+  def apply(
+      conn: CassandraConnector,
+      tableDef: TableDef,
+      splitCount: Option[Int],
+      splitSize: Int): CassandraRDDPartitioner[V, T] = {
+
+    val partitionerClassName =
+      conn.withSessionDo { session =>
+        session.execute("SELECT partitioner FROM system.local").one().getString(0)
+      }
+    val tokenFactory = TokenFactory.forCassandraPartitioner(partitionerClassName)
+    new CassandraRDDPartitioner(conn, tableDef, splitCount, splitSize)(tokenFactory)
+  }
 }

@@ -21,9 +21,9 @@ class RandomPartitionerTokenRangeSplitter(dataSize: Long)
   /** Splits the token range uniformly into sub-ranges.
     * @param splitSize requested sub-split size, given in the same units as `dataSize` */
   def split(range: TR, splitSize: Long): Seq[TR] = {
-    val rangeSize = dataSize * tokenFactory.ringFraction(range.start, range.end)
+    val rangeSize = range.dataSize
     val rangeTokenCount = tokenFactory.distance(range.start, range.end)
-    val n = math.max(1, math.round(rangeSize / splitSize).toInt)
+    val n = math.max(1, math.round(rangeSize.toDouble / splitSize)).toInt
 
     val left = range.start.value
     val right = range.end.value
@@ -35,6 +35,6 @@ class RandomPartitionerTokenRangeSplitter(dataSize: Long)
         new BigIntToken(l.bigInteger),
         new BigIntToken(r.bigInteger),
         range.replicas,
-        Some((rangeSize / n).toInt))
+        rangeSize / n)
   }
 }

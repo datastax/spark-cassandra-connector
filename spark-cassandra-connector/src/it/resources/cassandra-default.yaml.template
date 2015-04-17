@@ -398,7 +398,7 @@ start_rpc: false
 # set broadcast_rpc_address to a value other than 0.0.0.0.
 rpc_address: ${rpc_address}
 # port for Thrift to listen for clients on
-rpc_port: ${rpc_port}
+rpc_port: 9160
 
 # RPC address to broadcast to drivers and other Cassandra nodes. This cannot
 # be set to 0.0.0.0. If left blank, this will be set to the value of

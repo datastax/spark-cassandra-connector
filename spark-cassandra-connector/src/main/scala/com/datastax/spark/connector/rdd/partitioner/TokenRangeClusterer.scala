@@ -32,9 +32,9 @@ class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupS
       case Stream.Empty => result
       case head #:: rest =>
         val firstEndpoint = head.replicas.min
-        val rowCounts = tokenRanges.map(_.rowCount.get)
+        val rowCounts = tokenRanges.map(_.dataSize)
         val cumulativeRowCounts = rowCounts.scanLeft(0L)(_ + _).tail // drop first item always == 0
-        val rowLimit = math.max(maxRowCountPerGroup, head.rowCount.get) // make sure first element will be always included
+        val rowLimit = math.max(maxRowCountPerGroup, head.dataSize) // make sure first element will be always included
         val cluster = tokenRanges
           .take(math.max(1, maxGroupSize))
           .zip(cumulativeRowCounts)

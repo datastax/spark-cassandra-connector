@@ -33,12 +33,6 @@ class CassandraPartitionedRDD[T](
     }
   }
 
-  /**
-   * This method currently uses thrift to determine the local endpoint and rpc endpoints
-   * from whatever endpoint the partition belongs to. This gives us a better chance of matching
-   * the bound interface of the Spark Executor. In addition we will add the HostName and
-   * HostAddress that we get for each of these endpoints to cover all of the logical choices.
-   */
   override def getPreferredLocations(split: Partition): Seq[String] = split match {
     case epp: ReplicaPartition =>
       epp.endpoints.flatMap { inet => Seq(inet.getHostAddress, inet.getHostName) }.toSeq.distinct
@@ -47,6 +41,4 @@ class CassandraPartitionedRDD[T](
       "CassandraPartitionedRDD doesn't have Endpointed Partitions. PrefferedLocations cannot be" +
         "deterimined")
   }
-
-
 }

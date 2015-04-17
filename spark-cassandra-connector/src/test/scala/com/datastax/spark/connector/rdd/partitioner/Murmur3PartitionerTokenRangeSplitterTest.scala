@@ -27,8 +27,9 @@ class Murmur3PartitionerTokenRangeSplitterTest {
   @Test
   def testSplit() {
     val node = InetAddress.getLocalHost
-    val splitter = new Murmur3PartitionerTokenRangeSplitter(1000)
-    val range = new TokenRange(LongToken(0), LongToken(0), Set(node), None)
+    val dataSize = 1000
+    val splitter = new Murmur3PartitionerTokenRangeSplitter(dataSize)
+    val range = new TokenRange(LongToken(0), LongToken(0), Set(node), dataSize)
     val out = splitter.split(range, 100)
 
     assertEquals(10, out.size)
@@ -44,7 +45,7 @@ class Murmur3PartitionerTokenRangeSplitterTest {
   @Test
   def testNoSplit() {
     val splitter = new Murmur3PartitionerTokenRangeSplitter(1000)
-    val range = new TokenRange(LongToken(0), new LongToken(100), Set.empty, None)
+    val range = new TokenRange(LongToken(0), new LongToken(100), Set.empty, 0)
     val out = splitter.split(range, 500)
 
     // range is too small to contain 500 units
@@ -55,8 +56,9 @@ class Murmur3PartitionerTokenRangeSplitterTest {
 
   @Test
   def testZeroRows() {
-    val splitter = new Murmur3PartitionerTokenRangeSplitter(0)
-    val range = new TokenRange(LongToken(0), LongToken(100), Set.empty, None)
+    val dataSize = 0
+    val splitter = new Murmur3PartitionerTokenRangeSplitter(dataSize)
+    val range = new TokenRange(LongToken(0), LongToken(100), Set.empty, dataSize)
     val out = splitter.split(range, 500)
     assertEquals(1, out.size)
     assertEquals(0L, out.head.start.value)
@@ -65,10 +67,11 @@ class Murmur3PartitionerTokenRangeSplitterTest {
 
   @Test
   def testWrapAround() {
-    val splitter = new Murmur3PartitionerTokenRangeSplitter(2000)
+    val dataSize = 2000
+    val splitter = new Murmur3PartitionerTokenRangeSplitter(dataSize)
     val start = Murmur3TokenFactory.maxToken.value - Long.MaxValue / 2
     val end = Murmur3TokenFactory.minToken.value + Long.MaxValue / 2
-    val range = new TokenRange(LongToken(start), LongToken(end), Set.empty, None)
+    val range = new TokenRange(LongToken(start), LongToken(end), Set.empty, dataSize / 2)
     val splits = splitter.split(range, 100)
 
     // range is half of the ring; 2000 * 0.5 / 100 = 10
