@@ -29,7 +29,7 @@ class CassandraPartitionedRDD[T](prev: RDD[T])(implicit ct: ClassTag[T]) extends
   override def getPreferredLocations(split: Partition): Seq[String] = {
     split match {
       case epp: ReplicaPartition =>
-        epp.endpoints.map(_.getHostAddress).toSeq
+        epp.endpoints.flatMap( inet => Seq(inet.getHostAddress, inet.getHostName)).toSet.toSeq
       case other: Partition => throw new IllegalArgumentException("CassandraPartitionedRDD doesn't have Endpointed Partitions. This should be impossible.")
     }
   }
