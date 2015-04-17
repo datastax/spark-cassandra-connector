@@ -3,7 +3,7 @@ package org.apache.spark.sql.cassandra
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.sources.{CreatableRelationProvider, SchemaRelationProvider, BaseRelation, RelationProvider}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DataType, StructType}
 
 
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
@@ -11,8 +11,11 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
   /** Creates a new relation for a cassandra table given table, keyspace, and cluster as a parameter.*/
   override def createRelation(sqlContext: SQLContext,
                               parameters: Map[String, String]): BaseRelation = {
+    val schemaJsonString = getUserDefinedSchema(parameters)
+    val schema = if (schemaJsonString == None) None
+                 else Option(DataType.fromJson(schemaJsonString.get).asInstanceOf[StructType])
     sqlContext.getDataSourceRelation(getTable(parameters), getKeyspace(parameters),
-      getScanType(parameters), getCluster(parameters), None)
+      getScanType(parameters), getCluster(parameters), schema)
   }
 
   /** Creates a new relation for a cassandra table given table, keyspace, cluster and schema as a parameter.*/
@@ -59,6 +62,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
   private def getCluster(parameters: Map[String, String]) = parameters.get(CassandraDataSourceClusterNameProperty)
 
+  private def getUserDefinedSchema(parameters: Map[String, String]) =
+    parameters.get(CassandraDataSourUserDefinedSchemaNameProperty)
+
   private def missingProp(prop: String) = throw new IllegalArgumentException(s"Missing $prop name")
 
   private def getScanType(parameters: Map[String, String]) = CassandraDataSourceScanTypeMap.get(
@@ -71,6 +77,7 @@ object DefaultSource {
   val CassandraDataSourceKeyspaceNameProperty = "keyspace"
   val CassandraDataSourceClusterNameProperty = "cluster"
   val CassandraDataSourceScanTypeNameProperty = "scan_type"
+  val CassandraDataSourUserDefinedSchemaNameProperty = "schema"
 
   val CassandraDataSourceBaseScanTypeName = "base"
   val CassandraDataSourcePrunedScanTypeName = "pruned"

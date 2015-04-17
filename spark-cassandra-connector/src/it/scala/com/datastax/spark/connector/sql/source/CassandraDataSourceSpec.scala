@@ -131,6 +131,30 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to create a temp table" in {
+    sqlContext.sql(
+      s"""
+        |CREATE TEMPORARY TABLE tmpTable
+        |USING org.apache.spark.sql.cassandra
+        |OPTIONS (
+        | c_table "test1",
+        | keyspace "sql_test",
+        | scan_type "$scanType",
+        | schema '{"type":"struct","fields":
+        | [{"name":"a","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"b","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"c","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"d","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"e","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"f","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"g","type":"integer","nullable":true,"metadata":{}},
+        | {"name":"h","type":"integer","nullable":true,"metadata":{}}]}'
+        | )
+      """.stripMargin.replaceAll("\n", " "))
+    sqlContext.sql("SELECT * FROM tmpTable").collect() should have length 8
+    sqlContext.dropTempTable("tmpTable")
+  }
+
+  it should "allow to create a temp table with user defined schema" in {
     sqlContext.sql("SELECT * FROM ddlTable").collect() should have length 8
   }
 
