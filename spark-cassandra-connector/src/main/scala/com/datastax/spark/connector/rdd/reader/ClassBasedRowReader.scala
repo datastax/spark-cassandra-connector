@@ -23,7 +23,7 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
   private val columnMap = implicitly[ColumnMapper[R]].columnMap(table, aliasToColumnName)
 
   @transient
-  private val tpe = implicitly[TypeTag[R]].tpe
+  private val tpe = TypeTag.synchronized(implicitly[TypeTag[R]].tpe)
 
   // This must be  serialized:
   val constructorArgConverters: Array[TypeConverter[_]] =
