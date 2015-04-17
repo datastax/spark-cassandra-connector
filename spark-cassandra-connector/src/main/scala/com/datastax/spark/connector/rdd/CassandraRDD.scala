@@ -226,4 +226,34 @@ abstract class CassandraRDD[R : ClassTag](
   }
 }
 
+object CassandraRDD {
+  def apply[T](sc: SparkContext, keyspaceName: String, tableName: String)
+              (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraRDD[T] =
 
+    new CassandraTableScanRDD[T](
+      sc,
+      CassandraConnector(sc.getConf),
+      keyspaceName,
+      tableName,
+      AllColumns,
+      CqlWhereClause.empty,
+      None,
+      None,
+      ReadConf.fromSparkConf(sc.getConf)
+    )
+
+  def apply[K, V](sc: SparkContext, keyspaceName: String, tableName: String)
+                 (implicit keyCT: ClassTag[K], valueCT: ClassTag[V], rrf: RowReaderFactory[(K, V)]): CassandraRDD[(K, V)] =
+
+    new CassandraTableScanRDD[(K, V)](
+      sc,
+      CassandraConnector(sc.getConf),
+      keyspaceName,
+      tableName,
+      AllColumns,
+      CqlWhereClause.empty,
+      None,
+      None,
+      ReadConf.fromSparkConf(sc.getConf)
+    )
+}
