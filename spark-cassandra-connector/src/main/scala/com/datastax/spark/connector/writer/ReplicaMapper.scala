@@ -5,6 +5,7 @@ import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.driver.core._
+import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
 import org.apache.spark.Logging
 
@@ -83,7 +84,8 @@ object ReplicaMapper {
   def apply[T: RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
-      tableName: String): ReplicaMapper[T] = {
+      tableName: String,
+      partitionKeyMapper:ColumnSelector): ReplicaMapper[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
@@ -92,7 +94,7 @@ object ReplicaMapper {
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef,
       selectedColumns,
-      Map.empty.withDefault(x => x)
+      partitionKeyMapper.aliases
     )
     new ReplicaMapper[T](connector, tableDef, rowWriter)
   }

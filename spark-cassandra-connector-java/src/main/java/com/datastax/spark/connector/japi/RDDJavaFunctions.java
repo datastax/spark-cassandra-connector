@@ -132,6 +132,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     public JavaRDD<T> repartitionByCassandraReplica(
             String keyspaceName,
             String tableName,
+            ColumnSelector partitionKeyMapper,
             int partitionsPerHost,
             RowWriterFactory<T> rowWriterFactory
     ) {
@@ -141,6 +142,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         CassandraPartitionedRDD<T> newRDD = rddFunctions.repartitionByCassandraReplica(
                 keyspaceName,
                 tableName,
+                partitionKeyMapper,
                 partitionsPerHost,
                 connector,
                 ctT,
