@@ -40,6 +40,7 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
   def repartitionByCassandraReplica(
     keyspaceName: String,
     tableName: String,
+    partitionKeyMapper:ColumnSelector = PartitionKeyColumns,
     partitionsPerHost: Int = 10)(
   implicit
     connector: CassandraConnector = CassandraConnector(conf),
@@ -47,7 +48,7 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     rwf: RowWriterFactory[T]): DStream[T] = {
 
     dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionsPerHost))
+      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionKeyMapper, partitionsPerHost))
   }
 
   /**
