@@ -138,11 +138,14 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * event.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
    **/
-  def repartitionByCassandraReplica(keyspaceName: String, tableName: String, partitionsPerHost: Int = 10)
+  def repartitionByCassandraReplica(keyspaceName: String,
+                                    tableName: String,
+                                    partitionsPerHost: Int = 10,
+                                    partitionKeyMapper: ColumnSelector = PartitionKeyColumns)
                                    (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
                                     currentType: ClassTag[T], rwf: RowWriterFactory[T]) = {
     val part = new ReplicaPartitioner(partitionsPerHost, connector)
-    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName).partitionBy(part)
+    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName, partitionKeyMapper).partitionBy(part)
     val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
     new CassandraPartitionedRDD[T](output, keyspaceName, tableName)
   }
@@ -152,10 +155,12 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * of the data specified by that row.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
    */
-  def keyByCassandraReplica(keyspaceName: String, tableName: String)
+  def keyByCassandraReplica(keyspaceName: String,
+                            tableName: String,
+                            partitionKeyMapper: ColumnSelector = PartitionKeyColumns)
                            (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
                             currentType: ClassTag[T], rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName)
+    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
     rdd.mapPartitions(primaryKey =>
       converter.keyByReplicas(primaryKey)
     )

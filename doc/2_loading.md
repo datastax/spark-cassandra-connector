@@ -228,6 +228,27 @@ scala> repartitioned
 //res2: com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD[CustomerID] = CassandraPartitionedRDD[5] at RDD at CassandraPartitionedRDD.scala:12
 ```
 
+Specifying the RDD Field mapping to Cassandra Partition Keys can be done using the partitionKeyMapper parameter.
+
+```scala
+//CREATE TABLE test.shopping_history ( cust_id INT, date TIMESTAMP,  product TEXT, quantity INT, PRIMARY KEY (cust_id, date, product));
+case class OtherId(aCol: Int, bCol: Int) // Defines partition key
+val idsOfInterest = sc.parallelize(1 to 1000).map(id => OtherId(id, id + 1))
+val repartitionedOnA = idsOfInterest.repartitionByCassandraReplica(
+  "test", 
+  "shopping_history", 
+  10, 
+  partitionKeyMapper = SomeColumns("cust_id" as "aCol") 
+)
+
+val repartitionedOnB = idsOfInterest.repartitionByCassandraReplica(
+  "test", 
+  "shopping_history", 
+  10, 
+  partitionKeyMapper = SomeColumns("cust_id" as "bCol") 
+)
+```
+
 
 ### Using joinWithCassandraTable
 The connector supports using any RDD as a source of a direct join with a Cassandra Table through `joinWithCassandraTable`.
