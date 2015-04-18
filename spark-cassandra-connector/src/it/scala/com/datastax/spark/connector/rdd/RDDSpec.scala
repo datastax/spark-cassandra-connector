@@ -129,7 +129,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(Tuple1(_))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -171,7 +171,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(x => new KVRow(x))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -214,7 +214,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
@@ -296,7 +296,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be repartitionable" in {
     val source = sc.cassandraTable(keyspace, otherTable)
-    val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    val repart = source.repartitionByCassandraReplica(keyspace, tableName, partitionsPerHost = 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(keyspace, tableName)
     someCass.partitions.foreach {
