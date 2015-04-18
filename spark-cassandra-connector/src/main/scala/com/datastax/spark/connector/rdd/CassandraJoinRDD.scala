@@ -182,17 +182,26 @@ class CassandraJoinRDD[L, R] private[connector](
 
     logDebug("Generating Single Key Query Prepared Statement String")
     logDebug(s"SelectedColumns : $selectedColumnRefs -- JoinColumnNames : $joinColumnNames")
+    val partitionKeyColumns = tableDef.partitionKey.map(_.columnName)
+    val clusteringColumns = tableDef.clusteringColumns.map(_.columnName)
+    val joinColumns = joinColumnNames.map(_.columnName)
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")
-    val joinWhere = joinColumnNames.map(_.columnName).map(name => s"${quote(name)} = :$name")
+    val joinWhere = joinColumns.map(name => {
+      if(partitionKeyColumns.contains(name))
+        s"token(${quote(name)}) = token(:$name)"
+      else
+        s"${quote(name)} = :$name"
+    })
     val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val filter = (where.predicates ++ joinWhere).mkString(" AND ")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
+    val allowFiltering = if(where.predicates.size > 0 || joinColumns.intersect(clusteringColumns).size>0) "ALLOW FILTERING" else ""
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $limitClause $orderBy"
+        s"WHERE $filter $limitClause $orderBy $allowFiltering"
     logDebug(s"Query : $query")
     query
   }
