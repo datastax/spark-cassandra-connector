@@ -4,19 +4,34 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector.types.ColumnType
 import org.apache.spark.Logging
 
+/**
+ * Class for binding row-like objects into prepared statements. prefixVals
+ * is used for binding constant values into each bound statement. This supports parametrized
+ * .where clauses in [[com.datastax.spark.connector.rdd.CassandraJoinRDD]]
+ */
 private[connector] class BoundStatementBuilder[T](
     val rowWriter: RowWriter[T],
     val preparedStmt: PreparedStatement,
-    val protocolVersion: ProtocolVersion) extends Logging {
+    val protocolVersion: ProtocolVersion,
+    val prefixVals: Seq[Any] = Seq.empty) extends Logging {
 
   private val columnNames = rowWriter.columnNames.toIndexedSeq
   private val columnTypes = columnNames.map(preparedStmt.getVariables.getType)
   private val converters = columnTypes.map(ColumnType.converterToCassandra(_)(protocolVersion))
   private val buffer = Array.ofDim[Any](columnNames.size)
 
+  private val prefixConverted = for {
+    prefixIndex: Int <- 0 until prefixVals.length
+    prefixVal = prefixVals(prefixIndex)
+    prefixType = preparedStmt.getVariables.getType(prefixIndex)
+    prefixConverter =  ColumnType.converterToCassandra(prefixType)(protocolVersion)
+  } yield prefixConverter.convert(prefixVal)
+
   /** Creates `BoundStatement` from the given data item */
   def bind(row: T): RichBoundStatement = {
     val boundStatement = new RichBoundStatement(preparedStmt)
+    boundStatement.bind(prefixConverted: _*)
+
     rowWriter.readColumnValues(row, buffer)
     var bytesCount = 0
     for (i <- 0 until columnNames.size) {
