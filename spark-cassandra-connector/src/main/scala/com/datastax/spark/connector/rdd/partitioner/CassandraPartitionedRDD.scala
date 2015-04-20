@@ -13,7 +13,13 @@ import scala.reflect.ClassTag
  * RDD created by repartitionByCassandraReplica with preferred locations mapping to the CassandraReplicas
  * each partition was created for.
  */
-class CassandraPartitionedRDD[T](prev: RDD[T], keyspace:String, table:String)(implicit ct: ClassTag[T]) extends RDD[T](prev) {
+class CassandraPartitionedRDD[T](
+    prev: RDD[T],
+    keyspace:String,
+    table:String)(
+  implicit
+    ct: ClassTag[T])
+  extends RDD[T](prev) {
 
   //We aren't going to change the data
   override def compute(split: Partition, context: TaskContext): Iterator[T] = prev.iterator(split, context)
@@ -26,7 +32,8 @@ class CassandraPartitionedRDD[T](prev: RDD[T], keyspace:String, table:String)(im
   override def getPartitions: Array[Partition] = {
     partitioner match {
       case Some(rp: ReplicaPartitioner) => prev.partitions.map(partition => rp.getEndpointPartition(partition))
-      case _ => throw new IllegalArgumentException("CassandraPartitionedRDD hasn't been partitioned by ReplicaPartitioner. This should be impossible")
+      case _ => throw new IllegalArgumentException("CassandraPartitionedRDD hasn't been " +
+        "partitioned by ReplicaPartitioner. This should be impossible")
     }
   }
 
@@ -41,11 +48,12 @@ class CassandraPartitionedRDD[T](prev: RDD[T], keyspace:String, table:String)(im
 
     val rpcToLocalAddress = connector.withCassandraClientDo { client =>
       val ring = client.describe_local_ring(keyspace)
-      for {tr <- ring
-           rpcIps = tr.rpc_endpoints.map(InetAddress.getByName)
-           localIps = tr.endpoints.map(InetAddress.getByName)
-           (rpc, local) <- (rpcIps).zip(localIps)}
-        yield (rpc, local)
+      for {
+        tr <- ring
+        rpcIps = tr.rpc_endpoints.map(InetAddress.getByName)
+        localIps = tr.endpoints.map(InetAddress.getByName)
+        (rpc, local) <- (rpcIps).zip(localIps)
+      } yield (rpc, local)
     }.toMap
     val localToRpcAddress = rpcToLocalAddress.map { case (k, v) => (v -> k) }
 
@@ -56,7 +64,7 @@ class CassandraPartitionedRDD[T](prev: RDD[T], keyspace:String, table:String)(im
           val localIps = rpcToLocalAddress.get(origInet)
           val possibleIps = Seq(Some(origInet), rpcIps, localIps).flatMap(ip => ip)
           possibleIps.flatMap(ip => Seq(ip.getHostAddress, ip.getHostName))
-        }.toSet.toSeq
+        }.toSeq.distinct
       case other: Partition => throw new IllegalArgumentException(
         "CassandraPartitionedRDD doesn't have Endpointed Partitions. This should be impossible.")
     }
