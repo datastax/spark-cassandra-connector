@@ -17,7 +17,7 @@ import scala.util.Properties
  */
 object Versions {
 
-  val crossScala = Seq("2.11.5", "2.10.4")
+  val crossScala = Seq("2.11.6", "2.10.5")
 
   /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
   lazy val scalaVersion = sys.props.get("scala-2.11") match {
@@ -48,7 +48,7 @@ object Versions {
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
   val JSR166e         = "1.1.0"
-  val Spark           = "1.2.1"
+  val Spark           = "1.2.2"
 
   val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
 
