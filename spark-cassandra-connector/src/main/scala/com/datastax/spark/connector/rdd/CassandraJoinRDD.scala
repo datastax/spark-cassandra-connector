@@ -167,17 +167,20 @@ class CassandraJoinRDD[L, R] private[connector](
   //built
   lazy val singleKeyCqlQuery: (String) = {
     val whereClauses = where.predicates.flatMap(CqlWhereParser.parse)
-    val partitionKeys = tableDef.partitionKey.map(_.columnName)
-    val partitionKeyPredicates = whereClauses.collect {
-      case EqPredicate(c, _) if partitionKeys.contains(c) => c
-      case InPredicate(c) if partitionKeys.contains(c) => c
-      case InListPredicate(c, _) if partitionKeys.contains(c) => c
-      case RangePredicate(c, _, _) if partitionKeys.contains(c) => c
+    val joinColumns = joinColumnNames.map(_.columnName)
+    val joinColumnPredicates = whereClauses.collect {
+      case EqPredicate(c, _) if joinColumns.contains(c) => c
+      case InPredicate(c) if joinColumns.contains(c) => c
+      case InListPredicate(c, _) if joinColumns.contains(c) => c
+      case RangePredicate(c, _, _) if joinColumns.contains(c) => c
     }.toSet
 
     require(
-      partitionKeyPredicates.isEmpty,
-      s"No partition keys allowed in where on joins with Cassandra. Found : $partitionKeyPredicates")
+      joinColumnPredicates.isEmpty,
+      s"""Columns specified in both the join on clause and the where clause.
+         |Partition key columns are always part of the join clause.
+         |Columns in both: ${joinColumnPredicates.mkString(", ")}""".stripMargin
+    )
 
     logDebug("Generating Single Key Query Prepared Statement String")
     logDebug(s"SelectedColumns : $selectedColumnRefs -- JoinColumnNames : $joinColumnNames")
@@ -205,7 +208,7 @@ class CassandraJoinRDD[L, R] private[connector](
     val session = connector.openSession()
     implicit val pv = protocolVersion(session)
     val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
-    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, pv)
+    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, pv, where.values)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, limit)
