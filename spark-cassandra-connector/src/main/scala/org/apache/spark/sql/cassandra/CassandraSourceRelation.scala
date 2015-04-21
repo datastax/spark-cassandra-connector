@@ -4,8 +4,8 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef}
-import com.datastax.spark.connector.rdd.ValidRDDType
-import com.datastax.spark.connector.writer.SqlRowWriter
+import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
+import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import org.apache.spark.Logging
 
 import org.apache.spark.rdd.RDD
@@ -17,50 +17,57 @@ import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import scala.reflect.ClassTag
 
-/** Create Cassandra data source relation based on [[ScanType]]*/
-case class CassandraSourceRelation(table: String, keyspace: String, scanType: ScanType, cluster: Option[String],
-                                   userSpecifiedSchema: Option[StructType], sqlContext: SQLContext) {
-  def apply(table: String, keyspace: String, scanType: ScanType, cluster: Option[String],
-            userSpecifiedSchema: Option[StructType], sqlContext: SQLContext) = scanType.makeRelation(
-    table, keyspace, cluster, userSpecifiedSchema, sqlContext)
-}
 
 /** Base table scan relation*/
 case object BaseScanType extends ScanType  {
   override def makeRelation(table: String, keyspace: String, cluster: Option[String],
-                            userSpecifiedSchema: Option[StructType],sqlContext: SQLContext) =
-    new TableScanRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
+                            userSpecifiedSchema: Option[StructType],
+                            connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                            sqlContext: SQLContext) : BaseRelationImpl =
+    new TableScanRelationImpl(table, keyspace, cluster, connector, readConf, writeConf, userSpecifiedSchema, sqlContext)
+
 }
 
 /** Pruned columns table scan relation*/
 case object PrunedScanType extends ScanType {
   override def makeRelation(table: String, keyspace: String, cluster: Option[String],
-                            userSpecifiedSchema: Option[StructType],sqlContext: SQLContext) =
-    new PrunedScanRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
+                            userSpecifiedSchema: Option[StructType],
+                            connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                            sqlContext: SQLContext) : BaseRelationImpl=
+    new PrunedScanRelationImpl(table, keyspace, cluster, connector, readConf, writeConf,
+      userSpecifiedSchema, sqlContext)
 }
 
 /** Pruned columns and filtered table scan relation*/
 case object PrunedFilteredScanType extends ScanType {
   override def makeRelation(table: String, keyspace: String, cluster: Option[String],
-                            userSpecifiedSchema: Option[StructType],sqlContext: SQLContext) =
-    new PrunedFilteredScanRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
+                            userSpecifiedSchema: Option[StructType],
+                            connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                            sqlContext: SQLContext) : BaseRelationImpl =
+    new PrunedFilteredScanRelationImpl(table, keyspace, cluster,  connector, readConf, writeConf,
+      userSpecifiedSchema, sqlContext)
 }
 
 /** Pruned columns and Catalyst filtered table scan relation*/
 case object CatalystScanType extends ScanType {
   override def makeRelation(table: String, keyspace: String, cluster: Option[String],
-                            userSpecifiedSchema: Option[StructType],sqlContext: SQLContext) =
-    new CatalystScanRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
+                            userSpecifiedSchema: Option[StructType],
+                            connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                            sqlContext: SQLContext) : BaseRelationImpl =
+    new CatalystScanRelationImpl(table, keyspace, cluster, connector, readConf, writeConf,
+      userSpecifiedSchema, sqlContext)
 }
 
 /** Table scan type */
 sealed trait ScanType {
-  def makeRelation(table: String, keyspace: String, cluster: Option[String],
-                   userSpecifiedSchema: Option[StructType], sqlContext: SQLContext) : BaseRelationImpl
+  def makeRelation(table: String, keyspace: String, cluster: Option[String], userSpecifiedSchema: Option[StructType],
+                   connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                   sqlContext: SQLContext) : BaseRelationImpl
 }
 
 /** Base relation implements [[BaseRelation]] and [[InsertableRelation]] */
 private[cassandra] class BaseRelationImpl(table: String, keyspace: String, cluster: Option[String],
+                                          connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
                                           userSpecifiedSchema: Option[StructType], override val sqlContext: SQLContext)
   extends BaseRelation with InsertableRelation with Serializable with Logging {
 
@@ -83,21 +90,13 @@ private[cassandra] class BaseRelationImpl(table: String, keyspace: String, clust
     }
   }
 
-  protected[this] val baseRdd = sqlContext
-    .sparkContext
-    .cassandraTable[CassandraSQLRow](keyspace, table)(
-      new CassandraConnector(sqlContext.getCassandraConnConf(cluster)),
-      sqlContext.getReadConf(keyspace, table, cluster),
-      implicitly[ClassTag[CassandraSQLRow]],
-      CassandraSQLRowReader,
-      implicitly[ValidRDDType[CassandraSQLRow]])
-
-  private[this] val writeConf = sqlContext.getWriteConf(keyspace, table, cluster)
+  protected[this] val baseRdd = sqlContext.sparkContext.cassandraTable[CassandraSQLRow](keyspace, table)(
+    connector, readConf, implicitly[ClassTag[CassandraSQLRow]], CassandraSQLRowReader,
+    implicitly[ValidRDDType[CassandraSQLRow]])
 
   //TODO: need add some tests for insert null
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
-    data.rdd.saveToCassandra(keyspace, table, AllColumns, writeConf)(
-      new CassandraConnector(sqlContext.getCassandraConnConf(cluster)), SqlRowWriter.Factory)
+    data.rdd.saveToCassandra(keyspace, table, AllColumns, writeConf)(connector, SqlRowWriter.Factory)
   }
 
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
@@ -105,15 +104,21 @@ private[cassandra] class BaseRelationImpl(table: String, keyspace: String, clust
 
 /** Table scan relation implements [[BaseRelation]], [[InsertableRelation]] and [[TableScan]] */
 private[cassandra] class TableScanRelationImpl(table: String, keyspace: String, cluster: Option[String],
-                                               userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
-  extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with TableScan {
+                                               connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                                               userSpecifiedSchema: Option[StructType],
+                                               override val sqlContext: SQLContext)
+  extends BaseRelationImpl(table, keyspace, cluster, connector, readConf, writeConf, userSpecifiedSchema,
+    sqlContext) with TableScan {
   override def buildScan(): RDD[Row] = super.buildScan()
 }
 
 /** Table scan relation implements [[BaseRelation]], [[InsertableRelation]] and [[PrunedScan]] */
 private[cassandra] class PrunedScanRelationImpl(table: String, keyspace: String, cluster: Option[String],
-                                                userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
-  extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with PrunedScan {
+                                                connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                                                userSpecifiedSchema: Option[StructType],
+                                                override val sqlContext: SQLContext)
+  extends BaseRelationImpl(table, keyspace, cluster, connector, readConf, writeConf, userSpecifiedSchema, sqlContext)
+  with PrunedScan {
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val transformer = new RddFilterSelectPdTrf(requiredColumns, columnNameByLowercase, Seq.empty)
     transformer.maybeSelect apply baseRdd
@@ -122,8 +127,12 @@ private[cassandra] class PrunedScanRelationImpl(table: String, keyspace: String,
 
 /** Table scan relation implements [[BaseRelation]], [[InsertableRelation]] and [[PrunedFilteredScan]] */
 private[cassandra] class PrunedFilteredScanRelationImpl(table: String, keyspace: String, cluster: Option[String],
-                                                        userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
-  extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with PrunedFilteredScan {
+                                                        connector: CassandraConnector, readConf: ReadConf,
+                                                        writeConf: WriteConf,
+                                                        userSpecifiedSchema: Option[StructType],
+                                                        override val sqlContext: SQLContext)
+  extends BaseRelationImpl(table, keyspace, cluster, connector, readConf, writeConf, userSpecifiedSchema, sqlContext)
+  with PrunedFilteredScan {
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val pushDown = new FilterPushDown(filters, tableDef)
@@ -182,8 +191,10 @@ private[cassandra] class PrunedFilteredScanRelationImpl(table: String, keyspace:
 
 /** Table scan relation implements [[BaseRelation]], [[InsertableRelation]] and [[CatalystScan]] */
 private[cassandra] class CatalystScanRelationImpl(table: String, keyspace: String, cluster: Option[String],
-                                                  userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
-  extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with CatalystScan {
+                                                  connector: CassandraConnector, readConf: ReadConf, writeConf: WriteConf,
+                                                  userSpecifiedSchema: Option[StructType],
+                                                  override val sqlContext: SQLContext)
+  extends BaseRelationImpl(table, keyspace, cluster, connector, readConf, writeConf, userSpecifiedSchema, sqlContext) with CatalystScan {
   override def buildScan(requiredColumns: Seq[Attribute], filters: Seq[Expression]): RDD[Row] = {
     val pushDown = new PredicatePushDown(filters, tableDef)
     val pushdownFilters = pushDown.toPushDown

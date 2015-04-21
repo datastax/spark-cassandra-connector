@@ -28,17 +28,23 @@ package object cassandra {
                        keyspace: String,
                        scanType: ScanType = PrunedFilteredScanType,
                        cluster: Option[String] = None,
-                       userSpecifiedSchema: Option[StructType] = None): DataFrame =
-      sqlContext.baseRelationToDataFrame(getDataSourceRelation(table, keyspace, scanType, cluster, userSpecifiedSchema))
+                       userSpecifiedSchema: Option[StructType] = None)(
+      implicit connector: CassandraConnector = new CassandraConnector(sqlContext.getCassandraConnConf(cluster)),
+      readConf: ReadConf = sqlContext.getReadConf(keyspace, table, cluster),
+      writeConf: WriteConf = sqlContext.getWriteConf(keyspace, table, cluster)): DataFrame =
+      sqlContext.baseRelationToDataFrame(getDataSourceRelation(table, keyspace, scanType, cluster,
+        userSpecifiedSchema)(connector, readConf, writeConf))
 
     /** Get data source relation for given table, keyspace, scanType, cluster and userSpecifiedSchema */
     def getDataSourceRelation(table: String,
                               keyspace: String,
                               scanType: ScanType = PrunedFilteredScanType,
                               cluster: Option[String] = None,
-                              userSpecifiedSchema: Option[StructType] = None) : BaseRelationImpl = {
-      scanType.makeRelation(table, keyspace, cluster, userSpecifiedSchema, sqlContext)
-
+                              userSpecifiedSchema: Option[StructType] = None)(
+      implicit connector: CassandraConnector = new CassandraConnector(sqlContext.getCassandraConnConf(cluster)),
+      readConf: ReadConf = sqlContext.getReadConf(keyspace, table, cluster),
+      writeConf: WriteConf = sqlContext.getWriteConf(keyspace, table, cluster)) : BaseRelationImpl = {
+      scanType.makeRelation(table, keyspace, cluster, userSpecifiedSchema, connector, readConf, writeConf, sqlContext)
     }
 
     /** Get context Cassandra configuration settings. If it's not found, use default context configuration settings */
@@ -86,7 +92,8 @@ package object cassandra {
     def getReadConf(keyspace: String,
                     table: String,
                     cluster: Option[String]): ReadConf =
-      getContextConfSettings().getReadConf(keyspace, table, cluster, ReadConf.fromSparkConf(sqlContext.sparkContext.getConf))
+      getContextConfSettings().getReadConf(keyspace, table, cluster,
+        ReadConf.fromSparkConf(sqlContext.sparkContext.getConf))
 
     /** Add table level write configuration settings. Set cluster to None for a single cluster */
     def addTableWriteConf(keyspace: String,
@@ -137,11 +144,12 @@ package object cassandra {
 
     val schemas = CacheBuilder.newBuilder
       .maximumSize(100)
-      .expireAfterWrite(sqlContext.sparkContext.getConf.getLong(CassandraSchemaExpireInMinutesProperty, DefaultCassandraSchemaExpireInMinutes), TimeUnit.MINUTES)
+      .expireAfterWrite(sqlContext.sparkContext.getConf.getLong(CassandraSchemaExpireInMinutesProperty,
+      DefaultCassandraSchemaExpireInMinutes), TimeUnit.MINUTES)
       .build(
         new CacheLoader[String, Schema] {
           def load(cluster: String) : Schema = {
-            val clusterOpt = if("default".eq(cluster)) None else Option(cluster)
+            val clusterOpt = if(DefaultCassandraClusterName.eq(cluster)) None else Option(cluster)
             Schema.fromCassandra(new CassandraConnector(sqlContext.getCassandraConnConf(clusterOpt)))
           }
         })
@@ -152,6 +160,7 @@ package object cassandra {
     val DefaultCassandraSchemaExpireInMinutes = 10
     val SparkSQLContextNameProperty = "spark.sql.context.name"
     val DefaultSparkSQLContextName = "default"
+    val DefaultCassandraClusterName = "default"
 
     val Properties = Seq(
       CassandraSchemaExpireInMinutesProperty,
