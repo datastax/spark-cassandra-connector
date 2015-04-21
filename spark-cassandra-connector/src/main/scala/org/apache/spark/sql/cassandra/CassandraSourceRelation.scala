@@ -72,7 +72,7 @@ private[cassandra] class BaseRelationImpl(table: String, keyspace: String, clust
   extends BaseRelation with InsertableRelation with Serializable with Logging {
 
   protected[this] val tableDef = sqlContext
-    .schemas.get(cluster.getOrElse("default"))
+    .getCassandraSchema(cluster.getOrElse("default"))
     .keyspaceByName.getOrElse(keyspace, throw new IOException(s"Keyspace not found: $keyspace"))
     .tableByName.getOrElse(table, throw new IOException(s"Table not found: $keyspace.$table"))
 

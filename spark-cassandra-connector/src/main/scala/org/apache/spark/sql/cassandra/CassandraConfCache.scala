@@ -5,53 +5,22 @@ import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.lang.StringUtils
 
-object ConfManager {
-  import CSQLContext._
-
-  /** A map stores Cassandra [[CassandraConfCache]] per context */
-  private val confSettings = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[String, CassandraConfCache](){
-      put(DefaultSparkSQLContextName, new CassandraConfCache())
-    })
-
-  /** Add a Cassandra [[CassandraConfCache]] for a context to the cache */
-  def addContextConfSettings(contextName: String): Unit = {
-    confSettings.put(contextName, new CassandraConfCache())
-  }
-
-  /** Remove the Cassandra configuration settings for all contexts */
-  def clearContextConfSettings() : Unit = {
-    confSettings.clear()
-  }
-
-  /** Remove Cassandra configuration settings for the context */
-  def removeContextConfSettings(contextName: String) : Unit = {
-    confSettings.remove(contextName)
-  }
-
-  /** Get Cassandra configuration settings for the context, if it's not found, use default context settings */
-  def getContextConfSettings(contextName: String): CassandraConfCache = {
-    if (confSettings.get(contextName) == null) {
-      copyFromDefaultContext(contextName)
-    }
-    confSettings.get(contextName)
-  }
-
-  /** Copy the default Cassandra context settings to the context */
-  def copyFromDefaultContext(contextName: String): Unit = {
-    val defaultSettings = confSettings.get(DefaultSparkSQLContextName)
-    if (defaultSettings == null) {
-      val cache = new CassandraConfCache()
-      confSettings.put(DefaultSparkSQLContextName, cache)
-      confSettings.put(contextName, cache)
-    } else {
-      confSettings.put(contextName, defaultSettings)
-    }
-  }
-}
+/**
+ * A local cache to store user defined Cassandra configuration settings. It includes
+ * per cluster level, per keyspace level and per table level settings. It also allows to
+ * update the settings. It's mainly used by Spark SQL, so user can define all kind of
+ * Cassandra configuration settings, and SQL query automatically get the settings to
+ * connect to, read from and write to Cassandra.
+ *
+ * Potentially it could be used by other components as well.
+ *
+ * If it's difficult to isolate the settings for your application, you still could pass
+ * explicitly those settings to the methods.
+ */
 
 class CassandraConfCache {
 
+  /** Low lock contention so use [[java.util.Collections.synchronizedMap]] */
   private val clusterReadConf = java.util.Collections.synchronizedMap(
     new java.util.HashMap[String, ReadConf]())
   private val keyspaceReadConf = java.util.Collections.synchronizedMap(

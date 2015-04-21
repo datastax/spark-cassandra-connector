@@ -14,7 +14,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   override def lookupRelation(tableIdentifier: Seq[String], alias: Option[String]): LogicalPlan = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    val schema = cc.schemas.get(cluster)
+    val schema = cc.getCassandraSchema(cluster)
     val keyspaceDef = schema.keyspaceByName.getOrElse(database, throw new IOException(s"Keyspace not found: $database"))
     val tableDef = keyspaceDef.tableByName.getOrElse(table, throw new IOException(s"Table not found: $database.$table"))
     val clusterOpt = if("default".eq(cluster)) None else Option(cluster)
@@ -25,7 +25,8 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
-    (id(2).getOrElse("default"), id(1).getOrElse(cc.getKeyspace), id(0).getOrElse(throw new IOException(s"Missing table name")))
+    (id(2).getOrElse(CSQLContext.DefaultCassandraClusterName), id(1).getOrElse(cc.getKeyspace),
+      id(0).getOrElse(throw new IOException(s"Missing table name")))
   }
 
   override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = ???
@@ -36,7 +37,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   override def tableExists(tableIdentifier: Seq[String]): Boolean = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    val schema = cc.schemas.get(cluster)
+    val schema = cc.getCassandraSchema(cluster)
     val tabDef = for (ksDef <- schema.keyspaceByName.get(database); tabDef <- ksDef.tableByName.get(table)) yield tabDef
     tabDef.isDefined
   }
