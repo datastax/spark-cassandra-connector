@@ -13,7 +13,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
-  var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -72,10 +71,19 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
+  val cc: CassandraSQLContext = new CassandraSQLContext(sc)
+
   override def beforeAll() {
     super.beforeAll()
-    cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
+  }
+
+  override def afterAll() {
+    super.afterAll()
+    conn.withSessionDo { session =>
+      session.execute("DROP KEYSPACE sql_test")
+      session.execute("DROP KEYSPACE sql_test2")
+    }
   }
 
   it should "allow to select all rows" in {
