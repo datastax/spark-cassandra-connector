@@ -29,7 +29,7 @@ object Versions {
   val Logback         = "1.1.2"
   val Lzf             = "0.8.4"
   val MetricsJson     = "3.0.2"
-  val Scala           = "2.10.4"
+  val Scala           = "2.10.5"
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
