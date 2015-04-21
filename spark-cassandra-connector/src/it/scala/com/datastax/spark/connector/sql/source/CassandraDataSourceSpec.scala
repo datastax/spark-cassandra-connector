@@ -80,6 +80,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
 
   override def beforeAll() {
     sqlContext = new SQLContext(sc)
+    sqlContext.setConf("spark.sql.context.name", "testContext")
     setScanType()
     createTempTable("sql_test", "test1", "ddlTable")
     createTempTable("sql_test", "test2", "ddlTable2")

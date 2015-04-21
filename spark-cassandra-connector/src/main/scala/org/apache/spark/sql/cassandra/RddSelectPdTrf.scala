@@ -1,38 +1,28 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.NamedColumnRef
-import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.CassandraRDD
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.DataType
 
+
 /**
  * Transform a RDD by filtering [[[Attribute]] and pushdown Catalyst [[Expression]]s
  */
-class RddPredicateSelectPdTrf(attributes: Seq[Attribute], columnNameByLowercase: Map[String, String],
+class RddPredicateSelectPdTrf(attributes: Seq[Attribute], override  val columnNameByLowercase: Map[String, String],
                               pushdownPred: Seq[Expression]) extends RddSelectPdTrf {
 
-  override var maybeSelect = if (attributes.nonEmpty) { rdd: RDDType =>
-    rdd.select(attributes.map(a => columnNameByLowercase(a.name): NamedColumnRef): _*)
+  override lazy val maybeSelect: RDDType => RDDType = if (attributes.nonEmpty) { rdd: RDDType =>
+    rdd.select(attributes.map(attribute => columnNameByLowercase(attribute.name): NamedColumnRef): _*)
   } else { rdd: RDDType =>
     rdd
   }
 
-  override protected var maybePushdownPredicates = whereClause(pushdownPred) match {
+  override protected lazy val maybePushdownPredicates : RDDType => RDDType = whereClause(pushdownPred) match {
     case (cql, values) if values.nonEmpty => rdd: RDDType => rdd.where(cql, values: _*)
     case _ => rdd: RDDType => rdd
-  }
-
-
-  override protected def predicateRhsValue(predicate: Any): Seq[Any] = {
-    predicate match {
-      case cmp: BinaryComparison => Seq(castFromString(cmp.right.toString, cmp.right.dataType))
-      case in: In => in.list.map(value => castFromString(value.toString, value.dataType))
-      case inset: InSet => inset.hset.toSeq
-      case _ => throw new UnsupportedOperationException("Unsupported predicate: " + predicate)
-    }
   }
 
   private[this] def predicateOperator(predicate: Expression): String = {
@@ -48,14 +38,17 @@ class RddPredicateSelectPdTrf(attributes: Seq[Attribute], columnNameByLowercase:
     }
   }
 
-  override protected def predicateToCql(predicate: Any): String = {
+  override protected def predicateToCqlAndValue(predicate: Any): (String, Seq[Any]) = {
     predicate match {
       case cmp: BinaryComparison =>
-        cmp.references.head.name + " " + predicateOperator(cmp) + " ?"
+        (quotedName(cmp.references.head.name) + " " + predicateOperator(cmp) + " ?",
+          Seq(castFromString(cmp.right.toString, cmp.right.dataType)))
       case in: In =>
-        in.value.references.head.name + " IN " + in.list.map(_ => "?").mkString("(", ", ", ")")
+        (quotedName(in.value.references.head.name) + " IN " + in.list.map(_ => "?").mkString("(", ", ", ")"),
+          in.list.map(value => castFromString(value.toString, value.dataType)))
       case inset: InSet =>
-        inset.value.references.head.name + " IN " + inset.hset.toSeq.map(_ => "?").mkString("(", ", ", ")")
+        (quotedName(inset.value.references.head.name) + " IN " + inset.hset.toSeq.map(_ => "?").mkString("(", ", ", ")"),
+          inset.hset.toSeq)
       case _ =>
         throw new UnsupportedOperationException(
           "It's not a valid predicate to be pushed down, only >, <, >=, <= and In are allowed: " + predicate)
@@ -69,61 +62,34 @@ class RddPredicateSelectPdTrf(attributes: Seq[Attribute], columnNameByLowercase:
 /**
  * Transform a RDD by filtering columns and pushdown source [[Filter]]s
  */
-class RddFilterSelectPdTrf(requiredColumns: Array[String], columnNameByLowercase: Map[String, String],
+class RddFilterSelectPdTrf(requiredColumns: Array[String], override val columnNameByLowercase: Map[String, String],
                            filters: Seq[Filter]) extends RddSelectPdTrf {
 
-  override var maybeSelect = if (requiredColumns.nonEmpty) { rdd: RDDType =>
-    rdd.select(requiredColumns.map(a => columnNameByLowercase(a): NamedColumnRef): _*)
+  override lazy val maybeSelect : RDDType => RDDType = if (requiredColumns.nonEmpty) { rdd: RDDType =>
+    rdd.select(requiredColumns.map(column => columnNameByLowercase(column): NamedColumnRef): _*)
   } else { rdd: RDDType =>
     rdd
   }
 
-  override protected var maybePushdownPredicates = whereClause(filters) match {
+  override protected lazy val maybePushdownPredicates : RDDType => RDDType = whereClause(filters) match {
     case (cql, values) if values.nonEmpty => rdd: RDDType => rdd.where(cql, values: _*)
     case _ => rdd: RDDType => rdd
   }
-
-
-  override protected def predicateRhsValue(filter: Any): Seq[Any] = {
+  //TODO: need add some tests for upper case name
+  override protected def predicateToCqlAndValue(filter: Any): (String, Seq[Any]) = {
     filter match {
-      case eq: sources.EqualTo            => Seq(eq.value)
-      case lt: sources.LessThan           => Seq(lt.value)
-      case le: sources.LessThanOrEqual    => Seq(le.value)
-      case gt: sources.GreaterThan        => Seq(gt.value)
-      case ge: sources.GreaterThanOrEqual => Seq(ge.value)
-      case in: sources.In                 => in.values.toSeq
-      case _ => throw new UnsupportedOperationException("Unsupported filter: " + filter)
-    }
-  }
-
-  private[this] def filterOperator(filter: Filter): String = {
-    filter match {
-      case _: sources.EqualTo            => "="
-      case _: sources.LessThan           => "<"
-      case _: sources.LessThanOrEqual    => "<="
-      case _: sources.GreaterThan        => ">"
-      case _: sources.GreaterThanOrEqual => ">="
-      case _: sources.In                 => "IN"
-      case _ => throw new UnsupportedOperationException(
-        "It's not a valid filter to be pushed down, only >, <, >=, <= and In are allowed: " + filter)
-    }
-  }
-
-  override protected def predicateToCql(filter: Any): String = {
-    filter match {
-      case eq: sources.EqualTo            => eq.attribute + " " + filterOperator(eq) + " ?"
-      case lt: sources.LessThan           => lt.attribute + " " + filterOperator(lt) + " ?"
-      case le: sources.LessThanOrEqual    => le.attribute + " " + filterOperator(le) + " ?"
-      case gt: sources.GreaterThan        => gt.attribute + " " + filterOperator(gt) + " ?"
-      case ge: sources.GreaterThanOrEqual => ge.attribute + " " + filterOperator(ge) + " ?"
-      case in: sources.In                 =>
-        in.attribute + " IN " + in.values.map(_ => "?").mkString("(", ", ", ")")
+      case sources.EqualTo(attribute, value)            => (s"${quotedName(attribute)} = ?", Seq(value))
+      case sources.LessThan(attribute, value)           => (s"${quotedName(attribute)} < ?", Seq(value))
+      case sources.LessThanOrEqual(attribute, value)    => (s"${quotedName(attribute)} <= ?", Seq(value))
+      case sources.GreaterThan(attribute, value)        => (s"${quotedName(attribute)} > ?", Seq(value))
+      case sources.GreaterThanOrEqual(attribute, value) => (s"${quotedName(attribute)} >= ?", Seq(value))
+      case sources.In(attribute, values)                 =>
+        (quotedName(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
       case _ =>
         throw new UnsupportedOperationException(
           "It's not a valid filter to be pushed down, only >, <, >=, <= and In are allowed: " + filter)
     }
   }
-
 }
 
 
@@ -132,21 +98,32 @@ class RddFilterSelectPdTrf(requiredColumns: Array[String], columnNameByLowercase
  */
 abstract class RddSelectPdTrf extends Serializable {
 
+  /** CassandraRDD[CassandraSQLRow] is the only type supported for transferring */
   protected type RDDType = CassandraRDD[CassandraSQLRow]
 
-  var maybeSelect : RDDType => RDDType
+  /** Transfer selection to limit to columns specified */
+  val maybeSelect : RDDType => RDDType
 
-  protected var maybePushdownPredicates : RDDType => RDDType
+  /** Push down predicates to Java driver query */
+  protected val maybePushdownPredicates : RDDType => RDDType
 
+  /** Constuct where clause from pushdown predicates */
   protected def whereClause(pushdownPred: Seq[Any]): (String, Seq[Any]) = {
-    val cql = pushdownPred.map(predicateToCql).mkString(" AND ")
-    val args = pushdownPred.flatMap(predicateRhsValue)
+    val cqlValue = pushdownPred.map(predicateToCqlAndValue)
+    val cql = cqlValue.map(_._1).mkString(" AND ")
+    val args = cqlValue.flatMap(_._2)
     (cql, args)
   }
 
-  protected def predicateToCql(predicate: Any): String
-  protected def predicateRhsValue(predicate: Any): Seq[Any]
+  /** Construct Cql clause and retrieve the values from predicate */
+  protected def predicateToCqlAndValue(predicate: Any): (String, Seq[Any])
 
+  protected val columnNameByLowercase: Map[String, String]
+
+  /** Quote name */
+  protected def quotedName(str: String): String = "\"" + columnNameByLowercase(str) + "\""
+
+  /** Transform rdd by applying selected columns and push downed predicates */
   def transform(rdd: RDDType) : RDDType = {
     maybeSelect andThen maybePushdownPredicates apply rdd
   }

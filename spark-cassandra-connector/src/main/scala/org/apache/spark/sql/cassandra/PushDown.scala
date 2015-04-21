@@ -23,7 +23,8 @@ class PredicatePushDown (predicates: Seq[Expression], tableDef: TableDef)
     case _                     => false
   }
 
-  def isSingleColumn(predicate: Expression) = predicate.references.size == 1
+  override def isSingleColumn(predicate: Expression) : Boolean  =
+    predicate.references.size == 1 && super.isSingleColumn(predicate)
 
   /** Returns the only column name referenced in the predicate */
   def predicateColumnName(predicate: Expression) : String = {
@@ -49,11 +50,6 @@ class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
     case _: sources.GreaterThanOrEqual => true
     case _                             => false
   }
-
-  def isSingleColumn(filter: Filter) = filter.isInstanceOf[sources.In] || filter.isInstanceOf[sources.EqualTo] ||
-    filter.isInstanceOf[sources.LessThan] || filter.isInstanceOf[sources.LessThanOrEqual] ||
-    filter.isInstanceOf[sources.GreaterThan] || filter.isInstanceOf[sources.GreaterThanOrEqual]
-
 
   /** Returns the only column name referenced in the predicate */
   def predicateColumnName(filter: Filter) : String = {
@@ -92,21 +88,25 @@ class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
  */
 abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
 
+  /** Check if the predicate is a Eqaul To predicate */
   def isEqualTo(predicate: T): Boolean
 
+  /** Check if the predicate is In predicate */
   def isIn(predicate: T) : Boolean
 
+  /** Check if the predicate is a range comparison predicate */
   def isRangeComparison(predicate: T) : Boolean
 
-  def isSingleColumn(predicate: T) : Boolean
+  /** Check if the column is a single column predicate */
+  def isSingleColumn(predicate: T) : Boolean = isEqualTo(predicate) ||  isIn(predicate) || isRangeComparison(predicate)
 
   /** Returns the only column name referenced in the predicate */
   def predicateColumnName(predicate: T) : String
 
-  private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName)
-  private val clusteringColumns = tableDef.clusteringColumns.map(_.columnName)
-  private val indexedColumns = tableDef.allColumns.filter(_.isIndexedColumn).map(_.columnName)
-  private val regularColumns = tableDef.regularColumns.map(_.columnName)
+  private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName.toLowerCase)
+  private val clusteringColumns = tableDef.clusteringColumns.map(_.columnName.toLowerCase)
+  private val indexedColumns = tableDef.allColumns.filter(_.isIndexedColumn).map(_.columnName.toLowerCase)
+  private val regularColumns = tableDef.regularColumns.map(_.columnName.toLowerCase)
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
   private val singleColumnPredicates = predicates.filter(isSingleColumn)
@@ -153,7 +153,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
    * Selects clustering key predicates for pushdown:
    * 1. Clustering column predicates must be equality predicates, except the last one.
    * 2. The last predicate is allowed to be an equality or a range predicate.
-   * 3. The last predicate is allowed to be an IN predicate only if it was preceded by an equality predicate.
+   * 3. The last predicate is allowed to be an IN predicate only if it was preceded by all other equality predicates.
    * 4. Consecutive clustering columns must be used, but, contrary to partition key, the tail can be skipped.
    */
   private val clusteringColumnPredicatesToPushDown: Seq[T] = {
@@ -182,7 +182,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
     // be pushed down because we use token range query which already has partition columns in the
     // where clause and it can't have other partial partition columns in where clause any more.
     val nonIndexedPredicates = for {
-      c <- allColumns if !partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) ||
+      c <- allColumns if partitionKeyPredicatesToPushDown.nonEmpty && !eqIndexedColumns.contains(c) ||
       partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) &&
         !partitionKeyColumns.contains(c)
       p <- firstNonEmptySeq(eqPredicatesByName(c), rangePredicatesByName(c))
@@ -199,6 +199,6 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
       clusteringColumnPredicatesToPushDown ++
       indexedColumnPredicatesToPushDown).distinct
 
-  val toPreserve = predicates.filterNot(toPushDown.toSet.contains)
+  val toPreserve = (predicates.toSet -- toPushDown.toSet).toSeq
 }
 

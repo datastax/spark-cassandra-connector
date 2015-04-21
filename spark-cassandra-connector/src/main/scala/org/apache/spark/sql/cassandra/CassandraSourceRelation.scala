@@ -61,10 +61,8 @@ sealed trait ScanType {
 
 /** Base relation implements [[BaseRelation]] and [[InsertableRelation]] */
 private[cassandra] class BaseRelationImpl(table: String, keyspace: String, cluster: Option[String],
-                                          userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
+                                          userSpecifiedSchema: Option[StructType], override val sqlContext: SQLContext)
   extends BaseRelation with InsertableRelation with Serializable with Logging {
-
-  override def sqlContext: SQLContext = sqlcontext
 
   protected[this] val tableDef = sqlContext
     .schemas.get(cluster.getOrElse("default"))
@@ -96,21 +94,13 @@ private[cassandra] class BaseRelationImpl(table: String, keyspace: String, clust
 
   private[this] val writeConf = sqlContext.getWriteConf(keyspace, table, cluster)
 
+  //TODO: need add some tests for insert null
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     data.rdd.saveToCassandra(keyspace, table, AllColumns, writeConf)(
-        new CassandraConnector(sqlContext.getCassandraConnConf(cluster)), SqlRowWriter.Factory)
+      new CassandraConnector(sqlContext.getCassandraConnConf(cluster)), SqlRowWriter.Factory)
   }
 
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
-
-  protected[this] def getSchemaData(column: String, row: Row): (Any, NativeType) = {
-    val index = row.asInstanceOf[CassandraSQLRow].indexOf(column)
-    val columnDef = tableDef.columnByName.get(column).getOrElse(throw new IOException(s"Can't find $column"))
-    val dataType = ColumnDataType.catalystDataType(columnDef.columnType, nullable = true)
-    require(dataType.isPrimitive, s"${dataType.typeName} is not supported in filter.")
-
-    (row.get(index), dataType.asInstanceOf[NativeType])
-  }
 }
 
 /** Table scan relation implements [[BaseRelation]], [[InsertableRelation]] and [[TableScan]] */
@@ -126,7 +116,7 @@ private[cassandra] class PrunedScanRelationImpl(table: String, keyspace: String,
   extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with PrunedScan {
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val transformer = new RddFilterSelectPdTrf(requiredColumns, columnNameByLowercase, Seq.empty)
-    (transformer.maybeSelect apply baseRdd).asInstanceOf[RDD[Row]]
+    transformer.maybeSelect apply baseRdd
   }
 }
 
@@ -134,6 +124,7 @@ private[cassandra] class PrunedScanRelationImpl(table: String, keyspace: String,
 private[cassandra] class PrunedFilteredScanRelationImpl(table: String, keyspace: String, cluster: Option[String],
                                                         userSpecifiedSchema: Option[StructType], sqlcontext: SQLContext)
   extends BaseRelationImpl(table, keyspace, cluster, userSpecifiedSchema, sqlcontext) with PrunedFilteredScan {
+
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val pushDown = new FilterPushDown(filters, tableDef)
     val pushdownFilters = pushDown.toPushDown
@@ -141,35 +132,50 @@ private[cassandra] class PrunedFilteredScanRelationImpl(table: String, keyspace:
 
     logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
 
+    val dataTypeMapping: Map[String, (Int, DataType)] = requiredColumns.map(column =>
+      (column, (requiredColumns.indexOf(column),
+        ColumnDataType.catalystDataType(tableDef.columnByName.get(column).
+          getOrElse(throw new RuntimeException(s"Can't find column $column in $table")).columnType,
+          nullable = true)))).toMap
+
+    def getSchemaData(column: String, row: Row): (Any, NativeType) = {
+      val (index, dataType): (Int, DataType) = dataTypeMapping.get(column).getOrElse(
+        throw new IOException(s"Can't find column $column in $table"))
+      require(dataType.isPrimitive, s"${dataType.typeName} is not supported in filter.")
+      (row.get(index), dataType.asInstanceOf[NativeType])
+    }
+
+    /** Evaluate filter by column value from the row */
+    def translateFilter(filter: Filter): Row => Boolean = filter match {
+      case EqualTo(column, v) => (a: Row)            => compareColumnValue(column, a, v) == 0
+      case LessThan(column, v) => (a: Row)           => compareColumnValue(column, a, v) < 0
+      case LessThanOrEqual(column, v) => (a: Row)    => compareColumnValue(column, a, v) <= 0
+      case GreaterThan(column, v) => (a: Row)        => compareColumnValue(column, a, v) > 0
+      case GreaterThanOrEqual(column, v) => (a: Row) => compareColumnValue(column, a, v) >= 0
+      case In(column, values) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
+        values.toSet.contains(value)
+      //TODO: need add some tests for NULL
+      case IsNull(column) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
+        value.asInstanceOf[dataType.JvmType] == dataType.asNullable
+      case IsNotNull(column) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
+        value.asInstanceOf[dataType.JvmType] != dataType.asNullable
+      case Not(f) => (a: Row) =>    !translateFilter(f)(a)
+      case And(l, r) => (a: Row) => translateFilter(l)(a) && translateFilter(r)(a)
+      case Or(l, r) => (a: Row) =>  translateFilter(l)(a) || translateFilter(r)(a)
+      case _ => (a: Row) => logWarning(s"Unknown $filter")
+        true
+    }
+
+    def compareColumnValue(column: String, row: Row, v: Any): Int = {
+      val(value, dataType) = getSchemaData(column, row)
+      dataType.ordering.compare(value.asInstanceOf[dataType.JvmType], v.asInstanceOf[dataType.JvmType])
+    }
     // a filter combining all other filters
-    def rowFilter(row: Row): Boolean = !preservedFilters.map(translateFilter(_)(row)).contains(false)
+    val translators = preservedFilters.map(translateFilter)
+    def rowFilter(row: Row): Boolean = translators.forall(_(row))
 
     val transformer = new RddFilterSelectPdTrf(requiredColumns, columnNameByLowercase, pushdownFilters)
-    transformer.transform(baseRdd).asInstanceOf[RDD[Row]].filter(rowFilter)
-  }
-
-  /** Evaluate filter by column value from the row */
-  private[this] def translateFilter(filter: Filter): Row => Boolean = filter match {
-    case EqualTo(column, v) => (a: Row)            => compareColumnValue(column, a, v) == 0
-    case LessThan(column, v) => (a: Row)           => compareColumnValue(column, a, v) < 0
-    case LessThanOrEqual(column, v) => (a: Row)    => compareColumnValue(column, a, v) <= 0
-    case GreaterThan(column, v) => (a: Row)        => compareColumnValue(column, a, v) > 0
-    case GreaterThanOrEqual(column, v) => (a: Row) => compareColumnValue(column, a, v) >= 0
-    case In(column, values) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
-      values.map(_.asInstanceOf[dataType.JvmType]).toSet.contains(value)
-    case IsNull(column) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
-      value.asInstanceOf[dataType.JvmType] == dataType.asNullable
-    case IsNotNull(column) => (a: Row) => val (value, dataType) = getSchemaData(column, a)
-      value.asInstanceOf[dataType.JvmType] != dataType.asNullable
-    case Not(f) => (a: Row) =>    !translateFilter(f)(a)
-    case And(l, r) => (a: Row) => translateFilter(l)(a) && translateFilter(r)(a)
-    case Or(l, r) => (a: Row) =>  translateFilter(l)(a) || translateFilter(r)(a)
-    case _ => (a: Row) =>         true
-  }
-
-  private[this] def compareColumnValue(column: String, row: Row, v: Any): Int = {
-    val(value, dataType) = getSchemaData(column, row)
-    dataType.ordering.compare(value.asInstanceOf[dataType.JvmType], v.asInstanceOf[dataType.JvmType])
+    transformer.transform(baseRdd).filter(rowFilter)
   }
 }
 
@@ -185,17 +191,31 @@ private[cassandra] class CatalystScanRelationImpl(table: String, keyspace: Strin
 
     logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
 
+    val dataTypeMapping: Map[String, (Int, DataType)] = requiredColumns.map(attribute =>
+      (attribute.name,  (requiredColumns.indexOf(attribute),
+        ColumnDataType.catalystDataType(tableDef.columnByName.get(attribute.name).
+          getOrElse(throw new RuntimeException(s"Can't find column ${attribute.name} in the $table")).columnType,
+          nullable = true)))).toMap
+
+    def getSchemaData(column: String, row: Row): (Any, NativeType) = {
+      val (index, dataType): (Int, DataType) = dataTypeMapping.get(column).getOrElse(
+        throw new IOException(s"Can't find column $column in the $table"))
+      require(dataType.isPrimitive, s"${dataType.typeName} is not supported in filter.")
+      (row.get(index), dataType.asInstanceOf[NativeType])
+    }
+
     def rowFilter(row: Row): Boolean = {
       val evalAttributeReference: PartialFunction[Expression, Expression] = {
         case AttributeReference(name, _, _, _) => val (value, dataType) = getSchemaData(name, row)
           Literal(value, dataType)
         case e: Expression => e
       }
-      !preservedFilters.map(_.transform(evalAttributeReference)).map(_.eval(row)).contains(false)
+      val translators = preservedFilters.map(_.transform(evalAttributeReference))
+      !translators.map(_.eval(row)).contains(false)
     }
 
     val transformer = new RddPredicateSelectPdTrf(requiredColumns, columnNameByLowercase, pushdownFilters)
-    transformer.transform(baseRdd).asInstanceOf[RDD[Row]].filter(rowFilter)
+    transformer.transform(baseRdd).filter(rowFilter)
   }
 
 }

@@ -62,7 +62,7 @@ object ColumnDataType {
     connector.types.InetType       -> types.StringType,
     connector.types.UUIDType       -> types.StringType,
     connector.types.TimeUUIDType   -> types.StringType,
-    connector.types.BlobType       -> types.ByteType
+    connector.types.BlobType       -> types.BinaryType
   )
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {

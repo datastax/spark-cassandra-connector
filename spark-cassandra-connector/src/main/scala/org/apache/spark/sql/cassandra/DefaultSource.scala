@@ -13,7 +13,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
                               parameters: Map[String, String]): BaseRelation = {
     val schemaJsonString = getUserDefinedSchema(parameters)
     val schema = if (schemaJsonString == None) None
-                 else Option(DataType.fromJson(schemaJsonString.get).asInstanceOf[StructType])
+    else Option(DataType.fromJson(schemaJsonString.get).asInstanceOf[StructType])
     sqlContext.getDataSourceRelation(getTable(parameters), getKeyspace(parameters),
       getScanType(parameters), getCluster(parameters), schema)
   }
@@ -54,22 +54,23 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
   import DefaultSource._
 
-  private def getTable(parameters: Map[String, String]) =
+  private def getTable(parameters: Map[String, String]) : String =
     parameters.getOrElse(CassandraDataSourceTableNameProperty, missingProp(CassandraDataSourceTableNameProperty))
 
-  private def getKeyspace(parameters: Map[String, String]) =
+  private def getKeyspace(parameters: Map[String, String]) : String =
     parameters.getOrElse(CassandraDataSourceKeyspaceNameProperty, missingProp(CassandraDataSourceKeyspaceNameProperty))
 
-  private def getCluster(parameters: Map[String, String]) = parameters.get(CassandraDataSourceClusterNameProperty)
+  private def getCluster(parameters: Map[String, String]): Option[String] =
+    parameters.get(CassandraDataSourceClusterNameProperty)
 
-  private def getUserDefinedSchema(parameters: Map[String, String]) =
+  private def getUserDefinedSchema(parameters: Map[String, String]) : Option[String] =
     parameters.get(CassandraDataSourUserDefinedSchemaNameProperty)
 
   private def missingProp(prop: String) = throw new IllegalArgumentException(s"Missing $prop name")
 
-  private def getScanType(parameters: Map[String, String]) = CassandraDataSourceScanTypeMap.get(
+  private def getScanType(parameters: Map[String, String]) : ScanType = CassandraDataSourceScanTypeMap.get(
     parameters.getOrElse(CassandraDataSourceScanTypeNameProperty,
-    CassandraDataSourcePrunedFilteredScanTypeName).toLowerCase).getOrElse(CatalystScanType)
+      CassandraDataSourcePrunedFilteredScanTypeName).toLowerCase).getOrElse(CatalystScanType)
 }
 
 object DefaultSource {
