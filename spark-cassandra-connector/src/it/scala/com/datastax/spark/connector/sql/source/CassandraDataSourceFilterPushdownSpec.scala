@@ -38,16 +38,10 @@ class CassandraDataSourceFilterPushdownSpec extends SparkCassandraITFlatSpecBase
     session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 5, 5, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
   }
 
-  var sqlContext: SQLContext = null
-  var scanType: String = null
-
-  def setScanType() = {
-    scanType = CassandraDataSourcePrunedFilteredScanTypeName
-  }
+  val sqlContext: SQLContext = new SQLContext(sc)
+  val scanType: String = CassandraDataSourcePrunedFilteredScanTypeName
 
   override def beforeAll() {
-    sqlContext = new SQLContext(sc)
-    setScanType()
     createTempTable("sql_test", "test_pd", "test_pd")
   }
 

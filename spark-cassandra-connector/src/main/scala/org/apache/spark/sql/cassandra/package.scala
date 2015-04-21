@@ -6,7 +6,6 @@ import com.datastax.spark.connector.cql.{CassandraConnector, Schema, CassandraCo
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 import com.google.common.cache.{CacheLoader, CacheBuilder}
-import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.StructType
 

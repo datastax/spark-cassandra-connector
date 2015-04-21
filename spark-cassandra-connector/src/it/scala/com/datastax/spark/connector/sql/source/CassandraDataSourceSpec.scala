@@ -71,16 +71,10 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
-  var sqlContext: SQLContext = null
-  var scanType: String = null
-
-  def setScanType() = {
-    scanType = CassandraDataSourcePrunedFilteredScanTypeName
-  }
+  val sqlContext: SQLContext = new SQLContext(sc)
+  val scanType: String = CassandraDataSourcePrunedFilteredScanTypeName
 
   override def beforeAll() {
-    sqlContext = new SQLContext(sc)
-    setScanType()
     createTempTable("sql_test", "test1", "ddlTable")
     createTempTable("sql_test", "test2", "ddlTable2")
     createTempTable("sql_test2", "test3", "ddlTable3")

@@ -11,10 +11,9 @@ class CassandraSQLPredicatePushdownSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
-  var cc: CassandraSQLContext = null
+  val cc: CassandraSQLContext = new CassandraSQLContext(sc)
 
   override def beforeAll() {
-    cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
   }
 

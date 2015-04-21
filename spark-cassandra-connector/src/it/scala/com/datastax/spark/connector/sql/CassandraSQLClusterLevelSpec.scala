@@ -41,10 +41,9 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TABLE IF NOT EXISTS sql_test2.test3 (a INT PRIMARY KEY, d INT, e INT)")
   }
 
-  var cc: CassandraSQLContext = null
+  val cc: CassandraSQLContext = new CassandraSQLContext(sc)
 
   override def beforeAll() {
-    cc = new CassandraSQLContext(sc)
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
       .set("spark.cassandra.connection.native.port", getNativePort(0).toString)

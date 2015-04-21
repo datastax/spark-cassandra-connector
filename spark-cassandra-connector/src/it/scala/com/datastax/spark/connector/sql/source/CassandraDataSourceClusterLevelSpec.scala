@@ -40,16 +40,10 @@ class CassandraDataSourceClusterLevelSpec  extends SparkCassandraITFlatSpecBase 
     session.execute("CREATE TABLE IF NOT EXISTS sql_test2.test3 (a INT PRIMARY KEY, d INT, e INT)")
   }
 
-  var sqlContext: SQLContext = null
-  var scanType: String = null
-
-  def setScanType() = {
-    scanType = CassandraDataSourcePrunedFilteredScanTypeName
-  }
+  val sqlContext: SQLContext = new SQLContext(sc)
+  val scanType: String = CassandraDataSourcePrunedFilteredScanTypeName
 
   override def beforeAll() {
-    sqlContext = new SQLContext(sc)
-    setScanType()
     val conf1 = new SparkConf(true)
       .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
       .set("spark.cassandra.connection.native.port", getNativePort(0).toString)
@@ -71,7 +65,6 @@ class CassandraDataSourceClusterLevelSpec  extends SparkCassandraITFlatSpecBase 
   }
 
   override def afterAll() {
-    super.afterAll()
     super.afterAll()
     conn.withSessionDo { session =>
       session.execute("DROP KEYSPACE sql_test1")
