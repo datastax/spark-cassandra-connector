@@ -25,8 +25,10 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
-    (id(2).getOrElse(CSQLContext.DefaultCassandraClusterName), id(1).getOrElse(cc.getKeyspace),
-      id(0).getOrElse(throw new IOException(s"Missing table name")))
+    val clusterName = id(2).getOrElse(CSQLContext.DefaultCassandraClusterName)
+    val keyspaceName = id(1).getOrElse(cc.getKeyspace)
+    val tableName = id(0).getOrElse(throw new IOException(s"Missing table name"))
+    (clusterName, keyspaceName, tableName)
   }
 
   override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = ???

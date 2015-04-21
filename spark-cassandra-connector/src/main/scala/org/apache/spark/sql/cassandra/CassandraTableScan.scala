@@ -21,7 +21,7 @@ case class CassandraTableScan(
                                @transient val context: CassandraSQLContext)
   extends LeafNode with Logging {
 
-  private[this] val transformer = new RddPredicateSelectPdTrf(attributes,
+  private[this] val transformer = new CatalystRddTransformer(attributes,
     relation.columnNameByLowercase,
     pushdownPred)
 

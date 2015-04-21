@@ -1,34 +1,54 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.sources.Filter
 
+import com.datastax.spark.connector.cql.TableDef
+
 /**
  * Calculate pushdown predicates for a given table and Catalyst [[Expression]]s
  */
-class PredicatePushDown (predicates: Seq[Expression], tableDef: TableDef)
-  extends PushDown(predicates: Seq[Expression], tableDef: TableDef) {
+class PredicatePushDown (
+      predicates: Seq[Expression],
+      tableDef: TableDef) extends PushDown(predicates: Seq[Expression], tableDef: TableDef) {
 
-  def isEqualTo(predicate: Expression): Boolean = predicate.isInstanceOf[EqualTo]
+  def isEqualTo(
+      predicate: Expression): Boolean = {
 
-  def isIn(predicate: Expression) : Boolean = predicate.isInstanceOf[In] || predicate.isInstanceOf[InSet]
-
-  def isRangeComparison(predicate: Expression) : Boolean = predicate match {
-    case _: LessThan           => true
-    case _: LessThanOrEqual    => true
-    case _: GreaterThan        => true
-    case _: GreaterThanOrEqual => true
-    case _                     => false
+    predicate.isInstanceOf[EqualTo]
   }
 
-  override def isSingleColumn(predicate: Expression) : Boolean  =
+  def isIn(
+      predicate: Expression) : Boolean = {
+
+    predicate.isInstanceOf[In] || predicate.isInstanceOf[InSet]
+  }
+
+  def isRangeComparison(
+      predicate: Expression) : Boolean = {
+
+    predicate match {
+      case _: LessThan           => true
+      case _: LessThanOrEqual    => true
+      case _: GreaterThan        => true
+      case _: GreaterThanOrEqual => true
+      case _                     => false
+    }
+  }
+
+  override def isSingleColumn(
+               predicate: Expression) : Boolean  = {
+
     predicate.references.size == 1 && super.isSingleColumn(predicate)
+  }
+
 
   /** Returns the only column name referenced in the predicate */
-  def predicateColumnName(predicate: Expression) : String = {
-    require(predicate.references.size == 1, "Given predicate is not a single column predicate: " + predicate)
+  def predicateColumnName(
+      predicate: Expression) : String = {
+
+    require(predicate.references.size == 1, s"Given predicate $predicate is not a single column predicate. ")
     predicate.references.head.name
   }
 }
@@ -36,23 +56,38 @@ class PredicatePushDown (predicates: Seq[Expression], tableDef: TableDef)
 /**
  * Calculate pushdown filters for a given table and source [[Filter]]s
  */
-class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
-  extends PushDown(filters: Seq[Filter], tableDef: TableDef) {
+class FilterPushDown (
+      filters: Seq[Filter],
+      tableDef: TableDef) extends PushDown(filters: Seq[Filter], tableDef: TableDef) {
 
-  def isEqualTo(filter: Filter): Boolean = filter.isInstanceOf[sources.EqualTo]
+  def isEqualTo(
+      filter: Filter): Boolean = {
 
-  def isIn(filter: Filter) : Boolean = filter.isInstanceOf[sources.In]
+    filter.isInstanceOf[sources.EqualTo]
+  }
 
-  def isRangeComparison(filter: Filter) : Boolean = filter match {
-    case _: sources.LessThan           => true
-    case _: sources.LessThanOrEqual    => true
-    case _: sources.GreaterThan        => true
-    case _: sources.GreaterThanOrEqual => true
-    case _                             => false
+  def isIn(
+      filter: Filter) : Boolean = {
+
+    filter.isInstanceOf[sources.In]
+  }
+
+  def isRangeComparison(
+      filter: Filter) : Boolean = {
+
+    filter match {
+      case _: sources.LessThan           => true
+      case _: sources.LessThanOrEqual    => true
+      case _: sources.GreaterThan        => true
+      case _: sources.GreaterThanOrEqual => true
+      case _                             => false
+    }
   }
 
   /** Returns the only column name referenced in the predicate */
-  def predicateColumnName(filter: Filter) : String = {
+  def predicateColumnName(
+      filter: Filter) : String = {
+
     filter match {
       case eq: sources.EqualTo            => eq.attribute
       case lt: sources.LessThan           => lt.attribute
@@ -62,7 +97,7 @@ class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
       case in: sources.In                 => in.attribute
       case _ =>
         throw new UnsupportedOperationException(
-          "It's not a valid filter to be pushed down, only >, <, >=, <= and In are allowed: " + filter)
+          s"filter $filter is not valid to be pushed down, only >, <, >=, <= and In are allowed.")
     }
   }
 }
@@ -86,7 +121,9 @@ class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
  *     is equality or IN predicate.
  *
  */
-abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
+abstract class PushDown[T](
+               predicates: Seq[T],
+               tableDef: TableDef) {
 
   /** Check if the predicate is a Eqaul To predicate */
   def isEqualTo(predicate: T): Boolean
@@ -98,7 +135,11 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
   def isRangeComparison(predicate: T) : Boolean
 
   /** Check if the column is a single column predicate */
-  def isSingleColumn(predicate: T) : Boolean = isEqualTo(predicate) ||  isIn(predicate) || isRangeComparison(predicate)
+  def isSingleColumn(
+      predicate: T) : Boolean = {
+
+    isEqualTo(predicate) ||  isIn(predicate) || isRangeComparison(predicate)
+  }
 
   /** Returns the only column name referenced in the predicate */
   def predicateColumnName(predicate: T) : String
@@ -131,8 +172,8 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
   }
 
   /** Returns a first non-empty sequence. If not found, returns an empty sequence. */
-  private def firstNonEmptySeq[T](sequences: Seq[T]*): Seq[T] =
-    sequences.find(_.nonEmpty).getOrElse(Seq.empty[T])
+  private def firstNonEmptySeq[Type](sequences: Seq[Type]*): Seq[Type] =
+    sequences.find(_.nonEmpty).getOrElse(Seq.empty[Type])
 
   /**
    * Selects partition key predicates for pushdown:
