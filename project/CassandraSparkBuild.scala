@@ -67,8 +67,8 @@ object Dependencies {
     val slf4jApi          = "org.slf4j"               % "slf4j-api"             % Slf4j          % "provided"                 // MIT
     /* To allow spark artifact inclusion in the demo module at runtime, we set 'provided'
        scope on the connector below, specifically, versus globally here. */
-    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark                                       // ApacheV2
-    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark                                       // ApacheV2
+    val sparkCore         = "org.apache.spark"        %% "spark-core"           % Spark          exclude("org.scala-lang", "scala-compiler") exclude("org.scala-lang", "scala-library")  // ApacheV2
+    val sparkStreaming    = "org.apache.spark"        %% "spark-streaming"      % Spark          exclude("org.scala-lang", "scala-compiler") exclude("org.scala-lang", "scala-library")  // ApacheV2
 
     object Metrics {
       val metricsJson     = "com.codahale.metrics"    % "metrics-json"          % MetricsJson    % "provided"
