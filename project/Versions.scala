@@ -29,7 +29,7 @@ object Versions {
   val Kafka           = "0.8.0"// TODO issues w encoder/decoder ATM "0.8.1.1"
   val Lzf             = "0.8.4"
   val CodaHaleMetrics = "3.0.2"
-  val Scala           = "2.10.4"
+  val Scala           = "2.10.5"
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
