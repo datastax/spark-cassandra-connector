@@ -76,13 +76,13 @@ partition which is created for the RDD.
 
 ### Grouping rows by partition key
 
-Physically, cassandra stores data already grouped by Cassandra partition key and ordered by clustering
+Physically, Cassandra stores data already grouped by partition key and ordered by clustering
 column(s) within each partition. As a single Cassandra partition never spans multiple Spark partitions,
 it is possible to very efficiently group data by partition key without shuffling data around.
 Call `spanBy` or `spanByKey` methods instead of `groupBy` or `groupByKey`:
 
 ```sql
-CREATE TABLE events (year int, month int, ts timestamp, data varchar);
+CREATE TABLE events (year int, month int, ts timestamp, data varchar, PRIMARY KEY (year,month,ts));
 ```
 
 ```scala
@@ -93,6 +93,12 @@ sc.cassandraTable("test", "events")
   .keyBy(row => (row.getInt("year"), row.getInt("month")))
   .spanByKey
 ```
+
+Note: This only works for sequentially ordered data. Because data is ordered in Cassandra by the
+clustering keys, all viable spans must follow the natural clustering key order.
+
+This means in the above example that `spanBy` will be possible on (year), (year,month),
+(year,month,ts) but not (month), (ts), or (month,ts).
 
 The methods `spanBy` and `spanByKey` iterate every Spark partition locally
 and put every RDD item into the same group as long as the key doesn't change.
