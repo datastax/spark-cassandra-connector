@@ -318,11 +318,28 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   it should " support where clauses" in {
     val someCass = sc.parallelize(keys).map(x => new KVRow(x)).joinWithCassandraTable(keyspace, tableName).where("group >= 500")
     val results = someCass.collect.map(_._2)
-    results should have length (keys.filter(_ >= 5).length)
+    results should have length keys.count(_ >= 5)
   }
 
-  it should " throw an exception if using where on a column in the Partition key" in {
-    intercept[IllegalArgumentException] {
+  it should " support parametrized where clauses" in {
+    val someCass = sc.parallelize(keys).map(x => new KVRow(x)).joinWithCassandraTable(keyspace, tableName).where("group >= ?", 500L)
+    val results = someCass.collect.map(_._2)
+    results should have length keys.count(_ >= 5)
+  }
+
+  it should " throw an exception if using a where on a column that is specified by the join" in {
+    val exc = intercept[IllegalArgumentException] {
+      val someCass = sc.parallelize(keys).map(x => (x, x * 100L))
+        .joinWithCassandraTable(keyspace, tableName)
+        .where("group >= ?", 500L)
+        .on(SomeColumns("key","group"))
+      val results = someCass.collect.map(_._2)
+      results should have length keys.count(_ >= 5)
+    }
+  }
+
+  it should " throw an exception if using a where on a column that is a part of the Partition key" in {
+    val exc = intercept[IllegalArgumentException] {
       val someCass = sc.parallelize(keys)
         .map(x => new KVRow(x))
         .joinWithCassandraTable(keyspace, tableName)
