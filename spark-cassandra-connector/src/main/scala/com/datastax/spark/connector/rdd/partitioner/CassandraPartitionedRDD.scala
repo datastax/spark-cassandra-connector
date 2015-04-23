@@ -33,7 +33,7 @@ class CassandraPartitionedRDD[T](
     partitioner match {
       case Some(rp: ReplicaPartitioner) => prev.partitions.map(partition => rp.getEndpointPartition(partition))
       case _ => throw new IllegalArgumentException("CassandraPartitionedRDD hasn't been " +
-        "partitioned by ReplicaPartitioner. This should be impossible")
+        "partitioned by ReplicaPartitioner. Unable to do any work with data locality.")
     }
   }
 
@@ -62,11 +62,12 @@ class CassandraPartitionedRDD[T](
         epp.endpoints.flatMap { origInet =>
           val rpcIps = localToRpcAddress.get(origInet)
           val localIps = rpcToLocalAddress.get(origInet)
-          val possibleIps = Seq(Some(origInet), rpcIps, localIps).flatMap(ip => ip)
+          val possibleIps = Seq(Some(origInet), rpcIps, localIps).flatten
           possibleIps.flatMap(ip => Seq(ip.getHostAddress, ip.getHostName))
         }.toSeq.distinct
       case other: Partition => throw new IllegalArgumentException(
-        "CassandraPartitionedRDD doesn't have Endpointed Partitions. This should be impossible.")
+        "CassandraPartitionedRDD doesn't have Endpointed Partitions. PrefferedLocations cannot be" +
+          "deterimined")
     }
   }
 }
