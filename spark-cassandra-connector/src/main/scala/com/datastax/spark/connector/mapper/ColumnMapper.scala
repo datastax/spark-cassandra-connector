@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
   * }}}
   */
 trait ColumnMapper[T] {
-  def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String] = Map.empty): ColumnMap
+  def columnMap(struct: StructDef, aliasToColumnName: Map[String, String] = Map.empty): ColumnMap
 
   /** Provides a definition of the table that class `T` could be saved to. */
   def newTable(keyspaceName: String, tableName: String): TableDef

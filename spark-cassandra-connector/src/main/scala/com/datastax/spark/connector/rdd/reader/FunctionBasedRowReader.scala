@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.spark.connector.AbstractGettableData
+import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.types.TypeConverter
 
 import scala.reflect.ClassTag
@@ -19,7 +19,7 @@ class FunctionBasedRowReader1[R, A0](f: A0 => R)(
   implicit a0c: TypeConverter[A0], @transient override val ct: ClassTag[R]) extends FunctionBasedRowReader[R] {
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
-    f(a0c.convert(AbstractGettableData.get(row, 0)))
+    f(a0c.convert(GettableData.get(row, 0)))
 
   override def requiredColumns = Some(1)
   override def columnNames = None
@@ -34,8 +34,8 @@ class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1))
     )
 
   override def requiredColumns = Some(2)
@@ -52,9 +52,9 @@ class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)))
 
   override def requiredColumns = Some(3)
   override def columnNames = None
@@ -72,10 +72,10 @@ class FunctionBasedRowReader4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3))
     )
 
   override def requiredColumns = Some(4)
@@ -95,11 +95,11 @@ class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => 
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4))
     )
 
   override def requiredColumns = Some(5)
@@ -120,12 +120,12 @@ class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4,
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5))
     )
 
   override def requiredColumns = Some(6)
@@ -146,13 +146,13 @@ class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3,
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6))
     )
 
   override def requiredColumns = Some(7)
@@ -175,14 +175,14 @@ class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6)),
-      a7c.convert(AbstractGettableData.get(row, 7))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6)),
+      a7c.convert(GettableData.get(row, 7))
     )
 
   override def requiredColumns = Some(8)
@@ -206,15 +206,15 @@ class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6)),
-      a7c.convert(AbstractGettableData.get(row, 7)),
-      a8c.convert(AbstractGettableData.get(row, 8))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6)),
+      a7c.convert(GettableData.get(row, 7)),
+      a8c.convert(GettableData.get(row, 8))
     )
 
   override def requiredColumns = Some(9)
@@ -239,16 +239,16 @@ class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6)),
-      a7c.convert(AbstractGettableData.get(row, 7)),
-      a8c.convert(AbstractGettableData.get(row, 8)),
-      a9c.convert(AbstractGettableData.get(row, 9))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6)),
+      a7c.convert(GettableData.get(row, 7)),
+      a8c.convert(GettableData.get(row, 8)),
+      a9c.convert(GettableData.get(row, 9))
     )
 
   override def requiredColumns = Some(10)
@@ -274,17 +274,17 @@ class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6)),
-      a7c.convert(AbstractGettableData.get(row, 7)),
-      a8c.convert(AbstractGettableData.get(row, 8)),
-      a9c.convert(AbstractGettableData.get(row, 9)),
-      a10c.convert(AbstractGettableData.get(row, 10))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6)),
+      a7c.convert(GettableData.get(row, 7)),
+      a8c.convert(GettableData.get(row, 8)),
+      a9c.convert(GettableData.get(row, 9)),
+      a10c.convert(GettableData.get(row, 10))
     )
 
   override def requiredColumns = Some(11)
@@ -311,18 +311,18 @@ class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A
 
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(
-      a0c.convert(AbstractGettableData.get(row, 0)),
-      a1c.convert(AbstractGettableData.get(row, 1)),
-      a2c.convert(AbstractGettableData.get(row, 2)),
-      a3c.convert(AbstractGettableData.get(row, 3)),
-      a4c.convert(AbstractGettableData.get(row, 4)),
-      a5c.convert(AbstractGettableData.get(row, 5)),
-      a6c.convert(AbstractGettableData.get(row, 6)),
-      a7c.convert(AbstractGettableData.get(row, 7)),
-      a8c.convert(AbstractGettableData.get(row, 8)),
-      a9c.convert(AbstractGettableData.get(row, 9)),
-      a10c.convert(AbstractGettableData.get(row, 10)),
-      a11c.convert(AbstractGettableData.get(row, 11))
+      a0c.convert(GettableData.get(row, 0)),
+      a1c.convert(GettableData.get(row, 1)),
+      a2c.convert(GettableData.get(row, 2)),
+      a3c.convert(GettableData.get(row, 3)),
+      a4c.convert(GettableData.get(row, 4)),
+      a5c.convert(GettableData.get(row, 5)),
+      a6c.convert(GettableData.get(row, 6)),
+      a7c.convert(GettableData.get(row, 7)),
+      a8c.convert(GettableData.get(row, 8)),
+      a9c.convert(GettableData.get(row, 9)),
+      a10c.convert(GettableData.get(row, 10)),
+      a11c.convert(GettableData.get(row, 11))
     )
 
   override def requiredColumns = Some(12)

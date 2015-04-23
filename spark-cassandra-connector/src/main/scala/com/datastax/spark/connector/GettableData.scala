@@ -9,35 +9,35 @@ import scala.collection.JavaConversions._
 
 import com.datastax.spark.connector.util.ByteBufferUtil
 
-trait AbstractGettableData {
+trait GettableData {
 
-  protected def fieldNames: IndexedSeq[String]
-  protected def fieldValues: IndexedSeq[AnyRef]
+  def columnNames: IndexedSeq[String]
+  def columnValues: IndexedSeq[AnyRef]
 
   @transient
   private[connector] lazy val _indexOf =
-    fieldNames.zipWithIndex.toMap.withDefaultValue(-1)
+    columnNames.zipWithIndex.toMap.withDefaultValue(-1)
 
   @transient
   private[connector] lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
     throw new ColumnNotFoundException(
       s"Column not found: $name. " +
-        s"Available columns are: ${fieldNames.mkString("[", ", ", "]")}")
+        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
   }
 
   /** Total number of columns in this row. Includes columns with null values. */
-  def length = fieldValues.size
+  def length = columnValues.size
 
   /** Total number of columns in this row. Includes columns with null values. */
-  def size = fieldValues.size
+  def size = columnValues.size
 
   /** Returns true if column value is Cassandra null */
   def isNullAt(index: Int): Boolean =
-    fieldValues(index) == null
+    columnValues(index) == null
 
   /** Returns true if column value is Cassandra null */
   def isNullAt(name: String): Boolean = {
-    fieldValues(_indexOfOrThrow(name)) == null
+    columnValues(_indexOfOrThrow(name)) == null
   }
 
   /** Returns index of column with given name or -1 if column not found */
@@ -46,7 +46,7 @@ trait AbstractGettableData {
 
   /** Returns the name of the i-th column. */
   def nameOf(index: Int): String =
-    fieldNames(index)
+    columnNames(index)
 
   /** Returns true if column with given name is defined and has an
     * entry in the underlying value array, i.e. was requested in the result set.
@@ -55,24 +55,24 @@ trait AbstractGettableData {
     _indexOf(name) != -1
 
   /** Displays the content in human readable form, including the names and values of the columns */
-  def dataAsString = fieldNames
-    .zip(fieldValues)
+  def dataAsString = columnNames
+    .zip(columnValues)
     .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
     .mkString("{", ", ", "}")
 
   override def toString = dataAsString
 
   override def equals(o: Any) = o match {
-    case o: AbstractGettableData =>
-      if (this.fieldValues.length == o.length) {
-        this.fieldValues.zip(o.fieldValues).forall { case (mine, yours) => mine == yours}
+    case o: GettableData =>
+      if (this.columnValues.length == o.length) {
+        this.columnValues.zip(o.columnValues).forall { case (mine, yours) => mine == yours}
       } else
         false
     case _ => false
   }
 }
 
-object AbstractGettableData {
+object GettableData {
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */

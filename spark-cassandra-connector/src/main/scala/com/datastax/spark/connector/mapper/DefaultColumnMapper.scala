@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn, PartitionKeyColumn, TableDef}
+import com.datastax.spark.connector.cql.{StructDef, ColumnDef, RegularColumn, PartitionKeyColumn, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.ReflectionUtil
 
@@ -9,8 +9,8 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{typeOf, Type, TypeTag}
 import scala.util.{Success, Try}
 
-/** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor names
-  * and underscore naming convention for column names.
+/** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor
+  * names and underscore naming convention for column names.
   *
   * Example mapping:
   * {{{
@@ -28,9 +28,11 @@ import scala.util.{Success, Try}
   *   )
   * }}}
   *
-  * @param columnNameOverride maps property names to column names; use it to override default mapping for some properties
+  * @param columnNameOverride maps property names to column names; use it to override default mapping
+  *                           for some properties
   */
-class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String, String] = Map.empty) extends ColumnMapper[T] {
+class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String, String] = Map.empty)
+  extends ColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.DefaultColumnMapper._
 
@@ -43,32 +45,44 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
   private val getters = ReflectionUtil.getters[T]
   private val setters = ReflectionUtil.setters[T]
 
-  def resolve(name: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    columnNameOverride orElse aliasToColumnName applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, tableDef))
+  def resolve(name: String, structDef: StructDef, aliasToColumnName: Map[String, String]): String =
+    columnNameOverride
+      .orElse(aliasToColumnName)
+      .applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, structDef))
 
-  def constructorParamToColumnName(paramName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    resolve(paramName, tableDef, aliasToColumnName)
+  def constructorParamToColumnName(
+      paramName: String,
+      structDef: StructDef,
+      aliasToColumnName: Map[String, String]): String =
+    resolve(paramName, structDef, aliasToColumnName)
 
-  def getterToColumnName(getterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    resolve(getterName, tableDef, aliasToColumnName)
 
-  def setterToColumnName(setterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String = {
+  def getterToColumnName(
+      getterName: String,
+      structDef: StructDef,
+      aliasToColumnName: Map[String, String]): String =
+    resolve(getterName, structDef, aliasToColumnName)
+
+  def setterToColumnName(
+      setterName: String,
+      tableDef: StructDef,
+      aliasToColumnName: Map[String, String]): String = {
     val propertyName = setterNameToPropertyName(setterName)
     resolve(propertyName, tableDef, aliasToColumnName)
   }
 
-  override def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String]): ColumnMap = {
+  override def columnMap(structDef: StructDef, aliasToColumnName: Map[String, String]): ColumnMap = {
     val constructor =
       for ((paramName, _) <- constructorParams)
-      yield ColumnName(constructorParamToColumnName(paramName, tableDef, aliasToColumnName))
+      yield ColumnName(constructorParamToColumnName(paramName, structDef, aliasToColumnName))
 
     val getterMap =
       for ((getterName, _) <- getters)
-      yield (getterName, ColumnName(getterToColumnName(getterName, tableDef, aliasToColumnName)))
+      yield (getterName, ColumnName(getterToColumnName(getterName, structDef, aliasToColumnName)))
 
     val setterMap =
       for ((setterName, _) <- setters)
-      yield (setterName, ColumnName(setterToColumnName(setterName, tableDef, aliasToColumnName)))
+      yield (setterName, ColumnName(setterToColumnName(setterName, structDef, aliasToColumnName)))
 
     SimpleColumnMap(constructor, getterMap.toMap, setterMap.toMap, allowsNull = false)
   }
@@ -99,7 +113,9 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
         .map { case (name, tpe) => (name, Try(ColumnType.fromScalaType(tpe))) }
         .collect { case (name, Success(columnType)) => (name, columnType) }
 
-    require(mappableProperties.size > 0, "No mappable properties found in class: " + classTag.runtimeClass.getName)
+    require(
+      mappableProperties.nonEmpty,
+      "No mappable properties found in class: " + classTag.runtimeClass.getName)
 
     val columns =
       for ((property, i) <- mappableProperties.zipWithIndex) yield {

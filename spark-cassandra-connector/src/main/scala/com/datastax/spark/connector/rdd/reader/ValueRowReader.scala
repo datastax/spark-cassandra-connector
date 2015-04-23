@@ -2,7 +2,6 @@ package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.AbstractGettableData
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.JavaApiHelper
@@ -16,8 +15,8 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
     * @param columnNames column names available in the `row` */
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): T = {
     columnRef match {
-      case SelectableColumnRef(selectedAs) => converter.convert(AbstractGettableData.get(row, selectedAs))
-      case ColumnIndex(idx) => converter.convert(AbstractGettableData.get(row, idx))
+      case SelectableColumnRef(selectedAs) => converter.convert(GettableData.get(row, selectedAs))
+      case ColumnIndex(idx) => converter.convert(GettableData.get(row, idx))
     }
   }
 

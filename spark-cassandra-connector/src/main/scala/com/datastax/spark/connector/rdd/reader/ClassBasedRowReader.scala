@@ -5,7 +5,6 @@ import java.lang.reflect.Method
 import com.datastax.driver.core.{ProtocolVersion, Row}
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.AbstractGettableData
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TypeConversionException, TypeConverter}
@@ -67,9 +66,9 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
   private def getColumnValue(row: Row, columnRef: ColumnRef)(implicit protocolVersion: ProtocolVersion) = {
     columnRef match {
       case SelectableColumnRef(selectedAs) =>
-        AbstractGettableData.get(row, selectedAs)
+        GettableData.get(row, selectedAs)
       case ColumnIndex(index) =>
-        AbstractGettableData.get(row, index + skipColumns)
+        GettableData.get(row, index + skipColumns)
     }
   }
 

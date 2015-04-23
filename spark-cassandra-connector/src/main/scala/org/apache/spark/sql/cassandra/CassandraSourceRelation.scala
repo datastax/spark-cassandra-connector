@@ -40,7 +40,7 @@ private[cassandra] class CassandraSourceRelation(
     .keyspaceByName(tableRef.keyspace).tableByName(tableRef.table)
 
   override def schema: StructType = {
-    userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(toStructField)))
+    userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
   }
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {

@@ -4,7 +4,7 @@ import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 
 import com.datastax.spark.connector.{ColumnRef, ColumnIndex}
-import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
+import com.datastax.spark.connector.cql.{StructDef, RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
@@ -15,7 +15,7 @@ class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[
   private def indexedColumnRefs(n: Int) =
     (0 until n).map(ColumnIndex)
 
-  override def columnMap(tableDef: TableDef, aliases: Map[String, String]): ColumnMap = {
+  override def columnMap(structDef: StructDef, aliases: Map[String, String]): ColumnMap = {
 
     val GetterRegex = "_([0-9]+)".r
     val cls = implicitly[ClassTag[T]].runtimeClass

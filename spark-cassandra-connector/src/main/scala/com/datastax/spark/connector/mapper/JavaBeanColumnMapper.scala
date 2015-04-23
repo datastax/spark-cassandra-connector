@@ -2,11 +2,12 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.Method
 
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.{TableDef, StructDef}
 
 import scala.reflect.ClassTag
 
-class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty) extends ReflectionColumnMapper[T] {
+class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty) 
+  extends ReflectionColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.JavaBeanColumnMapper._
 
@@ -19,7 +20,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
 
   override protected def isGetter(method: Method): Boolean =
     GetterRegex.findFirstMatchIn(method.getName).isDefined &&
-    method.getParameterTypes.size == 0 &&
+    method.getParameterTypes.isEmpty &&
     method.getReturnType != Void.TYPE
 
   override protected def isSetter(method: Method): Boolean =
@@ -27,22 +28,33 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
     method.getParameterTypes.size == 1 &&
     method.getReturnType == Void.TYPE
 
-  def resolve(name: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String = {
-    columnNameOverride orElse aliasToColumnName applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, tableDef))
+  def resolve(name: String, structDef: StructDef, aliasToColumnName: Map[String, String]): String = {
+    columnNameOverride
+      .orElse(aliasToColumnName)
+      .applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, structDef))
   }
 
-  override protected def getterToColumnName(getterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]) = {
+  override protected def getterToColumnName(
+      getterName: String,
+      structDef: StructDef,
+      aliasToColumnName: Map[String, String]) = {
     val p = propertyName(getterName)
-    columnNameOverride.getOrElse(p, resolve(p, tableDef, aliasToColumnName))
+    columnNameOverride.getOrElse(p, resolve(p, structDef, aliasToColumnName))
   }
 
-  override protected def setterToColumnName(setterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]) = {
+  override protected def setterToColumnName(
+      setterName: String,
+      structDef: StructDef,
+      aliasToColumnName: Map[String, String]) = {
     val p = propertyName(setterName)
-    columnNameOverride.getOrElse(p, resolve(p, tableDef, aliasToColumnName))
+    columnNameOverride.getOrElse(p, resolve(p, structDef, aliasToColumnName))
   }
 
-  override protected def constructorParamToColumnName(paramName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]) = {
-    columnNameOverride.getOrElse(paramName, resolve(paramName, tableDef, aliasToColumnName))
+  override protected def constructorParamToColumnName(
+      paramName: String,
+      structDef: StructDef,
+      aliasToColumnName: Map[String, String]) = {
+    columnNameOverride.getOrElse(paramName, resolve(paramName, structDef, aliasToColumnName))
   }
 
   /** Java Beans allow nulls in property values */

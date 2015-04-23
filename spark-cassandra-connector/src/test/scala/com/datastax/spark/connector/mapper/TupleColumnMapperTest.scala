@@ -52,12 +52,12 @@ class TupleColumnMapperTest {
     val table = columnMapper.newTable("keyspace", "table")
     assertEquals("keyspace", table.keyspaceName)
     assertEquals("table", table.tableName)
-    assertEquals(4, table.allColumns.size)
+    assertEquals(4, table.columns.size)
     assertEquals(1, table.partitionKey.size)
     assertEquals(IntType, table.partitionKey(0).columnType)
-    assertEquals(VarCharType, table.allColumns(1).columnType)
-    assertEquals(BooleanType, table.allColumns(2).columnType)
-    assertEquals(ListType(TimestampType), table.allColumns(3).columnType)
+    assertEquals(VarCharType, table.columns(1).columnType)
+    assertEquals(BooleanType, table.columns(2).columnType)
+    assertEquals(ListType(TimestampType), table.columns(3).columnType)
   }
 
 }

@@ -126,8 +126,8 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
 
     "allow to list fields of a user defined type" in {
       val udt = table.columnByName("d16_address").columnType.asInstanceOf[UserDefinedType]
-      udt.fieldNames shouldBe Seq("street", "city", "zip")
-      udt.fieldTypes shouldBe Seq(VarCharType, VarCharType, IntType)
+      udt.columnNames shouldBe Seq("street", "city", "zip")
+      udt.columnTypes shouldBe Seq(VarCharType, VarCharType, IntType)
     }
   }
 

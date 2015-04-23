@@ -77,7 +77,7 @@ class TableWriter[T] private (
   }
 
   private val isCounterUpdate =
-    tableDef.allColumns.exists(_.isCounterColumn)
+    tableDef.columns.exists(_.isCounterColumn)
 
   private val queryTemplate: String = {
     if (isCounterUpdate)
@@ -157,7 +157,7 @@ object TableWriter {
   }
 
   private def checkMissingColumns(table: TableDef, columnNames: Seq[String]) {
-    val allColumnNames = table.allColumns.map(_.columnName)
+    val allColumnNames = table.columns.map(_.columnName)
     val missingColumns = columnNames.toSet -- allColumnNames
     if (missingColumns.nonEmpty)
       throw new IllegalArgumentException(

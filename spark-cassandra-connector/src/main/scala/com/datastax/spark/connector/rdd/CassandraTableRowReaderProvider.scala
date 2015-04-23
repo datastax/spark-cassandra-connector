@@ -59,7 +59,7 @@ trait CassandraTableRowReaderProvider[R] {
   }
 
   protected def checkColumnsExistence(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
-    val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
+    val allColumnNames = tableDef.columns.map(_.columnName).toSet
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
 
     def checkSingleColumn(column: NamedColumnRef) = {
@@ -93,7 +93,7 @@ trait CassandraTableRowReaderProvider[R] {
   lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
     val providedColumnRefs =
       columnNames match {
-        case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef)
+        case AllColumns => tableDef.columns.map(col => col.columnName: NamedColumnRef)
         case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef)
         case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
@@ -156,7 +156,7 @@ trait CassandraTableRowReaderProvider[R] {
   def verify() = {
     val targetType = classTag
 
-    tableDef.allColumns // will throw IOException if table does not exist
+    tableDef.columns // will throw IOException if table does not exist
 
     rowReader.columnNames match {
       case Some(names) =>

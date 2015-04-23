@@ -117,14 +117,14 @@ class DefaultColumnMapperTest {
 
     assertEquals("keyspace", table.keyspaceName)
     assertEquals("table", table.tableName)
-    assertEquals(3, table.allColumns.size)
+    assertEquals(3, table.columns.size)
     assertEquals(1, table.partitionKey.size)
-    assertEquals("property_1", table.allColumns(0).columnName)
-    assertEquals(VarCharType, table.allColumns(0).columnType)
-    assertEquals("camel_case_property", table.allColumns(1).columnName)
-    assertEquals(IntType, table.allColumns(1).columnType)
-    assertEquals("upper_case_column", table.allColumns(2).columnName)
-    assertEquals(IntType, table.allColumns(2).columnType)
+    assertEquals("property_1", table.columns(0).columnName)
+    assertEquals(VarCharType, table.columns(0).columnType)
+    assertEquals("camel_case_property", table.columns(1).columnName)
+    assertEquals(IntType, table.columns(1).columnType)
+    assertEquals("upper_case_column", table.columns(2).columnName)
+    assertEquals(IntType, table.columns(2).columnType)
   }
 
   @Test
@@ -134,14 +134,14 @@ class DefaultColumnMapperTest {
 
     assertEquals("keyspace", table.keyspaceName)
     assertEquals("table", table.tableName)
-    assertEquals(3, table.allColumns.size)
+    assertEquals(3, table.columns.size)
     assertEquals(1, table.partitionKey.size)
-    assertEquals("property_1", table.allColumns(0).columnName)
-    assertEquals(VarCharType, table.allColumns(0).columnType)
-    assertEquals("camel_case_property", table.allColumns(1).columnName)
-    assertEquals(IntType, table.allColumns(1).columnType)
-    assertEquals("upper_case_column", table.allColumns(2).columnName)
-    assertEquals(IntType, table.allColumns(2).columnType)
+    assertEquals("property_1", table.columns(0).columnName)
+    assertEquals(VarCharType, table.columns(0).columnType)
+    assertEquals("camel_case_property", table.columns(1).columnName)
+    assertEquals(IntType, table.columns(1).columnType)
+    assertEquals("upper_case_column", table.columns(2).columnName)
+    assertEquals(IntType, table.columns(2).columnType)
   }
 
   class Foo
@@ -154,10 +154,10 @@ class DefaultColumnMapperTest {
 
     assertEquals("keyspace", table.keyspaceName)
     assertEquals("table", table.tableName)
-    assertEquals(1, table.allColumns.size)
+    assertEquals(1, table.columns.size)
     assertEquals(1, table.partitionKey.size)
-    assertEquals("property_2", table.allColumns(0).columnName)
-    assertEquals(IntType, table.allColumns(0).columnType)
+    assertEquals("property_2", table.columns(0).columnName)
+    assertEquals(IntType, table.columns(0).columnType)
   }
 
   @Test(expected = classOf[IllegalArgumentException])
