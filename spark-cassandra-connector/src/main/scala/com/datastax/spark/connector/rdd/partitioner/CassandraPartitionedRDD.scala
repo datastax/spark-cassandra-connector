@@ -43,31 +43,29 @@ class CassandraPartitionedRDD[T](
    * the bound interface of the Spark Executor. In addition we will add the HostName and
    * HostAddress that we get for each of these endpoints to cover all of the logical choices.
    */
-  override def getPreferredLocations(split: Partition): Seq[String] = {
-    val connector = CassandraConnector(prev.sparkContext.getConf)
+  override def getPreferredLocations(split: Partition): Seq[String] = split match {
+    case epp: ReplicaPartition =>
+      val connector = CassandraConnector(prev.sparkContext.getConf)
+      val rpcToLocalAddress = connector.withCassandraClientDo { client =>
+        val ring = client.describe_local_ring(keyspace)
+        for {
+          tr <- ring
+          rpcIps = tr.rpc_endpoints.map(InetAddress.getByName)
+          localIps = tr.endpoints.map(InetAddress.getByName)
+          (rpc, local) <- (rpcIps).zip(localIps)
+        } yield (rpc, local)
+      }.toMap
+      val localToRpcAddress = rpcToLocalAddress.map(_.swap)
 
-    val rpcToLocalAddress = connector.withCassandraClientDo { client =>
-      val ring = client.describe_local_ring(keyspace)
-      for {
-        tr <- ring
-        rpcIps = tr.rpc_endpoints.map(InetAddress.getByName)
-        localIps = tr.endpoints.map(InetAddress.getByName)
-        (rpc, local) <- (rpcIps).zip(localIps)
-      } yield (rpc, local)
-    }.toMap
-    val localToRpcAddress = rpcToLocalAddress.map { case (k, v) => (v -> k) }
+      epp.endpoints.flatMap { origInet =>
+        val rpcIps = localToRpcAddress.get(origInet)
+        val localIps = rpcToLocalAddress.get(origInet)
+        val possibleIps = Seq(Some(origInet), rpcIps, localIps).flatten
+        possibleIps.flatMap(ip => Seq(ip.getHostAddress, ip.getHostName))
+      }.toSeq.distinct
 
-    split match {
-      case epp: ReplicaPartition =>
-        epp.endpoints.flatMap { origInet =>
-          val rpcIps = localToRpcAddress.get(origInet)
-          val localIps = rpcToLocalAddress.get(origInet)
-          val possibleIps = Seq(Some(origInet), rpcIps, localIps).flatten
-          possibleIps.flatMap(ip => Seq(ip.getHostAddress, ip.getHostName))
-        }.toSeq.distinct
-      case other: Partition => throw new IllegalArgumentException(
-        "CassandraPartitionedRDD doesn't have Endpointed Partitions. PrefferedLocations cannot be" +
-          "deterimined")
-    }
+    case other: Partition => throw new IllegalArgumentException(
+      "CassandraPartitionedRDD doesn't have Endpointed Partitions. PrefferedLocations cannot be" +
+        "deterimined")
   }
 }
