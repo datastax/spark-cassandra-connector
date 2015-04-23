@@ -31,19 +31,18 @@ import scala.util.{Success, Try}
   * @param columnNameOverride maps property names to column names; use it to override default mapping
   *                           for some properties
   */
-class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String, String] = Map.empty)
+class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] = Map.empty)
   extends ColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.DefaultColumnMapper._
 
-  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
-
   private def setterNameToPropertyName(str: String) =
     str.substring(0, str.length - SetterSuffix.length)
 
-  private val constructorParams = ReflectionUtil.constructorParams[T]
-  private val getters = ReflectionUtil.getters[T]
-  private val setters = ReflectionUtil.setters[T]
+  private val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
+  private val constructorParams = ReflectionUtil.constructorParams(tpe)
+  private val getters = ReflectionUtil.getters(tpe)
+  private val setters = ReflectionUtil.setters(tpe)
 
   def resolve(name: String, structDef: StructDef, aliasToColumnName: Map[String, String]): String =
     columnNameOverride
@@ -89,7 +88,7 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
 
   private def inheritedScalaGetters: Seq[(String, Type)] = {
     for {
-      bc <- typeOf[T].baseClasses if bc.fullName.startsWith("scala.")
+      bc <- tpe.baseClasses if bc.fullName.startsWith("scala.")
       tpe = bc.typeSignature
       getter <- ReflectionUtil.getters(tpe)
     } yield getter
@@ -115,7 +114,7 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
 
     require(
       mappableProperties.nonEmpty,
-      "No mappable properties found in class: " + classTag.runtimeClass.getName)
+      "No mappable properties found in class: " + tpe.toString)
 
     val columns =
       for ((property, i) <- mappableProperties.zipWithIndex) yield {

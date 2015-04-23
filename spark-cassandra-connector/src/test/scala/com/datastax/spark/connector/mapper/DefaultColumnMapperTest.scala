@@ -22,7 +22,7 @@ class DefaultColumnMapperTest {
 
   @Test
   def testGetters1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
     val getters = columnMap.getters
     assertEquals(ColumnName(c1.columnName), getters("property1"))
     assertEquals(ColumnName(c2.columnName), getters("camelCaseProperty"))
@@ -31,7 +31,7 @@ class DefaultColumnMapperTest {
 
   @Test
   def testGetters2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
     val getters = columnMap.getters
     assertEquals(ColumnName(c1.columnName), getters("property1"))
     assertEquals(ColumnName(c2.columnName), getters("camelCaseProperty"))
@@ -40,13 +40,13 @@ class DefaultColumnMapperTest {
 
   @Test
   def testSetters1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
     assertTrue(columnMap.setters.isEmpty)
   }
 
   @Test
   def testSetters2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
     val setters = columnMap.setters
     assertEquals(ColumnName(c1.columnName), setters("property1_$eq"))
     assertEquals(ColumnName(c2.columnName), setters("camelCaseProperty_$eq"))
@@ -55,7 +55,7 @@ class DefaultColumnMapperTest {
 
   @Test
   def testConstructorParams1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
     val expectedConstructor: Seq[ColumnName] = Seq(
       ColumnName(c1.columnName),
       ColumnName(c2.columnName),
@@ -65,7 +65,7 @@ class DefaultColumnMapperTest {
 
   @Test
   def testConstructorParams2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2].columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
     val expectedConstructor: Seq[ColumnName] = Seq(
       ColumnName(c1.columnName),
       ColumnName(c2.columnName),

@@ -3,7 +3,6 @@ package com.datastax.spark.connector.mapper
 import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
 import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
 
 
 /** Produces [[ColumnMap]] objects that map class `T` properties to columns
@@ -24,17 +23,18 @@ import scala.reflect.ClassTag
   * }}}
   */
 trait ColumnMapper[T] {
+
+  /** Provides a mapping between given table or UDT and properties of type `T` */
   def columnMap(struct: StructDef, aliasToColumnName: Map[String, String] = Map.empty): ColumnMap
 
   /** Provides a definition of the table that class `T` could be saved to. */
   def newTable(keyspaceName: String, tableName: String): TableDef
 
-  def classTag: ClassTag[T]
 }
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {
-  implicit def defaultColumnMapper[T : ClassTag : TypeTag]: ColumnMapper[T] =
+  implicit def defaultColumnMapper[T : TypeTag]: ColumnMapper[T] =
     new DefaultColumnMapper[T]
 }
 

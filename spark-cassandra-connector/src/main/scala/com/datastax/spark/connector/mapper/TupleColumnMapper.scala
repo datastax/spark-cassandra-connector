@@ -10,8 +10,6 @@ import com.datastax.spark.connector.util.Reflect
 
 class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[T] {
 
-  override val classTag: ClassTag[T] = implicitly[ClassTag[T]]
-
   private def indexedColumnRefs(n: Int) =
     (0 until n).map(ColumnIndex)
 

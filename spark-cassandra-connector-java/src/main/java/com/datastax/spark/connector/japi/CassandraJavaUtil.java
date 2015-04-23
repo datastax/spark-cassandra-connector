@@ -121,7 +121,7 @@ public class CassandraJavaUtil {
      */
     @SuppressWarnings("unchecked")
     public static <T> TypeTags.TypeTag<T> typeTag(Class<?> main) {
-        return JavaApiHelper.<T>getTypeTag((Class<T>) main);
+        return JavaApiHelper.getTypeTag((Class<T>) main);
     }
 
     /**
@@ -332,7 +332,7 @@ public class CassandraJavaUtil {
      * for inline invocations.
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
-     * be used, see {@link #mapRowTo(ColumnMapper)} method.
+     * be used, see {@link #mapRowTo(Class, ColumnMapper)} method.
      */
     public static <T> RowReaderFactory<T> mapRowTo(
             Class<T> targetClass, Map<String, String> columnMapping) {
@@ -352,7 +352,7 @@ public class CassandraJavaUtil {
      * convention.
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
-     * be used, see {@link #mapRowTo(ColumnMapper)} method.
+     * be used, see {@link #mapRowTo(Class, ColumnMapper)} method.
      */
     public static <T> RowReaderFactory<T> mapRowTo(Class<T> targetClass, Pair... columnMappings) {
         TypeTags.TypeTag<T> tt = typeTag(targetClass);
@@ -365,8 +365,8 @@ public class CassandraJavaUtil {
      * Constructs a row reader factory which maps an entire row using a specified column mapper. Follow
      * the guide to find out more about column mappers.
      */
-    public static <T> RowReaderFactory<T> mapRowTo(ColumnMapper<T> columnMapper) {
-        TypeTags.TypeTag<T> tt = typeTag(getRuntimeClass(columnMapper.classTag()));
+    public static <T> RowReaderFactory<T> mapRowTo(Class<T> targetClass, ColumnMapper<T> columnMapper) {
+        TypeTags.TypeTag<T> tt = typeTag(targetClass);
         return new ClassBasedRowReaderFactory<>(tt, columnMapper);
     }
 
@@ -378,8 +378,8 @@ public class CassandraJavaUtil {
      * Creates a row writer factory which can map objects supported by a given column mapper to columns
      * in a table.
      */
-    public static <T> RowWriterFactory<T> mapToRow(ColumnMapper<T> columnMapper) {
-        return defaultRowWriterFactory(columnMapper);
+    public static <T> RowWriterFactory<T> mapToRow(Class<T> targetClass, ColumnMapper<T> columnMapper) {
+        return defaultRowWriterFactory(columnMapper, safeClassTag(targetClass));
     }
 
     /**
@@ -396,12 +396,12 @@ public class CassandraJavaUtil {
      * for inline invocations.
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
-     * be used, see {@link #mapToRow(ColumnMapper)} method.
+     * be used, see {@link #mapToRow(Class, ColumnMapper)} method.
      */
     public static <T> RowWriterFactory<T> mapToRow(
             Class<T> sourceClass, Map<String, String> columnNameMappings) {
         ColumnMapper<T> mapper = javaBeanColumnMapper(safeClassTag(sourceClass), columnNameMappings);
-        return mapToRow(mapper);
+        return mapToRow(sourceClass, mapper);
     }
 
     /**
@@ -415,7 +415,7 @@ public class CassandraJavaUtil {
      * convention.
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
-     * be used, see {@link #mapToRow(ColumnMapper)} method.
+     * be used, see {@link #mapToRow(Class, ColumnMapper)} method.
      */
     public static <T> RowWriterFactory<T> mapToRow(Class<T> sourceClass, Pair... columnNameMappings) {
         return mapToRow(sourceClass, convertToMap(columnNameMappings));

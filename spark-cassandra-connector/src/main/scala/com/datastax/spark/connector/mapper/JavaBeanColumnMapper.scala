@@ -6,12 +6,10 @@ import com.datastax.spark.connector.cql.{TableDef, StructDef}
 
 import scala.reflect.ClassTag
 
-class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty) 
+class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String] = Map.empty)
   extends ReflectionColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.JavaBeanColumnMapper._
-
-  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
   private def propertyName(accessorName: String) = {
     val AccessorRegex(_, strippedName) = accessorName
