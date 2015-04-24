@@ -144,7 +144,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     val part = new ReplicaPartitioner(partitionsPerHost, connector)
     val repart = rdd.keyByCassandraReplica(keyspaceName, tableName).partitionBy(part)
     val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
-    new CassandraPartitionedRDD[T](output, keyspaceName, tableName)
+    new CassandraPartitionedRDD[T](output)
   }
 
   /**
