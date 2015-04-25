@@ -13,7 +13,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
-  var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -72,10 +71,19 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
+  val cc: CassandraSQLContext = new CassandraSQLContext(sc)
+
   override def beforeAll() {
     super.beforeAll()
-    cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
+  }
+
+  override def afterAll() {
+    super.afterAll()
+    conn.withSessionDo { session =>
+      session.execute("DROP KEYSPACE sql_test")
+      session.execute("DROP KEYSPACE sql_test2")
+    }
   }
 
   it should "allow to select all rows" in {
@@ -301,8 +309,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("create table sql_test.export_table(objectid int, utcstamp timestamp, service_location_id int, " +
         "service_location_name text, meterid int, primary key(meterid, utcstamp))")
     }
-    val cc = new CassandraSQLContext(sc)
-    cc.setKeyspace("sql_test")
     cc.cassandraSql("select objectid, meterid, utcstamp  from export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
   }
 
@@ -314,8 +320,34 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 3, '2015-01-03 17:13')")
       session.execute("insert into sql_test.timestamp_conversion_bug (k, v, d) values (1, 4, '2015-01-03 18:13')")
     }
-    val cc = new CassandraSQLContext(sc)
-    cc.setKeyspace("sql_test")
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+  }
+
+  it should "allow to insert null" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.null_test (k int, v int, d text, primary key(k,v))")
+      session.execute("insert into sql_test.null_test (k, v, d) values (1, 1, 'one')")
+      session.execute("insert into sql_test.null_test (k, v, d) values (1, 2, 'two')")
+      session.execute("insert into sql_test.null_test (k, v) values (1, 3)")
+      session.execute("create table sql_test.null_test2 (k int, v int, d text, primary key(k,v))")
+    }
+
+    cc.cassandraSql("select * from null_test where d = 'one' ").collect() should have length 1
+    cc.cassandraSql("select * from null_test where d IS NULL ").collect() should have length 1
+    cc.cassandraSql("select * from null_test where d IS NOT NULL ").collect() should have length 2
+    cc.cassandraSql("select * from null_test where v > 1 ").collect() should have length 2
+    cc.cassandraSql("INSERT OVERWRITE TABLE null_test2 SELECT k, v, d FROM null_test")
+    cc.cassandraSql("select * from null_test2").collect() should have length 3
+  }
+
+  it should "allow to query on table with upper case names" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.\"Upper_Case_Table\"(" +
+        "\"KEY\" int, \"VALUE\" int, d text, primary key(\"KEY\",\"VALUE\"))")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 1, 'one')")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 2, 'two')")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 3, 'three')")
+    }
+    cc.cassandraSql("select KEY, VALUE from Upper_Case_Table where VALUE > 1").collect() should have length 2
   }
 }

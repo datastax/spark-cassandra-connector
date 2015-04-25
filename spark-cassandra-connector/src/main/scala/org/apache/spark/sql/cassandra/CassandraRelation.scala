@@ -19,7 +19,6 @@ private[cassandra] case class CassandraRelation
   val partitionColumns      = tableDef.partitionKey.map(columnToAttribute)
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
-  val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
   var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
@@ -42,7 +41,7 @@ private[cassandra] case class CassandraRelation
 
 object ColumnDataType {
 
-  private val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
+  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
     connector.types.TextType       -> types.StringType,
     connector.types.AsciiType      -> types.StringType,
     connector.types.VarCharType    -> types.StringType,
@@ -62,7 +61,7 @@ object ColumnDataType {
     connector.types.InetType       -> types.StringType,
     connector.types.UUIDType       -> types.StringType,
     connector.types.TimeUUIDType   -> types.StringType,
-    connector.types.BlobType       -> types.ByteType
+    connector.types.BlobType       -> types.BinaryType
   )
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
