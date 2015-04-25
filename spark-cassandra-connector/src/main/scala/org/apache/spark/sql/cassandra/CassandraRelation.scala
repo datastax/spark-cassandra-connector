@@ -21,7 +21,7 @@ private[cassandra] case class CassandraRelation
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
   val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  val projectAttributes     = tableDef.allColumns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
@@ -34,7 +34,12 @@ private[cassandra] case class CassandraRelation
 
   @transient override lazy val statistics = Statistics(
     sizeInBytes = {
-      BigInt(cc.sparkConf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.conf.defaultSizeInBytes))
+      val bytes = cc.getConf(s"spark.cassandra.$keyspaceName.$tableName.size.in.bytes")
+      if (Option(bytes).nonEmpty) {
+        BigInt(bytes.toLong)
+      } else {
+        BigInt(cc.conf.defaultSizeInBytes)
+      }
     }
   )
 
@@ -43,7 +48,7 @@ private[cassandra] case class CassandraRelation
 
 object ColumnDataType {
 
-  private val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
+  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
     connector.types.TextType       -> types.StringType,
     connector.types.AsciiType      -> types.StringType,
     connector.types.VarCharType    -> types.StringType,
@@ -63,7 +68,7 @@ object ColumnDataType {
     connector.types.InetType       -> types.StringType,
     connector.types.UUIDType       -> types.StringType,
     connector.types.TimeUUIDType   -> types.StringType,
-    connector.types.BlobType       -> types.ByteType
+    connector.types.BlobType       -> types.BinaryType
   )
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
