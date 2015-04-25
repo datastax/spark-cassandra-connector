@@ -119,10 +119,10 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
   /** Returns the only column name referenced in the predicate */
   def predicateColumnName(predicate: T) : String
 
-  private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName.toLowerCase)
-  private val clusteringColumns = tableDef.clusteringColumns.map(_.columnName.toLowerCase)
-  private val indexedColumns = tableDef.allColumns.filter(_.isIndexedColumn).map(_.columnName.toLowerCase)
-  private val regularColumns = tableDef.regularColumns.map(_.columnName.toLowerCase)
+  private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName)
+  private val clusteringColumns = tableDef.clusteringColumns.map(_.columnName)
+  private val indexedColumns = tableDef.allColumns.filter(_.isIndexedColumn).map(_.columnName)
+  private val regularColumns = tableDef.regularColumns.map(_.columnName)
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
   private val singleColumnPredicates = predicates.filter(isSingleColumn)

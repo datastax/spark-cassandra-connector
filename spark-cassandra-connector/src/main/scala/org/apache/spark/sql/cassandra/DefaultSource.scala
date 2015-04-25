@@ -59,7 +59,7 @@ class DefaultSource
     schema: StructType): BaseRelation = {
 
     val (tableIdent, options) = parseParameters(parameters)
-    val optionsWithNewSchema = CassandraDataSourceOptions(Option(schema), options.pushDown)
+    val optionsWithNewSchema = CassandraDataSourceOptions(Option(schema), options.pushdown)
     sqlContext.createCassandraSourceRelation(tableIdent, optionsWithNewSchema)
 
   }
@@ -97,10 +97,7 @@ class DefaultSource
 }
 
 /** Store data source options */
-case class CassandraDataSourceOptions(
-    schema: Option[StructType] = None,
-    pushDown: Boolean = true)
-
+case class CassandraDataSourceOptions(schema: Option[StructType] = None, pushdown: Boolean = true)
 
 object DefaultSource {
   val CassandraDataSourceTableNameProperty = "c_table"
@@ -109,6 +106,7 @@ object DefaultSource {
   val CassandraDataSourUserDefinedSchemaNameProperty = "schema"
   val CassandraDataSourPushdownEnableProperty = "push_down"
 
+
   /** Parse parameters into CassandraDataSourceOptions and TableIdent object */
   def parseParameters(parameters: Map[String, String]) : (TableIdent, CassandraDataSourceOptions) = {
     val tableName = parameters(CassandraDataSourceTableNameProperty)
@@ -116,9 +114,9 @@ object DefaultSource {
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val schema = parameters.get(CassandraDataSourUserDefinedSchemaNameProperty)
       .map(DataType.fromJson).map(_.asInstanceOf[StructType])
-    val pushDown : Boolean = parameters.getOrElse(CassandraDataSourPushdownEnableProperty, "true").toBoolean
+    val pushdown : Boolean = parameters.getOrElse(CassandraDataSourPushdownEnableProperty, "true").toBoolean
 
-    (TableIdent(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushDown))
+    (TableIdent(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushdown))
   }
 }
 

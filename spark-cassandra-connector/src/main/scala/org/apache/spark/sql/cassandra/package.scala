@@ -169,6 +169,11 @@ package object cassandra {
     def getCassandraSchema(cluster: String): Schema = {
       schemas.get(cluster)
     }
+
+    /** Return Cassandra schema metadata for a cluster */
+    def refreshCassandraSchema(cluster: String) : Unit = {
+      schemas.invalidate(cluster)
+    }
   }
 
   object CSQLContext {

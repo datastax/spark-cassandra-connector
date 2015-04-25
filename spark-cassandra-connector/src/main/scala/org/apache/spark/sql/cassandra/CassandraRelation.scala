@@ -19,7 +19,8 @@ private[cassandra] case class CassandraRelation
   val partitionColumns      = tableDef.partitionKey.map(columnToAttribute)
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
+  val projectAttributes     = tableDef.allColumns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
@@ -32,7 +33,12 @@ private[cassandra] case class CassandraRelation
 
   @transient override lazy val statistics = Statistics(
     sizeInBytes = {
-      BigInt(cc.sparkConf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.conf.defaultSizeInBytes))
+      val bytes = cc.getConf(s"spark.cassandra.$keyspaceName.$tableName.size.in.bytes")
+      if (Option(bytes).nonEmpty) {
+        BigInt(bytes.toLong)
+      } else {
+        BigInt(cc.conf.defaultSizeInBytes)
+      }
     }
   )
 

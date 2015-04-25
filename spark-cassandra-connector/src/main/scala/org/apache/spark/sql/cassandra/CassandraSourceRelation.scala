@@ -59,7 +59,7 @@ private[cassandra] abstract class BaseRelationImpl(
     if (overwrite) {
       new CassandraConnector(sqlContext.getCassandraConnConf(tableIdent.cluster))
         .withSessionDo {
-        session => session.execute(s"TRUNCATE ${quotedName(tableIdent.keyspace)}.${quotedName(tableIdent.table)}")
+        session => session.execute(s"TRUNCATE ${quoted(tableIdent.keyspace)}.${quoted(tableIdent.table)}")
       }
     }
 
@@ -72,10 +72,21 @@ private[cassandra] abstract class BaseRelationImpl(
         SqlRowWriter.Factory)
   }
 
+  override def sizeInBytes: Long = {
+    val keyspace = tableIdent.keyspace
+    val table = tableIdent.table
+    val size = sqlContext.conf.getConf(s"spark.cassandra.$keyspace.$table.size.in.bytes", null)
+    if (size != null) {
+      size.toLong
+    } else {
+      sqlContext.conf.defaultSizeInBytes
+    }
+  }
+
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   /** Quote name */
-  private def quotedName(str: String): String = {
+  private def quoted(str: String): String = {
     "\"" + str + "\""
   }
 }
@@ -279,7 +290,7 @@ object CassandraSourceRelation {
       sourceOptions: CassandraDataSourceOptions = CassandraDataSourceOptions()) : BaseRelationImpl = {
 
     // Default scan type
-    if (sourceOptions.pushDown) {
+    if (sourceOptions.pushdown) {
       new PrunedFilteredScanRelationImpl(
         tableIdent = tableIdent,
         connector = connector,
