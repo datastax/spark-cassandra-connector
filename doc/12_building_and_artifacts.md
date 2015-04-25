@@ -66,7 +66,7 @@ The documentation will be generated to:
   - `spark-cassandra-connector/target/scala-{binary.version}/api/`
   - `spark-cassandra-connector-java/target/scala-{binary.version}/api/`
 
-##### Build Tasks
+#### Using the Assembly Jar With Spark Submit
 The easiest way to do this is to make the assembled connector jar using
 
      sbt assembly
@@ -85,3 +85,5 @@ Then add this jar to your Spark executor classpath by adding the following line 
 
 This driver is also compatible with Spark distribution provided in
 [DataStax Enterprise](http://datastax.com/docs/latest-dse/).
+
+[Next - The Spark Shell](13_spark_shell.md)    
