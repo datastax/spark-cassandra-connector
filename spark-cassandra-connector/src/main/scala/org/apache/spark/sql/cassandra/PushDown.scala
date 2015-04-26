@@ -6,80 +6,6 @@ import org.apache.spark.sql.sources.Filter
 
 import com.datastax.spark.connector.cql.TableDef
 
-/**
- * Calculate pushdown predicates for a given table and Catalyst [[Expression]]s
- */
-class PredicatePushDown (predicates: Seq[Expression], tableDef: TableDef)
-  extends PushDown(predicates: Seq[Expression], tableDef: TableDef) {
-
-  def isEqualTo(predicate: Expression): Boolean = {
-    predicate.isInstanceOf[EqualTo]
-  }
-
-  def isIn(predicate: Expression) : Boolean = {
-    predicate.isInstanceOf[In] || predicate.isInstanceOf[InSet]
-  }
-
-  def isRangeComparison(predicate: Expression) : Boolean = {
-    predicate match {
-      case _: LessThan           => true
-      case _: LessThanOrEqual    => true
-      case _: GreaterThan        => true
-      case _: GreaterThanOrEqual => true
-      case _                     => false
-    }
-  }
-
-  override def isSingleColumn(predicate: Expression) : Boolean  = {
-    predicate.references.size == 1 && super.isSingleColumn(predicate)
-  }
-
-  /** Returns the only column name referenced in the predicate */
-  def predicateColumnName(predicate: Expression) : String = {
-    require(predicate.references.size == 1, s"Given predicate $predicate is not a single column predicate. ")
-    predicate.references.head.name
-  }
-}
-
-/**
- * Calculate pushdown filters for a given table and source [[Filter]]s
- */
-class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
-  extends PushDown(filters: Seq[Filter], tableDef: TableDef) {
-
-  def isEqualTo(filter: Filter): Boolean = {
-    filter.isInstanceOf[sources.EqualTo]
-  }
-
-  def isIn(filter: Filter) : Boolean = {
-    filter.isInstanceOf[sources.In]
-  }
-
-  def isRangeComparison(filter: Filter) : Boolean = {
-    filter match {
-      case _: sources.LessThan           => true
-      case _: sources.LessThanOrEqual    => true
-      case _: sources.GreaterThan        => true
-      case _: sources.GreaterThanOrEqual => true
-      case _                             => false
-    }
-  }
-
-  /** Returns the only column name referenced in the predicate */
-  def predicateColumnName(filter: Filter) : String = {
-    filter match {
-      case eq: sources.EqualTo            => eq.attribute
-      case lt: sources.LessThan           => lt.attribute
-      case le: sources.LessThanOrEqual    => le.attribute
-      case gt: sources.GreaterThan        => gt.attribute
-      case ge: sources.GreaterThanOrEqual => ge.attribute
-      case in: sources.In                 => in.attribute
-      case _ =>
-        throw new UnsupportedOperationException(
-          s"filter $filter is not valid to be pushed down, only >, <, >=, <= and In are allowed.")
-    }
-  }
-}
 
 /**
  * Calculate the pushdown predicates for a given table and predicates.
@@ -100,24 +26,48 @@ class FilterPushDown (filters: Seq[Filter], tableDef: TableDef)
  *     is equality or IN predicate.
  *
  */
-abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
+class PushDown (filters: Seq[Filter], tableDef: TableDef) {
 
   /** Check if the predicate is Eqaul predicate */
-  def isEqualTo(predicate: T): Boolean
+  private def isEqualTo(filter: Filter): Boolean = {
+    filter.isInstanceOf[sources.EqualTo]
+  }
 
   /** Check if the predicate is In predicate */
-  def isIn(predicate: T) : Boolean
+  private def isIn(filter: Filter) : Boolean = {
+    filter.isInstanceOf[sources.In]
+  }
 
   /** Check if the predicate is a range comparison predicate */
-  def isRangeComparison(predicate: T) : Boolean
+  private def isRangeComparison(filter: Filter) : Boolean = {
+    filter match {
+      case _: sources.LessThan           => true
+      case _: sources.LessThanOrEqual    => true
+      case _: sources.GreaterThan        => true
+      case _: sources.GreaterThanOrEqual => true
+      case _                             => false
+    }
+  }
 
   /** Check if the column is a single column predicate */
-  def isSingleColumn(predicate: T) : Boolean = {
-    isEqualTo(predicate) ||  isIn(predicate) || isRangeComparison(predicate)
+  private def isSingleColumn(filter: Filter) : Boolean = {
+    isEqualTo(filter) ||  isIn(filter) || isRangeComparison(filter)
   }
 
   /** Returns the only column name referenced in the predicate */
-  def predicateColumnName(predicate: T) : String
+  private def predicateColumnName(filter: Filter) : String = {
+    filter match {
+      case eq: sources.EqualTo            => eq.attribute
+      case lt: sources.LessThan           => lt.attribute
+      case le: sources.LessThanOrEqual    => le.attribute
+      case gt: sources.GreaterThan        => gt.attribute
+      case ge: sources.GreaterThanOrEqual => ge.attribute
+      case in: sources.In                 => in.attribute
+      case _ =>
+        throw new UnsupportedOperationException(
+          s"filter $filter is not valid to be pushed down, only >, <, >=, <= and In are allowed.")
+    }
+  }
 
   private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName)
   private val clusteringColumns = tableDef.clusteringColumns.map(_.columnName)
@@ -125,7 +75,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
   private val regularColumns = tableDef.regularColumns.map(_.columnName)
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
-  private val singleColumnPredicates = predicates.filter(isSingleColumn)
+  private val singleColumnPredicates = filters.filter(isSingleColumn)
 
   private val eqPredicates = singleColumnPredicates.filter(isEqualTo)
   private val eqPredicatesByName = eqPredicates.groupBy(predicateColumnName)
@@ -156,7 +106,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
    * 2. Only the last partition key column predicate can be an IN.
    * 3. All partition key predicates must be used or none.
    */
-  private val partitionKeyPredicatesToPushDown: Seq[T] = {
+  private val partitionKeyPredicatesToPushDown: Seq[Filter] = {
     val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
     val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
@@ -172,7 +122,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
    * 3. The last predicate is allowed to be an IN predicate only if it was preceded by all other equality predicates.
    * 4. Consecutive clustering columns must be used, but, contrary to partition key, the tail can be skipped.
    */
-  private val clusteringColumnPredicatesToPushDown: Seq[T] = {
+  private val clusteringColumnPredicatesToPushDown: Seq[Filter] = {
     val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
     val eqPredicates = eqColumns.flatMap(eqPredicatesByName)
     val optionalNonEqPredicate = for {
@@ -190,7 +140,7 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
    * 2. Regular column predicates can be either equality or range predicates.
    * 3. If multiple predicates use the same column, equality predicates are preferred over range predicates.
    */
-  private val indexedColumnPredicatesToPushDown: Seq[T] = {
+  private val indexedColumnPredicatesToPushDown: Seq[Filter] = {
     val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(isIn)
     val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
     val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
@@ -215,6 +165,6 @@ abstract class PushDown[T](predicates: Seq[T], tableDef: TableDef) {
       clusteringColumnPredicatesToPushDown ++
       indexedColumnPredicatesToPushDown).distinct
 
-  val toPreserve = (predicates.toSet -- toPushDown.toSet).toSeq
+  val toPreserve = (filters.toSet -- toPushDown.toSet).toSeq
 }
 

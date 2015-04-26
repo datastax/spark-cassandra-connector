@@ -61,7 +61,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
-  override protected[sql] val planner = new SparkPlanner with CassandraStrategies {
+  override protected[sql] val planner = new SparkPlanner {
     val cassandraContext = CassandraSQLContext.this
     override val strategies: Seq[Strategy] = Seq(
       DataSourceStrategy,
@@ -69,8 +69,6 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       TakeOrdered,
       ParquetOperations,
       InMemoryScans,
-      CassandraTableScans,
-      DataSinks,
       HashAggregation,
       LeftSemiJoin,
       HashJoin,

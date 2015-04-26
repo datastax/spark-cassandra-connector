@@ -1,5 +1,7 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.types.FieldDef
+
 import scala.reflect.ClassTag
 
 import org.apache.spark.Logging
@@ -10,6 +12,7 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{types, DataFrame, Row, SQLContext}
 
+import com.datastax.spark.connector
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef}
 import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
@@ -113,7 +116,7 @@ private[cassandra] class PrunedScanRelationImpl(
   with PrunedScan {
 
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
-    val transformer = new FilterRddTransformer(requiredColumns, Seq.empty)
+    val transformer = new RddTransformer(requiredColumns, Seq.empty)
     transformer.maybeSelect(baseRdd)
   }
 }
@@ -156,7 +159,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
 
     logInfo(s"filters: ${filters.mkString(", ")}")
 
-    val pushDown = new FilterPushDown(filters, tableDef)
+    val pushDown = new PushDown(filters, tableDef)
     val pushdownFilters = pushDown.toPushDown
     val preservedFilters = pushDown.toPreserve
 
@@ -273,7 +276,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
     val translatedFilters = richFilters.map(translateFilter)
     def rowFilter(row: Row): Boolean = translatedFilters.forall(_(row))
 
-    val transformer = new FilterRddTransformer(requiredColumns, pushdownFilters)
+    val transformer = new RddTransformer(requiredColumns, pushdownFilters)
     transformer.transform(baseRdd).filter(rowFilter)
   }
 
@@ -306,6 +309,46 @@ object CassandraSourceRelation {
         writeConf = writeConf,
         userSpecifiedSchema = sourceOptions.schema,
         sqlContext = sqlContext)
+    }
+  }
+}
+
+object ColumnDataType {
+
+  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
+    connector.types.TextType       -> types.StringType,
+    connector.types.AsciiType      -> types.StringType,
+    connector.types.VarCharType    -> types.StringType,
+
+    connector.types.BooleanType    -> types.BooleanType,
+
+    connector.types.IntType        -> types.IntegerType,
+    connector.types.BigIntType     -> types.LongType,
+    connector.types.CounterType    -> types.LongType,
+    connector.types.FloatType      -> types.FloatType,
+    connector.types.DoubleType     -> types.DoubleType,
+
+    connector.types.VarIntType     -> types.DecimalType(), // no native arbitrary-size integer type
+    connector.types.DecimalType    -> types.DecimalType(),
+
+    connector.types.TimestampType  -> types.TimestampType,
+    connector.types.InetType       -> types.StringType,
+    connector.types.UUIDType       -> types.StringType,
+    connector.types.TimeUUIDType   -> types.StringType,
+    connector.types.BlobType       -> types.BinaryType
+  )
+
+  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
+
+    def catalystStructField(field: FieldDef): StructField =
+      StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
+
+    cassandraType match {
+      case connector.types.SetType(et)                => types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.ListType(et)               => types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.MapType(kt, vt)            => types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.UserDefinedType(_, fields) => types.StructType(fields.map(catalystStructField))
+      case _                                          => primitiveTypeMap(cassandraType)
     }
   }
 }

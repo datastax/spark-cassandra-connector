@@ -34,23 +34,8 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   /** Obtain the Relation for a Cassandra table */
   override def lookupRelation(tableIdentifier: Seq[String], alias: Option[String]): LogicalPlan = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    // Use source provider by default.
-    val useSourceProvider = {
-      val disable : String = cc.getConf(CassandraCatalog.CassandraSQLSourceProviderDisableProperty, "false")
-      "false" == disable.trim.toLowerCase
-    }
-
-    if (useSourceProvider) {
-      val relation = cachedDataSourceTables.get(tableIdentifier)
-      alias.map(a => Subquery(a, relation)).getOrElse(Subquery(table, relation))
-    } else {
-      val schema = cc.getCassandraSchema(cluster)
-      val keyspaceDef = schema.keyspaceByName.getOrElse(database, throw new IOException(s"Keyspace not found: $database"))
-      val tableDef = keyspaceDef.tableByName.getOrElse(table, throw new IOException(s"Table not found: $database.$table"))
-      val clusterOpt = if(DefaultCassandraClusterName.eq(cluster)) None else Option(cluster)
-      val relation = CassandraRelation(tableDef, alias, clusterOpt)(cc)
-      alias.map(a => Subquery(a, relation)).getOrElse(Subquery(table, relation))
-    }
+    val relation = cachedDataSourceTables.get(tableIdentifier)
+    alias.map(a => Subquery(a, relation)).getOrElse(Subquery(table, relation))
   }
 
   /** Retrieve table, keyspace and cluster names from table identifier. Use default name if it's not found */
