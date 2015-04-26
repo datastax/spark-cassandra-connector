@@ -3,6 +3,7 @@ package org.apache.spark.sql.cassandra
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.sources.DataSourceStrategy
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
 
 
@@ -36,10 +37,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
     new this.QueryExecution(plan)
 
-  @transient
-  val sparkConf = sc.getConf
-
-  private var keyspaceName = sparkConf.getOption(CassandraSQLKeyspaceNameProperty)
+  private var keyspaceName = Option(conf.getConf(CassandraSQLKeyspaceNameProperty, null))
 
   /** Sets default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) {
@@ -49,7 +47,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   /** Returns keyspace set previously by [[setKeyspace]] or throws IllegalStateException if
     * keyspace has not been set yet. */
   def getKeyspace: String = keyspaceName.getOrElse(
-    throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace."))
+    throw new IllegalStateException("Default keyspace not set. Please call CassandraSQLContext#setKeyspace."))
 
   /** Executes SQL query against Cassandra and returns DataFrame representing the result. */
   def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, super.parseSql(cassandraQuery))
@@ -66,6 +64,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] val planner = new SparkPlanner with CassandraStrategies {
     val cassandraContext = CassandraSQLContext.this
     override val strategies: Seq[Strategy] = Seq(
+      DataSourceStrategy,
       DDLStrategy,
       TakeOrdered,
       ParquetOperations,

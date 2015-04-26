@@ -7,7 +7,7 @@ import com.datastax.spark.connector.types.FieldDef
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Statistics, LeafNode}
 import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.{catalyst, types}
+import org.apache.spark.sql.types
 
 private[cassandra] case class CassandraRelation
   (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)(@transient cc: CassandraSQLContext)
@@ -19,7 +19,7 @@ private[cassandra] case class CassandraRelation
   val partitionColumns      = tableDef.partitionKey.map(columnToAttribute)
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  val projectAttributes     = tableDef.allColumns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
@@ -32,7 +32,12 @@ private[cassandra] case class CassandraRelation
 
   @transient override lazy val statistics = Statistics(
     sizeInBytes = {
-      BigInt(cc.sparkConf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.conf.defaultSizeInBytes))
+      val bytes = cc.getConf(s"spark.cassandra.$keyspaceName.$tableName.size.in.bytes")
+      if (Option(bytes).nonEmpty) {
+        BigInt(bytes.toLong)
+      } else {
+        BigInt(cc.conf.defaultSizeInBytes)
+      }
     }
   )
 
