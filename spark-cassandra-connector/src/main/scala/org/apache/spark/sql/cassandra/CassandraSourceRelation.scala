@@ -1,7 +1,5 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.types.FieldDef
-
 import scala.reflect.ClassTag
 
 import org.apache.spark.Logging
@@ -12,11 +10,12 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{types, DataFrame, Row, SQLContext}
 
-import com.datastax.spark.connector
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef}
 import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
+
+import DataTypeConverter._
 
 /**
  *  Implements [[BaseRelation]] and [[InsertableRelation]].
@@ -40,12 +39,7 @@ private[cassandra] abstract class BaseRelationImpl(
       .keyspaceByName(tableIdent.keyspace).tableByName(tableIdent.table)
 
   override def schema: StructType = {
-    def columnToStructField(column: ColumnDef): StructField = {
-      StructField(
-        column.columnName,
-        ColumnDataType.catalystDataType(column.columnType, nullable = true))
-    }
-    userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(columnToStructField)))
+    userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(toStructField)))
   }
 
   protected[this] val baseRdd =
@@ -151,8 +145,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
 
   /** Return a catalyst data type for the column */
   private def columnDataType(columnDef: ColumnDef) : types.DataType = {
-    val columnType = tableDef.columnByName(columnDef.columnName).columnType
-    ColumnDataType.catalystDataType(tableDef.columnByName(columnDef.columnName).columnType, nullable = true)
+    catalystDataType(tableDef.columnByName(columnDef.columnName).columnType, nullable = true)
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
@@ -176,7 +169,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
      */
     def compare(columnValue: Any, columnDataType: NativeType, value: Any) : Int = {
       if (columnValue == null) {
-          throw new RuntimeException(s"Can't compare column with null value")
+          throw new RuntimeException(s"Can't compare column having null value")
       } else {
         columnDataType.ordering.compare(
           columnValue.asInstanceOf[columnDataType.JvmType],
@@ -309,46 +302,6 @@ object CassandraSourceRelation {
         writeConf = writeConf,
         userSpecifiedSchema = sourceOptions.schema,
         sqlContext = sqlContext)
-    }
-  }
-}
-
-object ColumnDataType {
-
-  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
-    connector.types.TextType       -> types.StringType,
-    connector.types.AsciiType      -> types.StringType,
-    connector.types.VarCharType    -> types.StringType,
-
-    connector.types.BooleanType    -> types.BooleanType,
-
-    connector.types.IntType        -> types.IntegerType,
-    connector.types.BigIntType     -> types.LongType,
-    connector.types.CounterType    -> types.LongType,
-    connector.types.FloatType      -> types.FloatType,
-    connector.types.DoubleType     -> types.DoubleType,
-
-    connector.types.VarIntType     -> types.DecimalType(), // no native arbitrary-size integer type
-    connector.types.DecimalType    -> types.DecimalType(),
-
-    connector.types.TimestampType  -> types.TimestampType,
-    connector.types.InetType       -> types.StringType,
-    connector.types.UUIDType       -> types.StringType,
-    connector.types.TimeUUIDType   -> types.StringType,
-    connector.types.BlobType       -> types.BinaryType
-  )
-
-  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
-
-    def catalystStructField(field: FieldDef): StructField =
-      StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
-
-    cassandraType match {
-      case connector.types.SetType(et)                => types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)               => types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)            => types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
-      case connector.types.UserDefinedType(_, fields) => types.StructType(fields.map(catalystStructField))
-      case _                                          => primitiveTypeMap(cassandraType)
     }
   }
 }

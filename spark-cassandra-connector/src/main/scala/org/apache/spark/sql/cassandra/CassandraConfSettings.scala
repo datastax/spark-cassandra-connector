@@ -25,10 +25,9 @@ class CassandraClusterLevelConfSettings[T] {
 
   /** Get cluster level configuration settings*/
   def getClusterLevelConf(cluster: Option[String], defaultConf: T): T = {
-    if (cluster == None) {
+    if (empty(cluster)) {
       defaultConf
     } else {
-      validateName(cluster.get)
       clusterConf.getOrElse(cluster.get, defaultConf)
     }
   }
@@ -38,7 +37,7 @@ class CassandraClusterLevelConfSettings[T] {
   }
 
   protected def empty(cluster: Option[String]) : Boolean = {
-    cluster == None || !cluster.exists(_.trim.nonEmpty)
+    cluster.isEmpty || !cluster.exists(_.trim.nonEmpty)
   }
 }
 
