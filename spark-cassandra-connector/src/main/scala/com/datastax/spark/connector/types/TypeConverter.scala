@@ -686,10 +686,10 @@ object TypeConverter {
     UDTValueConverter
   )
 
-  private def forCollectionType(tpe: Type): TypeConverter[_] = TypeTag.synchronized {
+  private def forCollectionType(tpe: Type, moreConverters: Seq[TypeConverter[_]]): TypeConverter[_] = TypeTag.synchronized {
     tpe match {
       case TypeRef(_, symbol, List(arg)) =>
-        val untypedItemConverter = forType(arg)
+        val untypedItemConverter = forType(arg, moreConverters)
         type T = untypedItemConverter.targetType
         implicit val itemConverter = untypedItemConverter.asInstanceOf[TypeConverter[T]]
         implicit val ordering = orderingFor(arg).map(_.asInstanceOf[Ordering[T]]).orNull
@@ -710,8 +710,8 @@ object TypeConverter {
         }
 
       case TypeRef(_, symbol, List(k, v)) =>
-        val untypedKeyConverter = forType(k)
-        val untypedValueConverter = forType(v)
+        val untypedKeyConverter = forType(k, moreConverters)
+        val untypedValueConverter = forType(v, moreConverters)
         type K = untypedKeyConverter.targetType
         type V = untypedValueConverter.targetType
         implicit val keyConverter = untypedKeyConverter.asInstanceOf[TypeConverter[K]]
@@ -731,23 +731,36 @@ object TypeConverter {
 
   /** Useful for getting converter based on a type received from Scala reflection.
     * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
-  def forType(tpe: Type): TypeConverter[_] = TypeTag.synchronized {
-    type T = TypeConverter[_]
-    val selectedConverters =
-      converters.collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
+  def forType(tpe: Type, moreConverters: Seq[TypeConverter[_]] = Seq.empty): TypeConverter[_] = {
+    TypeTag.synchronized {
+      type T = TypeConverter[_]
+      val selectedConverters =
+        (converters ++ moreConverters).collect { case c: T if c.targetTypeTag.tpe =:= tpe => c }
 
-    selectedConverters match {
-      case Seq() => forCollectionType(tpe)
-      case Seq(c) => c
-      case Seq(cs @ _*) => new ChainedTypeConverter(cs : _*)
-   }
+      selectedConverters match {
+        case Seq() => forCollectionType(tpe, moreConverters)
+        case Seq(c) => c
+        case Seq(cs @ _*) => new ChainedTypeConverter(cs: _*)
+      }
+    }
   }
 
   /** Useful when implicit converters are not in scope, but a TypeTag is.
     * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
-  def forType[T : TypeTag]: TypeConverter[T] = TypeTag.synchronized {
-    forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
+  def forType[T : TypeTag](moreConverters: Seq[TypeConverter[_]]): TypeConverter[T] = {
+    TypeTag.synchronized {
+      forType(implicitly[TypeTag[T]].tpe, moreConverters).asInstanceOf[TypeConverter[T]]
+    }
   }
+
+  /** Useful when implicit converters are not in scope, but a TypeTag is.
+    * Synchronized to workaround Scala 2.10 reflection thread-safety problems. */
+  def forType[T : TypeTag]: TypeConverter[T] = {
+    TypeTag.synchronized {
+      forType(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeConverter[T]]
+    }
+  }
+
 
   /** Registers a custom converter */
   def registerConverter(c: TypeConverter[_]) {

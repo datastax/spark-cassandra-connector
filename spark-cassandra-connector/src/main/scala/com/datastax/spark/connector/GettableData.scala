@@ -12,6 +12,8 @@ import com.datastax.spark.connector.util.ByteBufferUtil
 trait GettableData {
 
   def columnNames: IndexedSeq[String]
+
+  /** Corresponding values of every column, in the same order as `columnNames` */
   def columnValues: IndexedSeq[AnyRef]
 
   @transient
@@ -24,6 +26,13 @@ trait GettableData {
       s"Column not found: $name. " +
         s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
   }
+
+  /** Returns a column value by index without applying any conversion.
+    * The underlying type is the same as the type returned by the low-level Cassandra driver,
+    * is implementation defined and may change in the future.
+    * Cassandra nulls are returned as Scala nulls. */
+  def getRaw(index: Int): AnyRef = columnValues(index)
+  def getRaw(name: String): AnyRef = columnValues(_indexOfOrThrow(name))
 
   /** Total number of columns in this row. Includes columns with null values. */
   def length = columnValues.size

@@ -50,7 +50,7 @@ trait StructDef extends Serializable {
     * about the name of the column and name of the structure. */
   def columnByName: Map[String, Column] =
     columns.map(c => (c.columnName, c)).toMap.withDefault {
-      columnName => throw new NoSuchElementException(s"Column not found $columnName in $name")
+      columnName => throw new NoSuchElementException(s"Column $columnName not found in $name")
     }
 
   /** For quickly finding a column definition by index.

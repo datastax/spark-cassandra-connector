@@ -28,13 +28,6 @@ trait ScalaGettableData extends GettableData {
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
 
-  /** Returns a column value by index without applying any conversion.
-    * The underlying type is the same as the type returned by the low-level Cassandra driver,
-    * is implementation defined and may change in the future.
-    * Cassandra nulls are returned as Scala nulls. */
-  def getRaw(index: Int): AnyRef = columnValues(index)
-  def getRaw(name: String): AnyRef = columnValues(_indexOfOrThrow(name))
-
   /** Returns a `bool` column value. Besides working with `bool` Cassandra type, it can also read
     * numbers and strings. Non-zero numbers are converted to `true`, zero is converted to `false`.
     * Strings are converted using `String#toBoolean` method.*/

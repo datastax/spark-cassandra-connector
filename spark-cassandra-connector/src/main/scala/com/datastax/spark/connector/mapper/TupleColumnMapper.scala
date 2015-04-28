@@ -8,7 +8,7 @@ import com.datastax.spark.connector.cql.{StructDef, RegularColumn, PartitionKeyC
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
-class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[T] {
+class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
   private def indexedColumnRefs(n: Int) =
     (0 until n).map(ColumnIndex)
@@ -16,7 +16,7 @@ class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[
   override def columnMap(structDef: StructDef, aliases: Map[String, String]): ColumnMap = {
 
     val GetterRegex = "_([0-9]+)".r
-    val cls = implicitly[ClassTag[T]].runtimeClass
+    val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
 
     val constructor =
       indexedColumnRefs(cls.getConstructors()(0).getParameterTypes.length)
