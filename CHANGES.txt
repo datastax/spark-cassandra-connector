@@ -10,6 +10,7 @@
  * Fixed compilation warnings (SPARKC-76)
  * Fixed ScalaDoc warnings (SPARKC-119)
  * Synchronized TypeTag access in various places (SPARKC-123)
+ * Adds both hostname and hostaddress as partition preferredLocations (SPARKC-126)
 
 1.2.0 RC 3
  * Select aliases are no longer ignored in CassandraRow objects (SPARKC-109)
