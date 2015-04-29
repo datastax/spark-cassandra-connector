@@ -116,7 +116,7 @@ object Settings extends Build {
       .withWarnDirectEvictions(false)
       .withWarnScalaVersionEviction(false),
 
-    cleanKeepFiles ++= Seq("resolution-cache", "streams").map(target.value / _),
+    cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _),
     updateOptions := updateOptions.value.withCachedResolution(cachedResoluton = true),
 
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
@@ -133,6 +133,10 @@ object Settings extends Build {
   )
 
   lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ testSettings
+
+  lazy val rootSettings = Seq(
+    cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _)
+  )
 
   lazy val demoSettings = projectSettings ++ noPublish ++ Seq(
     publishArtifact in (Test,packageBin) := false,

@@ -26,12 +26,17 @@ object CassandraSparkBuild extends Build {
 
   val demosPath = file(s"$namespace-demos")
 
-  lazy val root = RootProject("root", file("."), Seq(embedded, connector, demos, jconnector))
+  lazy val root = RootProject(
+    name = "root",
+    dir = file("."),
+    settings = rootSettings,
+    contains = Seq(embedded, connector, demos, jconnector)
+  )
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs (IntegrationTest)
+  ) configs IntegrationTest
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
@@ -39,16 +44,20 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
-  ) configs (IntegrationTest)
+  ) configs IntegrationTest
 
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
     settings = japiSettings ++ connector.settings,
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
-  ) configs (IntegrationTest)
+  ) configs IntegrationTest
 
-  lazy val demos = RootProject("demos", demosPath, Seq(simpleDemos, kafkaStreaming, twitterStreaming))
+  lazy val demos = RootProject(
+    name = "demos",
+    dir = demosPath,
+    contains = Seq(simpleDemos, kafkaStreaming, twitterStreaming)
+  )
 
   lazy val simpleDemos = Project(
     id = "simple-demos",
@@ -87,8 +96,8 @@ object CassandraSparkBuild extends Build {
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value)
     ))
 
-  def RootProject(name: String, dir: sbt.File, contains: Seq[ProjectReference]): Project =
-    Project(id = name, base = dir, settings = parentSettings, aggregate = contains)
+  def RootProject(name: String, dir: sbt.File, settings: => scala.Seq[sbt.Def.Setting[_]] = Seq.empty, contains: Seq[ProjectReference]): Project =
+    Project(id = name, base = dir, settings = parentSettings ++ settings, aggregate = contains)
 
 }
 
