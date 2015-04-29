@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
+import java.io.File
+
 import scala.collection.mutable
 import scala.language.postfixOps
 
-import sbt._
-import sbt.Keys._
-import sbtrelease.ReleasePlugin._
-import sbtassembly.Plugin._
-import AssemblyKeys._
-import com.typesafe.tools.mima.plugin.MimaKeys._
-import com.typesafe.tools.mima.plugin.MimaPlugin._
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
+import com.typesafe.tools.mima.plugin.MimaKeys._
+import com.typesafe.tools.mima.plugin.MimaPlugin._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
-import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
+import sbt.Keys._
+import sbt._
+import sbtassembly.Plugin.AssemblyKeys._
+import sbtassembly.Plugin._
+import sbtrelease.ReleasePlugin._
 
 object Settings extends Build {
 
@@ -139,24 +141,22 @@ object Settings extends Build {
 
   val testConfigs = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
-  lazy val ClusterIntegrationTest = config("extit") extend IntegrationTest
-  val itClusterTask = taskKey[Unit]("IntegrationTest in Cluster Task")
+  val pureTestClasspath = taskKey[Set[String]]("Show classpath which is obtained as (test:fullClasspath + it:fullClasspath) - compile:fullClasspath")
 
-  val allArtifacts = mutable.HashSet[String]()
-  lazy val jarsInCluster = Seq(
-    itClusterTask := {
-      val (_, moduleJar) = packagedArtifact.in(Compile,         packageBin).value
-      val (_, itTestJar) = packagedArtifact.in(IntegrationTest, packageBin).value
-      val (_, testJar)   = packagedArtifact.in(Test,            packageBin).value
-      allArtifacts += moduleJar.getAbsolutePath
-      allArtifacts += itTestJar.getAbsolutePath
-      allArtifacts += testJar.getAbsolutePath
-      println("All artifacts: " + allArtifacts.mkString(", "))
+  lazy val customTasks = Seq(
+    pureTestClasspath := {
+      val testDeps = (fullClasspath in Test value) map (_.data.getAbsolutePath) toSet
+      val itDeps = (fullClasspath in IntegrationTest value) map (_.data.getAbsolutePath) toSet
+      val compileDeps = (fullClasspath in Compile value) map (_.data.getAbsolutePath) toSet
+
+      val cp = (testDeps ++ itDeps) -- compileDeps
+
+      println("TEST_CLASSPATH=" + cp.mkString(File.pathSeparator))
+
+      cp
     }
   )
-  lazy val assembledSettings = defaultSettings ++ jarsInCluster ++ sbtAssemblySettings ++ Seq(
-    javaOptions in ClusterIntegrationTest ++= Seq(s"-Dspark.jars=${allArtifacts.mkString(",")}")
-  )
+  lazy val assembledSettings = defaultSettings ++ customTasks ++ sbtAssemblySettings
 
   val testOptionSettings = Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
