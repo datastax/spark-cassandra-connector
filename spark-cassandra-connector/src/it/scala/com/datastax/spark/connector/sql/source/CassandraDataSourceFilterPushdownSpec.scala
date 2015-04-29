@@ -4,7 +4,7 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.cassandra.DefaultSource._
+import org.apache.spark.sql.cassandra.CassandraDefaultSource._
 
 class CassandraDataSourceFilterPushdownSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))

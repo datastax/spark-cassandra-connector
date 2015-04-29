@@ -272,7 +272,6 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
     val transformer = new RddTransformer(requiredColumns, pushdownFilters)
     transformer.transform(baseRdd).filter(rowFilter)
   }
-
 }
 
 object CassandraSourceRelation {

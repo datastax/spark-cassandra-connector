@@ -7,6 +7,8 @@ import org.apache.spark.sql.sources
 import com.datastax.spark.connector.NamedColumnRef
 import com.datastax.spark.connector.rdd.CassandraRDD
 
+import CSQLContext._
+
 /**
  * Transform a RDD by filtering columns and pushdown source [[Filter]]s
  */
@@ -56,10 +58,6 @@ class RddTransformer(requiredColumns: Array[String], filters: Seq[Filter]) {
     (cql, args)
   }
 
-  /** Quote name */
-  private def quoted(str: String): String = {
-    "\"" + str + "\""
-  }
   /** Transform rdd by applying selected columns and push downed predicates */
   def transform(rdd: RDDType) : RDDType = {
     maybePushdownPredicates(maybeSelect(rdd))

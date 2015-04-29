@@ -1,12 +1,13 @@
 package com.datastax.spark.connector.sql
 
+import java.util.concurrent.ExecutionException
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{ConfigMap, FlatSpec, Matchers}
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
+
+import org.apache.spark.sql.cassandra.{CassandraDefaultSource, DefaultSource, TableIdent, CassandraSQLContext}
+
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -348,5 +349,39 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 3, 'three')")
     }
     cc.cassandraSql("select KEY, VALUE from Upper_Case_Table where VALUE > 1").collect() should have length 2
+  }
+
+  it should "not find non-exist tables" in {
+    an [ExecutionException] should be thrownBy {
+      cc.tableExists(TableIdent("non_exist", "non_exist"))
+    }
+
+    noException should be thrownBy {
+      cc.tableExists(TableIdent("test1", "sql_test"))
+    }
+
+    noException should be thrownBy {
+      cc.tableExists(TableIdent("Upper_Case_Table", "sql_test"))
+    }
+  }
+
+  it should "get all tables" in {
+    cc.getTables(Option("non_exist"), Option("non_exist")) should have length 0
+    cc.getTables(Option("sql_test")) should have length 12
+  }
+
+  it should "register/unregister tables" in {
+    cc.registerTable(
+      TableIdent("test1", "sql_test"),
+      "org.apache.spark.sql.cassandra",
+      None,
+      Map("push_down" -> "false"))
+
+    noException should be thrownBy {
+      cc.tableExists(TableIdent("test1", "sql_test"))
+    }
+
+    cc.unregisterTable(TableIdent("test1", "sql_test"))
+    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe false
   }
 }

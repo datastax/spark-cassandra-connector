@@ -8,7 +8,7 @@ import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.cassandra._
-import org.apache.spark.sql.cassandra.DefaultSource._
+import org.apache.spark.sql.cassandra.CassandraDefaultSource._
 
 class CassandraDataSourceClusterLevelSpec  extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))

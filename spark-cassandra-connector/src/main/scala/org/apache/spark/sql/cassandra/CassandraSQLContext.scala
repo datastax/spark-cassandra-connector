@@ -1,14 +1,14 @@
 package org.apache.spark.sql.cassandra
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.DataSourceStrategy
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
 
 
 /** Allows to execute SQL queries against Cassandra and access results as
-  * [[org.apache.spark.sql.SchemaRDD]] collections.
+  * [[org.apache.spark.sql.DataFrame]] collections.
   * Predicate pushdown to Cassandra is supported.
   *
   * Example:
@@ -57,7 +57,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
-  override protected[sql] lazy val catalog = new CassandraCatalog(this) with OverrideCatalog
+  override protected[sql] lazy val catalog = new CassandraCatalog(this)
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
@@ -77,6 +77,37 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       BroadcastNestedLoopJoin
     )
   }
+
+  /**
+   * Get all tables for given database name and cluster.
+   * databaseName is equivalent to keyspace as a Cassandra name
+   */
+  def getTables(databaseName: Option[String], cluster: Option[String] = None): Seq[(String, Boolean)] =
+    catalog.getTables(databaseName, cluster)
+
+  /** Register a customized table meta data to local cache and metastore */
+  def registerTable(
+      tableIdent: TableIdent,
+      source: String,
+      schema: Option[StructType],
+      options: Map[String, String]): Unit =
+    catalog.registerTable(tableIdent, source, schema, options)
+
+
+  /** Unregister table from local cache and metastore. */
+  def unregisterTable(tableIdent: TableIdent): Unit = catalog.unregisterTable(tableIdent)
+
+  /** Unregister all tables from local cache and metastore. */
+  def unregisterAllTables(): Unit = catalog.unregisterAllTables()
+
+  /** Refresh CassandraContext schema cache, then refresh table in local cache */
+  def refreshTable(tableIdent: TableIdent): Unit = catalog.refreshTable(tableIdent)
+
+  /** Check whether table exists. It's either in Cassandra or in metastore */
+  def tableExists(tableIdent: TableIdent): Boolean = catalog.tableExists(tableIdent)
+
+  /** Check whether table is stored in metastore */
+  def tableExistsInMetastore(tableIdent: TableIdent): Boolean = catalog.tableExistsInMetastore(tableIdent)
 }
 
 object CassandraSQLContext {

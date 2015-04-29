@@ -4,6 +4,7 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.sources.{CreatableRelationProvider, SchemaRelationProvider, BaseRelation, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}
+import CassandraDefaultSource._
 
 /**
  * Cassandra data source extends [[RelationProvider]], [[SchemaRelationProvider]] and [[CreatableRelationProvider]].
@@ -23,12 +24,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
  *         {"name":"c","type":"integer","nullable":true,"metadata":{}}]}'
  *      )
  */
-class DefaultSource
-  extends RelationProvider
-  with SchemaRelationProvider
-  with CreatableRelationProvider {
-
-  import DefaultSource._
+class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
 
   /**
    * Creates a new relation for a cassandra table.
@@ -99,12 +95,13 @@ class DefaultSource
 /** Store data source options */
 case class CassandraDataSourceOptions(schema: Option[StructType] = None, pushdown: Boolean = true)
 
-object DefaultSource {
+object CassandraDefaultSource {
   val CassandraDataSourceTableNameProperty = "c_table"
   val CassandraDataSourceKeyspaceNameProperty = "keyspace"
   val CassandraDataSourceClusterNameProperty = "cluster"
-  val CassandraDataSourUserDefinedSchemaNameProperty = "schema"
-  val CassandraDataSourPushdownEnableProperty = "push_down"
+  val CassandraDataSourceUserDefinedSchemaNameProperty = "schema"
+  val CassandraDataSourcePushdownEnableProperty = "push_down"
+  val CassandraDataSourceProviderName = CassandraDefaultSource.getClass.getPackage.getName
 
 
   /** Parse parameters into CassandraDataSourceOptions and TableIdent object */
@@ -112,9 +109,9 @@ object DefaultSource {
     val tableName = parameters(CassandraDataSourceTableNameProperty)
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
-    val schema = parameters.get(CassandraDataSourUserDefinedSchemaNameProperty)
+    val schema = parameters.get(CassandraDataSourceUserDefinedSchemaNameProperty)
       .map(DataType.fromJson).map(_.asInstanceOf[StructType])
-    val pushdown : Boolean = parameters.getOrElse(CassandraDataSourPushdownEnableProperty, "true").toBoolean
+    val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
 
     (TableIdent(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushdown))
   }

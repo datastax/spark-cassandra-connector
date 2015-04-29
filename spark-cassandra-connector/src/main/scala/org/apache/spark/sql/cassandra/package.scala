@@ -33,7 +33,7 @@ package object cassandra {
         new CacheLoader[String, Schema] {
           def load(cluster: String) : Schema = {
             val clusterOpt =
-              if(DefaultCassandraClusterName.eq(cluster))
+              if(getDefaultCluster.eq(cluster))
                 None
               else
                 Option(cluster)
@@ -174,15 +174,22 @@ package object cassandra {
     def refreshCassandraSchema(cluster: String) : Unit = {
       schemas.invalidate(cluster)
     }
+
+    /** Return default cluster name */
+    def getDefaultCluster : String = {
+      sqlContext.getConf(DefaultCassandraClusterNameProperty, DefaultCassandraClusterName)
+    }
   }
 
   object CSQLContext {
     val CassandraSchemaExpireInMinutesProperty = "spark.cassandra.schema.expire.in.minutes"
+    val DefaultCassandraClusterNameProperty = "spark.cassandra.default.cluster"
     val DefaultCassandraSchemaExpireInMinutes = 10
     val DefaultCassandraClusterName = "default"
 
     val Properties = Seq(
-      CassandraSchemaExpireInMinutesProperty
+      CassandraSchemaExpireInMinutesProperty,
+      DefaultCassandraClusterNameProperty
     )
 
     /** Stores per cluster level, keyspace level and table level Cassandra configuration settings */
@@ -190,5 +197,9 @@ package object cassandra {
     val writeConfSettings = new CassandraConfSettings[WriteConf]()
     val connConfSettings = new CassandraClusterLevelConfSettings[CassandraConnectorConf]()
 
+    /** Quote name */
+    def quoted(str: String): String = {
+      "\"" + str + "\""
+    }
   }
 }
