@@ -95,6 +95,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 /** Store data source options */
 case class CassandraDataSourceOptions(schema: Option[StructType] = None, pushdown: Boolean = true)
 
+/** It's not a companion object because it throws exception during create a new instance by reflection. */
 object CassandraDefaultSource {
   val CassandraDataSourceTableNameProperty = "c_table"
   val CassandraDataSourceKeyspaceNameProperty = "keyspace"

@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.sql
 
+import java.io.{FileNotFoundException, File}
 import java.util.concurrent.ExecutionException
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
@@ -7,6 +8,8 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
 
 import org.apache.spark.sql.cassandra.{CassandraDefaultSource, DefaultSource, TableIdent, CassandraSQLContext}
+import org.apache.spark.sql.catalyst.util
+import org.apache.spark.Util
 
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
@@ -376,12 +379,89 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       "org.apache.spark.sql.cassandra",
       None,
       Map("push_down" -> "false"))
-
-    noException should be thrownBy {
-      cc.tableExists(TableIdent("test1", "sql_test"))
-    }
-
+    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe true
     cc.unregisterTable(TableIdent("test1", "sql_test"))
     cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe false
   }
+
+  it should "create a table" in {
+    cc.sql(
+      s"""
+        |CREATE TABLE test1
+        |USING org.apache.spark.sql.cassandra
+        |OPTIONS (
+        | c_table "test1",
+        | keyspace "sql_test",
+        | push_down "false"
+        | )
+      """.stripMargin.replaceAll("\n", " "))
+    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe true
+    cc.unregisterTable(TableIdent("test1", "sql_test"))
+    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe false
+  }
+
+  it should "create a table from a parquet table and join it with cassandra data source table" in {
+    val file = util.getTempFilePath("parquetTest").getCanonicalFile
+    cc.sql("SELECT * from sql_test.test1").save(file.getCanonicalPath)
+    cc.sql(
+      s"""
+        |CREATE TABLE parquet_table
+        |USING parquet
+        |OPTIONS (
+        | path "${file.getCanonicalPath}"
+        | )
+      """.stripMargin.replaceAll("\n", " "))
+    cc.tableExistsInMetastore(TableIdent("parquet_table", "sql_test")) shouldBe true
+
+    val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.parquet_table AS test1 " +
+      "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    result should have length 12
+
+    //if (file.exists()) Util.deleteRecursively(file)
+    cc.unregisterTable(TableIdent("parquet_table", "sql_test"))
+  }
+
+  it should "create a table as select from another table" in {
+    val file = util.getTempFilePath("parquetTest").getCanonicalFile
+    an [FileNotFoundException] should be thrownBy {
+      cc.load(file.getCanonicalPath).collect()
+    }
+    cc.sql(
+      s"""
+        |CREATE TABLE parquet_table
+        |USING parquet
+        |OPTIONS (
+        | path "${file.getCanonicalPath}"
+        | )
+        | AS SELECT * FROM test1
+      """.stripMargin.replaceAll("\n", " "))
+    cc.tableExistsInMetastore(TableIdent("parquet_table", "sql_test")) shouldBe true
+
+    val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.parquet_table AS test1 " +
+      "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
+    result should have length 12
+
+    if (file.exists()) Util.deleteRecursively(file)
+    cc.unregisterTable(TableIdent("parquet_table", "sql_test"))
+  }
+
+  it should "describe a table" in {
+    cc.sql("DESCRIBE test1").collect() should have length 8
+    cc.sql("DESCRIBE EXTENDED test1").collect() should have length 8
+    cc.sql("DESCRIBE sql_test.test1").collect() should have length 8
+    cc.sql("DESCRIBE EXTENDED sql_test.test1").collect() should have length 8
+  }
+
+  it should "drop a table" in {
+    //DROP TABLE IF EXISTS test1
+  }
+
+  it should "show a database" in {
+    //SHOW sql_test
+  }
+
+  it should "use a database" in {
+    //USE sql_test
+  }
+
 }

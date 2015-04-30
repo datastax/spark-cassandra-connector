@@ -13,7 +13,6 @@ import org.apache.spark.sql.types.{StructType, DataType}
 import com.datastax.driver.core.{Row, PreparedStatement}
 import com.datastax.spark.connector.cql.{Schema, CassandraConnector}
 
-import CSQLContext._
 
 trait MetaStore {
 
@@ -200,9 +199,9 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore {
     val deleteQuery =
       s"""
         |DELETE FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
-        |WHERE cluster_name = '${quoted(tableIdent.cluster.getOrElse(sqlContext.getDefaultCluster))}'
-        | AND keyspace_name = '${quoted(tableIdent.keyspace)}'
-        | AND table_name = '${quoted(tableIdent.table)}'
+        |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getDefaultCluster)}'
+        | AND keyspace_name = '${tableIdent.keyspace}'
+        | AND table_name = '${tableIdent.table}'
       """.stripMargin.replaceAll("\n", " ")
 
     metaStoreConn.withSessionDo {
@@ -226,18 +225,18 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore {
 
   /** Look up source table from metastore */
   def getTableFromMetastore(tableIdent: TableIdent): Option[LogicalPlan] = {
-    val SelectTableMetadataQuery =
+    val selectQuery =
       s"""
         |SELECT source_provider, schema_json, options
         |FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
-        |WHERE cluster_name = '${quoted(tableIdent.cluster.getOrElse(sqlContext.getDefaultCluster))}'
-        |  AND keyspace_name = '${quoted(tableIdent.keyspace)}'
-        |  AND table_name = '${quoted(tableIdent.table)}'
+        |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getDefaultCluster)}'
+        |  AND keyspace_name = '${tableIdent.keyspace}'
+        |  AND table_name = '${tableIdent.table}'
       """.stripMargin.replaceAll("\n", " ")
 
     metaStoreConn.withSessionDo {
       session =>
-        val result = session.execute(SelectTableMetadataQuery)
+        val result = session.execute(selectQuery)
         if (result.isExhausted()) {
           None
         } else {

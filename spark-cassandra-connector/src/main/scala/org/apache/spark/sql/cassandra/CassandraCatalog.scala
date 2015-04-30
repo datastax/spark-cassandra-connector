@@ -3,12 +3,12 @@ package org.apache.spark.sql.cassandra
 import java.io.IOException
 
 import com.google.common.cache.{LoadingCache, CacheBuilder, CacheLoader}
+
 import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, Catalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
-import org.apache.spark.sql.sources.{ResolvedDataSource, LogicalRelation}
-
 import org.apache.spark.sql.types.StructType
+
 import CassandraDefaultSource._
 
 private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catalog with Logging {
@@ -56,19 +56,15 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
       schema: Option[StructType],
       options: Map[String, String]): Unit = {
 
-    val resolvedRelation =
-      if (source == CassandraDataSourceProviderName || source == CassandraDataSourceProviderName + ".DefaultSource") {
-      val fullOptions = options ++ Map[String, String](
-        CassandraDataSourceClusterNameProperty -> tableIdent.cluster.getOrElse(cc.getDefaultCluster),
-        CassandraDataSourceKeyspaceNameProperty -> tableIdent.keyspace,
-        CassandraDataSourceTableNameProperty -> tableIdent.table
-      )
-      ResolvedDataSource(cc, schema, source, fullOptions)
-    } else {
-      ResolvedDataSource(cc, schema, source, options)
-    }
+    val fullOptions =
+      if (source == CassandraDataSourceProviderName ||
+        source == CassandraDataSourceProviderName + ".DefaultSource") {
+        cc.optionsWithTableIdent(tableIdent, options)
+      } else {
+        options
+      }
     synchronized {
-      metaStore.storeTable(tableIdent, source, schema, options)
+      metaStore.storeTable(tableIdent, source, schema, fullOptions)
     }
   }
 
@@ -136,7 +132,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   /** Convert Catalyst tableIdentifier to TableIdent */
-  private def tableIdentFrom(tableIdentifier: Seq[String]) : TableIdent = {
+  def tableIdentFrom(tableIdentifier: Seq[String]) : TableIdent = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
     val clusterName = id(2).getOrElse(cc.getDefaultCluster)
     val keyspaceName = id(1).getOrElse(cc.getKeyspace)
@@ -145,7 +141,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   /** Convert TableIdent to Catalyst tableIdentifier */
-  private def catalystTableIdentFrom(tableIdent: TableIdent) : Seq[String] =
+  def catalystTableIdentFrom(tableIdent: TableIdent) : Seq[String] =
     Seq(tableIdent.cluster.getOrElse(cc.getDefaultCluster), tableIdent.keyspace, tableIdent.table)
 }
 

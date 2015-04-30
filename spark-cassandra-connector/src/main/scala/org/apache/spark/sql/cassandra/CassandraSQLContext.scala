@@ -6,7 +6,6 @@ import org.apache.spark.sql.sources.DataSourceStrategy
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
 
-
 /** Allows to execute SQL queries against Cassandra and access results as
   * [[org.apache.spark.sql.DataFrame]] collections.
   * Predicate pushdown to Cassandra is supported.
@@ -61,10 +60,11 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
-  override protected[sql] val planner = new SparkPlanner {
+  override protected[sql] val planner = new SparkPlanner with CassandraStrategies {
     val cassandraContext = CassandraSQLContext.this
     override val strategies: Seq[Strategy] = Seq(
       DataSourceStrategy,
+      CassandraDDLStrategy,
       DDLStrategy,
       TakeOrdered,
       ParquetOperations,
@@ -85,6 +85,13 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   def getTables(databaseName: Option[String], cluster: Option[String] = None): Seq[(String, Boolean)] =
     catalog.getTables(databaseName, cluster)
 
+  /**
+   * Only register table to local cache. To register table in metastore, use
+   * registerTable(tableIdent, source, schema, options) method
+   */
+  def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit =
+    catalog.registerTable(tableIdentifier, plan)
+
   /** Register a customized table meta data to local cache and metastore */
   def registerTable(
       tableIdent: TableIdent,
@@ -92,7 +99,6 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       schema: Option[StructType],
       options: Map[String, String]): Unit =
     catalog.registerTable(tableIdent, source, schema, options)
-
 
   /** Unregister table from local cache and metastore. */
   def unregisterTable(tableIdent: TableIdent): Unit = catalog.unregisterTable(tableIdent)

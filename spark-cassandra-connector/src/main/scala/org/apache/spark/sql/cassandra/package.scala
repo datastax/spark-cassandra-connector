@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.google.common.cache.{CacheLoader, CacheBuilder}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraDefaultSource._
 import org.apache.spark.sql.sources.PrunedScan
 
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, CassandraConnectorConf}
@@ -178,6 +179,15 @@ package object cassandra {
     /** Return default cluster name */
     def getDefaultCluster : String = {
       sqlContext.getConf(DefaultCassandraClusterNameProperty, DefaultCassandraClusterName)
+    }
+
+    /** Add table names to options */
+    def optionsWithTableIdent(tableIdent: TableIdent, options: Map[String, String]) : Map[String, String] = {
+      Map[String, String](
+        CassandraDataSourceClusterNameProperty -> tableIdent.cluster.getOrElse(getDefaultCluster),
+        CassandraDataSourceKeyspaceNameProperty -> tableIdent.keyspace,
+        CassandraDataSourceTableNameProperty -> tableIdent.table
+      ) ++ options
     }
   }
 
