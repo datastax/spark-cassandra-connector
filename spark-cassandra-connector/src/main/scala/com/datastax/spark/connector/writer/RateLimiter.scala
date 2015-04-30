@@ -29,20 +29,20 @@ class RateLimiter(
     sleep: Long => Any = Thread.sleep) {
 
   private val bucketFill = new AtomicLong(0L)
-  private val lastTime = new AtomicLong(0L)
+  private val lastTime = new AtomicLong(time())
 
   @tailrec
   private def leak(toLeak: Long): Unit = {
     val fill = bucketFill.get()
     val reallyToLeak = math.min(fill, toLeak)  // we can't leak more than there is now
     if (!bucketFill.compareAndSet(fill, fill - reallyToLeak))
-      leak(toLeak)
+      leak(reallyToLeak)
   }
 
   private def leak(): Unit = {
     val currentTime = time()
     val prevTime = lastTime.getAndSet(currentTime)
-    val elapsedTime = currentTime - prevTime
+    val elapsedTime = math.max(currentTime - prevTime, 0) // Protect against funky clocks
     leak(elapsedTime * rate / 1000)
   }
 

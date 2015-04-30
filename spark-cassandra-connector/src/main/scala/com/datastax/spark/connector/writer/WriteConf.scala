@@ -78,7 +78,7 @@ object WriteConf {
   val DefaultParallelismLevel = 8
   val DefaultBatchGroupingBufferSize = 1000
   val DefaultBatchGroupingKey = BatchGroupingKey.Partition
-  val DefaultThroughputMiBPS = Int.MaxValue
+  val DefaultThroughputMiBPS = 1000000
   val DefaultWriteTaskMetricsEnabled = true
 
   def fromSparkConf(conf: SparkConf): WriteConf = {

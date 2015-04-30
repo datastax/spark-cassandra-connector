@@ -3,6 +3,7 @@ package com.datastax.spark.connector.writer
 import java.io.IOException
 
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
+import org.scalatest.concurrent.Timeouts
 
 import scala.collection.JavaConversions._
 
@@ -24,7 +25,7 @@ class SuperKeyValue(val key: Int, val value: String) extends Serializable
 
 class SubKeyValue(k: Int, v: String, val group: Long) extends SuperKeyValue(k, v)
 
-class TableWriterSpec extends SparkCassandraITFlatSpecBase {
+class TableWriterSpec extends SparkCassandraITFlatSpecBase with Timeouts{
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
@@ -35,7 +36,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     session.execute("DROP KEYSPACE IF EXISTS write_test")
     session.execute("CREATE KEYSPACE IF NOT EXISTS write_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    for (x <- 1 to 19) {
+    for (x <- 1 to 20) {
       session.execute(s"CREATE TABLE IF NOT EXISTS write_test.key_value_$x (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
     }
 
@@ -427,6 +428,16 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq(KeyValueWithTransient(1, 1L, "value1", "a"), KeyValueWithTransient(2, 2L, "value2", "b"), KeyValueWithTransient(3, 3L, "value3", "c"))
     sc.parallelize(col).saveToCassandra("write_test", "key_value_19")
     verifyKeyValueTable("key_value_19")
+  }
+
+  it should "write a large RDD with write throttling on" in{
+    import org.scalatest.time.SpanSugar._
+    failAfter(30 seconds) {
+      sc.parallelize(1 to 10, 10)
+        .flatMap(x => 1 to 10)
+        .map(x => KeyValueWithTimestamp(x, x, x.toString, x))
+        .saveToCassandra("write_test", "key_value_20", AllColumns, new WriteConf(throughputMiBPS = 20))
+    }
   }
 
 }
