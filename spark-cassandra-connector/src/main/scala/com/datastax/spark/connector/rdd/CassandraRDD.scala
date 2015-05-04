@@ -304,7 +304,7 @@ class CassandraRDD[R] private[connector] (
 
   override def getPreferredLocations(split: Partition) =
     split.asInstanceOf[CassandraPartition]
-      .endpoints.map(_.getHostName).toSeq
+    .endpoints.flatMap(inet => Seq(inet.getHostName, inet.getHostAddress)).toSeq.distinct
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnNames.map(quote).mkString(", ")
