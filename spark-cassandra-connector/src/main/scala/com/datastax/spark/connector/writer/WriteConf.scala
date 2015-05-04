@@ -74,8 +74,8 @@ object WriteConf {
   )
 
   val DefaultConsistencyLevel = ConsistencyLevel.LOCAL_ONE
-  val DefaultBatchSizeInBytes = 16 * 1024
-  val DefaultParallelismLevel = 8
+  val DefaultBatchSizeInBytes = 1024
+  val DefaultParallelismLevel = 5
   val DefaultBatchGroupingBufferSize = 1000
   val DefaultBatchGroupingKey = BatchGroupingKey.Partition
   val DefaultThroughputMiBPS = Int.MaxValue

@@ -28,8 +28,11 @@ class RateLimiter(
     time: () => Long = System.currentTimeMillis,
     sleep: Long => Any = Thread.sleep) {
 
-  private val bucketFill = new AtomicLong(0L)
-  private val lastTime = new AtomicLong(0L)
+  require(rate > 0, "A positive rate is required")
+  require(bucketSize > 0, "A positive bucket size is required")
+
+  private[writer] val bucketFill = new AtomicLong(0L)
+  private[writer] val lastTime = new AtomicLong(time()) //Avoid a large initial step
 
   @tailrec
   private def leak(toLeak: Long): Unit = {
@@ -39,11 +42,11 @@ class RateLimiter(
       leak(toLeak)
   }
 
-  private def leak(): Unit = {
+  private[writer] def leak(): Unit = {
     val currentTime = time()
     val prevTime = lastTime.getAndSet(currentTime)
-    val elapsedTime = currentTime - prevTime
-    leak(elapsedTime * rate / 1000)
+    val elapsedTime = math.max(currentTime - prevTime, 0L) // Protect against negative time
+    leak(elapsedTime * rate / 1000L)
   }
 
   /** Processes a single packet.
@@ -55,8 +58,9 @@ class RateLimiter(
     leak()
     val currentFill = bucketFill.addAndGet(packetSize)
     val overflow = currentFill - bucketSize
-    val delay = 1000 * overflow / rate
-    if (delay > 0)
+    val delay = 1000L * overflow / rate
+    if (delay > 0L)
       sleep(delay)
   }
+
 }
