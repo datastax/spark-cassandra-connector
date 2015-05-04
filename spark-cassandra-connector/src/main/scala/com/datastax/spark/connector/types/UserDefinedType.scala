@@ -5,15 +5,17 @@ import java.io.ObjectOutputStream
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{UDTValue => DriverUDTValue, DataType, ProtocolVersion, UserType}
-import com.datastax.spark.connector.UDTValue
+import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
+import com.datastax.spark.connector.{ColumnName, UDTValue}
 import com.datastax.spark.connector.cql.{StructDef, FieldDef}
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
   * The word `column` instead of `field` is used in member names because we want to treat UDT field
   * entries in the same way as table columns, so that they are mappable to case classes.
   * This is also the reason why this class extends `FieldDef`*/
-case class UDTFieldDef(columnName: String, columnType: ColumnType[_]) extends FieldDef
+case class UDTFieldDef(columnName: String, columnType: ColumnType[_]) extends FieldDef {
+  override lazy val ref = ColumnName(columnName)
+}
 
 /** A Cassandra user defined type metadata.
   * A UDT consists of a sequence of ordered fields, called `columns`. */

@@ -26,7 +26,7 @@ case class CassandraTableScan(
   private type RDDType = CassandraRDD[CassandraSQLRow]
 
   private val maybeSelect = if (attributes.nonEmpty) { rdd: RDDType =>
-    rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): NamedColumnRef): _*)
+    rdd.select(attributes.map(a => relation.columnNameByLowercase(a.name): ColumnRef): _*)
   } else { rdd: RDDType =>
     rdd
   }
@@ -40,7 +40,7 @@ case class CassandraTableScan(
     logInfo(s"attributes : ${attributes.map(_.name).mkString(",")}")
 
     val readConf = context.getReadConf(relation.keyspaceName, relation.tableName, relation.cluster)
-    var rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)(
+    val rdd = context.sparkContext.cassandraTable[CassandraSQLRow](relation.keyspaceName, relation.tableName)(
       new CassandraConnector(context.getCassandraConnConf(relation.cluster)), readConf,
       implicitly[ClassTag[CassandraSQLRow]], CassandraSQLRowReader, implicitly[ValidRDDType[CassandraSQLRow]])
 

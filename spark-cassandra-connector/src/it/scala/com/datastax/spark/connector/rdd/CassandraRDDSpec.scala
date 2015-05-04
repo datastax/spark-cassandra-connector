@@ -604,7 +604,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       session.execute(s"""TRUNCATE "$ks".write_time_ttl_test""")
       session.execute(s"""INSERT INTO "$ks".write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime""")
     }
-    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedFromCassandraAs))
+    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedAs))
     val results = sc.cassandraTable[WriteTimeClass](ks, "write_time_ttl_test")
       .select("id", "value", "value".writeTime).collect().headOption
     results.isDefined should be (true)
@@ -617,7 +617,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       session.execute(s"""TRUNCATE "$ks".write_time_ttl_test""")
       session.execute(s"""INSERT INTO "$ks".write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl""")
     }
-    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedFromCassandraAs))
+    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedAs))
     val results = sc.cassandraTable[TTLClass](ks, "write_time_ttl_test")
       .select("id", "value", "value".ttl).collect().headOption
     results.isDefined should be (true)

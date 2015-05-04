@@ -13,6 +13,7 @@ import scala.reflect.ClassTag
 trait FunctionBasedRowReader[R] extends RowReader[R] with ThisRowReaderAsFactory[R] {
   def ct: ClassTag[R]
   override val targetClass: Class[R] = ct.runtimeClass.asInstanceOf[Class[R]]
+  override def neededColumns = None
 }
 
 class FunctionBasedRowReader1[R, A0](f: A0 => R)(
@@ -21,8 +22,6 @@ class FunctionBasedRowReader1[R, A0](f: A0 => R)(
   override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
     f(a0c.convert(GettableData.get(row, 0)))
 
-  override def requiredColumns = Some(1)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
@@ -37,9 +36,6 @@ class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1))
     )
-
-  override def requiredColumns = Some(2)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
@@ -55,9 +51,6 @@ class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
       a2c.convert(GettableData.get(row, 2)))
-
-  override def requiredColumns = Some(3)
-  override def columnNames = None
 
 }
 
@@ -77,10 +70,6 @@ class FunctionBasedRowReader4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
       a2c.convert(GettableData.get(row, 2)),
       a3c.convert(GettableData.get(row, 3))
     )
-
-  override def requiredColumns = Some(4)
-  override def columnNames = None
-
 }
 
 class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => R)(
@@ -101,10 +90,6 @@ class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => 
       a3c.convert(GettableData.get(row, 3)),
       a4c.convert(GettableData.get(row, 4))
     )
-
-  override def requiredColumns = Some(5)
-  override def columnNames = None
-
 }
 
 class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4, A5) => R)(
@@ -127,9 +112,6 @@ class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4,
       a4c.convert(GettableData.get(row, 4)),
       a5c.convert(GettableData.get(row, 5))
     )
-
-  override def requiredColumns = Some(6)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3, A4, A5, A6) => R)(
@@ -154,9 +136,6 @@ class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3,
       a5c.convert(GettableData.get(row, 5)),
       a6c.convert(GettableData.get(row, 6))
     )
-
-  override def requiredColumns = Some(7)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
@@ -184,9 +163,6 @@ class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
       a6c.convert(GettableData.get(row, 6)),
       a7c.convert(GettableData.get(row, 7))
     )
-
-  override def requiredColumns = Some(8)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
@@ -216,9 +192,6 @@ class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
       a7c.convert(GettableData.get(row, 7)),
       a8c.convert(GettableData.get(row, 8))
     )
-
-  override def requiredColumns = Some(9)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
@@ -250,9 +223,6 @@ class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
       a8c.convert(GettableData.get(row, 8)),
       a9c.convert(GettableData.get(row, 9))
     )
-
-  override def requiredColumns = Some(10)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
@@ -286,9 +256,6 @@ class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
       a9c.convert(GettableData.get(row, 9)),
       a10c.convert(GettableData.get(row, 10))
     )
-
-  override def requiredColumns = Some(11)
-  override def columnNames = None
 }
 
 class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11]
@@ -324,8 +291,5 @@ class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A
       a10c.convert(GettableData.get(row, 10)),
       a11c.convert(GettableData.get(row, 11))
     )
-
-  override def requiredColumns = Some(12)
-  override def columnNames = None
 }
 

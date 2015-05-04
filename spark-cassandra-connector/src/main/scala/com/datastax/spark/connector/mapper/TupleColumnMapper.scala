@@ -1,37 +1,49 @@
 package com.datastax.spark.connector.mapper
 
 import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
-import com.datastax.spark.connector.{ColumnRef, ColumnIndex}
-import com.datastax.spark.connector.cql.{StructDef, RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
+import com.datastax.spark.connector.ColumnRef
+import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
 class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
-  private def indexedColumnRefs(n: Int) =
-    (0 until n).map(ColumnIndex)
+  val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
+  val ctorLength = cls.getConstructors()(0).getParameterTypes.length
+  val methodNames = cls.getMethods.map(_.getName)
 
-  override def columnMap(structDef: StructDef, aliases: Map[String, String]): ColumnMap = {
-
-    val GetterRegex = "_([0-9]+)".r
-    val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
-
-    val constructor =
-      indexedColumnRefs(cls.getConstructors()(0).getParameterTypes.length)
-
-    val getters = {
-      for (name @ GetterRegex(id) <- cls.getMethods.map(_.getName))
-      yield (name, ColumnIndex(id.toInt - 1))
-    }.toMap
-
-    val setters =
-      Map.empty[String, ColumnRef]
-
-    SimpleColumnMap(constructor, getters, setters)
+  override def columnMapForReading(
+      struct: StructDef,
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForReading = {
+    
+    require(
+      ctorLength <= selectedColumns.length,
+      s"Not enough columns selected from ${struct.name}. " +
+        s"Only ${selectedColumns.length} column(s) were selected, but $ctorLength are required. " +
+        s"Selected columns: [${selectedColumns.mkString(", ")}]")
+    
+    SimpleColumnMapForReading(
+      constructor = selectedColumns.take(ctorLength),
+      setters = Map.empty[String, ColumnRef],
+      allowsNull = false)
   }
-
+  
+  override def columnMapForWriting(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]) = {
+    val GetterRegex = "_([0-9]+)".r
+    val getters = 
+      for (name @ GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
+        yield (name, selectedColumns(id.toInt - 1))
+    
+    require(
+      getters.length == selectedColumns.length,
+      s"The number of columns ${selectedColumns.length} selected to write to ${struct.name} " +
+        s"is higher than the size of the tuple ${getters.length}")
+    
+    SimpleColumnMapForWriting(getters.toMap)
+  }
+  
   override def newTable(keyspaceName: String, tableName: String): TableDef = {
     val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
     val ctorSymbol = Reflect.constructor(tpe).asMethod

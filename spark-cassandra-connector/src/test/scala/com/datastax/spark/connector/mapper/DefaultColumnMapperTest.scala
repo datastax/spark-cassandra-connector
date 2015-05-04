@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.ColumnName
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.{AllColumns, ColumnName}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{VarCharType, IntType}
 import org.junit.Assert._
@@ -17,12 +18,15 @@ class DefaultColumnMapperTest {
   private val c1 = ColumnDef("property_1", PartitionKeyColumn, IntType)
   private val c2 = ColumnDef("camel_case_property", ClusteringColumn(0), IntType)
   private val c3 = ColumnDef("UpperCaseColumn", RegularColumn, IntType)
-  private val c4 = ColumnDef("column", RegularColumn, IntType)
-  private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4))
+  private val table1 = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
+
+  private val c4 = ColumnDef("column", PartitionKeyColumn, IntType)
+  private val table2 = TableDef("test", "table", Seq(c4), Seq(c2), Seq(c3))
 
   @Test
   def testGetters1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
+      .columnMapForWriting(table1, table1.columnRefs)
     val getters = columnMap.getters
     assertEquals(ColumnName(c1.columnName), getters("property1"))
     assertEquals(ColumnName(c2.columnName), getters("camelCaseProperty"))
@@ -31,7 +35,8 @@ class DefaultColumnMapperTest {
 
   @Test
   def testGetters2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]()
+      .columnMapForWriting(table1, table1.columnRefs)
     val getters = columnMap.getters
     assertEquals(ColumnName(c1.columnName), getters("property1"))
     assertEquals(ColumnName(c2.columnName), getters("camelCaseProperty"))
@@ -40,13 +45,15 @@ class DefaultColumnMapperTest {
 
   @Test
   def testSetters1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
+      .columnMapForReading(table1, table1.columnRefs)
     assertTrue(columnMap.setters.isEmpty)
   }
 
   @Test
   def testSetters2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]()
+      .columnMapForReading(table1, table1.columnRefs)
     val setters = columnMap.setters
     assertEquals(ColumnName(c1.columnName), setters("property1_$eq"))
     assertEquals(ColumnName(c2.columnName), setters("camelCaseProperty_$eq"))
@@ -55,7 +62,8 @@ class DefaultColumnMapperTest {
 
   @Test
   def testConstructorParams1() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
+      .columnMapForReading(table1, table1.columnRefs)
     val expectedConstructor: Seq[ColumnName] = Seq(
       ColumnName(c1.columnName),
       ColumnName(c2.columnName),
@@ -65,7 +73,8 @@ class DefaultColumnMapperTest {
 
   @Test
   def testConstructorParams2() {
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2]().columnMapForReading(
+      table1, table1.columnRefs)
     val expectedConstructor: Seq[ColumnName] = Seq(
       ColumnName(c1.columnName),
       ColumnName(c2.columnName),
@@ -76,7 +85,8 @@ class DefaultColumnMapperTest {
   @Test
   def columnNameOverrideGetters() {
     val nameOverride: Map[String, String] = Map("property1" -> c4.columnName)
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1](nameOverride).columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass1](nameOverride)
+      .columnMapForWriting(table2, table2.columnRefs)
     val getters = columnMap.getters
     assertEquals(ColumnName(c4.columnName), getters("property1"))
     assertEquals(ColumnName(c2.columnName), getters("camelCaseProperty"))
@@ -86,7 +96,8 @@ class DefaultColumnMapperTest {
   @Test
   def columnNameOverrideSetters() {
     val nameOverride: Map[String, String] = Map("property1" -> c4.columnName)
-    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2](nameOverride).columnMap(tableDef)
+    val columnMap = new DefaultColumnMapper[DefaultColumnMapperTestClass2](nameOverride)
+      .columnMapForReading(table2, table2.columnRefs)
     val setters = columnMap.setters
     assertEquals(ColumnName(c4.columnName), setters("property1_$eq"))
     assertEquals(ColumnName(c2.columnName), setters("camelCaseProperty_$eq"))
@@ -96,7 +107,8 @@ class DefaultColumnMapperTest {
   @Test
   def columnNameOverrideConstructor() {
     val nameOverride: Map[String, String] = Map("property1" -> "column")
-    val mapper = new DefaultColumnMapper[DefaultColumnMapperTestClass1](nameOverride).columnMap(tableDef)
+    val mapper = new DefaultColumnMapper[DefaultColumnMapperTestClass1](nameOverride)
+      .columnMapForReading(table2, table2.columnRefs)
     val expectedConstructor: Seq[ColumnName] = Seq(
       ColumnName(c4.columnName),
       ColumnName(c2.columnName),
@@ -169,23 +181,35 @@ class DefaultColumnMapperTest {
   @Test
   def testWorkWithAliases() {
     val mapper = new DefaultColumnMapper[ClassWithWeirdProps]()
-    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
-    val expectedConstructor: Seq[ColumnName] = Seq(
-      ColumnName(c1.columnName),
-      ColumnName(c2.columnName),
-      ColumnName(c4.columnName))
-    assertEquals(expectedConstructor, map.constructor)
+    val selectedColumns = IndexedSeq(
+      "property_1" as "devil",
+      "camel_case_property" as "cat",
+      "column" as "eye")
+    val map = mapper.columnMapForReading(table2, selectedColumns)
+    assertEquals(selectedColumns, map.constructor)
   }
 
   @Test
   def testWorkWithAliasesAndHonorOverrides() {
-    val mapper = new DefaultColumnMapper[ClassWithWeirdProps](Map("cat" -> "UpperCaseColumn"))
-    val map = mapper.columnMap(tableDef, Map("devil" -> "property_1", "cat" -> "camel_case_property", "eye" -> "column"))
-    val expectedConstructor: Seq[ColumnName] = Seq(
-      ColumnName(c1.columnName),
-      ColumnName(c3.columnName),
-      ColumnName(c4.columnName))
-    assertEquals(expectedConstructor, map.constructor)
+    val mapper = new DefaultColumnMapper[ClassWithWeirdProps](Map("cat" -> "cat2"))
+    val selectedColumns = IndexedSeq(
+      "property_1" as "devil",
+      "camel_case_property" as "cat2",
+      "UpperCaseColumn" as "eye")
+    val map = mapper.columnMapForReading(table1, selectedColumns)
+    assertEquals(selectedColumns, map.constructor)
+  }
+
+  @Test(expected = classOf[IllegalArgumentException])
+  def testNotEnoughColumnsSelectedForReading(): Unit = {
+    new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
+      .columnMapForReading(table1, table1.columnRefs.tail)
+  }
+
+  @Test(expected = classOf[IllegalArgumentException])
+  def testNotEnoughPropertiesForWriting(): Unit = {
+    new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
+      .columnMapForWriting(table1, table1.columnRefs :+ ColumnName("missingColumn"))
   }
 
 }

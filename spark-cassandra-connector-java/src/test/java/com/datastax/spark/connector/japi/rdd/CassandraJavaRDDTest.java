@@ -7,7 +7,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.datastax.spark.connector.SelectableColumnRef;
+import com.datastax.spark.connector.ColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
@@ -20,8 +20,8 @@ public class CassandraJavaRDDTest {
     public void testSelectColumnNames() {
         CassandraRDD<Integer> rdd = mock(CassandraRDD.class);
         CassandraRDD<Integer> rdd2 = mock(CassandraRDD.class);
-        when(rdd.select(JavaApiHelper.<SelectableColumnRef>toScalaSeq(
-                new SelectableColumnRef[]{column("a"), column("b")}))).thenReturn(rdd2);
+        when(rdd.select(JavaApiHelper.<ColumnRef>toScalaSeq(
+                new ColumnRef[]{column("a"), column("b")}))).thenReturn(rdd2);
         CassandraJavaRDD<Integer> jrdd = new CassandraJavaRDD<>(rdd, Integer.class);
         assertThat(jrdd.select("a", "b").rdd(), is(rdd2));
     }
@@ -30,8 +30,8 @@ public class CassandraJavaRDDTest {
     public void testSelectColumns() {
         CassandraRDD<Integer> rdd = mock(CassandraRDD.class);
         CassandraRDD<Integer> rdd2 = mock(CassandraRDD.class);
-        when(rdd.select(JavaApiHelper.<SelectableColumnRef>toScalaSeq(
-                new SelectableColumnRef[]{column("a"), column("b")}))).thenReturn(rdd2);
+        when(rdd.select(JavaApiHelper.<ColumnRef>toScalaSeq(
+                new ColumnRef[]{column("a"), column("b")}))).thenReturn(rdd2);
         CassandraJavaRDD<Integer> jrdd = new CassandraJavaRDD<>(rdd, Integer.class);
         assertThat(jrdd.select(column("a"), column("b")).rdd(), is(rdd2));
     }
@@ -68,9 +68,9 @@ public class CassandraJavaRDDTest {
     public void testSelectedColumnRefs() {
         CassandraRDD<Integer> rdd = mock(CassandraRDD.class);
         when(rdd.selectedColumnRefs())
-                .thenReturn(JavaApiHelper.<SelectableColumnRef>toScalaSeq(new SelectableColumnRef[]{column("a"), column("b")}));
+                .thenReturn(JavaApiHelper.<ColumnRef>toScalaSeq(new ColumnRef[]{column("a"), column("b")}));
         CassandraJavaRDD<Integer> jrdd = new CassandraJavaRDD<>(rdd, Integer.class);
-        assertThat(jrdd.selectedColumnRefs(), is(new SelectableColumnRef[] {column("a"), column("b")}));
+        assertThat(jrdd.selectedColumnRefs(), is(new ColumnRef[] {column("a"), column("b")}));
     }
 
     @Test

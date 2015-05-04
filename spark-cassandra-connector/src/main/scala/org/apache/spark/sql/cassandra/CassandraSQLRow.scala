@@ -54,8 +54,7 @@ object CassandraSQLRow {
     override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow =
       fromJavaDriverRow(row, columnNames)
 
-    override def requiredColumns = None
-    override def columnNames = None
+    override def neededColumns = None
     override def targetClass = classOf[CassandraSQLRow]
   }
 }

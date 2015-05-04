@@ -463,12 +463,12 @@ public class CassandraJavaUtil {
      * Creates a column selector with a given columns projection.
      */
     public static ColumnSelector someColumns(String... columnNames) {
-        NamedColumnRef[] columnsSelection = new NamedColumnRef[columnNames.length];
+        ColumnRef[] columnsSelection = new ColumnRef[columnNames.length];
         for (int i = 0; i < columnNames.length; i++) {
             columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i], Option.<String>empty());
         }
 
-        return SomeColumns$.MODULE$.apply(JAPI.<SelectableColumnRef>seq(columnsSelection));
+        return SomeColumns$.MODULE$.apply(JAPI.<ColumnRef>seq(columnsSelection));
     }
 
     public static ColumnName column(String columnName) {
@@ -483,7 +483,7 @@ public class CassandraJavaUtil {
         return new WriteTime(columnName, Option.<String>empty());
     }
 
-    public static SelectableColumnRef[] toSelectableColumnRefs(String... columnNames) {
+    public static ColumnRef[] toSelectableColumnRefs(String... columnNames) {
         ColumnName[] refs = new ColumnName[columnNames.length];
         for (int i = 0; i < columnNames.length; i++) {
             refs[i] = column(columnNames[i]);

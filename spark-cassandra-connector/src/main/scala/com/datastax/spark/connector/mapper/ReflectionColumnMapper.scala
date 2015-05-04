@@ -17,55 +17,79 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
   protected def setterToColumnName(
       setterName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]): String
+      columns: Map[String, ColumnRef]): Option[ColumnRef]
 
   protected def getterToColumnName(
       getterName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]): String
+      columns: Map[String, ColumnRef]): Option[ColumnRef]
 
   protected def constructorParamToColumnName(
       paramName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]): String
+      columns: Map[String, ColumnRef]): Option[ColumnRef]
 
   protected def allowsNull: Boolean
 
-  override def columnMap(structDef: StructDef, aliasToColumnName: Map[String, String]): ColumnMap = {
+  private def columnRefByAliasName(selectedColumns: IndexedSeq[ColumnRef]): Map[String, ColumnRef] =
+    (for (c <- selectedColumns) yield (c.selectedAs, c)).toMap
 
-    val cls = implicitly[ClassTag[T]].runtimeClass
+  private val cls = implicitly[ClassTag[T]].runtimeClass
+
+  override def columnMapForReading(
+      struct: StructDef,
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForReading = {
+
+    val columnByName = columnRefByAliasName(selectedColumns)
+
+    def columnRefOrThrow(paramName: String) = {
+      constructorParamToColumnName(paramName, columnByName).getOrElse {
+        throw new IllegalArgumentException(
+          s"Failed to map constructor parameter $paramName in $cls to a column of ${struct.name}")
+      }
+    }
 
     def columnsOf(ctor: Constructor[_]): Seq[ColumnRef] = {
       if (isNoArgsConstructor(ctor))
         Nil
       else {
         val paramNames = paranamer.lookupParameterNames(ctor)
-        val columnNames = paramNames
-          .map(constructorParamToColumnName(_, structDef, aliasToColumnName))
+        paramNames
           .filter(_ != "$_outer")
-        columnNames.map(ColumnName(_, None))
+          .map(columnRefOrThrow)
       }
     }
 
     val constructor = columnsOf(resolveConstructor(cls))
 
-    val getters: Map[String, ColumnRef] = {
-      for (method <- cls.getMethods if isGetter(method)) yield {
-        val methodName = method.getName
-        val columnName = getterToColumnName(methodName, structDef, aliasToColumnName)
-        (methodName, ColumnName(columnName))
-      }
-    }.toMap
-
     val setters: Map[String, ColumnRef] = {
-      for (method <- cls.getMethods if isSetter(method)) yield {
-        val methodName = method.getName
-        val columnName = setterToColumnName(methodName, structDef, aliasToColumnName)
-        (methodName, ColumnName(columnName))
-      }
+      for {
+        method <- cls.getMethods if isSetter(method)
+        methodName = method.getName
+        columnRef <- setterToColumnName(methodName, columnByName)
+      } yield (methodName, columnRef)
     }.toMap
 
-    new SimpleColumnMap(constructor, getters, setters, allowsNull)
+    new SimpleColumnMapForReading(constructor, setters, allowsNull)
+  }
+
+  override def columnMapForWriting(
+      struct: StructDef,
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForWriting = {
+
+    val columnByName = columnRefByAliasName(selectedColumns)
+
+    val getterMap: Map[String, ColumnRef] = {
+      for {
+        method <- cls.getMethods if isGetter(method)
+        methodName = method.getName
+        columnRef <- getterToColumnName(methodName, columnByName)
+      } yield (methodName, columnRef)
+    }.toMap
+
+    // Check if we have all the required columns:
+    val mappedColumns = getterMap.values.toSet
+    val unmappedColumns = selectedColumns.filterNot(mappedColumns)
+    require(unmappedColumns.isEmpty, s"Columns not found in $cls: [${unmappedColumns.mkString(", ")}]")
+
+    new SimpleColumnMapForWriting(getterMap)
   }
 }

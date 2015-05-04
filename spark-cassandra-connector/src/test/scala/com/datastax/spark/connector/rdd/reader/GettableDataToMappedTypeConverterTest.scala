@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.{Matchers, FlatSpec}
 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
 import com.datastax.spark.connector.{UDTValue, CassandraRow}
 import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
@@ -28,7 +29,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     regularColumns = Seq(passwordColumn, addressColumn))
 
   "GettableDataToMappedTypeConverter" should "be Serializable" in {
-    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs)
     SerializationUtils.roundtrip(converter)
   }
 
@@ -36,7 +37,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
 
   it should "convert a CassandraRow to a case class object" in {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
-    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -46,7 +47,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
     val converter =
       SerializationUtils.roundtrip(
-        new GettableDataToMappedTypeConverter[User](userTable, userTable.columnNames))
+        new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs))
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -80,7 +81,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
 
   it should "convert a UDTValue to a case class object" in {
     val row = UDTValue.fromMap(Map("login" -> "foo", "password" -> "bar"))
-    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -92,7 +93,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> null))
     val converter =
       new GettableDataToMappedTypeConverter[UserWithOption](
-        userTable, userTable.columnNames)
+        userTable, userTable.columnRefs)
 
     val user = converter.convert(row)
     user.login shouldBe "foo"
@@ -106,8 +107,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val converter =
       new GettableDataToMappedTypeConverter[DifferentlyNamedUser](
         userTable,
-        IndexedSeq("login", "password"),
-        Map("name" -> "login", "pass" -> "password"))
+        IndexedSeq("login" as "name", "password" as "pass"))
 
     val user = converter.convert(row)
     user.name shouldBe "foo"
@@ -121,7 +121,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
 
   it should "set property values with setters" in {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
-    val converter = new GettableDataToMappedTypeConverter[UserWithSetters](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[UserWithSetters](userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -131,7 +131,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
 
   it should "apply proper type conversions for columns" in {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> "5"))  // 5 as String
-    val converter = new GettableDataToMappedTypeConverter[Address](addressType, addressType.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[Address](addressType, addressType.columnRefs)
     val addressObj = converter.convert(address)
     addressObj.number shouldBe 5
   }
@@ -142,7 +142,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> 5))
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar", "address" -> address))
     val converter = new GettableDataToMappedTypeConverter[UserWithAddress](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -156,7 +156,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> 5))
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar", "address" -> address))
     val converter = new GettableDataToMappedTypeConverter[UserWithAddressAsTuple](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -170,7 +170,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> 5))
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar", "address" -> address))
     val converter = new GettableDataToMappedTypeConverter[UserWithOptionalAddress](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
@@ -194,7 +194,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address2 = UDTValue.fromMap(Map("street" -> "B street", "number" -> 7))
     val row = CassandraRow.fromMap(Map("login" -> "foo", "addresses" -> List(address1, address2)))
     val converter = new GettableDataToMappedTypeConverter[UserWithMultipleAddresses](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.addresses(0).street shouldBe "A street"
@@ -227,7 +227,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val addresses = Map(0 -> address1, 1 -> address2)
     val row = CassandraRow.fromMap(Map("login" -> "foo", "addresses" -> addresses))
     val converter = new GettableDataToMappedTypeConverter[UserWithMultipleAddressesAsMap](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.addresses(0).street shouldBe "A street"
@@ -249,7 +249,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
   it should "convert a CassandraRow to a JavaBean" in {
     implicit val cm: ColumnMapper[UserBean] = new JavaBeanColumnMapper[UserBean]
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
-    val converter = new GettableDataToMappedTypeConverter[UserBean](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[UserBean](userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.getLogin shouldBe "foo"
     user.getPassword shouldBe "bar"
@@ -280,7 +280,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> 5))
     val row = CassandraRow.fromMap(Map("login" -> "foo", "address" -> address))
     val converter = new GettableDataToMappedTypeConverter[UserBeanWithAddress](
-      userTable, userTable.columnNames)
+      userTable, userTable.columnRefs)
     val user = converter.convert(row)
     user.getLogin shouldBe "foo"
     user.getAddress.getStreet shouldBe "street"
@@ -294,7 +294,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
     val exception = the[IllegalArgumentException] thrownBy {
       val converter = new GettableDataToMappedTypeConverter[UserWithUnknownType](
-        userTable, userTable.columnNames)
+        userTable, userTable.columnRefs)
       converter.convert(row)
     }
     exception.getMessage should include("UnknownType")
@@ -304,7 +304,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> "street", "number" -> "incorrect_number"))
     val exception = the[TypeConversionException] thrownBy {
       val converter = new GettableDataToMappedTypeConverter[Address](
-        addressType, addressType.columnNames)
+        addressType, addressType.columnRefs)
       converter.convert(address)
 
     }
@@ -318,7 +318,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val address = UDTValue.fromMap(Map("street" -> null, "number" -> "5"))
     val exception = the[NullPointerException] thrownBy {
       val converter = new GettableDataToMappedTypeConverter[Address](
-        addressType, addressType.columnNames)
+        addressType, addressType.columnRefs)
       converter.convert(address)
     }
     exception.getMessage should include("address")
@@ -326,7 +326,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
   }
 
   it should "throw NPE when trying to access its targetTypeTag after serialization/deserialization" in {
-    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnNames)
+    val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs)
     val deserialized = SerializationUtils.roundtrip(converter)
     a [NullPointerException] should be thrownBy deserialized.targetTypeTag
   }

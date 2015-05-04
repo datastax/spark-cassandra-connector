@@ -111,6 +111,7 @@ object GettableData {
 
   def get(row: Row, name: String)(implicit protocolVersion: ProtocolVersion): AnyRef = {
     val index = row.getColumnDefinitions.getIndexOf(name)
+    require(index >= 0, s"Column not found in Java driver Row: $name")
     get(row, index)
   }
 

@@ -2,6 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.Method
 
+import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.{TableDef, StructDef}
 
 import scala.reflect.ClassTag
@@ -26,33 +27,25 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
     method.getParameterTypes.size == 1 &&
     method.getReturnType == Void.TYPE
 
-  def resolve(name: String, structDef: StructDef, aliasToColumnName: Map[String, String]): String = {
-    columnNameOverride
-      .orElse(aliasToColumnName)
-      .applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, structDef))
+  private def resolve(name: String, columns: Map[String, ColumnRef]): Option[ColumnRef] = {
+    val overridenName = columnNameOverride.getOrElse(name, name)
+    ColumnMapperConvention.columnForProperty(overridenName, columns)
   }
 
-  override protected def getterToColumnName(
-      getterName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]) = {
+  override protected def getterToColumnName(getterName: String, columns: Map[String, ColumnRef]) = {
     val p = propertyName(getterName)
-    columnNameOverride.getOrElse(p, resolve(p, structDef, aliasToColumnName))
+    resolve(p, columns)
   }
 
-  override protected def setterToColumnName(
-      setterName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]) = {
+  override protected def setterToColumnName(setterName: String, columns: Map[String, ColumnRef]) = {
     val p = propertyName(setterName)
-    columnNameOverride.getOrElse(p, resolve(p, structDef, aliasToColumnName))
+    resolve(p, columns)
   }
 
   override protected def constructorParamToColumnName(
       paramName: String,
-      structDef: StructDef,
-      aliasToColumnName: Map[String, String]) = {
-    columnNameOverride.getOrElse(paramName, resolve(paramName, structDef, aliasToColumnName))
+      columns: Map[String, ColumnRef]) = {
+    resolve(paramName, columns)
   }
 
   /** Java Beans allow nulls in property values */

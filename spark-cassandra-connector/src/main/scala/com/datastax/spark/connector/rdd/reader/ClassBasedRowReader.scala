@@ -14,12 +14,12 @@ import com.datastax.spark.connector.util.Reflect
 import scala.reflect.runtime.universe._
 
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class, calling the class constructor */
-class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumns: Int = 0, aliasToColumnName: Map[String, String] = Map.empty)
+class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, selection: IndexedSeq[ColumnRef])
   extends RowReader[R] {
 
   private[connector] val factory = new AnyObjectFactory[R]
 
-  private val columnMap = implicitly[ColumnMapper[R]].columnMap(table, aliasToColumnName)
+  private val columnMap = implicitly[ColumnMapper[R]].columnMapForReading(table, selection)
 
   @transient
   private val tpe = TypeTag.synchronized(implicitly[TypeTag[R]].tpe)
@@ -33,7 +33,7 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
     def argType(name: String) = {
       val symbol = Reflect.member(tpe, name)
       if (symbol.isMethod)
-        symbol.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
+        symbol.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params.head.typeSignature
       else
         throw new IllegalArgumentException(s"The provided type $tpe does not implement the method $name")
     }
@@ -64,19 +64,11 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
   }
 
   private def getColumnValue(row: Row, columnRef: ColumnRef)(implicit protocolVersion: ProtocolVersion) = {
-    columnRef match {
-      case SelectableColumnRef(selectedAs) =>
-        GettableData.get(row, selectedAs)
-      case ColumnIndex(index) =>
-        GettableData.get(row, index + skipColumns)
-    }
+    GettableData.get(row, columnRef.cqlValueName)
   }
 
   private def getColumnName(row: Row, columnRef: ColumnRef) = {
-    columnRef match {
-      case SelectableColumnRef(selectedAs) => selectedAs
-      case ColumnIndex(index) => row.getColumnDefinitions.getName(index + skipColumns)
-    }
+    columnRef.columnName
   }
 
   private def convert(columnValue: AnyRef, columnName: String, converter: TypeConverter[_]): AnyRef = {
@@ -92,7 +84,7 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
   }
 
   private def fillBuffer(row: Row, buf: Array[AnyRef])(implicit protocolVersion: ProtocolVersion) {
-    for (i <- 0 until buf.length) {
+    for (i <- buf.indices) {
       val columnRef = constructorColumnRefs(i)
       val columnName = getColumnName(row, columnRef)
       val columnValue = getColumnValue(row, columnRef)
@@ -124,16 +116,9 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
     invokeSetters(row, factory.newInstance(buf: _*))
   }
 
-  private def extractColumnNames(columnRefs: Iterable[ColumnRef]): Seq[String] =
-    columnRefs.collect{ case ColumnName(name, _) => name }.toSeq
-
-  private def extractColumnIndexes(columnRefs: Iterable[ColumnRef]): Seq[Int] =
-    columnRefs.collect{ case ColumnIndex(index) => index }.toSeq
-
   private val allColumnRefs = columnMap.constructor ++ columnMap.setters.values
 
-  override def columnNames = Some(extractColumnNames(allColumnRefs))
-  override def requiredColumns = extractColumnIndexes(allColumnRefs).reduceOption(_ max _)
+  override def neededColumns = Some(allColumnRefs)
   override def consumedColumns: Option[Int] = {
     val keyIsTuple = tpe.typeSymbol.fullName startsWith "scala.Tuple"
     if (keyIsTuple) Some(factory.argCount) else None
@@ -142,8 +127,11 @@ class ClassBasedRowReader[R: TypeTag : ColumnMapper](table: TableDef, skipColumn
 
 
 class ClassBasedRowReaderFactory[R : TypeTag : ColumnMapper] extends RowReaderFactory[R] {
-  override def rowReader(tableDef: TableDef, options: RowReaderOptions) =
-    new ClassBasedRowReader[R](tableDef, options.offset, options.aliasToColumnName)
+
+  def columnMapper = implicitly[ColumnMapper[R]]
+
+  override def rowReader(tableDef: TableDef, selection: IndexedSeq[ColumnRef]) =
+    new ClassBasedRowReader[R](tableDef, selection)
 
   override def targetClass: Class[R] = JavaApiHelper.getRuntimeClass(typeTag[R])
 }
