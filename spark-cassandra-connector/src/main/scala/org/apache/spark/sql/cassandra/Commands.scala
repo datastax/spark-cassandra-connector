@@ -127,15 +127,12 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
 /**
  * Drops a table from the metastore and removes it if it is cached.
  */
-private[cassandra] case class DropTable(
-    tableName: String,
-    ifExists: Boolean) extends RunnableCommand {
-
+private[cassandra] case class DropTable(tableIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent = cc.catalog.tableIdentFrom(Seq(cc.getKeyspace, tableName))
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
     try {
-      cc.cacheManager.tryUncacheQuery(cc.table(tableName))
+      cc.cacheManager.tryUncacheQuery(cc.table(tableIdent.table))
     } catch {
       // This table's metadata is not in
       case _: org.apache.hadoop.hive.ql.metadata.InvalidTableException =>
@@ -145,6 +142,159 @@ private[cassandra] case class DropTable(
       case e: Throwable => log.warn(s"${e.getMessage}")
     }
     cc.unregisterTable(tableIdent)
+    Seq.empty[Row]
+  }
+}
+
+/**
+ * Rename a table from the metastore.
+ */
+private[cassandra] case class RenameTable(tableIdentifier: Seq[String], newName: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    try {
+      //TODO OSS SPARK should update it to use tableIdentifier
+      cc.cacheManager.tryUncacheQuery(cc.table(tableIdent.table))
+    } catch {
+      // This table's metadata is not in
+      case _: org.apache.hadoop.hive.ql.metadata.InvalidTableException =>
+      // Other Throwables can be caused by users providing wrong parameters in OPTIONS
+      // (e.g. invalid paths). We catch it and log a warning message.
+      // Users should be able to drop such kinds of tables regardless if there is an error.
+      case e: Throwable => log.warn(s"${e.getMessage}")
+    }
+    val metadata = cc.getTableMetadata(tableIdent)
+    if (metadata.nonEmpty) {
+      cc.unregisterTable(tableIdent)
+      val newTableIdent = TableIdent(newName, tableIdent.keyspace, tableIdent.cluster)
+      val data = metadata.get
+      cc.registerTable(newTableIdent, data.source, data.schema, data.options)
+    }
+    Seq.empty[Row]
+  }
+}
+
+/** Set table schema */
+private[cassandra] case class SetTableSchema(tableIdentifier: Seq[String], schemaJsonString: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    cc.setTableSchema(tableIdent, schemaJsonString)
+    Seq.empty[Row]
+  }
+}
+
+/** Set an option of table options */
+private[cassandra] case class SetTableOption(
+    tableIdentifier: Seq[String],
+    key: String,
+    value: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    cc.setTableOption(tableIdent, key, value)
+    Seq.empty[Row]
+  }
+}
+
+/** Remove an option of table options */
+private[cassandra] case class RemoveTableOption(tableIdentifier: Seq[String], key: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    cc.removeTableOption(tableIdent, key)
+    Seq.empty[Row]
+  }
+}
+
+/** Remove table schema */
+private[cassandra] case class RemoveTableSchema(tableIdentifier: Seq[String]) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    cc.removeTableSchema(tableIdent)
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class UseCluster(cluster: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    sqlContext.useCluster(cluster)
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class UseDatabase(database: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    sqlContext.useDatabase(database)
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class ShowTables(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val id = keyspaceIdentifier.reverse.lift
+    val clusterName = id(1).getOrElse(sqlContext.getCluster)
+    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val tables = cc.getTables(Option(keyspaceName), Option(clusterName))
+    tables.map(_._1).map(name => Row.fromSeq(Seq(name)))
+  }
+}
+
+private[cassandra] case class ShowDatabases(clusterIdentifier: Seq[String]) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val id = clusterIdentifier.reverse.lift
+    val clusterName = id(0).getOrElse(sqlContext.getCluster)
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val databases = cc.getDatabases(Option(clusterName))
+    databases.map(name => Row.fromSeq(Seq(name)))
+  }
+}
+
+private[cassandra] case class ShowClusters() extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    val clusters = cc.getClusters()
+    clusters.map(name => Row.fromSeq(Seq(name)))
+  }
+}
+
+private[cassandra] case class CreateDatabase(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val id = keyspaceIdentifier.reverse.lift
+    val clusterName = id(1).getOrElse(sqlContext.getCluster)
+    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    cc.createDatabase(keyspaceName, Option(clusterName))
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class CreateCluster(cluster: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    cc.createCluster(cluster)
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class DropDatabase(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val id = keyspaceIdentifier.reverse.lift
+    val clusterName = id(1).getOrElse(sqlContext.getCluster)
+    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    cc.unregisterDatabase(keyspaceName, Option(clusterName))
+    Seq.empty[Row]
+  }
+}
+
+private[cassandra] case class DropCluster(cluster: String) extends RunnableCommand {
+  override def run(sqlContext: SQLContext) = {
+    val cc = sqlContext.asInstanceOf[CassandraSQLContext]
+    cc.unregisterCluster(cluster)
     Seq.empty[Row]
   }
 }

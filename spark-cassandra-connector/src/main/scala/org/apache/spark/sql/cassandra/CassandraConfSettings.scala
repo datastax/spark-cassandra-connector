@@ -24,20 +24,17 @@ class CassandraClusterLevelConfSettings[T] {
   }
 
   /** Get cluster level configuration settings*/
-  def getClusterLevelConf(cluster: Option[String], defaultConf: T): T = {
-    if (empty(cluster)) {
-      defaultConf
-    } else {
-      clusterConf.getOrElse(cluster.get, defaultConf)
-    }
+  def getClusterLevelConf(cluster: String, defaultConf: T): T = {
+    validateName(cluster)
+    clusterConf.getOrElse(cluster, defaultConf)
   }
 
-  protected def validateName(cluster: String) : Unit = {
-    require(!empty(Option(cluster)), "Name can't be empty String or null")
+  protected def validateName(name: String) : Unit = {
+    require(!empty(name), "Name can't be empty String or null")
   }
 
-  protected def empty(cluster: Option[String]) : Boolean = {
-    cluster.isEmpty || !cluster.exists(_.trim.nonEmpty)
+  protected def empty(name: String) : Boolean = {
+    name == null || name.trim.isEmpty
   }
 }
 
@@ -64,22 +61,14 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
     val table = tableIdent.table
     val keyspace = tableIdent.keyspace
     val cluster = tableIdent.cluster
-    validateName(table, keyspace)
-    if (empty(cluster)) {
-      tableConf.put(Seq(table, keyspace), conf)
-    } else {
-      tableConf.put(Seq(table, keyspace, cluster.get), conf)
-    }
+    validateName(Seq(table, keyspace))
+    tableConf.put(Seq(table, keyspace, cluster.get), conf)
   }
 
   /** Add keyspace level configuration settings. Set cluster to None for a single cluster */
-  def addKeyspaceLevelConf(keyspace: String, cluster: Option[String], conf: T) : Unit = {
-    validateName(keyspace)
-    if (empty(cluster)) {
-      keyspaceConf.put(Seq(keyspace), conf)
-    } else {
-      keyspaceConf.put(Seq(keyspace, cluster.get), conf)
-    }
+  def addKeyspaceLevelConf(keyspace: String, cluster: String, conf: T) : Unit = {
+    validateName(Seq(keyspace, cluster))
+    keyspaceConf.put(Seq(keyspace, cluster), conf)
   }
 
   /** Remove table level configuration settings */
@@ -87,22 +76,14 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
     val table = tableIdent.table
     val keyspace = tableIdent.keyspace
     val cluster = tableIdent.cluster
-    validateName(table, keyspace)
-    if (empty(cluster)) {
-      tableConf.remove(Seq(table, keyspace))
-    } else {
-      tableConf.remove(Seq(table, keyspace, cluster.get))
-    }
+    validateName(Seq(table, keyspace, cluster.get))
+    tableConf.remove(Seq(table, keyspace, cluster.get))
   }
 
   /** Remove keyspace level configuration settings */
-  def removeKeyspaceLevelConf(keyspace: String, cluster: Option[String]) : Unit = {
-    validateName(keyspace)
-    if (empty(cluster)) {
-      keyspaceConf.remove(Seq(keyspace))
-    } else {
-      keyspaceConf.remove(Seq(keyspace, cluster.get))
-    }
+  def removeKeyspaceLevelConf(keyspace: String, cluster: String) : Unit = {
+    validateName(Seq(keyspace, cluster))
+    keyspaceConf.remove(Seq(keyspace, cluster))
   }
 
   /** Get configuration settings by the order of table level, keyspace level, cluster level, default settings */
@@ -110,21 +91,16 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
     val table = tableIdent.table
     val keyspace = tableIdent.keyspace
     val cluster = tableIdent.cluster
-    validateName(table, keyspace)
-    if (empty(cluster)) {
-      tableConf.getOrElse(Seq(table, keyspace),
-        keyspaceConf.getOrElse(Seq(keyspace), defaultConf))
-    } else {
-      val clusterName = cluster.get
-      tableConf.getOrElse(Seq(table, keyspace, clusterName),
-        keyspaceConf.getOrElse(Seq(keyspace, clusterName),
-          clusterConf.getOrElse(clusterName, defaultConf)))
-    }
+    validateName(Seq(table, keyspace, cluster.get))
+    val clusterName = cluster.get
+    tableConf.getOrElse(Seq(table, keyspace, clusterName),
+      keyspaceConf.getOrElse(Seq(keyspace, clusterName),
+        clusterConf.getOrElse(clusterName, defaultConf)))
   }
 
-  private def validateName(table: String, keyspace: String) : Unit = {
-    validateName(table)
-    validateName(keyspace)
+  private def validateName(names: Seq[String]) : Unit = {
+    for (name <- names)
+      validateName(name)
   }
 
 }

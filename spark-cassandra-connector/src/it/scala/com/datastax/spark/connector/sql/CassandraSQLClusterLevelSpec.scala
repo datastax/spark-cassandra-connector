@@ -52,12 +52,12 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
       .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
       .set("spark.cassandra.connection.native.port", getNativePort(1).toString)
       .set("spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
-    cc.addCassandraConnConf("cluster1", CassandraConnectorConf(conf1))
-    cc.addCassandraConnConf("cluster2", CassandraConnectorConf(conf2))
-    cc.addClusterLevelReadConf("cluster1", ReadConf.fromSparkConf(sc.getConf))
-    cc.addClusterLevelWriteConf("cluster1", WriteConf.fromSparkConf(sc.getConf))
-    cc.addClusterLevelReadConf("cluster2", ReadConf.fromSparkConf(sc.getConf))
-    cc.addClusterLevelWriteConf("cluster2", WriteConf.fromSparkConf(sc.getConf))
+    cc.addCassandraConnConf(CassandraConnectorConf(conf1), "cluster1")
+    cc.addCassandraConnConf(CassandraConnectorConf(conf2), "cluster2")
+    cc.addClusterLevelReadConf(ReadConf.fromSparkConf(sc.getConf), "cluster1")
+    cc.addClusterLevelWriteConf(WriteConf.fromSparkConf(sc.getConf), "cluster1")
+    cc.addClusterLevelReadConf(ReadConf.fromSparkConf(sc.getConf), "cluster2")
+    cc.addClusterLevelWriteConf(WriteConf.fromSparkConf(sc.getConf), "cluster2")
   }
 
   override def afterAll() {

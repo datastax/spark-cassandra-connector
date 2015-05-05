@@ -54,7 +54,8 @@ private[cassandra] abstract class BaseRelationImpl(
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
-      new CassandraConnector(sqlContext.getCassandraConnConf(tableIdent.cluster))
+      val clusterName = tableIdent.cluster.getOrElse(sqlContext.getCluster)
+      new CassandraConnector(sqlContext.getCassandraConnConf(clusterName))
         .withSessionDo {
         session => session.execute(s"TRUNCATE ${quoted(tableIdent.keyspace)}.${quoted(tableIdent.table)}")
       }
@@ -279,7 +280,8 @@ object CassandraSourceRelation {
   /** If push down is disable, use [[PrunedScan]]. By default use [[PrunedFilteredScan]]*/
   def apply(tableIdent: TableIdent, sqlContext: SQLContext)(
     implicit
-      connector: CassandraConnector = new CassandraConnector(sqlContext.getCassandraConnConf(None)),
+      connector: CassandraConnector =
+      new CassandraConnector(sqlContext.getCassandraConnConf(sqlContext.getCluster)),
       readConf: ReadConf = sqlContext.getReadConf(tableIdent),
       writeConf: WriteConf = sqlContext.getWriteConf(tableIdent),
       sourceOptions: CassandraDataSourceOptions = CassandraDataSourceOptions()) : BaseRelationImpl = {
