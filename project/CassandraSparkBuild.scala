@@ -20,6 +20,7 @@ import sbt.Keys._
 
 object CassandraSparkBuild extends Build {
   import Settings._
+  import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
 
   val namespace = "spark-cassandra-connector"
@@ -36,7 +37,7 @@ object CassandraSparkBuild extends Build {
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs IntegrationTest
+  ).disablePlugins(AssemblyPlugin) configs (IntegrationTest, ClusterIntegrationTest)
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
@@ -64,7 +65,7 @@ object CassandraSparkBuild extends Build {
     base = demosPath / "simple-demos",
     settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
-  )
+  ).disablePlugins(AssemblyPlugin)
 
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
@@ -73,13 +74,14 @@ object CassandraSparkBuild extends Build {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
    }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
+    .disablePlugins(AssemblyPlugin)
 
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector)
-  )
+  ).disablePlugins(AssemblyPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
