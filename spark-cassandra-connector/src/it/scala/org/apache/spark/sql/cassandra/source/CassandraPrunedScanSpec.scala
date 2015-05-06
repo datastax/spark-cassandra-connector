@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.sql.source
+package org.apache.spark.sql.cassandra.source
 
 
 class CassandraPrunedScanSpec extends CassandraDataSourceSpec {

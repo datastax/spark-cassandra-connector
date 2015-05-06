@@ -9,6 +9,7 @@ private[cassandra] trait CassandraStrategies {
   // Possibly being too clever with types here... or not clever enough.
   self: SQLContext#SparkPlanner =>
 
+  /** Custom create table commands */
   object CassandraDDLStrategy extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case CreateTableUsing(

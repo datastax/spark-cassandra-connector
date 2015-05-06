@@ -551,6 +551,7 @@ object DataSourceMetaStore {
   val TempDatabaseOrTableToBeDeletedName = "TO_BE_DELETED"
 }
 
+/** Store table metadata */
 case class TableMetaData(
     TableIdent: TableIdent,
     source : String,

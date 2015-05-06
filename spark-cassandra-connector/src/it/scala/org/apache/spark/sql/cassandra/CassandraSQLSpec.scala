@@ -1,15 +1,13 @@
-package com.datastax.spark.connector.sql
+package org.apache.spark.sql.cassandra
 
-import java.io.{FileNotFoundException, File}
+import java.io.FileNotFoundException
 import java.util.concurrent.ExecutionException
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
-
-import org.apache.spark.sql.cassandra.{CassandraDefaultSource, DefaultSource, TableIdent, CassandraSQLContext}
 import org.apache.spark.sql.catalyst.util
-import org.apache.spark.Util
+import org.apache.spark.util.Utils
 
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
@@ -441,7 +439,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
 
-    if (file.exists()) Util.deleteRecursively(file)
+    if (file.exists()) Utils.deleteRecursively(file)
     cc.unregisterTable(TableIdent("parquet_table", "sql_test"))
   }
 

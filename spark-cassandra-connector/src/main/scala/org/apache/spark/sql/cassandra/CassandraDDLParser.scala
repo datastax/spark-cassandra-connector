@@ -4,6 +4,7 @@ import org.apache.spark.sql.catalyst.AbstractSparkSQLParser
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.DDLException
 
+/** A customer parser to add custom commands for Cassandra SQL metastore */
 private [cassandra] class CassandraDDLParser(parseQuery: String => LogicalPlan) extends AbstractSparkSQLParser {
 
   def apply(input: String, exceptionOnError: Boolean): Option[LogicalPlan] = {
