@@ -3,46 +3,46 @@ package org.apache.spark.sql.cassandra
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
 import com.datastax.spark.connector.types.FieldDef
-import org.apache.spark.sql.types
-import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.{UUIDType, InetAddressType, StructField}
+import org.apache.spark.sql.{types => catalystTypes}
 
 /** Convert Cassandra data type to Catalyst data type */
 object DataTypeConverter {
 
-  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
-    connector.types.TextType       -> types.StringType,
-    connector.types.AsciiType      -> types.StringType,
-    connector.types.VarCharType    -> types.StringType,
+  private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], catalystTypes.DataType](
+    connector.types.TextType       -> catalystTypes.StringType,
+    connector.types.AsciiType      -> catalystTypes.StringType,
+    connector.types.VarCharType    -> catalystTypes.StringType,
 
-    connector.types.BooleanType    -> types.BooleanType,
+    connector.types.BooleanType    -> catalystTypes.BooleanType,
 
-    connector.types.IntType        -> types.IntegerType,
-    connector.types.BigIntType     -> types.LongType,
-    connector.types.CounterType    -> types.LongType,
-    connector.types.FloatType      -> types.FloatType,
-    connector.types.DoubleType     -> types.DoubleType,
+    connector.types.IntType        -> catalystTypes.IntegerType,
+    connector.types.BigIntType     -> catalystTypes.LongType,
+    connector.types.CounterType    -> catalystTypes.LongType,
+    connector.types.FloatType      -> catalystTypes.FloatType,
+    connector.types.DoubleType     -> catalystTypes.DoubleType,
 
-    connector.types.VarIntType     -> types.DecimalType(), // no native arbitrary-size integer type
-    connector.types.DecimalType    -> types.DecimalType(),
+    connector.types.VarIntType     -> catalystTypes.DecimalType(), // no native arbitrary-size integer type
+    connector.types.DecimalType    -> catalystTypes.DecimalType(),
 
-    connector.types.TimestampType  -> types.TimestampType,
-    connector.types.InetType       -> types.StringType,
-    connector.types.UUIDType       -> types.StringType,
-    connector.types.TimeUUIDType   -> types.StringType,
-    connector.types.BlobType       -> types.BinaryType
+    connector.types.TimestampType  -> catalystTypes.TimestampType,
+    connector.types.InetType       -> InetAddressType,
+    connector.types.UUIDType       -> UUIDType,
+    connector.types.TimeUUIDType   -> UUIDType,
+    connector.types.BlobType       -> catalystTypes.BinaryType
   )
 
   /** Convert Cassandra data type to Catalyst data type */
-  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
+  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): catalystTypes.DataType = {
 
     def catalystStructField(field: FieldDef): StructField =
       StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
 
     cassandraType match {
-      case connector.types.SetType(et)                => types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)               => types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)            => types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
-      case connector.types.UserDefinedType(_, fields) => types.StructType(fields.map(catalystStructField))
+      case connector.types.SetType(et)                => catalystTypes.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.ListType(et)               => catalystTypes.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.MapType(kt, vt)            => catalystTypes.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.UserDefinedType(_, fields) => catalystTypes.StructType(fields.map(catalystStructField))
       case _                                          => primitiveTypeMap(cassandraType)
     }
   }
