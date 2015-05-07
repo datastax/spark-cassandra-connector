@@ -33,7 +33,7 @@ class InetAddressType private() extends NativeType with PrimitiveType with Loggi
     }
   }
   /**
-   * The default size of a value of the StringType is 4096 bytes.
+   * The default size of a value of the InetAddressType is 16 bytes.
    */
   override def defaultSize: Int = 16
 

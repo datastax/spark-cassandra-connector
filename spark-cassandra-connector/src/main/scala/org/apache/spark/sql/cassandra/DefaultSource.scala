@@ -41,7 +41,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     sqlContext: SQLContext,
     parameters: Map[String, String]): BaseRelation = {
 
-    val (tableIdent, options) = parseParameters(parameters)
+    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
     sqlContext.createCassandraSourceRelation(tableIdent, options)
   }
 
@@ -54,7 +54,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     parameters: Map[String, String],
     schema: StructType): BaseRelation = {
 
-    val (tableIdent, options) = parseParameters(parameters)
+    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
     val optionsWithNewSchema = CassandraDataSourceOptions(Option(schema), options.pushdown)
     sqlContext.createCassandraSourceRelation(tableIdent, optionsWithNewSchema)
 
@@ -70,7 +70,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     parameters: Map[String, String],
     data: DataFrame): BaseRelation = {
 
-    val (tableIdent, options) = parseParameters(parameters)
+    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
     val table = sqlContext.createCassandraSourceRelation(tableIdent, options)
 
     mode match {
@@ -107,7 +107,7 @@ object CassandraDefaultSource {
 
 
   /** Parse parameters into CassandraDataSourceOptions and TableIdent object */
-  def parseParameters(parameters: Map[String, String]) : (TableIdent, CassandraDataSourceOptions) = {
+  def parametersToTableIdentAndOptions(parameters: Map[String, String]) : (TableIdent, CassandraDataSourceOptions) = {
     val tableName = parameters(CassandraDataSourceTableNameProperty)
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
@@ -116,6 +116,11 @@ object CassandraDefaultSource {
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
 
     (TableIdent(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushdown))
+  }
+
+  /** Check whether the provider is Cassandra datasource or not */
+  def cassandraDatasource(provider: String) : Boolean = {
+    provider == CassandraDataSourceProviderName || provider == CassandraDataSourceProviderFullName
   }
 }
 

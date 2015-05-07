@@ -13,7 +13,7 @@ import CassandraDefaultSource._
 
 private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catalog with Logging {
 
-  val caseSensitive: Boolean = true
+  override val caseSensitive: Boolean = true
   val metaStore: MetaStore = new DataSourceMetaStore(cc)
 
   // Create metastore keyspace and table if they don't exist
@@ -23,7 +23,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   private[cassandra] val cachedDataSourceTables: LoadingCache[Seq[String], LogicalPlan] = {
     val cacheLoader = new CacheLoader[Seq[String], LogicalPlan]() {
       override def load(tableIdent: Seq[String]): LogicalPlan = {
-        logDebug(s"Creating new cached data source for $tableIdent")
+        logDebug(s"Creating new cached data source for ${tableIdent.mkString(".")}")
         synchronized {
           metaStore.getTable(tableIdentFrom(tableIdent))
         }
@@ -37,7 +37,8 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   override def lookupRelation(tableIdentifier: Seq[String], alias: Option[String]): LogicalPlan = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
     val tableName = id(0).getOrElse(throw new IOException(s"Missing table name"))
-    val relation = cachedDataSourceTables.get(tableIdentifier)
+    val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
+    val relation = cachedDataSourceTables.get(fullTableIdentifier)
     alias.map(a => Subquery(a, relation)).getOrElse(Subquery(tableName, relation))
   }
 
@@ -46,11 +47,11 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
    * registerTable(tableIdent, source, schema, options) method
    */
   override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = {
-    val fullTableIdent = fullTableIdentFrom(tableIdentifier)
-    cachedDataSourceTables.put(fullTableIdent, plan)
+    val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
+    cachedDataSourceTables.put(fullTableIdentifier, plan)
   }
 
-  /** Register a customized table meta data to local cache and metastore */
+  /** Register a customized table metadata to metastore */
   def registerTable(
       tableIdent: TableIdent,
       source: String,
@@ -58,8 +59,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
       options: Map[String, String]): Unit = {
 
     val fullOptions =
-      if (source == CassandraDataSourceProviderName ||
-        source == CassandraDataSourceProviderFullName) {
+      if (CassandraDefaultSource.cassandraDatasource(source)) {
         cc.optionsWithTableIdent(tableIdent, options)
       } else {
         options
@@ -69,10 +69,10 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     }
   }
 
-  /** Unregister table from local cache and metastore. */
+  /** Unregister a table from local cache and metastore. */
   override def unregisterTable(tableIdentifier: Seq[String]): Unit = {
-    val fullTableIdent = fullTableIdentFrom(tableIdentifier)
-    cachedDataSourceTables.invalidate(fullTableIdent)
+    val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
+    cachedDataSourceTables.invalidate(fullTableIdentifier)
     synchronized {
       metaStore.removeTable(tableIdentFrom(tableIdentifier))
     }
@@ -91,6 +91,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     }
   }
 
+  /** Remove tables of given database from the local cache */
   private def unregisterDatabaseFromCache(database: String, cluster: Option[String]): Unit = {
     val tables = getTables(Option(database), cluster)
     val dbAndCluster = if (cluster.nonEmpty) Seq(cluster.get, database) else Seq(database)
@@ -120,8 +121,9 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   /** Check whether table exists */
   override def tableExists(tableIdentifier: Seq[String]): Boolean = synchronized {
+    val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
     try {
-      cachedDataSourceTables.get(tableIdentifier) != null
+      cachedDataSourceTables.get(fullTableIdentifier) != null
     } catch {
       case _: NoSuchTableException => false
     }
@@ -229,7 +231,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   def catalystTableIdentFrom(tableIdent: TableIdent) : Seq[String] =
     Seq(tableIdent.cluster.getOrElse(cc.getCluster), tableIdent.keyspace, tableIdent.table)
 
-  private[this] def fullTableIdentFrom(tableIdentifier: Seq[String]) : Seq[String] = {
+  private[this] def fullTableIdentifierFrom(tableIdentifier: Seq[String]) : Seq[String] = {
     catalystTableIdentFrom(tableIdentFrom(tableIdentifier))
   }
 }

@@ -94,17 +94,17 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   import DataSourceMetaStore._
   import CassandraDefaultSource._
 
-  private val metaStoreConn = new CassandraConnector(sqlContext.getCassandraConnConf(getMetaStoreCluster()))
+  private val metaStoreConn = new CassandraConnector(sqlContext.getCassandraConnConf(getMetaStoreCluster))
 
   private val CreateMetaStoreKeyspaceQuery =
     s"""
-      |CREATE KEYSPACE IF NOT EXISTS ${getMetaStoreKeyspace()}
+      |CREATE KEYSPACE IF NOT EXISTS ${getMetaStoreKeyspace}
       | WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1}
     """.stripMargin.replaceAll("\n", " ")
 
   private val CreateMetaStoreTableQuery =
     s"""
-      |CREATE TABLE IF NOT EXISTS ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |CREATE TABLE IF NOT EXISTS ${getMetaStoreTableFullName}
       | (cluster_name text,
       |  keyspace_name text,
       |  table_name text,
@@ -116,14 +116,14 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
   private val InsertIntoMetaStoreQuery =
     s"""
-      |INSERT INTO ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |INSERT INTO ${getMetaStoreTableFullName}
       | (cluster_name, keyspace_name, table_name, source_provider, schema_json, options)
       | values (?, ?, ?, ?, ?, ?)
     """.stripMargin.replaceAll("\n", " ")
 
   private val InsertIntoMetaStoreWithoutSchemaQuery =
     s"""
-      |INSERT INTO ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |INSERT INTO ${getMetaStoreTableFullName}
       | (cluster_name, keyspace_name, table_name, source_provider, options)
       | values (?, ?, ?, ?, ?)
     """.stripMargin.replaceAll("\n", " ")
@@ -138,7 +138,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val selectQuery =
       s"""
       |SELECT table_name, keyspace_name
-      |From ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |From ${getMetaStoreTableFullName}
       |WHERE cluster_name = '$clusterName'
     """.stripMargin.replaceAll("\n", " ")
     val names = ListBuffer[(String, Boolean)]()
@@ -182,7 +182,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val selectQuery =
       s"""
       |SELECT keyspace_name
-      |From ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |From ${getMetaStoreTableFullName}
       |WHERE cluster_name = '$clusterName'
     """.stripMargin.replaceAll("\n", " ")
     val names = ListBuffer[String]()
@@ -209,7 +209,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val selectQuery =
       s"""
       |SELECT cluster_name
-      |From ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |From ${getMetaStoreTableFullName}
     """.stripMargin.replaceAll("\n", " ")
     val names = ListBuffer[String]()
     // Add source tables from metastore
@@ -273,7 +273,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   override def setTableOption(tableIdent: TableIdent, key: String, value: String) : Unit = {
     val updateQuery =
       s"""
-      |UPDATE ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |UPDATE ${getMetaStoreTableFullName}
       |SET options['$key'] = '$value'
       |WHERE cluster_name = '${tableIdent.cluster.get}'
       | AND keyspace_name = '${tableIdent.keyspace}'
@@ -288,7 +288,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val deleteQuery =
       s"""
       |DELETE options['$key']
-      |FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |FROM ${getMetaStoreTableFullName}
       |WHERE cluster_name = '${tableIdent.cluster.get}'
       | AND keyspace_name = '${tableIdent.keyspace}'
       | AND table_name = '${tableIdent.table}'
@@ -308,7 +308,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
     val updateQuery =
         s"""
-      |UPDATE ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |UPDATE ${getMetaStoreTableFullName}
       |SET schema_json = '$scheamJsonString'
       |WHERE cluster_name = '${tableIdent.cluster.get}'
       | AND keyspace_name = '${tableIdent.keyspace}'
@@ -324,7 +324,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val deleteQuery =
       s"""
       |DELETE schema_json
-      |FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |FROM ${getMetaStoreTableFullName}
       |WHERE cluster_name = '${tableIdent.cluster.get}'
       | AND keyspace_name = '${tableIdent.keyspace}'
       | AND table_name = '${tableIdent.table}'
@@ -340,7 +340,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
     val insertQuery =
       s"""
-      |INSERT INTO ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |INSERT INTO ${getMetaStoreTableFullName}
       | (cluster_name, keyspace_name, table_name)
       | values (?, ?, ?)
     """.stripMargin.replaceAll("\n", " ")
@@ -361,7 +361,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
     val insertQuery =
       s"""
-      |INSERT INTO ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |INSERT INTO ${getMetaStoreTableFullName}
       | (cluster_name, keyspace_name, table_name)
       | values (?, ?, ?)
     """.stripMargin.replaceAll("\n", " ")
@@ -380,7 +380,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   override def removeTable(tableIdent: TableIdent) : Unit = {
     val deleteQuery =
       s"""
-        |DELETE FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+        |DELETE FROM ${getMetaStoreTableFullName}
         |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getCluster)}'
         | AND keyspace_name = '${tableIdent.keyspace}'
         | AND table_name = '${tableIdent.table}'
@@ -395,7 +395,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val selectQuery =
       s"""
       |SELECT table_name, keyspace_name
-      |From ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+      |From ${getMetaStoreTableFullName}
       |WHERE cluster_name = '$clusterName'
     """.stripMargin.replaceAll("\n", " ")
 
@@ -416,7 +416,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   override def removeCluster(cluster: String) : Unit = {
     val deleteQuery =
       s"""
-        |DELETE FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+        |DELETE FROM ${getMetaStoreTableFullName}
         |WHERE cluster_name = '$cluster'
       """.stripMargin.replaceAll("\n", " ")
 
@@ -427,7 +427,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
   override def removeAllTables() : Unit = {
     metaStoreConn.withSessionDo {
-      session => session.execute(s"TRUNCATE ${getMetaStoreKeyspace()}.${getMetaStoreTable()}")
+      session => session.execute(s"TRUNCATE ${getMetaStoreTableFullName}")
     }
   }
 
@@ -455,7 +455,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val selectQuery =
       s"""
         |SELECT source_provider, schema_json, options
-        |FROM ${getMetaStoreKeyspace()}.${getMetaStoreTable()}
+        |FROM ${getMetaStoreTableFullName}
         |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getCluster)}'
         |  AND keyspace_name = '${tableIdent.keyspace}'
         |  AND table_name = '${tableIdent.table}'
@@ -502,27 +502,25 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   }
 
   /** Get metastore schema keyspace name */
-  private def getMetaStoreKeyspace() : String = {
+  private def getMetaStoreKeyspace : String = {
     sqlContext.conf.getConf(CassandraDataSourceMetaStoreKeyspaceNameProperty,
       DefaultCassandraDataSourceMetaStoreKeyspaceName)
   }
 
   /** Get metastore schema table name */
-  private def getMetaStoreTable() : String = {
+  private def getMetaStoreTable : String = {
     sqlContext.conf.getConf(CassandraDataSourceMetaStoreTableNameProperty,
       DefaultCassandraDataSourceMetaStoreTableName)
   }
 
-  /** Get cluster name where metastore resides */
-  private def getMetaStoreCluster() : String = {
-    sqlContext.conf.getConf(CassandraDataSourceMetaStoreClusterNameProperty, sqlContext.getCluster)
+  /** Return metastore schema table name with keyspace */
+  private def getMetaStoreTableFullName : String = {
+    s"${getMetaStoreKeyspace}.${getMetaStoreTable}"
   }
 
-  /** Get the cluster names. Those cluster tables are loaded into metastore */
-  private def toLoadClusters(): Seq[String] = {
-    val clusters =
-      sqlContext.conf.getConf(CassandraDataSourceToLoadClustersProperty, sqlContext.getCluster)
-    clusters.split(",").map(_.trim)
+  /** Get cluster name where metastore resides */
+  private def getMetaStoreCluster : String = {
+    sqlContext.conf.getConf(CassandraDataSourceMetaStoreClusterNameProperty, sqlContext.getCluster)
   }
 }
 
@@ -533,18 +531,34 @@ object DataSourceMetaStore {
   val CassandraDataSourceMetaStoreClusterNameProperty = "spark.cassandra.datasource.metastore.cluster";
   val CassandraDataSourceMetaStoreKeyspaceNameProperty = "spark.cassandra.datasource.metastore.keyspace";
   val CassandraDataSourceMetaStoreTableNameProperty = "spark.cassandra.datasource.metastore.table";
-  //Separated by comma
-  val CassandraDataSourceToLoadClustersProperty = "spark.cassandra.datasource.toload.clusters";
 
   val Properties = Seq(
     CassandraDataSourceMetaStoreClusterNameProperty,
     CassandraDataSourceMetaStoreKeyspaceNameProperty,
-    CassandraDataSourceMetaStoreTableNameProperty,
-    CassandraDataSourceToLoadClustersProperty
+    CassandraDataSourceMetaStoreTableNameProperty
   )
 
-  //TODO more system keyspace to add
-  val SystemKeyspaces = Set("system", "system_traces", DefaultCassandraDataSourceMetaStoreKeyspaceName)
+  private val DSESystemKeyspace = "dse_system"
+  private val DSESecurityKeyspace = "dse_security"
+  private val HiveMetastoreKeyspace = "HiveMetaStore"
+  private val CFSKeyspace = "cfs"
+  private val CFSArchiveKeyspace = "cfs_archive"
+  private val CassandraSystemKeyspace = "system"
+  private val CassandraSystemTraceKeyspace = "system_traces"
+  private val CassandraSystemAuthKeyspace = "system_auth"
+
+  val SystemKeyspaces =
+    Set(
+      CassandraSystemKeyspace,
+      CassandraSystemTraceKeyspace,
+      CassandraSystemAuthKeyspace,
+      DefaultCassandraDataSourceMetaStoreKeyspaceName,
+      DSESystemKeyspace,
+      DSESecurityKeyspace,
+      HiveMetastoreKeyspace,
+      CFSKeyspace,
+      CFSArchiveKeyspace)
+
   // This temporary entry in metastore should be deleted once there are real table
   // for the cluster is inserted into metastore. It shouldn't return to client when
   // list tables or databases.

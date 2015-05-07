@@ -47,8 +47,8 @@ private [cassandra] class CassandraDDLParser(parseQuery: String => LogicalPlan) 
     }
 
   private lazy val useDatabase: Parser[LogicalPlan] =
-    USE ~ DATABASE ~> restInput ^^ {
-      case input => UseDatabase(input.trim)
+    USE ~ DATABASE ~> rep1sep(ident, ".") ^^ {
+      case input => UseDatabase(input)
     }
 
   private lazy val showClusters: Parser[LogicalPlan] =
@@ -67,7 +67,7 @@ private [cassandra] class CassandraDDLParser(parseQuery: String => LogicalPlan) 
     }
 
   private lazy val createDatabase: Parser[LogicalPlan] =
-    CREATE ~ DATABASE ~> repsep(ident, ".") ^^ {
+    CREATE ~ DATABASE ~> rep1sep(ident, ".") ^^ {
       case input => CreateDatabase(input)
     }
 
@@ -77,7 +77,7 @@ private [cassandra] class CassandraDDLParser(parseQuery: String => LogicalPlan) 
     }
 
   private lazy val dropDatabase: Parser[LogicalPlan] =
-    DROP ~ DATABASE ~> repsep(ident, ".") ^^ {
+    DROP ~ DATABASE ~> rep1sep(ident, ".") ^^ {
       case input => DropDatabase(input)
     }
 
@@ -87,32 +87,32 @@ private [cassandra] class CassandraDDLParser(parseQuery: String => LogicalPlan) 
     }
 
   private lazy val dropTable: Parser[LogicalPlan] =
-    DROP ~ TABLE ~> repsep(ident, ".") ^^ {
+    DROP ~ TABLE ~> rep1sep(ident, ".") ^^ {
       case input => DropTable(input)
     }
 
   private lazy val renameTable: Parser[LogicalPlan] =
-    (ALTER ~ TABLE ~> repsep(ident, ".")) ~ (RENAME ~ TO ~> restInput) ^^ {
+    (ALTER ~ TABLE ~> rep1sep(ident, ".")) ~ (RENAME ~ TO ~> restInput) ^^ {
       case oldName ~ newName => RenameTable(oldName, newName.trim)
     }
 
   private lazy val setTableOption: Parser[LogicalPlan] =
-    (ALTER ~ TABLE ~> repsep(ident, ".")) ~ (SET ~ OPTION) ~ ("(" ~> stringLit) ~ ("," ~> stringLit <~ ")") ^^ {
+    (ALTER ~ TABLE ~> rep1sep(ident, ".")) ~ (SET ~ OPTION) ~ ("(" ~> stringLit) ~ ("," ~> stringLit <~ ")") ^^ {
       case table ~ opt ~ key ~ value => SetTableOption(table, key.trim, value.trim)
     }
 
   private lazy val removeTableOption: Parser[LogicalPlan] =
-    (ALTER ~ TABLE ~> repsep(ident, ".")) ~ (REMOVE ~ OPTION ~> restInput) ^^ {
+    (ALTER ~ TABLE ~> rep1sep(ident, ".")) ~ (REMOVE ~ OPTION ~> restInput) ^^ {
       case table ~ key => RemoveTableOption(table, key.trim)
     }
 
   private lazy val setTableSchema: Parser[LogicalPlan] =
-    (ALTER ~ TABLE ~> repsep(ident, ".")) ~ (SET ~ SCHEMA ~> restInput) ^^ {
+    (ALTER ~ TABLE ~> rep1sep(ident, ".")) ~ (SET ~ SCHEMA ~> restInput) ^^ {
       case table ~ schema => SetTableSchema(table, schema.trim)
     }
 
   private lazy val removeTableSchema: Parser[LogicalPlan] =
-    (ALTER ~ TABLE ~> repsep(ident, ".")) ~ (REMOVE ~ SCHEMA) ^^ {
+    (ALTER ~ TABLE ~> rep1sep(ident, ".")) ~ (REMOVE ~ SCHEMA) ^^ {
       case table ~ remove => RemoveTableSchema(table)
     }
 }

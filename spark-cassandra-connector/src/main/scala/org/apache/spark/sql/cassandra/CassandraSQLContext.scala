@@ -100,13 +100,13 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   def getClusters(): Seq[String] = catalog.getClusters()
 
   /**
-   * Only register table to local cache. To register table in metastore, use
+   * Only register a table to local cache. To register table in metastore, use
    * registerTable(tableIdent, source, schema, options) method
    */
   def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit =
     catalog.registerTable(tableIdentifier, plan)
 
-  /** Register a customized table meta data to local cache and metastore */
+  /** Register a customized table meta data to metastore */
   def registerTable(
       tableIdent: TableIdent,
       source: String,
@@ -114,7 +114,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       options: Map[String, String]): Unit =
     catalog.registerTable(tableIdent, source, schema, options)
 
-  /** Unregister table from local cache and metastore. */
+  /** Unregister a table from local cache and metastore. */
   def unregisterTable(tableIdent: TableIdent): Unit =
     catalog.unregisterTable(tableIdent)
 
@@ -169,10 +169,3 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     catalog.removeTableSchema(tableIdent)
 }
 
-object CassandraSQLContext {
-  val CassandraSQLKeyspaceNameProperty = "spark.cassandra.keyspace"
-
-  val Properties = Seq(
-    CassandraSQLKeyspaceNameProperty
-  )
-}

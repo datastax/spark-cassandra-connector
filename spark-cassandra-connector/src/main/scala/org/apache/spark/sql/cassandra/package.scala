@@ -238,7 +238,7 @@ package object cassandra {
     val writeConfSettings = new CassandraConfSettings[WriteConf]()
     val connConfSettings = new CassandraClusterLevelConfSettings[CassandraConnectorConf]()
 
-    /** Quote name */
+    /** Quote a string, it's used by compose a CQL query */
     def quoted(str: String): String = {
       "\"" + str + "\""
     }

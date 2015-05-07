@@ -10,7 +10,7 @@ import org.apache.spark.sql.catalyst.ScalaReflectionLock
 /**
  * :: DeveloperApi ::
  *
- * The data type representing `InetAddress` values.
+ * The data type representing `UUID` values.
  *
  * @group dataType
  */
@@ -25,7 +25,7 @@ class UUIDType private() extends NativeType with PrimitiveType {
     def compare(x: UUID, y: UUID) = x.compareTo(y)
   }
   /**
-   * The default size of a value of the StringType is 4096 bytes.
+   * The default size of a value of the UUIDType is 16 bytes.
    */
   override def defaultSize: Int = 16
 

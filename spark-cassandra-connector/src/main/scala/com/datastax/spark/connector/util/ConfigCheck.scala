@@ -25,7 +25,6 @@ object ConfigCheck {
     CassandraConnectorConf.Properties ++
     AuthConfFactory.Properties ++
     CassandraConnectionFactory.Properties ++
-    CassandraSQLContext.Properties ++
     CSQLContext.Properties ++
     DataSourceMetaStore.Properties
 

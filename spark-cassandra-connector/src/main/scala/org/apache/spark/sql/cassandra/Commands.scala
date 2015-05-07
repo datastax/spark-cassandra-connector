@@ -8,8 +8,10 @@ import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.sources.{ResolvedDataSource, InsertableRelation, LogicalRelation}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{AnalysisException, DataFrame, SQLContext, SaveMode}
+import CassandraDefaultSource._
+import Commands._
 
-
+/** Create a datasource table metadata in metastore */
 private[cassandra] case class CreateMetastoreDataSource(
     tableName: String,
     userSpecifiedSchema: Option[StructType],
@@ -36,6 +38,7 @@ private[cassandra] case class CreateMetastoreDataSource(
   }
 }
 
+/** Create a datasource table metadata in metastore for a AS Select query */
 private[cassandra] case class CreateMetastoreDataSourceAsSelect(
     tableName: String,
     provider: String,
@@ -90,7 +93,7 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
               throw new AnalysisException(s"Saving data in ${o.toString} is not supported.")
           }
         case SaveMode.Overwrite =>
-          cc.sql(s"DROP TABLE IF EXISTS $tableName")
+          cc.sql(s"DROP TABLE $tableName")
           // Need to create the table again.
           createMetastoreTable = true
       }
@@ -106,9 +109,13 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
       case None => data
     }
 
-    val optionsWithTableIdent = cc.optionsWithTableIdent(tableIdent, options)
+    val optionsMayWithTableIdent =
+      if(cassandraDatasource(provider))
+        cc.optionsWithTableIdent(tableIdent, options)
+      else
+        options
     // Create the relation based on the data of df.
-    val resolved = ResolvedDataSource(sqlContext, provider, mode, optionsWithTableIdent, df)
+    val resolved = ResolvedDataSource(sqlContext, provider, mode, optionsMayWithTableIdent, df)
     if (createMetastoreTable) {
       // We will use the schema of resolved.relation as the schema of the table (instead of
       // the schema of df). It is important since the nullability may be changed by the relation
@@ -218,6 +225,7 @@ private[cassandra] case class RemoveTableSchema(tableIdentifier: Seq[String]) ex
   }
 }
 
+/** Change the current used cluster */
 private[cassandra] case class UseCluster(cluster: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     sqlContext.useCluster(cluster)
@@ -225,24 +233,27 @@ private[cassandra] case class UseCluster(cluster: String) extends RunnableComman
   }
 }
 
-private[cassandra] case class UseDatabase(database: String) extends RunnableCommand {
+/** Change the current used database */
+private[cassandra] case class UseDatabase(databaseIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
-    sqlContext.useDatabase(database)
+    val (clusterName, databaseName) = clusterDatabaseNamesFrom(databaseIdentifier, sqlContext)
+    sqlContext.useCluster(clusterName)
+    sqlContext.useDatabase(databaseName)
     Seq.empty[Row]
   }
 }
 
-private[cassandra] case class ShowTables(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+/** Show table names for a database of a cluster */
+private[cassandra] case class ShowTables(databaseIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
-    val id = keyspaceIdentifier.reverse.lift
-    val clusterName = id(1).getOrElse(sqlContext.getCluster)
-    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val (clusterName, databaseName) = clusterDatabaseNamesFrom(databaseIdentifier, sqlContext)
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tables = cc.getTables(Option(keyspaceName), Option(clusterName))
+    val tables = cc.getTables(Option(databaseName), Option(clusterName))
     tables.map(_._1).map(name => Row.fromSeq(Seq(name)))
   }
 }
 
+/** Show database names for a cluster */
 private[cassandra] case class ShowDatabases(clusterIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val id = clusterIdentifier.reverse.lift
@@ -253,6 +264,7 @@ private[cassandra] case class ShowDatabases(clusterIdentifier: Seq[String]) exte
   }
 }
 
+/** Show cluster names */
 private[cassandra] case class ShowClusters() extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
@@ -261,17 +273,17 @@ private[cassandra] case class ShowClusters() extends RunnableCommand {
   }
 }
 
-private[cassandra] case class CreateDatabase(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+/** Create a database in metastore */
+private[cassandra] case class CreateDatabase(databaseIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
-    val id = keyspaceIdentifier.reverse.lift
-    val clusterName = id(1).getOrElse(sqlContext.getCluster)
-    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val (clusterName, databaseName) = clusterDatabaseNamesFrom(databaseIdentifier, sqlContext)
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    cc.createDatabase(keyspaceName, Option(clusterName))
+    cc.createDatabase(databaseName, Option(clusterName))
     Seq.empty[Row]
   }
 }
 
+/** Create a cluster in metastore */
 private[cassandra] case class CreateCluster(cluster: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
@@ -280,21 +292,31 @@ private[cassandra] case class CreateCluster(cluster: String) extends RunnableCom
   }
 }
 
-private[cassandra] case class DropDatabase(keyspaceIdentifier: Seq[String]) extends RunnableCommand {
+/** Drop a database from metastore */
+private[cassandra] case class DropDatabase(databaseIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
-    val id = keyspaceIdentifier.reverse.lift
-    val clusterName = id(1).getOrElse(sqlContext.getCluster)
-    val keyspaceName = id(0).getOrElse(sqlContext.getDatabase)
+    val (clusterName, databaseName) = clusterDatabaseNamesFrom(databaseIdentifier, sqlContext)
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    cc.unregisterDatabase(keyspaceName, Option(clusterName))
+    cc.unregisterDatabase(databaseName, Option(clusterName))
     Seq.empty[Row]
   }
 }
 
+/** Drop a cluster from metastore */
 private[cassandra] case class DropCluster(cluster: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
     cc.unregisterCluster(cluster)
     Seq.empty[Row]
+  }
+}
+
+object Commands {
+  /** Get cluster name and database name from database identifier */
+  def clusterDatabaseNamesFrom(databaseIdentifier: Seq[String], sqlContext: SQLContext) : (String, String) = {
+    val id = databaseIdentifier.reverse.lift
+    val clusterName = id(1).getOrElse(sqlContext.getCluster)
+    val databaseName = id(0).getOrElse(sqlContext.getDatabase)
+    (clusterName, databaseName)
   }
 }
