@@ -41,6 +41,9 @@ class SubKeyValue extends SuperKeyValue {
   var group: Long = 0L
 }
 
+case class Address(street: String, city: String, zip: Int)
+case class ClassWithUDT(key: Int, name: String, addr: Address)
+
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -372,7 +375,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be("name")
   }
 
-  it should "allow to fetch UDT columns" in {
+  it should "allow to fetch UDT columns as UDTValue objects" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name", "addr").collect()
     result should have length 1
     val row = result.head
@@ -384,6 +387,19 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getString("street") should be("Some Street")
     udtValue.getString("city") should be("Paris")
     udtValue.getInt("zip") should be(11120)
+  }
+
+  it should "allow to fetch UDT columns as objects of case classes" in {
+    val result = sc.cassandraTable[ClassWithUDT](ks, "udts").select("key", "name", "addr").collect()
+    result should have length 1
+    val row = result.head
+    row.key should be(1)
+    row.name should be("name")
+
+    val udtValue = row.addr
+    udtValue.street should be("Some Street")
+    udtValue.city should be("Paris")
+    udtValue.zip should be(11120)
   }
 
   it should "throw appropriate IOException when the table was not found at the computation time" in {

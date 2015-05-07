@@ -50,7 +50,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
   private val isJavaBean =
     implicitly[ColumnMapper[T]].isInstanceOf[JavaBeanColumnMapper[_]]
 
-  private val columnMap =
+  val columnMap =
     implicitly[ColumnMapper[T]].columnMapForReading(structDef, columnSelection)
 
   /** Returns the column mapper associated with the given type.
