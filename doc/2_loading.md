@@ -306,4 +306,29 @@ The following options can be specified in the SparkConf object or as a jvm
 | spark.cassandra.input.page.row.size     | number of CQL rows fetched per driver request              | 1000
 | spark.cassandra.input.consistency.level | consistency level to use when reading                      | LOCAL_ONE
 
+### Using Implicits for Configuration
+
+In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
+allows a user to define a set of parameters in a separate object and import them into a block of 
+code rather than repeatedly passing the same `ReadConf` object.
+
+```scala
+object ReadConfigurationOne {
+  implicit val readConf = ReadConf(100,100)
+}
+import ReadConfigurationOne._
+val rdd = sc.cassandraTable("write_test","collections")
+rdd.readConf
+//com.datastax.spark.connector.rdd.ReadConf = ReadConf(100,100,LOCAL_ONE,true)
+```
+   
+Or you can define them implicitly in the same block as the `cassandraTable` call
+
+```scala
+implicit val anotherConf = ReadConf(200,200)
+val rddWithADifferentConf = sc.cassandraTable("write_test","collections")
+rddWithADifferentConf.readConf
+//com.datastax.spark.connector.rdd.ReadConf = ReadConf(200,200,LOCAL_ONE,true)
+```
+
 [Next - Server-side data selection and filtering](3_selection.md)
