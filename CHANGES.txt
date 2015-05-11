@@ -12,6 +12,8 @@
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
  * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
+ * Support for modifying C* Collections using saveToCassandra (SPARKC-147)
+********************************************************************************
 
 1.2.3 (unreleased)
  * Support for connection compressions configuration (SPARKC-124)

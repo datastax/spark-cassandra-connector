@@ -123,6 +123,8 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
         structDef.columnByName(columnName).columnType
       case TTL(_, _) | WriteTime(_, _) | RowCountRef =>
         BigIntType
+      case CollectionColumnName(columnName, _, _) =>
+        structDef.columnByName(columnName).columnType
     }
   }
 

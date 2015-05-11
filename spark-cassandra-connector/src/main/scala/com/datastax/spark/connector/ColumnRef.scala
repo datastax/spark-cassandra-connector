@@ -24,6 +24,14 @@ sealed trait ColumnRef  {
   def cqlValueName: String
 }
 
+/** Insert behaviors for Collections. */
+sealed trait CollectionBehavior
+case object CollectionOverwrite extends CollectionBehavior
+case object CollectionAppend extends CollectionBehavior
+case object CollectionPrepend extends CollectionBehavior
+case object CollectionRemove extends CollectionBehavior
+
+
 /** References a column by name. */
 case class ColumnName(columnName: String, alias: Option[String] = None) extends ColumnRef {
   override val cql = s""""$columnName""""
@@ -31,7 +39,33 @@ case class ColumnName(columnName: String, alias: Option[String] = None) extends 
   override def selectedAs = alias.getOrElse(columnName)
   override def toString: String = columnName
 
+  def overwrite() = CollectionColumnName(columnName, alias, CollectionOverwrite)
+  def add() = CollectionColumnName(columnName, alias, CollectionAppend)
+  def append() = CollectionColumnName(columnName, alias, CollectionAppend)
+  def prepend() = CollectionColumnName(columnName, alias, CollectionPrepend)
+  def remove() = CollectionColumnName(columnName, alias, CollectionRemove)
+
   def as(alias: String) = copy(alias = Some(alias))
+}
+
+/** References a collection column by name with insert instructions */
+case class CollectionColumnName(
+    columnName: String,
+    alias: Option[String] = None,
+    collectionBehavior: CollectionBehavior = CollectionOverwrite) extends ColumnRef {
+
+  override val cql = s""""$columnName""""
+  override def cqlValueName = columnName
+  override def selectedAs = alias.getOrElse(columnName)
+  override def toString: String = columnName
+
+  def as(alias: String) = copy(alias = Some(alias))
+
+  def overwrite() = copy(collectionBehavior = CollectionOverwrite)
+  def add() = copy(collectionBehavior = CollectionAppend)
+  def append() = copy(collectionBehavior = CollectionAppend)
+  def prepend() = copy(collectionBehavior = CollectionPrepend)
+  def remove() = copy(collectionBehavior = CollectionRemove)
 }
 
 /** References TTL of a column. */
