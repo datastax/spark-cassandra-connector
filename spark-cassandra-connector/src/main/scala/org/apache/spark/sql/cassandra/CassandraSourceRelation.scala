@@ -170,7 +170,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
      */
     def compare(columnValue: Any, columnDataType: NativeType, value: Any) : Int = {
       if (columnValue == null) {
-          throw new RuntimeException(s"Can't compare column having null value")
+          1 //false positive
       } else {
         columnDataType.ordering.compare(
           columnValue.asInstanceOf[columnDataType.JvmType],
@@ -262,7 +262,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
       case Not(f) => (row: Row) => !translateFilter(f)(row)
       case And(l, r) => (row: Row) => translateFilter(l)(row) && translateFilter(r)(row)
       case Or(l, r) => (row: Row) => translateFilter(l)(row) || translateFilter(r)(row)
-      case _ => (row: Row) => throw new RuntimeException(s"Unknown RichFilter $filter")
+      case _ => (row: Row) => true
     }
 
     // a filter combining all other filters

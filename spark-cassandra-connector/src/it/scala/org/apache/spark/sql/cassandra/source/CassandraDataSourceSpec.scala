@@ -15,33 +15,33 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
 
   conn.withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = " +
+    session.execute("CREATE KEYSPACE IF NOT EXISTS sql_ds_test WITH REPLICATION = " +
       "{ 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, " +
+    session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, " +
       "h INT, PRIMARY KEY ((a, b, c), d , e, f))")
-    session.execute("USE sql_test")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)")
-    session.execute("INSERT INTO sql_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)")
+    session.execute("USE sql_ds_test")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)")
+    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)")
   }
 
   val sqlContext: SQLContext = new SQLContext(sc)
   def pushDown: Boolean = true
 
   override def beforeAll() {
-    createTempTable("sql_test", "test1", "ddlTable")
+    createTempTable("sql_ds_test", "test1", "ddlTable")
   }
 
   override def afterAll() {
     super.afterAll()
     conn.withSessionDo { session =>
-      session.execute("DROP KEYSPACE sql_test")
+      session.execute("DROP KEYSPACE sql_ds_test")
     }
     sqlContext.dropTempTable("ddlTable")
   }
@@ -60,13 +60,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to select all rows" in {
-    val result = sqlContext.cassandraTable(TableIdent("test1", "sql_test")).select("a").collect()
+    val result = sqlContext.cassandraTable(TableIdent("test1", "sql_ds_test")).select("a").collect()
     result should have length 8
     result.head should have length 1
   }
 
   it should "allow to register as a temp table" in {
-    sqlContext.cassandraTable(TableIdent("test1", "sql_test")).registerTempTable("test1")
+    sqlContext.cassandraTable(TableIdent("test1", "sql_ds_test")).registerTempTable("test1")
     val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
@@ -80,7 +80,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
         |USING org.apache.spark.sql.cassandra
         |OPTIONS (
         | c_table "test1",
-        | keyspace "sql_test",
+        | keyspace "sql_ds_test",
         | push_down "$pushDown",
         | schema '{"type":"struct","fields":
         | [{"name":"a","type":"integer","nullable":true,"metadata":{}},
@@ -103,9 +103,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to insert data into a cassandra table" in {
     conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert (a INT PRIMARY KEY, b INT)")
+      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert (a INT PRIMARY KEY, b INT)")
     }
-    createTempTable("sql_test", "test_insert", "insertTable")
+    createTempTable("sql_ds_test", "test_insert", "insertTable")
     sqlContext.sql("SELECT * FROM insertTable").collect() should have length 0
 
     sqlContext.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM ddlTable")
@@ -115,17 +115,17 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to save data to a cassandra table" in {
     conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert1 (a INT PRIMARY KEY, b INT)")
+      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert1 (a INT PRIMARY KEY, b INT)")
     }
 
     sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-      ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_test"))
+      ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
 
-    sqlContext.cassandraTable(TableIdent("test_insert1", "sql_test")).collect() should have length 1
+    sqlContext.cassandraTable(TableIdent("test_insert1", "sql_ds_test")).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
       sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-        ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_test"))
+        ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
     }.getMessage
 
     assert(
@@ -135,11 +135,11 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to overwrite a cassandra table" in {
     conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_insert2 (a INT PRIMARY KEY, b INT)")
+      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert2 (a INT PRIMARY KEY, b INT)")
     }
 
     sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-      Overwrite, Map("c_table" -> "test_insert2", "keyspace" -> "sql_test"))
+      Overwrite, Map("c_table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
   }
 
   it should "allow to filter a table" in {

@@ -12,40 +12,40 @@ class CassandraSQLPredicatePushdownSpec extends SparkCassandraITFlatSpecBase {
   val cc: CassandraSQLContext = new CassandraSQLContext(sc)
 
   override def beforeAll() {
-    cc.setKeyspace("sql_test")
+    cc.setKeyspace("sql_pd_test")
   }
 
   override def afterAll() {
     super.afterAll()
     conn.withSessionDo { session =>
-      session.execute("DROP KEYSPACE sql_test")
+      session.execute("DROP KEYSPACE sql_pd_test")
     }
   }
 
   conn.withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute("CREATE KEYSPACE IF NOT EXISTS sql_pd_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_pd (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, i INT, j INT, k INT, l INT, PRIMARY KEY ((a, b, c, d), e, f, g, h))")
-    session.execute("USE sql_test")
+    session.execute("CREATE TABLE IF NOT EXISTS sql_pd_test.test_pd (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, i INT, j INT, k INT, l INT, PRIMARY KEY ((a, b, c, d), e, f, g, h))")
+    session.execute("USE sql_pd_test")
     session.execute("CREATE INDEX test_pd_i ON test_pd(i)")
     session.execute("CREATE INDEX test_pd_j ON test_pd(j)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
 
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 2, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 3, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 4, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 5, 1, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 2, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 3, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 4, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 5, 1, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
 
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 2, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 4, 4, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
-    session.execute("INSERT INTO sql_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 5, 5, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 2, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 4, 4, 1, 3, 4, 5, 6, 7, 8, 9, 10)")
+    session.execute("INSERT INTO sql_pd_test.test_pd (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (1, 5, 5, 1, 5, 6, 7, 8, 9, 10, 11, 12)")
   }
 
   it should "not allow predicate pushdown if some partition column doesn't have predicate" in {
