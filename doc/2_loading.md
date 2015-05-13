@@ -310,7 +310,7 @@ The following options can be specified in the SparkConf object or as a jvm
 
 In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
 allows a user to define a set of parameters in a separate object and import them into a block of 
-code rather than repeatedly passing the same `ReadConf` object.
+code rather than repeatedly passing the same [`ReadConf` object] (https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
 
 ```scala
 object ReadConfigurationOne {
