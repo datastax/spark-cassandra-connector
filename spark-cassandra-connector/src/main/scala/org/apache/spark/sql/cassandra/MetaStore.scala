@@ -50,7 +50,7 @@ trait MetaStore {
       schema: Option[StructType],
       options: Map[String, String]) : Unit
 
-  /** Update table options */
+  /** Update table Schema */
   def setTableSchema(tableRef: TableRef, schemaJsonString: String) : Unit
 
   /** Update table options */
@@ -220,7 +220,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
   override def getAllTables(keyspace: Option[String], cluster: Option[String] = None): Seq[(String, Boolean)] = {
     val clusterName = cluster.getOrElse(sqlContext.getCluster)
-    val names = ListBuffer[(String, Boolean)]()
+    val names = ListBuffer[String]()
     // Add source tables from metastore
     val result = execute(selectTableKeyspaceQuery, clusterName).iterator()
     while (result.hasNext) {
@@ -230,7 +230,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
         val ks = row.getString(1)
         if (keyspace.nonEmpty && ks == keyspace.get ||
           ks != TempDatabaseOrTableToBeDeletedName) {
-          names += ((tableName, false))
+          names += tableName
         }
       }
     }
@@ -239,9 +239,9 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     val conn = new CassandraConnector(sqlContext.getCassandraConnConf(clusterName))
     if (keyspace.nonEmpty) {
       val ksDef = Schema.fromCassandra(conn).keyspaceByName.get(keyspace.get)
-      names ++= ksDef.map(_.tableByName.keySet).getOrElse(Set.empty).map((name => (name, false)))
+      names ++= ksDef.map(_.tableByName.keySet).getOrElse(Set.empty)
     }
-     names.toList
+    names.distinct.toList.map(name => (name, false))
   }
 
   override def getAllDatabases(cluster: Option[String] = None): Seq[String] = {
