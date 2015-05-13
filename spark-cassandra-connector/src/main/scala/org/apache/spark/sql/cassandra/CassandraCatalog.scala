@@ -1,6 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import java.io.IOException
+import java.util.concurrent.ExecutionException
 
 import com.google.common.cache.{LoadingCache, CacheBuilder, CacheLoader}
 
@@ -123,9 +124,9 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   override def tableExists(tableIdentifier: Seq[String]): Boolean = synchronized {
     val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
     try {
-      cachedDataSourceTables.get(fullTableIdentifier) != null
+      return cachedDataSourceTables.get(fullTableIdentifier) != null
     } catch {
-      case _: NoSuchTableException => false
+      case _: ExecutionException =>
     }
     false
   }

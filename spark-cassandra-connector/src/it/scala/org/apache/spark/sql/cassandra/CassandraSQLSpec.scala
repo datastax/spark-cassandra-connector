@@ -1,14 +1,13 @@
 package org.apache.spark.sql.cassandra
 
 import java.io.FileNotFoundException
-import java.util.concurrent.ExecutionException
+
+import org.apache.spark.sql.catalyst.util
+import org.apache.spark.util.Utils
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
-import org.apache.spark.sql.catalyst.util
-import org.apache.spark.util.Utils
-
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -353,17 +352,9 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "not find non-exist tables" in {
-    an [ExecutionException] should be thrownBy {
-      cc.tableExists(TableIdent("non_exist", "non_exist"))
-    }
-
-    noException should be thrownBy {
-      cc.tableExists(TableIdent("test1", "sql_test"))
-    }
-
-    noException should be thrownBy {
-      cc.tableExists(TableIdent("Upper_Case_Table", "sql_test"))
-    }
+    cc.tableExists(TableIdent("non_exist", "non_exist")) shouldBe false
+    cc.tableExists(TableIdent("test1", "sql_test"))  shouldBe true
+    cc.tableExists(TableIdent("Upper_Case_Table", "sql_test")) shouldBe true
   }
 
   it should "get all tables" in {
