@@ -41,8 +41,8 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     sqlContext: SQLContext,
     parameters: Map[String, String]): BaseRelation = {
 
-    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
-    sqlContext.createCassandraSourceRelation(tableIdent, options)
+    val (tableRef, options) = parametersToTableIdentAndOptions(parameters)
+    sqlContext.createCassandraSourceRelation(tableRef, options)
   }
 
   /**
@@ -54,9 +54,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     parameters: Map[String, String],
     schema: StructType): BaseRelation = {
 
-    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
+    val (tableRef, options) = parametersToTableIdentAndOptions(parameters)
     val optionsWithNewSchema = CassandraDataSourceOptions(Option(schema), options.pushdown)
-    sqlContext.createCassandraSourceRelation(tableIdent, optionsWithNewSchema)
+    sqlContext.createCassandraSourceRelation(tableRef, optionsWithNewSchema)
 
   }
 
@@ -70,8 +70,8 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     parameters: Map[String, String],
     data: DataFrame): BaseRelation = {
 
-    val (tableIdent, options) = parametersToTableIdentAndOptions(parameters)
-    val table = sqlContext.createCassandraSourceRelation(tableIdent, options)
+    val (tableRef, options) = parametersToTableIdentAndOptions(parameters)
+    val table = sqlContext.createCassandraSourceRelation(tableRef, options)
 
     mode match {
       case Append => table.insert(data, overwrite = false)
@@ -88,7 +88,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
         }
     }
 
-    sqlContext.createCassandraSourceRelation(tableIdent, options)
+    sqlContext.createCassandraSourceRelation(tableRef, options)
   }
 }
 
@@ -106,8 +106,8 @@ object CassandraDefaultSource {
   val CassandraDataSourceProviderFullName = CassandraDefaultSource.getClass.getPackage.getName + ".DefaultSource"
 
 
-  /** Parse parameters into CassandraDataSourceOptions and TableIdent object */
-  def parametersToTableIdentAndOptions(parameters: Map[String, String]) : (TableIdent, CassandraDataSourceOptions) = {
+  /** Parse parameters into CassandraDataSourceOptions and TableRef object */
+  def parametersToTableIdentAndOptions(parameters: Map[String, String]) : (TableRef, CassandraDataSourceOptions) = {
     val tableName = parameters(CassandraDataSourceTableNameProperty)
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
@@ -115,7 +115,7 @@ object CassandraDefaultSource {
       .map(DataType.fromJson).map(_.asInstanceOf[StructType])
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
 
-    (TableIdent(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushdown))
+    (TableRef(tableName, keyspaceName, clusterName), CassandraDataSourceOptions(schema, pushdown))
   }
 
   /** Check whether the provider is Cassandra datasource or not */

@@ -101,37 +101,37 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /**
    * Only register a table to local cache. To register table in metastore, use
-   * registerTable(tableIdent, source, schema, options) method
+   * registerTable(tableRef, source, schema, options) method
    */
   def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit =
     catalog.registerTable(tableIdentifier, plan)
 
   /** Register a customized table meta data to metastore */
   def registerTable(
-      tableIdent: TableIdent,
+      tableRef: TableRef,
       source: String,
       schema: Option[StructType],
       options: Map[String, String]): Unit =
-    catalog.registerTable(tableIdent, source, schema, options)
+    catalog.registerTable(tableRef, source, schema, options)
 
   /** Unregister a table from local cache and metastore. */
-  def unregisterTable(tableIdent: TableIdent): Unit =
-    catalog.unregisterTable(tableIdent)
+  def unregisterTable(tableRef: TableRef): Unit =
+    catalog.unregisterTable(tableRef)
 
   /** Unregister all tables from local cache and metastore. */
   def unregisterAllTables(): Unit = catalog.unregisterAllTables()
 
   /** Refresh CassandraContext schema cache, then refresh table in local cache */
-  def refreshTable(tableIdent: TableIdent): Unit =
-    catalog.refreshTable(tableIdent)
+  def refreshTable(tableRef: TableRef): Unit =
+    catalog.refreshTable(tableRef)
 
   /** Check whether table exists. It's either in Cassandra or in metastore */
-  def tableExists(tableIdent: TableIdent): Boolean =
-    catalog.tableExists(tableIdent)
+  def tableExists(tableRef: TableRef): Boolean =
+    catalog.tableExists(tableRef)
 
   /** Check whether table is stored in metastore */
-  def tableExistsInMetastore(tableIdent: TableIdent): Boolean =
-    catalog.tableExistsInMetastore(tableIdent)
+  def tableExistsInMetastore(tableRef: TableRef): Boolean =
+    catalog.tableExistsInMetastore(tableRef)
 
   /** Create a database in metastore */
   def createDatabase(database: String, cluster: Option[String]): Unit =
@@ -149,23 +149,23 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     catalog.unregisterCluster(cluster)
 
   /** Return table metadata */
-  def getTableMetadata(tableIdent : TableIdent) : Option[TableMetaData] =
-    catalog.getTableMetadata(tableIdent)
+  def getTableMetadata(tableRef : TableRef) : Option[TableMetaData] =
+    catalog.getTableMetadata(tableRef)
 
   /** Set an option of table options*/
-  def setTableOption(tableIdent : TableIdent, key: String, value: String) : Unit =
-    catalog.setTableOption(tableIdent, key, value)
+  def setTableOption(tableRef : TableRef, key: String, value: String) : Unit =
+    catalog.setTableOption(tableRef, key, value)
 
   /** Remove an option from table options */
-  def removeTableOption(tableIdent : TableIdent, key: String) : Unit =
-    catalog.removeTableOption(tableIdent, key)
+  def removeTableOption(tableRef : TableRef, key: String) : Unit =
+    catalog.removeTableOption(tableRef, key)
 
   /** Set table schema */
-  def setTableSchema(tableIdent : TableIdent, schemaJsonString: String) : Unit =
-    catalog.setTableSchema(tableIdent, schemaJsonString)
+  def setTableSchema(tableRef : TableRef, schemaJsonString: String) : Unit =
+    catalog.setTableSchema(tableRef, schemaJsonString)
 
   /** Remove table schema */
-  def removeTableSchema(tableIdent : TableIdent) : Unit =
-    catalog.removeTableSchema(tableIdent)
+  def removeTableSchema(tableRef : TableRef) : Unit =
+    catalog.removeTableSchema(tableRef)
 }
 

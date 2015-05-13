@@ -57,10 +57,10 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
   private val tableConf = TrieMap[Seq[String], T]()
 
   /** Add table level configuration settings. Set cluster to None for a single cluster */
-  def addTableConf(tableIdent: TableIdent, conf: T): Unit = {
-    val table = tableIdent.table
-    val keyspace = tableIdent.keyspace
-    val cluster = tableIdent.cluster
+  def addTableConf(tableRef: TableRef, conf: T): Unit = {
+    val table = tableRef.table
+    val keyspace = tableRef.keyspace
+    val cluster = tableRef.cluster
     validateName(Seq(table, keyspace))
     tableConf.put(Seq(table, keyspace, cluster.get), conf)
   }
@@ -72,10 +72,10 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
   }
 
   /** Remove table level configuration settings */
-  def removeTableLevelConf(tableIdent: TableIdent): Unit = {
-    val table = tableIdent.table
-    val keyspace = tableIdent.keyspace
-    val cluster = tableIdent.cluster
+  def removeTableLevelConf(tableRef: TableRef): Unit = {
+    val table = tableRef.table
+    val keyspace = tableRef.keyspace
+    val cluster = tableRef.cluster
     validateName(Seq(table, keyspace, cluster.get))
     tableConf.remove(Seq(table, keyspace, cluster.get))
   }
@@ -87,10 +87,10 @@ class CassandraConfSettings[T] extends CassandraClusterLevelConfSettings[T] {
   }
 
   /** Get configuration settings by the order of table level, keyspace level, cluster level, default settings */
-  def getConf(tableIdent: TableIdent, defaultConf: T): T = {
-    val table = tableIdent.table
-    val keyspace = tableIdent.keyspace
-    val cluster = tableIdent.cluster
+  def getConf(tableRef: TableRef, defaultConf: T): T = {
+    val table = tableRef.table
+    val keyspace = tableRef.keyspace
+    val cluster = tableRef.cluster
     validateName(Seq(table, keyspace, cluster.get))
     val clusterName = cluster.get
     tableConf.getOrElse(Seq(table, keyspace, clusterName),

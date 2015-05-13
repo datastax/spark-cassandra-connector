@@ -22,13 +22,13 @@ trait MetaStore {
    * up Cassandra tables to get the source table.
    *
    */
-  def getTable(tableIdent: TableIdent) : LogicalPlan
+  def getTable(tableRef: TableRef) : LogicalPlan
 
   /** Get a table's metadata */
-  def getTableMetaData(tableIdent: TableIdent) : Option[TableMetaData]
+  def getTableMetaData(tableRef: TableRef) : Option[TableMetaData]
 
   /** Get a table from metastore. If it's not found in metastore, return None */
-  def getTableFromMetastore(tableIdent: TableIdent) : Option[LogicalPlan]
+  def getTableFromMetastore(tableRef: TableRef) : Option[LogicalPlan]
 
   /**
    * Get all table names for a keyspace. If keyspace is empty, get all tables from
@@ -45,22 +45,22 @@ trait MetaStore {
 
   /** Only Store customized tables meta data in metastore */
   def storeTable(
-      tableIdent: TableIdent,
+      tableRef: TableRef,
       source: String,
       schema: Option[StructType],
       options: Map[String, String]) : Unit
 
   /** Update table options */
-  def setTableSchema(tableIdent: TableIdent, scheamJsonString: String) : Unit
+  def setTableSchema(tableRef: TableRef, scheamJsonString: String) : Unit
 
   /** Update table options */
-  def setTableOption(tableIdent: TableIdent, key: String, value: String) : Unit
+  def setTableOption(tableRef: TableRef, key: String, value: String) : Unit
 
   /** Remove an option from table options */
-  def removeTableOption(tableIdent: TableIdent, key: String) : Unit
+  def removeTableOption(tableRef: TableRef, key: String) : Unit
 
   /** Remove table schema from metadata */
-  def removeTableSchema(tableIdent: TableIdent) : Unit
+  def removeTableSchema(tableRef: TableRef) : Unit
 
   /** create a database in metastore */
   def storeDatabase(database: String, cluster: Option[String]) : Unit
@@ -69,7 +69,7 @@ trait MetaStore {
   def storeCluster(cluster: String) : Unit
 
   /** Remove table from metastore */
-  def removeTable(tableIdent: TableIdent) : Unit
+  def removeTable(tableRef: TableRef) : Unit
 
   /** Remove a database from metastore */
   def removeDatabase(database: String, cluster: Option[String]) : Unit
@@ -129,8 +129,8 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     """.stripMargin.replaceAll("\n", " ")
 
 
-  override def getTable(tableIdent: TableIdent): LogicalPlan = {
-      getTableFromMetastore(tableIdent).getOrElse(getTableMayThrowException(tableIdent))
+  override def getTable(tableRef: TableRef): LogicalPlan = {
+      getTableFromMetastore(tableRef).getOrElse(getTableMayThrowException(tableRef))
   }
 
   override def getAllTables(keyspace: Option[String], cluster: Option[String] = None): Seq[(String, Boolean)] = {
@@ -228,13 +228,13 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
   /** Store a tale with the creation meta data */
   override def storeTable(
-      tableIdent: TableIdent,
+      tableRef: TableRef,
       source: String,
       schema: Option[StructType],
       options: Map[String, String]): Unit = {
     import collection.JavaConversions._
 
-    val cluster = tableIdent.cluster.getOrElse(sqlContext.getCluster)
+    val cluster = tableRef.cluster.getOrElse(sqlContext.getCluster)
     if (schema.nonEmpty) {
       metaStoreConn.withSessionDo {
         session =>
@@ -242,8 +242,8 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
           session.execute(
             preparedStatement.bind(
               cluster,
-              tableIdent.keyspace,
-              tableIdent.table,
+              tableRef.keyspace,
+              tableRef.table,
               source,
               schema.get.json,
               mapAsJavaMap(options)))
@@ -255,43 +255,43 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
           session.execute(
             preparedStatement.bind(
               cluster,
-              tableIdent.keyspace,
-              tableIdent.table,
+              tableRef.keyspace,
+              tableRef.table,
               source,
               mapAsJavaMap(options)))
       }
     }
 
     // Remove temporary database or table
-    val tempTableIdent = TableIdent(
+    val tempTableIdent = TableRef(
       TempDatabaseOrTableToBeDeletedName,
       TempDatabaseOrTableToBeDeletedName,
       Option(cluster))
     removeTable(tempTableIdent)
   }
 
-  override def setTableOption(tableIdent: TableIdent, key: String, value: String) : Unit = {
+  override def setTableOption(tableRef: TableRef, key: String, value: String) : Unit = {
     val updateQuery =
       s"""
       |UPDATE ${getMetaStoreTableFullName}
       |SET options['$key'] = '$value'
-      |WHERE cluster_name = '${tableIdent.cluster.get}'
-      | AND keyspace_name = '${tableIdent.keyspace}'
-      | AND table_name = '${tableIdent.table}'
+      |WHERE cluster_name = '${tableRef.cluster.get}'
+      | AND keyspace_name = '${tableRef.keyspace}'
+      | AND table_name = '${tableRef.table}'
     """.stripMargin.replaceAll("\n", " ")
     metaStoreConn.withSessionDo {
       session => session.execute(updateQuery)
     }
   }
 
-  override def removeTableOption(tableIdent: TableIdent, key: String) : Unit = {
+  override def removeTableOption(tableRef: TableRef, key: String) : Unit = {
     val deleteQuery =
       s"""
       |DELETE options['$key']
       |FROM ${getMetaStoreTableFullName}
-      |WHERE cluster_name = '${tableIdent.cluster.get}'
-      | AND keyspace_name = '${tableIdent.keyspace}'
-      | AND table_name = '${tableIdent.table}'
+      |WHERE cluster_name = '${tableRef.cluster.get}'
+      | AND keyspace_name = '${tableRef.keyspace}'
+      | AND table_name = '${tableRef.table}'
     """.stripMargin.replaceAll("\n", " ")
     metaStoreConn.withSessionDo {
       session => session.execute(deleteQuery)
@@ -299,7 +299,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   }
 
   /** Set table schema */
-  override def setTableSchema(tableIdent: TableIdent, scheamJsonString: String) : Unit = {
+  override def setTableSchema(tableRef: TableRef, scheamJsonString: String) : Unit = {
     try {
       DataType.fromJson(scheamJsonString)
     } catch {
@@ -310,9 +310,9 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
         s"""
       |UPDATE ${getMetaStoreTableFullName}
       |SET schema_json = '$scheamJsonString'
-      |WHERE cluster_name = '${tableIdent.cluster.get}'
-      | AND keyspace_name = '${tableIdent.keyspace}'
-      | AND table_name = '${tableIdent.table}'
+      |WHERE cluster_name = '${tableRef.cluster.get}'
+      | AND keyspace_name = '${tableRef.keyspace}'
+      | AND table_name = '${tableRef.table}'
     """.stripMargin.replaceAll("\n", " ")
     metaStoreConn.withSessionDo {
       session => session.execute(updateQuery)
@@ -320,14 +320,14 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   }
 
   /** Remove table schema */
-  override def removeTableSchema(tableIdent: TableIdent) : Unit = {
+  override def removeTableSchema(tableRef: TableRef) : Unit = {
     val deleteQuery =
       s"""
       |DELETE schema_json
       |FROM ${getMetaStoreTableFullName}
-      |WHERE cluster_name = '${tableIdent.cluster.get}'
-      | AND keyspace_name = '${tableIdent.keyspace}'
-      | AND table_name = '${tableIdent.table}'
+      |WHERE cluster_name = '${tableRef.cluster.get}'
+      | AND keyspace_name = '${tableRef.keyspace}'
+      | AND table_name = '${tableRef.table}'
     """.stripMargin.replaceAll("\n", " ")
     metaStoreConn.withSessionDo {
       session => session.execute(deleteQuery)
@@ -377,13 +377,13 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     }
   }
 
-  override def removeTable(tableIdent: TableIdent) : Unit = {
+  override def removeTable(tableRef: TableRef) : Unit = {
     val deleteQuery =
       s"""
         |DELETE FROM ${getMetaStoreTableFullName}
-        |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getCluster)}'
-        | AND keyspace_name = '${tableIdent.keyspace}'
-        | AND table_name = '${tableIdent.table}'
+        |WHERE cluster_name = '${tableRef.cluster.getOrElse(sqlContext.getCluster)}'
+        | AND keyspace_name = '${tableRef.keyspace}'
+        | AND table_name = '${tableRef.table}'
       """.stripMargin.replaceAll("\n", " ")
     metaStoreConn.withSessionDo {
       session => session.execute(deleteQuery)
@@ -407,7 +407,7 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
           val keyspaceName = row.getString(1)
           if (keyspaceName == database) {
             val tableName = row.getString(0)
-            removeTable(TableIdent(tableName, keyspaceName, Option(clusterName)))
+            removeTable(TableRef(tableName, keyspaceName, Option(clusterName)))
           }
         }
     }
@@ -440,8 +440,8 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
   }
 
   /** Look up source table from metastore */
-  def getTableFromMetastore(tableIdent: TableIdent): Option[LogicalPlan] = {
-    val metadata = getTableMetaData(tableIdent)
+  def getTableFromMetastore(tableRef: TableRef): Option[LogicalPlan] = {
+    val metadata = getTableMetaData(tableRef)
     if (metadata.nonEmpty) {
       val data = metadata.get
       val relation = ResolvedDataSource(sqlContext, data.schema, data.source, data.options)
@@ -451,14 +451,14 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
     }
   }
 
-  override def getTableMetaData(tableIdent: TableIdent) : Option[TableMetaData] = {
+  override def getTableMetaData(tableRef: TableRef) : Option[TableMetaData] = {
     val selectQuery =
       s"""
         |SELECT source_provider, schema_json, options
         |FROM ${getMetaStoreTableFullName}
-        |WHERE cluster_name = '${tableIdent.cluster.getOrElse(sqlContext.getCluster)}'
-        |  AND keyspace_name = '${tableIdent.keyspace}'
-        |  AND table_name = '${tableIdent.table}'
+        |WHERE cluster_name = '${tableRef.cluster.getOrElse(sqlContext.getCluster)}'
+        |  AND keyspace_name = '${tableRef.keyspace}'
+        |  AND table_name = '${tableRef.table}'
       """.stripMargin.replaceAll("\n", " ")
 
     metaStoreConn.withSessionDo {
@@ -478,24 +478,24 @@ class DataSourceMetaStore(sqlContext: SQLContext) extends MetaStore with Logging
 
           // convert to scala Map
           import scala.collection.JavaConversions._
-          Option(TableMetaData(tableIdent, source, options.toMap, schema))
+          Option(TableMetaData(tableRef, source, options.toMap, schema))
         }
     }
   }
   /** Create a Relation directly from Cassandra table. It may throw NoSuchTableException if it's not found. */
-  private def getTableMayThrowException(tableIdent: TableIdent) : LogicalPlan = {
-    existInCassandra(tableIdent)
-    val sourceRelation = sqlContext.createCassandraSourceRelation(tableIdent, CassandraDataSourceOptions())
+  private def getTableMayThrowException(tableRef: TableRef) : LogicalPlan = {
+    existInCassandra(tableRef)
+    val sourceRelation = sqlContext.createCassandraSourceRelation(tableRef, CassandraDataSourceOptions())
     LogicalRelation(sourceRelation)
   }
 
   /** Check whether table is in Cassandra */
-  private def existInCassandra(tableIdent: TableIdent) : Unit = {
-    val clusterName = tableIdent.cluster.getOrElse(sqlContext.getCluster)
+  private def existInCassandra(tableRef: TableRef) : Unit = {
+    val clusterName = tableRef.cluster.getOrElse(sqlContext.getCluster)
     val conn = new CassandraConnector(sqlContext.getCassandraConnConf(clusterName))
     //Throw NoSuchElementException if can't find table in C*
     try {
-      Schema.fromCassandra(conn).keyspaceByName(tableIdent.keyspace).tableByName(tableIdent.table)
+      Schema.fromCassandra(conn).keyspaceByName(tableRef.keyspace).tableByName(tableRef.table)
     } catch {
       case _:NoSuchElementException => throw new NoSuchTableException
     }
@@ -567,7 +567,7 @@ object DataSourceMetaStore {
 
 /** Store table metadata */
 case class TableMetaData(
-    TableIdent: TableIdent,
+    tableRef: TableRef,
     source : String,
     options: Map[String, String],
     schema: Option[StructType] = None)

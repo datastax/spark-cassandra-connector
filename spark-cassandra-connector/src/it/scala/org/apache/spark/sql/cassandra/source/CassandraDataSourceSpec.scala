@@ -60,13 +60,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to select all rows" in {
-    val result = sqlContext.cassandraTable(TableIdent("test1", "sql_ds_test")).select("a").collect()
+    val result = sqlContext.cassandraTable(TableRef("test1", "sql_ds_test")).select("a").collect()
     result should have length 8
     result.head should have length 1
   }
 
   it should "allow to register as a temp table" in {
-    sqlContext.cassandraTable(TableIdent("test1", "sql_ds_test")).registerTempTable("test1")
+    sqlContext.cassandraTable(TableRef("test1", "sql_ds_test")).registerTempTable("test1")
     val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
@@ -121,7 +121,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
       ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
 
-    sqlContext.cassandraTable(TableIdent("test_insert1", "sql_ds_test")).collect() should have length 1
+    sqlContext.cassandraTable(TableRef("test_insert1", "sql_ds_test")).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
       sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",

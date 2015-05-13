@@ -38,20 +38,20 @@ package object cassandra {
         })
 
     /**
-     * Create a DataFrame for a given Cassandra table given tableIdent, pushDown and user defined schema
+     * Create a DataFrame for a given Cassandra table given tableRef, pushDown and user defined schema
      * parameters. If pushDown is disable, [[PrunedScan]] is used.
      */
     def cassandraTable(
-        tableIdent: TableIdent,
+        tableRef: TableRef,
         sourceOptions: CassandraDataSourceOptions = CassandraDataSourceOptions())(
       implicit
         connector: CassandraConnector = new CassandraConnector(sqlContext.getCassandraConnConf(
-          tableIdent.cluster.getOrElse(sqlContext.getCluster))),
-        readConf: ReadConf = sqlContext.getReadConf(tableIdent),
-        writeConf: WriteConf = sqlContext.getWriteConf(tableIdent)) : DataFrame = {
+          tableRef.cluster.getOrElse(sqlContext.getCluster))),
+        readConf: ReadConf = sqlContext.getReadConf(tableRef),
+        writeConf: WriteConf = sqlContext.getWriteConf(tableRef)) : DataFrame = {
 
       sqlContext.baseRelationToDataFrame(
-        CassandraSourceRelation(tableIdent, sqlContext)(
+        CassandraSourceRelation(tableRef, sqlContext)(
           connector = connector,
           readConf = readConf,
           writeConf = writeConf,
@@ -63,15 +63,15 @@ package object cassandra {
      * parameters. If pushDown is disable, [[PrunedScan]] is used.
      */
     def createCassandraSourceRelation(
-        tableIdent: TableIdent,
+        tableRef: TableRef,
         sourceOptions: CassandraDataSourceOptions = CassandraDataSourceOptions())(
       implicit
         connector: CassandraConnector = new CassandraConnector(sqlContext.getCassandraConnConf(
-          tableIdent.cluster.getOrElse(sqlContext.getCluster))),
-        readConf: ReadConf = sqlContext.getReadConf(tableIdent),
-        writeConf: WriteConf = sqlContext.getWriteConf(tableIdent)): BaseRelationImpl = {
+          tableRef.cluster.getOrElse(sqlContext.getCluster))),
+        readConf: ReadConf = sqlContext.getReadConf(tableRef),
+        writeConf: WriteConf = sqlContext.getWriteConf(tableRef)): BaseRelationImpl = {
 
-      CassandraSourceRelation(tableIdent, sqlContext)(
+      CassandraSourceRelation(tableRef, sqlContext)(
         connector = connector,
         readConf = readConf,
         writeConf = writeConf,
@@ -79,8 +79,8 @@ package object cassandra {
     }
 
     /** Add table level read configuration settings. Set cluster to None for a single cluster */
-    def addTableReadConf(conf: ReadConf, tableIdent: TableIdent): Unit = {
-      readConfSettings.addTableConf(tableIdentWithCluster(tableIdent), conf)
+    def addTableReadConf(conf: ReadConf, tableRef: TableRef): Unit = {
+      readConfSettings.addTableConf(tableIdentWithCluster(tableRef), conf)
     }
 
     /** Add keyspace level read configuration settings. Set cluster to None for a single cluster */
@@ -97,8 +97,8 @@ package object cassandra {
     }
 
     /** Remove table level read configuration settings */
-    def removeTableLevelReadConf(tableIdent: TableIdent): Unit = {
-      readConfSettings.removeTableLevelConf(tableIdentWithCluster(tableIdent))
+    def removeTableLevelReadConf(tableRef: TableRef): Unit = {
+      readConfSettings.removeTableLevelConf(tableIdentWithCluster(tableRef))
     }
 
     /** Remove keyspace level read configuration settings */
@@ -112,15 +112,15 @@ package object cassandra {
     }
 
     /** Get read configuration settings by the order of table level, keyspace level, cluster level, default settings */
-    def getReadConf(tableIdent: TableIdent): ReadConf = {
+    def getReadConf(tableRef: TableRef): ReadConf = {
       readConfSettings.getConf(
-        tableIdentWithCluster(tableIdent),
+        tableIdentWithCluster(tableRef),
         ReadConf.fromSparkConf(sqlContext.sparkContext.getConf))
     }
 
     /** Add table level write configuration settings. Set cluster to None for a single cluster */
-    def addTableWriteConf(conf: WriteConf, tableIdent: TableIdent): Unit = {
-      writeConfSettings.addTableConf(tableIdentWithCluster(tableIdent), conf)
+    def addTableWriteConf(conf: WriteConf, tableRef: TableRef): Unit = {
+      writeConfSettings.addTableConf(tableIdentWithCluster(tableRef), conf)
     }
 
     /** Add keyspace level write configuration settings. Set cluster to None for a single cluster */
@@ -137,8 +137,8 @@ package object cassandra {
     }
 
     /** Remove table level write configuration settings */
-    def removeTableLevelWriteConf(tableIdent: TableIdent) : Unit = {
-      writeConfSettings.removeTableLevelConf(tableIdentWithCluster(tableIdent))
+    def removeTableLevelWriteConf(tableRef: TableRef) : Unit = {
+      writeConfSettings.removeTableLevelConf(tableIdentWithCluster(tableRef))
     }
 
     /** Remove keyspace level write configuration settings */
@@ -152,9 +152,9 @@ package object cassandra {
     }
 
     /** Get write configuration settings by the order of table level, keyspace level, cluster level, default settings */
-    def getWriteConf(tableIdent: TableIdent): WriteConf = {
+    def getWriteConf(tableRef: TableRef): WriteConf = {
       writeConfSettings.getConf(
-        tableIdentWithCluster(tableIdent),
+        tableIdentWithCluster(tableRef),
         WriteConf.fromSparkConf(sqlContext.sparkContext.getConf))
     }
 
@@ -198,25 +198,31 @@ package object cassandra {
       sqlContext.setConf(CassandraDatabaseNameProperty, database)
     }
 
+    /** Return keyspace name */
+    def getKeyspace : String = getDatabase
+
+    /** Set current used keyspace name */
+    def useKeyspace(keyspace: String) = useDatabase(keyspace)
+
     /** Set current used database name */
     def useCluster(cluster: String) = {
       sqlContext.setConf(CassandraClusterNameProperty, cluster)
     }
 
     /** Add table names to options */
-    def optionsWithTableIdent(tableIdent: TableIdent, options: Map[String, String]) : Map[String, String] = {
+    def optionsWithTableRef(tableRef: TableRef, options: Map[String, String]) : Map[String, String] = {
       Map[String, String](
-        CassandraDataSourceClusterNameProperty -> tableIdent.cluster.getOrElse(getCluster),
-        CassandraDataSourceKeyspaceNameProperty -> tableIdent.keyspace,
-        CassandraDataSourceTableNameProperty -> tableIdent.table
+        CassandraDataSourceClusterNameProperty -> tableRef.cluster.getOrElse(getCluster),
+        CassandraDataSourceKeyspaceNameProperty -> tableRef.keyspace,
+        CassandraDataSourceTableNameProperty -> tableRef.table
       ) ++ options
     }
 
-    private def tableIdentWithCluster(tableIdent: TableIdent) : TableIdent = {
-      if (tableIdent.cluster.nonEmpty)
-        tableIdent
+    private def tableIdentWithCluster(tableRef: TableRef) : TableRef = {
+      if (tableRef.cluster.nonEmpty)
+        tableRef
       else
-        TableIdent(tableIdent.table, tableIdent.keyspace, Option(getCluster))
+        TableRef(tableRef.table, tableRef.keyspace, Option(getCluster))
     }
   }
 

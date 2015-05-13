@@ -21,8 +21,8 @@ private[cassandra] case class CreateMetastoreDataSource(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent = cc.catalog.tableIdentFrom(Seq(cc.getKeyspace, tableName))
-    if (cc.tableExistsInMetastore(tableIdent)) {
+    val tableRef = cc.catalog.tableRefFrom(Seq(cc.getKeyspace, tableName))
+    if (cc.tableExistsInMetastore(tableRef)) {
       if (allowExisting) {
         return Seq.empty[Row]
       } else {
@@ -30,7 +30,7 @@ private[cassandra] case class CreateMetastoreDataSource(
       }
     }
     cc.registerTable(
-      tableIdent,
+      tableRef,
       provider,
       userSpecifiedSchema,
       options)
@@ -48,10 +48,10 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent = cc.catalog.tableIdentFrom(Seq(cc.getKeyspace, tableName))
+    val tableRef = cc.catalog.tableRefFrom(Seq(cc.getKeyspace, tableName))
     var existingSchema = None: Option[StructType]
     var createMetastoreTable = false
-    if (cc.tableExistsInMetastore(tableIdent)) {
+    if (cc.tableExistsInMetastore(tableRef)) {
       // Check if we need to throw an exception or just return.
       mode match {
         case SaveMode.ErrorIfExists =>
@@ -111,7 +111,7 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
 
     val optionsMayWithTableIdent =
       if(cassandraDatasource(provider))
-        cc.optionsWithTableIdent(tableIdent, options)
+        cc.optionsWithTableRef(tableRef, options)
       else
         options
     // Create the relation based on the data of df.
@@ -121,7 +121,7 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
       // the schema of df). It is important since the nullability may be changed by the relation
       // provider (for example, see org.apache.spark.sql.parquet.DefaultSource).
       cc.registerTable(
-        tableIdent,
+        tableRef,
         provider,
         Some(resolved.relation.schema),
         options)
@@ -137,9 +137,9 @@ private[cassandra] case class CreateMetastoreDataSourceAsSelect(
 private[cassandra] case class DropTable(tableIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
     try {
-      cc.cacheManager.tryUncacheQuery(cc.table(tableIdent.table))
+      cc.cacheManager.tryUncacheQuery(cc.table(tableRef.table))
     } catch {
       // This table's metadata is not in
       case _: org.apache.hadoop.hive.ql.metadata.InvalidTableException =>
@@ -148,7 +148,7 @@ private[cassandra] case class DropTable(tableIdentifier: Seq[String]) extends Ru
       // Users should be able to drop such kinds of tables regardless if there is an error.
       case e: Throwable => log.warn(s"${e.getMessage}")
     }
-    cc.unregisterTable(tableIdent)
+    cc.unregisterTable(tableRef)
     Seq.empty[Row]
   }
 }
@@ -159,10 +159,10 @@ private[cassandra] case class DropTable(tableIdentifier: Seq[String]) extends Ru
 private[cassandra] case class RenameTable(tableIdentifier: Seq[String], newName: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
     try {
       //TODO OSS SPARK should update it to use tableIdentifier
-      cc.cacheManager.tryUncacheQuery(cc.table(tableIdent.table))
+      cc.cacheManager.tryUncacheQuery(cc.table(tableRef.table))
     } catch {
       // This table's metadata is not in
       case _: org.apache.hadoop.hive.ql.metadata.InvalidTableException =>
@@ -171,10 +171,10 @@ private[cassandra] case class RenameTable(tableIdentifier: Seq[String], newName:
       // Users should be able to drop such kinds of tables regardless if there is an error.
       case e: Throwable => log.warn(s"${e.getMessage}")
     }
-    val metadata = cc.getTableMetadata(tableIdent)
+    val metadata = cc.getTableMetadata(tableRef)
     if (metadata.nonEmpty) {
-      cc.unregisterTable(tableIdent)
-      val newTableIdent = TableIdent(newName, tableIdent.keyspace, tableIdent.cluster)
+      cc.unregisterTable(tableRef)
+      val newTableIdent = TableRef(newName, tableRef.keyspace, tableRef.cluster)
       val data = metadata.get
       cc.registerTable(newTableIdent, data.source, data.schema, data.options)
     }
@@ -186,8 +186,8 @@ private[cassandra] case class RenameTable(tableIdentifier: Seq[String], newName:
 private[cassandra] case class SetTableSchema(tableIdentifier: Seq[String], schemaJsonString: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
-    cc.setTableSchema(tableIdent, schemaJsonString)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
+    cc.setTableSchema(tableRef, schemaJsonString)
     Seq.empty[Row]
   }
 }
@@ -199,8 +199,8 @@ private[cassandra] case class SetTableOption(
     value: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
-    cc.setTableOption(tableIdent, key, value)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
+    cc.setTableOption(tableRef, key, value)
     Seq.empty[Row]
   }
 }
@@ -209,8 +209,8 @@ private[cassandra] case class SetTableOption(
 private[cassandra] case class RemoveTableOption(tableIdentifier: Seq[String], key: String) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
-    cc.removeTableOption(tableIdent, key)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
+    cc.removeTableOption(tableRef, key)
     Seq.empty[Row]
   }
 }
@@ -219,8 +219,8 @@ private[cassandra] case class RemoveTableOption(tableIdentifier: Seq[String], ke
 private[cassandra] case class RemoveTableSchema(tableIdentifier: Seq[String]) extends RunnableCommand {
   override def run(sqlContext: SQLContext) = {
     val cc = sqlContext.asInstanceOf[CassandraSQLContext]
-    val tableIdent : TableIdent = cc.catalog.tableIdentFrom(tableIdentifier)
-    cc.removeTableSchema(tableIdent)
+    val tableRef : TableRef = cc.catalog.tableRefFrom(tableIdentifier)
+    cc.removeTableSchema(tableRef)
     Seq.empty[Row]
   }
 }

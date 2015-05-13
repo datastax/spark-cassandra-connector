@@ -23,7 +23,7 @@ import DataTypeConverter._
  *  helper methods and variables for sub class to use.
  */
 private[cassandra] abstract class BaseRelationImpl(
-    tableIdent: TableIdent,
+    tableRef: TableRef,
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
@@ -35,8 +35,8 @@ private[cassandra] abstract class BaseRelationImpl(
   with Logging {
 
   protected[this] val tableDef =
-    sqlContext.getCassandraSchema(tableIdent.cluster.getOrElse("default"))
-      .keyspaceByName(tableIdent.keyspace).tableByName(tableIdent.table)
+    sqlContext.getCassandraSchema(tableRef.cluster.getOrElse("default"))
+      .keyspaceByName(tableRef.keyspace).tableByName(tableRef.table)
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(toStructField)))
@@ -44,8 +44,8 @@ private[cassandra] abstract class BaseRelationImpl(
 
   protected[this] val baseRdd =
     sqlContext.sparkContext.cassandraTable[CassandraSQLRow](
-      tableIdent.keyspace,
-      tableIdent.table)(
+      tableRef.keyspace,
+      tableRef.table)(
         connector,
         readConf,
         implicitly[ClassTag[CassandraSQLRow]],
@@ -54,16 +54,16 @@ private[cassandra] abstract class BaseRelationImpl(
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
-      val clusterName = tableIdent.cluster.getOrElse(sqlContext.getCluster)
+      val clusterName = tableRef.cluster.getOrElse(sqlContext.getCluster)
       new CassandraConnector(sqlContext.getCassandraConnConf(clusterName))
         .withSessionDo {
-        session => session.execute(s"TRUNCATE ${quoted(tableIdent.keyspace)}.${quoted(tableIdent.table)}")
+        session => session.execute(s"TRUNCATE ${quoted(tableRef.keyspace)}.${quoted(tableRef.table)}")
       }
     }
 
     data.rdd.saveToCassandra(
-      tableIdent.keyspace,
-      tableIdent.table,
+      tableRef.keyspace,
+      tableRef.table,
       AllColumns,
       writeConf)(
         connector,
@@ -71,8 +71,8 @@ private[cassandra] abstract class BaseRelationImpl(
   }
 
   override def sizeInBytes: Long = {
-    val keyspace = tableIdent.keyspace
-    val table = tableIdent.table
+    val keyspace = tableRef.keyspace
+    val table = tableRef.table
     val size = sqlContext.conf.getConf(s"spark.cassandra.$keyspace.$table.size.in.bytes", null)
     if (size != null) {
       size.toLong
@@ -95,14 +95,14 @@ private[cassandra] abstract class BaseRelationImpl(
  * so that only those columns return.
  */
 private[cassandra] class PrunedScanRelationImpl(
-    tableIdent: TableIdent,
+    tableRef: TableRef,
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
     userSpecifiedSchema: Option[StructType],
     override val sqlContext: SQLContext)
   extends BaseRelationImpl(
-    tableIdent,
+    tableRef,
     connector,
     readConf,
     writeConf,
@@ -125,14 +125,14 @@ private[cassandra] class PrunedScanRelationImpl(
  * This is the default scanner to access Cassandra.
  */
 private[cassandra] class PrunedFilteredScanRelationImpl(
-    tableIdent: TableIdent,
+    tableRef: TableRef,
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
     userSpecifiedSchema: Option[StructType],
     override val sqlContext: SQLContext)
   extends BaseRelationImpl(
-    tableIdent,
+    tableRef,
     connector,
     readConf,
     writeConf,
@@ -278,18 +278,18 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
 object CassandraSourceRelation {
 
   /** If push down is disable, use [[PrunedScan]]. By default use [[PrunedFilteredScan]]*/
-  def apply(tableIdent: TableIdent, sqlContext: SQLContext)(
+  def apply(tableRef: TableRef, sqlContext: SQLContext)(
     implicit
       connector: CassandraConnector =
       new CassandraConnector(sqlContext.getCassandraConnConf(sqlContext.getCluster)),
-      readConf: ReadConf = sqlContext.getReadConf(tableIdent),
-      writeConf: WriteConf = sqlContext.getWriteConf(tableIdent),
+      readConf: ReadConf = sqlContext.getReadConf(tableRef),
+      writeConf: WriteConf = sqlContext.getWriteConf(tableRef),
       sourceOptions: CassandraDataSourceOptions = CassandraDataSourceOptions()) : BaseRelationImpl = {
 
     // Default scan type
     if (sourceOptions.pushdown) {
       new PrunedFilteredScanRelationImpl(
-        tableIdent = tableIdent,
+        tableRef = tableRef,
         connector = connector,
         readConf = readConf,
         writeConf = writeConf,
@@ -297,7 +297,7 @@ object CassandraSourceRelation {
         sqlContext = sqlContext)
     } else {
       new PrunedScanRelationImpl(
-        tableIdent = tableIdent,
+        tableRef = tableRef,
         connector = connector,
         readConf = readConf,
         writeConf = writeConf,

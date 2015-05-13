@@ -26,7 +26,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
       override def load(tableIdent: Seq[String]): LogicalPlan = {
         logDebug(s"Creating new cached data source for ${tableIdent.mkString(".")}")
         synchronized {
-          metaStore.getTable(tableIdentFrom(tableIdent))
+          metaStore.getTable(tableRefFrom(tableIdent))
         }
       }
     }
@@ -45,7 +45,7 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   /**
    * Only register table to local cache. To register table in metastore, use
-   * registerTable(tableIdent, source, schema, options) method
+   * registerTable(tableRef, source, schema, options) method
    */
   override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = {
     val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
@@ -54,19 +54,19 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   /** Register a customized table metadata to metastore */
   def registerTable(
-      tableIdent: TableIdent,
+      tableRef: TableRef,
       source: String,
       schema: Option[StructType],
       options: Map[String, String]): Unit = {
 
     val fullOptions =
       if (CassandraDefaultSource.cassandraDatasource(source)) {
-        cc.optionsWithTableIdent(tableIdent, options)
+        cc.optionsWithTableRef(tableRef, options)
       } else {
         options
       }
     synchronized {
-      metaStore.storeTable(tableIdent, source, schema, fullOptions)
+      metaStore.storeTable(tableRef, source, schema, fullOptions)
     }
   }
 
@@ -75,13 +75,13 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
     val fullTableIdentifier = fullTableIdentifierFrom(tableIdentifier)
     cachedDataSourceTables.invalidate(fullTableIdentifier)
     synchronized {
-      metaStore.removeTable(tableIdentFrom(tableIdentifier))
+      metaStore.removeTable(tableRefFrom(tableIdentifier))
     }
   }
 
   /** Unregister table from local cache and metastore. */
-  def unregisterTable(tableIdent: TableIdent): Unit = {
-    unregisterTable(catalystTableIdentFrom(tableIdent))
+  def unregisterTable(tableRef: TableRef): Unit = {
+    unregisterTable(catalystTableIdentFrom(tableRef))
   }
 
   /** Unregister database from local cache and metastore. */
@@ -132,13 +132,13 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   /** Check whether table exists */
-  def tableExists(tableIdent: TableIdent): Boolean = synchronized {
-    tableExists(catalystTableIdentFrom(tableIdent))
+  def tableExists(tableRef: TableRef): Boolean = synchronized {
+    tableExists(catalystTableIdentFrom(tableRef))
   }
 
   /** Check whether table is stored in metastore */
-  def tableExistsInMetastore(tableIdent: TableIdent): Boolean = synchronized {
-    metaStore.getTableFromMetastore(tableIdent).nonEmpty
+  def tableExistsInMetastore(tableRef: TableRef): Boolean = synchronized {
+    metaStore.getTableFromMetastore(tableRef).nonEmpty
   }
 
   /** All tables are not temporary tables */
@@ -172,68 +172,68 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   /** Refresh CassandraContext schema cache, then refresh table in local cache */
-  def refreshTable(tableIdent: TableIdent): Unit = {
-    cc.refreshCassandraSchema(tableIdent.cluster.getOrElse(cc.getCluster))
-    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableIdent))
+  def refreshTable(tableRef: TableRef): Unit = {
+    cc.refreshCassandraSchema(tableRef.cluster.getOrElse(cc.getCluster))
+    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableRef))
   }
 
   /** Refresh CassandraContext schema cache, then refresh table in local cache */
   override def refreshTable(databaseName: String, tableName: String): Unit = {
-    refreshTable(TableIdent(tableName, databaseName, Option(cc.getCluster)))
+    refreshTable(TableRef(tableName, databaseName, Option(cc.getCluster)))
   }
 
   /** Return table metadata */
-  def getTableMetadata(tableIdent : TableIdent) : Option[TableMetaData] = synchronized {
-    metaStore.getTableMetaData(tableIdent)
+  def getTableMetadata(tableRef : TableRef) : Option[TableMetaData] = synchronized {
+    metaStore.getTableMetaData(tableRef)
   }
 
   /** Set table schema */
-  def setTableSchema(tableIdent : TableIdent, schemaJsonString: String) : Unit = {
+  def setTableSchema(tableRef : TableRef, schemaJsonString: String) : Unit = {
     synchronized {
-      metaStore.setTableSchema(tableIdent, schemaJsonString)
+      metaStore.setTableSchema(tableRef, schemaJsonString)
     }
-    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableIdent))
+    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableRef))
   }
 
   /** Set an option of table options*/
-  def setTableOption(tableIdent : TableIdent, key: String, value: String) : Unit = {
+  def setTableOption(tableRef : TableRef, key: String, value: String) : Unit = {
     synchronized {
-      metaStore.setTableOption(tableIdent, key, value)
+      metaStore.setTableOption(tableRef, key, value)
     }
-    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableIdent))
+    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableRef))
   }
 
   /** Remove an option from table options */
-  def removeTableOption(tableIdent : TableIdent, key: String) : Unit = {
+  def removeTableOption(tableRef : TableRef, key: String) : Unit = {
     synchronized {
-      metaStore.removeTableOption(tableIdent, key)
+      metaStore.removeTableOption(tableRef, key)
     }
-    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableIdent))
+    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableRef))
   }
 
   /** Remove table schema */
-  def removeTableSchema(tableIdent : TableIdent) : Unit = {
+  def removeTableSchema(tableRef : TableRef) : Unit = {
     synchronized {
-      metaStore.removeTableSchema(tableIdent)
+      metaStore.removeTableSchema(tableRef)
     }
-    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableIdent))
+    cachedDataSourceTables.refresh(catalystTableIdentFrom(tableRef))
   }
 
-  /** Convert Catalyst tableIdentifier to TableIdent */
-  def tableIdentFrom(tableIdentifier: Seq[String]) : TableIdent = {
+  /** Convert Catalyst tableIdentifier to TableRef */
+  def tableRefFrom(tableIdentifier: Seq[String]) : TableRef = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
     val clusterName = id(2).getOrElse(cc.getCluster).trim
     val keyspaceName = id(1).getOrElse(cc.getKeyspace).trim
     val tableName = id(0).getOrElse(throw new IOException(s"Missing table name"))
-    TableIdent(tableName.trim, keyspaceName, Option(clusterName))
+    TableRef(tableName.trim, keyspaceName, Option(clusterName))
   }
 
-  /** Convert TableIdent to Catalyst tableIdentifier */
-  def catalystTableIdentFrom(tableIdent: TableIdent) : Seq[String] =
-    Seq(tableIdent.cluster.getOrElse(cc.getCluster), tableIdent.keyspace, tableIdent.table)
+  /** Convert TableRef to Catalyst tableIdentifier */
+  def catalystTableIdentFrom(tableRef: TableRef) : Seq[String] =
+    Seq(tableRef.cluster.getOrElse(cc.getCluster), tableRef.keyspace, tableRef.table)
 
   private[this] def fullTableIdentifierFrom(tableIdentifier: Seq[String]) : Seq[String] = {
-    catalystTableIdentFrom(tableIdentFrom(tableIdentifier))
+    catalystTableIdentFrom(tableRefFrom(tableIdentifier))
   }
 }
 

@@ -352,9 +352,9 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "not find non-exist tables" in {
-    cc.tableExists(TableIdent("non_exist", "non_exist")) shouldBe false
-    cc.tableExists(TableIdent("test1", "sql_test"))  shouldBe true
-    cc.tableExists(TableIdent("Upper_Case_Table", "sql_test")) shouldBe true
+    cc.tableExists(TableRef("non_exist", "non_exist")) shouldBe false
+    cc.tableExists(TableRef("test1", "sql_test"))  shouldBe true
+    cc.tableExists(TableRef("Upper_Case_Table", "sql_test")) shouldBe true
   }
 
   it should "get all tables" in {
@@ -364,13 +364,13 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   it should "register/unregister tables" in {
     cc.registerTable(
-      TableIdent("test1", "sql_test"),
+      TableRef("test1", "sql_test"),
       "org.apache.spark.sql.cassandra",
       None,
       Map("push_down" -> "false"))
-    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe true
-    cc.unregisterTable(TableIdent("test1", "sql_test"))
-    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe false
+    cc.tableExistsInMetastore(TableRef("test1", "sql_test")) shouldBe true
+    cc.unregisterTable(TableRef("test1", "sql_test"))
+    cc.tableExistsInMetastore(TableRef("test1", "sql_test")) shouldBe false
   }
 
   it should "create a table" in {
@@ -384,9 +384,9 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
         | push_down "false"
         | )
       """.stripMargin.replaceAll("\n", " "))
-    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe true
-    cc.unregisterTable(TableIdent("test1", "sql_test"))
-    cc.tableExistsInMetastore(TableIdent("test1", "sql_test")) shouldBe false
+    cc.tableExistsInMetastore(TableRef("test1", "sql_test")) shouldBe true
+    cc.unregisterTable(TableRef("test1", "sql_test"))
+    cc.tableExistsInMetastore(TableRef("test1", "sql_test")) shouldBe false
   }
 
   it should "create a table from a parquet table and join it with cassandra data source table" in {
@@ -400,14 +400,14 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
         | path "${file.getCanonicalPath}"
         | )
       """.stripMargin.replaceAll("\n", " "))
-    cc.tableExistsInMetastore(TableIdent("parquet_table", "sql_test")) shouldBe true
+    cc.tableExistsInMetastore(TableRef("parquet_table", "sql_test")) shouldBe true
 
     val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.parquet_table AS test1 " +
       "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
 
     //if (file.exists()) Util.deleteRecursively(file)
-    cc.unregisterTable(TableIdent("parquet_table", "sql_test"))
+    cc.unregisterTable(TableRef("parquet_table", "sql_test"))
   }
 
   it should "create a table as select from another table" in {
@@ -424,14 +424,14 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
         | )
         | AS SELECT * FROM test1
       """.stripMargin.replaceAll("\n", " "))
-    cc.tableExistsInMetastore(TableIdent("parquet_table", "sql_test")) shouldBe true
+    cc.tableExistsInMetastore(TableRef("parquet_table", "sql_test")) shouldBe true
 
     val result = cc.sql("SELECT test2.a, test2.b, test2.c FROM sql_test.parquet_table AS test1 " +
       "RIGHT JOIN sql_test.test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
 
     if (file.exists()) Utils.deleteRecursively(file)
-    cc.unregisterTable(TableIdent("parquet_table", "sql_test"))
+    cc.unregisterTable(TableRef("parquet_table", "sql_test"))
   }
 
   it should "describe a table" in {
@@ -538,11 +538,11 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
         | )
       """.stripMargin.replaceAll("\n", " "))
     cc.sql("ALTER TABLE fake_table SET OPTION ('path2', 'fake2')")
-    val options = cc.getTableMetadata(TableIdent("fake_table", "db_test", Option("default"))).get.options
+    val options = cc.getTableMetadata(TableRef("fake_table", "db_test", Option("default"))).get.options
     options("path2") eq "fake2"
 
     cc.sql("ALTER TABLE fake_table REMOVE OPTION path2")
-    val newOptions = cc.getTableMetadata(TableIdent("fake_table", "db_test", Option("default"))).get.options
+    val newOptions = cc.getTableMetadata(TableRef("fake_table", "db_test", Option("default"))).get.options
     newOptions.contains("path2") equals false
 
     cc.sql("DROP DATABASE db_test")
@@ -563,11 +563,11 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     cc.sql("ALTER TABLE fake_table SET SCHEMA {\"type\":\"struct\",\"fields\":" +
       "[{\"name\":\"a\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}}," +
       "{\"name\":\"b\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}}]}")
-    val schema = cc.getTableMetadata(TableIdent("fake_table", "db_test", Option("default"))).get.schema
+    val schema = cc.getTableMetadata(TableRef("fake_table", "db_test", Option("default"))).get.schema
     schema.nonEmpty equals true
 
     cc.sql("ALTER TABLE fake_table REMOVE SCHEMA")
-    val newSchema = cc.getTableMetadata(TableIdent("fake_table", "db_test", Option("default"))).get.schema
+    val newSchema = cc.getTableMetadata(TableRef("fake_table", "db_test", Option("default"))).get.schema
     newSchema.nonEmpty equals false
 
     cc.sql("DROP DATABASE db_test")
