@@ -1,18 +1,16 @@
 package org.apache.spark.sql.cassandra
 
-import scala.reflect.ClassTag
-
 import org.apache.spark.Logging
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{types, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef}
-import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
+import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 
 import DataTypeConverter._
@@ -42,15 +40,10 @@ private[cassandra] abstract class BaseRelationImpl(
     userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(toStructField)))
   }
 
+  implicit val cassandraConnector = connector
+  implicit val readconf = readConf
   protected[this] val baseRdd =
-    sqlContext.sparkContext.cassandraTable[CassandraSQLRow](
-      tableRef.keyspace,
-      tableRef.table)(
-        connector,
-        readConf,
-        implicitly[ClassTag[CassandraSQLRow]],
-        CassandraSQLRowReader,
-        implicitly[ValidRDDType[CassandraSQLRow]])
+    sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
@@ -61,13 +54,8 @@ private[cassandra] abstract class BaseRelationImpl(
       }
     }
 
-    data.rdd.saveToCassandra(
-      tableRef.keyspace,
-      tableRef.table,
-      AllColumns,
-      writeConf)(
-        connector,
-        SqlRowWriter.Factory)
+    implicit val rwf = SqlRowWriter.Factory
+    data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, AllColumns, writeConf)
   }
 
   override def sizeInBytes: Long = {
@@ -145,7 +133,7 @@ private[cassandra] class PrunedFilteredScanRelationImpl(
     tableDef.allColumns.map(columnDef => (columnDef.columnName, columnDataType(columnDef))).toMap
 
   /** Return a catalyst data type for the column */
-  private def columnDataType(columnDef: ColumnDef) : types.DataType = {
+  private def columnDataType(columnDef: ColumnDef) : DataType = {
     catalystDataType(tableDef.columnByName(columnDef.columnName).columnType, nullable = true)
   }
 
