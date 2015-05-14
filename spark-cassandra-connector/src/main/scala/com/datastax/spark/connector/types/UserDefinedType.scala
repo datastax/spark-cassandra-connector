@@ -5,7 +5,7 @@ import java.io.ObjectOutputStream
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
+import com.datastax.driver.core.{UDTValue => DriverUDTValue, DataType, ProtocolVersion, UserType}
 import com.datastax.spark.connector.UDTValue
 
 case class FieldDef(fieldName: String, fieldType: ColumnType[_])
@@ -16,8 +16,22 @@ case class UserDefinedType(name: String, fields: Seq[FieldDef]) extends ColumnTy
   def isCollection = false
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
   def cqlTypeName = name
-}
 
+  def converterToCassandra = new TypeConverter[UDTValue] {
+    override def targetTypeTag = UDTValue.UDTValueTypeTag
+    override def convertPF = {
+      case udtValue: UDTValue =>
+        val fieldValues =
+          for (i <- fields.indices) yield {
+            val fieldName = fieldNames(i)
+            val fieldConverter = fieldTypes(i).converterToCassandra
+            val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
+            fieldValue
+          }
+        new UDTValue(fieldNames, fieldValues)
+    }
+  }
+}
 
 object UserDefinedType {
 
@@ -33,7 +47,7 @@ object UserDefinedType {
     override def convertPF = {
       case udtValue: UDTValue =>
         val toSave = dataType.newValue()
-        for (i <- 0 until fieldNames.size) {
+        for (i <- fieldNames.indices) {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
