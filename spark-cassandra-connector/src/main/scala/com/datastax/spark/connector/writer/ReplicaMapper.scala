@@ -67,7 +67,7 @@ class ReplicaMapper[T] private(
         val clusterMetadata = session.getCluster.getMetadata
         data.map { row =>
           val hosts = clusterMetadata
-            .getReplicas(keyspaceName, routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
+            .getReplicas(Metadata.quote(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
             .map(_.getAddress)
             .toSet[InetAddress]
           (hosts, row)

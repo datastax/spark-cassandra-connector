@@ -13,11 +13,13 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
 
   case class KeyValue(key: Int, group: Long)
 
+  val ks = "TableWriterColumnNamesSpec"
+
   before {
     conn.withSessionDo { session =>
-      session.execute("CREATE KEYSPACE IF NOT EXISTS column_names_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
-      session.execute("CREATE TABLE IF NOT EXISTS column_names_test.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-      session.execute("TRUNCATE column_names_test.key_value")
+      session.execute(s"""CREATE KEYSPACE IF NOT EXISTS "$ks" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
+      session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+      session.execute(s"""TRUNCATE "$ks".key_value""")
     }
   }
 
@@ -27,7 +29,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
 
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf()
@@ -42,7 +44,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
 
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = SomeColumns(subset: _*),
         writeConf = WriteConf()
@@ -57,7 +59,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
 
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = SomeColumns(subset: _*),
         writeConf = WriteConf()
@@ -71,14 +73,14 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
       import com.datastax.spark.connector._
 
       intercept[IllegalArgumentException] {
-        sc.parallelize(Seq((1, 1L, None))).saveToCassandra("column_names_test", "key_value", SomeColumns("key", "value"))
+        sc.parallelize(Seq((1, 1L, None))).saveToCassandra(ks, "key_value", SomeColumns("key", "value"))
       }
     }
 
     "do not use TTL when it is not specified" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.defaultValue)
@@ -90,7 +92,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use static TTL if it is specified" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.constant(1234), timestamp = TimestampOption.defaultValue)
@@ -102,7 +104,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use static timestamp if it is specified" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.constant(1400000000000L))
@@ -114,7 +116,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use both static TTL and static timestamp when they are specified" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.constant(1234), timestamp = TimestampOption.constant(1400000000000L))
@@ -126,7 +128,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use per-row TTL and timestamp when the row writer provides them" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.perRow("ttl_column"), timestamp = TimestampOption.perRow("timestamp_column"))
@@ -138,7 +140,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use per-row TTL and static timestamp" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.perRow("ttl_column"), timestamp = TimestampOption.constant(1400000000000L))
@@ -150,7 +152,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use per-row timestamp and static TTL" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.constant(1234), timestamp = TimestampOption.perRow("timestamp_column"))
@@ -162,7 +164,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use per-row TTL" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.perRow("ttl_column"), timestamp = TimestampOption.defaultValue)
@@ -174,7 +176,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     "use per-row timestamp" in {
       val writer = TableWriter(
         conn,
-        keyspaceName = "column_names_test",
+        keyspaceName = ks,
         tableName = "key_value",
         columnNames = AllColumns,
         writeConf = WriteConf(ttl = TTLOption.defaultValue, timestamp = TimestampOption.perRow("timestamp_column"))
