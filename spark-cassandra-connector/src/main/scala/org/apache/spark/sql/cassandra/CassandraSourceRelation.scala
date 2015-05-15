@@ -66,71 +66,63 @@ private[cassandra] class CassandraSourceRelation(
   def buildScan() : RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
+    val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     logInfo(s"filters: ${filters.mkString(", ")}")
-    val pushdownFilters = if(filterPushdown) new PushDown(filters, tableDef).toPushDown else Seq.empty
-    if(filterPushdown) {
-      logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
+    val prunedFilteredRdd = {
+      if(filterPushdown) {
+        val pushdownFilters = new PushDown(filters, tableDef).toPushDown
+        logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
+        val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
+        filteredRdd.asInstanceOf[RDD[Row]]
+      } else {
+        prunedRdd
+      }
     }
-
-    val transformer = new RddTransformer(requiredColumns, pushdownFilters)
-    transformer.transform(baseRdd).asInstanceOf[RDD[Row]]
+    prunedFilteredRdd.asInstanceOf[RDD[Row]]
   }
 
-  /** Add column selection and where clauses on top of baseRdd */
-  private[this] class RddTransformer(requiredColumns: Array[String], filters: Seq[Filter]) {
+  /** Define a type for CassandraRDD[CassandraSQLRow]. It's used by following methods */
+  private type RDDType = CassandraRDD[CassandraSQLRow]
 
-    /** CassandraRDD[CassandraSQLRow] is the only type supported for transferring */
-    private type RDDType = CassandraRDD[CassandraSQLRow]
-
-    /** Transfer selection to limit to columns specified */
-    def maybeSelect(rdd: RDDType) : RDDType = {
-      if (requiredColumns.nonEmpty) {
-        rdd.select(requiredColumns.map(column => column: NamedColumnRef): _*)
-      } else {
-        rdd
-      }
+  /** Transfer selection to limit to columns specified */
+  private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDDType = {
+    if (requiredColumns.nonEmpty) {
+      rdd.select(requiredColumns.map(column => column: NamedColumnRef): _*)
+    } else {
+      rdd
     }
+  }
 
-    /** Push down filters to CQL query */
-    private def maybePushdownFilters(rdd: RDDType) : RDDType = {
-      whereClause(filters) match {
-        case (cql, values) if values.nonEmpty => rdd.where(cql, values: _*)
-        case _ => rdd
-      }
+  /** Push down filters to CQL query */
+  private def maybePushdownFilters(rdd: RDDType, filters: Seq[Filter]) : RDDType = {
+    whereClause(filters) match {
+      case (cql, values) if values.nonEmpty => rdd.where(cql, values: _*)
+      case _ => rdd
     }
+  }
 
-    /** Construct Cql clause and retrieve the values from filter */
-    private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
-      filter match {
-        case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(value))
-        case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(value))
-        case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(value))
-        case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(value))
-        case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(value))
-        case sources.In(attribute, values)                 =>
-          (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
-        case _ =>
-          throw new UnsupportedOperationException(
-            s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
-      }
+  /** Construct Cql clause and retrieve the values from filter */
+  private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
+    filter match {
+      case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(value))
+      case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(value))
+      case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(value))
+      case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(value))
+      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(value))
+      case sources.In(attribute, values)                 =>
+        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
+      case _ =>
+        throw new UnsupportedOperationException(
+          s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
     }
+  }
 
-    /** Construct where clause from pushdown filters */
-    private def whereClause(pushdownFilters: Seq[Any]): (String, Seq[Any]) = {
-      val cqlValue = pushdownFilters.map(filterToCqlAndValue)
-      val cql = cqlValue.map(_._1).mkString(" AND ")
-      val args = cqlValue.flatMap(_._2)
-      (cql, args)
-    }
-
-    /** Transform rdd by applying selected columns and push downed filters */
-    def transform(rdd: RDDType) : RDDType = {
-      if(filters.isEmpty) {
-        maybeSelect(rdd)
-      } else {
-        maybePushdownFilters(maybeSelect(rdd))
-      }
-    }
+  /** Construct where clause from pushdown filters */
+  private def whereClause(pushdownFilters: Seq[Any]): (String, Seq[Any]) = {
+    val cqlValue = pushdownFilters.map(filterToCqlAndValue)
+    val cql = cqlValue.map(_._1).mkString(" AND ")
+    val args = cqlValue.flatMap(_._2)
+    (cql, args)
   }
 }
 
