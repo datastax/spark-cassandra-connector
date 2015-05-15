@@ -35,7 +35,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   def pushDown: Boolean = true
 
   override def beforeAll() {
-    createTempTable("sql_ds_test", "test1", "ddlTable")
+    createTempTable("sql_ds_test", "test1", "tmpTable")
   }
 
   override def afterAll() {
@@ -43,7 +43,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     conn.withSessionDo { session =>
       session.execute("DROP KEYSPACE sql_ds_test")
     }
-    sqlContext.dropTempTable("ddlTable")
+    sqlContext.dropTempTable("tmpTable")
   }
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
@@ -81,10 +81,6 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     sqlContext.dropTempTable("test1")
   }
 
-  it should "allow to create a temp table" in {
-    sqlContext.sql("SELECT * FROM ddlTable").collect() should have length 8
-  }
-
   it should "allow to insert data into a cassandra table" in {
     conn.withSessionDo { session =>
       session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert (a INT PRIMARY KEY, b INT)")
@@ -92,7 +88,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     createTempTable("sql_ds_test", "test_insert", "insertTable")
     sqlContext.sql("SELECT * FROM insertTable").collect() should have length 0
 
-    sqlContext.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM ddlTable")
+    sqlContext.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM tmpTable")
     sqlContext.sql("SELECT * FROM insertTable").collect() should have length 1
     sqlContext.dropTempTable("insertTable")
   }
@@ -102,14 +98,18 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
       session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert1 (a INT PRIMARY KEY, b INT)")
     }
 
-    sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-      ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+    sqlContext.sql("SELECT a, b from tmpTable").save(
+      "org.apache.spark.sql.cassandra",
+      ErrorIfExists,
+      Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
 
     cassandraTable(TableRef("test_insert1", "sql_ds_test")).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
-      sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-        ErrorIfExists, Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+      sqlContext.sql("SELECT a, b from tmpTable").save(
+        "org.apache.spark.sql.cassandra",
+        ErrorIfExists,
+        Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
     }.getMessage
 
     assert(
@@ -124,29 +124,27 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
       session.execute("INSERT INTO sql_ds_test.test_insert2 (a, b) VALUES (5,6)")
     }
 
-    sqlContext.sql("SELECT a, b from ddlTable").save("org.apache.spark.sql.cassandra",
-      Overwrite, Map("c_table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
+    sqlContext.sql("SELECT a, b from tmpTable").save(
+      "org.apache.spark.sql.cassandra",
+      Overwrite,
+      Map("c_table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
     createTempTable("sql_ds_test", "test_insert2", "insertTable2")
     sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
     sqlContext.dropTempTable("insertTable2")
   }
 
   it should "allow to filter a table" in {
-    sqlContext.sql("SELECT a, b FROM ddlTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
+    sqlContext.sql("SELECT a, b FROM tmpTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
   }
 
   it should "allow to filter a table with a function for a column alias" in {
-    sqlContext.sql("SELECT * FROM (SELECT (a + b + c) AS x, d FROM ddlTable) " +
-      "AS ddlTable41 WHERE x= 3").collect() should have length 4
+    sqlContext.sql("SELECT * FROM (SELECT (a + b + c) AS x, d FROM tmpTable) " +
+      "AS tmpTable1 WHERE x= 3").collect() should have length 4
   }
 
   it should "allow to filter a table with alias" in {
     sqlContext.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
-      " FROM ddlTable) AS ddlTable51 WHERE  a1=1 and b1=2 and c1=1 and e1=1 ").collect() should have length 2
+      " FROM tmpTable) AS tmpTable1 WHERE  a1=1 and b1=2 and c1=1 and e1=1 ").collect() should have length 2
   }
 
-  it should "allow to filter a table with alias2" in {
-    sqlContext.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
-      " FROM ddlTable) AS ddlTable51 WHERE  a1=1 and b1=2 and c1=1 and e1 in (1,2) ").collect() should have length 4
-  }
 }
