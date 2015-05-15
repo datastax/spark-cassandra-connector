@@ -17,6 +17,7 @@ import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, Cassand
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
 
 
 /** RDD representing a Table Scan of A Cassandra table.

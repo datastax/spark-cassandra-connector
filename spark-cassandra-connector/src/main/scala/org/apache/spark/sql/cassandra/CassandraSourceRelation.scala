@@ -12,6 +12,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema, ColumnDef}
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
+import com.datastax.spark.connector.util.Quote._
 
 import DataTypeConverter._
 
@@ -45,8 +46,8 @@ private[cassandra] class CassandraSourceRelation(
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
       connector.withSessionDo {
-        val keyspace = quoted(tableRef.keyspace)
-        val table = quoted(tableRef.table)
+        val keyspace = quote(tableRef.keyspace)
+        val table = quote(tableRef.table)
         session => session.execute(s"TRUNCATE $keyspace.$table")
       }
     }
@@ -75,11 +76,6 @@ private[cassandra] class CassandraSourceRelation(
     transformer.transform(baseRdd).asInstanceOf[RDD[Row]]
   }
 
-  /** Quote name */
-  private[this] def quoted(str: String): String = {
-    "\"" + str + "\""
-  }
-
   /** Add column selection and where clauses on top of baseRdd */
   private[this] class RddTransformer(requiredColumns: Array[String], filters: Seq[Filter]) {
 
@@ -106,13 +102,13 @@ private[cassandra] class CassandraSourceRelation(
     /** Construct Cql clause and retrieve the values from filter */
     private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
       filter match {
-        case sources.EqualTo(attribute, value)            => (s"${quoted(attribute)} = ?", Seq(value))
-        case sources.LessThan(attribute, value)           => (s"${quoted(attribute)} < ?", Seq(value))
-        case sources.LessThanOrEqual(attribute, value)    => (s"${quoted(attribute)} <= ?", Seq(value))
-        case sources.GreaterThan(attribute, value)        => (s"${quoted(attribute)} > ?", Seq(value))
-        case sources.GreaterThanOrEqual(attribute, value) => (s"${quoted(attribute)} >= ?", Seq(value))
+        case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(value))
+        case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(value))
+        case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(value))
+        case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(value))
+        case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(value))
         case sources.In(attribute, values)                 =>
-          (quoted(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
+          (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
         case _ =>
           throw new UnsupportedOperationException(
             s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")

@@ -9,6 +9,7 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
+import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
 

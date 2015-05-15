@@ -8,6 +8,7 @@ import scala.collection.JavaConversions._
 import scala.language.existentials
 import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
+import com.datastax.spark.connector.util.Quote._
 
 sealed trait ColumnRole
 case object PartitionKeyColumn extends ColumnRole
@@ -35,7 +36,6 @@ case class ColumnDef(columnName: String,
   }
 
   def cql = {
-    def quote(str: String) = "\"" + str + "\""
     s"${quote(columnName)} ${columnType.cqlTypeName}"
   }
 }
@@ -67,7 +67,6 @@ case class TableDef(keyspaceName: String,
     }
 
   def cql = {
-    def quote(str: String) = "\"" + str + "\""
     val columnList = allColumns.map(_.cql).mkString(",\n  ")
     val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)

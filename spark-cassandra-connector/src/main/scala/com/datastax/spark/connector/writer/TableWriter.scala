@@ -9,6 +9,7 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
@@ -38,9 +39,6 @@ class TableWriter[T] private (
     case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
     case _ => None
   }
-
-  private def quote(name: String): String =
-    "\"" + name + "\""
 
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
