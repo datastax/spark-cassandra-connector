@@ -1,7 +1,6 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.cql.TableDef
-import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.sources.Filter
 
@@ -35,7 +34,7 @@ object FilterPushdown {
     val regularColumns = tableDef.regularColumns.map(_.columnName)
     val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
-    val singleColumnPredicates = filters.filter(isSingleColumnFilter)
+    val singleColumnPredicates = filters.collect(isSingleColumnFilter)
 
     val eqPredicates = singleColumnPredicates.collect({case filter: sources.EqualTo => filter})
     val eqPredicatesByName = eqPredicates.groupBy(predicateColumnName)
@@ -47,7 +46,7 @@ object FilterPushdown {
       .mapValues(_.take(1))      // take(1) in order not to push down more than one IN predicate for the same column
       .withDefaultValue(Seq.empty)
 
-    val rangePredicates = singleColumnPredicates.filter(isRangeComparisonFilter)
+    val rangePredicates = singleColumnPredicates.collect(isRangeComparisonFilter)
     val rangePredicatesByName = rangePredicates.groupBy(predicateColumnName).withDefaultValue(Seq.empty)
 
     /** Returns a first non-empty sequence. If not found, returns an empty sequence. */
@@ -126,19 +125,18 @@ object FilterPushdown {
   }
 
   /** Check if the predicate is a range comparison predicate */
-  private def isRangeComparisonFilter(filter: Filter) : Boolean = filter match {
-    case _: sources.LessThan           => true
-    case _: sources.LessThanOrEqual    => true
-    case _: sources.GreaterThan        => true
-    case _: sources.GreaterThanOrEqual => true
-    case _                             => false
+  private def isRangeComparisonFilter: PartialFunction[Filter, Filter] = {
+    case lt: sources.LessThan => lt
+    case le: sources.LessThanOrEqual => le
+    case gt: sources.GreaterThan => gt
+    case ge: sources.GreaterThanOrEqual => ge
   }
 
   /** Check if the column is a single column predicate */
-  private def isSingleColumnFilter(filter: Filter) : Boolean = filter match {
-    case _: sources.EqualTo => true
-    case _: sources.In      => true
-    case _                  => isRangeComparisonFilter(filter)
+  private def isSingleColumnFilter: PartialFunction[Filter, Filter] = {
+    case eq: sources.EqualTo => eq
+    case in: sources.In => in
+    case otherFilter => isRangeComparisonFilter(otherFilter)
   }
 
   /** Returns the only column name referenced in the predicate */
