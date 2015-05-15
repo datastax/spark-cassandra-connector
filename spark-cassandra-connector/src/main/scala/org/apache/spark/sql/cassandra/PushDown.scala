@@ -27,45 +27,39 @@ import org.apache.spark.sql.sources.Filter
  */
 class PushDown (filters: Seq[Filter], tableDef: TableDef) {
 
-  /** Check if the predicate is Eqaul predicate */
-  private def isEqualTo(filter: Filter): Boolean = {
-    filter.isInstanceOf[sources.EqualTo]
-  }
-
   /** Check if the predicate is In predicate */
-  private def isIn(filter: Filter) : Boolean = {
-    filter.isInstanceOf[sources.In]
+  private def isInFilter(filter: Filter) : Boolean = filter match {
+    case _: sources.EqualTo => true
+    case _                  => false
   }
 
   /** Check if the predicate is a range comparison predicate */
-  private def isRangeComparison(filter: Filter) : Boolean = {
-    filter match {
-      case _: sources.LessThan           => true
-      case _: sources.LessThanOrEqual    => true
-      case _: sources.GreaterThan        => true
-      case _: sources.GreaterThanOrEqual => true
-      case _                             => false
-    }
+  private def isRangeComparisonFilter(filter: Filter) : Boolean = filter match {
+    case _: sources.LessThan           => true
+    case _: sources.LessThanOrEqual    => true
+    case _: sources.GreaterThan        => true
+    case _: sources.GreaterThanOrEqual => true
+    case _                             => false
   }
 
   /** Check if the column is a single column predicate */
-  private def isSingleColumn(filter: Filter) : Boolean = {
-    isEqualTo(filter) ||  isIn(filter) || isRangeComparison(filter)
+  private def isSingleColumnFilter(filter: Filter) : Boolean = filter match {
+    case _: sources.EqualTo => true
+    case _: sources.In      => true
+    case _                  => isRangeComparisonFilter(filter)
   }
 
   /** Returns the only column name referenced in the predicate */
-  private def predicateColumnName(filter: Filter) : String = {
-    filter match {
-      case eq: sources.EqualTo            => eq.attribute
-      case lt: sources.LessThan           => lt.attribute
-      case le: sources.LessThanOrEqual    => le.attribute
-      case gt: sources.GreaterThan        => gt.attribute
-      case ge: sources.GreaterThanOrEqual => ge.attribute
-      case in: sources.In                 => in.attribute
-      case _ =>
-        throw new UnsupportedOperationException(
-          s"filter $filter is not valid to be pushed down, only >, <, >=, <= and In are allowed.")
-    }
+  private def predicateColumnName(filter: Filter) : String = filter match {
+    case eq: sources.EqualTo            => eq.attribute
+    case lt: sources.LessThan           => lt.attribute
+    case le: sources.LessThanOrEqual    => le.attribute
+    case gt: sources.GreaterThan        => gt.attribute
+    case ge: sources.GreaterThanOrEqual => ge.attribute
+    case in: sources.In                 => in.attribute
+    case _ =>
+      throw new UnsupportedOperationException(
+        s"filter $filter is not valid to be pushed down, only >, <, >=, <= and In are allowed.")
   }
 
   private val partitionKeyColumns = tableDef.partitionKey.map(_.columnName)
@@ -74,19 +68,19 @@ class PushDown (filters: Seq[Filter], tableDef: TableDef) {
   private val regularColumns = tableDef.regularColumns.map(_.columnName)
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
-  private val singleColumnPredicates = filters.filter(isSingleColumn)
+  private val singleColumnPredicates = filters.filter(isSingleColumnFilter)
 
-  private val eqPredicates = singleColumnPredicates.filter(isEqualTo)
+  private val eqPredicates = singleColumnPredicates.collect({case filter: sources.EqualTo => filter})
   private val eqPredicatesByName = eqPredicates.groupBy(predicateColumnName)
     .mapValues(_.take(1))       // take(1) in order not to push down more than one EQ predicate for the same column
     .withDefaultValue(Seq.empty)
 
-  private val inPredicates = singleColumnPredicates.filter(isIn)
+  private val inPredicates = singleColumnPredicates.collect({case filter: sources.In => filter})
   private val inPredicatesByName = inPredicates.groupBy(predicateColumnName)
     .mapValues(_.take(1))      // take(1) in order not to push down more than one IN predicate for the same column
     .withDefaultValue(Seq.empty)
 
-  private val rangePredicates = singleColumnPredicates.filter(isRangeComparison)
+  private val rangePredicates = singleColumnPredicates.filter(isRangeComparisonFilter)
   private val rangePredicatesByName = rangePredicates.groupBy(predicateColumnName).withDefaultValue(Seq.empty)
 
   /** Returns the only column name referenced in the predicate */
@@ -140,7 +134,7 @@ class PushDown (filters: Seq[Filter], tableDef: TableDef) {
    * 3. If multiple predicates use the same column, equality predicates are preferred over range predicates.
    */
   private val indexedColumnPredicatesToPushDown: Seq[Filter] = {
-    val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(isIn)
+    val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(isInFilter)
     val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
     val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
     // Don't include partition predicates as None-indexed predicates if partition predicates can't
