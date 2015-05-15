@@ -113,8 +113,8 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     }.getMessage
 
     assert(
-      message.contains("Writing to a none-empty Cassandra Table is not allowed."),
-      "We should complain that 'Writing to a none-empty Cassandra Table is not allowed.'")
+      message.contains("Writing to a non-empty Cassandra Table is not allowed."),
+      "We should complain that 'Writing to a non-empty Cassandra table is not allowed.'")
   }
 
   it should "allow to overwrite a cassandra table" in {

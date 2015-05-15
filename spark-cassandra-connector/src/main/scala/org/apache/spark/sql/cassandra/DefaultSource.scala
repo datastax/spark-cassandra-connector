@@ -34,13 +34,17 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
   /**
    * Creates a new relation for a cassandra table.
+   * The parameters map stores table level data. User can specify vale for following keys
    *
-   * c_table, keyspace, cluster, push_down and per table Cassandra connection, read and writ configuration settings
-   * can be specified in the parameters map.
+   *    c_table        -- table name, required
+   *    keyspace       -- keyspace name, required
+   *    cluster        -- cluster name, optional, default name is "default"
+   *    push_down      -- true/false, optional, default is true
+   *    Cassandra connection settings  -- optional, e.g. spark_cassandra_connection_timeout_ms
+   *    Cassandra Read Settings        -- optional, e.g. spark_cassandra_input_page_row_size
+   *    Cassandra Write settings       -- optional, e.g. spark_cassandra_output_consistency_level
    *
-   * push_down must be true/false. When it's enable, some filters are pushed down to data source connector.
-   * Other filters are applied to the data returned from data source connector
-   *
+   * When push_down is true, some filters are pushed down to CQL.
    *
    */
   override def createRelation(
@@ -84,7 +88,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
         if (table.buildScan().isEmpty()) {
           table.insert(data, overwrite = false)
         } else {
-          throw new UnsupportedOperationException("Writing to a none-empty Cassandra Table is not allowed.")
+          throw new UnsupportedOperationException("'Writing to a non-empty Cassandra Table is not allowed.'")
         }
       case Ignore =>
         if (table.buildScan().isEmpty()) {
@@ -121,7 +125,7 @@ object DefaultSource {
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
     val (readConf, writeConf, cassandraConConf, tableSizeInBytes) =
-      readWriteConnectionConfAndTableSize(parameters)
+      buildConfs(parameters)
 
     (TableRef(tableName, keyspaceName, clusterName),
       CassandraSourceOptions(pushdown, readConf, writeConf, cassandraConConf, tableSizeInBytes))
@@ -136,7 +140,7 @@ object DefaultSource {
   }
 
   /** Construct ReadConf, WriteConf, CassandraConnectorConf, tableSizeInBytes from options */
-  def readWriteConnectionConfAndTableSize(
+  def buildConfs(
     parameters: Map[String, String]) :(
       Option[ReadConf],
       Option[WriteConf],

@@ -3,11 +3,12 @@ package org.apache.spark.sql.cassandra
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
 import com.datastax.spark.connector.types.FieldDef
+import org.apache.spark.Logging
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
 
 /** Convert Cassandra data type to Catalyst data type */
-object DataTypeConverter {
+object DataTypeConverter extends Logging {
 
   private[cassandra] val primitiveTypeMap = Map[connector.types.ColumnType[_], catalystTypes.DataType](
     connector.types.TextType       -> catalystTypes.StringType,
@@ -43,6 +44,9 @@ object DataTypeConverter {
       case connector.types.ListType(et)               => catalystTypes.ArrayType(primitiveTypeMap(et), nullable)
       case connector.types.MapType(kt, vt)            => catalystTypes.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
       case connector.types.UserDefinedType(_, fields) => catalystTypes.StructType(fields.map(catalystStructField))
+      case connector.types.VarIntType                 =>
+        logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
+        primitiveTypeMap(cassandraType)
       case _                                          => primitiveTypeMap(cassandraType)
     }
   }
