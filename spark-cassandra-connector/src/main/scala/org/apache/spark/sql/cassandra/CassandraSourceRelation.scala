@@ -70,7 +70,7 @@ private[cassandra] class CassandraSourceRelation(
     logInfo(s"filters: ${filters.mkString(", ")}")
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val pushdownFilters = new PushDown(filters, tableDef).toPushDown
+        val pushdownFilters = FilterPushdown.pushdown(filters, tableDef)
         logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
         val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
         filteredRdd.asInstanceOf[RDD[Row]]
