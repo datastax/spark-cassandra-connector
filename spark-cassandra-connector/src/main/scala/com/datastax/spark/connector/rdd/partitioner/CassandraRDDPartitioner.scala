@@ -31,7 +31,7 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
     val startToken = tokenFactory.fromString(range.getStart.getValue.toString)
     val endToken = tokenFactory.fromString(range.getEnd.getValue.toString)
-    val replicas = metadata.getReplicas(keyspaceName, range).map(_.getAddress).toSet
+    val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
     new TokenRange(startToken, endToken, replicas, None)
   }
 
