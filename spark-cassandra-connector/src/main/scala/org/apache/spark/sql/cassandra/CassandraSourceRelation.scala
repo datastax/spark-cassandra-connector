@@ -26,7 +26,7 @@ private[cassandra] class CassandraSourceRelation(
     tableRef: TableRef,
     userSpecifiedSchema: Option[StructType],
     filterPushdown: Boolean,
-    tableSizeInBytes: Long,
+    tableSizeInBytes: Option[Long],
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
@@ -56,7 +56,11 @@ private[cassandra] class CassandraSourceRelation(
     data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, AllColumns, writeConf)
   }
 
-  override def sizeInBytes: Long = tableSizeInBytes
+  override def sizeInBytes: Long = {
+    //TODO  Retrieve table size from C* system table from Cassandra 2.1.4
+    // If it's not found, use SQLConf default setting
+    tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
+  }
 
   implicit val cassandraConnector = connector
   implicit val readconf = readConf
@@ -141,13 +145,7 @@ object CassandraSourceRelation {
       sourceOptions: CassandraSourceOptions = CassandraSourceOptions(),
       schema : Option[StructType] = None) : CassandraSourceRelation = {
 
-    //TODO
-    /** Retrieve table size from C* system table. If it's not found, use SQLConf default setting */
-    def tableSize = {
-      None.getOrElse(sqlContext.conf.defaultSizeInBytes)
-    }
-
-    val tableSizeInBytes = sourceOptions.tableSizeInBytes.getOrElse(tableSize)
+    val tableSizeInBytes = sourceOptions.tableSizeInBytes
     val defaultCassandraConnectorConf = CassandraConnectorConf(sqlContext.sparkContext.conf)
     val cassandraConnConf = sourceOptions.cassandraConConf.getOrElse(defaultCassandraConnectorConf)
     val cassandraConnector = new CassandraConnector(cassandraConnConf)
