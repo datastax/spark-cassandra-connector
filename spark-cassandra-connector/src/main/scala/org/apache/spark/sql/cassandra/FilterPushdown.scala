@@ -101,9 +101,11 @@ object FilterPushdown {
       // be pushed down because we use token range query which already has partition columns in the
       // where clause and it can't have other partial partition columns in where clause any more.
       val nonIndexedPredicates = for {
-        c <- allColumns if partitionKeyPredicatesToPushDown.nonEmpty && !eqIndexedColumns.contains(c) ||
-        partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) &&
-          !partitionKeyColumns.contains(c)
+        c <- allColumns if partitionKeyPredicatesToPushDown.nonEmpty &&
+           !eqIndexedColumns.contains(c) ||
+          partitionKeyPredicatesToPushDown.isEmpty &&
+            !eqIndexedColumns.contains(c) &&
+            !partitionKeyColumns.contains(c)
         p <- firstNonEmptySeq(eqPredicatesByName(c), rangePredicatesByName(c))
       } yield p
 
