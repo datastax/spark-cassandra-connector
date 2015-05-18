@@ -55,12 +55,15 @@ class DefaultRowWriter[T : ColumnMapper](table: TableDef, selectedColumns: Seq[S
 
   private val columnNameToPropertyName = (columnNames zip propertyNames).toMap
   private val extractor = new PropertyExtractor(cls, propertyNames)
+  private val columns = columnNames.map(table.columnByName).toIndexedSeq
+  private val converters = columns.map(_.columnType.converterToCassandra)
 
   override def readColumnValues(data: T, buffer: Array[Any]) = {
     for ((c, i) <- columnNames.zipWithIndex) {
       val propertyName = columnNameToPropertyName(c)
       val value = extractor.extractProperty(data, propertyName)
-      buffer(i) = value
+      val convertedValue = converters(i).convert(value)
+      buffer(i) = convertedValue
     }
   }
 }

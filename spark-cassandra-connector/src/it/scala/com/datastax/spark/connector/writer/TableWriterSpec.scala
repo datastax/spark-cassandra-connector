@@ -18,11 +18,16 @@ case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
 case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp: Long)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class ClassWithWeirdProps(devil: String, cat: Int, value: String)
-case class CustomerId(id: String)
 
 class SuperKeyValue(val key: Int, val value: String) extends Serializable
 
 class SubKeyValue(k: Int, v: String, val group: Long) extends SuperKeyValue(k, v)
+
+case class CustomerId(id: String)
+object CustomerIdConverter extends TypeConverter[String] {
+  def targetTypeTag = scala.reflect.runtime.universe.typeTag[String]
+  def convertPF = { case CustomerId(id) => id }
+}
 
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
@@ -257,10 +262,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write values of user-defined classes" in {
-    TypeConverter.registerConverter(new TypeConverter[String] {
-      def targetTypeTag = scala.reflect.runtime.universe.typeTag[String]
-      def convertPF = { case CustomerId(id) => id }
-    })
+    TypeConverter.registerConverter(CustomerIdConverter)
 
     val col = Seq((1, 1L, CustomerId("foo")))
     sc.parallelize(col).saveToCassandra(ks, "key_value_10", SomeColumns("key", "group", "value"))
