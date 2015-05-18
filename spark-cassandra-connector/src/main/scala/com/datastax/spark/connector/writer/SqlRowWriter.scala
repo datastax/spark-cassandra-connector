@@ -13,7 +13,7 @@ class SqlRowWriter(val table: TableDef, val columnNames: Seq[String]) extends Ro
     * in the same order as they are listed in the columnNames sequence. */
   override def readColumnValues(row: Row, buffer: Array[Any]) = {
     require(row.size == columnNames.size, s"Invalid row size: ${row.size} instead of ${columnNames.size}.")
-    for (i <- row.indices)
+    for (i <- 0 until row.size)
       buffer(i) = converters(i).convert(row(i))
 
   }
