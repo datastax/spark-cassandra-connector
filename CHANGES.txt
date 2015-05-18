@@ -4,6 +4,11 @@
 
 ********************************************************************************
 
+1.2.2 (unreleased)
+ * Fixed a bug preventing a custom type converter from being used
+   when saving data. RowWriter implementations must
+   perform type conversions now. (SPARKC-157)
+
 1.2.1
  * Fixed problems with mixed case keyspaces in ReplicaMapper (SPARKC-159)
 

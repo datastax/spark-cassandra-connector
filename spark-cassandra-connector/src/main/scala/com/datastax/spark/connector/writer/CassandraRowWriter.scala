@@ -8,9 +8,15 @@ class CassandraRowWriter(table: TableDef, selectedColumns: Seq[String]) extends 
 
   val columnNames = selectedColumns
 
+  private val columns = columnNames.map(table.columnByName).toIndexedSeq
+  private val converters = columns.map(_.columnType.converterToCassandra)
+
   override def readColumnValues(data: CassandraRow, buffer: Array[Any]) = {
-    for ((c, i) <- columnNames.zipWithIndex)
-      buffer(i) = data.getRaw(c)
+    for ((c, i) <- columnNames.zipWithIndex) {
+      val value = data.getRaw(c)
+      val convertedValue = converters(i).convert(value)
+      buffer(i) = convertedValue
+    }
   }
 }
 

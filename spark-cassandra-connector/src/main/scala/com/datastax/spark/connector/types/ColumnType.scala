@@ -17,6 +17,9 @@ trait ColumnType[T] extends Serializable {
   lazy val converterToScala: TypeConverter[T] =
     TypeConverter.forType(scalaTypeTag)
 
+  /** Returns a converter that converts this column to type that can be saved by TableWriter. */
+  def converterToCassandra: TypeConverter[_ <: AnyRef]
+
   /** Returns the TypeTag of the Scala type recommended to represent values of this column. */
   def scalaTypeTag: TypeTag[T]
 
@@ -124,32 +127,11 @@ object ColumnType {
     }
   }
 
-  // Lambdas are used here instead of TypeConverter instances, because a user can chain custom
-  // type converters for the builtin types by calling TypeConverter.registerConverter.
-  // If we instantiated converters in advance, using user defined converters would not be possible.
-  private val primitiveConverterMap = Map[DataType, () => TypeConverter[_]](
-    DataType.text() -> { () => TypeConverter.forType[String] },
-    DataType.ascii() -> { () => TypeConverter.forType[String] },
-    DataType.varchar() -> { () => TypeConverter.forType[String] },
-    DataType.cint() -> { () => TypeConverter.forType[java.lang.Integer] },
-    DataType.bigint() -> { () => TypeConverter.forType[java.lang.Long] },
-    DataType.cfloat() -> { () => TypeConverter.forType[java.lang.Float] },
-    DataType.cdouble() -> { () => TypeConverter.forType[java.lang.Double] },
-    DataType.cboolean() -> { () => TypeConverter.forType[java.lang.Boolean] },
-    DataType.varint() -> { () => TypeConverter.forType[java.math.BigInteger] },
-    DataType.decimal() -> { () => TypeConverter.forType[java.math.BigDecimal] },
-    DataType.timestamp() -> { () => TypeConverter.forType[Date] },
-    DataType.inet() -> { () => TypeConverter.forType[InetAddress] },
-    DataType.uuid() -> { () => TypeConverter.forType[UUID] },
-    DataType.timeuuid() -> { () => TypeConverter.forType[UUID] },
-    DataType.blob() -> { () => TypeConverter.forType[ByteBuffer] },
-    DataType.counter() -> { () => TypeConverter.forType[java.lang.Long] }
-  )
-
-
   /** Returns a converter that converts values to the type of this column expected by the
     * Cassandra Java driver when saving the row.*/
-  def converterToCassandra(dataType: DataType)(implicit protocolVersion: ProtocolVersion): TypeConverter[_ <: AnyRef] = {
+  def converterToCassandra(dataType: DataType)(implicit protocolVersion: ProtocolVersion)
+      : TypeConverter[_ <: AnyRef] = {
+
     val typeArgs = dataType.getTypeArguments.map(converterToCassandra)
     val converter: TypeConverter[_] =
       dataType.getName match {
@@ -157,9 +139,14 @@ object ColumnType {
         case DataType.Name.SET => TypeConverter.javaHashSetConverter(typeArgs(0))
         case DataType.Name.MAP => TypeConverter.javaHashMapConverter(typeArgs(0), typeArgs(1))
         case DataType.Name.UDT => UserDefinedType.driverUDTValueConverter(dataType)
-        case _ => primitiveConverterMap(dataType)()
+        case _ => fromDriverType(dataType).converterToCassandra
       }
-    new TypeConverter.OptionToNullConverter(converter)
+
+    // make sure it is always wrapped in OptionToNullConverter, but don't wrap twice:
+    converter match {
+      case c: TypeConverter.OptionToNullConverter => c
+      case _ => new TypeConverter.OptionToNullConverter(converter)
+    }
   }
 
 }
