@@ -142,22 +142,26 @@ object CassandraSourceRelation {
   def apply(
       tableRef: TableRef,
       sqlContext: SQLContext,
-      sourceOptions: CassandraSourceOptions = CassandraSourceOptions(),
+      options: CassandraSourceOptions = CassandraSourceOptions(),
       schema : Option[StructType] = None) : CassandraSourceRelation = {
 
-    val tableSizeInBytes = sourceOptions.tableSizeInBytes
-    val defaultCassandraConnectorConf = CassandraConnectorConf(sqlContext.sparkContext.conf)
-    val cassandraConnConf = sourceOptions.cassandraConConf.getOrElse(defaultCassandraConnectorConf)
-    val cassandraConnector = new CassandraConnector(cassandraConnConf)
-    val defaultReadConf = ReadConf.fromSparkConf(sqlContext.sparkContext.conf)
-    val readConf = sourceOptions.readConf.getOrElse(defaultReadConf)
-    val defaultWriteConf= WriteConf.fromSparkConf(sqlContext.sparkContext.conf)
-    val writeConf = sourceOptions.writeConf.getOrElse(defaultWriteConf)
+    val conf = sqlContext.sparkContext.getConf.clone()
+    for (prop <- DefaultSource.confProperties) {
+      val tableLevelValue = options.cassandraConfs.get(prop)
+      if (tableLevelValue.nonEmpty)
+        conf.set(prop, tableLevelValue.get)
+    }
+
+    val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
+    val tableSizeInBytes = if (tableSizeInBytesString.nonEmpty) Option(tableSizeInBytesString.get.toLong) else None
+    val cassandraConnector = new CassandraConnector(CassandraConnectorConf(conf))
+    val readConf = ReadConf.fromSparkConf(conf)
+    val writeConf = WriteConf.fromSparkConf(conf)
 
     new CassandraSourceRelation(
       tableRef = tableRef,
       userSpecifiedSchema = schema,
-      filterPushdown = sourceOptions.pushdown,
+      filterPushdown = options.pushdown,
       tableSizeInBytes = tableSizeInBytes,
       connector = cassandraConnector,
       readConf = readConf,

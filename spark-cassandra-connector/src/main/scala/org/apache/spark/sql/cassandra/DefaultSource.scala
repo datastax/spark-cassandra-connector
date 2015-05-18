@@ -1,6 +1,8 @@
 package org.apache.spark.sql.cassandra
 
-import org.apache.spark.{Logging, SparkConf}
+import scala.collection.mutable
+
+import org.apache.spark.Logging
 
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.SaveMode._
@@ -101,12 +103,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 }
 
 /** Store data source options */
-case class CassandraSourceOptions(
-    pushdown: Boolean = true,
-    readConf: Option[ReadConf] = None,
-    writeConf: Option[WriteConf] = None,
-    cassandraConConf: Option[CassandraConnectorConf] = None,
-    tableSizeInBytes: Option[Long] = None)
+case class CassandraSourceOptions(pushdown: Boolean = true, cassandraConfs: Map[String, String] = Map.empty)
 
 object DefaultSource {
   val CassandraDataSourceTableNameProperty = "c_table"
@@ -124,85 +121,33 @@ object DefaultSource {
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
-    val readConf = buildReadConf(parameters)
-    val writeConf = buildWriteConf(parameters)
-    val cassandraConConf = buildConnConf(parameters)
-    val tableSizeInBytes = getTableSizeInBytes(parameters)
+    val cassandraConfs = buildConfMap(parameters)
 
-    (TableRef(tableName, keyspaceName, clusterName),
-      CassandraSourceOptions(pushdown, readConf, writeConf, cassandraConConf, tableSizeInBytes))
+    (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
   }
+
+  val confProperties = ReadConf.Properties ++
+    WriteConf.Properties ++
+    CassandraConnectorConf.Properties ++
+    CassandraSourceRelation.Properties
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
   // Map converted property to origin property name
   // TODO check SPARK 1.4 it may be fixed
-  private val readPropertiesMap : Map[String, String] = {
-    ReadConf.Properties.map(prop => (prop.replace(".", "_"), prop)).toMap
+  private val propertiesMap : Map[String, String] = {
+    confProperties.map(prop => (prop.replace(".", "_"), prop)).toMap
   }
 
-  /** Construct ReadConf from options */
-  def buildReadConf(parameters: Map[String, String]) :(Option[ReadConf]) = {
-    val hasReadSettings = hasSettings(ReadConf.Properties, parameters)
-    if(hasReadSettings) {
-      val conf = sparkConf(readPropertiesMap, parameters)
-      Option(ReadConf.fromSparkConf(conf))
-    } else {
-      None
-    }
-  }
-
-  private val writePropertiesMap : Map[String, String] = {
-    WriteConf.Properties.map(prop => (prop.replace(".", "_"), prop)).toMap
-  }
-
-  /** Construct WriteConf from options */
-  def buildWriteConf(parameters: Map[String, String]) :(Option[WriteConf]) = {
-    val hasReadSettings = hasSettings(WriteConf.Properties, parameters)
-    if(hasReadSettings) {
-      val conf = sparkConf(writePropertiesMap, parameters)
-      Option(WriteConf.fromSparkConf(conf))
-    } else {
-      None
-    }
-  }
-
-  private val connPropertiesMap : Map[String, String] = {
-    CassandraConnectorConf.Properties.map(prop => (prop.replace(".", "_"), prop)).toMap
-  }
-
-  /** Construct CassandraConnectorConf from options */
-  def buildConnConf(parameters: Map[String, String]) :(Option[CassandraConnectorConf]) = {
-    val hasConnSettings = hasSettings(CassandraConnectorConf.Properties, parameters)
-    if(hasConnSettings) {
-      val conf = sparkConf(connPropertiesMap, parameters)
-      Option(CassandraConnectorConf(conf))
-    } else {
-      None
-    }
-  }
-
-  /** Construct tableSizeInBytes from options */
-  def getTableSizeInBytes(parameters: Map[String, String]) : Option[Long] = {
-    val tableSizeInBytesProperty = CassandraSourceRelation.Properties.seq.head.replace(".", "_")
-    parameters.get(tableSizeInBytesProperty).map(_.toLong)
-  }
-
-  /** Construct SparkConf from parameters and convertedPropertiesMap */
-  private def sparkConf(convertedPropertiesMap: Map[String, String], parameters: Map[String, String]) : SparkConf = {
-    val conf = new SparkConf()
-    for (convertedProp <- readPropertiesMap.keySet) {
+  /** Construct a map stores Cassandra Conf settings from options */
+  def buildConfMap(parameters: Map[String, String]) : Map[String, String] = {
+    val confMap = mutable.Map.empty[String, String]
+    for (convertedProp <- propertiesMap.keySet) {
       val setting = parameters.get(convertedProp)
       if (setting.nonEmpty) {
-        conf.set(readPropertiesMap(convertedProp), setting.get)
+        confMap += propertiesMap(convertedProp) -> setting.get
       }
     }
-    conf
-  }
-
-  /** Check whether parameters have the conf settings */
-  private def hasSettings(settings: Set[String] , parameters: Map[String, String]) : Boolean = {
-    val tableSettings = parameters.keySet
-    tableSettings.intersect(settings.map(_.replace(".", "_"))).nonEmpty
+    confMap.toMap
   }
 
   /** Check whether the provider is Cassandra datasource or not */
