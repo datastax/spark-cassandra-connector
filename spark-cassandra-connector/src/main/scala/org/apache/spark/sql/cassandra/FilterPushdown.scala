@@ -6,22 +6,22 @@ import org.apache.spark.sql.sources.Filter
 
 
 /**
- * Calculate the pushdown predicates for a given table and predicates.
+ * Calculate the pushdown filters for a given table and filters.
  *
- * Partition pruning predicates are also detected an applied.
- *  1. Only push down no-partition key column predicates with =, >, <, >=, <= predicate
- *  2. Only push down primary key column predicates with = or IN predicate.
- *  3. If there are regular columns in the pushdown predicates, they should have
- *     at least one EQ expression on an indexed column and no IN predicates.
- *  4. All partition column predicates must be included in the predicates to be pushed down,
- *     only the last part of the partition key can be an IN predicate. For each partition column,
- *     only one predicate is allowed.
- *  5. For cluster column predicates, only last predicate can be non-EQ predicate
- *     including IN predicate, and preceding column predicates must be EQ predicates.
- *     If there is only one cluster column predicate, the predicates could be any non-IN predicate.
- *  6. There is no pushdown predicates if there is any OR condition or NOT IN condition.
- *  7. We're not allowed to push down multiple predicates for the same column if any of them
- *     is equality or IN predicate.
+ * Partition pruning filters are also detected an applied.
+ *  1. Only push down no-partition key column filters with =, >, <, >=, <= filter
+ *  2. Only push down primary key column filters with = or IN filter.
+ *  3. If there are regular columns in the pushdown filters, they should have
+ *     at least one EQ expression on an indexed column and no IN filters.
+ *  4. All partition column filters must be included in the filters to be pushed down,
+ *     only the last part of the partition key can be an IN filter. For each partition column,
+ *     only one filter is allowed.
+ *  5. For cluster column filters, only last filter can be non-EQ filter
+ *     including IN filter, and preceding column filters must be EQ filters.
+ *     If there is only one cluster column filter, the filters could be any non-IN filter.
+ *  6. There is no pushdown filters if there is any OR condition or NOT IN condition.
+ *  7. We're not allowed to push down multiple filters for the same column if any of them
+ *     is equality or IN filter.
  *
  */
 object FilterPushdown {
@@ -34,99 +34,99 @@ object FilterPushdown {
     val regularColumns = tableDef.regularColumns.map(_.columnName)
     val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
-    val singleColumnPredicates = filters.collect(isSingleColumnFilter)
+    val singleColumnFilters = filters.collect(isSingleColumnFilter)
 
-    val eqPredicates = singleColumnPredicates.collect({case filter: sources.EqualTo => filter})
-    val eqPredicatesByName = eqPredicates.groupBy(predicateColumnName)
-      .mapValues(_.take(1))       // take(1) in order not to push down more than one EQ predicate for the same column
+    val eqFilters = singleColumnFilters.collect({case filter: sources.EqualTo => filter})
+    val eqFiltersByName = eqFilters.groupBy(filterColumnName)
+      .mapValues(_.take(1))       // take(1) in order not to push down more than one EQ filter for the same column
       .withDefaultValue(Seq.empty)
 
-    val inPredicates = singleColumnPredicates.collect({case filter: sources.In => filter})
-    val inPredicatesByName = inPredicates.groupBy(predicateColumnName)
-      .mapValues(_.take(1))      // take(1) in order not to push down more than one IN predicate for the same column
+    val inFilters = singleColumnFilters.collect({case filter: sources.In => filter})
+    val inFiltersByName = inFilters.groupBy(filterColumnName)
+      .mapValues(_.take(1))      // take(1) in order not to push down more than one IN filter for the same column
       .withDefaultValue(Seq.empty)
 
-    val rangePredicates = singleColumnPredicates.collect(isRangeComparisonFilter)
-    val rangePredicatesByName = rangePredicates.groupBy(predicateColumnName).withDefaultValue(Seq.empty)
+    val rangeFilters = singleColumnFilters.collect(isRangeComparisonFilter)
+    val rangeFiltersByName = rangeFilters.groupBy(filterColumnName).withDefaultValue(Seq.empty)
 
     /** Returns a first non-empty sequence. If not found, returns an empty sequence. */
     def firstNonEmptySeq[Type](sequences: Seq[Type]*): Seq[Type] =
     sequences.find(_.nonEmpty).getOrElse(Seq.empty[Type])
 
     /**
-     * Selects partition key predicates for pushdown:
-     * 1. Partition key predicates must be equality or IN predicates.
-     * 2. Only the last partition key column predicate can be an IN.
-     * 3. All partition key predicates must be used or none.
+     * Selects partition key filters for pushdown:
+     * 1. Partition key filters must be equality or IN filters.
+     * 2. Only the last partition key column filter can be an IN.
+     * 3. All partition key filters must be used or none.
      */
-    val partitionKeyPredicatesToPushDown: Seq[Filter] = {
-      val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
-      val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
+    val partitionKeyFiltersToPushDown: Seq[Filter] = {
+      val (eqColumns, otherColumns) = partitionKeyColumns.span(eqFiltersByName.contains)
+      val inColumns = otherColumns.headOption.toSeq.filter(inFiltersByName.contains)
       if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
-        eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)
+        eqColumns.flatMap(eqFiltersByName) ++ inColumns.flatMap(inFiltersByName)
       else
         Nil
     }
 
     /**
-     * Selects clustering key predicates for pushdown:
-     * 1. Clustering column predicates must be equality predicates, except the last one.
-     * 2. The last predicate is allowed to be an equality or a range predicate.
-     * 3. The last predicate is allowed to be an IN predicate only if it was preceded by all other equality predicates.
+     * Selects clustering key filters for pushdown:
+     * 1. Clustering column filters must be equality filters, except the last one.
+     * 2. The last filter is allowed to be an equality or a range filter.
+     * 3. The last filter is allowed to be an IN filter only if it was preceded by all other equality filters.
      * 4. Consecutive clustering columns must be used, but, contrary to partition key, the tail can be skipped.
      */
-    val clusteringColumnPredicatesToPushDown: Seq[Filter] = {
-      val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
-      val eqPredicates = eqColumns.flatMap(eqPredicatesByName)
-      val optionalNonEqPredicate = for {
+    val clusteringColumnFiltersToPushDown: Seq[Filter] = {
+      val (eqColumns, otherColumns) = clusteringColumns.span(eqFiltersByName.contains)
+      val eqFilters = eqColumns.flatMap(eqFiltersByName)
+      val optionalNonEqFilter = for {
         c <- otherColumns.headOption.toSeq
-        p <- firstNonEmptySeq(rangePredicatesByName(c), inPredicatesByName(c).filter(
+        p <- firstNonEmptySeq(rangeFiltersByName(c), inFiltersByName(c).filter(
           _ => c==clusteringColumns.last))
       } yield p
 
-      eqPredicates ++ optionalNonEqPredicate
+      eqFilters ++ optionalNonEqFilter
     }
 
     /**
-     * Selects indexed and regular column predicates for pushdown:
-     * 1. At least one indexed column must be present in an equality predicate to be pushed down.
-     * 2. Regular column predicates can be either equality or range predicates.
-     * 3. If multiple predicates use the same column, equality predicates are preferred over range predicates.
+     * Selects indexed and regular column filters for pushdown:
+     * 1. At least one indexed column must be present in an equality filter to be pushed down.
+     * 2. Regular column filters can be either equality or range filters.
+     * 3. If multiple filters use the same column, equality filters are preferred over range filters.
      */
-    val indexedColumnPredicatesToPushDown: Seq[Filter] = {
-      val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(isInFilter)
-      val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
-      val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
-      // Don't include partition predicates as None-indexed predicates if partition predicates can't
+    val indexedColumnFiltersToPushDown: Seq[Filter] = {
+      val inFilterInPrimaryKey = partitionKeyFiltersToPushDown.exists(isInFilter)
+      val eqIndexedColumns = indexedColumns.filter(eqFiltersByName.contains)
+      val eqIndexedFilters = eqIndexedColumns.flatMap(eqFiltersByName)
+      // Don't include partition filters as None-indexed filters if partition filters can't
       // be pushed down because we use token range query which already has partition columns in the
       // where clause and it can't have other partial partition columns in where clause any more.
-      val nonIndexedPredicates = for {
-        c <- allColumns if partitionKeyPredicatesToPushDown.nonEmpty &&
+      val nonIndexedFilters = for {
+        c <- allColumns if partitionKeyFiltersToPushDown.nonEmpty &&
            !eqIndexedColumns.contains(c) ||
-          partitionKeyPredicatesToPushDown.isEmpty &&
+          partitionKeyFiltersToPushDown.isEmpty &&
             !eqIndexedColumns.contains(c) &&
             !partitionKeyColumns.contains(c)
-        p <- firstNonEmptySeq(eqPredicatesByName(c), rangePredicatesByName(c))
+        p <- firstNonEmptySeq(eqFiltersByName(c), rangeFiltersByName(c))
       } yield p
 
-      if (!inPredicateInPrimaryKey && eqIndexedColumns.nonEmpty)
-        eqIndexedPredicates ++ nonIndexedPredicates
+      if (!inFilterInPrimaryKey && eqIndexedColumns.nonEmpty)
+        eqIndexedFilters ++ nonIndexedFilters
       else
         Nil
     }
 
-    (partitionKeyPredicatesToPushDown ++
-      clusteringColumnPredicatesToPushDown ++
-      indexedColumnPredicatesToPushDown).distinct
+    (partitionKeyFiltersToPushDown ++
+      clusteringColumnFiltersToPushDown ++
+      indexedColumnFiltersToPushDown).distinct
   }
 
-  /** Check if the predicate is In predicate */
+  /** Check if the filter is In filter */
   private def isInFilter(filter: Filter) : Boolean = filter match {
     case _: sources.EqualTo => true
     case _                  => false
   }
 
-  /** Check if the predicate is a range comparison predicate */
+  /** Check if the filter is a range comparison filter */
   private def isRangeComparisonFilter: PartialFunction[Filter, Filter] = {
     case lt: sources.LessThan => lt
     case le: sources.LessThanOrEqual => le
@@ -134,15 +134,15 @@ object FilterPushdown {
     case ge: sources.GreaterThanOrEqual => ge
   }
 
-  /** Check if the column is a single column predicate */
+  /** Check if the column is a single column filter */
   private def isSingleColumnFilter: PartialFunction[Filter, Filter] = {
     case eq: sources.EqualTo => eq
     case in: sources.In => in
     case otherFilter => isRangeComparisonFilter(otherFilter)
   }
 
-  /** Returns the only column name referenced in the predicate */
-  private def predicateColumnName(filter: Filter) : String = filter match {
+  /** Returns the only column name referenced in the filter */
+  private def filterColumnName(filter: Filter) : String = filter match {
     case eq: sources.EqualTo            => eq.attribute
     case lt: sources.LessThan           => lt.attribute
     case le: sources.LessThanOrEqual    => le.attribute
