@@ -49,8 +49,11 @@ class CassandraConnector(conf: CassandraConnectorConf)
 
   private[this] var _config = conf
 
-  /** Known cluster hosts. This is going to return all cluster hosts after at least one successful connection has been made */
-  def hosts = _config.hosts
+  /** Known cluster hosts in the connected datacenter.*/
+  lazy val hosts: Set[InetAddress] =
+    // wrapped in a session, so we get full lists of hosts,
+    // not only those explicitly passed in the conf
+    withSessionDo { _ => _config.hosts }
 
   /** Configured native port */
   def nativePort = _config.nativePort
@@ -73,7 +76,9 @@ class CassandraConnector(conf: CassandraConnectorConf)
     val session = sessionCache.acquire(_config)
     try {
       val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
-      val myNodes = LocalNodeFirstLoadBalancingPolicy.nodesInTheSameDC(_config.hosts, allNodes).map(_.getAddress)
+      val myNodes = LocalNodeFirstLoadBalancingPolicy
+        .nodesInTheSameDC(_config.hosts, allNodes)
+        .map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
 
       // We need a separate SessionProxy here to protect against double closing the session.
