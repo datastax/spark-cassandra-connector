@@ -34,19 +34,19 @@ object FilterPushdown {
     val regularColumns = tableDef.regularColumns.map(_.columnName)
     val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
 
-    val singleColumnFilters = filters.collect(isSingleColumnFilter)
+    val singleColumnFilters = filters.filter(isSingleColumnFilter)
 
-    val eqFilters = singleColumnFilters.collect({case filter: sources.EqualTo => filter})
+    val eqFilters = singleColumnFilters.filter(isEqualToFilter)
     val eqFiltersByName = eqFilters.groupBy(filterColumnName)
       .mapValues(_.take(1))       // take(1) in order not to push down more than one EQ filter for the same column
       .withDefaultValue(Seq.empty)
 
-    val inFilters = singleColumnFilters.collect({case filter: sources.In => filter})
+    val inFilters = singleColumnFilters.filter(isInFilter)
     val inFiltersByName = inFilters.groupBy(filterColumnName)
       .mapValues(_.take(1))      // take(1) in order not to push down more than one IN filter for the same column
       .withDefaultValue(Seq.empty)
 
-    val rangeFilters = singleColumnFilters.collect(isRangeComparisonFilter)
+    val rangeFilters = singleColumnFilters.filter(isRangeComparisonFilter)
     val rangeFiltersByName = rangeFilters.groupBy(filterColumnName).withDefaultValue(Seq.empty)
 
     /** Returns a first non-empty sequence. If not found, returns an empty sequence. */
@@ -122,22 +122,26 @@ object FilterPushdown {
 
   /** Check if the filter is In filter */
   private def isInFilter(filter: Filter) : Boolean = filter match {
+    case _: sources.In => true
+    case _             => false
+  }
+
+  /** Check if the filter is EqualTo filter */
+  private def isEqualToFilter(filter: Filter) : Boolean = filter match {
     case _: sources.EqualTo => true
     case _                  => false
   }
 
   /** Check if the filter is a range comparison filter */
-  private def isRangeComparisonFilter: PartialFunction[Filter, Filter] = {
-    case lt: sources.LessThan => lt
-    case le: sources.LessThanOrEqual => le
-    case gt: sources.GreaterThan => gt
-    case ge: sources.GreaterThanOrEqual => ge
+  private def isRangeComparisonFilter(filter: Filter) : Boolean = filter match {
+    case sources.LessThan(_,_) | sources.LessThanOrEqual(_,_) |
+         sources.GreaterThan(_,_) | sources.GreaterThanOrEqual(_,_)  => true
+    case _ => false
   }
 
   /** Check if the column is a single column filter */
-  private def isSingleColumnFilter: PartialFunction[Filter, Filter] = {
-    case eq: sources.EqualTo => eq
-    case in: sources.In => in
+  private def isSingleColumnFilter(filter: Filter) : Boolean = filter match {
+    case sources.EqualTo(_,_) | sources.In(_,_)  => true
     case otherFilter => isRangeComparisonFilter(otherFilter)
   }
 
