@@ -1,6 +1,9 @@
 1.3.x (unreleased)
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
    support for fetching TokenRanges (SPARKC-93)
+ * Decoupled PredicatePushDown logic from Spark (SPARKC-166)
+   - added support for Filter and Expression predicates
+   - improved code testability and added unit-tests
 
 ********************************************************************************
 
