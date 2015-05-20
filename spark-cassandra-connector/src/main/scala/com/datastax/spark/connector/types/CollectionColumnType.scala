@@ -8,6 +8,7 @@ trait CollectionColumnType[T] extends ColumnType[T] {
 }
 
 case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vector[T]] {
+
   @transient
   lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val elemTypeTag = elemType.scalaTypeTag
@@ -15,9 +16,13 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
   }
 
   def cqlTypeName = s"list<${elemType.cqlTypeName}>"
+
+  override def converterToCassandra: TypeConverter[_ <: AnyRef] =
+    new TypeConverter.OptionToNullConverter(TypeConverter.listConverter(elemType.converterToCassandra))
 }
 
 case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[T]] {
+
   @transient
   lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val elemTypeTag = elemType.scalaTypeTag
@@ -25,9 +30,14 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
   }
 
   def cqlTypeName = s"set<${elemType.cqlTypeName}>"
+
+  override def converterToCassandra: TypeConverter[_ <: AnyRef] =
+    new TypeConverter.OptionToNullConverter(TypeConverter.setConverter(elemType.converterToCassandra))
 }
 
-case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) extends CollectionColumnType[Map[K, V]] {
+case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V])
+  extends CollectionColumnType[Map[K, V]] {
+
   @transient
   lazy val scalaTypeTag = TypeTag.synchronized {
     implicit val keyTypeTag = keyType.scalaTypeTag
@@ -36,5 +46,9 @@ case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V]) exten
   }
 
   def cqlTypeName = s"map<${keyType.cqlTypeName}, ${valueType.cqlTypeName}>"
+
+  override def converterToCassandra: TypeConverter[_ <: AnyRef] =
+    new TypeConverter.OptionToNullConverter(
+      TypeConverter.mapConverter(keyType.converterToCassandra, valueType.converterToCassandra))
 }
 

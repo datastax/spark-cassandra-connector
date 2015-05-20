@@ -95,6 +95,38 @@ use the new converter for.
 Additionally, defining the `StringToEMailConverter` as an implicit object 
 allows to use generic `CassandraRow#get` with your custom `EMail` field type.
  
+The following table specifies the relationship between a Cassandra column type and 
+the type of needed `TypeConverter`.
+
+Cassandra column type | Object type to convert from / to
+-----------------------------------------------------------------
+ `ascii`              | `java.lang.String`                                         
+ `bigint`             | `java.lang.Long`                                       
+ `blob`               | `java.nio.ByteBuffer` 
+ `boolean`            | `java.lang.Boolean`              
+ `counter`            | `java.lang.Long`                       
+ `decimal`            | `java.math.BigDecimal` 
+ `double`             | `java.lang.Double`    
+ `float`              | `java.lang.Float`    
+ `inet`               | `java.net.InetAddress` 
+ `int`                | `java.lang.Integer`  
+ `text`               | `java.lang.String` 
+ `timestamp`          | `java.util.Date` 
+ `uuid`               | `java.util.UUID` 
+ `timeuuid`           | `java.util.UUID` 
+ `varchar`            | `java.lang.String` 
+ `varint`             | `java.math.BigInteger`
+ user defined         | `com.datastax.spark.connector.UDTValue`
+
+Custom converters for collections are not supported.
+ 
+When defining your own `TypeConverter` make sure it is `Serializable` and
+works properly after being deserialized. For example, if you want to 
+register a custom TypeConverter producing
+Cassandra UDT values, you must register a converter converting to connector's
+UDTValue class, not Java Driver's UDTValue. This is because many Java Driver's classes are not
+Serializable and would not be possible for such converter to be properly serialized/deserialized.  
+
 ### Low-level control over mapping
 The `ColumnMapper` API cannot be used to express every possible mapping, e.g., for classes that do not expose
 separate accessors for reading/writing every column. 
