@@ -25,7 +25,7 @@ import com.datastax.spark.connector.cql.TableDef
  * @param predicates list of filter predicates available in the user query
  * @param table Cassandra table definition
  */
-class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], table: TableDef) {
+class PredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], table: TableDef) {
 
   private val Predicates = implicitly[PredicateOps[Predicate]]
 
@@ -38,23 +38,28 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], ta
   private val singleColumnPredicates = predicates.filter(Predicates.isSingleColumnPredicate)
 
   private val eqPredicates = singleColumnPredicates.filter(Predicates.isEqualToPredicate)
-  private val eqPredicatesByName = eqPredicates.groupBy(Predicates.columnName)
-    .mapValues(_.take(1))       // don't push down more than one EQ predicate for the same column
-    .withDefaultValue(Seq.empty)
+  private val eqPredicatesByName =
+    eqPredicates
+      .groupBy(Predicates.columnName)
+      .mapValues(_.take(1))       // don't push down more than one EQ predicate for the same column
+      .withDefaultValue(Set.empty)
 
   private val inPredicates = singleColumnPredicates.filter(Predicates.isInPredicate)
-  private val inPredicatesByName = inPredicates.groupBy(Predicates.columnName)
-    .mapValues(_.take(1))      // don't push down more than one IN predicate for the same column
-    .withDefaultValue(Seq.empty)
+  private val inPredicatesByName =
+    inPredicates
+      .groupBy(Predicates.columnName)
+      .mapValues(_.take(1))      // don't push down more than one IN predicate for the same column
+      .withDefaultValue(Set.empty)
 
   private val rangePredicates = singleColumnPredicates.filter(Predicates.isRangePredicate)
-  private val rangePredicatesByName = rangePredicates
-    .groupBy(Predicates.columnName)
-    .withDefaultValue(Seq.empty)
+  private val rangePredicatesByName =
+    rangePredicates
+      .groupBy(Predicates.columnName)
+      .withDefaultValue(Set.empty)
 
-  /** Returns a first non-empty sequence. If not found, returns an empty sequence. */
-  private def firstNonEmptySeq[T](sequences: Seq[T]*): Seq[T] =
-    sequences.find(_.nonEmpty).getOrElse(Seq.empty[T])
+  /** Returns a first non-empty set. If not found, returns an empty set. */
+  private def firstNonEmptySet[T](sets: Set[T]*): Set[T] =
+    sets.find(_.nonEmpty).getOrElse(Set.empty[T])
 
   /**
    * Selects partition key predicates for pushdown:
@@ -62,13 +67,13 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], ta
    * 2. Only the last partition key column predicate can be an IN.
    * 3. All partition key predicates must be used or none.
    */
-  private val partitionKeyPredicatesToPushDown: Seq[Predicate] = {
+  private val partitionKeyPredicatesToPushDown: Set[Predicate] = {
     val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
     val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
-      eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)
+      (eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)).toSet
     else
-      Nil
+      Set.empty
   }
 
   /**
@@ -80,12 +85,12 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], ta
    * 4. Consecutive clustering columns must be used, but, contrary to partition key,
    *    the tail can be skipped.
    */
-  private val clusteringColumnPredicatesToPushDown: Seq[Predicate] = {
+  private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
     val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
-    val eqPredicates = eqColumns.flatMap(eqPredicatesByName)
+    val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
     val optionalNonEqPredicate = for {
       c <- otherColumns.headOption.toSeq
-      p <- firstNonEmptySeq(
+      p <- firstNonEmptySet(
         rangePredicatesByName(c),
         inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
     } yield p
@@ -100,7 +105,7 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], ta
    * 3. If multiple predicates use the same column, equality predicates are preferred over range
    *    predicates.
    */
-  private val indexedColumnPredicatesToPushDown: Seq[Predicate] = {
+  private val indexedColumnPredicatesToPushDown: Set[Predicate] = {
     val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(Predicates.isInPredicate)
     val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
     val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
@@ -113,23 +118,23 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Seq[Predicate], ta
         partitionKeyPredicatesToPushDown.nonEmpty && !eqIndexedColumns.contains(c) ||
         partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) &&
           !partitionKeyColumns.contains(c)
-      p <- firstNonEmptySeq(eqPredicatesByName(c), rangePredicatesByName(c))
+      p <- firstNonEmptySet(eqPredicatesByName(c), rangePredicatesByName(c))
     } yield p
 
     if (!inPredicateInPrimaryKey && eqIndexedColumns.nonEmpty)
-      eqIndexedPredicates ++ nonIndexedPredicates
+      (eqIndexedPredicates ++ nonIndexedPredicates).toSet
     else
-      Nil
+      Set.empty
   }
 
   /** Returns the set of predicates that can be safely pushed down to Cassandra */
-  val predicatesToPushDown: Seq[Predicate] = (
+  val predicatesToPushDown: Set[Predicate] =
     partitionKeyPredicatesToPushDown ++
       clusteringColumnPredicatesToPushDown ++
-      indexedColumnPredicatesToPushDown).distinct
+      indexedColumnPredicatesToPushDown
 
   /** Returns the set of predicates that cannot be pushed down to Cassandra,
     * so they must be applied by Spark  */
-  val predicatesToPreserve: Seq[Predicate] =
-    predicates.filterNot(predicatesToPushDown.toSet.contains)
+  val predicatesToPreserve: Set[Predicate] =
+    predicates -- predicatesToPushDown
 }

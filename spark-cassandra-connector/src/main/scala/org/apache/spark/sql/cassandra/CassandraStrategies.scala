@@ -31,9 +31,9 @@ private[cassandra] trait CassandraStrategies {
       case PhysicalOperation(projectList, predicates, relation: CassandraRelation) =>
         logInfo(s"projectList: ${projectList.toString()}")
         logInfo(s"predicates: ${predicates.toString()}")
-        val pushDown = new PredicatePushDown(predicates, relation.tableDef)
-        val pushdownPredicates = pushDown.predicatesToPushDown
-        val otherPredicates = pushDown.predicatesToPreserve
+        val pushDown = new PredicatePushDown(predicates.toSet, relation.tableDef)
+        val pushdownPredicates = pushDown.predicatesToPushDown.toSeq
+        val otherPredicates = pushDown.predicatesToPreserve.toSeq
         logInfo(s"pushdown predicates:  ${pushdownPredicates.toString()}")
         logInfo(s"remaining predicates: ${otherPredicates.toString()}")
 

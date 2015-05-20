@@ -51,19 +51,19 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   "PredicatePushDown" should "push down all equality predicates restricting partition key columns" in {
     val f1 = EqFilter("pk1")
     val f2 = EqFilter("pk2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain allOf(f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "not push down a partition key predicate for a part of the partition key" in {
     val f1 = EqFilter("pk1")
-    val ppd1 = new PredicatePushDown(Seq[Filter](f1), table)
+    val ppd1 = new PredicatePushDown(Set[Filter](f1), table)
     ppd1.predicatesToPushDown shouldBe empty
     ppd1.predicatesToPreserve should contain(f1)
 
     val f2 = EqFilter("pk2")
-    val ppd2 = new PredicatePushDown(Seq[Filter](f2), table)
+    val ppd2 = new PredicatePushDown(Set[Filter](f2), table)
     ppd2.predicatesToPushDown shouldBe empty
     ppd2.predicatesToPreserve should contain(f2)
   }
@@ -71,7 +71,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "not push down a range partition key predicate" in {
     val f1 = EqFilter("pk1")
     val f2 = LtFilter("pk2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
@@ -79,7 +79,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "push down an IN partition key predicate on the last partition key column" in {
     val f1 = EqFilter("pk1")
     val f2 = InFilter("pk2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain allOf(f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
@@ -87,22 +87,22 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "not push down an IN partition key predicate on the non-last partition key column" in {
     val f1 = InFilter("pk1")
     val f2 = EqFilter("pk2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
 
   it should "push down the first clustering column predicate" in {
     val f1 = EqFilter("c1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1), table)
-    ppd.predicatesToPushDown shouldBe Seq(f1)
+    val ppd = new PredicatePushDown(Set[Filter](f1), table)
+    ppd.predicatesToPushDown should contain only f1
     ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "push down the first and the second clustering column predicate" in {
     val f1 = EqFilter("c1")
     val f2 = LtFilter("c2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain only(f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
@@ -111,11 +111,11 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c3")
     
-    val ppd1 = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd1 = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd1.predicatesToPushDown should contain only f1
     ppd1.predicatesToPreserve should contain only f2
 
-    val ppd2 = new PredicatePushDown(Seq[Filter](f2), table)
+    val ppd2 = new PredicatePushDown(Set[Filter](f2), table)
     ppd2.predicatesToPushDown shouldBe empty
     ppd2.predicatesToPreserve should contain only f2
   }
@@ -124,15 +124,15 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
       "if there are more range predicates on different clustering columns" in {
     val f1 = LtFilter("c1")
     val f2 = LtFilter("c2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
-    ppd.predicatesToPushDown shouldBe Seq(f1)
-    ppd.predicatesToPreserve shouldBe Seq(f2)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
+    ppd.predicatesToPushDown should contain only f1
+    ppd.predicatesToPreserve should contain only f2
   }
 
   it should "push down multiple range predicates for the same clustering column" in {
     val f1 = LtFilter("c1")
     val f2 = GtFilter("c1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain allOf (f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
@@ -141,7 +141,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c2")
     val f3 = InFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2, f3), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2, f3), table)
     ppd.predicatesToPushDown should contain only(f1, f2, f3)
     ppd.predicatesToPreserve shouldBe empty
   }
@@ -150,53 +150,53 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = LtFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2, f3), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2, f3), table)
     ppd.predicatesToPushDown should contain only(f1, f2)
-    ppd.predicatesToPreserve shouldBe Seq(f3)
+    ppd.predicatesToPreserve should contain only f3
   }
 
   it should "not push down IN restriction on non-last column" in {
     val f1 = EqFilter("c1")
     val f2 = InFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2, f3), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2, f3), table)
     ppd.predicatesToPushDown should contain only f1
     ppd.predicatesToPreserve should contain only (f2, f3)
   }
 
   it should "not push down any clustering column predicates, if the first clustering column is missing" in {
     val f1 = EqFilter("c2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1), table)
     ppd.predicatesToPushDown shouldBe empty
-    ppd.predicatesToPreserve shouldBe Seq(f1)
+    ppd.predicatesToPreserve should contain only f1
   }
 
   it should "push down equality predicates on regular indexed columns" in {
     val f1 = EqFilter("i1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1), table)
-    ppd.predicatesToPushDown shouldBe Seq(f1)
+    val ppd = new PredicatePushDown(Set[Filter](f1), table)
+    ppd.predicatesToPushDown should contain only f1
     ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "not push down range predicates on regular indexed columns" in {
     val f1 = LtFilter("i1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1), table)
     ppd.predicatesToPushDown shouldBe empty
-    ppd.predicatesToPreserve shouldBe Seq(f1)
+    ppd.predicatesToPreserve should contain only f1
   }
 
   it should "not push down IN predicates on regular indexed columns" in {
     val f1 = InFilter("i1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1), table)
     ppd.predicatesToPushDown shouldBe empty
-    ppd.predicatesToPreserve shouldBe Seq(f1)
+    ppd.predicatesToPreserve should contain only f1
   }
 
   it should "push down predicates on regular non-indexed and indexed columns" in {
     val f1 = EqFilter("r1")
     val f2 = EqFilter("r2")
     val f3 = EqFilter("i1")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2, f3), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2, f3), table)
     ppd.predicatesToPushDown should contain allOf(f1, f2, f3)
     ppd.predicatesToPreserve shouldBe empty
   }
@@ -204,43 +204,16 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "not push down predicates on regular non-indexed columns if indexed ones are not included" in {
     val f1 = EqFilter("r1")
     val f2 = EqFilter("r2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
-
-  it should "not rely on given predicates order (1)" in {
-    val f1 = EqFilter("c1")
-    val f2 = LtFilter("c2")
-    val f3 = EqFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f2, f3, f1), table)
-    ppd.predicatesToPushDown should contain only(f1, f2)
-    ppd.predicatesToPreserve shouldBe Seq(f3)
-  }
-
-  it should "not rely on given predicates order (2)" in {
-    val f1 = EqFilter("c1")
-    val f2 = LtFilter("c2")
-    val f3 = EqFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f3, f2, f1), table)
-    ppd.predicatesToPushDown should contain only(f1, f2)
-    ppd.predicatesToPreserve shouldBe Seq(f3)
-  }
-
-  it should "not rely on given predicates order (3)" in {
-    val f1 = EqFilter("c1")
-    val f2 = EqFilter("c2")
-    val f3 = InFilter("c3")
-    val ppd = new PredicatePushDown(Seq[Filter](f2, f3, f1), table)
-    ppd.predicatesToPushDown should contain only(f1, f2, f3)
-    ppd.predicatesToPreserve shouldBe empty
-  }
-
+  
   it should "prefer to push down equality predicates over range predicates" in {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c2")
     val f3 = LtFilter("c2")
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2, f3), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2, f3), table)
     ppd.predicatesToPushDown should contain only(f1, f2)
     ppd.predicatesToPreserve should contain only f3
   }
@@ -248,7 +221,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "not push down unsupported predicates" in {
     val f1 = EqFilter("i1")
     val f2 = UnsupportedFilter
-    val ppd = new PredicatePushDown(Seq[Filter](f1, f2), table)
+    val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain only f1
     ppd.predicatesToPreserve should contain only f2
   }
