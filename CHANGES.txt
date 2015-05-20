@@ -4,7 +4,7 @@
  * Decoupled PredicatePushDown logic from Spark (SPARKC-166)
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
-
+ * Basical Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
 ********************************************************************************
 
 1.2.2 (unreleased)
