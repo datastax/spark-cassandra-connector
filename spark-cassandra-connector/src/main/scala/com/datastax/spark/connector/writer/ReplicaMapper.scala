@@ -6,6 +6,7 @@ import java.net.InetAddress
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
@@ -27,10 +28,6 @@ class ReplicaMapper[T] private(
   implicit val protocolVersion = connector.withClusterDo {
     _.getConfiguration.getProtocolOptions.getProtocolVersionEnum
   }
-
-
-  private def quote(name: String): String =
-    "\"" + name + "\""
 
   /**
    * This query is only used to build a prepared statement so we can more easily extract

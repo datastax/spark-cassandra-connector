@@ -13,6 +13,7 @@ import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.util.CqlWhereParser
 import com.datastax.spark.connector.util.CqlWhereParser._
+import com.datastax.spark.connector.util.Quote._
 
 /** Creates CassandraPartitions for given Cassandra table */
 class CassandraRDDPartitioner[V, T <: Token[V]](
@@ -41,8 +42,6 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
     }
   }
-
-  private def quote(name: String) = "\"" + name + "\""
 
   private def splitsOf(tokenRanges: Iterable[TokenRange], splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
     val parTokenRanges = tokenRanges.par

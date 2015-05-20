@@ -146,8 +146,6 @@ trait CassandraTableRowReaderProvider[R] {
         session.execute("SELECT partitioner FROM system.local").one().getString(0)
     }
 
-  protected def quote(name: String) = "\"" + name + "\""
-
   def protocolVersion(session: Session): ProtocolVersion = {
     session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
   }
