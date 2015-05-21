@@ -71,10 +71,19 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   }
 
   /** Executes SQL query against Cassandra and returns DataFrame representing the result. */
-  def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, super.parseSql(cassandraQuery))
+  def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, parseSql(cassandraQuery))
 
   /** Delegates to [[cassandraSql]] */
   override def sql(cassandraQuery: String): DataFrame = cassandraSql(cassandraQuery)
+
+  @transient
+  protected[sql] val cassandraDDLParser = new CassandraDDLParser(sqlParser.apply(_))
+
+  override protected[sql] def parseSql(sql: String): LogicalPlan = {
+    cassandraDDLParser(sql, false)
+      .getOrElse(ddlParser(sql, false)
+      .getOrElse(sqlParser(sql)))
+  }
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
