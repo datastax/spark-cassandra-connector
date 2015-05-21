@@ -1,7 +1,9 @@
 package com.datastax.spark.connector.writer
 
 
-/** `RowWriter` knows how to extract column names and values from custom row objects. */
+/** `RowWriter` knows how to extract column names and values from custom row objects
+  * and how to convert them to values that can be written to Cassandra.
+  * `RowWriter` is required to apply any user-defined data type conversion. */
 trait RowWriter[T] extends Serializable {
 
   /** List of columns this `RowWriter` is going to write.
