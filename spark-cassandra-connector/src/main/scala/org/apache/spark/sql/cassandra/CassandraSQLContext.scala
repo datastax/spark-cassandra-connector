@@ -1,5 +1,7 @@
 package org.apache.spark.sql.cassandra
 
+import java.util.NoSuchElementException
+
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.sources.DataSourceStrategy
 import org.apache.spark.{SparkConf, SparkContext}
@@ -7,7 +9,8 @@ import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
 
-import collection.mutable
+import CassandraSQLContext._
+import CassandraSourceRelation._
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * `SchemaRDD` collections. Predicate pushdown to Cassandra is supported.
@@ -38,20 +41,34 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
     new this.QueryExecution(plan)
 
-  @transient
-  val sparkConf = sc.getConf
-
-  private var keyspaceName = sparkConf.getOption(CassandraSQLKeyspaceNameProperty)
-
-  /** Sets default Cassandra keyspace to be used when accessing tables with unqualified names. */
-  def setKeyspace(ks: String) {
-    keyspaceName = Some(ks)
+  /** Set default Cassandra keyspace to be used when accessing tables with unqualified names. */
+  def setKeyspace(ks: String) = {
+    this.setConf(CassandraSqlDatabaseNameProperty, ks)
   }
 
-  /** Returns keyspace set previously by [[setKeyspace]] or throws IllegalStateException if
-    * keyspace has not been set yet. */
-  def getKeyspace: String = keyspaceName.getOrElse(
-    throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace."))
+  /** Set current used database name. Database is equivalent to keyspace */
+  def setDatabase(db: String) = setKeyspace(db)
+
+  /** Set current used cluster name */
+  def setCluster(cluster: String) = {
+    this.setConf(CassandraSqlClusterNameProperty, cluster)
+  }
+
+  /** Get current used cluster name */
+  def getCluster : String = this.getConf(CassandraSqlClusterNameProperty, defaultClusterName)
+
+  /**
+   * Returns keyspace/database set previously by [[setKeyspace]] or throws IllegalStateException if
+   * keyspace has not been set yet.
+   */
+  def getKeyspace: String = {
+    try {
+      this.getConf(CassandraSqlDatabaseNameProperty)
+    } catch {
+      case _: NoSuchElementException =>
+        throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace.")
+    }
+  }
 
   /** Executes SQL query against Cassandra and returns DataFrame representing the result. */
   def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, super.parseSql(cassandraQuery))
@@ -84,9 +101,11 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 }
 
 object CassandraSQLContext {
-  val CassandraSQLKeyspaceNameProperty = "spark.cassandra.keyspace"
+  val CassandraSqlDatabaseNameProperty = "spark.cassandra.sql.database"
+  val CassandraSqlClusterNameProperty = "spark.cassandra.sql.cluster"
 
   val Properties = Seq(
-    CassandraSQLKeyspaceNameProperty
+    CassandraSqlDatabaseNameProperty,
+    CassandraSqlClusterNameProperty
   )
 }
