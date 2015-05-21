@@ -3,9 +3,7 @@ package com.datastax.spark.connector.sql
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest._
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
@@ -43,20 +41,12 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
 
   override def beforeAll() {
     cc = new CassandraSQLContext(sc)
-    val conf1 = new SparkConf(true)
-      .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
-      .set("spark.cassandra.connection.native.port", getNativePort(0).toString)
-      .set("spark.cassandra.connection.rpc.port", getRpcPort(0).toString)
-    val conf2 = new SparkConf(true)
-      .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
-      .set("spark.cassandra.connection.native.port", getNativePort(1).toString)
-      .set("spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
-    cc.addClusterLevelCassandraConnConf("cluster1", conf1)
-      .addClusterLevelCassandraConnConf("cluster2", conf2)
-      .addClusterLevelReadConf("cluster1", sc.getConf)
-      .addClusterLevelWriteConf("cluster1", sc.getConf)
-      .addClusterLevelReadConf("cluster2", sc.getConf)
-      .addClusterLevelWriteConf("cluster2", sc.getConf)
+    cc.setConf("cluster1/spark.cassandra.connection.host", getHost(0).getHostAddress)
+    cc.setConf("cluster1/spark.cassandra.connection.native.port", getNativePort(0).toString)
+    cc.setConf("cluster1/spark.cassandra.connection.rpc.port", getRpcPort(0).toString)
+    cc.setConf("cluster2/spark.cassandra.connection.host", getHost(1).getHostAddress)
+    cc.setConf("cluster2/spark.cassandra.connection.native.port", getNativePort(1).toString)
+    cc.setConf("cluster2/spark.cassandra.connection.rpc.port", getRpcPort(1).toString)
   }
 
   it should "allow to join tables from different clusters" in {

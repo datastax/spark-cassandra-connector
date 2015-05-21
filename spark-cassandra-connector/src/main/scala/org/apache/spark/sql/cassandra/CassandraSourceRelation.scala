@@ -140,6 +140,8 @@ object CassandraSourceRelation {
     tableSizeInBytesProperty
   )
 
+  val defaultClusterName = "default"
+
   def apply(
       tableRef: TableRef,
       sqlContext: SQLContext,
