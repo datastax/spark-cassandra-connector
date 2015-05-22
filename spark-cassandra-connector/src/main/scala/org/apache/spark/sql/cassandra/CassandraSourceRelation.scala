@@ -143,17 +143,25 @@ object CassandraSourceRelation {
   val defaultClusterName = "default"
 
   def apply(
-      tableRef: TableRef,
-      sqlContext: SQLContext,
-      options: CassandraSourceOptions = CassandraSourceOptions(),
-      schema : Option[StructType] = None) : CassandraSourceRelation = {
+    tableRef: TableRef,
+    sqlContext: SQLContext,
+    options: CassandraSourceOptions = CassandraSourceOptions(),
+    schema : Option[StructType] = None) : CassandraSourceRelation = {
 
     val sparkConf = sqlContext.sparkContext.getConf
     val sqlConf = sqlContext.getAllConfs
-    val conf = consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
+    val conf =
+      consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
-    val tableSizeInBytes = if (tableSizeInBytesString.nonEmpty) Option(tableSizeInBytesString.get.toLong) else None
-    val cassandraConnector = new CassandraConnector(CassandraConnectorConf(conf))
+    val tableSizeInBytes = {
+      if (tableSizeInBytesString.nonEmpty) {
+        Option(tableSizeInBytesString.get.toLong)
+      } else {
+        None
+      }
+    }
+    val cassandraConnector =
+      new CassandraConnector(CassandraConnectorConf(conf))
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
 
@@ -169,11 +177,16 @@ object CassandraSourceRelation {
   }
 
   /**
-   * Consolidate Cassandra conf settings in the order of table level -> keyspace level ->
-   * cluster level -> default. Use the first available setting. Default settings are
-   * stored in SparkConf
+   * Consolidate Cassandra conf settings in the order of
+   * table level -> keyspace level -> cluster level ->
+   * default. Use the first available setting. Default
+   * settings are stored in SparkConf.
    */
-  def consolidateConfs(sparkConf: SparkConf, sqlConf: Map[String, String], tableRef: TableRef, tableConf: Map[String, String]) : SparkConf = {
+  def consolidateConfs(
+    sparkConf: SparkConf,
+    sqlConf: Map[String, String],
+    tableRef: TableRef,
+    tableConf: Map[String, String]) : SparkConf = {
     //Default settings
     val conf = sparkConf.clone()
     //Keyspace/Cluster level settings
@@ -182,7 +195,8 @@ object CassandraSourceRelation {
       val clusterLevelValue = sqlConf.get(s"$cluster/$prop")
       if (clusterLevelValue.nonEmpty)
         conf.set(prop, clusterLevelValue.get)
-      val keyspaceLevelValue = sqlConf.get(s"$cluster:${tableRef.keyspace}/$prop")
+      val keyspaceLevelValue =
+        sqlConf.get(s"$cluster:${tableRef.keyspace}/$prop")
       if (keyspaceLevelValue.nonEmpty)
         conf.set(prop, keyspaceLevelValue.get)
       val tableLevelValue = tableConf.get(prop)
