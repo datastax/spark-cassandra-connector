@@ -2,7 +2,7 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
-import com.datastax.spark.connector.types.FieldDef
+import com.datastax.spark.connector.types.UDTFieldDef
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Statistics, LeafNode}
@@ -21,7 +21,7 @@ private[cassandra] case class CassandraRelation
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
   val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  var projectAttributes     = tableDef.columns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
@@ -68,8 +68,8 @@ object ColumnDataType {
 
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
 
-    def catalystStructField(field: FieldDef): StructField =
-      StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
+    def catalystStructField(field: UDTFieldDef): StructField =
+      StructField(field.columnName, catalystDataType(field.columnType, nullable = true), nullable = true)
 
     cassandraType match {
       case connector.types.SetType(et)                => types.ArrayType(primitiveTypeMap(et), nullable)

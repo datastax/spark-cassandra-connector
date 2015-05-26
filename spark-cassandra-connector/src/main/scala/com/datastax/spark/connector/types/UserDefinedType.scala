@@ -5,14 +5,25 @@ import java.io.ObjectOutputStream
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{UDTValue => DriverUDTValue, DataType, ProtocolVersion, UserType}
-import com.datastax.spark.connector.UDTValue
+import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
+import com.datastax.spark.connector.{ColumnName, UDTValue}
+import com.datastax.spark.connector.cql.{StructDef, FieldDef}
 
-case class FieldDef(fieldName: String, fieldType: ColumnType[_])
+/** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
+  * The word `column` instead of `field` is used in member names because we want to treat UDT field
+  * entries in the same way as table columns, so that they are mappable to case classes.
+  * This is also the reason why this class extends `FieldDef`*/
+case class UDTFieldDef(columnName: String, columnType: ColumnType[_]) extends FieldDef {
+  override lazy val ref = ColumnName(columnName)
+}
 
-case class UserDefinedType(name: String, fields: Seq[FieldDef]) extends ColumnType[UDTValue] {
-  lazy val fieldNames = fields.toIndexedSeq.map(_.fieldName)
-  lazy val fieldTypes = fields.toIndexedSeq.map(_.fieldType)
+/** A Cassandra user defined type metadata.
+  * A UDT consists of a sequence of ordered fields, called `columns`. */
+case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
+  extends StructDef with ColumnType[UDTValue] {
+
+  override type Column = FieldDef
+
   def isCollection = false
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
   def cqlTypeName = name
@@ -21,20 +32,22 @@ case class UserDefinedType(name: String, fields: Seq[FieldDef]) extends ColumnTy
     override def targetTypeTag = UDTValue.UDTValueTypeTag
     override def convertPF = {
       case udtValue: UDTValue =>
-        val fieldValues =
-          for (i <- fields.indices) yield {
-            val fieldName = fieldNames(i)
-            val fieldConverter = fieldTypes(i).converterToCassandra
-            val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
-            fieldValue
+        val columnValues =
+          for (i <- columns.indices) yield {
+            val columnName = columnNames(i)
+            val columnConverter = columnTypes(i).converterToCassandra
+            val columnValue = columnConverter.convert(udtValue.getRaw(columnName))
+            columnValue
           }
-        new UDTValue(fieldNames, fieldValues)
+        new UDTValue(columnNames, columnValues)
     }
   }
 }
 
 object UserDefinedType {
 
+  /** Converts connector's UDTValue to Cassandra Java Driver UDTValue.
+    * Used when saving data to Cassandra.  */
   class DriverUDTValueConverter(dataType: UserType)(implicit protocolVersion: ProtocolVersion)
     extends TypeConverter[DriverUDTValue] {
 

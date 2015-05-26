@@ -27,7 +27,6 @@ import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
 import com.datastax.spark.connector.types.TypeConverter;
-import com.datastax.spark.connector.util.JavaApiHelper;
 
 @SuppressWarnings("unchecked")
 public class CassandraJavaUtilTest {
@@ -161,8 +160,7 @@ public class CassandraJavaUtilTest {
     public void testMapRowTo4() throws Exception {
         //noinspection unchecked
         ColumnMapper<SampleJavaBean> mapper = mock(ColumnMapper.class);
-        when(mapper.classTag()).thenReturn(JavaApiHelper.getClassTag(SampleJavaBean.class));
-        RowReaderFactory<SampleJavaBean> rrf = mapRowTo(mapper);
+        RowReaderFactory<SampleJavaBean> rrf = mapRowTo(SampleJavaBean.class, mapper);
         assertThat(rrf, instanceOf(ClassBasedRowReaderFactory.class));
         assertThat(rrf.targetClass().getName(), is(SampleJavaBean.class.getName()));
     }

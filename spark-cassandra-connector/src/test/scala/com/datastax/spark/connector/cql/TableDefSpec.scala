@@ -82,7 +82,7 @@ class TableDefSpec extends WordSpec with Matchers {
 
     "return all columns" in {
       val columns = tableDef.select(AllColumns)
-      columns should equal(tableDef.allColumns)
+      columns should equal(tableDef.columns)
     }
 
     "return partition key columns" in {

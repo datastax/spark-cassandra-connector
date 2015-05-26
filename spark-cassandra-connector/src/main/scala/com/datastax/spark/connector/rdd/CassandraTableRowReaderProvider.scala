@@ -43,9 +43,7 @@ trait CassandraTableRowReaderProvider[R] {
   protected val classTag: ClassTag[R]
 
   protected lazy val rowReader: RowReader[R] =
-    rowReaderFactory.rowReader(tableDef, RowReaderOptions(aliasToColumnName = aliasToColumnName))
-
-  private lazy val aliasToColumnName = columnNames.aliases
+    rowReaderFactory.rowReader(tableDef, columnNames.selectFrom(tableDef))
 
   lazy val tableDef: TableDef = {
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
@@ -58,57 +56,52 @@ trait CassandraTableRowReaderProvider[R] {
     }
   }
 
-  protected def checkColumnsExistence(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
-    val allColumnNames = tableDef.allColumns.map(_.columnName).toSet
+  protected def checkColumnsExistence(columns: Seq[ColumnRef]): Seq[ColumnRef] = {
+    val allColumnNames = tableDef.columns.map(_.columnName).toSet
     val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
 
-    def checkSingleColumn(column: NamedColumnRef) = {
-      if (!allColumnNames.contains(column.columnName))
-        throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
-
+    def checkSingleColumn(column: ColumnRef) = {
       column match {
-        case ColumnName(_, _) =>
-
+        case ColumnName(columnName, _) =>
+          if (!allColumnNames.contains(column.columnName))
+            throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
         case TTL(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
-
         case WriteTime(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
+        case _ =>
       }
 
       column
     }
 
-    columns.map {
-      case namedColumnRef: NamedColumnRef => checkSingleColumn(namedColumnRef)
-      case columnRef => columnRef
-    }
+    columns.map(checkSingleColumn)
   }
 
-  /** Returns the names of columns to be selected from the table.*/
-  lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
-    val providedColumnRefs =
+  /** Returns the columns to be selected from the table.*/
+  lazy val selectedColumnRefs: Seq[ColumnRef] = {
+    val providedColumns =
       columnNames match {
-        case AllColumns => tableDef.allColumns.map(col => col.columnName: NamedColumnRef)
-        case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: NamedColumnRef)
+        case AllColumns => tableDef.columns.map(col => col.columnName: ColumnRef)
+        case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: ColumnRef)
         case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
 
-    (rowReader.columnNames, rowReader.requiredColumns) match {
-      case (Some(cs), None) =>
-        val columnSet = cs.toSet
-        providedColumnRefs.filter(columnName => columnSet.contains(columnName.selectedFromCassandraAs))
-      case (_, _) =>
-        providedColumnRefs
+    // Let's leave only the columns needed by the rowReader.
+    // E.g. even if the user selects AllColumns,
+    // this will make sure only the columns needed by the RowReader are actually fetched.
+    rowReader.neededColumns match {
+      case Some(neededColumns) => providedColumns.filter(neededColumns.toSet)
+      case None => providedColumns
     }
   }
 
   /** Filters currently selected set of columns with a new set of columns */
-  def narrowColumnSelection(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = {
+  def narrowColumnSelection(columns: Seq[ColumnRef]): Seq[ColumnRef] = {
     columnNames match {
       case SomeColumns(cs@_*) =>
         checkColumnsAvailable(columns, cs)
@@ -122,8 +115,8 @@ trait CassandraTableRowReaderProvider[R] {
 
   /** Throws IllegalArgumentException if columns sequence contains unavailable columns */
   private def checkColumnsAvailable(
-      columns: Seq[SelectableColumnRef],
-      availableColumns: Seq[SelectableColumnRef]) {
+      columns: Seq[ColumnRef],
+      availableColumns: Seq[ColumnRef]) {
 
     val availableColumnsSet = availableColumns.collect {
       case ColumnName(columnName, _) => columnName
@@ -150,29 +143,10 @@ trait CassandraTableRowReaderProvider[R] {
     session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
   }
 
-  /** Checks for existence of keyspace, table, columns and whether the number of selected columns
-    * corresponds to the number of the columns expected by the target type constructor.
-    * If successful, does nothing, otherwise throws appropriate `IOException` or `AssertionError`. */
+  /** Checks for existence of keyspace and table.*/
   def verify() = {
-    val targetType = classTag
-
-    tableDef.allColumns // will throw IOException if table does not exist
-
-    rowReader.columnNames match {
-      case Some(names) =>
-        val missingColumns = names.toSet -- selectedColumnRefs.map(_.selectedFromCassandraAs).toSet
-        assert(missingColumns.isEmpty,
-          s"Missing columns needed by $targetType: ${missingColumns.mkString(", ")}")
-      case None =>
-    }
-
-    rowReader.requiredColumns match {
-      case Some(count) =>
-        assert(selectedColumnRefs.size >= count,
-          s"Not enough columns selected for the target row type $targetType: " +
-            s"${selectedColumnRefs.size} < $count")
-      case None =>
-    }
+    tableDef.columns // will throw IOException if table does not exist
+    rowReader // will instantiate rowReader which must validate existence of columns
   }
 
 }
