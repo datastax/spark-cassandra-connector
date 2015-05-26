@@ -37,7 +37,7 @@ object Settings extends Build {
 
   val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
 
-  def currentCommitSha = "git rev-parse --short HEAD" !!
+  def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
   def versionSuffix = {
     sys.props.get("publish.version.type").map(_.toLowerCase) match {
