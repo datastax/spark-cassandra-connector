@@ -30,6 +30,16 @@ import net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 object Settings extends Build {
 
+  def currentCommitSha = "git rev-parse --short HEAD" !!
+
+  def versionSuffix = {
+    sys.props.get("publish.version.type").map(_.toLowerCase) match {
+      case Some("release") ⇒ ""
+      case Some("commit-release") ⇒ s"-$currentCommitSha"
+      case _ ⇒ "-SNAPSHOT"
+    }
+  }
+
   lazy val buildSettings = Seq(
     name := "DataStax Apache Cassandra connector for Apache Spark",
     normalizedName := "spark-cassandra-connector",
@@ -37,7 +47,7 @@ object Settings extends Build {
       "and executes CQL queries in Spark applications.",
     organization := "com.datastax.spark",
     organizationHomepage := Some(url("http://www.datastax.com/")),
-    version in ThisBuild := "1.0.7-SNAPSHOT",
+    version in ThisBuild := s"1.0.7$versionSuffix",
     scalaVersion := Versions.Scala,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
