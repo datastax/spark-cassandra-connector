@@ -37,9 +37,19 @@ object Settings extends Build {
 
   val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
 
+  def currentCommitSha = "git rev-parse --short HEAD" !!
+
+  def versionSuffix = {
+    sys.props.get("publish.version.type").map(_.toLowerCase) match {
+      case Some("release") ⇒ ""
+      case Some("commit-release") ⇒ s"-$currentCommitSha"
+      case _ ⇒ "-SNAPSHOT"
+    }
+  }
+
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := "1.2.1",
+    version in ThisBuild := s"1.2.1$versionSuffix",
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
