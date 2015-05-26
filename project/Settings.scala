@@ -31,7 +31,7 @@ import net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 object Settings extends Build {
 
-  def currentCommitSha = "git rev-parse --short HEAD" !!
+  def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
   def versionSuffix = {
     sys.props.get("publish.version.type").map(_.toLowerCase) match {
