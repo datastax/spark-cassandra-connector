@@ -33,6 +33,6 @@ object Versions {
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.7.7"
-  val Spark           = "1.1.0"
+  val Spark           = "1.1.1"
 
 }
