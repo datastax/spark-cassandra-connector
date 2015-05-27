@@ -7,7 +7,7 @@
  * Fixed problems with mixed case keyspaces in ReplicaMapper (SPARKC-159)
 
 1.2.0
- * Removed conversion method rom WriteOption which accepted object of Duration type 
+ * Removed conversion method rom WriteOption which accepted object of Duration type
    from Spark Streaming (SPARKC-106)
  * Fixed compilation warnings (SPARKC-76)
  * Fixed ScalaDoc warnings (SPARKC-119)
@@ -39,9 +39,9 @@
    - Renamed batch grouping key option "all" to "none".
  * Error out on invalid config properties (SPARKC-90)
  * Set Java driver version to 2.1.5 and Cassandra to 2.1.3 (SPARKC-92)
- * Moved Spark streaming related methods from CassandraJavaUtil to CassandraStreamingJavaUtil 
+ * Moved Spark streaming related methods from CassandraJavaUtil to CassandraStreamingJavaUtil
    (SPARKC-80)
- 
+
 1.2.0 alpha 3
  * Exposed spanBy and spanByKey in Java API (SPARKC-39)
  * Added automatic generation of Cassandra table schema from a Scala type and
@@ -79,6 +79,7 @@
 ********************************************************************************
 
 1.1.x (unreleased)
+ * Upgraded to Spark 1.1.1
  * Synchronized ReflectionUtil findScalaObject and findSingletonClassInstance methods
    to avoid problems with Scala 2.10 lack thread safety in the reflection subsystem (SPARKC-107)
  * Fixed populating ReadConf with properties from SparkConf (SPARKC-121)
