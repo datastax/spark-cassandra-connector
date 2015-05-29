@@ -13,7 +13,7 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{NodeAddresses, CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
@@ -123,9 +123,10 @@ class CassandraTableScanRDD[R] private[connector](
     partitions
   }
 
+  private lazy val nodeAddresses = new NodeAddresses(connector)
+
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition]
-      .endpoints.flatMap(inet => Seq(inet.getHostName, inet.getHostAddress)).toSeq.distinct
+    split.asInstanceOf[CassandraPartition].endpoints.flatMap(nodeAddresses.hostNames).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")

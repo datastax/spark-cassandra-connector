@@ -17,26 +17,28 @@ class CassandraPartitionedRDD[T](
     ct: ClassTag[T])
   extends RDD[T](prev) {
 
-  //We aren't going to change the data
-  override def compute(split: Partition, context: TaskContext): Iterator[T] = prev.iterator(split, context)
+  // We aren't going to change the data
+  override def compute(split: Partition, context: TaskContext): Iterator[T] =
+    prev.iterator(split, context)
 
-  @transient override val partitioner: Option[Partitioner] = prev.partitioner
+  @transient
+  override val partitioner: Option[Partitioner] = prev.partitioner
 
-  /**
-   * This RDD was partitioned using the Replica Partitioner so we can use that to get preferred location data
-   */
-  override def getPartitions: Array[Partition] = {
+  private val replicaPartitioner: ReplicaPartitioner =
     partitioner match {
-      case Some(rp: ReplicaPartitioner) => prev.partitions.map(partition => rp.getEndpointPartition(partition))
+      case Some(rp: ReplicaPartitioner) => rp
       case _ => throw new IllegalArgumentException("CassandraPartitionedRDD hasn't been " +
         "partitioned by ReplicaPartitioner. Unable to do any work with data locality.")
     }
-  }
+
+  private lazy val nodeAddresses = new NodeAddresses(replicaPartitioner.connector)
+
+  override def getPartitions: Array[Partition] =
+    prev.partitions.map(partition => replicaPartitioner.getEndpointPartition(partition))
 
   override def getPreferredLocations(split: Partition): Seq[String] = split match {
     case epp: ReplicaPartition =>
-      epp.endpoints.flatMap { inet => Seq(inet.getHostAddress, inet.getHostName) }.toSeq.distinct
-
+      epp.endpoints.flatMap(nodeAddresses.hostNames).toSeq
     case other: Partition => throw new IllegalArgumentException(
       "CassandraPartitionedRDD doesn't have Endpointed Partitions. PrefferedLocations cannot be" +
         "deterimined")
