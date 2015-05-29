@@ -71,6 +71,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Performance monitoring](doc/11_metrics.md)
   - [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
+  - [DataFrames](doc/14_data_frames.md)
   - [Frequently Asked Questions](doc/FAQ.md)
     
 ## Community
