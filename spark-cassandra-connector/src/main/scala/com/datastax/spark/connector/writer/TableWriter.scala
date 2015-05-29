@@ -69,13 +69,14 @@ class TableWriter[T] private (
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
 
-    val nameToBehvaior = columnSelector collect {
+    val nameToBehavior = (columnSelector collect {
         case cn:CollectionColumnName => cn.columnName -> cn.collectionBehavior
-      } toMap
+      }).toMap
 
-    val setNonCounterColumnsClause = for { colDef <- nonCounterColumns
+    val setNonCounterColumnsClause = for {
+      colDef <- nonCounterColumns
       name = colDef.columnName
-      collectionBehavior = nameToBehvaior.get(name)
+      collectionBehavior = nameToBehavior.get(name)
       quotedName = quote(name)
     } yield collectionBehavior match {
         case Some(CollectionAppend)           => s"$quotedName = $quotedName + :$quotedName"
@@ -96,7 +97,7 @@ class TableWriter[T] private (
     tableDef.columns.exists(_.isCounterColumn)
 
   private val containsCollectionBehaviors =
-    columnSelector.collect{ case cn:CollectionColumnName => cn }.nonEmpty
+    columnSelector.exists(_.isInstanceOf[CollectionColumnName])
 
   private val queryTemplate: String = {
     if (isCounterUpdate || containsCollectionBehaviors)
@@ -170,13 +171,6 @@ class TableWriter[T] private (
 
 object TableWriter {
 
-  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) = {
-    val columnNames = columnRefs.map(_.columnName)
-    checkMissingColumns(table, columnNames)
-    checkMissingPrimaryKeyColumns(table, columnNames)
-    checkCollectionBehaviors(table, columnRefs)
-  }
-
   private def checkMissingColumns(table: TableDef, columnNames: Seq[String]) {
     val allColumnNames = table.columns.map(_.columnName)
     val missingColumns = columnNames.toSet -- allColumnNames
@@ -199,21 +193,21 @@ object TableWriter {
    * Check whether remove is used on Maps
    */
   private def checkCollectionBehaviors(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) {
-    val tableCollectionColumns = table.columns.filter( cd => cd.isCollection)
+    val tableCollectionColumns = table.columns.filter(cd => cd.isCollection)
     val tableCollectionColumnNames = tableCollectionColumns.map(_.columnName)
     val tableListColumnNames = tableCollectionColumns
-      .map( c => (c.columnName, c.columnType))
-      .collect{ case (name, x:ListType[_]) => name}
+      .map(c => (c.columnName, c.columnType))
+      .collect { case (name, x: ListType[_]) => name }
 
     val tableMapColumnNames = tableCollectionColumns
-      .map( c => (c.columnName, c.columnType))
-      .collect{ case (name, x:MapType[_,_]) => name}
+      .map(c => (c.columnName, c.columnType))
+      .collect { case (name, x: MapType[_, _]) => name }
 
     val refsWithCollectionBehavior = columnRefs collect {
       case columnName: CollectionColumnName => columnName
     }
 
-    val collectionBehaviorColumnNames =  refsWithCollectionBehavior.map(_.columnName)
+    val collectionBehaviorColumnNames = refsWithCollectionBehavior.map(_.columnName)
 
     //Check for non-collection columns with a collection Behavior
     val collectionBehaviorNormalColumn =
@@ -221,8 +215,9 @@ object TableWriter {
 
     if (collectionBehaviorNormalColumn.nonEmpty)
       throw new IllegalArgumentException(
-      s"""Collection behaviors (add/remove/append/prepend) are only allowed on collection columns.
-         |Normal Columns with illegal behavior: ${collectionBehaviorNormalColumn.mkString}""".stripMargin
+        s"""Collection behaviors (add/remove/append/prepend) are only allowed on collection columns.
+           |Normal Columns with illegal behavior: ${collectionBehaviorNormalColumn.mkString}"""
+          .stripMargin
       )
 
     //Check that prepend is used only on lists
@@ -233,7 +228,8 @@ object TableWriter {
 
     if (prependOnNonList.nonEmpty)
       throw new IllegalArgumentException(
-      s"""The prepend collection behavior only applies to Lists. Prepend used on: ${prependOnNonList.mkString}"""
+        s"""The prepend collection behavior only applies to Lists. Prepend used on:
+           |${prependOnNonList.mkString}""".stripMargin
       )
 
     //Check that remove is not used on Maps
@@ -246,8 +242,16 @@ object TableWriter {
 
     if (removeOnMap.nonEmpty)
       throw new IllegalArgumentException(
-      s"The remove operation is currently not supported for Maps. Remove used on: ${removeOnMap.mkString}"
+        s"The remove operation is currently not supported for Maps. Remove used on: ${removeOnMap
+          .mkString}"
       )
+  }
+
+  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) = {
+    val columnNames = columnRefs.map(_.columnName)
+    checkMissingColumns(table, columnNames)
+    checkMissingPrimaryKeyColumns(table, columnNames)
+    checkCollectionBehaviors(table, columnRefs)
   }
 
   def apply[T : RowWriterFactory](
@@ -265,7 +269,7 @@ object TableWriter {
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
       selectedColumns ++ optionColumns.map(_.ref))
-    
+
     checkColumns(tableDef, selectedColumns)
     new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
   }

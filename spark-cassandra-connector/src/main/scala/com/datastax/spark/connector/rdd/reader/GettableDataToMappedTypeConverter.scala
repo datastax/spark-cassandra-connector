@@ -119,12 +119,10 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
   /** Returns the type of the column, basing on the struct definition. */
   private def columnType(columnRef: ColumnRef): ColumnType[_] = {
     columnRef match {
-      case ColumnName(columnName, _) =>
-        structDef.columnByName(columnName).columnType
       case TTL(_, _) | WriteTime(_, _) | RowCountRef =>
         BigIntType
-      case CollectionColumnName(columnName, _, _) =>
-        structDef.columnByName(columnName).columnType
+      case c:ColumnRef =>
+        structDef.columnByName(c.columnName).columnType
     }
   }
 

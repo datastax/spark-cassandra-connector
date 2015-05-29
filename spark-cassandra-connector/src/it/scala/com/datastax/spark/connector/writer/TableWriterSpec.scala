@@ -444,14 +444,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   it should "be able to append and prepend elements to a C* list" in {
 
     val listElements = sc.parallelize(Seq(
-      (1,Vector("One")),
-      (1,Vector("Two")),
-      (1,Vector("Three"))))
+      (1, Vector("One")),
+      (1, Vector("Two")),
+      (1, Vector("Three"))))
 
     val prependElements = sc.parallelize(Seq(
-      (1,Vector("PrependOne")),
-      (1,Vector("PrependTwo")),
-      (1,Vector("PrependThree"))))
+      (1, Vector("PrependOne")),
+      (1, Vector("PrependTwo")),
+      (1, Vector("PrependThree"))))
 
     listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
     prependElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" prepend))
@@ -459,101 +459,103 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
       .where("key = 1")
       .select("lcol").take(1)(0)
-    testList.take(3) should contain allOf ("PrependOne","PrependTwo", "PrependThree")
-    testList.drop(3) should contain allOf ("One", "Two", "Three")
+    testList.take(3) should contain allOf("PrependOne", "PrependTwo", "PrependThree")
+    testList.drop(3) should contain allOf("One", "Two", "Three")
   }
 
   it should "be able to remove elements from a C* list " in {
     val listElements = sc.parallelize(Seq(
-      (2,Vector("One")),
-      (2,Vector("Two")),
-      (2,Vector("Three"))))
+      (2, Vector("One")),
+      (2, Vector("Two")),
+      (2, Vector("Three"))))
     listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
 
     sc.parallelize(Seq(
-      (2,Vector("Two")),
-      (2,Vector("Three"))))
+      (2, Vector("Two")),
+      (2, Vector("Three"))))
       .saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" remove))
 
     val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
       .where("key = 2")
       .select("lcol").take(1)(0)
-    testList should contain noneOf ("Two","Three")
-    testList should contain ("One")
+    testList should contain noneOf("Two", "Three")
+    testList should contain("One")
   }
 
   it should "be able to add elements to a C* set " in {
     val setElements = sc.parallelize(Seq(
-      (3,Set("One")),
-      (3,Set("Two")),
-      (3,Set("Three"))))
+      (3, Set("One")),
+      (3, Set("Two")),
+      (3, Set("Three"))))
     setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
     val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
       .where("key = 3")
       .select("scol").take(1)(0)
 
-    testSet should contain allOf ("One","Two","Three")
+    testSet should contain allOf("One", "Two", "Three")
   }
 
   it should "be able to remove elements from a C* set" in {
     val setElements = sc.parallelize(Seq(
-      (4,Set("One")),
-      (4,Set("Two")),
-      (4,Set("Three"))))
+      (4, Set("One")),
+      (4, Set("Two")),
+      (4, Set("Three"))))
     setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
 
-    sc.parallelize(Seq((4,Set("Two")), (4,Set("Three"))))
+    sc.parallelize(Seq((4, Set("Two")), (4, Set("Three"))))
       .saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" remove))
 
     val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
       .where("key = 4")
       .select("scol").take(1)(0)
 
-    testSet should contain noneOf ("Two","Three")
-    testSet should contain ("One")
+    testSet should contain noneOf("Two", "Three")
+    testSet should contain("One")
   }
 
   it should "be able to add key value pairs to a C* map" in {
     val setElements = sc.parallelize(Seq(
-      (5,Map("One" -> "One")),
-      (5,Map("Two" -> "Two")),
-      (5,Map("Three" -> "Three"))))
+      (5, Map("One" -> "One")),
+      (5, Map("Two" -> "Two")),
+      (5, Map("Three" -> "Three"))))
     setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" append))
 
     val testMap = sc.cassandraTable[(Map[String, String])](ks, "collections_mod")
       .where("key = 5")
       .select("mcol").take(1)(0)
 
-    testMap.toSeq should contain allOf (("One", "One"),("Two", "Two"), ("Three", "Three"))
+    testMap.toSeq should contain allOf(("One", "One"), ("Two", "Two"), ("Three", "Three"))
   }
 
   it should "throw an exception if you try to apply a collection behavior to a normal column" in {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     val e = intercept[IllegalArgumentException] {
-      sc.parallelize(col).saveToCassandra(ks, "key_value_1", SomeColumns("key", "group" overwrite, "value"))
+      sc.parallelize(col).saveToCassandra(ks, "key_value_1", SomeColumns("key", "group"
+        overwrite, "value"))
     }
-    e.getMessage should include ("group")
+    e.getMessage should include("group")
   }
 
   it should "throw an exception if you try to remove values from a map" in {
     val setElements = sc.parallelize(Seq(
-      (5,Map("One" -> "One")),
-      (5,Map("Two" -> "Two")),
-      (5,Map("Three" -> "Three"))))
+      (5, Map("One" -> "One")),
+      (5, Map("Two" -> "Two")),
+      (5, Map("Three" -> "Three"))))
     val e = intercept[IllegalArgumentException] {
       setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" remove))
     }
-    e.getMessage should include ("mcol")
+    e.getMessage should include("mcol")
   }
 
   it should "throw an exception if you prepend anything but a list" in {
     val setElements = sc.parallelize(Seq(
-      (5,Map("One" -> "One"),Set("One"))))
+      (5, Map("One" -> "One"), Set("One"))))
     val e = intercept[IllegalArgumentException] {
-      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" prepend, "scol" prepend))
+      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" prepend,
+        "scol" prepend))
     }
-    e.getMessage should include ("mcol")
-    e.getMessage should include ("scol")
+    e.getMessage should include("mcol")
+    e.getMessage should include("scol")
   }
 
 }

@@ -39,11 +39,11 @@ case class ColumnName(columnName: String, alias: Option[String] = None) extends 
   override def selectedAs = alias.getOrElse(columnName)
   override def toString: String = columnName
 
-  def overwrite() = CollectionColumnName(columnName, alias, CollectionOverwrite)
-  def add() = CollectionColumnName(columnName, alias, CollectionAppend)
-  def append() = CollectionColumnName(columnName, alias, CollectionAppend)
-  def prepend() = CollectionColumnName(columnName, alias, CollectionPrepend)
-  def remove() = CollectionColumnName(columnName, alias, CollectionRemove)
+  def overwrite = CollectionColumnName(columnName, alias, CollectionOverwrite)
+  def add = CollectionColumnName(columnName, alias, CollectionAppend)
+  def append = CollectionColumnName(columnName, alias, CollectionAppend)
+  def prepend = CollectionColumnName(columnName, alias, CollectionPrepend)
+  def remove = CollectionColumnName(columnName, alias, CollectionRemove)
 
   def as(alias: String) = copy(alias = Some(alias))
 }
@@ -61,11 +61,11 @@ case class CollectionColumnName(
 
   def as(alias: String) = copy(alias = Some(alias))
 
-  def overwrite() = copy(collectionBehavior = CollectionOverwrite)
-  def add() = copy(collectionBehavior = CollectionAppend)
-  def append() = copy(collectionBehavior = CollectionAppend)
-  def prepend() = copy(collectionBehavior = CollectionPrepend)
-  def remove() = copy(collectionBehavior = CollectionRemove)
+  def overwrite = copy(collectionBehavior = CollectionOverwrite)
+  def add = copy(collectionBehavior = CollectionAppend)
+  def append = copy(collectionBehavior = CollectionAppend)
+  def prepend = copy(collectionBehavior = CollectionPrepend)
+  def remove = copy(collectionBehavior = CollectionRemove)
 }
 
 /** References TTL of a column. */
