@@ -162,6 +162,7 @@ object Dependencies {
       val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt
       val kafka             = "org.apache.kafka"        %% "kafka"                  % Kafka                 kafkaExclusions   // ApacheV2
       val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark % "provided"    replExclusions    // ApacheV2
+      val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7"
     }
 
     object Demos {
@@ -214,7 +215,7 @@ object Dependencies {
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka)
+    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy)
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 

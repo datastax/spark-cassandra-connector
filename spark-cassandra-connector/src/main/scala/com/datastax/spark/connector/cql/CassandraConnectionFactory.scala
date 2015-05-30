@@ -71,6 +71,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         new LocalNodeFirstLoadBalancingPolicy(conf.hosts, conf.localDC))
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
+      .withCompression(conf.compression)
   }
 
   /** Creates and configures native Cassandra connection */

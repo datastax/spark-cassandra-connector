@@ -21,6 +21,7 @@ spark.cassandra.connection.keep_alive_ms             | period of time to keep un
 spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node            | 5000 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to wait before reconnecting to a dead node | 1000 ms
 spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to wait before reconnecting to a dead node | 60000 ms
+spark.cassandra.connection.compression               | compression to use (LZ4, SNAPPY or NONE)                          | NONE 
 spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)          | None
 spark.cassandra.auth.username                        | login name for password authentication                            |
 spark.cassandra.auth.password                        | password for password authentication                              |
