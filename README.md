@@ -15,8 +15,8 @@ execute arbitrary CQL queries in your Spark applications.
 
 ## Features
 
- - Compatible with Apache Cassandra version 2.0 or higher and DataStax Enterprise 4.5 (see table below)
- - Compatible with Apache Spark 1.0 through 1.2 (see table below)
+ - Compatible with Apache Cassandra version 2.0 or higher (see table below)
+ - Compatible with Apache Spark 1.0 through 1.3 (see table below)
  - Compatible with Scala 2.10 and 2.11
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
@@ -32,10 +32,13 @@ execute arbitrary CQL queries in your Spark applications.
 
 ## Version Compatibility
 
-The connector project has several branches, each of which map into different supported versions of Spark and Cassandra. Refer to the compatibility table below which shows the major.minor version range supported between the connector, Spark, Cassandra, and the Cassandra Java driver:
+The connector project has several branches, each of which map into different supported versions of 
+Spark and Cassandra. Refer to the compatibility table below which shows the major.minor 
+version range supported between the connector, Spark, Cassandra, and the Cassandra Java driver:
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
+| 1.3       | 1.3           | 2.1, 2.0  | 2.1                   |
 | 1.2       | 1.2           | 2.1, 2.0  | 2.1                   |
 | 1.1       | 1.1, 1.0      | 2.1, 2.0  | 2.1                   |
 | 1.0       | 1.0, 0.9      | 2.0       | 2.0                   |
@@ -46,11 +49,11 @@ This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.2.1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.3.0-M1"
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.2.1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.3.0-M1"
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)
@@ -71,6 +74,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Performance monitoring](doc/11_metrics.md)
   - [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
+  - [DataFrames](doc/14_data_frames.md)
   - [Frequently Asked Questions](doc/FAQ.md)
     
 ## Community

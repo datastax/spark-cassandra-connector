@@ -75,9 +75,6 @@ import com.datastax.driver.core.{ProtocolVersion, Row}
 final class CassandraRow(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData with Serializable {
 
-  protected def fieldNames = columnNames
-  protected def fieldValues = columnValues
-
   override def toString = "CassandraRow" + dataAsString
 }
 
@@ -91,8 +88,8 @@ object CassandraRow {
     * slower than fetching by index. */
   def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraRow = {
     val data = new Array[Object](columnNames.length)
-    for (i <- 0 until columnNames.length)
-      data(i) = AbstractGettableData.get(row, i)
+    for (i <- columnNames.indices)
+      data(i) = GettableData.get(row, i)
     new CassandraRow(columnNames, data)
   }
 

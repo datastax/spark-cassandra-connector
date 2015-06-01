@@ -33,7 +33,7 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], ta
   private val clusteringColumns = table.clusteringColumns.map(_.columnName)
   private val regularColumns = table.regularColumns.map(_.columnName)
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
-  private val indexedColumns = table.allColumns.filter(_.isIndexedColumn).map(_.columnName)
+  private val indexedColumns = table.columns.filter(_.isIndexedColumn).map(_.columnName)
 
   private val singleColumnPredicates = predicates.filter(Predicates.isSingleColumnPredicate)
 

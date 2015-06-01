@@ -79,8 +79,8 @@ object JavaApiHelper {
   def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
 
   /** Returns the default `RowWriterFactory` initialized with the given `ColumnMapper`. */
-  def defaultRowWriterFactory[T](mapper: ColumnMapper[T]) = {
-    RowWriterFactory.defaultRowWriterFactory(mapper)
+  def defaultRowWriterFactory[T](mapper: ColumnMapper[T], classTag: ClassTag[T]) = {
+    RowWriterFactory.defaultRowWriterFactory(mapper, classTag)
   }
 
   /** Returns the `JavaBeanColumnMapper` instance for the given `ClassTag` and column mapping. */

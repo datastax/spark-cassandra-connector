@@ -1,13 +1,13 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.ColumnRef
+import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
 import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
 
 
-/** Produces [[ColumnMap]] objects that map class `T` properties to columns
-  * in a given Cassandra table.
+/** Produces [[ColumnMapForReading]] or [[ColumnMapForWriting]] objects that map
+  * class `T` properties to columns in a given Cassandra table.
   *
   * You can associate a custom `ColumnMapper` object with any of your classes by
   * providing an implicit `ColumnMapper` in the companion object of the mapped class:
@@ -24,17 +24,26 @@ import scala.reflect.ClassTag
   * }}}
   */
 trait ColumnMapper[T] {
-  def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String] = Map.empty): ColumnMap
+
+  /** Provides a mapping between given table or UDT and properties of type `T`,
+    * useful for creating objects of type `T`. Throws [[IllegalArgumentException]] if
+    * `selectedColumns` does not provide some columns needed to instantiate object of type `T`*/
+  def columnMapForReading(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForReading
+
+  /** Provides a mapping between given table or UDT and properties of type `T`,
+    * useful for reading property values of type `T` and writing them to Cassandra.
+    * Throws [[IllegalArgumentException]] if `selectedColumns` contains some columns that
+    * don't have matching getters. */
+  def columnMapForWriting(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForWriting
 
   /** Provides a definition of the table that class `T` could be saved to. */
   def newTable(keyspaceName: String, tableName: String): TableDef
 
-  def classTag: ClassTag[T]
 }
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {
-  implicit def defaultColumnMapper[T : ClassTag : TypeTag]: ColumnMapper[T] =
+  implicit def defaultColumnMapper[T : TypeTag]: ColumnMapper[T] =
     new DefaultColumnMapper[T]
 }
 
