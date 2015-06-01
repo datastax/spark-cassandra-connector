@@ -79,6 +79,7 @@
 ********************************************************************************
 
 1.1.x (unreleased)
+ * Backport SPARKC-8, retrieval of TTL and write time
  * Upgraded to Spark 1.1.1
  * Synchronized ReflectionUtil findScalaObject and findSingletonClassInstance methods
    to avoid problems with Scala 2.10 lack thread safety in the reflection subsystem (SPARKC-107)
