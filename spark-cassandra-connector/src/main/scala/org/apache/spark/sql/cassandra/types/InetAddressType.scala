@@ -39,12 +39,12 @@ class InetAddressType private() extends NativeType with PrimitiveType with Loggi
   //
   // Convert to host address to compare InetAddress because it doesn't support comparison.
   // It's not a good solution though.
-  private[sql] val ordering = new Ordering[JvmType] {
-    def compare(x: InetAddress, y: InetAddress) = {
-      logWarning("InetAddress doesn't support comparison. Convert it to host address to compare.")
-      x.getHostAddress.compareTo(y.getHostAddress)
-    }
-  }
+  import Ordering.Implicits._
+  def unsignedByte(x: Byte) = (x + 256) % 256
+  def address(inet: InetAddress): Iterable[Int] =
+    inet.getAddress.map(unsignedByte)
+  val ord = Ordering by address
+  private[sql] val ordering = ord
   /**
    * The default size of a value of the InetAddressType is 16 bytes.
    */
