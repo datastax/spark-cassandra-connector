@@ -85,12 +85,8 @@ object ReplicaMapper {
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = tableDef.partitionKey.map(_.columnName).toSeq
-    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
-      tableDef,
-      selectedColumns,
-      Map.empty.withDefault(x => x)
-    )
+    val selectedColumns = tableDef.partitionKey.map(_.ref).toIndexedSeq
+    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
     new ReplicaMapper[T](connector, tableDef, rowWriter)
   }
 

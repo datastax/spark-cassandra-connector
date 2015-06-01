@@ -5,7 +5,7 @@ import scala.reflect.runtime.universe._
 import com.datastax.spark.connector.types.{TypeConverter, NullableTypeConverter}
 import com.datastax.spark.connector.{UDTValue => ConnectorUDTValue}
 
-final class UDTValue(val fieldNames: IndexedSeq[String], val fieldValues: IndexedSeq[AnyRef])
+final class UDTValue(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
   extends JavaGettableData with Serializable
 
 object UDTValue {
@@ -18,7 +18,7 @@ object UDTValue {
     def convertPF = {
       case x: UDTValue => x
       case x: ConnectorUDTValue =>
-        new UDTValue(x.fieldNames, x.fieldValues)
+        new UDTValue(x.columnNames, x.columnValues)
     }
   }
 

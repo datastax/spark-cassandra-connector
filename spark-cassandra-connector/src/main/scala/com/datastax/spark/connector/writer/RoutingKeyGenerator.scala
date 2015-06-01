@@ -10,12 +10,15 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
   extends ((BoundStatement) => ByteBuffer) {
 
   private val partitionKeyIdxs = {
-    val idxs = table.partitionKey
+    val missing = table.partitionKey
+      .map(_.columnName)
+      .filterNot(columnNames.contains)
+    require(
+      missing.isEmpty,
+      s"Not all partition key columns of ${table.name} were selected: [${missing.mkString(", ")}]")
+    table.partitionKey
       .map(pkColumn => columnNames.indexOf(pkColumn.columnName))
       .filter(_ >= 0)
-
-    require(idxs.size == table.partitionKey.size, "Not all partition key columns were selected.")
-    idxs
   }
 
   @transient

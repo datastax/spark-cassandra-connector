@@ -68,15 +68,15 @@ class CassandraJoinRDD[L, R] private[connector](
       readConf = readConf)
   }
 
-  lazy val joinColumnNames: Seq[NamedColumnRef] = joinColumns match {
+  lazy val joinColumnNames: Seq[ColumnRef] = joinColumns match {
     case AllColumns => throw new IllegalArgumentException(
       "Unable to join against all columns in a Cassandra Table. Only primary key columns allowed.")
     case PartitionKeyColumns =>
-      tableDef.partitionKey.map(col => col.columnName: NamedColumnRef)
+      tableDef.partitionKey.map(col => col.columnName: ColumnRef)
     case SomeColumns(cs @ _*) =>
       checkColumnsExistence(cs)
       cs.map {
-        case c: NamedColumnRef => c
+        case c: ColumnRef => c
         case _ => throw new IllegalArgumentException(
           "Unable to join against unnamed columns. No CQL Functions allowed.")
       }
@@ -107,7 +107,7 @@ class CassandraJoinRDD[L, R] private[connector](
 
   /** This method will create the RowWriter required before the RDD is serialized.
     * This is called during getPartitions */
-  protected def checkValidJoin(): Seq[NamedColumnRef] = {
+  protected def checkValidJoin(): Seq[ColumnRef] = {
     val partitionKeyColumnNames = tableDef.partitionKey.map(_.columnName).toSet
     val primaryKeyColumnNames = tableDef.primaryKey.map(_.columnName).toSet
     val colNames = joinColumnNames.map(_.columnName).toSet
@@ -116,7 +116,7 @@ class CassandraJoinRDD[L, R] private[connector](
     rowWriter.columnNames
     singleKeyCqlQuery.length
 
-    def checkSingleColumn(column: NamedColumnRef): Unit = {
+    def checkSingleColumn(column: ColumnRef): Unit = {
       require(
         primaryKeyColumnNames.contains(column.columnName),
         s"Can't pushdown join on column $column because it is not part of the PRIMARY KEY")
@@ -136,20 +136,15 @@ class CassandraJoinRDD[L, R] private[connector](
     }
     val missingPartitionKeys = partitionKeyColumnNames -- colNames
     require(
-      missingPartitionKeys.size == 0,
+      missingPartitionKeys.isEmpty,
       s"Can't join without the full partition key. Missing: [ $missingPartitionKeys ]")
 
-    joinColumnNames.foreach { case c: NamedColumnRef => checkSingleColumn(c) }
+    joinColumnNames.foreach(checkSingleColumn)
     joinColumnNames
   }
 
   lazy val rowWriter = implicitly[RowWriterFactory[L]].rowWriter(
-    tableDef,
-    joinColumnNames.map {
-      _.columnName
-    },
-    joinColumns.aliases
-  )
+    tableDef, joinColumnNames.toIndexedSeq)
 
   def on(joinColumns: ColumnSelector): CassandraJoinRDD[L, R] = {
     new CassandraJoinRDD[L, R](

@@ -5,7 +5,7 @@ import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.ConfigCheck
-import com.datastax.spark.connector.{ColumnSelector, NamedColumnRef, SomeColumns, _}
+import com.datastax.spark.connector.{ColumnSelector, SomeColumns, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
@@ -79,13 +79,13 @@ abstract class CassandraRDD[R : ClassTag](
     * after a column was removed by the previous `select` call, it is not possible to
     * add it back.
     *
-    * The selected columns are [[NamedColumnRef]] instances. This type allows to specify columns for
+    * The selected columns are [[ColumnRef]] instances. This type allows to specify columns for
     * straightforward retrieval and to read TTL or write time of regular columns as well. Implicit
     * conversions included in [[com.datastax.spark.connector]] package make it possible to provide
     * just column names (which is also backward compatible) and optional add `.ttl` or `.writeTime`
-    * suffix in order to create an appropriate [[NamedColumnRef]] instance.
+    * suffix in order to create an appropriate [[ColumnRef]] instance.
     */
-  def select(columns: SelectableColumnRef*): Self = {
+  def select(columns: ColumnRef*): Self = {
     copy(columnNames = SomeColumns(narrowColumnSelection(columns): _*))
   }
 
@@ -120,12 +120,12 @@ abstract class CassandraRDD[R : ClassTag](
     }
   }
 
-  protected def narrowColumnSelection(columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef]
+  protected def narrowColumnSelection(columns: Seq[ColumnRef]): Seq[ColumnRef]
 
   // Needed to be public for JavaAPI
-  val selectedColumnRefs: Seq[SelectableColumnRef]
+  val selectedColumnRefs: Seq[ColumnRef]
 
-  def selectedColumnNames: Seq[String] = selectedColumnRefs.map(_.selectedFromCassandraAs)
+  def selectedColumnNames: Seq[String] = selectedColumnRefs.map(_.cqlValueName)
 
   // convertTo must be implemented for classes which wish to support `.as`
   protected def convertTo[B : ClassTag : RowReaderFactory]: CassandraRDD[B] =
