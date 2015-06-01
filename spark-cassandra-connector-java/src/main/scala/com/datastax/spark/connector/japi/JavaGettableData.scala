@@ -7,17 +7,17 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID, HashMap => JHashMap, List => JList, Map => JMap, Set => JSet}
 
-import com.datastax.spark.connector.AbstractGettableData
+import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import org.joda.time.DateTime
 
-trait JavaGettableData extends AbstractGettableData {
+trait JavaGettableData extends GettableData {
 
   /** Converts this row to a Map */
   def toMap: JMap[String, AnyRef] = {
     val map = new JHashMap[String, AnyRef]()
-    for (i <- 0 until length) map.put(fieldNames(i), fieldValues(i))
+    for (i <- 0 until length) map.put(columnNames(i), columnValues(i))
     map
   }
 
@@ -34,12 +34,12 @@ trait JavaGettableData extends AbstractGettableData {
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   private def _get[T <: AnyRef](index: Int)(implicit tc: TypeConverter[T]): T =
-    tc.convert(fieldValues(index))
+    tc.convert(columnValues(index))
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
   private def _get[T  <: AnyRef](name: String)(implicit tc: TypeConverter[T]): T =
-    tc.convert(fieldValues(_indexOfOrThrow(name)))
+    tc.convert(columnValues(_indexOfOrThrow(name)))
 
   /** Equivalent to `getAny` */
   def apply(index: Int): AnyRef = getObject(index)

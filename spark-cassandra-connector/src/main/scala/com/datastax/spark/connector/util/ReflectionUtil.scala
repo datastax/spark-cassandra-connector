@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.util
 
 import scala.collection.concurrent.TrieMap
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.util.{Try, Success, Failure}
 
@@ -84,13 +85,22 @@ object ReflectionUtil {
     getters(implicitly[TypeTag[T]].tpe)
   }
 
+  /** Returns the type of the parameters of the given method.
+    * The method must exist, otherwise `IllegalArgumentException` is thrown. */
+  def methodParamTypes(tpe: Type, methodName: String): Seq[Type] = TypeTag.synchronized {
+    val member = tpe.member(newTermName(methodName))
+    require(member != NoSymbol, s"Member $methodName not found in $tpe")
+    require(member.isMethod, s"Member $methodName of type $tpe is not a method")
+    member.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params.map(_.typeSignature)
+  }
+
   /** Returns a list of names and parameter types of 1-argument public methods of a Scala type,
     * returning no result (Unit) */
   def setters(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod
     for (s <- methods if s.isSetter) yield {
       // need a concrete type, not a generic one:
-      val paramType = s.typeSignatureIn(tpe).asInstanceOf[MethodType].params(0).typeSignature
+      val paramType = s.typeSignatureIn(tpe).asInstanceOf[MethodType].params.head.typeSignature
       (s.name.toString, paramType)
     }
   }
@@ -99,5 +109,20 @@ object ReflectionUtil {
     setters(implicitly[TypeTag[T]].tpe)
   }
 
+  /** Creates a corresponding `TypeTag` for the given `Type`.
+    * Allows to use reflection-created objects in APIs expecting `TypeTag`. */
+  def typeToTypeTag[T](tpe: Type): TypeTag[T] = TypeTag.synchronized {
+    val mirror = scala.reflect.runtime.currentMirror
+    TypeTag(mirror, new reflect.api.TypeCreator {
+      def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
+        assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
+        tpe.asInstanceOf[U#Type]
+      }
+    })
+  }
 
+  /** Creates a corresponding `ClassTag` for the given `TypeTag` */
+  def classTag[T : TypeTag]: ClassTag[T] = TypeTag.synchronized {
+    ClassTag[T](typeTag[T].mirror.runtimeClass(typeTag[T].tpe))
+  }
 }

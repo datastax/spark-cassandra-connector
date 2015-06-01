@@ -10,6 +10,68 @@ import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, Keyspa
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
 
+/** Abstract column / field definition.
+  * Common to tables and user-defined types */
+trait FieldDef extends Serializable {
+  def ref: ColumnRef
+  def columnName: String
+  def columnType: ColumnType[_]
+}
+
+/** Cassandra structure that contains columnar information, e.g. a table or a user defined type.
+  * This trait allows `ColumnMapper` to work on tables and user defined types.
+  * Cassandra tables and user defined types are similar in a way data are extracted from them,
+  * therefore a common interface to describe their metadata is handy. */
+trait StructDef extends Serializable {
+
+  /** Allows to specify concrete type of column in subclasses,
+    * so that `columns` and `columnByName` members return concrete types.
+    * Columns in tables may carry more information than columns in user defined types. */
+  type Column <: FieldDef
+
+  /** Human-readable name for easy identification of this structure.
+    * Used in the error message when the column is not found.
+    * E.g. a table name or a type name. */
+  def name: String
+
+  /** Sequence of column definitions in this data structure.
+    * The order of the columns is implementation-defined. */
+  def columns: IndexedSeq[Column]
+
+  /** References to the columns */
+  lazy val columnRefs: IndexedSeq[ColumnRef] =
+    columns.map(_.ref)
+
+  /** Names of the columns, in the same order as column definitions. */
+  def columnNames: IndexedSeq[String] =
+    columns.map(_.columnName)
+
+  /** Types of the columns, in the same order as column names and column definitions. */
+  def columnTypes: IndexedSeq[ColumnType[_]] =
+    columns.map(_.columnType)
+
+  /** For quickly finding a column definition by name.
+    * If column is not found, throws NoSuchElementException with information
+    * about the name of the column and name of the structure. */
+  def columnByName: Map[String, Column] =
+    columns.map(c => (c.columnName, c)).toMap.withDefault {
+      columnName => throw new NoSuchElementException(s"Column $columnName not found in $name")
+    }
+
+  /** For quickly finding a column definition by index.
+    * If column is not found, throws NoSuchElementException with information
+    * about the requested index of the column and name of the structure. */
+  def columnByIndex(index: Int): Column = {
+    require(index >= 0 && index < columns.length, s"Column index $index out of bounds for $name")
+    columns(index)
+  }
+
+  /** Returns the columns that are not present in the structure. */
+  def missingColumns(columnsToCheck: Seq[ColumnRef]): Seq[ColumnRef] =
+    for (c <- columnsToCheck if !columnByName.contains(c.columnName)) yield c
+}
+
+
 sealed trait ColumnRole
 case object PartitionKeyColumn extends ColumnRole
 case class ClusteringColumn(index: Int) extends ColumnRole
@@ -17,11 +79,13 @@ case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
 /** A Cassandra column metadata that can be serialized. */
-case class ColumnDef(columnName: String,
-                     columnRole: ColumnRole,
-                     columnType: ColumnType[_],
-                     indexed : Boolean = false) {
+case class ColumnDef(
+    columnName: String,
+    columnRole: ColumnRole,
+    columnType: ColumnType[_],
+    indexed : Boolean = false) extends FieldDef {
 
+  def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
   def isCollection = columnType.isCollection
   def isPartitionKeyColumn = columnRole == PartitionKeyColumn
@@ -49,25 +113,32 @@ object ColumnDef {
 }
 
 /** A Cassandra table metadata that can be serialized. */
-case class TableDef(keyspaceName: String,
-                    tableName: String,
-                    partitionKey: Seq[ColumnDef],
-                    clusteringColumns: Seq[ColumnDef],
-                    regularColumns: Seq[ColumnDef]) {
+case class TableDef(
+    keyspaceName: String,
+    tableName: String,
+    partitionKey: Seq[ColumnDef],
+    clusteringColumns: Seq[ColumnDef],
+    regularColumns: Seq[ColumnDef]) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
 
-  lazy val primaryKey = partitionKey ++ clusteringColumns
-  lazy val allColumns = primaryKey ++ regularColumns
-  lazy val columnByName = allColumns.map(c => (c.columnName, c))
-    .toMap.withDefault {
-      name => throw new NoSuchElementException(s"Column not found $name in table $keyspaceName.$tableName")
-    }
+  override type Column = ColumnDef
 
-  def cql = {
-    val columnList = allColumns.map(_.cql).mkString(",\n  ")
+  override def name: String = s"$keyspaceName.$tableName"
+  
+  lazy val primaryKey: IndexedSeq[ColumnDef] =
+    (partitionKey ++ clusteringColumns).toIndexedSeq
+
+  override lazy val columns: IndexedSeq[ColumnDef] =
+    (primaryKey ++ regularColumns).toIndexedSeq
+
+  override lazy val columnByName: Map[String, ColumnDef] =
+    super.columnByName
+
+  def cql = {    
+    val columnList = columns.map(_.cql).mkString(",\n  ")
     val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
@@ -80,9 +151,9 @@ case class TableDef(keyspaceName: String,
 
   /** Selects a subset of columns.
     * Columns are returned in the order specified in the `ColumnSelector`. */
-  def select(columns: ColumnSelector): Seq[ColumnDef] = {
-    columns match {
-      case AllColumns => allColumns
+  def select(selector: ColumnSelector): IndexedSeq[ColumnDef] = {
+    selector match {
+      case AllColumns => columns
       case PartitionKeyColumns => partitionKey
       case SomeColumns(names @ _*) => names.map {
         case ColumnName(columnName, _) =>
@@ -91,7 +162,7 @@ case class TableDef(keyspaceName: String,
           throw new IllegalArgumentException(s"Invalid column reference $columnRef for table $keyspaceName.$tableName")
       }
     }
-  }
+  }.toIndexedSeq
 }
 
 object TableDef {

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn, PartitionKeyColumn, TableDef}
+import com.datastax.spark.connector.{ColumnRef, ColumnName}
+import com.datastax.spark.connector.cql.{StructDef, ColumnDef, RegularColumn, PartitionKeyColumn, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.ReflectionUtil
 
@@ -9,8 +9,8 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{typeOf, Type, TypeTag}
 import scala.util.{Success, Try}
 
-/** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor names
-  * and underscore naming convention for column names.
+/** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor
+  * names and underscore naming convention for column names.
   *
   * Example mapping:
   * {{{
@@ -28,54 +28,89 @@ import scala.util.{Success, Try}
   *   )
   * }}}
   *
-  * @param columnNameOverride maps property names to column names; use it to override default mapping for some properties
+  * @param columnNameOverride maps property names to column names; use it to override default mapping
+  *                           for some properties
   */
-class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String, String] = Map.empty) extends ColumnMapper[T] {
+class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] = Map.empty)
+  extends ColumnMapper[T] {
 
   import com.datastax.spark.connector.mapper.DefaultColumnMapper._
-
-  override def classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
   private def setterNameToPropertyName(str: String) =
     str.substring(0, str.length - SetterSuffix.length)
 
-  private val constructorParams = ReflectionUtil.constructorParams[T]
-  private val getters = ReflectionUtil.getters[T]
-  private val setters = ReflectionUtil.setters[T]
+  private val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
+  private val constructorParams = ReflectionUtil.constructorParams(tpe)
+  private val getters = ReflectionUtil.getters(tpe)
+  private val setters = ReflectionUtil.setters(tpe)
 
-  def resolve(name: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    columnNameOverride orElse aliasToColumnName applyOrElse(name, ColumnMapperConvention.columnNameForProperty(_: String, tableDef))
 
-  def constructorParamToColumnName(paramName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    resolve(paramName, tableDef, aliasToColumnName)
+  private def resolve(name: String, columns: Map[String, ColumnRef]): Option[ColumnRef] = {
+    val overridenName = columnNameOverride.getOrElse(name, name)
+    ColumnMapperConvention.columnForProperty(overridenName, columns)
+  }
 
-  def getterToColumnName(getterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String =
-    resolve(getterName, tableDef, aliasToColumnName)
+  def ctorParamToColumnName(paramName: String, columns: Map[String, ColumnRef]): Option[ColumnRef] =
+    resolve(paramName, columns)
+  
+  def getterToColumnName(getterName: String, columns: Map[String, ColumnRef]): Option[ColumnRef] =
+    resolve(getterName, columns)
 
-  def setterToColumnName(setterName: String, tableDef: TableDef, aliasToColumnName: Map[String, String]): String = {
+  def setterToColumnName(setterName: String, columns: Map[String, ColumnRef]): Option[ColumnRef] = {
     val propertyName = setterNameToPropertyName(setterName)
-    resolve(propertyName, tableDef, aliasToColumnName)
+    resolve(propertyName, columns)
   }
 
-  override def columnMap(tableDef: TableDef, aliasToColumnName: Map[String, String]): ColumnMap = {
+  private def columnByName(selectedColumns: IndexedSeq[ColumnRef]): Map[String, ColumnRef] =
+    (for (c <- selectedColumns) yield (c.selectedAs, c)).toMap
+
+  override def columnMapForReading(
+      struct: StructDef,
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForReading = {
+    
+    val columns = columnByName(selectedColumns)
+
     val constructor =
-      for ((paramName, _) <- constructorParams)
-      yield ColumnName(constructorParamToColumnName(paramName, tableDef, aliasToColumnName))
+      for ((paramName, _) <- constructorParams) yield {
+        val column = ctorParamToColumnName(paramName, columns)
+        column.getOrElse(throw new IllegalArgumentException(
+          s"Failed to map constructor parameter $paramName in $tpe to a column of ${struct.name}"))
+      }
 
-    val getterMap =
-      for ((getterName, _) <- getters)
-      yield (getterName, ColumnName(getterToColumnName(getterName, tableDef, aliasToColumnName)))
-
-    val setterMap =
-      for ((setterName, _) <- setters)
-      yield (setterName, ColumnName(setterToColumnName(setterName, tableDef, aliasToColumnName)))
-
-    SimpleColumnMap(constructor, getterMap.toMap, setterMap.toMap, allowsNull = false)
+    val setterMap = {
+      for {
+        (setterName, _) <- setters
+        columnRef <- setterToColumnName(setterName, columns)
+      } yield (setterName, columnRef)
+    }.toMap
+    
+    SimpleColumnMapForReading(constructor, setterMap, allowsNull = false)
   }
 
+  override def columnMapForWriting(
+      struct: StructDef, 
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForWriting = {
+
+    val columns = columnByName(selectedColumns)
+
+    val getterMap = {
+      for {
+        (getterName, _) <- getters
+        columnRef <- getterToColumnName(getterName, columns)
+      } yield (getterName, columnRef)
+    }.toMap
+
+    // Check if we have all the required columns:
+    val mappedColumns = getterMap.values.toSet
+    val unmappedColumns = selectedColumns.filterNot(mappedColumns)
+    require(unmappedColumns.isEmpty, s"Columns not found in $tpe: [${unmappedColumns.mkString(", ")}]")
+
+    SimpleColumnMapForWriting(getterMap)
+  }
+  
   private def inheritedScalaGetters: Seq[(String, Type)] = {
     for {
-      bc <- typeOf[T].baseClasses if bc.fullName.startsWith("scala.")
+      bc <- tpe.baseClasses if bc.fullName.startsWith("scala.")
       tpe = bc.typeSignature
       getter <- ReflectionUtil.getters(tpe)
     } yield getter
@@ -99,7 +134,9 @@ class DefaultColumnMapper[T : ClassTag : TypeTag](columnNameOverride: Map[String
         .map { case (name, tpe) => (name, Try(ColumnType.fromScalaType(tpe))) }
         .collect { case (name, Success(columnType)) => (name, columnType) }
 
-    require(mappableProperties.size > 0, "No mappable properties found in class: " + classTag.runtimeClass.getName)
+    require(
+      mappableProperties.nonEmpty,
+      "No mappable properties found in class: " + tpe.toString)
 
     val columns =
       for ((property, i) <- mappableProperties.zipWithIndex) yield {

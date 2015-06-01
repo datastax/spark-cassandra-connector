@@ -47,7 +47,7 @@ class EmptyCassandraRDD[R : ClassTag](
   override def compute(split: Partition, context: TaskContext): Iterator[R] =
     throw new UnsupportedOperationException("Cannot call compute on an EmptyRDD")
 
-  lazy val selectedColumnRefs: Seq[SelectableColumnRef] = {
+  lazy val selectedColumnRefs: Seq[ColumnRef] = {
     val providedColumnNames =
       columnNames match {
         case AllColumns => Seq()
@@ -63,5 +63,5 @@ class EmptyCassandraRDD[R : ClassTag](
   override def toEmptyCassandraRDD: EmptyCassandraRDD[R] = copy()
 
   override protected def narrowColumnSelection(
-      columns: Seq[SelectableColumnRef]): Seq[SelectableColumnRef] = columns
+      columns: Seq[ColumnRef]): Seq[ColumnRef] = columns
 }
