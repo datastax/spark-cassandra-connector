@@ -1,9 +1,11 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.mapper.IndexedByNameColumnRef
 import com.datastax.spark.connector.{SomeColumns, AllColumns}
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector._
 
 class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassandra with SparkTemplate {
 
@@ -35,7 +37,7 @@ class TableWriterColumnNamesSpec extends AbstractSpec with SharedEmbeddedCassand
     }
 
     "distinguish and use only specified column names if provided" in {
-      val subset = Seq("key", "group")
+      val subset = Seq("key": IndexedByNameColumnRef, "group": IndexedByNameColumnRef)
 
       val writer = TableWriter(
         conn,

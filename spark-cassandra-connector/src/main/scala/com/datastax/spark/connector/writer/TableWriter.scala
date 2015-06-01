@@ -5,6 +5,7 @@ import java.io.IOException
 import com.datastax.driver.core.{BatchStatement, PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{ColumnDef, CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.mapper.{WriteTime, TTL, NamedColumnRef}
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
 
@@ -165,7 +166,13 @@ object TableWriter {
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
     val selectedColumns = columnNames match {
-      case SomeColumns(names @ _*) => names
+      case SomeColumns(names) => names.map {
+        case NamedColumnRef(columnName) => columnName
+        case TTL(_) | WriteTime(_) =>
+          throw new IllegalArgumentException(
+            s"Neither TTL nor WriteTime fields are not supported for writing. " +
+            s"Use appropriate write configuration settings to specify TTL or WriteTime.")
+      }
       case AllColumns => tableDef.allColumns.map(_.columnName).toSeq
     }
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)

@@ -6,6 +6,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.mapper.NamedColumnRef
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.commons.lang3.tuple
@@ -104,8 +105,8 @@ with ShouldMatchers with SharedEmbeddedCassandra with SparkTemplate {
   it should "return selected columns" in {
     val rdd = javaFunctions(sc).cassandraTable("java_api_test", "test_table")
       .select("key")
-    assert(rdd.selectedColumnNames().size === 1)
-    assert(rdd.selectedColumnNames().contains("key"))
+    assert(rdd.selectedColumnRefs().size === 1)
+    assert(rdd.selectedColumnRefs().contains(new NamedColumnRef("key")))
   }
 
   it should "allow to use where clause to filter records" in {

@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.japi.rdd;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.datastax.spark.connector.japi.CassandraJavaUtil;
+import com.datastax.spark.connector.mapper.IndexedByNameColumnRef;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
 import com.datastax.spark.connector.util.JavaApiHelper;
@@ -42,7 +44,21 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     public CassandraJavaPairRDD<K, V> select(String... columnNames) {
         // explicit type argument is intentional and required here
         //noinspection RedundantTypeArguments
-        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(JavaApiHelper.<String>toScalaSeq(columnNames));
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(JavaApiHelper.<IndexedByNameColumnRef>toScalaSeq(CassandraJavaUtil.convert(columnNames)));
+        return new CassandraJavaPairRDD<>(newRDD, kClassTag(), vClassTag());
+    }
+
+    /**
+     * Narrows down the selected set of columns.
+     *
+     * <p>Use this for better performance, when you don't need all the columns in the result RDD. When called multiple
+     * times, it selects the subset of the already selected columns, so after a column was removed by the previous
+     * {@code select} call, it is not possible to add it back.</p>
+     */
+    public CassandraJavaPairRDD<K, V> select(IndexedByNameColumnRef... selectionColumns) {
+        // explicit type argument is intentional and required here
+        //noinspection RedundantTypeArguments
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(JavaApiHelper.<IndexedByNameColumnRef>toScalaSeq(selectionColumns));
         return new CassandraJavaPairRDD<>(newRDD, kClassTag(), vClassTag());
     }
 
@@ -64,7 +80,7 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     public String[] selectedColumnNames() {
         // explicit type cast is intentional and required here
         //noinspection RedundantCast
-        return (String[]) rdd().selectedColumnNames().<String>toArray(getClassTag(String.class));
+        return (String[]) rdd().selectedColumnRefs().<String>toArray(getClassTag(String.class));
     }
 
     /**

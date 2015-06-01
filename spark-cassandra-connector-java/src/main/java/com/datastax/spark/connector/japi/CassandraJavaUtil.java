@@ -3,7 +3,7 @@ package com.datastax.spark.connector.japi;
 import akka.japi.JAPI;
 import com.datastax.spark.connector.*;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.mapper.ColumnMapper;
+import com.datastax.spark.connector.mapper.*;
 import com.datastax.spark.connector.rdd.reader.ClassBasedRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.ValueRowReaderFactory;
@@ -438,9 +438,34 @@ public class CassandraJavaUtil {
      * Creates a column selector with a given columns projection.
      */
     public static ColumnSelector someColumns(String... columnNames) {
-        return SomeColumns$.MODULE$.apply(JAPI.seq(columnNames));
+        IndexedByNameColumnRef[] columnsSelection = new IndexedByNameColumnRef[columnNames.length];
+        for (int i = 0; i < columnNames.length; i++) {
+            columnsSelection[i] = NamedColumnRef$.MODULE$.apply(columnNames[i]);
+        }
+
+        return SomeColumns$.MODULE$.apply(JAPI.seq(columnsSelection));
     }
 
+    public static IndexedByNameColumnRef[] convert(String... columnNames) {
+        IndexedByNameColumnRef[] columnsSelection = new IndexedByNameColumnRef[columnNames.length];
+        for (int i = 0; i < columnNames.length; i++) {
+            columnsSelection[i] = NamedColumnRef$.MODULE$.apply(columnNames[i]);
+        }
+
+        return columnsSelection;
+    }
+
+    public static NamedColumnRef plain(String columnName) {
+        return new NamedColumnRef(columnName);
+    }
+
+    public static TTL ttl(String columnName) {
+        return new TTL(columnName);
+    }
+
+    public static WriteTime writeTime(String columnName) {
+        return new WriteTime(columnName);
+    }
 
     // -------------------------------------------------------------------------
     //              Utility methods 
