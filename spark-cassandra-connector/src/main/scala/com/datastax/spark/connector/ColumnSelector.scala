@@ -12,13 +12,13 @@ sealed trait ColumnSelector {
 case object AllColumns extends ColumnSelector {
   override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
   override def selectFrom(table: TableDef) =
-    table.select(this).map(_.ref)
+    table.columns.map(_.ref)
 }
 
 case object PartitionKeyColumns extends ColumnSelector {
   override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
   override def selectFrom(table: TableDef) =
-    table.select(this).map(_.ref)
+    table.partitionKey.map(_.ref).toIndexedSeq
 }
 
 case class SomeColumns(columns: ColumnRef*) extends ColumnSelector {
@@ -29,7 +29,9 @@ case class SomeColumns(columns: ColumnRef*) extends ColumnSelector {
 
   override def selectFrom(table: TableDef): IndexedSeq[ColumnRef] = {
     val missing = table.missingColumns(columns).filterNot(_ == RowCountRef)
-    require(missing.isEmpty, s"Columns not found in table ${table.name}: ${missing.mkString(", ")}")
+    if (missing.nonEmpty) throw new NoSuchElementException(
+      s"Columns not found in table ${table.name}: ${missing.mkString(", ")}")
+
     columns.toIndexedSeq
   }
 }

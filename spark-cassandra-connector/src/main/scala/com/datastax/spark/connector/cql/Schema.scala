@@ -148,21 +148,6 @@ case class TableDef(
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
   }
-
-  /** Selects a subset of columns.
-    * Columns are returned in the order specified in the `ColumnSelector`. */
-  def select(selector: ColumnSelector): IndexedSeq[ColumnDef] = {
-    selector match {
-      case AllColumns => columns
-      case PartitionKeyColumns => partitionKey
-      case SomeColumns(names @ _*) => names.map {
-        case ColumnName(columnName, _) =>
-          columnByName(columnName)
-        case columnRef =>
-          throw new IllegalArgumentException(s"Invalid column reference $columnRef for table $keyspaceName.$tableName")
-      }
-    }
-  }.toIndexedSeq
 }
 
 object TableDef {
