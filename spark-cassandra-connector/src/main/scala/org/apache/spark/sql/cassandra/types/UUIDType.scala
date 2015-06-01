@@ -22,6 +22,18 @@ class UUIDType private() extends NativeType with PrimitiveType {
   // Defined with a private constructor so the companion object is the only possible instantiation.
   private[sql] type JvmType = UUID
   @transient private[sql] lazy val tag = ScalaReflectionLock.synchronized { typeTag[JvmType] }
+
+  // Because this new type is not a Spark internal supported data type, there is no
+  // CAST method to convert a UUID to a String. Spark internally converts it
+  // to Double, so it errors out the query such as
+  //    select * from table where uuid_column = '123e4567-e89b-12d3-a456-426655440000'
+  // The correct query should be
+  //    select * from table where CAST(uuid_column as string) = '123e4567-e89b-12d3-a456-426655440000'
+  //
+  // The following code provides only a reference ordering implementation. But it will
+  // never be called by Spark, for there is no CAST function or UDF to convert String
+  // to UUID
+  //
   private[sql] val ordering = new Ordering[JvmType] {
     def compare(x: UUID, y: UUID) = x.compareTo(y)
   }

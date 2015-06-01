@@ -26,6 +26,17 @@ class InetAddressType private() extends NativeType with PrimitiveType with Loggi
   private[sql] type JvmType = InetAddress
   @transient private[sql] lazy val tag = ScalaReflectionLock.synchronized { typeTag[JvmType] }
 
+  // Because this new type is not a Spark internal supported data type, there is no
+  // CAST method to convert a InetAddress to a String. Spark internally converts it
+  // to Double, so it errors out the query such as
+  //    select * from table where inet_address_column = '/74.125.239.135'
+  // The correct query should be
+  //    select * from table where CAST(inet_address_column as string) = '/74.125.239.135'
+  //
+  // The following code provides only a reference ordering implementation. But it will
+  // never be called by Spark, for there is no CAST function or UDF to convert String
+  // to InetAddress
+  //
   // Convert to host address to compare InetAddress because it doesn't support comparison.
   // It's not a good solution though.
   private[sql] val ordering = new Ordering[JvmType] {

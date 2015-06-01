@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.sql
 
+import java.net.InetAddress
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
@@ -317,5 +319,21 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+  }
+
+  it should "use InetAddressType and UUIDType" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.custom_type (k INT, v INT, a INET, b UUID, primary key(k,v))")
+      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
+        "values (1, 1, '74.125.239.135', 123e4567-e89b-12d3-a456-426655440000)")
+      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
+        "values (1, 2, '74.125.239.136', 067e6162-3b6f-4ae2-a171-2470b63dff00)")
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc.cassandraSql("select k, v, a, b from custom_type where CAST(a as string) > '/74.125.239.135'").collect()
+    result should have length 1
+    val result1 = cc.cassandraSql("select k, v,  a, b from custom_type where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
+    result1 should have length 1
   }
 }
