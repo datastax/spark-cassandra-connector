@@ -1,4 +1,6 @@
 1.2.2
+ * Updated Spark version to 1.2.2, Scala to 2.10.5 / 2.11.6
+ * Enabled Java API artifact generation for Scala 2.11.x (SPARKC-130)
  * Fixed a bug preventing a custom type converter from being used
    when saving data. RowWriter implementations must
    perform type conversions now. (SPARKC-157)
