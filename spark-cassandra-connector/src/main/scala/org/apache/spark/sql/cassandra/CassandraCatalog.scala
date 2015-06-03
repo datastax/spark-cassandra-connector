@@ -10,7 +10,7 @@ import org.apache.spark.sql.catalyst.analysis.Catalog
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
 import org.apache.spark.sql.sources.LogicalRelation
 
-private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catalog with Logging {
+private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Catalog with Logging {
 
   val caseSensitive: Boolean = true
 
@@ -35,14 +35,14 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   private def buildRelation(tableIdentifier: Seq[String]): LogicalPlan = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
     val tableRef = TableRef(table, database, Option(cluster))
-    val sourceRelation = CassandraSourceRelation(tableRef, cc, CassandraSourceOptions())
+    val sourceRelation = CassandraSourceRelation(tableRef, csc, CassandraSourceOptions())
     Subquery(table, LogicalRelation(sourceRelation))
   }
 
   private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {
     val id = processTableIdentifier(tableIdentifier).reverse.lift
-    val cluster = id(2).getOrElse(cc.getCluster)
-    val database = id(1).getOrElse(cc.getKeyspace)
+    val cluster = id(2).getOrElse(csc.getCluster)
+    val database = id(1).getOrElse(csc.getKeyspace)
     val table = id(0).getOrElse(throw new IOException(s"Missing table name"))
     (cluster, database, table)
   }
@@ -75,27 +75,29 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   override def getTables(databaseName: Option[String]): Seq[(String, Boolean)] = {
-    val cluster = cc.getCluster
+    val cluster = csc.getCluster
     val schema = Schema.fromCassandra(getCassandraConnector(cluster))
     if (databaseName.nonEmpty) {
       val ksDef = schema.keyspaceByName.get(databaseName.get)
       if (ksDef.nonEmpty) {
-        ksDef.get.tables.map(tableDef => (tableDef.tableName, false)).toSeq
+        ksDef.get.tables.map(
+          tableDef => (s"${ksDef.get.keyspaceName}.${tableDef.tableName}", false)).toSeq
       } else {
         Seq.empty
       }
     } else {
       val tables = mutable.Set[(String, Boolean)]()
       for (ksDef <- schema.keyspaces) {
-        tables ++= ksDef.tables.map(table => (table.tableName, false))
+        tables ++= ksDef.tables.map(
+          table => (s"${ksDef.keyspaceName}.${table.tableName}", false))
       }
       tables.toSeq
     }
   }
 
   private def getCassandraConnector(cluster: String) : CassandraConnector = {
-    val conf = cc.sparkContext.getConf.clone()
-    val sqlConf = cc.getAllConfs
+    val conf = csc.sparkContext.getConf.clone()
+    val sqlConf = csc.getAllConfs
     for (prop <- CassandraConnectorConf.Properties) {
       val clusterLevelValue = sqlConf.get(s"$cluster/$prop")
       if (clusterLevelValue.nonEmpty)
@@ -105,6 +107,6 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
   }
 
   def refreshTable(databaseName: String, tableName: String): Unit = {
-    cachedDataSourceTables.refresh(Seq(cc.getCluster, databaseName, tableName))
+    cachedDataSourceTables.refresh(Seq(csc.getCluster, databaseName, tableName))
   }
 }

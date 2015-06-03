@@ -43,7 +43,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Set default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) = {
-    this.setConf(CassandraSqlDatabaseNameProperty, ks)
+    this.setConf(CassandraSqlKSNameProperty, ks)
   }
 
   /** Set current used database name. Database is equivalent to keyspace */
@@ -63,7 +63,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
    */
   def getKeyspace: String = {
     try {
-      this.getConf(CassandraSqlDatabaseNameProperty)
+      this.getConf(CassandraSqlKSNameProperty)
     } catch {
       case _: NoSuchElementException =>
         throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace.")
@@ -101,11 +101,15 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 }
 
 object CassandraSQLContext {
-  val CassandraSqlDatabaseNameProperty = "spark.cassandra.sql.database"
+  // Should use general used database than Cassandra specific keyspace?
+  // Other source tables don't have keyspace concept. We should make
+  // an effort to set CassandraSQLContext a more database like to join
+  // tables from other sources. Keyspace is equivalent to database in SQL world
+  val CassandraSqlKSNameProperty = "spark.cassandra.sql.keyspace"
   val CassandraSqlClusterNameProperty = "spark.cassandra.sql.cluster"
 
   val Properties = Seq(
-    CassandraSqlDatabaseNameProperty,
+    CassandraSqlKSNameProperty,
     CassandraSqlClusterNameProperty
   )
 }
