@@ -12,6 +12,8 @@
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
  * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
+ * Removed CassandraRelation by CassandraSourceRelation and Added cache to 
+   CassandraCatalog (SPARKC-163)
 
 1.2.2
  * Updated Spark version to 1.2.2, Scala to 2.10.5 / 2.11.6
