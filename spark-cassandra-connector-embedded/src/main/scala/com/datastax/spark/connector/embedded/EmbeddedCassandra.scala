@@ -128,6 +128,7 @@ object EmbeddedCassandra {
       "storage_port"          -> getStoragePort(index).toString,
       "ssl_storage_port"      -> getSslStoragePort(index).toString,
       "native_transport_port" -> getPort(index).toString,
+      "jmx_port"              -> getJmxPort(index).toString,
       "rpc_address"           -> host,
       "listen_address"        -> host,
       "cluster_name"          -> getClusterName(index))
@@ -135,6 +136,7 @@ object EmbeddedCassandra {
 
   def getStoragePort(index: Integer) = 7000 + index
   def getSslStoragePort(index: Integer) = 7100 + index
+  def getJmxPort(index: Integer) = CassandraRunner.DefaultJmxPort + index
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
   def getHost(index: Integer): InetAddress = getNodeProperty(index, HostProperty)
@@ -163,6 +165,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   import java.io.{File, FileOutputStream, IOException}
   import org.apache.cassandra.io.util.FileUtils
   import com.google.common.io.Files
+  import CassandraRunner._
 
   val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
@@ -183,6 +186,10 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
+  private val jmxPort = props.getOrElse("jmx_port", DefaultJmxPort)
+  private val jmxPortProperty = s"-Dcassandra.jmx.local.port=$jmxPort"
+  private val sizeEstimatesUpdateIntervalProperty =
+    s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
   private val jammAgent = classPath.split(File.pathSeparator).find(_.matches(".*jamm.*\\.jar"))
   private val jammAgentProperty = jammAgent.map("-javaagent:" + _).getOrElse("")
   private val cassandraMainClass = "org.apache.cassandra.service.CassandraDaemon"
@@ -190,8 +197,9 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val process = new ProcessBuilder()
     .command(javaBin,
       "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC",
-      cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, "-cp", classPath,
-      cassandraMainClass, "-f")
+      sizeEstimatesUpdateIntervalProperty,
+      cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, jmxPortProperty,
+      "-cp", classPath, cassandraMainClass, "-f")
     .inheritIO()
     .start()
 
@@ -207,5 +215,9 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   }
 }
 
+object CassandraRunner {
+  val SizeEstimatesUpdateIntervalInSeconds = 5
+  val DefaultJmxPort = 7199
+}
 
 
