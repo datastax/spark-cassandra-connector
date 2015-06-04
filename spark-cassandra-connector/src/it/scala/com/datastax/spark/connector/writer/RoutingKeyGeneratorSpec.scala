@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import scala.collection.immutable.Map
 
 import org.apache.cassandra.dht.IPartitioner
@@ -11,7 +13,7 @@ import com.datastax.spark.connector.{CassandraRow, SparkCassandraITFlatSpecBase}
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   val ks = "RoutingKeyGeneratorSpec"
 
