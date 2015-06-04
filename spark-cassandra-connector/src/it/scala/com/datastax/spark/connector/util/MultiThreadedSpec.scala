@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
@@ -11,7 +12,7 @@ class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with AsyncAssertion
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   val count = 10000
 
   val ks = "multi_threaded"

@@ -2,6 +2,8 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import scala.reflect.ClassTag
 
 import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
@@ -36,7 +38,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   val ks = "TableWriterSpec"
   
