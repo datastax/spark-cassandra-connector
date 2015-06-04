@@ -5,14 +5,12 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest._
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(getHost(0)))
-
+  val conn = CassandraConnector(defaultSparkConf)
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test1 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
@@ -25,7 +23,10 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test1.test1 (a, b, c) VALUES (5, 1, 5)")
   }
 
-  val conn2 = CassandraConnector(Set(getHost(1)), getPort(1))
+  val conf2 = new SparkConf(true)
+    .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
+    .set("spark.cassandra.connection.port", getPort(1).toString)
+  val conn2 = CassandraConnector(conf2)
   conn2.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test2 WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
@@ -43,13 +44,7 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
 
   override def beforeAll() {
     cc = new CassandraSQLContext(sc)
-    val conf1 = new SparkConf(true)
-      .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
-      .set("spark.cassandra.connection.port", getPort(0).toString)
-    val conf2 = new SparkConf(true)
-      .set("spark.cassandra.connection.host", getHost(1).getHostAddress)
-      .set("spark.cassandra.connection.port", getPort(1).toString)
-    cc.addClusterLevelCassandraConnConf("cluster1", conf1)
+    cc.addClusterLevelCassandraConnConf("cluster1", defaultSparkConf)
       .addClusterLevelCassandraConnConf("cluster2", conf2)
       .addClusterLevelReadConf("cluster1", sc.getConf)
       .addClusterLevelWriteConf("cluster1", sc.getConf)

@@ -1,19 +1,21 @@
 package com.datastax.spark.connector.sql
 
+import org.apache.spark.Logging
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.SaveMode._
 
-import org.apache.spark.sql.cassandra.{CassandraSourceOptions, TableRef, CassandraSourceRelation}
+import org.apache.spark.sql.cassandra.{TableRef, CassandraSourceRelation}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 
-class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
+class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_ds_test WITH REPLICATION = " +
       "{ 'class': 'SimpleStrategy', 'replication_factor': 1 }")
@@ -58,7 +60,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
         | spark_cassandra_input_page_row_size "10",
         | spark_cassandra_output_consistency_level "ONE",
         | spark_cassandra_connection_timeout_ms "1000",
-        | spark_cassandra_connection_host "127.0.0.1"
+        | spark_cassandra_connection_host "${getHost(0).getHostAddress}"
         | )
       """.stripMargin.replaceAll("\n", " "))
   }
