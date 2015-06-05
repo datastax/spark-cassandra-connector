@@ -1,9 +1,8 @@
-package com.datastax.spark.connector.sql
+package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
-import org.apache.spark.sql.cassandra.CassandraSQLContext
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))

@@ -2,14 +2,12 @@ package org.apache.spark.sql.cassandra
 
 import java.util.NoSuchElementException
 
-import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.sources.DataSourceStrategy
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
 
-import CassandraSQLContext._
 import CassandraSourceRelation._
 
 /** Allows to execute SQL queries against Cassandra and access results as
@@ -47,10 +45,10 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   }
 
   /** Set current used database name. Database is equivalent to keyspace */
-  def setDatabase(db: String) = setKeyspace(db)
+  def useDatabase(db: String) = setKeyspace(db)
 
   /** Set current used cluster name */
-  def setCluster(cluster: String) = {
+  def useCluster(cluster: String) = {
     this.setConf(CassandraSqlClusterNameProperty, cluster)
   }
 
