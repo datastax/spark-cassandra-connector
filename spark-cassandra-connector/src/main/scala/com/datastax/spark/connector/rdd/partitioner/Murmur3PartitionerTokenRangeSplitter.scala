@@ -13,11 +13,13 @@ class Murmur3PartitionerTokenRangeSplitter(dataSize: Long)
   private type TR = TokenRange[Long, LongToken]
 
   /** Splits the token range uniformly into sub-ranges.
-    * @param splitSize requested sub-split size, given in the same units as `dataSize` */
-  def split(range: TR, splitSize: Long): Seq[TR] = {
+    * @param splitSize requested sub-split size, given in the same units as `dataSize`
+    *  @param numPartitions if set, the exact number of ranges are returned. splitSize is ignored */
+
+  def split(range: TR, splitSize: Long, numPartitions: Option[Int] = None): Seq[TR] = {
     val rangeSize = range.dataSize
     val rangeTokenCount = tokenFactory.distance(range.start, range.end)
-    val n = math.max(1, math.round(rangeSize.toDouble / splitSize).toInt)
+    val n =  numPartitions.getOrElse(math.max(1, math.round(rangeSize.toDouble / splitSize).toInt))
 
     val left = range.start.value
     val right = range.end.value

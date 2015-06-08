@@ -51,6 +51,7 @@ class CassandraJoinRDD[L, R] private[connector](
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
     limit: Option[Long] = limit,
+    numPartitions: Option[Int] = None,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self = {
