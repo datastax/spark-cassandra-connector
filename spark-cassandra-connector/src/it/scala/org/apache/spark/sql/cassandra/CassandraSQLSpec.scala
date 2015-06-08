@@ -1,14 +1,12 @@
 package org.apache.spark.sql.cassandra
 
-import java.io.FileNotFoundException
+import java.io.{File, FileNotFoundException}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import org.apache.spark.sql.catalyst.util
-import org.apache.spark.sql.test.TestSQLContext._
-import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.Row
 import org.apache.spark.util.Utils
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
@@ -531,4 +529,84 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     cc.sql("DROP DATABASE db_test")
   }
 
+  it should "create a table" in {
+    cc.useDatabase("sql_test")
+    cc.sql(
+      s"""
+        |CREATE TABLE test1
+        |USING org.apache.spark.sql.cassandra
+        |OPTIONS (
+        | c_table "test1",
+        | keyspace "sql_test",
+        | push_down "false"
+        | )
+      """.stripMargin.replaceAll("\n", " "))
+
+    exist("test1") shouldBe true
+    removeTable("test1")
+    exist("test1") shouldBe false
+  }
+
+  it should "create a table from a parquet table" in {
+    val file = getTempFile
+    cc.sql("SELECT * from sql_test.test1").save(file.getCanonicalPath)
+    cc.sql(
+      s"""
+        |CREATE TABLE parquet_table1
+        |USING parquet
+        |OPTIONS (
+        | path "${file.getCanonicalPath}"
+        | )
+      """.stripMargin.replaceAll("\n", " "))
+
+    exist("parquet_table1") shouldBe true
+    joinTable("parquet_table1", "test2") should have length 12
+    removeFile(file)
+    removeTable("parquet_table1")
+  }
+
+  it should "create a table as select from another table" in {
+    val file = getTempFile
+    an [FileNotFoundException] should be thrownBy {
+      cc.load(file.getCanonicalPath).collect()
+    }
+    cc.sql(
+      s"""
+        |CREATE TABLE parquet_table2
+        |USING parquet
+        |OPTIONS (
+        | path "${file.getCanonicalPath}"
+        | )
+        | AS SELECT * FROM test1
+      """.stripMargin.replaceAll("\n", " "))
+
+    exist("parquet_table2") shouldBe true
+    joinTable("parquet_table2", "test2") should have length 12
+    removeFile(file)
+    removeTable("parquet_table2")
+  }
+
+  private def removeTable(table: String) : Unit = {
+    cc.catalog.unregisterTable(TableRef(table, "sql_test"))
+  }
+
+  private def exist(table: String) : Boolean = {
+    cc.catalog.tableExistsInMetastore(
+      TableRef(table, "sql_test"))
+  }
+
+  private def getTempFile : File = {
+    util.getTempFilePath("parquetTest").getCanonicalFile
+  }
+
+  private def removeFile(file: File) : Unit = {
+    if (file.exists()) Utils.deleteRecursively(file)
+  }
+
+  private def joinTable(table1: String, table2: String) : Array[Row] = {
+    cc.sql("SELECT test2.a, test2.b, test2.c " +
+      s"FROM sql_test.$table1 AS test1 " +
+      s"RIGHT JOIN sql_test.$table2 AS test2 ON test1.a = test2.a " +
+      "AND test1.b = test2.b AND test1.c = test2.c").collect()
+  }
 }

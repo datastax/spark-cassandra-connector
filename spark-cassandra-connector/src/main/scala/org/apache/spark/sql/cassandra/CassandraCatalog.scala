@@ -299,7 +299,7 @@ private[cassandra] class CassandraCatalog(
   }
 
   /** Add table names to options */
-  private def optionsWithTableRef(
+  def optionsWithTableRef(
       tableRef: TableRef,
       options: Map[String, String]) : Map[String, String] = {
 
