@@ -2,11 +2,13 @@ package org.apache.spark.sql.cassandra
 
 import java.util.NoSuchElementException
 
-import org.apache.spark.sql.sources.DataSourceStrategy
+import org.apache.spark.sql.execution.{ExecutedCommand, SparkPlan}
+import org.apache.spark.sql.sources.{CreateTableUsingAsSelect, CreateTableUsing, DataSourceStrategy}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
+
 
 import CassandraSourceRelation._
 
@@ -93,6 +95,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     val cassandraContext = CassandraSQLContext.this
     override val strategies: Seq[Strategy] = Seq(
       DataSourceStrategy,
+      CassandraDDLStrategy,
       DDLStrategy,
       TakeOrdered,
       ParquetOperations,
@@ -115,4 +118,20 @@ object CassandraSQLContext {
     CassandraSqlDatabaseNameProperty,
     CassandraSqlClusterNameProperty
   )
+}
+
+/** Custom create table commands */
+object CassandraDDLStrategy extends Strategy {
+  def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+    case CreateTableUsing(
+    tableName, userSpecifiedSchema, provider, false, opts, allowExisting, managedIfNoPath) =>
+      ExecutedCommand(
+        CreateMetastoreDataSource(
+          tableName, userSpecifiedSchema, provider, opts, allowExisting)) :: Nil
+    case CreateTableUsingAsSelect(tableName, provider, false, mode, opts, query) =>
+      val cmd =
+        CreateMetastoreDataSourceAsSelect(tableName, provider, mode, opts, query)
+      ExecutedCommand(cmd) :: Nil
+    case _ => Nil
+  }
 }
