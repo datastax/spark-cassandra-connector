@@ -137,7 +137,7 @@ object Dependencies {
     val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
-    val guava               = "com.google.guava"        % "guava"                  % Guava          % "provided"
+    val guava               = "com.google.guava"        % "guava"                  % Guava
     val jodaC               = "org.joda"                % "joda-convert"           % JodaC
     val jodaT               = "joda-time"               % "joda-time"              % JodaT
     val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
