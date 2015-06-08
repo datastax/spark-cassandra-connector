@@ -4,7 +4,7 @@ import java.net.InetAddress
 
 
 case class TokenRange[V, T <: Token[V]] (
-    start: T, end: T, replicas: Set[InetAddress], rowCount: Option[Long]) {
+    start: T, end: T, replicas: Set[InetAddress], dataSize: Long) {
 
   def isWrapAround: Boolean =
     start >= end
@@ -13,8 +13,8 @@ case class TokenRange[V, T <: Token[V]] (
     val minToken = tokenFactory.minToken
     if (isWrapAround)
       Seq(
-        TokenRange(start, minToken, replicas, rowCount.map(_ / 2)),
-        TokenRange(minToken, end, replicas, rowCount.map(_ / 2)))
+        TokenRange(start, minToken, replicas, dataSize / 2),
+        TokenRange(minToken, end, replicas, dataSize / 2))
     else
       Seq(this)
   }

@@ -13,7 +13,7 @@ case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends End
  * Hosts . It will group keys which share a common IP address into partitionsPerReplicaSet Partitions.
  * @param partitionsPerReplicaSet The number of Spark Partitions to make Per Unique Endpoint
  */
-class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConnector) extends Partitioner {
+class ReplicaPartitioner(partitionsPerReplicaSet: Int, val connector: CassandraConnector) extends Partitioner {
   /* TODO We Need JAVA-312 to get sets of replicas instead of single endpoints. Once we have that we'll be able to
   build a map of Set[ip,ip,...] => Index before looking at our data and give the all options for the preferred location
    for a partition*/

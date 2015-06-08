@@ -75,8 +75,7 @@ object UserDefinedProperty {
 
   abstract sealed class NodeProperty(val propertyName: String) extends TypedProperty
   case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS") with InetAddressProperty
-  case object NativePortProperty extends NodeProperty("IT_TEST_CASSANDRA_NATIVE_PORTS") with IntProperty
-  case object RpcPortProperty extends NodeProperty("IT_TEST_CASSANDRA_RPC_PORTS") with IntProperty
+  case object PortProperty extends NodeProperty("IT_TEST_CASSANDRA_PORTS") with IntProperty
 
   private def getValueSeq(propertyName: String): Seq[String] = {
     sys.env.get(propertyName) match {
@@ -89,8 +88,7 @@ object UserDefinedProperty {
     getValueSeq(nodeProperty.propertyName).map(x => nodeProperty.convertValueFromString(x))
 
   val hosts = getValueSeq(HostProperty)
-  val nativePorts = getValueSeq(NativePortProperty)
-  val rpcPorts = getValueSeq(RpcPortProperty)
+  val ports = getValueSeq(PortProperty)
 
   def getProperty(nodeProperty: NodeProperty): Option[String] =
     sys.env.get(nodeProperty.propertyName)
@@ -112,15 +110,10 @@ object EmbeddedCassandra {
     case Some(hostsStr) =>
       val hostCount = countCommaSeparatedItemsIn(hostsStr)
 
-      val nativePortsStr = getPropertyOrThrowIfNotFound(NativePortProperty)
+      val nativePortsStr = getPropertyOrThrowIfNotFound(PortProperty)
       val nativePortCount = countCommaSeparatedItemsIn(nativePortsStr)
       require(hostCount == nativePortCount,
         "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_NATIVE_PORTS")
-
-      val rpcPortsStr = getPropertyOrThrowIfNotFound(RpcPortProperty)
-      val rpcPortCount = countCommaSeparatedItemsIn(rpcPortsStr)
-      require(hostCount == rpcPortCount,
-        "IT_TEST_CASSANDRA_HOSTS must have the same size as IT_TEST_CASSANDRA_RPC_PORTS")
   }
 
   private[connector] var cassandraRunners: IndexedSeq[Option[CassandraRunner]] = IndexedSeq(None)
@@ -130,31 +123,30 @@ object EmbeddedCassandra {
   def getProps(index: Integer): Map[String, String] = {
     require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
-    Map("seeds"               -> host,
+    Map(
+      "seeds"                 -> host,
       "storage_port"          -> getStoragePort(index).toString,
       "ssl_storage_port"      -> getSslStoragePort(index).toString,
-      "native_transport_port" -> getNativePort(index).toString,
+      "native_transport_port" -> getPort(index).toString,
+      "jmx_port"              -> getJmxPort(index).toString,
       "rpc_address"           -> host,
-      "rpc_port"              -> getRpcPort(index).toString,
       "listen_address"        -> host,
       "cluster_name"          -> getClusterName(index))
   }
 
   def getStoragePort(index: Integer) = 7000 + index
   def getSslStoragePort(index: Integer) = 7100 + index
+  def getJmxPort(index: Integer) = CassandraRunner.DefaultJmxPort + index
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
   def getHost(index: Integer): InetAddress = getNodeProperty(index, HostProperty)
-  def getNativePort(index: Integer) = getNodeProperty(index, NativePortProperty)
-  def getRpcPort(index: Integer) = getNodeProperty(index, RpcPortProperty)
+  def getPort(index: Integer) = getNodeProperty(index, PortProperty)
 
   private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): nodeProperty.ValueType = {
     nodeProperty.checkValueType {
       nodeProperty match {
-        case NativePortProperty if nativePorts.isEmpty => 9042 + index
-        case NativePortProperty if index < hosts.size => nativePorts(index)
-        case RpcPortProperty if rpcPorts.isEmpty => 9160 + index
-        case RpcPortProperty if index < hosts.size => rpcPorts(index)
+        case PortProperty if ports.isEmpty => 9042 + index
+        case PortProperty if index < hosts.size => ports(index)
         case HostProperty if hosts.isEmpty => InetAddress.getByName("127.0.0.1")
         case HostProperty if index < hosts.size => hosts(index)
         case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
@@ -173,6 +165,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   import java.io.{File, FileOutputStream, IOException}
   import org.apache.cassandra.io.util.FileUtils
   import com.google.common.io.Files
+  import CassandraRunner._
 
   val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
@@ -182,7 +175,6 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val confDir = mkdir(new File(tempDir, "conf"))
   val confFile = new File(confDir, "cassandra.yaml")
 
-  assert(props != null)
   private val properties = Map("cassandra_dir" -> workDir.toString) ++ props
   closeAfterUse(ClassLoader.getSystemResourceAsStream(configTemplate)) { input =>
     closeAfterUse(new FileOutputStream(confFile)) { output =>
@@ -194,6 +186,10 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
+  private val jmxPort = props.getOrElse("jmx_port", DefaultJmxPort)
+  private val jmxPortProperty = s"-Dcassandra.jmx.local.port=$jmxPort"
+  private val sizeEstimatesUpdateIntervalProperty =
+    s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
   private val jammAgent = classPath.split(File.pathSeparator).find(_.matches(".*jamm.*\\.jar"))
   private val jammAgentProperty = jammAgent.map("-javaagent:" + _).getOrElse("")
   private val cassandraMainClass = "org.apache.cassandra.service.CassandraDaemon"
@@ -201,8 +197,9 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val process = new ProcessBuilder()
     .command(javaBin,
       "-Xms2G", "-Xmx2G", "-Xmn384M", "-XX:+UseConcMarkSweepGC",
-      cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, "-cp", classPath,
-      cassandraMainClass, "-f")
+      sizeEstimatesUpdateIntervalProperty,
+      cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, jmxPortProperty,
+      "-cp", classPath, cassandraMainClass, "-f")
     .inheritIO()
     .start()
 
@@ -218,5 +215,9 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   }
 }
 
+object CassandraRunner {
+  val SizeEstimatesUpdateIntervalInSeconds = 5
+  val DefaultJmxPort = 7199
+}
 
 

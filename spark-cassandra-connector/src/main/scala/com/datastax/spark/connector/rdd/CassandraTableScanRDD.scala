@@ -13,7 +13,7 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{NodeAddresses, CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
@@ -38,9 +38,9 @@ import com.datastax.spark.connector.util.Quote._
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
   * The following properties control the number of partitions and the fetch size:
-  * - spark.cassandra.input.split.size: approx number of Cassandra partitions in a Spark partition,
-  *   default 100000
-  * - spark.cassandra.input.page.row.size:  number of CQL rows fetched per roundtrip,
+  * - spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
+  *   partition, default 64 MB
+  * - spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
   *   default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then
@@ -116,16 +116,17 @@ class CassandraTableScanRDD[R] private[connector](
 
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
-    val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
+    val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSizeInMB)
+    val partitions = partitioner.partitions(where)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
 
+  private lazy val nodeAddresses = new NodeAddresses(connector)
+
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition]
-      .endpoints.flatMap(inet => Seq(inet.getHostName, inet.getHostAddress)).toSeq.distinct
+    split.asInstanceOf[CassandraPartition].endpoints.flatMap(nodeAddresses.hostNames).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")

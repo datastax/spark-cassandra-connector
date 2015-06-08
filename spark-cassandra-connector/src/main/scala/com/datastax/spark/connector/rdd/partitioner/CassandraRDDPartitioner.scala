@@ -4,7 +4,6 @@ import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
 
-import org.apache.cassandra.thrift.Cassandra
 import org.apache.spark.Partition
 
 import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
@@ -19,6 +18,7 @@ import com.datastax.spark.connector.util.Quote._
 class CassandraRDDPartitioner[V, T <: Token[V]](
     connector: CassandraConnector,
     tableDef: TableDef,
+    splitCount: Option[Int],
     splitSize: Long)(
   implicit
     tokenFactory: TokenFactory[V, T]) {
@@ -29,21 +29,36 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
-  def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
-    val startToken = tokenFactory.fromString(range.getStart.getValue.toString)
-    val endToken = tokenFactory.fromString(range.getEnd.getValue.toString)
-    val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
-    new TokenRange(startToken, endToken, replicas, None)
+  private val totalDataSize: Long = {
+    // If we know both the splitCount and splitSize, we should pretend the total size of the data is
+    // their multiplication. TokenRangeSplitter will try to produce splits of desired size, and this way
+    // their number will be close to desired splitCount. Otherwise, if splitCount is not set,
+    // we just go to C* and read the estimated data size from an appropriate system table
+    splitCount match {
+      case Some(c) => c * splitSize
+      case None => new DataSizeEstimates(connector, keyspaceName, tableName).dataSizeInBytes
+    }
   }
 
-  private def describeRing(client: Cassandra.Iface): Seq[TokenRange] = {
+  def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
+    val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
+    val endToken = tokenFactory.tokenFromString(range.getEnd.getValue.toString)
+    val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
+    val dataSize = (tokenFactory.ringFraction(startToken, endToken) * totalDataSize).toLong
+    new TokenRange(startToken, endToken, replicas, dataSize)
+  }
+
+  private def describeRing: Seq[TokenRange] = {
     connector.withClusterDo { cluster =>
       val metadata = cluster.getMetadata
       for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
     }
   }
 
-  private def splitsOf(tokenRanges: Iterable[TokenRange], splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
+  private def splitsOf(
+      tokenRanges: Iterable[TokenRange],
+      splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
+
     val parTokenRanges = tokenRanges.par
     parTokenRanges.tasksupport = new ForkJoinTaskSupport(CassandraRDDPartitioner.pool)
     (for (tokenRange <- parTokenRanges;
@@ -67,38 +82,14 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         CqlTokenRange(s"token($pk) <= ?", endToken))
   }
 
-  /** This works only for numeric tokens */
-  private def tokenCount(range: TokenRange): BigInt = {
-    val start = BigInt(tokenFactory.toString(range.start))
-    val end = BigInt(tokenFactory.toString(range.end))
-    if (start < end)
-      end - start
-    else
-      end - start + tokenFactory.totalTokenCount
-  }
-
-  /** Rows per token average is required for fast local range splitting.
-    * Used only for Murmur3Partitioner and RandomPartitioner.  */
-  private def estimateCassandraPartitionsPerToken(tokenRanges: Seq[TokenRange]): Double = {
-    val random = new scala.util.Random(0)
-    val tokenRangeSample = random.shuffle(tokenRanges).take(CassandraRDDPartitioner.TokenRangeSampleSize)
-    val splitter = new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
-    val splits = splitsOf(tokenRangeSample, splitter)
-    val tokenCountSum = splits.map(tokenCount).sum
-    val rowCountSum = splits.map(_.rowCount.get).sum
-    rowCountSum.toDouble / tokenCountSum.toDouble
-  }
-
-  private def createSplitterFor(tokenRanges: Seq[TokenRange]): TokenRangeSplitter[V, T] = {
+  private def createTokenRangeSplitter: TokenRangeSplitter[V, T] = {
     tokenFactory.asInstanceOf[TokenFactory[_, _]] match {
       case TokenFactory.RandomPartitionerTokenFactory =>
-        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
-        new RandomPartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        new RandomPartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case TokenFactory.Murmur3TokenFactory =>
-        val partitionsPerToken = estimateCassandraPartitionsPerToken(tokenRanges)
-        new Murmur3PartitionerTokenRangeSplitter(partitionsPerToken).asInstanceOf[TokenRangeSplitter[V, T]]
+        new Murmur3PartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
       case _ =>
-        new ServerSideTokenRangeSplitter(connector, keyspaceName, tableName, tokenFactory)
+        throw new UnsupportedOperationException(s"Unsupported TokenFactory $tokenFactory")
     }
   }
 
@@ -128,28 +119,25 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
 
   /** Computes Spark partitions of the given table. Called by [[CassandraTableScanRDD]]. */
   def partitions(whereClause: CqlWhereClause): Array[Partition] = {
-    connector.withCassandraClientDo {
-      client =>
-        val tokenRanges = describeRing(client)
-        val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
-        val splitter = createSplitterFor(tokenRanges)
-        val splits = splitsOf(tokenRanges, splitter).toSeq
-        val maxGroupSize = tokenRanges.size / endpointCount
-        val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
-        val groups = clusterer.group(splits).toArray
+    val tokenRanges = describeRing
+    val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
+    val splitter = createTokenRangeSplitter
+    val splits = splitsOf(tokenRanges, splitter).toSeq
+    val maxGroupSize = tokenRanges.size / endpointCount
+    val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
+    val groups = clusterer.group(splits).toArray
 
-        if (containsPartitionKey(whereClause)) {
-          val replicas = tokenRanges.flatMap(_.replicas)
-          Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
-        }
-        else
-          for ((group, index) <- groups.zipWithIndex) yield {
-            val cqlPredicates = group.flatMap(splitToCqlClause)
-            val replicas = group.map(_.replicas).reduce(_ intersect _)
-            val rowCount = group.map(_.rowCount.get).sum
-            CassandraPartition(index, replicas, cqlPredicates, rowCount)
-          }
+    if (containsPartitionKey(whereClause)) {
+      val replicas = tokenRanges.flatMap(_.replicas)
+      Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
     }
+    else
+      for ((group, index) <- groups.zipWithIndex) yield {
+        val cqlPredicates = group.flatMap(splitToCqlClause)
+        val replicas = group.map(_.replicas).reduce(_ intersect _)
+        val rowCount = group.map(_.dataSize).sum
+        CassandraPartition(index, replicas, cqlPredicates, rowCount)
+      }
   }
 
 }
@@ -163,4 +151,25 @@ object CassandraRDDPartitioner {
   val TokenRangeSampleSize = 16
 
   private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
+
+  type V = t forSome { type t }
+  type T = t forSome { type t <: Token[V] }
+
+  /** Creates a `CassandraRDDPartitioner` for the given cluster and table.
+    * Unlike the class constructor, this method does not take the generic `V` and `T` parameters,
+    * and therefore you don't need to specify the ones proper for the partitioner used in the
+    * Cassandra cluster. */
+  def apply(
+      conn: CassandraConnector,
+      tableDef: TableDef,
+      splitCount: Option[Int],
+      splitSize: Int): CassandraRDDPartitioner[V, T] = {
+
+    val partitionerClassName =
+      conn.withSessionDo { session =>
+        session.execute("SELECT partitioner FROM system.local").one().getString(0)
+      }
+    val tokenFactory = TokenFactory.forCassandraPartitioner(partitionerClassName)
+    new CassandraRDDPartitioner(conn, tableDef, splitCount, splitSize)(tokenFactory)
+  }
 }

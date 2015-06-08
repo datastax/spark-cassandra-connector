@@ -10,7 +10,7 @@ class ConsolidateSettingsSpec extends FlatSpec with Matchers {
     "table level -> keyspace -> cluster -> default" in {
     val tableRef = TableRef("table", "keyspace", Option("cluster"))
     val sparkConf = new SparkConf
-    val rowSize = "spark.cassandra.input.page.row.size"
+    val rowSize = "spark.cassandra.input.fetch.size_in_rows"
 
     sparkConf.set(rowSize, "10")
     val consolidatedConf =
