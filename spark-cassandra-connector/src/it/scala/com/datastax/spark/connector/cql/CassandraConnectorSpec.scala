@@ -1,7 +1,9 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import org.apache.spark.SparkConf
+
+import com.datastax.driver.core.ProtocolOptions
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
@@ -114,6 +116,19 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     // would throw exception if connection unsuccessful
     val conn2 = CassandraConnector(conf)
     conn2.withSessionDo { session => }
+  }
+
+  it should "use compression when configured" in {
+    val host = EmbeddedCassandra.getHost(0).getHostAddress
+    val conf = new SparkConf(loadDefaults = false)
+      .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
+      .set(CassandraConnectorConf.CassandraConnectionCompressionProperty, "SNAPPY")
+
+    val conn = CassandraConnector(conf)
+    conn.withSessionDo { session ⇒
+      session.getCluster.getConfiguration
+          .getProtocolOptions.getCompression shouldBe ProtocolOptions.Compression.SNAPPY
+    }
   }
 }
 
