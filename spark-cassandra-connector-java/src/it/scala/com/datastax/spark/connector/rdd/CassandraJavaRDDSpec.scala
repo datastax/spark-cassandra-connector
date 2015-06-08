@@ -51,6 +51,9 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
     session.execute("INSERT INTO java_api_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
 
+    session.execute("CREATE TABLE IF NOT EXISTS java_api_test.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)")
+    session.execute("INSERT INTO java_api_test.tuples(key, value) VALUES (1, (1, 'first'))")
+
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
     session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
     session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 11, '1011')")
@@ -335,6 +338,21 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getString("street") should be("Some Street")
     udtValue.getString("city") should be("Paris")
     udtValue.getInt("zip") should be(11120)
+  }
+
+  it should "allow to fetch tuple columns" in {
+    val result = javaFunctions(sc)
+      .cassandraTable("java_api_test", "tuples")
+      .select("key", "value").collect()
+
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+
+    val tupleValue = row.getTupleValue(1)
+    tupleValue.size should be(2)
+    tupleValue.getInt(0) shouldBe 1
+    tupleValue.getString(1) shouldBe "first"
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {

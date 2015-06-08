@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe._
 
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, TupleColumnMapper, ColumnMapper, DefaultColumnMapper}
-import com.datastax.spark.connector.types.{MapType, SetType, ListType, TypeConversionException, BigIntType, ColumnType, TypeConverter, UserDefinedType}
+import com.datastax.spark.connector.types.{TupleType, MapType, SetType, ListType, TypeConversionException, BigIntType, ColumnType, TypeConverter, UserDefinedType}
 import com.datastax.spark.connector.util.{Symbols, ReflectionUtil}
 import com.datastax.spark.connector._
 
@@ -86,9 +86,9 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
         val argConverter = converter(argColumnType, argScalaType)
         TypeConverter.forType[U](Seq(argConverter))
 
-      case (udt @ UserDefinedType(_, columns), _) =>
+      case (struct: StructDef, _) =>
         implicit val cm: ColumnMapper[U] = columnMapper[U]
-        new GettableDataToMappedTypeConverter[U](udt, udt.columnRefs)
+        new GettableDataToMappedTypeConverter[U](struct, struct.columnRefs)
 
       case (ListType(argColumnType), TypeRef(_, _, List(argScalaType))) =>
         val argConverter = converter(argColumnType, argScalaType)
@@ -192,6 +192,16 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
     convertedColumnValue(ref, data, converter)
   }
 
+  /** Evaluates the i-th constructor param value, based on given input data.
+    * The returned value is already converted to the type expected by the constructor. */
+  private def ctorParamValue(i: Int, data: GettableByIndexData): AnyRef = {
+    val ref = columnMap.constructor(i)
+    val converter = ctorParamConverters(i)
+    val value = data.getRaw(i)
+    val name = i.toString
+    checkNotNull(tryConvert(value, converter, name), name)
+  }
+
   /** Evaluates the argument to be passed to the given setter of type `T`, based on given input data.
     * The returned value is already converted to the type expected by the setter. */
   private def setterParamValue(setter: String, data: GettableData): AnyRef = {
@@ -213,6 +223,13 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
     for (i <- buf.indices)
       buf(i) = ctorParamValue(i, data)
   }
+
+  /** Fills buffer with converted constructor arguments */
+  private def fillBuffer(data: GettableByIndexData, buf: Array[AnyRef]): Unit = {
+    for (i <- buf.indices)
+      buf(i) = ctorParamValue(i, data)
+  }
+
 
   /** List of the setters on type `T` with their corresponding column references.
     * Evaluated basing on the information from the `ColumnMapper`.
@@ -238,13 +255,17 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
   /** The main function to convert a `GettableData`
     * to an object that has a `ColumnMapper` */
   override def convertPF: PartialFunction[Any, T] = {
+
     case data: GettableData =>
       val buf = buffer.get()
       fillBuffer(data, buf)
       val obj = factory.newInstance(buf: _*)
       invokeSetters(data, obj)
       obj
+
+    case data: GettableByIndexData =>
+      val buf = buffer.get()
+      fillBuffer(data, buf)
+      factory.newInstance(buf: _*)
   }
-
-
 }

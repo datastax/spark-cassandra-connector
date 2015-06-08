@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
-import com.datastax.driver.core.{UserType, ProtocolVersion, DataType}
+import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, ProtocolVersion, DataType}
 import com.datastax.spark.connector.util.Symbols
 
 import scala.collection.JavaConversions._
@@ -58,9 +58,14 @@ object ColumnType {
     * This guarantees that if T is Serializable, the collection is Serializable. */
   private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
 
-  private def fields(dataType: UserType): IndexedSeq[UDTFieldDef] = unlazify {
+  private def fields(dataType: DriverUserType): IndexedSeq[UDTFieldDef] = unlazify {
     for (field <- dataType.iterator().toIndexedSeq) yield
       UDTFieldDef(field.getName, fromDriverType(field.getType))
+  }
+
+  private def fields(dataType: DriverTupleType): IndexedSeq[TupleFieldDef] = unlazify {
+    for ((field, index) <- dataType.getComponentTypes.toIndexedSeq.zipWithIndex) yield
+      TupleFieldDef(index, fromDriverType(field))
   }
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
@@ -69,7 +74,8 @@ object ColumnType {
       case (_, DataType.Name.LIST) => ListType(typeArgs(0))
       case (_, DataType.Name.SET)  => SetType(typeArgs(0))
       case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
-      case (userType: UserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
+      case (userType: DriverUserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
+      case (tupleType: DriverTupleType, _) => TupleType(fields(tupleType): _*)
       case _ => primitiveTypeMap(dataType)
     }
   }
@@ -139,6 +145,7 @@ object ColumnType {
         case DataType.Name.SET => TypeConverter.javaHashSetConverter(typeArgs(0))
         case DataType.Name.MAP => TypeConverter.javaHashMapConverter(typeArgs(0), typeArgs(1))
         case DataType.Name.UDT => UserDefinedType.driverUDTValueConverter(dataType)
+        case DataType.Name.TUPLE => TupleType.driverTupleValueConverter(dataType)
         case _ => fromDriverType(dataType).converterToCassandra
       }
 
