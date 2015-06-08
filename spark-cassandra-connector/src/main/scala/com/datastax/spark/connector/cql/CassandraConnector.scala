@@ -122,8 +122,9 @@ class CassandraConnector(conf: CassandraConnectorConf)
     withClusterDo { cluster =>
       LocalNodeFirstLoadBalancingPolicy
         .sortNodesByProximityAndStatus(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+        .filter(_.isUp) //Remove localhost if it is down (SPARKC-183)
         .headOption
-        .getOrElse(throw new IOException("Cannot connect to Cassandra: No hosts found"))
+        .getOrElse(throw new IOException("Cannot connect to Cassandra: No live hosts found"))
     }
   }
 
