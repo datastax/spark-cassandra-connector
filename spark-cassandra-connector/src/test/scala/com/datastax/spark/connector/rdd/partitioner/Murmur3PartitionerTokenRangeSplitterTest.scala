@@ -81,4 +81,37 @@ class Murmur3PartitionerTokenRangeSplitterTest {
     assertNoHoles(splits)
     assertSimilarSize(splits)
   }
+
+  @Test
+  def testSplitNumPartitions() {
+    val node = InetAddress.getLocalHost
+    val dataSize = 1000
+    val splitter = new Murmur3PartitionerTokenRangeSplitter(dataSize)
+    val range = new TokenRange(LongToken(0), LongToken(0), Set(node), dataSize)
+    val out = splitter.split(range, 0,Some(10))
+
+    assertEquals(10, out.size)
+    assertEquals(0L, out.head.start.value)
+    assertEquals(0L, out.last.end.value)
+    assertTrue(out.forall(s => s.end.value != s.start.value))
+    assertTrue(out.forall(_.replicas == Set(node)))
+    assertNoHoles(out)
+    assertSimilarSize(out)
+  }
+  @Test
+  def testWrapAroundNumPartitions() {
+    val dataSize = 2000
+    val splitter = new Murmur3PartitionerTokenRangeSplitter(dataSize)
+    val start = Murmur3TokenFactory.maxToken.value - Long.MaxValue / 2
+    val end = Murmur3TokenFactory.minToken.value + Long.MaxValue / 2
+    val range = new TokenRange(LongToken(start), LongToken(end), Set.empty, dataSize / 2)
+    val splits = splitter.split(range, 0, Some(10))
+
+    // range is half of the ring; 2000 * 0.5 / 100 = 10
+    assertEquals(10, splits.size)
+    assertEquals(start, splits.head.start.value)
+    assertEquals(end, splits.last.end.value)
+    assertNoHoles(splits)
+    assertSimilarSize(splits)
+  }
 }

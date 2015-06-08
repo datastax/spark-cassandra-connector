@@ -20,8 +20,9 @@ class CassandraRDDPartitionerSpec
     session.execute(s"CREATE TABLE IF NOT EXISTS $keyspaceName.empty(key INT PRIMARY KEY)")
   }
 
-  // TODO: Currently CassandraRDDPartitioner uses a size-based algorithm that doesn't guarantee exact
-  // split count, so we are only checking if the split count is "close enough" to the desired value.
+  // CassandraRDDPartitioner uses two approacehs a size-based algorithm that doesn't guarantee exact
+  // split count and nexect number of paritionsm
+  // Heere  are only checking if the split count is "close enough" to the desired value.
   // Should be improved in the future.
   private def testPartitionCount(numPartitions: Int, min: Int, max: Int): Unit = {
     val table = Schema.fromCassandra(conn, Some(keyspaceName), Some("empty")).tables.head
@@ -38,6 +39,13 @@ class CassandraRDDPartitionerSpec
   // we won't run it on a 10000 node cluster, so we don't need to check node count
   it should "create about 10000 partitions when splitCount == 10000" in {
     testPartitionCount(10000, 9000, 11000)
+  }
+
+  it should "create exect 256 partitions when numPartitions == 256" in {
+    val table = Schema.fromCassandra(conn, Some(keyspaceName), Some("empty")).tables.head
+    val partitioner = CassandraRDDPartitioner(conn, table, None, 10000)
+    val partitions = partitioner.partitions(CqlWhereClause.empty, Some(256))
+    partitions.length should be (256)
   }
 
   it should "create multiple partitions if the amount of data is big enough" in {
@@ -69,6 +77,11 @@ class CassandraRDDPartitionerSpec
     // theoretically there should be 64 splits, but it is ok to be "a little" inaccurate
     partitions.length should be >= 16
     partitions.length should be <= 256
+
+    // test exect number of paritions:
+    partitioner.partitions(CqlWhereClause.empty, Some(512)).length should be (512)
+    partitioner.partitions(CqlWhereClause.empty, Some(1)).length should be (1)
+
   }
 
 }

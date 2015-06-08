@@ -1,11 +1,5 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import scala.collection.JavaConversions._
-import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
-
-import org.apache.spark.Partition
-
 import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd._
@@ -13,6 +7,12 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.util.CqlWhereParser
 import com.datastax.spark.connector.util.CqlWhereParser._
 import com.datastax.spark.connector.util.Quote._
+import org.apache.spark.Partition
+
+import Ordering.Implicits._
+import scala.collection.JavaConversions._
+import scala.collection.parallel.ForkJoinTaskSupport
+import scala.concurrent.forkjoin.ForkJoinPool
 
 /** Creates CassandraPartitions for given Cassandra table */
 class CassandraRDDPartitioner[V, T <: Token[V]](
@@ -118,26 +118,45 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
   }
 
   /** Computes Spark partitions of the given table. Called by [[CassandraTableScanRDD]]. */
-  def partitions(whereClause: CqlWhereClause): Array[Partition] = {
+  def partitions(whereClause: CqlWhereClause, partitionNunmber :Option[Int] = None): Array[Partition] = {
     val tokenRanges = describeRing
-    val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
     val splitter = createTokenRangeSplitter
-    val splits = splitsOf(tokenRanges, splitter).toSeq
-    val maxGroupSize = tokenRanges.size / endpointCount
-    val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
-    val groups = clusterer.group(splits).toArray
 
     if (containsPartitionKey(whereClause)) {
       val replicas = tokenRanges.flatMap(_.replicas)
       Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
     }
-    else
+    else if(partitionNunmber.nonEmpty) 
+    {
+      val np = partitionNunmber.getOrElse(tokenRanges.length);
+      val groups = if (np < tokenRanges.length) {
+        // glue token ranges
+        tokenRanges.sortBy(_.replicas.map(_.getHostAddress).toSeq.sorted)
+          .grouped(math.ceil(tokenRanges.length.toDouble/np).toInt).toSeq
+      } else if (np >= 2*tokenRanges.length) {
+        // split token ranges
+        tokenRanges.flatMap(splitter.split(_, 0, Some(np/tokenRanges.length))).map(Seq(_))
+      } else  tokenRanges.map(Seq(_))
+
+      (for ((group, index) <- groups.zipWithIndex) yield {
+        val cqlPredicates = group.flatMap(splitToCqlClause)
+        val replicas = group.map(_.replicas).reduce(_ intersect _)
+        CassandraPartition(index, replicas, cqlPredicates, 0)
+      }).toArray
+    } else {
+      val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
+      val splits = splitsOf(tokenRanges, splitter).toSeq
+      val maxGroupSize = tokenRanges.size / endpointCount
+      val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
+      val groups = clusterer.group(splits).toArray
+
       for ((group, index) <- groups.zipWithIndex) yield {
         val cqlPredicates = group.flatMap(splitToCqlClause)
         val replicas = group.map(_.replicas).reduce(_ intersect _)
         val rowCount = group.map(_.dataSize).sum
         CassandraPartition(index, replicas, cqlPredicates, rowCount)
       }
+    }
   }
 
 }
