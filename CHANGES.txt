@@ -1,3 +1,6 @@
+1.2.3 (unreleased)
+ * Support for connection compressions configuration (SPARKC-124)
+
 1.2.2
  * Updated Spark version to 1.2.2, Scala to 2.10.5 / 2.11.6
  * Enabled Java API artifact generation for Scala 2.11.x (SPARKC-130)
