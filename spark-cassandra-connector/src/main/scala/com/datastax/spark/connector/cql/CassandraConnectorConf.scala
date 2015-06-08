@@ -6,6 +6,7 @@ import org.apache.spark.{Logging, SparkConf}
 
 import scala.util.control.NonFatal
 
+import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.util.ConfigCheck
 
 /** Stores configuration of a connection to Cassandra.
@@ -19,6 +20,7 @@ case class CassandraConnectorConf(
   keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
   minReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMinReconnectionDelayMillis,
   maxReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMaxReconnectionDelayMillis,
+  compression: ProtocolOptions.Compression = CassandraConnectorConf.DefaultCassandraConnectionCompression,
   queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
   connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
   readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
@@ -41,6 +43,7 @@ object CassandraConnectorConf extends Logging {
   val DefaultQueryRetryCount = 10
   val DefaultConnectTimeoutMillis = 5000
   val DefaultReadTimeoutMillis = 12000
+  val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
 
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionRpcPortProperty = "spark.cassandra.connection.rpc.port"
@@ -51,6 +54,7 @@ object CassandraConnectorConf extends Logging {
   val CassandraConnectionKeepAliveProperty = "spark.cassandra.connection.keep_alive_ms"
   val CassandraMinReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.min"
   val CassandraMaxReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.max"
+  val CassandraConnectionCompressionProperty = "spark.cassandra.connection.compression"
   val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
 
@@ -64,6 +68,7 @@ object CassandraConnectorConf extends Logging {
     CassandraConnectionKeepAliveProperty,
     CassandraMinReconnectionDelayProperty,
     CassandraMaxReconnectionDelayProperty,
+    CassandraConnectionCompressionProperty,
     CassandraQueryRetryCountProperty,
     CassandraReadTimeoutProperty
   )
@@ -97,6 +102,9 @@ object CassandraConnectorConf extends Logging {
     val connectTimeout = conf.getInt(CassandraConnectionTimeoutProperty, DefaultConnectTimeoutMillis)
     val readTimeout = conf.getInt(CassandraReadTimeoutProperty, DefaultReadTimeoutMillis)
 
+    val compression = conf.getOption(CassandraConnectionCompressionProperty)
+        .map(ProtocolOptions.Compression.valueOf).getOrElse(DefaultCassandraConnectionCompression)
+
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
 
     CassandraConnectorConf(
@@ -108,6 +116,7 @@ object CassandraConnectorConf extends Logging {
       keepAliveMillis = keepAlive,
       minReconnectionDelayMillis = minReconnectionDelay,
       maxReconnectionDelayMillis = maxReconnectionDelay,
+      compression = compression,
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
