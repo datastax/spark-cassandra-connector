@@ -118,8 +118,8 @@ class CassandraConnector(conf: CassandraConnectorConf)
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       LocalNodeFirstLoadBalancingPolicy
-        .sortNodesByProximityAndStatus(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
-        .filter(_.isUp) //Remove localhost if it is down (SPARKC-183)
+        .sortNodesByStatusAndProximity(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+        .filter(_.isUp)
         .headOption
         .getOrElse(throw new IOException("Cannot connect to Cassandra: No live hosts found"))
     }
