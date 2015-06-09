@@ -1,10 +1,10 @@
-package com.datastax.spark.connector.metrics
+package org.apache.spark.metrics
+
+import org.apache.spark.TaskContext
+import org.apache.spark.executor.{DataReadMethod, InputMetrics}
 
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.rdd.ReadConf
-import org.apache.spark.TaskContext
-import org.apache.spark.executor.{DataReadMethod, InputMetrics}
-import org.apache.spark.metrics.CassandraConnectorSource
 
 /** A trait that provides a method to update read metrics which are collected for connector related tasks.
   * The appropriate instance is created by the companion object.
@@ -13,7 +13,7 @@ import org.apache.spark.metrics.CassandraConnectorSource
   * created for each Cassandra read task. This remains valid as long as Cassandra read tasks are
   * single-threaded.
   */
-private[connector] trait InputMetricsUpdater extends MetricsUpdater {
+sealed trait InputMetricsUpdater extends MetricsUpdater {
   /** Updates the metrics being collected for the connector after reading each single row. This method
     * is not thread-safe.
     *
@@ -22,7 +22,7 @@ private[connector] trait InputMetricsUpdater extends MetricsUpdater {
   def updateMetrics(row: Row): Row = row
 
   /** For internal use only */
-  private[metrics] def updateTaskMetrics(dataLength: Int): Unit = {}
+  private[metrics] def updateTaskMetrics(count: Int, dataLength: Int): Unit = {}
 
   /** For internal use only */
   private[metrics] def updateCodahaleMetrics(count: Int, dataLength: Int): Unit = {}
@@ -57,13 +57,12 @@ object InputMetricsUpdater {
 
     if (readConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()
-      if (tm.inputMetrics.isEmpty || tm.inputMetrics.get.readMethod != DataReadMethod.Hadoop)
-        tm.inputMetrics = Some(new InputMetrics(DataReadMethod.Hadoop))
+      val inputMetrics = tm.getInputMetricsForReadMethod(DataReadMethod.Hadoop)
 
       if (source.isDefined)
-        new CodahaleAndTaskMetricsUpdater(groupSize, source.get, tm.inputMetrics.get)
+        new CodahaleAndTaskMetricsUpdater(groupSize, source.get, inputMetrics)
       else
-        new TaskMetricsUpdater(groupSize, tm.inputMetrics.get)
+        new TaskMetricsUpdater(groupSize, inputMetrics)
 
     } else {
       if (source.isDefined)
@@ -92,7 +91,7 @@ object InputMetricsUpdater {
       val binarySize = getRowBinarySize(row)
 
       // updating task metrics is cheap
-      updateTaskMetrics(binarySize)
+      updateTaskMetrics(1, binarySize)
 
       cnt += 1
       dataLength += binarySize
@@ -129,7 +128,10 @@ object InputMetricsUpdater {
     val inputMetrics: InputMetrics
 
     @inline
-    override def updateTaskMetrics(dataLength: Int): Unit = inputMetrics.bytesRead += dataLength
+    override def updateTaskMetrics(count: Int, dataLength: Int): Unit = {
+      inputMetrics.incBytesRead(dataLength)
+      inputMetrics.incRecordsRead(count)
+    }
   }
 
   /** The implementation of [[InputMetricsUpdater]] which does not update anything. */

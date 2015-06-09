@@ -23,15 +23,6 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "authenticate with username and password when using thrift" in {
-    val conn2 = CassandraConnector(
-      hosts = Set(EmbeddedCassandra.getHost(0)),
-      authConf = PasswordAuthConf("cassandra", "cassandra"))
-    conn2.withCassandraClientDo { client =>
-      assert(client.describe_cluster_name() === "Test Cluster0")
-    }
-  }
-
   it should "pick up user and password from SparkConf" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
     val conf = new SparkConf(loadDefaults = true)

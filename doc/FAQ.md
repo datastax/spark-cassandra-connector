@@ -13,7 +13,8 @@ when running stages, the numbers represent (Completed Tasks + Running Tasks) / T
 
 If you see that only a single task has been created this means that the Cassandra Token range has
 not been split into a enough tasks to be well parallelized on your cluster. The number of 
-Spark partitions(tasks) created is directly controlled by the setting `spark.cassandra.input.split.size`.
+Spark partitions(tasks) created is directly controlled by the setting 
+`spark.cassandra.input.split.size_in_mb`.
 This number reflects the approximate number of live Cassandra Partitions in a given Spark partition.
 To increase the number of Spark Partitions decrease this number from the default (100k) to one that
 will sufficiently break up your C* token range. This can also be adjusted on a per cassandraTable basis
@@ -77,7 +78,7 @@ the executor's heap can handle. Remember that all of the executors run in the sa
 of the data is multiplied by the number of executor slots.
 
 To fix this either increase the heap size of the executors `spark.executor.memory`
- or shrink the size of the partitions by decreasing `spark.cassandra.input.split.size`
+ or shrink the size of the partitions by decreasing `spark.cassandra.input.split.size_in_mb`
  
 ### Why can't my spark job find My Application Classes / Anonymous Functions?
  

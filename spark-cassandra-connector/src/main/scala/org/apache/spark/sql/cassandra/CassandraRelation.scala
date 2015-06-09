@@ -2,11 +2,12 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
-import com.datastax.spark.connector.types.FieldDef
+import com.datastax.spark.connector.types.UDTFieldDef
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Statistics, LeafNode}
-import org.apache.spark.sql.{StructField, catalyst}
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.{catalyst, types}
 
 private[cassandra] case class CassandraRelation
     (tableDef: TableDef, alias: Option[String], cluster: Option[String] = None)
@@ -20,7 +21,7 @@ private[cassandra] case class CassandraRelation
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
   val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  var projectAttributes     = tableDef.columns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
@@ -33,7 +34,7 @@ private[cassandra] case class CassandraRelation
 
   @transient override lazy val statistics = Statistics(
     sizeInBytes = {
-      BigInt(cc.conf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.defaultSizeInBytes))
+      BigInt(cc.sparkConf.getLong(keyspaceName + "." + tableName + ".size.in.bytes", cc.conf.defaultSizeInBytes))
     }
   )
 
@@ -42,39 +43,39 @@ private[cassandra] case class CassandraRelation
 
 object ColumnDataType {
 
-  private val primitiveTypeMap = Map[connector.types.ColumnType[_], catalyst.types.DataType](
-    connector.types.TextType       -> catalyst.types.StringType,
-    connector.types.AsciiType      -> catalyst.types.StringType,
-    connector.types.VarCharType    -> catalyst.types.StringType,
+  private val primitiveTypeMap = Map[connector.types.ColumnType[_], types.DataType](
+    connector.types.TextType       -> types.StringType,
+    connector.types.AsciiType      -> types.StringType,
+    connector.types.VarCharType    -> types.StringType,
 
-    connector.types.BooleanType    -> catalyst.types.BooleanType,
+    connector.types.BooleanType    -> types.BooleanType,
 
-    connector.types.IntType        -> catalyst.types.IntegerType,
-    connector.types.BigIntType     -> catalyst.types.LongType,
-    connector.types.CounterType    -> catalyst.types.LongType,
-    connector.types.FloatType      -> catalyst.types.FloatType,
-    connector.types.DoubleType     -> catalyst.types.DoubleType,
+    connector.types.IntType        -> types.IntegerType,
+    connector.types.BigIntType     -> types.LongType,
+    connector.types.CounterType    -> types.LongType,
+    connector.types.FloatType      -> types.FloatType,
+    connector.types.DoubleType     -> types.DoubleType,
   
-    connector.types.VarIntType     -> catalyst.types.DecimalType(), // no native arbitrary-size integer type
-    connector.types.DecimalType    -> catalyst.types.DecimalType(),
+    connector.types.VarIntType     -> types.DecimalType(), // no native arbitrary-size integer type
+    connector.types.DecimalType    -> types.DecimalType(),
 
-    connector.types.TimestampType  -> catalyst.types.TimestampType,
-    connector.types.InetType       -> catalyst.types.StringType, 
-    connector.types.UUIDType       -> catalyst.types.StringType,
-    connector.types.TimeUUIDType   -> catalyst.types.StringType,
-    connector.types.BlobType       -> catalyst.types.ByteType
+    connector.types.TimestampType  -> types.TimestampType,
+    connector.types.InetType       -> types.StringType,
+    connector.types.UUIDType       -> types.StringType,
+    connector.types.TimeUUIDType   -> types.StringType,
+    connector.types.BlobType       -> types.ByteType
   )
 
-  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): catalyst.types.DataType = {
+  def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): types.DataType = {
 
-    def catalystStructField(field: FieldDef): StructField =
-      StructField(field.fieldName, catalystDataType(field.fieldType, nullable = true), nullable = true)
+    def catalystStructField(field: UDTFieldDef): StructField =
+      StructField(field.columnName, catalystDataType(field.columnType, nullable = true), nullable = true)
 
     cassandraType match {
-      case connector.types.SetType(et)                => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)               => catalyst.types.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)            => catalyst.types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
-      case connector.types.UserDefinedType(_, fields) => catalyst.types.StructType(fields.map(catalystStructField))
+      case connector.types.SetType(et)                => types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.ListType(et)               => types.ArrayType(primitiveTypeMap(et), nullable)
+      case connector.types.MapType(kt, vt)            => types.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.UserDefinedType(_, fields) => types.StructType(fields.map(catalystStructField))
       case _                                          => primitiveTypeMap(cassandraType)
     }
   }

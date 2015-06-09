@@ -2,21 +2,21 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import scala.collection.JavaConversions._
-import scala.language.existentials
-import scala.reflect.ClassTag
-
-import org.apache.spark.{Partition, SparkContext, TaskContext}
-
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.InputMetricsUpdater
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange, NodeAddresses}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
+import org.apache.spark.metrics.InputMetricsUpdater
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+
+import scala.collection.JavaConversions._
+import scala.language.existentials
+import scala.reflect.ClassTag
 
 
 /** RDD representing a Table Scan of A Cassandra table.
@@ -37,9 +37,9 @@ import com.datastax.spark.connector.util.CountingIterator
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
   * The following properties control the number of partitions and the fetch size:
-  * - spark.cassandra.input.split.size: approx number of Cassandra partitions in a Spark partition,
-  *   default 100000
-  * - spark.cassandra.input.page.row.size:  number of CQL rows fetched per roundtrip,
+  * - spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
+  *   partition, default 64 MB
+  * - spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
   *   default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then
@@ -63,6 +63,7 @@ class CassandraTableScanRDD[R] private[connector](
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
     val limit: Option[Long] = None,
+    val numPartitions: Option[Int] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())(
   implicit
@@ -77,6 +78,7 @@ class CassandraTableScanRDD[R] private[connector](
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
     limit: Option[Long] = limit,
+    numPartitions: Option[Int] = numPartitions,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self = {
@@ -96,6 +98,7 @@ class CassandraTableScanRDD[R] private[connector](
       columnNames = columnNames,
       where = where,
       limit = limit,
+      numPartitions = numPartitions,
       clusteringOrder = clusteringOrder,
       readConf = readConf)
   }
@@ -113,18 +116,43 @@ class CassandraTableScanRDD[R] private[connector](
       readConf = readConf)
   }
 
+  /**
+   * The method does not create  CoalesceRDD, but reduce number of parittions to read from Cassandra
+   * so it turn off partition size calcutlation and ignore spark.cassandra.input.split.size
+   * The method is useful with where() method call, when actual size of data is small then the table size
+   * Has no effect if partition key is used in where clause.
+   *
+   * @param numPartitions
+   * @param shuffle
+   * @param ord
+   * @return
+   */
+
+  override def coalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[R] = null)
+  : RDD[R] = {
+    val rdd  = copy (numPartitions = Some(numPartitions))
+    if(shuffle) {
+      rdd.superCoalesce(numPartitions, shuffle)
+    } else {
+      rdd
+    }
+  }
+  private def superCoalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[R] = null) =
+    super.coalesce(numPartitions,shuffle);
+
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
-    val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
+    val partitioner = CassandraRDDPartitioner(connector, tableDef, numPartitions, splitSizeInMB)
+    val partitions = partitioner.partitions(where)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
 
+  private lazy val nodeAddresses = new NodeAddresses(connector)
+
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition]
-      .endpoints.flatMap(inet => Seq(inet.getHostName, inet.getHostAddress)).toSeq.distinct
+    split.asInstanceOf[CassandraPartition].endpoints.flatMap(nodeAddresses.hostNames).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")
@@ -239,6 +267,7 @@ class CassandraTableScanRDD[R] private[connector](
         columnNames = SomeColumns(RowCountRef),
         where = where,
         limit = limit,
+        numPartitions = numPartitions,
         clusteringOrder = clusteringOrder,
         readConf = readConf)
 

@@ -1,11 +1,10 @@
-package com.datastax.spark.connector.metrics
+package org.apache.spark.metrics
 
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.Timer.Context
 import com.twitter.jsr166e.LongAdder
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
-import org.apache.spark.metrics.CassandraConnectorSource
 import org.apache.spark.{Logging, TaskContext}
 
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
@@ -16,7 +15,7 @@ import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
   * Instances of `OutputMetricsUpdater` are thread-safe, because the Cassandra write task implementation
   * is multi-threaded.
   */
-private[connector] trait OutputMetricsUpdater extends MetricsUpdater {
+sealed trait OutputMetricsUpdater extends MetricsUpdater {
   /** Updates the metrics being collected for the connector after writing each single statement.
     * This method is thread-safe.
     *
@@ -33,7 +32,7 @@ private[connector] trait OutputMetricsUpdater extends MetricsUpdater {
   ): Unit = {}
 
   /** For internal use only */
-  private[metrics] def updateTaskMetrics(success: Boolean, dataLength: Int): Unit = {}
+  private[metrics] def updateTaskMetrics(success: Boolean, count: Int, dataLength: Int): Unit = {}
 
   /** For internal use only */
   private[metrics] def updateCodahaleMetrics(
@@ -94,8 +93,9 @@ object OutputMetricsUpdater extends Logging {
     ): Unit = {
 
       val dataLength = stmt.bytesCount
-      updateTaskMetrics(success, dataLength)
-      updateCodahaleMetrics(success, stmt.rowsCount, dataLength, submissionTimestamp, executionTimestamp)
+      val rowsCount = stmt.rowsCount
+      updateTaskMetrics(success, rowsCount, dataLength)
+      updateCodahaleMetrics(success, rowsCount, dataLength, submissionTimestamp, executionTimestamp)
     }
 
     def finish(): Long = stopTimer()
@@ -104,13 +104,18 @@ object OutputMetricsUpdater extends Logging {
   private trait TaskMetricsSupport extends OutputMetricsUpdater {
     val outputMetrics: OutputMetrics
 
-    val atomicCounter = new LongAdder
-    atomicCounter.add(outputMetrics.bytesWritten)
+    val dataLengthCounter = new LongAdder
+    val rowsCounter = new LongAdder
 
-    override private[metrics] def updateTaskMetrics(success: Boolean, dataLength: Int): Unit = {
+    dataLengthCounter.add(outputMetrics.bytesWritten)
+    rowsCounter.add(outputMetrics.recordsWritten)
+
+    override private[metrics] def updateTaskMetrics(success: Boolean, count: Int, dataLength: Int): Unit = {
       if (success) {
-        atomicCounter.add(dataLength)
-        outputMetrics.bytesWritten = atomicCounter.longValue()
+        dataLengthCounter.add(dataLength)
+        rowsCounter.add(count)
+        outputMetrics.setBytesWritten(dataLengthCounter.longValue())
+        outputMetrics.setRecordsWritten(rowsCounter.longValue())
       }
     }
   }

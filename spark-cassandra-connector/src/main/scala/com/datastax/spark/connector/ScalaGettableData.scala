@@ -8,16 +8,16 @@ import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import org.joda.time.DateTime
 
-trait ScalaGettableData extends AbstractGettableData {
+trait ScalaGettableData extends GettableData {
 
   /** Converts this row to a Map */
   def toMap: Map[String, Any] =
-    fieldNames.zip(fieldValues).toMap
+    columnNames.zip(columnValues).toMap
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
   def get[T](index: Int)(implicit c: TypeConverter[T]): T =
-    c.convert(fieldValues(index)) match {
+    c.convert(columnValues(index)) match {
       case null => throw new NullPointerException(
         "Unexpected null value of column " + index + ". Use get[Option[...]] to receive null values.")
       case notNull => notNull
@@ -27,13 +27,6 @@ trait ScalaGettableData extends AbstractGettableData {
     * Looks the column up by column name. Column names are case-sensitive.*/
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
     get[T](_indexOfOrThrow(name))
-
-  /** Returns a column value by index without applying any conversion.
-    * The underlying type is the same as the type returned by the low-level Cassandra driver,
-    * is implementation defined and may change in the future.
-    * Cassandra nulls are returned as Scala nulls. */
-  def getRaw(index: Int): AnyRef = fieldValues(index)
-  def getRaw(name: String): AnyRef = fieldValues(_indexOfOrThrow(name))
 
   /** Returns a `bool` column value. Besides working with `bool` Cassandra type, it can also read
     * numbers and strings. Non-zero numbers are converted to `true`, zero is converted to `false`.
@@ -212,6 +205,6 @@ trait ScalaGettableData extends AbstractGettableData {
 
 
   def copy() = this  // this class is immutable
-  def iterator = fieldValues.iterator
+  def iterator = columnValues.iterator
 
 }

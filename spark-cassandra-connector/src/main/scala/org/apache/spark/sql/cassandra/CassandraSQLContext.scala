@@ -7,7 +7,7 @@ import org.apache.commons.lang.StringUtils
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.{Strategy, SQLContext, SchemaRDD}
+import org.apache.spark.sql.{DataFrame, Strategy, SQLContext, SchemaRDD}
 
 import collection.mutable
 
@@ -38,10 +38,10 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   import CassandraSQLContext._
 
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
-    new this.QueryExecution { val logical = plan }
+    new this.QueryExecution(plan)
 
   @transient
-  val conf = sc.getConf
+  val sparkConf = sc.getConf
 
   @transient
   private val clusterReadConf = mutable.Map[String, ReadConf]()
@@ -98,9 +98,9 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       case Some(c) => validateClusterName(c)
                       tableReadConf.get(Seq(table, keyspace, c)).getOrElse(
                         keyspaceReadConf.get(Seq(keyspace, c)).getOrElse(
-                          clusterReadConf.get(c).getOrElse(ReadConf.fromSparkConf(conf))))
+                          clusterReadConf.get(c).getOrElse(ReadConf.fromSparkConf(sparkConf))))
       case _       => tableReadConf.get(Seq(table, keyspace)).getOrElse(
-                        keyspaceReadConf.get(Seq(keyspace)).getOrElse(ReadConf.fromSparkConf(conf)))
+                        keyspaceReadConf.get(Seq(keyspace)).getOrElse(ReadConf.fromSparkConf(sparkConf)))
     }
   }
 
@@ -159,9 +159,9 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       case Some(c) => validateClusterName(c)
                       tableWriteConf.get(Seq(table, keyspace, c)).getOrElse(
                         keyspaceWriteConf.get(Seq(keyspace, c)).getOrElse(
-                          clusterWriteConf.get(c).getOrElse(WriteConf.fromSparkConf(conf))))
+                          clusterWriteConf.get(c).getOrElse(WriteConf.fromSparkConf(sparkConf))))
       case _       => tableWriteConf.get(Seq(table, keyspace)).getOrElse(
-                        keyspaceWriteConf.get(Seq(keyspace)).getOrElse(WriteConf.fromSparkConf(conf)))
+                        keyspaceWriteConf.get(Seq(keyspace)).getOrElse(WriteConf.fromSparkConf(sparkConf)))
     }
   }
 
@@ -185,7 +185,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     cluster match {
       case Some(c) => validateClusterName(c)
                       clusterCassandraConnConf.get(c).getOrElse(throw new RuntimeException(s"Missing cluster $c Cassandra connection conf"))
-      case _       => CassandraConnectorConf(conf)
+      case _       => CassandraConnectorConf(sparkConf)
     }
   }
 
@@ -195,7 +195,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     }
   }
 
-  private var keyspaceName = conf.getOption(CassandraSQLKeyspaceNameProperty)
+  private var keyspaceName = sparkConf.getOption(CassandraSQLKeyspaceNameProperty)
 
   /** Sets default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) {
@@ -207,11 +207,11 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   def getKeyspace: String = keyspaceName.getOrElse(
     throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace."))
 
-  /** Executes SQL query against Cassandra and returns SchemaRDD representing the result. */
-  def cassandraSql(cassandraQuery: String): SchemaRDD = new SchemaRDD(this, super.parseSql(cassandraQuery))
+  /** Executes SQL query against Cassandra and returns DataFrame representing the result. */
+  def cassandraSql(cassandraQuery: String): DataFrame = new DataFrame(this, super.parseSql(cassandraQuery))
 
   /** Delegates to [[cassandraSql]] */
-  override def sql(cassandraQuery: String): SchemaRDD = cassandraSql(cassandraQuery)
+  override def sql(cassandraQuery: String): DataFrame = cassandraSql(cassandraQuery)
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
@@ -222,8 +222,9 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] val planner = new SparkPlanner with CassandraStrategies {
     val cassandraContext = CassandraSQLContext.this
     override val strategies: Seq[Strategy] = Seq(
-      CommandStrategy(CassandraSQLContext.this),
+      DDLStrategy,
       TakeOrdered,
+      ParquetOperations,
       InMemoryScans,
       CassandraTableScans,
       DataSinks,

@@ -2,12 +2,14 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import org.apache.spark.metrics.OutputMetricsUpdater
+
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.OutputMetricsUpdater
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
@@ -37,9 +39,6 @@ class TableWriter[T] private (
     case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
     case _ => None
   }
-
-  private def quote(name: String): String =
-    "\"" + name + "\""
 
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
@@ -78,7 +77,7 @@ class TableWriter[T] private (
   }
 
   private val isCounterUpdate =
-    tableDef.allColumns.exists(_.isCounterColumn)
+    tableDef.columns.exists(_.isCounterColumn)
 
   private val queryTemplate: String = {
     if (isCounterUpdate)
@@ -158,7 +157,7 @@ object TableWriter {
   }
 
   private def checkMissingColumns(table: TableDef, columnNames: Seq[String]) {
-    val allColumnNames = table.allColumns.map(_.columnName)
+    val allColumnNames = table.columns.map(_.columnName)
     val missingColumns = columnNames.toSet -- allColumnNames
     if (missingColumns.nonEmpty)
       throw new IllegalArgumentException(
@@ -183,12 +182,13 @@ object TableWriter {
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = tableDef.select(columnNames).map(_.columnName)
+    val selectedColumns = columnNames.selectFrom(tableDef)
+    val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
-      tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
-      selectedColumns ++ writeConf.optionPlaceholders, columnNames.aliases)
+      tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
+      selectedColumns ++ optionColumns.map(_.ref))
     
-    checkColumns(tableDef, selectedColumns)
+    checkColumns(tableDef, selectedColumns.map(_.columnName))
     new TableWriter[T](connector, tableDef, rowWriter, writeConf)
   }
 }

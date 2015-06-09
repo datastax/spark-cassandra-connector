@@ -301,7 +301,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     javaFunctions(sc).cassandraTable("java_api_test", "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), nativePort = 9999, rpcPort = 9998)
+    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), port = 9999)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable("java_api_test", "test_table").withConnector(invalidConnector).collect()
     }

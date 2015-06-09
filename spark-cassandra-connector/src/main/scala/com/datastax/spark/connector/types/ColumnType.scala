@@ -56,11 +56,11 @@ object ColumnType {
 
   /** Makes sure the sequence does not contain any lazy transformations.
     * This guarantees that if T is Serializable, the collection is Serializable. */
-  private def unlazify[T](seq: Seq[T]): Seq[T] = Seq(seq: _*)
+  private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
 
-  private def fields(dataType: UserType): Seq[FieldDef] = unlazify {
-    for (field <- dataType.iterator().toSeq) yield
-      FieldDef(field.getName, fromDriverType(field.getType))
+  private def fields(dataType: UserType): IndexedSeq[UDTFieldDef] = unlazify {
+    for (field <- dataType.iterator().toIndexedSeq) yield
+      UDTFieldDef(field.getName, fromDriverType(field.getType))
   }
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {

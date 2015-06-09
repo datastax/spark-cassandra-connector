@@ -29,7 +29,7 @@ object Versions {
   lazy val scalaBinary = scalaVersion.dropRight(2)
 
   val Akka            = "2.3.4"
-  val Cassandra       = "2.1.3"
+  val Cassandra       = "2.1.5"
   val CassandraDriver = "2.1.5"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
@@ -47,8 +47,9 @@ object Versions {
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
+  val Spark           = "1.3.1"
+  val SparkJetty      = "8.1.14.v20131031"
   val JSR166e         = "1.1.0"
-  val Spark           = "1.2.2"
 
   val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
 

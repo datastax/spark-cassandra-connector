@@ -1,8 +1,7 @@
-package com.datastax.spark.connector.metrics
+package org.apache.spark.metrics
 
 import com.codahale.metrics.Timer.Context
 import org.apache.spark.SparkEnv
-import org.apache.spark.metrics.CassandraConnectorSource
 
 /** The base trait for metrics updaters implementations. The metrics updater is an object which provides
   * a unified way to update all the relevant metrics which are collected for the particular type of
