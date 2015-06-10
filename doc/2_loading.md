@@ -187,6 +187,7 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `timeuuid`        | `java.util.UUID` 
 | `varchar`         | `String` 
 | `varint`          | `BigInt`, `java.math.BigInteger`
+| `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
 
 Other conversions might work, but may cause loss of precision or may not work for all values. 

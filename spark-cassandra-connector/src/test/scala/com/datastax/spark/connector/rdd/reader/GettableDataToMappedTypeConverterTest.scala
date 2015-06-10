@@ -7,7 +7,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, ColumnMapper}
 import com.datastax.spark.connector.{UDTValue, CassandraRow}
 import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
-import com.datastax.spark.connector.types.{MapType, ColumnType, SetType, ListType, TypeConversionException, UserDefinedType, IntType, UDTFieldDef, VarCharType}
+import com.datastax.spark.connector.types._
 
 
 class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
@@ -85,6 +85,40 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     val user = converter.convert(row)
     user.login shouldBe "foo"
     user.password shouldBe "bar"
+  }
+
+  it should "convert a TupleValue to a Scala tuple" in {
+    val tupleValue = TupleValue("foo", "bar")
+    val tupleType = TupleType(TupleFieldDef(0, VarCharType), TupleFieldDef(1, VarCharType))
+    val converter = new GettableDataToMappedTypeConverter[(String, String)](tupleType, tupleType.columnRefs)
+    val tuple = converter.convert(tupleValue)
+    tuple._1 shouldBe "foo"
+    tuple._2 shouldBe "bar"
+  }
+
+  it should "allow for nesting UDTValues inside of TupleValues" in {
+    val addressValue = UDTValue.fromMap(Map("street" -> "foo", "number" -> 10))
+    val tupleValue = TupleValue("baz", addressValue)
+    val tupleType = TupleType(TupleFieldDef(0, VarCharType), TupleFieldDef(1, addressType))
+    val converter = new GettableDataToMappedTypeConverter[(String, Address)](tupleType, tupleType.columnRefs)
+    val tuple = converter.convert(tupleValue)
+    tuple._1 shouldBe "baz"
+    tuple._2.street shouldBe "foo"
+    tuple._2.number shouldBe 10
+  }
+
+  case class AddressWithCompoundNumber(street: String, number: (Int, Int))
+
+  it should "allow for nesting TupleValues inside of UDTValues" in {
+    val tupleType = TupleType(TupleFieldDef(0, IntType), TupleFieldDef(1, IntType))
+    val numberColumn = UDTFieldDef("number", tupleType)
+    val addressType = UserDefinedType("address", IndexedSeq(streetColumn, numberColumn))
+    val addressValue = UDTValue.fromMap(Map("street" -> "foo", "number" -> TupleValue(5, 10)))
+    val converter = new GettableDataToMappedTypeConverter[AddressWithCompoundNumber](addressType, addressType.columnRefs)
+    val address = converter.convert(addressValue)
+    address.street shouldBe "foo"
+    address.number._1 shouldBe 5
+    address.number._2 shouldBe 10
   }
 
   case class UserWithOption(login: String, password: Option[String])
@@ -213,7 +247,7 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
 
   case class UserWithMultipleAddressesAsMap(login: String, addresses: Map[Int, Address])
 
-  it should "convert a CassandraRow with a map of UDTValues" in {
+  it should "convert a CassandraRow with a collection of UDTValues" in {
     val addressesColumn = ColumnDef("addresses", RegularColumn, MapType(IntType, addressType))
     val userTable = new TableDef(
       keyspaceName = "test",
@@ -234,6 +268,32 @@ class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
     user.addresses(0).number shouldBe 4
     user.addresses(1).street shouldBe "B street"
     user.addresses(1).number shouldBe 7
+  }
+
+  case class UserWithMultipleAddressesAsPairs(login: String, addresses: List[(String, Int)])
+
+  it should "convert a CassandraRow with a collection of tuples" in {
+    val tupleType = TupleType(TupleFieldDef(0, VarCharType), TupleFieldDef(1, IntType))
+    val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(tupleType))
+    val userTable = new TableDef(
+      keyspaceName = "test",
+      tableName = "test",
+      partitionKey = Seq(loginColumn),
+      clusteringColumns = Seq.empty,
+      regularColumns = Seq(addressesColumn))
+
+    val address1 = TupleValue("A street", 4)
+    val address2 = TupleValue("B street", 7)
+    val addresses = List(address1, address2)
+    val row = CassandraRow.fromMap(Map("login" -> "foo", "addresses" -> addresses))
+    val converter = new GettableDataToMappedTypeConverter[UserWithMultipleAddressesAsPairs](
+      userTable, userTable.columnRefs)
+    val user = converter.convert(row)
+    user.login shouldBe "foo"
+    user.addresses(0)._1 shouldBe "A street"
+    user.addresses(0)._2 shouldBe 4
+    user.addresses(1)._1 shouldBe "B street"
+    user.addresses(1)._2 shouldBe 7
   }
 
   class UserBean {

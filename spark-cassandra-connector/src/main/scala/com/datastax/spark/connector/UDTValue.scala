@@ -6,10 +6,8 @@ import scala.reflect.runtime.universe._
 import com.datastax.driver.core.{ProtocolVersion, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
-final class UDTValue(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
-  extends ScalaGettableData with Serializable {
-
-}
+final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
+  extends ScalaGettableData
 
 object UDTValue {
 

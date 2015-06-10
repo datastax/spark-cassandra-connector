@@ -2,19 +2,15 @@ package com.datastax.spark.connector
 
 import java.nio.ByteBuffer
 
-import com.datastax.driver.core.{ProtocolVersion, Row, UDTValue => DriverUDTValue}
-import com.datastax.spark.connector.types.TypeConverter.StringConverter
-
 import scala.collection.JavaConversions._
 
+import com.datastax.driver.core.{ProtocolVersion, Row, UDTValue => DriverUDTValue, TupleValue => DriverTupleValue}
+import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
 
-trait GettableData {
+trait GettableData extends GettableByIndexData {
 
   def columnNames: IndexedSeq[String]
-
-  /** Corresponding values of every column, in the same order as `columnNames` */
-  def columnValues: IndexedSeq[AnyRef]
 
   @transient
   private[connector] lazy val _indexOf =
@@ -31,18 +27,7 @@ trait GettableData {
     * The underlying type is the same as the type returned by the low-level Cassandra driver,
     * is implementation defined and may change in the future.
     * Cassandra nulls are returned as Scala nulls. */
-  def getRaw(index: Int): AnyRef = columnValues(index)
   def getRaw(name: String): AnyRef = columnValues(_indexOfOrThrow(name))
-
-  /** Total number of columns in this row. Includes columns with null values. */
-  def length = columnValues.size
-
-  /** Total number of columns in this row. Includes columns with null values. */
-  def size = columnValues.size
-
-  /** Returns true if column value is Cassandra null */
-  def isNullAt(index: Int): Boolean =
-    columnValues(index) == null
 
   /** Returns true if column value is Cassandra null */
   def isNullAt(name: String): Boolean = {
@@ -64,21 +49,23 @@ trait GettableData {
     _indexOf(name) != -1
 
   /** Displays the content in human readable form, including the names and values of the columns */
-  def dataAsString = columnNames
-    .zip(columnValues)
-    .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
-    .mkString("{", ", ", "}")
+  override def dataAsString =
+    columnNames
+      .zip(columnValues)
+      .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
+      .mkString("{", ", ", "}")
 
   override def toString = dataAsString
 
   override def equals(o: Any) = o match {
-    case o: GettableData =>
-      if (this.columnValues.length == o.length) {
-        this.columnValues.zip(o.columnValues).forall { case (mine, yours) => mine == yours}
-      } else
-        false
+    case o: GettableData if
+        this.columnNames == o.columnNames &&
+        this.columnValues == o.columnValues => true
     case _ => false
   }
+
+  override def hashCode =
+    columnNames.hashCode * 31 + columnValues.hashCode
 }
 
 object GettableData {
@@ -92,6 +79,7 @@ object GettableData {
       case set: java.util.Set[_] => set.view.map(convert).toSet
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
+      case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
       case other => other.asInstanceOf[AnyRef]
 
     }
@@ -123,6 +111,16 @@ object GettableData {
     else
       null
   }
+
+  def get(value: DriverTupleValue, index: Int)(implicit protocolVersion: ProtocolVersion): AnyRef = {
+    val valueType = value.getType.getComponentTypes.get(index)
+    val bytes = value.getBytesUnsafe(index)
+    if (bytes != null)
+      convert(valueType.deserialize(bytes, protocolVersion))
+    else
+      null
+  }
+
 }
 
 /** Thrown when the requested column does not exist in the result set. */

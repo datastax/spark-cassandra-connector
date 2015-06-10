@@ -8,8 +8,10 @@ import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
 
+import org.apache.commons.lang3.tuple
 import org.joda.time.DateTime
 
+import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
 import Symbols._
@@ -406,7 +408,7 @@ object TypeConverter {
     }
   }
 
-  class TupleConverter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
+  class Tuple2Converter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
     @transient
@@ -417,7 +419,66 @@ object TypeConverter {
     }
     
     def convertPF = {
+      case TupleValue(k, v) => (kc.convert(k), vc.convert(v))
       case (k, v) => (kc.convert(k), vc.convert(v))
+    }
+  }
+
+  class Tuple3Converter[C1 : TypeConverter, C2 : TypeConverter, C3 : TypeConverter]
+    extends TypeConverter[(C1, C2, C3)] {
+
+    private val c1 = implicitly[TypeConverter[C1]]
+    private val c2 = implicitly[TypeConverter[C2]]
+    private val c3 = implicitly[TypeConverter[C3]]
+
+    @transient
+    lazy val targetTypeTag = TypeTag.synchronized {
+      implicit val tag1 = c1.targetTypeTag
+      implicit val tag2 = c2.targetTypeTag
+      implicit val tag3 = c3.targetTypeTag
+      implicitly[TypeTag[(C1, C2, C3)]]
+    }
+
+    def convertPF = {
+      case TupleValue(a1, a2, a3) => (c1.convert(a1), c2.convert(a2), c3.convert(a3))
+      case (a1, a2, a3) => (c1.convert(a1), c2.convert(a2), c3.convert(a3)) 
+    }
+  }
+
+  class PairConverter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
+    extends TypeConverter[tuple.Pair[K, V]] {
+
+    @transient
+    lazy val targetTypeTag = TypeTag.synchronized {
+      implicit val kTag = kc.targetTypeTag
+      implicit val vTag = vc.targetTypeTag
+      implicitly[TypeTag[tuple.Pair[K, V]]]
+    }
+
+    def convertPF = {
+      case TupleValue(k, v) => tuple.Pair.of(kc.convert(k), vc.convert(v))
+      case (k, v) => tuple.Pair.of(kc.convert(k), vc.convert(v))
+    }
+  }
+
+  class TripleConverter[C1 : TypeConverter, C2 : TypeConverter, C3 : TypeConverter]
+    extends TypeConverter[tuple.Triple[C1, C2, C3]] {
+
+    private val c1 = implicitly[TypeConverter[C1]]
+    private val c2 = implicitly[TypeConverter[C2]]
+    private val c3 = implicitly[TypeConverter[C3]]
+
+    @transient
+    lazy val targetTypeTag = TypeTag.synchronized {
+      implicit val tag1 = c1.targetTypeTag
+      implicit val tag2 = c2.targetTypeTag
+      implicit val tag3 = c3.targetTypeTag
+      implicitly[TypeTag[tuple.Triple[C1, C2, C3]]]
+    }
+
+    def convertPF = {
+      case TupleValue(a1, a2, a3) => tuple.Triple.of(c1.convert(a1), c2.convert(a2), c3.convert(a3))
+      case (a1, a2, a3) => tuple.Triple.of(c1.convert(a1), c2.convert(a2), c3.convert(a3))
     }
   }
 
@@ -572,8 +633,18 @@ object TypeConverter {
   implicit def optionConverter[T : TypeConverter]: OptionConverter[T] =
     new OptionConverter[T]
 
-  implicit def tupleConverter[K : TypeConverter, V : TypeConverter]: TupleConverter[K, V] =
-    new TupleConverter[K, V]
+  implicit def tuple2Converter[K : TypeConverter, V : TypeConverter]: Tuple2Converter[K, V] =
+    new Tuple2Converter[K, V]
+
+//  TODO: Enable when SPARKC-150 gets fixed; now this conflicts with RowReaderFactory implicits
+//  implicit def tuple3Converter[A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter]
+//    : Tuple3Converter[A1, A2, A3] = new Tuple3Converter[A1, A2, A3]
+
+  implicit def pairConverter[K : TypeConverter, V : TypeConverter]: PairConverter[K, V] =
+    new PairConverter[K, V]
+
+  implicit def tripleConverter[A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter]
+    : TripleConverter[A1, A2, A3] = new TripleConverter[A1, A2, A3]
 
   implicit def listConverter[T : TypeConverter]: ListConverter[T] =
     new ListConverter[T]
@@ -718,10 +789,26 @@ object TypeConverter {
         implicit val valueConverter = untypedValueConverter.asInstanceOf[TypeConverter[V]]
         implicit val ordering = orderingFor(k).map(_.asInstanceOf[Ordering[K]]).orNull
         symbol match {
+          case PairSymbol => pairConverter[K, V]
           case MapSymbol => mapConverter[K, V]
           case TreeMapSymbol if ordering != null => treeMapConverter[K, V]
           case JavaMapSymbol => javaMapConverter[K, V]
           case JavaHashMapSymbol => javaHashMapConverter[K, V]
+          case _ => throw new IllegalArgumentException(s"Unsupported type: $tpe")
+        }
+
+      case TypeRef(_, symbol, List(t1, t2, t3)) =>
+        val untypedConverter1 = forType(t1, moreConverters)
+        val untypedConverter2 = forType(t2, moreConverters)
+        val untypedConverter3 = forType(t3, moreConverters)
+        type T1 = untypedConverter1.targetType
+        type T2 = untypedConverter2.targetType
+        type T3 = untypedConverter3.targetType
+        implicit val converter1 = untypedConverter1.asInstanceOf[TypeConverter[T1]]
+        implicit val converter2 = untypedConverter2.asInstanceOf[TypeConverter[T2]]
+        implicit val converter3 = untypedConverter3.asInstanceOf[TypeConverter[T3]]
+        symbol match {
+          case TripleSymbol => tripleConverter[T1, T2, T3]
           case _ => throw new IllegalArgumentException(s"Unsupported type: $tpe")
         }
 

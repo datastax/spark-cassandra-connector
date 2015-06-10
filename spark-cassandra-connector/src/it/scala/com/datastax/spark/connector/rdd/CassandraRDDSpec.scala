@@ -43,6 +43,7 @@ class SubKeyValue extends SuperKeyValue {
 
 case class Address(street: String, city: String, zip: Int)
 case class ClassWithUDT(key: Int, name: String, addr: Address)
+case class ClassWithTuple(key: Int, value: (Int, String))
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
@@ -89,6 +90,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TYPE IF NOT EXISTS "$ks".address (street text, city text, zip int)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
     session.execute(s"""INSERT INTO "$ks".udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)""")
+    session.execute(s"""INSERT INTO "$ks".tuples(key, value) VALUES (1, (1, 'first'))""")
 
     session.execute("""CREATE KEYSPACE IF NOT EXISTS "MixedSpace" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
     session.execute("""CREATE TABLE IF NOT EXISTS "MixedSpace"."MixedCase"(key INT PRIMARY KEY, value INT)""")
@@ -400,6 +404,27 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.street should be("Some Street")
     udtValue.city should be("Paris")
     udtValue.zip should be(11120)
+  }
+
+  it should "allow to fetch tuple columns as TupleValue objects" in {
+    val result = sc.cassandraTable(ks, "tuples").select("key", "value").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+
+    val tuple = row.getTupleValue(1)
+    tuple.size should be(2)
+    tuple.getInt(0) should be(1)
+    tuple.getString(1) should be("first")
+  }
+
+  it should "allow to fetch tuple columns as Scala tuples" in {
+    val result = sc.cassandraTable[ClassWithTuple](ks, "tuples").select("key", "value").collect()
+    result should have length 1
+    val row = result.head
+    row.key should be(1)
+    row.value._1 should be(1)
+    row.value._2 should be("first")
   }
 
   it should "throw appropriate IOException when the table was not found at the computation time" in {

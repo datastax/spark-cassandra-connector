@@ -2,9 +2,7 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import scala.reflect.ClassTag
-
-import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
+import com.datastax.spark.connector.mapper.DefaultColumnMapper
 
 import scala.collection.JavaConversions._
 
@@ -59,6 +57,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TYPE "$ks".address (street text, city text, zip int)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
 
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+
+    session.execute(s"""CREATE TYPE "$ks".address2 (street text, number frozen<tuple<int, int>>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
   }
 
   private def verifyKeyValueTable(tableName: String) {
@@ -294,6 +297,72 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "write values of TupleValue type" in {
+    val tuple = TupleValue(1, 2, "three")
+    val col = Seq((1, tuple))
+    sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(1) shouldEqual 2
+        row.getTupleValue(1).getString(2) shouldEqual "three"
+      }
+    }
+  }
+
+  it should "write column values of tuple type given as Scala tuples" in {
+    val tuple = (1, 2, "three")  // Scala tuple
+    val col = Seq((1, tuple))
+    sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(1) shouldEqual 2
+        row.getTupleValue(1).getString(2) shouldEqual "three"
+      }
+    }
+  }
+
+  it should "write Scala tuples nested in UDTValues" in {
+    val number = (1, 2)
+    val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
+    val col = Seq((1, address))
+    sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getUDTValue(1).getString(0) shouldEqual "foo"
+        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+      }
+    }
+  }
+
+  it should "convert components in nested Scala tuples to proper types" in {
+    val number = ("1", "2")  // Strings, but should be Ints
+    val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
+    val col = Seq((1, address))
+    sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      for (row <- result) {
+        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+      }
+    }
+  }
 
   it should "write to single-column tables" in {
     val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
