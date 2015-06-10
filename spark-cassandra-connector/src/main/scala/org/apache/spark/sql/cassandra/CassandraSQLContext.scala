@@ -78,7 +78,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** A catalyst metadata catalog that points to Cassandra. */
   @transient
-  override protected[sql] lazy val catalog = new CassandraCatalog(this) with OverrideCatalog
+  override protected[sql] lazy val catalog = new CassandraCatalog(this)
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
