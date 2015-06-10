@@ -54,11 +54,13 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
   }
 
   override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = {
-    cachedDataSourceTables.put(tableIdentifier, plan)
+    val tableIdent = fullTableIdent(tableIdentifier)
+    cachedDataSourceTables.put(tableIdent, plan)
   }
 
   override def unregisterTable(tableIdentifier: Seq[String]): Unit = {
-    cachedDataSourceTables.invalidate(tableIdentifier)
+    val tableIdent = fullTableIdent(tableIdentifier)
+    cachedDataSourceTables.invalidate(tableIdent)
   }
 
   override def unregisterAllTables(): Unit = {
