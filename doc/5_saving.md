@@ -99,7 +99,7 @@ Takes the elements from rddSetField and removes them from corrosponding C* colum
 "a_set" and takes elements from "rddMapField" and adds them to C* column "a_map" where C*
 column key == key in the RDD elements. 
    
-    ("key", "a_set" as "rddSetField" remove , "a_map" as "rddMapField" as append)
+    ("key", "a_set" as "rddSetField" remove , "a_map" as "rddMapField" append)
 
 
 Example Schema
