@@ -1,23 +1,21 @@
 package com.datastax.spark.connector.writer
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
+import scala.collection.Seq
 
-import com.datastax.spark.connector.{ColumnName, ColumnRef}
+import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
 
-import scala.collection.Seq
-import scala.collection.JavaConversions._
-
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
   * Can save case class objects, java beans and tuples. */
-class DefaultRowWriter[T : ColumnMapper : ClassTag](
+class DefaultRowWriter[T : TypeTag : ColumnMapper](
     table: TableDef, 
     selectedColumns: IndexedSeq[ColumnRef])
   extends RowWriter[T] {
 
   // do not save reference to ColumnMapper in a field, because it is non Serializable
-  private val cls = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+  private val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe).asInstanceOf[Class[T]]
   private val columnMap = implicitly[ColumnMapper[T]].columnMapForWriting(table, selectedColumns)
 
   private def checkMissingProperties(requestedPropertyNames: Seq[String]) {
@@ -51,7 +49,7 @@ class DefaultRowWriter[T : ColumnMapper : ClassTag](
 
 object DefaultRowWriter {
 
-  def factory[T : ColumnMapper : ClassTag] = new RowWriterFactory[T] {
+  def factory[T : ColumnMapper : TypeTag] = new RowWriterFactory[T] {
     override def rowWriter(tableDef: TableDef, selectedColumns: IndexedSeq[ColumnRef]) = {
       new DefaultRowWriter[T](tableDef, selectedColumns)
     }
