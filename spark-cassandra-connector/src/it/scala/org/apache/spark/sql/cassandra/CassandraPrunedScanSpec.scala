@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.sql
+package org.apache.spark.sql.cassandra
 
 class CassandraPrunedScanSpec extends CassandraDataSourceSpec {
   override def pushDown = false

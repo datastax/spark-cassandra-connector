@@ -1,12 +1,15 @@
-package com.datastax.spark.connector.sql
+package org.apache.spark.sql.cassandra
+
+import java.io.FileNotFoundException
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{ConfigMap, FlatSpec, Matchers}
+import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import org.apache.spark.sql.catalyst.util
+import org.apache.spark.sql.test.TestSQLContext._
+import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.util.Utils
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -72,10 +75,24 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
   }
 
+  val file = util.getTempFilePath("parquetTest").getCanonicalFile
+
   override def beforeAll() {
     super.beforeAll()
     cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
+
+    val data = (0 until 10).map(i => (i, i.toString))
+    cc.createDataFrame(data).toDF("c1", "c2").registerTempTable("parquet_table")
+
+    an [FileNotFoundException] should be thrownBy {
+      cc.load(file.getCanonicalPath).collect()
+    }
+    cc.sql("select * from parquet_table").saveAsParquetFile(file.getCanonicalPath)
+  }
+
+  override def afterAll() {
+    if (file.exists()) Utils.deleteRecursively(file)
   }
 
   it should "allow to select all rows" in {
@@ -318,4 +335,200 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     cc.setKeyspace("sql_test")
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
   }
+
+  it should "allow to insert null" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.null_test (k int, v int, d text, primary key(k,v))")
+      session.execute("insert into sql_test.null_test (k, v, d) values (1, 1, 'one')")
+      session.execute("insert into sql_test.null_test (k, v, d) values (1, 2, 'two')")
+      session.execute("insert into sql_test.null_test (k, v) values (1, 3)")
+      session.execute("create table sql_test.null_test2 (k int, v int, d text, primary key(k,v))")
+    }
+
+    cc.cassandraSql("select * from null_test where d = 'one' ").collect() should have length 1
+    cc.cassandraSql("select * from null_test where d IS NULL ").collect() should have length 1
+    cc.cassandraSql("select * from null_test where d IS NOT NULL ").collect() should have length 2
+    cc.cassandraSql("select * from null_test where v > 1 ").collect() should have length 2
+    cc.cassandraSql("INSERT OVERWRITE TABLE null_test2 SELECT k, v, d FROM null_test")
+    cc.cassandraSql("select * from null_test2").collect() should have length 3
+  }
+
+  it should "allow to query on table with upper case names" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.\"Upper_Case_Table\"(" +
+        "\"KEY\" int, \"VALUE\" int, d text, primary key(\"KEY\",\"VALUE\"))")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 1, 'one')")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 2, 'two')")
+      session.execute("insert into sql_test.\"Upper_Case_Table\"(\"KEY\",\"VALUE\", d) values (1, 3, 'three')")
+    }
+    cc.cassandraSql("select KEY, VALUE from Upper_Case_Table where VALUE > 1").collect() should have length 2
+  }
+
+
+  it should "not find non-exist tables" in {
+    cc.catalog.tableExists(
+      TableRef("non_exist", "non_exist")) shouldBe false
+    cc.catalog.tableExists(
+      TableRef("test1", "sql_test"))  shouldBe true
+    cc.catalog.tableExists(
+      TableRef("Upper_Case_Table", "sql_test")) shouldBe true
+  }
+
+  it should "get all tables" in {
+    cc.catalog.getTables(
+      Option("non_exist"),
+      Option("non_exist")) should have length 0
+    cc.catalog.getTables(
+      Option("sql_test")) should have length 13
+  }
+
+  it should "register/unregister tables" in {
+    cc.catalog.registerTable(
+      TableRef("test1", "sql_test"),
+      "org.apache.spark.sql.cassandra",
+      None,
+      Map("push_down" -> "false"))
+    cc.catalog.tableExistsInMetastore(
+      TableRef("test1", "sql_test")) shouldBe true
+    cc.catalog.unregisterTable(
+      TableRef("test1", "sql_test"))
+    cc.catalog.tableExistsInMetastore(
+      TableRef("test1", "sql_test")) shouldBe false
+  }
+
+  it should "describe a table" in {
+    cc.sql("DESCRIBE test1").collect() should have length 8
+    cc.sql("DESCRIBE EXTENDED test1").collect() should have length 8
+    cc.sql("DESCRIBE sql_test.test1").collect() should have length 8
+    cc.sql("DESCRIBE EXTENDED sql_test.test1").collect() should have length 8
+  }
+
+  it should "show clusters" in {
+    cc.sql("SHOW CLUSTERS").collect() should have length 1
+  }
+
+  it should "show databases" in {
+    cc.sql("SHOW DATABASES").collect() should contain allOf
+      (Row("sql_test2"), Row("sql_test1"), Row("sql_test"))
+    cc.sql("SHOW DATABASES IN default").collect() should contain allOf
+      (Row("sql_test2"), Row("sql_test1"), Row("sql_test"))
+  }
+
+  it should "show tables" in {
+    cc.sql("SHOW TABLES").collect() should have length 12
+    cc.sql("SHOW TABLES IN sql_test").collect() should have length 12
+    cc.sql("SHOW TABLES IN default.sql_test").collect() should have length 12
+  }
+
+  it should "use a database" in {
+    cc.sql("USE DATABASE keyspace");
+    cc.getKeyspace should equal("keyspace")
+    cc.sql("USE DATABASE sql_test");
+    cc.getKeyspace should equal("sql_test")
+  }
+
+  it should "create/drop a database" in {
+    cc.sql("CREATE DATABASE db_test");
+    cc.sql("SHOW DATABASES").collect() should contain allOf
+      (Row("sql_test2"), Row("sql_test1"), Row("sql_test"), Row("db_test"))
+    cc.sql("USE DATABASE db_test")
+    val tableRef = TableRef("fake_table", "db_test", None)
+    val options = Map[String, String]("path" -> "fake")
+    cc.catalog.registerTable(tableRef, "parquet", None, options)
+    cc.sql("DROP DATABASE db_test")
+    cc.sql("SHOW DATABASES").collect() shouldNot contain (Row("db_test"))
+    cc.sql("CREATE DATABASE cluster2.db_test");
+    cc.sql("USE CLUSTER cluster2");
+    cc.sql("SHOW DATABASES").collect() should contain (Row("db_test"))
+    cc.sql("DROP CLUSTER cluster2")
+    cc.sql("USE CLUSTER default")
+  }
+
+  it should "create/drop a cluster" in {
+    cc.sql("CREATE CLUSTER cluster_test");
+    cc.sql("SHOW CLUSTERS").collect() should have length 2
+    cc.sql("DROP CLUSTER cluster_test")
+    cc.sql("SHOW CLUSTERS").collect() should have length 1
+  }
+
+  it should "drop a table" in {
+    cc.sql("CREATE DATABASE db_test");
+    cc.sql("USE DATABASE db_test")
+    val tableRef = TableRef("fake_table", "db_test", None)
+    val options = Map[String, String]("path" -> s"${file.getCanonicalPath}")
+    cc.catalog.registerTable(tableRef, "parquet", None, options)
+    cc.sql("SHOW TABLES").collect() should have length 1
+    cc.sql("DROP TABLE fake_table")
+    cc.sql("SHOW TABLES").collect() should have length 0
+    cc.sql("DROP DATABASE db_test")
+  }
+
+  it should "rename a table" in {
+    cc.sql("CREATE DATABASE db_test");
+    cc.sql("USE DATABASE db_test")
+    val tableRef = TableRef("fake_table", "db_test", None)
+    val options = Map[String, String]("path" -> s"${file.getCanonicalPath}")
+    cc.catalog.registerTable(tableRef, "parquet", None, options)
+    cc.sql("ALTER TABLE fake_table RENAME TO real_table")
+    cc.sql("SHOW TABLES").collect() should have length 1
+    cc.sql("DROP TABLE real_table")
+    cc.sql("SHOW TABLES").collect() should have length 0
+    cc.sql("DROP DATABASE db_test")
+  }
+
+  it should "set/remove options of a table" in {
+    cc.sql("CREATE DATABASE db_test");
+    cc.sql("USE DATABASE db_test")
+    val tableRef = TableRef("fake_table", "db_test", None)
+    cc.catalog.registerTable(
+      tableRef, "parquet",
+      None,
+      Map[String, String]("path" -> s"${file.getCanonicalPath}"))
+    cc.sql("ALTER TABLE fake_table SET OPTION ('path2', 'fake2')")
+    val options = cc.catalog.getTableMetadata(
+      TableRef(
+        "fake_table",
+        "db_test",
+        Option("default"))).get.options
+    options("path2") eq "fake2"
+
+    cc.sql("ALTER TABLE fake_table REMOVE OPTION path2")
+    val newOptions = cc.catalog.getTableMetadata(
+      TableRef(
+        "fake_table",
+        "db_test",
+        Option("default"))).get.options
+    newOptions.contains("path2") equals false
+
+    cc.sql("DROP DATABASE db_test")
+  }
+
+  it should "set/remove table schema" in {
+    cc.sql("CREATE DATABASE db_test");
+    cc.sql("USE DATABASE db_test")
+    val tableRef = TableRef("fake_table", "db_test", None)
+    val options = Map[String, String]("path" -> s"${file.getCanonicalPath}")
+    cc.catalog.registerTable(tableRef, "parquet", None, options)
+
+    cc.sql("ALTER TABLE fake_table SET SCHEMA {\"type\":\"struct\",\"fields\":" +
+      "[{\"name\":\"a\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}}," +
+      "{\"name\":\"b\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}}]}")
+    val schema = cc.catalog.getTableMetadata(
+      TableRef(
+        "fake_table",
+        "db_test",
+        Option("default"))).get.schema
+    schema.nonEmpty equals true
+
+    cc.sql("ALTER TABLE fake_table REMOVE SCHEMA")
+    val newSchema = cc.catalog.getTableMetadata(
+      TableRef(
+        "fake_table",
+        "db_test",
+        Option("default"))).get.schema
+    newSchema.nonEmpty equals false
+
+    cc.sql("DROP DATABASE db_test")
+  }
+
 }

@@ -1,13 +1,10 @@
-package com.datastax.spark.connector.sql
-
-import org.apache.spark.sql.{DataFrame, SQLContext}
-import org.apache.spark.sql.SaveMode._
-
-import org.apache.spark.sql.cassandra.{CassandraSourceOptions, TableRef, CassandraSourceRelation}
+package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import org.apache.spark.sql.SaveMode._
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
