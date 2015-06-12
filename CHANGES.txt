@@ -1,3 +1,8 @@
+1.4.0 M1 (unreleased)
+ * Upgrade Spark to 1.4.0 (SPARKC-192)
+
+********************************************************************************
+
 1.3.0 M2 (unreleased)
  * Support for loading, saving and mapping Cassandra tuples (SPARKC-172)
  * Table and keyspace Name suggestions in DataFrames API (SPARKC-186)
