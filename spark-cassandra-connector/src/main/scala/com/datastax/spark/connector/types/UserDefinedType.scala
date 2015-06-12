@@ -29,7 +29,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   def cqlTypeName = name
 
   def converterToCassandra = new TypeConverter[UDTValue] {
-    override def targetTypeTag = UDTValue.UDTValueTypeTag
+    override def targetTypeTag = UDTValue.TypeTag
     override def convertPF = {
       case udtValue: UDTValue =>
         val columnValues =
@@ -41,6 +41,12 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
           }
         new UDTValue(columnNames, columnValues)
     }
+  }
+
+  override type ValueRepr = UDTValue
+
+  override def newInstance(columnValues: Any*): UDTValue = {
+    UDTValue(columnNames, columnValues.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
   }
 }
 

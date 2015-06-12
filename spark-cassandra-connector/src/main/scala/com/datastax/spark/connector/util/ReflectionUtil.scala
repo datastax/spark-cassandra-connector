@@ -85,13 +85,33 @@ object ReflectionUtil {
     getters(implicitly[TypeTag[T]].tpe)
   }
 
-  /** Returns the type of the parameters of the given method.
+  /** Looks up a method by name in a type.
     * The method must exist, otherwise `IllegalArgumentException` is thrown. */
-  def methodParamTypes(tpe: Type, methodName: String): Seq[Type] = TypeTag.synchronized {
+  def method(tpe: Type, methodName: String): Type = TypeTag.synchronized {
+    require(methodName != null, "Method name must not be null")
+    require(methodName.nonEmpty, "Method name must not be empty")
     val member = tpe.member(newTermName(methodName))
     require(member != NoSymbol, s"Member $methodName not found in $tpe")
     require(member.isMethod, s"Member $methodName of type $tpe is not a method")
-    member.asMethod.typeSignatureIn(tpe).asInstanceOf[MethodType].params.map(_.typeSignature)
+    member.asMethod.typeSignatureIn(tpe)
+  }
+
+  /** Returns the type of the parameters of the given method.
+    * The method must exist, otherwise `IllegalArgumentException` is thrown. */
+  def methodParamTypes(tpe: Type, methodName: String): Seq[Type] = TypeTag.synchronized {
+    method(tpe, methodName) match {
+      case m: MethodType => m.params.map(_.typeSignature)
+      case m: NullaryMethodType => Seq.empty
+    }
+  }
+
+  /** Returns the return type of the method.
+    * The method must exist, otherwise `IllegalArgumentException` is thrown. */
+  def returnType(tpe: Type, methodName: String): Type = TypeTag.synchronized {
+    method(tpe, methodName) match {
+      case m: MethodType => m.resultType
+      case m: NullaryMethodType => m.resultType
+    }
   }
 
   /** Returns a list of names and parameter types of 1-argument public methods of a Scala type,
@@ -125,4 +145,13 @@ object ReflectionUtil {
   def classTag[T : TypeTag]: ClassTag[T] = TypeTag.synchronized {
     ClassTag[T](typeTag[T].mirror.runtimeClass(typeTag[T].tpe))
   }
+
+  /** Returns true if the type is scala tuple of any arity */
+  def isScalaTuple(symbol: Symbol): Boolean =
+    symbol.fullName startsWith "scala.Tuple"
+
+  /** Returns true if the type is scala tuple of any arity */
+  def isScalaTuple(tpe: Type): Boolean =
+    isScalaTuple(tpe.typeSymbol)
+
 }

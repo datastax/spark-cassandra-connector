@@ -25,6 +25,8 @@ case class TupleFieldDef(index: Int, columnType: ColumnType[_]) extends FieldDef
 case class TupleType(componentTypes: TupleFieldDef*)
     extends StructDef with ColumnType[TupleValue] {
 
+  override type ValueRepr = TupleValue
+
   override type Column = TupleFieldDef
 
   for ((c, i) <- componentTypes.zipWithIndex) {
@@ -34,37 +36,52 @@ case class TupleType(componentTypes: TupleFieldDef*)
 
   override def columns = componentTypes.toIndexedSeq
 
-  override def scalaTypeTag = TupleValue.TupleValueTypeTag
+  override def scalaTypeTag = TupleValue.TypeTag
 
   override def isCollection = false
+
+  private val defaultComponentConverters =
+    componentTypes.map(_.columnType.converterToCassandra).toIndexedSeq
 
   /** Creates new tuple from components converted each to the
     * type determined by an appropriate componentType.
     * Throws IllegalArgumentException if the number of components does
     * not match the number of components in the tuple type. */
-  def newTuple(componentValues: Any*): TupleValue = {
+  def newInstance
+      (componentConverters: IndexedSeq[TypeConverter[_ <: AnyRef]])
+      (componentValues: Any*): TupleValue = {
     require(
       componentValues.length == columns.length,
       s"Expected ${columns.length} components, instead of ${componentValues.length}")
     val values =
       for (i <- columns.indices) yield
-        columnTypes(i).converterToCassandra.convert(componentValues(i))
+        componentConverters(i).convert(componentValues(i))
     new TupleValue(values: _*)
   }
 
-  override def converterToCassandra =  new TypeConverter[TupleValue] {
-    override def targetTypeTag = TupleValue.TupleValueTypeTag
-    override def convertPF = {
-      case x: TupleValue =>
-        newTuple(x.columnValues: _*)
-      case x: Product =>                                // converts from Scala tuples
-        newTuple(x.productIterator.toIndexedSeq: _*)
-      case x: Pair[_, _] =>                             // Java programmers may like this
-        newTuple(x.getLeft, x.getRight)
-      case x: Triple[_, _, _] =>                        // Java programmers may like this
-        newTuple(x.getLeft, x.getMiddle, x.getRight)
+  override def newInstance(componentValues: Any*): TupleValue =
+    newInstance(defaultComponentConverters)(componentValues: _*)
+
+  def converterToCassandra(componentConverters: IndexedSeq[TypeConverter[_ <: AnyRef]]) = {
+    new TypeConverter[TupleValue] {
+
+      override def targetTypeTag = TupleValue.TypeTag
+
+      override def convertPF = {
+        case x: TupleValue =>
+          newInstance(componentConverters)(x.columnValues: _*)
+        case x: Product => // converts from Scala tuples
+          newInstance(componentConverters)(x.productIterator.toIndexedSeq: _*)
+        case x: Pair[_, _] => // Java programmers may like this
+          newInstance(componentConverters)(x.getLeft, x.getRight)
+        case x: Triple[_, _, _] => // Java programmers may like this
+          newInstance(componentConverters)(x.getLeft, x.getMiddle, x.getRight)
+      }
     }
   }
+
+  override def converterToCassandra: TypeConverter[TupleValue] =
+    converterToCassandra(defaultComponentConverters)
 
   override def cqlTypeName = {
     val types = columnTypes.map(_.cqlTypeName)
