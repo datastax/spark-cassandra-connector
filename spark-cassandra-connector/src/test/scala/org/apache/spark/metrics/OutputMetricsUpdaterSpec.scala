@@ -4,12 +4,13 @@ import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
 import org.apache.spark.{SparkConf, SparkEnv}
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
-import com.datastax.spark.connector.metrics.{RichStatementMock, SparkEnvMock, TaskContextMock}
+import com.datastax.spark.connector.metrics.{RichStatementMock, TaskContextMock}
 import com.datastax.spark.connector.writer.WriteConf
 
-class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter {
+class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter with MockitoSugar {
 
   val ts = System.currentTimeMillis()
 
@@ -24,7 +25,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.output.metrics", "true")
 
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
 
     tc.metrics.outputMetrics.isDefined shouldBe true
@@ -40,7 +41,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.output.metrics", "true")
 
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
 
     tc.metrics.outputMetrics.isDefined shouldBe true
@@ -56,7 +57,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.output.metrics", "true")
 
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
 
     val rc = new RichStatementMock(100, 10)
@@ -79,7 +80,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.output.metrics", "false")
 
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
 
     val rc = new RichStatementMock(100, 10)
@@ -92,7 +93,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
   it should "create updater which uses Codahale metrics" in {
     val tc = new TaskContextMock
     val conf = new SparkConf(loadDefaults = false)
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val ccs = new CassandraConnectorSource
     CassandraConnectorSource.instance should not be None
 
@@ -118,7 +119,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
   it should "create updater which doesn't use Codahale metrics" in {
     val tc = new TaskContextMock
     val conf = new SparkConf(loadDefaults = false)
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
 
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
     val rc = new RichStatementMock(100, 10)
@@ -137,7 +138,7 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     val conf = new SparkConf(loadDefaults = false)
     conf.set("spark.cassandra.output.metrics", "true")
 
-    SparkEnv.set(new SparkEnvMock(conf))
+    SparkEnv.set(mock[SparkEnv])
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
 
     val rc = new RichStatementMock(100, 10)
