@@ -52,14 +52,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
         |CREATE TEMPORARY TABLE $tmpTable
         |USING org.apache.spark.sql.cassandra
         |OPTIONS (
-        | c_table "$table",
+        | table "$table",
         | keyspace "$keyspace",
-        | push_down "$pushDown",
-        | spark_cassandra_input_page_row_size "10",
-        | spark_cassandra_output_consistency_level "ONE",
-        | spark_cassandra_connection_timeout_ms "1000",
-        | spark_cassandra_connection_host "127.0.0.1"
-        | )
+        | pushdown "$pushDown")
       """.stripMargin.replaceAll("\n", " "))
   }
 
@@ -101,7 +96,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     sqlContext.sql("SELECT a, b from tmpTable").save(
       "org.apache.spark.sql.cassandra",
       ErrorIfExists,
-      Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+      Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
 
     cassandraTable(TableRef("test_insert1", "sql_ds_test")).collect() should have length 1
 
@@ -109,7 +104,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
       sqlContext.sql("SELECT a, b from tmpTable").save(
         "org.apache.spark.sql.cassandra",
         ErrorIfExists,
-        Map("c_table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+        Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
     }.getMessage
 
     assert(
@@ -127,7 +122,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase {
     sqlContext.sql("SELECT a, b from tmpTable").save(
       "org.apache.spark.sql.cassandra",
       Overwrite,
-      Map("c_table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
+      Map("table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
     createTempTable("sql_ds_test", "test_insert2", "insertTable2")
     sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
     sqlContext.dropTempTable("insertTable2")

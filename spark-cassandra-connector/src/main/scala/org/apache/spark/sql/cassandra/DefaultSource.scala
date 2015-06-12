@@ -23,10 +23,10 @@ import DefaultSource._
  *      CREATE TEMPORARY TABLE tmpTable
  *      USING org.apache.spark.sql.cassandra
  *      OPTIONS (
- *       c_table "table",
+ *       table "table",
  *       keyspace "keyspace",
  *       cluster "test_cluster",
- *       push_down "true",
+ *       pushdown "true",
  *       spark_cassandra_input_page_row_size "10",
  *       spark_cassandra_output_consistency_level "ONE",
  *       spark_cassandra_connection_timeout_ms "1000"
@@ -38,10 +38,10 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
    * Creates a new relation for a cassandra table.
    * The parameters map stores table level data. User can specify vale for following keys
    *
-   *    c_table        -- table name, required
+   *    table        -- table name, required
    *    keyspace       -- keyspace name, required
    *    cluster        -- cluster name, optional, default name is "default"
-   *    push_down      -- true/false, optional, default is true
+   *    pushdown      -- true/false, optional, default is true
    *    Cassandra connection settings  -- optional, e.g. spark_cassandra_connection_timeout_ms
    *    Cassandra Read Settings        -- optional, e.g. spark_cassandra_input_page_row_size
    *    Cassandra Write settings       -- optional, e.g. spark_cassandra_output_consistency_level
@@ -106,11 +106,11 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 case class CassandraSourceOptions(pushdown: Boolean = true, cassandraConfs: Map[String, String] = Map.empty)
 
 object DefaultSource {
-  val CassandraDataSourceTableNameProperty = "c_table"
+  val CassandraDataSourceTableNameProperty = "table"
   val CassandraDataSourceKeyspaceNameProperty = "keyspace"
   val CassandraDataSourceClusterNameProperty = "cluster"
   val CassandraDataSourceUserDefinedSchemaNameProperty = "schema"
-  val CassandraDataSourcePushdownEnableProperty = "push_down"
+  val CassandraDataSourcePushdownEnableProperty = "pushdown"
   val CassandraDataSourceProviderPackageName = DefaultSource.getClass.getPackage.getName
   val CassandraDataSourceProviderClassName = CassandraDataSourceProviderPackageName + ".DefaultSource"
 
