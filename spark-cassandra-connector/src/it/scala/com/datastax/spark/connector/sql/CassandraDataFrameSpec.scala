@@ -56,7 +56,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
     val df = sqlContext.load(
       "org.apache.spark.sql.cassandra",
       Map(
-        "c_Table" -> "kv",
+        "table" -> "kv",
         "keyspace" -> keyspace
       )
     )
@@ -68,7 +68,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       val df = sqlContext.load(
         "org.apache.spark.sql.cassandra",
         Map(
-          "c_Table" -> "randomtable",
+          "table" -> "randomtable",
           "keyspace" -> keyspace
         )
       )
@@ -81,7 +81,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       val df = sqlContext.load(
         "org.apache.spark.sql.cassandra",
         Map(
-          "c_Table" -> "hardertoremembertablename",
+          "table" -> "hardertoremembertablename",
           "keyspace" -> keyspace
         )
       )

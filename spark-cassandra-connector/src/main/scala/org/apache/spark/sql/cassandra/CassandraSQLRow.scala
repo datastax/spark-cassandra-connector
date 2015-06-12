@@ -3,6 +3,8 @@ package org.apache.spark.sql.cassandra
 import java.sql.Timestamp
 import java.util.Date
 
+import org.apache.spark.sql.types.UTF8String
+
 import com.datastax.driver.core.{Row, ProtocolVersion}
 import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
@@ -43,8 +45,12 @@ object CassandraSQLRow {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices) {
       data(i) = GettableData.get(row, i)
-      if (data(i).isInstanceOf[Date])
-        data(i) = new Timestamp(data(i).asInstanceOf[Date].getTime)
+      data(i) match {
+        case date: Date => data.update(i, new Timestamp(date.getTime))
+        case str: String => data.update(i, UTF8String(str))
+        case set: Set[_] => data.update(i, set.toSeq)
+        case _ =>
+      }
     }
     new CassandraSQLRow(columnNames, data)
   }

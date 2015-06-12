@@ -3,6 +3,8 @@ package org.apache.spark.sql.cassandra
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+import org.apache.spark.sql.catalyst.{SimpleCatalystConf, CatalystConf}
+
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import org.apache.spark.sql.catalyst.analysis.Catalog
@@ -62,4 +64,5 @@ private[cassandra] class CassandraCatalog(cc: CassandraSQLContext) extends Catal
 
   def refreshTable(databaseName: String, tableName: String): Unit = ???
 
+  override val conf: CatalystConf = SimpleCatalystConf(caseSensitive)
 }

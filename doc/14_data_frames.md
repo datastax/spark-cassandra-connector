@@ -18,10 +18,10 @@ Those followed with a default of N/A are required, all others are optional.
 
 | Option Key  | Controls                                              | Values        | Default  |
 |-------------|-------------------------------------------------------|---------------|----------|
-| c_table     | The Cassandra Table to connect to                     | String        | N/A      |
-| keyspace    | The Keyspace where c_table is looked for              | String        | N/A      |
+| table       | The Cassandra Table to connect to                     | String        | N/A      |
+| keyspace    | The Keyspace where table is looked for                | String        | N/A      |
 | cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
-| push_down   | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
+| pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
 
 ####Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
@@ -47,18 +47,18 @@ val conf = new SparkConf()
 
 val df = sqlContext.load(
   "org.apache.spark.sql.cassandra", 
-   options = Map( "c_table" -> "words", "keyspace" -> "test" 
+   options = Map( "table" -> "words", "keyspace" -> "test" 
 )// This DataFrame will use a spark.cassandra.input.size of 5000
 
 val otherdf =  sqlContext.load(
   "org.apache.spark.sql.cassandra", 
-   options = Map( "c_table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne" )
+   options = Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne" )
 )// This DataFrame will use a spark.cassandra.input.size of 1000
 
 val lastdf = sqlContext.load(
                "org.apache.spark.sql.cassandra", 
                 options = Map( 
-                  "c_table" -> "words", 
+                  "table" -> "words", 
                   "keyspace" -> "test" ,
                   "cluster" -> "ClusterOne",
                   "spark.cassandra.input.split.size" -> 500
@@ -76,7 +76,7 @@ Example Creating a DataFrame using a Load Command
 ```scala
 val df = sqlContext.load(
   "org.apache.spark.sql.cassandra", 
-   options = Map( "c_table" -> "words", "keyspace" -> "test" )
+   options = Map( "table" -> "words", "keyspace" -> "test" )
    )
 df.show
 //word count
@@ -90,9 +90,9 @@ Accessing data Frames using Spark SQL involves creating temporary tables and spe
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
-`.` characters replaced with `_`. This means `spark.cassandra.input.split.size` becomes 
-`spark_cassandra_input_split_size`. 
+Because of a limitation in SparkSQL 1.4.0 DDL parser, SparkSQL `OPTIONS` 
+do not accept "." and "_" characters in option names, so options containing these 
+characters can be only set in the `SparkConf` or `SQLConf` objects.
 
 Example Creating a Source Using Spark SQL:
 ```scala
@@ -101,14 +101,11 @@ scala> sqlContext.sql(
    """CREATE TEMPORARY TABLE words 
      |USING org.apache.spark.sql.cassandra 
      |OPTIONS ( 
-     |  c_table "words",
+     |  table "words",
      |  keyspace "test", 
      |  cluster "Test Cluster", 
-     |  push_down "true", 
-     |  spark_cassandra_input_page_row_size "10", 
-     |  spark_cassandra_output_consistency_level "ONE", 
-     |  spark_cassandra_connection_timeout_ms "1000" 
-     |  )""".stripMargin)
+     |  pushdown "true" 
+     |)""".stripMargin)
 scala> val df = sqlContext.sql("SELECT * FROM words")
 scala> df.show()
 //word count
@@ -134,11 +131,11 @@ Example Copying Between Two Tables Using DataFrames
 ```scala
 val df = sqlContext.load(
   "org.apache.spark.sql.cassandra", 
-  options = Map( "c_table" -> "words", "keyspace" -> "test" )
+  options = Map( "table" -> "words", "keyspace" -> "test" )
 )
 
 df.save(
   "org.apache.spark.sql.cassandra",
-  options = Map( "c_table" -> "words_copy", "keyspace" -> "test")
+  options = Map( "table" -> "words_copy", "keyspace" -> "test")
 )
 ```

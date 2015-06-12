@@ -47,7 +47,7 @@ object Versions {
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
-  val Spark           = "1.3.1"
+  val Spark           = "1.4.0"
   val SparkJetty      = "8.1.14.v20131031"
   val JSR166e         = "1.1.0"
 
