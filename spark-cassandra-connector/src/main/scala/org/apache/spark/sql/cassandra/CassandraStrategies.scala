@@ -17,7 +17,7 @@ private[cassandra] trait CassandraStrategies {
 
   object DataSinks extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-      case logical.InsertIntoTable(table: CassandraRelation, partition, child, overwrite) =>
+      case logical.InsertIntoTable(table: CassandraRelation, partition, child, overwrite, ifNotExists) =>
         InsertIntoCassandraTable(table, planLater(child), overwrite)(cassandraContext) :: Nil
       case _ => Nil
     }

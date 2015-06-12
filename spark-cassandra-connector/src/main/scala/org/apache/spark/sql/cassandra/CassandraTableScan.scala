@@ -96,7 +96,7 @@ case class CassandraTableScan(
    * Runs this query returning the result as an RDD[Row].
    * cast CassandraRDD to RDD[ROW]
    */
-  override def execute() = inputRdd.asInstanceOf[RDD[Row]]
+  override def doExecute() = inputRdd.asInstanceOf[RDD[Row]]
 
   override def output = if (attributes.isEmpty) relation.output else attributes
 

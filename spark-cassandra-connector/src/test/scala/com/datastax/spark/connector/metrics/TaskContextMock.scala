@@ -2,6 +2,7 @@ package com.datastax.spark.connector.metrics
 
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.TaskMetrics
+import org.apache.spark.unsafe.memory.TaskMemoryManager
 import org.apache.spark.util.TaskCompletionListener
 
 class TaskContextMock extends TaskContext {
@@ -32,4 +33,6 @@ class TaskContextMock extends TaskContext {
   override def attemptNumber(): Int = ???
 
   override def taskAttemptId(): Long = ???
+
+  override def taskMemoryManager(): TaskMemoryManager  = ???
 }

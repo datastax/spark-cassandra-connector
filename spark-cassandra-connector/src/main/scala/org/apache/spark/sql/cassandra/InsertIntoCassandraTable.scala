@@ -18,7 +18,7 @@ case class InsertIntoCassandraTable(cassandraRelation: CassandraRelation,
 
   override def output: Seq[Attribute] = childPlan.output
 
-  override def execute(): RDD[Row] = result
+  override def doExecute(): RDD[Row] = result
 
   override def child: SparkPlan = childPlan
 
