@@ -150,9 +150,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     result should have length 1
   }
 
-  //BETWEEN is not supported yet in Spark SQL
-  ignore should "allow to select rows with between clause" in {
-    val result = cc.sql("SELECT * FROM test2 WHERE a BETWEEN 1 AND 3 ").collect()
+  it should "allow to select rows with between clause" in {
+    val result = cc.sql("SELECT * FROM test2 WHERE a BETWEEN 1 AND 2 ").collect()
     result should have length 6
   }
 
