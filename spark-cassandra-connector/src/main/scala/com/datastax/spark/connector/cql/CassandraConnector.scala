@@ -118,9 +118,10 @@ class CassandraConnector(conf: CassandraConnectorConf)
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
       LocalNodeFirstLoadBalancingPolicy
-        .sortNodesByProximityAndStatus(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+        .sortNodesByStatusAndProximity(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
+        .filter(_.isUp)
         .headOption
-        .getOrElse(throw new IOException("Cannot connect to Cassandra: No hosts found"))
+        .getOrElse(throw new IOException("Cannot connect to Cassandra: No live hosts found"))
     }
   }
 
