@@ -37,6 +37,26 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 
     (4 rows)
    
+Using a custom mapper is also supported with tuples
+
+```sql
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+```
+
+```scala
+val collection = sc.parallelize(Seq((30, "cat"), (40, "fox")))
+collection.saveToCassandra("test", "words", SomeColumns("word" as "_2", "count" as "_1"))
+```
+    
+    cqlsh:test> select * from words;
+
+     word | count
+    ------+-------
+      cat |    30
+      fox |    40
+
+    (2 rows)
+
 ## Saving a collection of objects
 When saving a collection of objects of a user-defined class, the items to be saved
 must provide appropriately named public property accessors for getting every column

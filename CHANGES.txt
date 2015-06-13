@@ -28,6 +28,8 @@
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
  * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
+ * Added support to use aliases with Tuples (SPARKC-125)
+********************************************************************************
 
 ********************************************************************************
 
