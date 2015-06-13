@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.mapper
 
 import scala.reflect.runtime.universe._
-import scala.util.matching.Regex
 
-import com.datastax.spark.connector.ColumnRef
+import com.datastax.spark.connector.{ColumnName, ColumnRef}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
@@ -32,16 +31,40 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
   
   override def columnMapForWriting(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]) = {
     val GetterRegex = "_([0-9]+)".r
-    val getters = 
-      for (name @ GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
-        yield (name, selectedColumns(id.toInt - 1))
-    
+
     require(
-      getters.length == selectedColumns.length,
-      s"The number of columns ${selectedColumns.length} selected to write to ${struct.name} " +
-        s"is higher than the size of the tuple ${getters.length}")
-    
-    SimpleColumnMapForWriting(getters.toMap)
+      selectedColumns.forall(colName => colName.selectedAs == colName.columnName) ||
+        selectedColumns.forall(colName => colName.selectedAs != colName.columnName),
+      """No mixing of implicit and explicit column mapping when writing tuples
+        |1. All columns must be un-aliased or aliased to themselves OR
+        |2. Some columns aliased to fields (_1,_2 ...) but no columns are implicitly mapped"""
+        .stripMargin
+    )
+
+    for (colName <- selectedColumns) {
+      val columnName = colName.columnName
+      val alias = colName.selectedAs
+      if (alias != columnName && !methodNames.contains(alias))
+        throw new IllegalArgumentException(
+          s"""Found Alias: $alias
+             |Tuple provided does not have a getter for that alias.'
+             |Provided getters are ${methodNames.mkString(",")}""".stripMargin)
+    }
+
+    val aliasToRef = selectedColumns.map(colRef => colRef.selectedAs -> colRef).toMap
+
+    //Implicit Mapping, Order of C* Columns == Tuple Field Order
+    val getters = if (selectedColumns.forall(colRef => colRef.columnName == colRef.selectedAs)) {
+      for (methodName @ GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
+        yield (methodName, selectedColumns(id.toInt - 1))
+    }.toMap
+    else {
+      //Explicit Mapping, Tuple field aliases used
+      for (methodName @ GetterRegex(id) <- methodNames if aliasToRef.contains(methodName))
+        yield (methodName, aliasToRef(methodName))
+    }.toMap
+
+    SimpleColumnMapForWriting(getters)
   }
   
   override def newTable(keyspaceName: String, tableName: String): TableDef = {
