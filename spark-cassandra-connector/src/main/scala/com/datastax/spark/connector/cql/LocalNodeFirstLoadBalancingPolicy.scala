@@ -28,7 +28,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress]) extends
   }
 
   override def newQueryPlan(query: String, statement: Statement): java.util.Iterator[Host] = {
-    sortNodesByProximityAndStatus(contactPoints, liveNodes).iterator
+    sortNodesByStatusAndProximity(contactPoints, liveNodes).iterator
   }
 
   override def onAdd(host: Host) {
@@ -77,16 +77,15 @@ object LocalNodeFirstLoadBalancingPolicy {
   }
 
   /** Sorts nodes in the following order:
-    * 1. local host
-    * 2. live nodes in the same DC as `contactPoints`
-    * 3. down nodes in the same DC as `contactPoints`
+    * 1. live nodes in the same DC as `contactPoints` starting with localhost if up
+    * 2. down nodes in the same DC as `contactPoints`
     *
     * Nodes within a group are ordered randomly.
     * Nodes from other DCs are not included. */
-  def sortNodesByProximityAndStatus(contactPoints: Set[InetAddress], hostsToSort: Set[Host]): Seq[Host] = {
+  def sortNodesByStatusAndProximity(contactPoints: Set[InetAddress], hostsToSort: Set[Host]): Seq[Host] = {
     val nodesInLocalDC = nodesInTheSameDC(contactPoints, hostsToSort)
-    val (localHost, otherHosts) = nodesInLocalDC.partition(isLocalHost)
-    val (upHosts, downHosts) = otherHosts.partition(_.isUp)
+    val (allUpHosts, downHosts) = nodesInLocalDC.partition(_.isUp)
+    val (localHost, upHosts) = allUpHosts.partition(isLocalHost)
     localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq)
   }
 
