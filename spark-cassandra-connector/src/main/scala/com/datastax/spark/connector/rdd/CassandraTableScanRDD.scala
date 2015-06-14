@@ -2,22 +2,21 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import scala.collection.JavaConversions._
-import scala.language.existentials
-import scala.reflect.ClassTag
-
-import org.apache.spark.metrics.InputMetricsUpdater
-import org.apache.spark.{Partition, SparkContext, TaskContext}
-
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.partitioner.{NodeAddresses, CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange, NodeAddresses}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector.util.Quote._
+import org.apache.spark.metrics.InputMetricsUpdater
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+
+import scala.collection.JavaConversions._
+import scala.language.existentials
+import scala.reflect.ClassTag
 
 
 /** RDD representing a Table Scan of A Cassandra table.
@@ -64,6 +63,7 @@ class CassandraTableScanRDD[R] private[connector](
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
     val limit: Option[Long] = None,
+    val numPartitions: Option[Int] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())(
   implicit
@@ -78,6 +78,7 @@ class CassandraTableScanRDD[R] private[connector](
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
     limit: Option[Long] = limit,
+    numPartitions: Option[Int] = numPartitions,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self = {
@@ -97,6 +98,7 @@ class CassandraTableScanRDD[R] private[connector](
       columnNames = columnNames,
       where = where,
       limit = limit,
+      numPartitions = numPartitions,
       clusteringOrder = clusteringOrder,
       readConf = readConf)
   }
@@ -114,10 +116,34 @@ class CassandraTableScanRDD[R] private[connector](
       readConf = readConf)
   }
 
+  /**
+   * The method does not create  CoalesceRDD, but reduce number of parittions to read from Cassandra
+   * so it turn off partition size calcutlation and ignore spark.cassandra.input.split.size
+   * The method is useful with where() method call, when actual size of data is small then the table size
+   * Has no effect if partition key is used in where clause.
+   *
+   * @param numPartitions
+   * @param shuffle
+   * @param ord
+   * @return
+   */
+
+  override def coalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[R] = null)
+  : RDD[R] = {
+    val rdd  = copy (numPartitions = Some(numPartitions))
+    if(shuffle) {
+      rdd.superCoalesce(numPartitions, shuffle)
+    } else {
+      rdd
+    }
+  }
+  private def superCoalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[R] = null) =
+    super.coalesce(numPartitions,shuffle);
+
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
     val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSizeInMB)
-    val partitions = partitioner.partitions(where)
+    val partitions = partitioner.partitions(where, numPartitions)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
@@ -241,6 +267,7 @@ class CassandraTableScanRDD[R] private[connector](
         columnNames = SomeColumns(RowCountRef),
         where = where,
         limit = limit,
+        numPartitions = numPartitions,
         clusteringOrder = clusteringOrder,
         readConf = readConf)
 

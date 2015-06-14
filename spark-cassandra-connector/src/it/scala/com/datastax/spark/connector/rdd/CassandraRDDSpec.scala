@@ -769,4 +769,13 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MixedCase")
   }
 
+  "RDD.coalesce"  should "not loose data" in {
+    val rdd = sc.cassandraTable(ks, "big_table").coalesce(4)
+    rdd.count should be (bigTableRowCount)
+  }
+
+  "RDD.repartition"  should "not loose data" in {
+    val rdd = sc.cassandraTable(ks, "big_table").repartition(4)
+    rdd.count should be (bigTableRowCount)
+  }
 }

@@ -2,11 +2,10 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
+import com.datastax.spark.connector.rdd.partitioner.dht.BigIntToken
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.RandomPartitionerTokenFactory
 import org.junit.Assert._
 import org.junit.Test
-
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.RandomPartitionerTokenFactory
-import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFactory}
 
 class RandomPartitionerTokenRangeSplitterTest {
 
@@ -88,4 +87,41 @@ class RandomPartitionerTokenRangeSplitterTest {
     assertSimilarSize(out)
   }
 
+  @Test
+  def testSplitNumPartitions() {
+    val dataSize = 1000
+    val node = InetAddress.getLocalHost
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
+    val rangeLeft = BigInt("0")
+    val rangeRight = BigInt("0")
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set(node), dataSize)
+    val out = splitter.split(range, 0, Some(10))
+
+    assertEquals(10, out.size)
+    assertEquals(rangeLeft, out.head.start.value)
+    assertEquals(rangeRight, out.last.end.value)
+    assertTrue(out.forall(_.replicas == Set(node)))
+    assertNoHoles(out)
+    assertSimilarSize(out)
+  }
+
+  @Test
+  def testWrapAroundNumPartitions() {
+    val dataSize = 2000
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
+    val totalTokenCount = RandomPartitionerTokenFactory.totalTokenCount
+    val rangeLeft = RandomPartitionerTokenFactory.maxToken.value - totalTokenCount / 4
+    val rangeRight = RandomPartitionerTokenFactory.minToken.value + totalTokenCount / 4
+    val range = new TokenRange(
+      new BigIntToken(rangeLeft),
+      new BigIntToken(rangeRight),
+      Set.empty,
+      dataSize / 2)
+    val out = splitter.split(range, 0, Some(10))
+    assertEquals(10, out.size)
+    assertEquals(rangeLeft, out.head.start.value)
+    assertEquals(rangeRight, out.last.end.value)
+    assertNoHoles(out)
+    assertSimilarSize(out)
+  }
 }
