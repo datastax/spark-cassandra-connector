@@ -28,7 +28,13 @@ spark.cassandra.auth.password                        | password for password aut
 spark.cassandra.auth.conf.factory                    | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                        | 10
 spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return               | 12000 ms
-  
+spark.cassandra.connection.ssl.enabled               | enable secure connection to Cassandra cluster                     | false
+spark.cassandra.connection.ssl.trust_store.path      | path for the trust store being used                               | None
+spark.cassandra.connection.ssl.trust_store.password  | trust store password                                              | None
+spark.cassandra.connection.ssl.trust_store.type      | trust store type                                                  | JKS
+spark.cassandra.connection.ssl.protocol              | SSL protocol                                                      | TLS
+spark.cassandra.connection.ssl.cipher_suites         | SSL cipher suites                                                 | TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA
+
 Example:
 
 ```scala

@@ -1,13 +1,19 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
 
 class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-ssl.yaml.template"))
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)),
-    sslEnabled = true, sslTrustStorePath = Some("truststore"), sslTrustStorePassword = Some("connector"))
+
+  val conn = CassandraConnector(
+    hosts = Set(EmbeddedCassandra.getHost(0)),
+    cassandraSSLConf = CassandraSSLConf(
+      enabled = true,
+      trustStorePath = Some(ClassLoader.getSystemResource("truststore").getPath),
+      trustStorePassword = Some("connector")))
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)

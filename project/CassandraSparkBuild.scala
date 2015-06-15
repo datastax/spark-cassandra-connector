@@ -137,7 +137,7 @@ object Dependencies {
     val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
     val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra       guavaExclude // ApacheV2
     val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude // ApacheV2
-    val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Cassandra       cassandraServerExclusions // ApacheV2
+    val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Cassandra      % "test,it" cassandraServerExclusions // ApacheV2
     val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2

@@ -654,7 +654,7 @@ server_encryption_options:
 # enable or disable client/server encryption.
 client_encryption_options:
     enabled: true
-    keystore: keystore
+    keystore: ${keystore_path}
     keystore_password: connector
     # require_client_auth: false
     # Set trustore and truststore_password if require_client_auth is true
