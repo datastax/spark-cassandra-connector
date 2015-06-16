@@ -13,6 +13,8 @@
    - Cassandra listen addresses fetched from system.peers table
    - spark.cassandra.connection.(rpc|native).port replaced with spark.cassandra.connection.port
  * Refactored ColumnSelector to avoid circular dependency on TableDef (SPARKC-177)
+ * Support for modifying C* Collections using saveToCassandra (SPARKC-147)
+
 
 1.3.0 M1
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
