@@ -240,10 +240,11 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, null))
   }
 
-  it should "allow to read rows as an array of KV pairs of two single-column types" in {
+  it should "allow to transform rows into KV pairs of two single-column types" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapColumnTo(classOf[java.lang.Integer]), mapColumnTo(classOf[java.lang.String]))
+      .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.String]))
+      .select("value", "key")
+      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
       .collect()
 
     rows should have size 3
@@ -252,10 +253,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, null))
   }
 
-  it should "allow to read rows as an array of KV pairs of a single-column type and a multi-column type" in {
+  it should "allow to transform rows into KV pairs of a single-column type and a multi-column type" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapColumnTo(classOf[java.lang.Integer]), mapRowTo(classOf[SampleJavaBean]))
+      .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleJavaBean]))
+      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
       .collect().map { case (i, x) ⇒ (i, (x.getKey, x.getValue))}
 
     rows should have size 3
@@ -264,10 +265,11 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, (3, null)))
   }
 
-  it should "allow to read rows as an array of KV pairs of a multi-column type and a single-column type" in {
+  it should "allow to transform rows into KV pairs of a multi-column type and a single-column type" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapRowTo(classOf[SampleJavaBean]), mapColumnTo(classOf[java.lang.Integer]))
+      .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.Integer]))
+      .select("key", "value")
+      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
       .collect().map { case (x, i) ⇒ ((x.getKey, x.getValue), i)}
 
     rows should have size 3
@@ -276,10 +278,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain(((3, null), 3))
   }
 
-  it should "allow to read rows as an array of KV pairs of multi-column types" in {
+  it should "allow to transform rows into KV pairs of multi-column types" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapRowTo(classOf[SampleJavaBean]), mapRowTo(classOf[SampleJavaBean]))
+      .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleJavaBean]))
+      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
       .collect().map { case (x, y) ⇒ ((x.getKey, x.getValue), (y.getKey, y.getValue))}
 
     rows should have size 3

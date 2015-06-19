@@ -100,18 +100,22 @@ CREATE TABLE test.users (
 INSERT INTO test.users (user_name, domain, password_hash, last_visit) VALUES ('john', 'datastax.com', '1234', '2014-06-05');
 ```
 
-We can access map the rows of this table into pair in the following ways:
+We can map each rows of this table into a key-value pair by using the `keyBy` 
+method of `CassandraTableScanRDD` class. 
 
 ```scala
 import org.joda.time.DateTime
 case class UserId(userName: String, domain: String)
 case class UserData(passwordHash: String, lastVisit: DateTime)
 
-sc.cassandraTable[(UserId, UserData)]("test", "users")
+sc.cassandraTable[UserData]("test", "users").keyBy[UserId]
 
-sc.cassandraTable[((String, String), UserData)]("test", "users")
+sc.cassandraTable[UserData]("test", "users").keyBy[(String, String)]("user_name", "domain")
 
-sc.cassandraTable[((String, String), (String, DateTime))]("test", "users")
+sc.cassandraTable[(String, DateTime)]("test", "users")
+  .select("password_hash", "last_visit", "user_name", "domain")   
+  .keyBy[(String, String)]("user_name", "domain")
+
 ```
 
 [Next - Saving data](5_saving.md)

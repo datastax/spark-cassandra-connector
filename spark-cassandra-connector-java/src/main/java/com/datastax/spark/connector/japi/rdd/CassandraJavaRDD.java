@@ -1,5 +1,9 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD;
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
+import org.apache.spark.rdd.RDD;
+import scala.Tuple2;
 import scala.collection.Seq;
 import scala.reflect.ClassTag;
 
@@ -148,6 +152,57 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public CassandraJavaRDD<R> limit(Long rowsNumber) {
         CassandraRDD<R> newRDD = rdd().limit(rowsNumber);
         return wrap(newRDD);
+    }
+
+    /**
+     * Selects a subset of columns mapped to the key of a JavaPairRDD.
+     * The selected columns must be available in the CassandraRDD.
+     * If no selected columns are given, all available columns are selected.
+     *
+     * @param rrf row reader factory to convert the key to desired type K
+     * @param keyClassTag class tag of K, required to construct the result JavaPairRDD
+     * @param columns list of columns passed to the rrf to create the row reader,
+     *                useful when the key is mapped to a tuple or a single value
+     */
+    public <K> CassandraJavaPairRDD<K, R> keyBy(
+            RowReaderFactory<K> rrf, ClassTag<K> keyClassTag, ColumnRef... columns) {
+        if (rdd() instanceof CassandraTableScanRDD<?>) {
+            CassandraTableScanRDD tableScanRDD = (CassandraTableScanRDD) rdd();
+            Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(columns);
+            CassandraRDD<Tuple2<K, R>> resultRDD =
+                    columns.length == 0
+                            ? tableScanRDD.keyBy(rrf)
+                            : tableScanRDD.keyBy(columnRefs, rrf);
+            return new CassandraJavaPairRDD(resultRDD, keyClassTag, classTag());
+        }
+        else {
+            // TODO: The keyBy really belongs to CassandraTableScanJavaRDD class, but we don't have one yet
+            throw new UnsupportedOperationException("keyBy is supported only on CassandraTableScanRDDs");
+        }
+    }
+
+    /**
+     * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
+     */
+    public <K> CassandraJavaPairRDD<K, R> keyBy(
+            RowReaderFactory<K> rrf, Class<K> keyClass, ColumnRef... columns) {
+        return keyBy(rrf, getClassTag(keyClass), columns);
+    }
+
+    /**
+     * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
+     */
+    public <K> CassandraJavaPairRDD<K, R> keyBy(
+            RowReaderFactory<K> rrf, Class<K> keyClass, String... columnNames) {
+        ColumnRef[] columnRefs = toSelectableColumnRefs(columnNames);
+        return keyBy(rrf, getClassTag(keyClass), columnRefs);
+    }
+
+    /**
+     * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
+     */
+    public <K> CassandraJavaPairRDD<K, R> keyBy(RowReaderFactory<K> rrf, Class<K> keyClass) {
+        return keyBy(rrf, getClassTag(keyClass));
     }
 
     /**

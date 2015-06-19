@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.japi;
 
+import com.datastax.spark.connector.AllColumns$;
+import com.datastax.spark.connector.ColumnSelector;
 import scala.Tuple2;
 
 import org.apache.spark.SparkContext;
@@ -89,33 +91,5 @@ public class SparkContextJavaFunctions {
                 .apply(sparkContext, keyspace, table, getClassTag(rrf.targetClass()), rrf);
         return new CassandraJavaRDD<>(rdd, getClassTag(rrf.targetClass()));
     }
-
-    /**
-     * Returns a view of a Cassandra table as a {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDDLike}.
-     *
-     * <p>With this method, each row is converted to a pair of two objects of types {@code K} and {@code V}
-     * respectively. For each conversion a separate row reader factory is specified. Row reader factories can be easily
-     * obtained with one of utility methods in {@link com.datastax.spark.connector.japi.CassandraJavaUtil}.</p>
-     *
-     * @param keyspace the name of the keyspace which contains the accessed table
-     * @param table    the accessed Cassandra table
-     * @param keyRRF   a row reader factory to convert rows into keys of type {@code K}
-     * @param valueRRF a row reader factory to convert rows into values of type {@code V}
-     * @param <K>      key type
-     * @param <V>      value type
-     *
-     * @return {@link com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDDLike} of ({@code K}, {@code V}) pairs
-     *
-     * @since 1.1.0
-     */
-    public <K, V> CassandraJavaPairRDD<K, V> cassandraTable(String keyspace, String table, RowReaderFactory<K> keyRRF, RowReaderFactory<V> valueRRF) {
-        KeyValueRowReaderFactory<K, V> rrf = new KeyValueRowReaderFactory<>(keyRRF, valueRRF);
-
-        CassandraRDD<Tuple2<K, V>> rdd = CassandraTableScanRDD$.MODULE$.apply(sparkContext, keyspace, table,
-                getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()), rrf);
-
-        return new CassandraJavaPairRDD<>(rdd, getClassTag(keyRRF.targetClass()), getClassTag(valueRRF.targetClass()));
-    }
-
 
 }

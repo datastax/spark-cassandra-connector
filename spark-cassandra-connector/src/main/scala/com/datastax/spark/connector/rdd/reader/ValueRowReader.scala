@@ -21,7 +21,6 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
   override def neededColumns: Option[Seq[ColumnRef]] =
     Some(Seq(columnRef))
 
-  override def consumedColumns: Option[Int] = Some(1)
 }
 
 class ValueRowReaderFactory[T: TypeConverter]

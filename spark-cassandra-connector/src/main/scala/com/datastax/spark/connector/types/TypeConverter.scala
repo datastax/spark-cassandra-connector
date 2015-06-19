@@ -636,9 +636,8 @@ object TypeConverter {
   implicit def tuple2Converter[K : TypeConverter, V : TypeConverter]: Tuple2Converter[K, V] =
     new Tuple2Converter[K, V]
 
-//  TODO: Enable when SPARKC-150 gets fixed; now this conflicts with RowReaderFactory implicits
-//  implicit def tuple3Converter[A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter]
-//    : Tuple3Converter[A1, A2, A3] = new Tuple3Converter[A1, A2, A3]
+  implicit def tuple3Converter[A1 : TypeConverter, A2 : TypeConverter, A3 : TypeConverter]
+    : Tuple3Converter[A1, A2, A3] = new Tuple3Converter[A1, A2, A3]
 
   implicit def pairConverter[K : TypeConverter, V : TypeConverter]: PairConverter[K, V] =
     new PairConverter[K, V]

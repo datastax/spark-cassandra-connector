@@ -457,7 +457,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of two pairs" in {
-    val results = sc.cassandraTable[((Int, Int), (Int, String))](ks, "composite_key").select("key_c1", "key_c2" ,"group", "value").collect()
+    val results = sc
+      .cassandraTable[(Int, String)](ks, "composite_key")
+      .select("group", "value", "key_c1", "key_c2")
+      .keyBy[(Int, Int)]("key_c1", "key_c2")
+      .collect()
     results should have length 4
     results should contain (((1, 1), (1, "value1")))
     results should contain (((1, 1), (2, "value2")))
@@ -466,7 +470,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a pair and a case class" in {
-    val results = sc.cassandraTable[((Int, Int), Value)](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc
+      .cassandraTable[Value](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[(Int, Int)]("key", "group")
+      .collect()
     results should have length 3
     val map = results.toMap
     map((1, 100)) should be (Value("0001"))
@@ -475,7 +483,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple" in {
-    val results = sc.cassandraTable[(KeyGroup, (Int, Int, String))](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc
+      .cassandraTable[(Int, Int, String)](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[KeyGroup]
+      .collect()
     results should have length 3
     results should contain ((KeyGroup(1, 100), (1, 100, "0001")))
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
@@ -495,8 +507,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     }
 
     val results = sc
-      .cassandraTable[(Key, (Int, Int, String))](ks, "wide_rows")
+      .cassandraTable[(Int, Int, String)](ks, "wide_rows")
       .select("key", "group", "value")
+      .keyBy[Key]
       .spanByKey
       .collect()
       .toMap
@@ -516,9 +529,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       (20, 22, "2022"))
   }
 
-
   it should "allow to read Cassandra table as Array of tuples of two case classes" in {
-    val results = sc.cassandraTable[(KeyGroup, Value)](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc.cassandraTable[Value](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[KeyGroup]
+      .collect()
     results should have length 3
     results should contain((KeyGroup(1, 100), Value("0001")))
     results should contain((KeyGroup(2, 100), Value("0002")))
