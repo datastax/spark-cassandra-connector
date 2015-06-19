@@ -1,15 +1,15 @@
 package com.datastax.spark.connector.japi;
 
-import com.datastax.spark.connector.AllColumns$;
-import com.datastax.spark.connector.ColumnSelector;
 import scala.Tuple2;
 
 import org.apache.spark.SparkContext;
+
 import com.datastax.spark.connector.japi.rdd.CassandraJavaPairRDD;
 import com.datastax.spark.connector.japi.rdd.CassandraJavaRDD;
+import com.datastax.spark.connector.japi.rdd.CassandraTableScanJavaRDD;
 import com.datastax.spark.connector.rdd.CassandraRDD;
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD;
 import com.datastax.spark.connector.rdd.CassandraTableScanRDD$;
-import com.datastax.spark.connector.rdd.reader.KeyValueRowReaderFactory;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
@@ -65,7 +65,7 @@ public class SparkContextJavaFunctions {
      *
      * @since 1.0.0
      */
-    public CassandraJavaRDD<CassandraRow> cassandraTable(String keyspace, String table) {
+    public CassandraTableScanJavaRDD<CassandraRow> cassandraTable(String keyspace, String table) {
         RowReaderFactory<CassandraRow> rtf = GenericJavaRowReaderFactory.instance;
         return cassandraTable(keyspace, table, rtf);
     }
@@ -86,10 +86,13 @@ public class SparkContextJavaFunctions {
      *
      * @since 1.1.0
      */
-    public <T> CassandraJavaRDD<T> cassandraTable(String keyspace, String table, RowReaderFactory<T> rrf) {
-        CassandraRDD<T> rdd = CassandraTableScanRDD$.MODULE$
+    public <T> CassandraTableScanJavaRDD<T> cassandraTable(
+            String keyspace,
+            String table,
+            RowReaderFactory<T> rrf) {
+        CassandraTableScanRDD<T> rdd = CassandraTableScanRDD$.MODULE$
                 .apply(sparkContext, keyspace, table, getClassTag(rrf.targetClass()), rrf);
-        return new CassandraJavaRDD<>(rdd, getClassTag(rrf.targetClass()));
+        return new CassandraTableScanJavaRDD<>(rdd, getClassTag(rrf.targetClass()));
     }
 
 }
