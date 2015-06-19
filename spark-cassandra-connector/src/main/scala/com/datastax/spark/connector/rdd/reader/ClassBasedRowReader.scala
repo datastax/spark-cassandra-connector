@@ -30,9 +30,6 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
     Some(ctorRefs ++ setterRefs)
   }
 
-  override val consumedColumns: Option[Int] =
-    Some(if (isReadingTuples) converter.columnMap.constructor.size else 0)
-
   override def read(row: Row, ignored: Array[String])(implicit protocolVersion: ProtocolVersion): R = {
     // can't use passed array of column names, because it is already after applying aliases
     val columnNames = row.getColumnDefinitions.iterator.map(_.getName).toArray

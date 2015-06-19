@@ -114,6 +114,31 @@ class CassandraTableScanRDD[R] private[connector](
       readConf = readConf)
   }
 
+  /** Selects a subset of columns mapped to the key and returns an RDD of pairs.
+    * Similar to the builtin Spark keyBy method, but this one uses implicit
+    * RowReaderFactory to construct the key objects.
+    * The selected columns must be available in the CassandraRDD.
+    *
+    * @param columns column selector passed to the rrf to create the row reader,
+    *                useful when the key is mapped to a tuple or a single value
+    */
+  def keyBy[K : RowReaderFactory](columns: ColumnSelector): CassandraTableScanRDD[(K, R)] = {
+    val kRRF = implicitly[RowReaderFactory[K]]
+    val vRRF = rowReaderFactory
+    implicit val kvRRF = new KeyValueRowReaderFactory[K, R](columns, kRRF, vRRF)
+    convertTo[(K, R)]
+  }
+
+  /** Extracts a key of the given class from the given columns.
+    *  @see `keyBy(ColumnSelector)` */
+  def keyBy[K : RowReaderFactory](columns: ColumnRef*): CassandraTableScanRDD[(K, R)] =
+    keyBy(SomeColumns(columns: _*))
+
+  /** Extracts a key of the given class from all the available columns.
+    * @see `keyBy(ColumnSelector)` */
+  def keyBy[K : RowReaderFactory]: CassandraTableScanRDD[(K, R)] =
+    keyBy(AllColumns)
+
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
     val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSizeInMB)

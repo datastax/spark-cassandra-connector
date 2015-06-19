@@ -42,11 +42,6 @@ public class GenericJavaRowReaderFactory {
         public Option<Seq<ColumnRef>> neededColumns() {
             return Option.empty();
         }
-
-        @Override
-        public Option<Object> consumedColumns() {
-            return Option.empty();
-        }
     }
 
 }
