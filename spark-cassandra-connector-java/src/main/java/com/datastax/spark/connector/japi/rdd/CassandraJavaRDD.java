@@ -42,7 +42,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
         return (CassandraRDD<R>) super.rdd();
     }
 
-    private CassandraJavaRDD<R> wrap(CassandraRDD<R> newRDD) {
+    protected CassandraJavaRDD<R> wrap(CassandraRDD<R> newRDD) {
         return new CassandraJavaRDD<>(newRDD, classTag());
     }
 
