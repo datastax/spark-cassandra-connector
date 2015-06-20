@@ -16,8 +16,8 @@ public class SparkContextJavaFunctionsTest
     @Test
     public void testReadConfPopulating() {
         SparkConf conf = new SparkConf();
-        conf.set("spark.cassandra.input.page.row.size", "1234");
-        conf.set("spark.cassandra.input.split.size", "4321");
+        conf.set("spark.cassandra.input.fetch.size_in_rows", "1234");
+        conf.set("spark.cassandra.input.split.size_in_mb", "4321");
         conf.set("spark.cassandra.input.consistency.level", "THREE");
 
         SparkContext sc = Mockito.mock(SparkContext.class);
@@ -25,8 +25,8 @@ public class SparkContextJavaFunctionsTest
 
         ReadConf readConf = CassandraJavaUtil.javaFunctions(sc).cassandraTable("a", "b").rdd().readConf();
 
-        assertEquals(readConf.fetchSize(), 1234);
-        assertEquals(readConf.splitSize(), 4321);
+        assertEquals(readConf.fetchSizeInRows(), 1234);
+        assertEquals(readConf.splitSizeInMB(), 4321);
         assertEquals(readConf.consistencyLevel(), ConsistencyLevel.THREE);
     }
 }

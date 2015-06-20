@@ -31,14 +31,14 @@ class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupS
     tokenRanges match {
       case Stream.Empty => result
       case head #:: rest =>
-        val firstEndpoint = head.endpoints.min
+        val firstEndpoint = head.replicas.min
         val rowCounts = tokenRanges.map(_.rowCount.get)
         val cumulativeRowCounts = rowCounts.scanLeft(0L)(_ + _).tail // drop first item always == 0
         val rowLimit = math.max(maxRowCountPerGroup, head.rowCount.get) // make sure first element will be always included
         val cluster = tokenRanges
           .take(math.max(1, maxGroupSize))
           .zip(cumulativeRowCounts)
-          .takeWhile { case (tr, count) => count <= rowLimit && tr.endpoints.min == firstEndpoint }
+          .takeWhile { case (tr, count) => count <= rowLimit && tr.replicas.min == firstEndpoint }
           .map(_._1)
           .toVector
         val remainingTokenRanges = tokenRanges.drop(cluster.length)
@@ -52,7 +52,7 @@ class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupS
   def group(tokenRanges: Seq[TokenRange[V, T]]): Iterable[Seq[TokenRange[V, T]]] = {
     // sort by endpoints lexicographically
     // this way ranges on the same host are grouped together
-    val sortedRanges = tokenRanges.sortBy(_.endpoints.toSeq.sorted)
+    val sortedRanges = tokenRanges.sortBy(_.replicas.toSeq.sorted)
     group(sortedRanges.toStream, Vector.empty)
   }
 

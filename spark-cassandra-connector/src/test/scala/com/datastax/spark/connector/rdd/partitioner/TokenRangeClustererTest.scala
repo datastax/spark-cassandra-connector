@@ -2,25 +2,20 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, LongToken}
 import org.junit.Assert._
 import org.junit.Test
+
+import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
 
 class TokenRangeClustererTest {
 
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[Long, LongToken]
 
-  val addr1 = InetAddress.getByName("192.168.123.1")
-  val addr2 = InetAddress.getByName("192.168.123.2")
-  val addr3 = InetAddress.getByName("192.168.123.3")
-  val addr4 = InetAddress.getByName("192.168.123.4")
-  val addr5 = InetAddress.getByName("192.168.123.5")
-
-  val node1 = CassandraNode(addr1, addr1)
-  val node2 = CassandraNode(addr2, addr2)
-  val node3 = CassandraNode(addr3, addr3)
-  val node4 = CassandraNode(addr4, addr4)
-  val node5 = CassandraNode(addr5, addr5)
+  val node1 = InetAddress.getByName("192.168.123.1")
+  val node2 = InetAddress.getByName("192.168.123.2")
+  val node3 = InetAddress.getByName("192.168.123.3")
+  val node4 = InetAddress.getByName("192.168.123.4")
+  val node5 = InetAddress.getByName("192.168.123.5")
 
   private def token(x: Long) = new com.datastax.spark.connector.rdd.partitioner.dht.LongToken(x)
 
@@ -90,7 +85,7 @@ class TokenRangeClustererTest {
     val groups = trc.group(Seq(tr1, tr2, tr3, tr4))
     assertEquals(1, groups.size)
     assertEquals(4, groups.head.size)
-    assertFalse(groups.head.map(_.endpoints).reduce(_ intersect _).isEmpty)
+    assertFalse(groups.head.map(_.replicas).reduce(_ intersect _).isEmpty)
   }
 
   @Test

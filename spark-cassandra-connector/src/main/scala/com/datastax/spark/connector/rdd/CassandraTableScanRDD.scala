@@ -36,10 +36,11 @@ import com.datastax.spark.connector.util.CountingIterator
   * cluster node. A data partition consists of one or more contiguous token ranges.
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
+  *
   * The following properties control the number of partitions and the fetch size:
-  * - spark.cassandra.input.split.size: approx number of Cassandra partitions in a Spark partition,
-  *   default 100000
-  * - spark.cassandra.input.page.row.size:  number of CQL rows fetched per roundtrip,
+  *  * - spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
+  *   partition, default 64 MB
+  * - spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
   *   default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then
@@ -116,7 +117,7 @@ class CassandraTableScanRDD[R] private[connector](
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
     val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
+    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSizeInMB)(tf).partitions(where)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
