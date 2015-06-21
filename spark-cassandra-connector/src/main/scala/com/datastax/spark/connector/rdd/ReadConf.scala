@@ -6,12 +6,14 @@ import org.apache.spark.SparkConf
 
 /** Read settings for RDD
   *
+  * @param splitCount number of partitions to divide the data into; unset by default
   * @param splitSizeInMB number of Cassandra partitions to be read in a single Spark task
   * @param fetchSizeInRows number of CQL rows to fetch in a single round-trip to Cassandra
   * @param consistencyLevel consistency level for reads, default LOCAL_ONE;
   *                         higher consistency level will disable data-locality
   * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+) */
 case class ReadConf(
+  splitCount: Option[Int] = None,
   splitSizeInMB: Int = ReadConf.DefaultSplitSizeInMB,
   fetchSizeInRows: Int = ReadConf.DefaultFetchSizeInRows,
   consistencyLevel: ConsistencyLevel = ReadConf.DefaultConsistencyLevel,

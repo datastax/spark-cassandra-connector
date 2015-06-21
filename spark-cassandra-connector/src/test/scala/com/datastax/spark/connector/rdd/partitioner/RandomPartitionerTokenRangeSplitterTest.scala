@@ -26,11 +26,12 @@ class RandomPartitionerTokenRangeSplitterTest {
 
   @Test
   def testSplit() {
+    val dataSize = 1000
     val node = InetAddress.getLocalHost
-    val splitter = new RandomPartitionerTokenRangeSplitter(1000)
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("0")
-    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set(node), None)
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set(node), dataSize)
     val out = splitter.split(range, 100)
 
     assertEquals(10, out.size)
@@ -46,7 +47,7 @@ class RandomPartitionerTokenRangeSplitterTest {
     val splitter = new RandomPartitionerTokenRangeSplitter(1000)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("100")
-    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, None)
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, 0)
     val out = splitter.split(range, 500)
 
     // range is too small to contain 500 rows
@@ -60,7 +61,7 @@ class RandomPartitionerTokenRangeSplitterTest {
     val splitter = new RandomPartitionerTokenRangeSplitter(0)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("100")
-    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, None)
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, 0)
     val out = splitter.split(range, 500)
     assertEquals(1, out.size)
     assertEquals(rangeLeft, out.head.start.value)
@@ -69,11 +70,16 @@ class RandomPartitionerTokenRangeSplitterTest {
 
   @Test
   def testWrapAround() {
-    val splitter = new RandomPartitionerTokenRangeSplitter(2000)
+    val dataSize = 2000
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
     val totalTokenCount = RandomPartitionerTokenFactory.totalTokenCount
     val rangeLeft = RandomPartitionerTokenFactory.maxToken.value - totalTokenCount / 4
     val rangeRight = RandomPartitionerTokenFactory.minToken.value + totalTokenCount / 4
-    val range = new TokenRange(new BigIntToken(rangeLeft), new BigIntToken(rangeRight), Set.empty, None)
+    val range = new TokenRange(
+      new BigIntToken(rangeLeft),
+      new BigIntToken(rangeRight),
+      Set.empty,
+      dataSize / 2)
     val out = splitter.split(range, 100)
     assertEquals(10, out.size)
     assertEquals(rangeLeft, out.head.start.value)
