@@ -84,3 +84,30 @@ class DataSizeEstimates[V, T <: Token[V]](
     normalizedCount
   }
 }
+
+object DataSizeEstimates {
+
+  /** Waits until data size estimates are present in the system.size_estimates table.
+    * Returns true if size estimates were written, returns false if timeout was reached
+    * while waiting */
+  def waitForDataSizeEstimates(
+                                conn: CassandraConnector,
+                                keyspaceName: String,
+                                tableName: String,
+                                timeoutInMs: Int): Boolean = {
+
+    conn.withSessionDo { session =>
+      def hasSizeEstimates: Boolean = {
+        session.execute(
+          s"SELECT * FROM system.size_estimates " +
+            s"WHERE keyspace_name = '$keyspaceName' AND table_name = '$tableName'").all().nonEmpty
+      }
+
+      val startTime = System.currentTimeMillis()
+      while (!hasSizeEstimates && System.currentTimeMillis() < startTime + timeoutInMs)
+        Thread.sleep(1000)
+
+      hasSizeEstimates
+    }
+  }
+}

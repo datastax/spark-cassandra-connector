@@ -13,7 +13,7 @@ case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends End
  * Hosts . It will group keys which share a common IP address into partitionsPerReplicaSet Partitions.
  * @param partitionsPerReplicaSet The number of Spark Partitions to make Per Unique Endpoint
  */
-class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConnector) extends Partitioner {
+class ReplicaPartitioner(partitionsPerReplicaSet: Int, val connector: CassandraConnector) extends Partitioner {
   /* TODO We Need JAVA-312 to get sets of replicas instead of single endpoints. Once we have that we'll be able to
   build a map of Set[ip,ip,...] => Index before looking at our data and give the all options for the preferred location
    for a partition*/
@@ -30,17 +30,23 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
     hosts(rand.nextInt(numHosts))
 
   /**
-   * Given a set of endpoints, pick a random endpoint, and then a random partition owned by that endpoint. If the
-   * requested host doesn't exist chose another random host.
+   * Given a set of endpoints, pick a random endpoint, and then a random partition owned by that
+   * endpoint. If the requested host doesn't exist chose another random host. Only uses valid hosts
+   * from the connected datacenter.
    * @param key A Set[InetAddress] of replicas for this Cassandra Partition
    * @return An integer between 0 and numPartitions
    */
   override def getPartition(key: Any): Int = {
     key match {
       case key: Set[_] if key.size > 0 && key.forall(_.isInstanceOf[InetAddress]) =>
-        val replicaSet = key.asInstanceOf[Set[InetAddress]].toVector
-        val endpoint = replicaSet(rand.nextInt(replicaSet.size))
-        hostMap.getOrElse(endpoint, hostMap(randomHost))(rand.nextInt(partitionsPerReplicaSet))
+        //Only use ReplicaEndpoints in the connected DC
+        val replicaSetInDC = (hosts.toSet & key.asInstanceOf[Set[InetAddress]]).toVector
+        if (replicaSetInDC.nonEmpty) {
+          val endpoint = replicaSetInDC(rand.nextInt(replicaSetInDC.size))
+          hostMap(endpoint)(rand.nextInt(partitionsPerReplicaSet))
+        } else {
+          hostMap(randomHost)(rand.nextInt(partitionsPerReplicaSet))
+        }
       case _ => throw new IllegalArgumentException(
         "ReplicaPartitioner can only determine the partition of a tuple whose key is a non-empty Set[InetAddress]. " +
           s"Invalid key: $key")
@@ -56,4 +62,3 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, connector: CassandraConne
   }
 
 }
-

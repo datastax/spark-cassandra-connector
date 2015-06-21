@@ -26,4 +26,3 @@ case class CassandraPartition(index: Int,
                               endpoints: Iterable[InetAddress],
                               tokenRanges: Iterable[CqlTokenRange],
                               rowCount: Long) extends EndpointPartition
-
