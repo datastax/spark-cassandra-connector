@@ -14,7 +14,7 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
       enabled = true,
       trustStorePath = Some(ClassLoader.getSystemResource("truststore").getPath),
       trustStorePassword = Some("connector"),
-      cipherSuites = Array("TLS_RSA_WITH_AES_128_CBC_SHA")))
+      enabledAlgorithms = Array("TLS_RSA_WITH_AES_128_CBC_SHA")))
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)

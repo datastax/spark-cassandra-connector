@@ -66,7 +66,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     conf.cassandraSSLConf.trustStorePath.map("enc.truststore" → _),
     conf.cassandraSSLConf.trustStorePassword.map("enc.truststore.password" → _),
     Some("enc.protocol" → conf.cassandraSSLConf.protocol),
-    Some("enc.cipher.suites" → conf.cassandraSSLConf.cipherSuites.mkString(","))
+    Some("enc.cipher.suites" → conf.cassandraSSLConf.enabledAlgorithms.mkString(","))
   ).flatten.toMap.filterKeys(supportedOptions.contains)
 
   def createTransportFactory(conf: CassandraSSLConf): ITransportFactory = {
@@ -128,7 +128,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
         val context = SSLContext.getInstance(conf.protocol)
         context.init(null, tmf.getTrustManagers, new SecureRandom)
-        new SSLOptions(context, conf.cipherSuites)
+        new SSLOptions(context, conf.enabledAlgorithms)
     }
   }
 

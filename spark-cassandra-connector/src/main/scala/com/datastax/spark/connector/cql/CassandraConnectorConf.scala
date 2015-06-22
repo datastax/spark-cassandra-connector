@@ -41,7 +41,7 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    cipherSuites: Array[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES
+    enabledAlgorithms: Array[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES
   )
 
   val DefaultRpcPort = 9160
@@ -71,11 +71,11 @@ object CassandraConnectorConf extends Logging {
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
 
   val CassandraConnectionSSLEnabledProperty = "spark.cassandra.connection.ssl.enabled"
-  val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trust_store.path"
-  val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trust_store.password"
-  val CassandraConnectionSSLTrustStoreTypeProperty = "spark.cassandra.connection.ssl.trust_store_type"
+  val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trustStore.path"
+  val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trustStore.password"
+  val CassandraConnectionSSLTrustStoreTypeProperty = "spark.cassandra.connection.ssl.trustStore.type"
   val CassandraConnectionSSLProtocolProperty = "spark.cassandra.connection.ssl.protocol"
-  val CassandraConnectionSSLCipherSuitesProperty = "spark.cassandra.connection.ssl.cipher_suites"
+  val CassandraConnectionSSLEnabledAlgorithmsProperty = "spark.cassandra.connection.ssl.enabledAlgorithms"
 
   //Whitelist for allowed CassandraConnector environment variables
   val Properties = Set(
@@ -95,7 +95,7 @@ object CassandraConnectorConf extends Logging {
     CassandraConnectionSSLTrustStorePasswordProperty,
     CassandraConnectionSSLTrustStoreTypeProperty,
     CassandraConnectionSSLProtocolProperty,
-    CassandraConnectionSSLCipherSuitesProperty
+    CassandraConnectionSSLEnabledAlgorithmsProperty
   )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {
@@ -140,8 +140,8 @@ object CassandraConnectorConf extends Logging {
       defaultValue = DefaultCassandraSSLConf.trustStoreType)
     val sslProtocol = conf.get(CassandraConnectionSSLProtocolProperty,
       defaultValue = DefaultCassandraSSLConf.protocol)
-    val sslCipherSuites = conf.getOption(CassandraConnectionSSLCipherSuitesProperty)
-      .map(_.split(",").map(_.trim)).getOrElse(DefaultCassandraSSLConf.cipherSuites)
+    val sslEnabledAlgorithms = conf.getOption(CassandraConnectionSSLEnabledAlgorithmsProperty)
+      .map(_.split(",").map(_.trim)).getOrElse(DefaultCassandraSSLConf.enabledAlgorithms)
 
     val cassandraSSLConf = CassandraSSLConf(
       enabled = sslEnabled,
@@ -149,7 +149,7 @@ object CassandraConnectorConf extends Logging {
       trustStorePassword = sslTrustStorePassword,
       trustStoreType = sslTrustStoreType,
       protocol = sslProtocol,
-      cipherSuites = sslCipherSuites
+      enabledAlgorithms = sslEnabledAlgorithms
     )
 
     CassandraConnectorConf(
