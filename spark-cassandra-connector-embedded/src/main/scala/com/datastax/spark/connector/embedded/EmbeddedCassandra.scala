@@ -131,7 +131,8 @@ object EmbeddedCassandra {
       "jmx_port"              -> getJmxPort(index).toString,
       "rpc_address"           -> host,
       "listen_address"        -> host,
-      "cluster_name"          -> getClusterName(index))
+      "cluster_name"          -> getClusterName(index),
+      "keystore_path"         -> ClassLoader.getSystemResource("keystore").getPath)
   }
 
   def getStoragePort(index: Integer) = 7000 + index
