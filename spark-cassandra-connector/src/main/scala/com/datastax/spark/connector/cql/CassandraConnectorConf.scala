@@ -2,11 +2,11 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import org.apache.spark.{Logging, SparkConf}
-
 import scala.util.control.NonFatal
 
-import com.datastax.driver.core.ProtocolOptions
+import org.apache.spark.{Logging, SparkConf}
+
+import com.datastax.driver.core.{ProtocolOptions, SSLOptions}
 import com.datastax.spark.connector.util.ConfigCheck
 
 /** Stores configuration of a connection to Cassandra.
@@ -23,17 +23,28 @@ case class CassandraConnectorConf(
   queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
   connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
   readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
-  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory
+  connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
 )
 
 /** A factory for [[CassandraConnectorConf]] objects.
   * Allows for manually setting connection properties or reading them from [[org.apache.spark.SparkConf SparkConf]]
   * object. By embedding connection information in [[org.apache.spark.SparkConf SparkConf]],
   * [[org.apache.spark.SparkContext SparkContext]] can offer Cassandra specific methods which require establishing
-  * connections to a Cassandra cluster.*/
+  * connections to a Cassandra cluster. */
 object CassandraConnectorConf extends Logging {
 
+  case class CassandraSSLConf(
+    enabled: Boolean = false,
+    trustStorePath: Option[String] = None,
+    trustStorePassword: Option[String] = None,
+    trustStoreType: String = "JKS",
+    protocol: String = "TLS",
+    enabledAlgorithms: Array[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES
+  )
+
   val DefaultPort = 9042
+
   val DefaultKeepAliveMillis = 250
   val DefaultMinReconnectionDelayMillis = 1000
   val DefaultMaxReconnectionDelayMillis = 60000
@@ -41,6 +52,8 @@ object CassandraConnectorConf extends Logging {
   val DefaultConnectTimeoutMillis = 5000
   val DefaultReadTimeoutMillis = 12000
   val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
+
+  val DefaultCassandraSSLConf = CassandraSSLConf()
 
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
   val CassandraConnectionPortProperty = "spark.cassandra.connection.port"
@@ -54,6 +67,13 @@ object CassandraConnectorConf extends Logging {
   val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
 
+  val CassandraConnectionSSLEnabledProperty = "spark.cassandra.connection.ssl.enabled"
+  val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trustStore.path"
+  val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trustStore.password"
+  val CassandraConnectionSSLTrustStoreTypeProperty = "spark.cassandra.connection.ssl.trustStore.type"
+  val CassandraConnectionSSLProtocolProperty = "spark.cassandra.connection.ssl.protocol"
+  val CassandraConnectionSSLEnabledAlgorithmsProperty = "spark.cassandra.connection.ssl.enabledAlgorithms"
+
   //Whitelist for allowed CassandraConnector environment variables
   val Properties = Set(
     CassandraConnectionHostProperty,
@@ -65,9 +85,15 @@ object CassandraConnectorConf extends Logging {
     CassandraMaxReconnectionDelayProperty,
     CassandraConnectionCompressionProperty,
     CassandraQueryRetryCountProperty,
-    CassandraReadTimeoutProperty
+    CassandraReadTimeoutProperty,
+    CassandraConnectionSSLEnabledProperty,
+    CassandraConnectionSSLTrustStorePathProperty,
+    CassandraConnectionSSLTrustStorePasswordProperty,
+    CassandraConnectionSSLTrustStoreTypeProperty,
+    CassandraConnectionSSLProtocolProperty,
+    CassandraConnectionSSLEnabledAlgorithmsProperty
   )
-  
+
   private def resolveHost(hostName: String): Option[InetAddress] = {
     try Some(InetAddress.getByName(hostName))
     catch {
@@ -88,7 +114,7 @@ object CassandraConnectorConf extends Logging {
     val port = conf.getInt(CassandraConnectionPortProperty, DefaultPort)
     val authConf = AuthConf.fromSparkConf(conf)
     val keepAlive = conf.getInt(CassandraConnectionKeepAliveProperty, DefaultKeepAliveMillis)
-    
+
     val localDC = conf.getOption(CassandraConnectionLocalDCProperty)
     val minReconnectionDelay = conf.getInt(CassandraMinReconnectionDelayProperty, DefaultMinReconnectionDelayMillis)
     val maxReconnectionDelay = conf.getInt(CassandraMaxReconnectionDelayProperty, DefaultMaxReconnectionDelayMillis)
@@ -97,9 +123,29 @@ object CassandraConnectorConf extends Logging {
     val readTimeout = conf.getInt(CassandraReadTimeoutProperty, DefaultReadTimeoutMillis)
 
     val compression = conf.getOption(CassandraConnectionCompressionProperty)
-        .map(ProtocolOptions.Compression.valueOf).getOrElse(DefaultCassandraConnectionCompression)
+      .map(ProtocolOptions.Compression.valueOf).getOrElse(DefaultCassandraConnectionCompression)
 
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
+
+    val sslEnabled = conf.getBoolean(CassandraConnectionSSLEnabledProperty,
+      defaultValue = DefaultCassandraSSLConf.enabled)
+    val sslTrustStorePath = conf.getOption(CassandraConnectionSSLTrustStorePathProperty)
+    val sslTrustStorePassword = conf.getOption(CassandraConnectionSSLTrustStorePasswordProperty)
+    val sslTrustStoreType = conf.get(CassandraConnectionSSLTrustStoreTypeProperty,
+      defaultValue = DefaultCassandraSSLConf.trustStoreType)
+    val sslProtocol = conf.get(CassandraConnectionSSLProtocolProperty,
+      defaultValue = DefaultCassandraSSLConf.protocol)
+    val sslEnabledAlgorithms = conf.getOption(CassandraConnectionSSLEnabledAlgorithmsProperty)
+      .map(_.split(",").map(_.trim)).getOrElse(DefaultCassandraSSLConf.enabledAlgorithms)
+
+    val cassandraSSLConf = CassandraSSLConf(
+      enabled = sslEnabled,
+      trustStorePath = sslTrustStorePath,
+      trustStorePassword = sslTrustStorePassword,
+      trustStoreType = sslTrustStoreType,
+      protocol = sslProtocol,
+      enabledAlgorithms = sslEnabledAlgorithms
+    )
 
     CassandraConnectorConf(
       hosts = hosts,
@@ -113,6 +159,8 @@ object CassandraConnectorConf extends Logging {
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
-      connectionFactory = connectionFactory)
+      connectionFactory = connectionFactory,
+      cassandraSSLConf = cassandraSSLConf
+    )
   }
 }
