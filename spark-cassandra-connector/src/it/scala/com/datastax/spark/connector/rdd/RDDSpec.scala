@@ -20,6 +20,8 @@ case class MissingClustering2(pk1: Int, pk2: Int, pk3: Int, cc3: Int, cc1: Int)
 
 case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 
+case class MisMatchClass(word: String, another: Int)
+
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
 class RDDSpec extends SparkCassandraITFlatSpecBase {
@@ -132,6 +134,21 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     val repart = source.repartitionByCassandraReplica(ks, tableName, 10)
     repart.partitions.length should be(conn.hosts.size * 10)
     val someCass = repart.joinWithCassandraTable(ks, tableName)
+    someCass.partitions.foreach {
+      case e: EndpointPartition =>
+        conn.hosts should contain(e.endpoints.head)
+      case _ =>
+        fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
+    }
+    val result = someCass.collect
+    checkArrayCassandraRow(result)
+  }
+
+  it should "be repartitionable on a mapped RDD field" in {
+    val source = sc.parallelize(keys).map(id => MisMatchClass(id.toString, id))
+    val repart = source.repartitionByCassandraReplica(ks, tableName, 10, SomeColumns("key" as "another"))
+    repart.partitions.length should be(conn.hosts.size * 10)
+    val someCass = repart.joinWithCassandraTable(ks, tableName).on(SomeColumns("key" as "another"))
     someCass.partitions.foreach {
       case e: EndpointPartition =>
         conn.hosts should contain(e.endpoints.head)
