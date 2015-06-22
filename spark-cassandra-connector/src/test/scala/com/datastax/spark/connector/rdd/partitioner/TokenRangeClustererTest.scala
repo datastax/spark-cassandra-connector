@@ -6,6 +6,8 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, LongToke
 import org.junit.Assert._
 import org.junit.Test
 
+import scala.util.Random
+
 class TokenRangeClustererTest {
 
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[Long, LongToken]
@@ -38,7 +40,7 @@ class TokenRangeClustererTest {
     val trc = new TokenRangeClusterer[Long, LongToken](10)
     val groups = trc.group(Seq(tr1, tr2))
     assertEquals(1, groups.size)
-    assertEquals(Set(tr1, tr2), groups.head.toSet)
+    assertEquals(Set(tr1, tr2), groups.head.ranges.toSet)
   }
 
   @Test
@@ -49,7 +51,7 @@ class TokenRangeClustererTest {
     val tr4 = new TokenRange(token(30), token(40), Set(node2), Some(2))
 
     val trc = new TokenRangeClusterer[Long, LongToken](10)
-    val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.toSet).toSet
+    val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.ranges.toSet).toSet
     assertEquals(2, groups.size)
     assertTrue(groups.contains(Set(tr1, tr2)))
     assertTrue(groups.contains(Set(tr3, tr4)))
@@ -63,7 +65,7 @@ class TokenRangeClustererTest {
     val tr4 = new TokenRange(token(30), token(40), Set(node1), Some(5))
 
     val trc = new TokenRangeClusterer[Long, LongToken](10)
-    val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.toSet).toSet
+    val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.ranges.toSet).toSet
     assertEquals(2, groups.size)
     assertTrue(groups.contains(Set(tr1, tr2)))
     assertTrue(groups.contains(Set(tr3, tr4)))
@@ -74,7 +76,7 @@ class TokenRangeClustererTest {
     val tr1 = new TokenRange(token(0), token(10), Set(node1), Some(100000))
     val tr2 = new TokenRange(token(10), token(20), Set(node1), Some(100000))
     val trc = new TokenRangeClusterer[Long, LongToken](10)
-    val groups = trc.group(Seq(tr1, tr2)).map(_.toSet).toSet
+    val groups = trc.group(Seq(tr1, tr2)).map(_.ranges.toSet).toSet
     assertEquals(2, groups.size)
     assertTrue(groups.contains(Set(tr1)))
     assertTrue(groups.contains(Set(tr2)))
@@ -89,8 +91,8 @@ class TokenRangeClustererTest {
     val trc = new TokenRangeClusterer[Long, LongToken](10)
     val groups = trc.group(Seq(tr1, tr2, tr3, tr4))
     assertEquals(1, groups.size)
-    assertEquals(4, groups.head.size)
-    assertFalse(groups.head.map(_.endpoints).reduce(_ intersect _).isEmpty)
+    assertEquals(4, groups.head.ranges.size)
+    assertFalse(groups.head.endpoints.isEmpty)
   }
 
   @Test
@@ -103,4 +105,15 @@ class TokenRangeClustererTest {
     assertEquals(3, groups.size)
   }
 
+
+  @Test
+  def testRealClusterSize() {
+    val rnd = new Random(1);
+    val nodes= (1 to 8).map(i=>InetAddress.getByName("192.168.123." + i)).map (a=>CassandraNode(a, a))
+    val trs = (1 to 256 * 8).map(i=> new TokenRange(token(i*10), token((i+1)*10), rnd.shuffle(nodes).take(3).toSet, Some(1)))
+    val trc = new TokenRangeClusterer[Long, LongToken](maxRowCountPerGroup = 256)
+    val groups = trc.group(trs)
+    groups.map(g => (g.endpoints, g.rowCount)).groupBy(_._1).mapValues(_.map(_._2).sum).foreach(println)
+    assertEquals(14, groups.size)
+  }
 }

@@ -160,22 +160,28 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
         val endpointCount = tokenRanges.map(_.endpoints).reduce(_ ++ _).size
         val splitter = createSplitterFor(tokenRanges)
         val splits = splitsOf(tokenRanges, splitter).toSeq
-        val maxGroupSize = tokenRanges.size / endpointCount
+        val maxGroupSize = Math.ceil(tokenRanges.size.toDouble / endpointCount).toInt
         val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
-        val groups = clusterer.group(splits).toArray
+        val groups: Iterable[clusterer.MutableCassandraPartition] = clusterer.group(splits)
 
         if (containsPartitionKey(whereClause)) {
           val endpoints = tokenRanges.flatMap(_.endpoints)
           val addresses = endpoints.flatMap(_.allAddresses)
-          Array(CassandraPartition(0, addresses, List(CqlTokenRange("")), 0))
+          Array(CassandraPartition(0, addresses, List(CqlTokenRange("")), 1))
         }
         else
-          for ((group, index) <- groups.zipWithIndex) yield {
-            val cqlPredicates = group.flatMap(splitToCqlClause)
-            val endpoints = group.map(_.endpoints).reduce(_ intersect _)
-            val rowCount = group.map(_.rowCount.get).sum
-            CassandraPartition(index, endpoints.flatMap(_.allAddresses), cqlPredicates, rowCount)
-          }
+          groups.map(group =>
+            CassandraPartition(group.index, scala.util.Random.shuffle(group.endpoints.flatMap(_.allAddresses).toSeq),
+              group.ranges.flatMap(splitToCqlClause), group.rowCount)
+          ).toArray
+             // sort groups to give scheduler more flexibility at the end of calculations
+            // tasks with more endpoints will be executed latter
+            // smaller task are also moved to the end
+            .sortWith((a,b) =>
+            if (a.endpoints.size == b.endpoints.size)
+              a.rowCount > b.rowCount
+            else
+              a.endpoints.size < b.endpoints.size).toArray
     }
   }
 
