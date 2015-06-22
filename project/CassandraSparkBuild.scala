@@ -125,6 +125,9 @@ object Dependencies {
        .exclude("com.sun.jmx", "jmxri")
        .exclude("com.sun.jdmk", "jmxtools")
        .exclude("net.sf.jopt-simple", "jopt-simple")
+
+    def cassandraServerExclusions: ModuleID = module.logbackExclude
+      .exclude("org.antlr", "stringtemplate")
   }
 
   object Compile {
@@ -134,6 +137,7 @@ object Dependencies {
     val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
     val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra       guavaExclude // ApacheV2
     val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude // ApacheV2
+    val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Cassandra      % "test,it" cassandraServerExclusions // ApacheV2
     val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
@@ -207,7 +211,7 @@ object Dependencies {
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
-  val cassandra = Seq(cassandraThrift, cassandraClient, cassandraDriver)
+  val cassandra = Seq(cassandraThrift, cassandraClient, cassandraServer, cassandraDriver)
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 

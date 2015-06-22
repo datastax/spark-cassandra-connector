@@ -1,21 +1,26 @@
 package com.datastax.spark.connector.cql
 
+import java.io.FileInputStream
 import java.net.InetAddress
+import java.security.{KeyStore, SecureRandom}
+import javax.net.ssl.{SSLContext, TrustManagerFactory}
 
-import org.apache.cassandra.thrift.{AuthenticationRequest, TFramedTransportFactory, Cassandra}
+import scala.collection.JavaConversions._
+
+import org.apache.cassandra.thrift._
+import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TTransport
 
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{Cluster, SocketOptions}
+import com.datastax.driver.core.{Cluster, SSLOptions, SocketOptions}
+import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.ReflectionUtil
-
-import scala.collection.JavaConversions._
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
-  * Other factories can be plugged in by setting `spark.cassandra.connection.factory` option.*/
+  * Other factories can be plugged in by setting `spark.cassandra.connection.factory` option. */
 trait CassandraConnectionFactory extends Serializable {
 
   /** Creates and configures a Thrift client.
@@ -37,7 +42,10 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
     var transport: TTransport = null
     try {
-      val transportFactory = new TFramedTransportFactory()
+      val transportFactory = createTransportFactory(conf.cassandraSSLConf)
+      val options = getTransportFactoryOptions(transportFactory.supportedOptions().toSet, conf)
+      transportFactory.setOptions(options)
+
       transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
       val client = new Cassandra.Client(new TBinaryProtocol(transport))
       val creds = conf.authConf.thriftCredentials
@@ -54,13 +62,30 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
+  def getTransportFactoryOptions(supportedOptions: Set[String], conf: CassandraConnectorConf) = Seq(
+    conf.cassandraSSLConf.trustStorePath.map("enc.truststore" → _),
+    conf.cassandraSSLConf.trustStorePassword.map("enc.truststore.password" → _),
+    Some("enc.protocol" → conf.cassandraSSLConf.protocol),
+    Some("enc.cipher.suites" → conf.cassandraSSLConf.enabledAlgorithms.mkString(","))
+  ).flatten.toMap.filterKeys(supportedOptions.contains)
+
+  def createTransportFactory(conf: CassandraSSLConf): ITransportFactory = {
+    conf.enabled match {
+      case false ⇒ new TFramedTransportFactory()
+      case true ⇒
+        val factoryClass = Class.forName("org.apache.cassandra.thrift.SSLTransportFactory")
+        val factory = factoryClass.newInstance()
+        factory.asInstanceOf[ITransportFactory]
+    }
+  }
+
   /** Returns the Cluster.Builder object used to setup Cluster instance. */
   def clusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
     val options = new SocketOptions()
       .setConnectTimeoutMillis(conf.connectTimeoutMillis)
       .setReadTimeoutMillis(conf.readTimeoutMillis)
 
-    Cluster.builder()
+    val builder = Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.nativePort)
       .withRetryPolicy(
@@ -72,11 +97,45 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
       .withCompression(conf.compression)
+
+    if (conf.cassandraSSLConf.enabled) {
+      maybeCreateSSLOptions(conf.cassandraSSLConf) match {
+        case Some(sslOptions) ⇒ builder.withSSL(sslOptions)
+        case None ⇒ builder.withSSL()
+      }
+    } else {
+      builder
+    }
+  }
+
+  private def maybeCreateSSLOptions(conf: CassandraSSLConf): Option[SSLOptions] = {
+    conf.trustStorePath map {
+      case path ⇒
+
+        val trustStoreFile = new FileInputStream(path)
+        val tmf = try {
+          val keyStore = KeyStore.getInstance(conf.trustStoreType)
+          conf.trustStorePassword match {
+            case None ⇒ keyStore.load(trustStoreFile, null)
+            case Some(password) ⇒ keyStore.load(trustStoreFile, password.toCharArray)
+          }
+          val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+          tmf.init(keyStore)
+          tmf
+        } finally {
+          IOUtils.closeQuietly(trustStoreFile)
+        }
+
+        val context = SSLContext.getInstance(conf.protocol)
+        context.init(null, tmf.getTrustManagers, new SecureRandom)
+        new SSLOptions(context, conf.enabledAlgorithms)
+    }
   }
 
   /** Creates and configures native Cassandra connection */
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
+  override def createCluster(conf: CassandraConnectorConf): Cluster = {
     clusterBuilder(conf).build()
+  }
 
 }
 
