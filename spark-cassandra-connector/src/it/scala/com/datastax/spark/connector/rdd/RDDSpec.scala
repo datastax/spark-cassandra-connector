@@ -4,11 +4,11 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.scalatest.{FlatSpec, Matchers}
 
 
 case class KVRow(key: Int)
+
+case class KVWithOptionRow(key: Option[Int])
 
 case class FullRow(key: Int, group: Long, value: String)
 
@@ -201,6 +201,38 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
+  it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in {
+    val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
+    try {
+      source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
+      fail()
+    } catch {
+      case ex: Exception ⇒
+        ex.getMessage should include("Invalid null value for partition key part key")
+    }
+  }
+
+  it should "throw a meaningful exception if partition column is null when repartitioning by replica" in {
+    val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long))
+    try {
+      source.repartitionByCassandraReplica(ks, tableName, 10).collect()
+      fail()
+    } catch {
+      case ex: Exception ⇒
+        ex.getMessage should include("Invalid null value for partition key part key")
+    }
+  }
+
+  it should "throw a meaningful exception if partition column is null when saving" in {
+    val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long, ""))
+    try {
+      source.saveToCassandra(ks, tableName)
+      fail()
+    } catch {
+      case ex: Exception ⇒
+        ex.getMessage should include("Invalid null value for partition key part key")
+    }
+  }
 
   "A Tuple RDD specifying partitioning keys and clustering keys " should "be retrievable from Cassandra" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
