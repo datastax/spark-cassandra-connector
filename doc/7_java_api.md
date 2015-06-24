@@ -249,6 +249,44 @@ of *RDD* elements and uses a default `JavaBeanColumnMapper` to map those element
 to attribute translations can be specified in order to override the default logic. If `JavaBeanColumnMapper` is not an
 option, a custom column mapper can be specified as well.
 
+### Working with tuples
+
+Since 1.3 there new methods to work with Scala tuples. 
+
+To read a Cassandra table as an RDD of tuples, just use one of `mapRowToTuple` methods to create 
+the appropriate `RowReaderFactory` instance. The arity of the tuple is determined by the number 
+of parameters which are provided to the mentioned method. 
+
+Example:
+
+```java
+CassandraJavaRDD<Tuple3<String, Integer, Double>> rdd = javaFunctions(sc)
+        .cassandraTable("ks", tuples", mapRowToTuple(String.class, Integer.class, Double.class))
+        .select("stringCol", "intCol", "doubleCol")
+```
+
+Remember to explicitly specify the columns to be selected because the values from the selected columns
+are resolved by the column position rather than its name.
+
+There are also new methods `mapTupleToRow` to create `RowWriterFactory` instance for tuples. 
+Those methods require all the tuple arguments types to be provided. The number of them determines the
+arity of tuples.
+
+Example:
+
+```java
+CassandraJavaUtil.javaFunctions(sc.makeRDD(Arrays.asList(tuple)))
+        .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+                String.class,
+                Integer.class,
+                Double.class
+        )).withColumnSelector(someColumns("stringCol", "intCol", "doubleCol"))
+        .saveToCassandra()
+```
+
+Similarly to reading data as tuples, it is highly recommended to explicitly specify the columns which are
+to be populated.
+
 ### Extensions for Spark Streaming
 
 The main entry point for Spark Streaming in Java is `JavaStreamingContext` object. Like for `JavaSparkContext`, we 
