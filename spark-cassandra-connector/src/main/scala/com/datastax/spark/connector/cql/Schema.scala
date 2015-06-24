@@ -69,6 +69,13 @@ trait StructDef extends Serializable {
   /** Returns the columns that are not present in the structure. */
   def missingColumns(columnsToCheck: Seq[ColumnRef]): Seq[ColumnRef] =
     for (c <- columnsToCheck if !columnByName.contains(c.columnName)) yield c
+  
+  /** Type of the data described by this struct */
+  type ValueRepr <: AnyRef
+  
+  /** Creates new instance of this struct.
+    * Column values must be given in the same order as columnNames */
+  def newInstance(columnValues: Any*): ValueRepr
 }
 
 
@@ -123,7 +130,7 @@ case class TableDef(
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
-
+  
   override type Column = ColumnDef
 
   override def name: String = s"$keyspaceName.$tableName"
@@ -147,6 +154,12 @@ case class TableDef(
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
+  }
+
+  type ValueRepr = CassandraRow
+  
+  def newInstance(columnValues: Any*): CassandraRow = {
+    new CassandraRow(columnNames, columnValues.toIndexedSeq.map(_.asInstanceOf[AnyRef]))
   }
 }
 

@@ -379,7 +379,8 @@ public class CassandraJavaUtil {
      * in a table.
      */
     public static <T> RowWriterFactory<T> mapToRow(Class<T> targetClass, ColumnMapper<T> columnMapper) {
-        return defaultRowWriterFactory(columnMapper, safeClassTag(targetClass));
+        TypeTags.TypeTag<T> tt = typeTag(targetClass);
+        return defaultRowWriterFactory(tt, columnMapper);
     }
 
     /**

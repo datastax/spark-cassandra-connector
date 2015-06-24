@@ -10,7 +10,7 @@ import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, Colu
 import com.datastax.spark.connector.types._
 
 
-class GettableDataToMappedTypeConverterTest extends FlatSpec with Matchers {
+class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
 
   val streetColumn = UDTFieldDef("street", VarCharType)
   val numberColumn = UDTFieldDef("number", IntType)
