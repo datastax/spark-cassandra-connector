@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import scala.collection.JavaConversions
 import scala.reflect.runtime.universe.typeTag
 
 import org.joda.time.DateTime
@@ -13,6 +14,7 @@ import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
 
+import JavaConversions._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -438,22 +440,29 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "not leak threads" in {
     // compute a few RDDs so the thread pools get initialized
     // using parallel range, to initialize parallel collections fork-join-pools
-    for (i <- (1 to 4).par)
+    val iterationCount = 128
+    for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
     // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
-    val iterationCount = 128
     val startThreadCount = Thread.activeCount()
+    val oldThreads = Thread.getAllStackTraces.keySet().toSet
+
     for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
+
     val endThreadCount = Thread.activeCount()
+    val newThreads = Thread.getAllStackTraces.keySet().toSet
+    val createdThreads = newThreads -- oldThreads
+    println("Start thread count: " + startThreadCount)
+    println("End thread count: " + endThreadCount)
+    println("Threads created: ")
+    createdThreads.map(_.getName).toSeq.sortBy(identity).foreach(println)
 
     // This is not very precise, but if there was a thread leak and we leaked even only
     // 1-thread per rdd, this test would not pass. Typically we observed the endThreadCount = startThreadCount +/- 3
-    // We divide iterationCount here, in order to detect thread leaks that would not happen every time and to account
-    // for a few threads exiting during the test.
-    endThreadCount should be < startThreadCount + iterationCount / 2
+    endThreadCount should be < startThreadCount + iterationCount * 3 / 4
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of two pairs" in {
