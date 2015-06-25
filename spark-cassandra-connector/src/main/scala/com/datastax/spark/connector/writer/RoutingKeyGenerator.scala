@@ -11,7 +11,7 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
 
   private val partitionKeyIdxs = {
     val idxs = table.partitionKey
-      .map(pkColumn => columnNames.indexOf(pkColumn.columnName))
+      .map(pkColumn ⇒ columnNames.indexOf(pkColumn.columnName))
       .filter(_ >= 0)
 
     require(idxs.size == table.partitionKey.size, "Not all partition key columns were selected.")
@@ -28,7 +28,7 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
     val totalLength = buffers.map(_.remaining() + 3).sum
     val out = ByteBuffer.allocate(totalLength)
 
-    for (buffer <- buffers) {
+    for (buffer ← buffers) {
       val bb = buffer.duplicate
       out.put(((bb.remaining >> 8) & 0xFF).toByte)
       out.put((bb.remaining & 0xFF).toByte)
@@ -41,8 +41,11 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
 
   private def fillRoutingKey(stmt: BoundStatement): Array[ByteBuffer] = {
     val rk = routingKey.get
-    for (i <- 0 until partitionKeyIdxs.size)
+    for (i ← partitionKeyIdxs.indices) {
+      if (stmt.isNull(partitionKeyIdxs(i)))
+        throw NullKeyColumnException(columnNames(partitionKeyIdxs(i)))
       rk(i) = stmt.getBytesUnsafe(partitionKeyIdxs(i))
+    }
     rk
   }
 
