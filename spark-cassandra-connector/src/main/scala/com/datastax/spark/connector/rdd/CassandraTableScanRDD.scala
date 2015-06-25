@@ -116,7 +116,7 @@ class CassandraTableScanRDD[R] private[connector](
 
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
-    val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSizeInMB)
+    val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSize)
     val partitions = partitioner.partitions(where)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
