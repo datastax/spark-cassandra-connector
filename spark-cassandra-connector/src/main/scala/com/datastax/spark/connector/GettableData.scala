@@ -104,8 +104,9 @@ object GettableData {
   }
 
   def get(value: DriverUDTValue, name: String)(implicit protocolVersion: ProtocolVersion): AnyRef = {
-    val valueType = value.getType.getFieldType(name)
-    val bytes = value.getBytesUnsafe(name)
+    val quotedName = "\"" + name + "\""
+    val valueType = value.getType.getFieldType(quotedName)
+    val bytes = value.getBytesUnsafe(quotedName)
     if (bytes != null)
       convert(valueType.deserialize(bytes, protocolVersion))
     else

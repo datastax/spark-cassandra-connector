@@ -2,15 +2,16 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.spark.connector.mapper.DefaultColumnMapper
 
 import scala.collection.JavaConversions._
+
+import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
+import com.datastax.spark.connector.embedded.SparkTemplate._
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
-import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
@@ -34,7 +35,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   val ks = "TableWriterSpec"
   

@@ -6,6 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.scalatest.BeforeAndAfter
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
@@ -15,7 +16,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

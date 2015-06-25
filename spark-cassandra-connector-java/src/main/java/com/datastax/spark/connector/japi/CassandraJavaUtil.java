@@ -1169,11 +1169,17 @@ public class CassandraJavaUtil {
      */
     @SuppressWarnings("unchecked")
     public static <T> RowWriterFactory<T> mapToRow(Class<?> targetClass, ColumnMapper<T> columnMapper) {
-        return defaultRowWriterFactory(columnMapper, (ClassTag<T>) classTag(targetClass));
+        TypeTags.TypeTag<T> tt = typeTag(targetClass);
+        return defaultRowWriterFactory(tt, columnMapper);
     }
 
+    /**
+     * Creates a row writer factory which can map objects supported by a given column mapper to columns
+     * in a table.
+     */
     public static <T> RowWriterFactory<T> safeMapToRow(Class<T> targetClass, ColumnMapper<T> columnMapper) {
-        return defaultRowWriterFactory(columnMapper, safeClassTag(targetClass));
+        TypeTags.TypeTag<T> tt = safeTypeTag(targetClass);
+        return defaultRowWriterFactory(tt, columnMapper);
     }
 
     /**
