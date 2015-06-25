@@ -7,7 +7,7 @@ import com.datastax.spark.connector.cql.TableDef
 
 /** This class computes the routing key of a bound statement. */
 class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
-  extends ((BoundStatement) ⇒ ByteBuffer) {
+  extends ((BoundStatement) => ByteBuffer) {
 
   private val partitionKeyIdxs = {
     val idxs = table.partitionKey
@@ -43,8 +43,7 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
     val rk = routingKey.get
     for (i ← partitionKeyIdxs.indices) {
       if (stmt.isNull(partitionKeyIdxs(i)))
-        throw new NullPointerException(
-          s"Invalid null value for partition key part ${columnNames(partitionKeyIdxs(i))}")
+        throw NullKeyColumnException(columnNames(partitionKeyIdxs(i)))
       rk(i) = stmt.getBytesUnsafe(partitionKeyIdxs(i))
     }
     rk
