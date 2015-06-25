@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 
 class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
@@ -8,7 +9,7 @@ class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS where_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")

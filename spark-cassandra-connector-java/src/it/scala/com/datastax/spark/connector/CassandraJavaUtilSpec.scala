@@ -1,6 +1,7 @@
 package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
@@ -14,7 +15,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   before {
     conn.withSessionDo { session =>
