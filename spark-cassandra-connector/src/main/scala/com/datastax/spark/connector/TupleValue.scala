@@ -20,10 +20,11 @@ object TupleValue {
     new TupleValue(values: _*)
   }
 
-  val TupleValueTypeTag = typeTag[TupleValue]
+  val TypeTag = typeTag[TupleValue]
+  val Symbol = typeOf[TupleValue].asInstanceOf[TypeRef].sym
 
   implicit object TupleValueConverter extends NullableTypeConverter[TupleValue] {
-    def targetTypeTag = TupleValueTypeTag
+    def targetTypeTag = TypeTag
     def convertPF = {
       case x: TupleValue => x
     }

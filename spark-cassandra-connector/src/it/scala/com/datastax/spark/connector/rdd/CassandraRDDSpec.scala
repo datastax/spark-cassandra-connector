@@ -3,6 +3,8 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import scala.reflect.runtime.universe.typeTag
 
 import org.joda.time.DateTime
@@ -50,7 +52,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000
 
   private val ks = "CassandraRDDSpec"

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
@@ -21,7 +21,7 @@ trait RowWriterFactory[T] {
 /** Provides a low-priority implicit `RowWriterFactory` able to write objects of any class for which
   * a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]] is defined. */
 trait LowPriorityRowWriterFactoryImplicits {
-  implicit def defaultRowWriterFactory[T : ColumnMapper : ClassTag]: RowWriterFactory[T] =
+  implicit def defaultRowWriterFactory[T : TypeTag : ColumnMapper]: RowWriterFactory[T] =
     DefaultRowWriter.factory
 }
 

@@ -3,6 +3,8 @@ package com.datastax.spark.connector
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
+import org.apache.commons.lang3.tuple
+
 import com.datastax.driver.core.{ProtocolVersion, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
@@ -20,10 +22,11 @@ object UDTValue {
   def fromMap(map: Map[String, Any]): UDTValue =
     new UDTValue(map.keys.toIndexedSeq, map.values.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
 
-  val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
+  val TypeTag = implicitly[TypeTag[UDTValue]]
+  val Symbol = typeOf[UDTValue].asInstanceOf[TypeRef].sym
 
   implicit object UDTValueConverter extends NullableTypeConverter[UDTValue] {
-    def targetTypeTag = UDTValueTypeTag
+    def targetTypeTag = TypeTag
     def convertPF = {
       case x: UDTValue => x
     }
