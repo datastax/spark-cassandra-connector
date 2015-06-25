@@ -3,6 +3,8 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import scala.reflect.runtime.universe.typeTag
 
 import org.joda.time.DateTime
@@ -50,7 +52,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000
 
   private val ks = "CassandraRDDSpec"
@@ -784,4 +786,47 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MixedCase")
   }
 
+  it should "handle upper case charactors in UDT fields" in {
+    conn.withSessionDo { session =>
+      session.execute("use \"CassandraRDDSpec\"")
+      session.execute(
+        """CREATE TYPE "Attachment" (
+          |  "Id" text,
+          |  "MimeType" text,
+          |  "FileName" text
+          |)
+        """.stripMargin)
+      session.execute(
+        """CREATE TABLE "Interaction" (
+          |  "Id" text PRIMARY KEY,
+          |  "Attachments" map<text,frozen<"Attachment">>,
+          |  "ContactId" text
+          |)
+        """.stripMargin)
+      session.execute(
+        """INSERT INTO "Interaction"(
+          |  "Id",
+          |  "Attachments",
+          |  "ContactId"
+          |)
+          |VALUES (
+          |  '000000a5ixIEvmPD',
+          |  null,
+          |  'xcb9HMoQ'
+          |)
+        """.stripMargin)
+      session.execute(
+        """UPDATE "Interaction"
+          |SET
+          |  "Attachments" = "Attachments" + {'rVpgK':
+          |  {"Id":'rVpgK',
+          |  "MimeType":'text/plain',
+          |  "FileName":'notes.txt'}}
+          |WHERE "Id" = '000000a5ixIEvmPD'
+        """.stripMargin)
+    }
+    val tableRdd = sc.cassandraTable("CassandraRDDSpec", "Interaction")
+    val dataColumns = tableRdd.map(row => row.getString("ContactId"))
+    dataColumns.count shouldBe 1
+  }
 }

@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.ProtocolOptions
@@ -12,7 +13,7 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   val createKeyspaceCql = "CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"
 
@@ -25,7 +26,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   it should "give access to cluster metadata" in {
     conn.withClusterDo { cluster =>
-      assert(cluster.getMetadata.getClusterName === "Test Cluster0")
+      assert(cluster.getMetadata.getClusterName != null)
       assert(cluster.getMetadata.getAllHosts.size > 0)
     }
   }
@@ -76,7 +77,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+    val conn2 = CassandraConnector(defaultConf)
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()
@@ -92,8 +93,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be configurable from SparkConf" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
-    val conf = new SparkConf(loadDefaults = true)
-      .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
+    val conf = defaultConf
+    conf.set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
 
     // would throw exception if connection unsuccessful
     val conn2 = CassandraConnector(conf)
@@ -104,8 +105,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     val goodHost = EmbeddedCassandra.getHost(0).getHostAddress
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
-    val conf = new SparkConf(loadDefaults = true)
-      .set(CassandraConnectorConf.CassandraConnectionHostProperty, invalidHost + "," + goodHost)
+    val conf = defaultConf
+    conf.set(CassandraConnectorConf.CassandraConnectionHostProperty, invalidHost + "," + goodHost)
 
     // would throw exception if connection unsuccessful
     val conn2 = CassandraConnector(conf)

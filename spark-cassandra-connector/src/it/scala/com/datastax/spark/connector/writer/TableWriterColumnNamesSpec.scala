@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 
@@ -9,7 +10,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   case class KeyValue(key: Int, group: Long)
 
