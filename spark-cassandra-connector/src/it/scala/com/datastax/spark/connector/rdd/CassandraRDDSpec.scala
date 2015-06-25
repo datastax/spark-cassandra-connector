@@ -786,4 +786,47 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MixedCase")
   }
 
+  it should "handle upper case charactors in UDT fields" in {
+    conn.withSessionDo { session =>
+      session.execute("use \"CassandraRDDSpec\"")
+      session.execute(
+        """CREATE TYPE "Attachment" (
+          |  "Id" text,
+          |  "MimeType" text,
+          |  "FileName" text
+          |)
+        """.stripMargin)
+      session.execute(
+        """CREATE TABLE "Interaction" (
+          |  "Id" text PRIMARY KEY,
+          |  "Attachments" map<text,frozen<"Attachment">>,
+          |  "ContactId" text
+          |)
+        """.stripMargin)
+      session.execute(
+        """INSERT INTO "Interaction"(
+          |  "Id",
+          |  "Attachments",
+          |  "ContactId"
+          |)
+          |VALUES (
+          |  '000000a5ixIEvmPD',
+          |  null,
+          |  'xcb9HMoQ'
+          |)
+        """.stripMargin)
+      session.execute(
+        """UPDATE "Interaction"
+          |SET
+          |  "Attachments" = "Attachments" + {'rVpgK':
+          |  {"Id":'rVpgK',
+          |  "MimeType":'text/plain',
+          |  "FileName":'notes.txt'}}
+          |WHERE "Id" = '000000a5ixIEvmPD'
+        """.stripMargin)
+    }
+    val tableRdd = sc.cassandraTable("CassandraRDDSpec", "Interaction")
+    val dataColumns = tableRdd.map(row => row.getString("ContactId"))
+    dataColumns.count shouldBe 1
+  }
 }
