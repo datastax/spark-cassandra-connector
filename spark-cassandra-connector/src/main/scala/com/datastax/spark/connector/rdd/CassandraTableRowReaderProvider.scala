@@ -31,7 +31,7 @@ trait CassandraTableRowReaderProvider[R] {
 
   protected def splitCount: Option[Int] = readConf.splitCount
 
-  protected def splitSizeInMB: Int = readConf.splitSizeInMB
+  protected def splitSize: Int = readConf.splitSizeInMB * 1024 * 1024
 
   protected def fetchSize: Int = readConf.fetchSizeInRows
 
