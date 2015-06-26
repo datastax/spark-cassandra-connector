@@ -132,12 +132,15 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
     }
     else
-      for ((group, index) <- groups.zipWithIndex) yield {
+      (for ((group, index) <- groups.zipWithIndex) yield {
         val cqlPredicates = group.flatMap(splitToCqlClause)
         val replicas = group.map(_.replicas).reduce(_ intersect _)
         val rowCount = group.map(_.dataSize).sum
         CassandraPartition(index, replicas, cqlPredicates, rowCount)
-      }
+      })
+      // sort groups to give scheduler more flexibility at the end of calculations
+      // tasks with more endpoints will be executed latter
+      .sortBy(p=>(p.endpoints.size, -p.rowCount)).toArray
   }
 
 }
