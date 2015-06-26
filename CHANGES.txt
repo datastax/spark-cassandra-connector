@@ -14,6 +14,7 @@
  * Added methods to work with tuples in Java API (SPARKC-206)
  * Fixed input_split_size_in_mb property (SPARKC-208)
  * Fixed DataSources tests when connecting to an external cluster (SPARKC-178)
+ * Added Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
 
 1.3.0 M1
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
@@ -30,7 +31,6 @@
    - improved code testability and added unit-tests
  * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
  * Added support to use aliases with Tuples (SPARKC-125)
- * Added Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
 
 ********************************************************************************
 
