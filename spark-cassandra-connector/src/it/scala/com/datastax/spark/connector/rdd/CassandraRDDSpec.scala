@@ -397,21 +397,31 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "not leak threads" in {
+
+    def threadCount() = {
+      // Before returning active thread count, wait while thread count is decreasing,
+      // to give spark some time to terminate temporary threads and not count them
+      val counts = Iterator.continually { Thread.sleep(500); Thread.activeCount() }
+      counts.sliding(2)
+        .dropWhile { case Seq(prev, current) => current < prev }
+        .next().head
+    }
+
     // compute a few RDDs so the thread pools get initialized
     // using parallel range, to initialize parallel collections fork-join-pools
-    val iterationCount = 128
+    val iterationCount = 256
     for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
     // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
-    val startThreadCount = Thread.activeCount()
+    val startThreadCount = threadCount()
     val oldThreads = Thread.getAllStackTraces.keySet().toSet
 
     for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
-    val endThreadCount = Thread.activeCount()
+    val endThreadCount = threadCount()
     val newThreads = Thread.getAllStackTraces.keySet().toSet
     val createdThreads = newThreads -- oldThreads
     println("Start thread count: " + startThreadCount)
