@@ -443,6 +443,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     val iterationCount = 128
     for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
+    Thread.sleep(1000)  // give Spark some time to close any background threads it created
 
     // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
@@ -452,6 +453,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     for (i <- (1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
+    Thread.sleep(1000)  // give Spark some time to close any background threads it created
     val endThreadCount = Thread.activeCount()
     val newThreads = Thread.getAllStackTraces.keySet().toSet
     val createdThreads = newThreads -- oldThreads
