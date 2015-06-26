@@ -13,7 +13,7 @@
  * Added the ability to use Custom Mappers with repartitionByCassandraReplica (SPARKC-104)
  * Added methods to work with tuples in Java API (SPARKC-206)
  * Fixed input_split_size_in_mb property (SPARKC-208)
- * Fixed external DataSources tests when connecting to an external cluster (SPARKC-178)
+ * Fixed DataSources tests when connecting to an external cluster (SPARKC-178)
 
 1.3.0 M1
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
