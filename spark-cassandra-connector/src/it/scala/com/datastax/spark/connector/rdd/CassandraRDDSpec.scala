@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import scala.reflect.runtime.universe.typeTag
 
 import org.joda.time.DateTime
 
@@ -14,6 +13,7 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
 
+import scala.reflect.runtime.universe.typeTag
 import scala.collection.JavaConversions._
 
 case class KeyValue(key: Int, group: Long, value: String)
