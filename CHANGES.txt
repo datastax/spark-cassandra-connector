@@ -36,6 +36,7 @@
  * Support for connection compressions configuration (SPARKC-124)
  * Support for connection encryption configuration (SPARKC-118)
  * Fix a bug to support upper case characters in UDT (SPARKC-201)
+ * Meaningful exception if some partition key column is null (SPARKC-198)
 
 1.2.2
  * Updated Spark version to 1.2.2, Scala to 2.10.5 / 2.11.6
