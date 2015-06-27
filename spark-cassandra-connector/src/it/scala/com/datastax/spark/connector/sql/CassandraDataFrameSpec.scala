@@ -33,6 +33,11 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
           .stripMargin)
 
       session.execute(
+        s"""CREATE TABLE IF NOT EXISTS "$keyspace".kv_copy
+                                                   |(k INT, v TEXT, PRIMARY KEY (k)) """
+          .stripMargin)
+
+      session.execute(
         s"""CREATE TABLE IF NOT EXISTS "$keyspace".hardtoremembernamedtable
                                                    |(k INT, v TEXT, PRIMARY KEY (k)) """
           .stripMargin)
@@ -53,38 +58,84 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
   }
 
   "A DataFrame" should "be able to be created programmatically" in {
-    val df = sqlContext.load(
-      "org.apache.spark.sql.cassandra",
-      Map(
-        "table" -> "kv",
-        "keyspace" -> keyspace
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv",
+          "keyspace" -> keyspace
+        )
       )
-    )
+      .load()
+
     df.count() should be(1000)
+  }
+
+  it should "be able to be saved programatically" in {
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv",
+          "keyspace" -> keyspace
+        )
+      )
+      .load()
+
+    df.write
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv_copy",
+          "keyspace" -> keyspace
+        )
+      )
+      .save()
+
+    val dfCopy = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv_copy",
+          "keyspace" -> keyspace
+        )
+      )
+      .load()
+
+    dfCopy.count() should be (1000)
   }
 
   it should " provide error out with a sensible message when a table can't be found" in {
     val exception = intercept[IOException] {
-      val df = sqlContext.load(
-        "org.apache.spark.sql.cassandra",
-        Map(
-          "table" -> "randomtable",
-          "keyspace" -> keyspace
+      val df = sqlContext
+        .read
+        .format("org.apache.spark.sql.cassandra")
+        .options(
+          Map(
+            "table" -> "randomtable",
+            "keyspace" -> keyspace
+          )
         )
-      )
+        .load()
     }
     exception.getMessage should include("Couldn't find")
   }
 
   it should " provide useful suggestions if a table can't be found but a close match exists" in {
     val exception = intercept[IOException] {
-      val df = sqlContext.load(
-        "org.apache.spark.sql.cassandra",
-        Map(
-          "table" -> "hardertoremembertablename",
-          "keyspace" -> keyspace
+      val df = sqlContext
+        .read
+        .format("org.apache.spark.sql.cassandra")
+        .options(
+          Map(
+            "table" -> "hardertoremembertablename",
+            "keyspace" -> keyspace
+          )
         )
-      )
+        .load
     }
     exception.getMessage should include("Couldn't find")
     exception.getMessage should include("hardtoremembernamedtable")

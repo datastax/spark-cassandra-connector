@@ -95,18 +95,22 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert1 (a INT PRIMARY KEY, b INT)")
     }
 
-    sqlContext.sql("SELECT a, b from tmpTable").save(
-      "org.apache.spark.sql.cassandra",
-      ErrorIfExists,
-      Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+    sqlContext.sql("SELECT a, b from tmpTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(ErrorIfExists)
+      .options(Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+      .save()
 
     cassandraTable(TableRef("test_insert1", "sql_ds_test")).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
-      sqlContext.sql("SELECT a, b from tmpTable").save(
-        "org.apache.spark.sql.cassandra",
-        ErrorIfExists,
-        Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+      sqlContext.sql("SELECT a, b from tmpTable")
+        .write
+        .format("org.apache.spark.sql.cassandra")
+        .mode(ErrorIfExists)
+        .options(Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+        .save()
     }.getMessage
 
     assert(
@@ -121,10 +125,12 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       session.execute("INSERT INTO sql_ds_test.test_insert2 (a, b) VALUES (5,6)")
     }
 
-    sqlContext.sql("SELECT a, b from tmpTable").save(
-      "org.apache.spark.sql.cassandra",
-      Overwrite,
-      Map("table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
+    sqlContext.sql("SELECT a, b from tmpTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Overwrite)
+      .options(Map("table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
+      .save()
     createTempTable("sql_ds_test", "test_insert2", "insertTable2")
     sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
     sqlContext.dropTempTable("insertTable2")

@@ -25,7 +25,7 @@ Those followed with a default of N/A are required, all others are optional.
 
 ####Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
-can be passed through as DataFrame options as well. When using the `load` command below these 
+can be passed through as DataFrame options as well. When using the `read` command below these 
 options should appear exactly the same as when set in the SparkConf.
 
 ####Setting Cluster and Keyspace Level Options
@@ -45,39 +45,44 @@ val conf = new SparkConf()
 
 ...
 
-val df = sqlContext.load(
-  "org.apache.spark.sql.cassandra", 
-   options = Map( "table" -> "words", "keyspace" -> "test" 
-)// This DataFrame will use a spark.cassandra.input.size of 5000
+val df = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test"))
+  .load()// This DataFrame will use a spark.cassandra.input.size of 5000
 
-val otherdf =  sqlContext.load(
-  "org.apache.spark.sql.cassandra", 
-   options = Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne" )
-)// This DataFrame will use a spark.cassandra.input.size of 1000
+val otherdf =  sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne"))
+  .load()// This DataFrame will use a spark.cassandra.input.size of 1000
 
-val lastdf = sqlContext.load(
-               "org.apache.spark.sql.cassandra", 
-                options = Map( 
-                  "table" -> "words", 
-                  "keyspace" -> "test" ,
-                  "cluster" -> "ClusterOne",
-                  "spark.cassandra.input.split.size" -> 500
-                )
-)// This DataFrame will use a spark.cassandra.input.split.size of 500
+val lastdf = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( 
+    "table" -> "words", 
+    "keyspace" -> "test" ,
+    "cluster" -> "ClusterOne",
+    "spark.cassandra.input.split.size" -> 500
+    )
+  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 500
 ```
 
-###Creating DataFrames using Load Commands
+###Creating DataFrames using Read Commands
 
-The most programmatic way to create a data frame is to invoke a `load` command on the SQLContext. 
-This function takes a `String` (the DataSource Class) as the first argument and a 
-`Map[String,String]` of options as described above.
+The most programmatic way to create a data frame is to invoke a `read` command on the SQLContext. This
+ will build a `DataFrameReader`. Specify `format` as `org.apache.spark.sql.cassandra`. 
+ You can then use `options` to give a map of `Map[String,String]` of options as described above. 
+ Then finish by calling `load` to actually get a `DataFrame`.
 
-Example Creating a DataFrame using a Load Command
+Example Creating a DataFrame using a Read Command
 ```scala
-val df = sqlContext.load(
-  "org.apache.spark.sql.cassandra", 
-   options = Map( "table" -> "words", "keyspace" -> "test" )
-   )
+val df = sqlContext
+  .read
+  .source("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test" ))
+  .load()
 df.show
 //word count
 //cat  30
@@ -129,13 +134,14 @@ Table.
 
 Example Copying Between Two Tables Using DataFrames
 ```scala
-val df = sqlContext.load(
-  "org.apache.spark.sql.cassandra", 
-  options = Map( "table" -> "words", "keyspace" -> "test" )
-)
+val df = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test" ))
+  .load()
 
-df.save(
-  "org.apache.spark.sql.cassandra",
-  options = Map( "table" -> "words_copy", "keyspace" -> "test")
-)
+df.write
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words_copy", "keyspace" -> "test"))
+  .save()
 ```
