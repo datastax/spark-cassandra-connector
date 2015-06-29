@@ -1,4 +1,4 @@
-1.2.3 (unreleased)
+1.2.3
  * Support for connection compressions configuration (SPARKC-124)
  * Support for connection encryption configuration (SPARKC-118)
  * Fix a bug to support upper case characters in UDT (SPARKC-201)
