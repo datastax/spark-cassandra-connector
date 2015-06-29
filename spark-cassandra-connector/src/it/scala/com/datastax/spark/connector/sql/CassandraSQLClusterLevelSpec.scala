@@ -44,12 +44,10 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
 
   override def beforeAll() {
     cc = new CassandraSQLContext(sc)
-    cc.addClusterLevelCassandraConnConf("cluster1", defaultSparkConf)
-      .addClusterLevelCassandraConnConf("cluster2", conf2)
-      .addClusterLevelReadConf("cluster1", sc.getConf)
-      .addClusterLevelWriteConf("cluster1", sc.getConf)
-      .addClusterLevelReadConf("cluster2", sc.getConf)
-      .addClusterLevelWriteConf("cluster2", sc.getConf)
+    cc.setConf("cluster1/spark.cassandra.connection.host", getHost(0).getHostAddress)
+    cc.setConf("cluster1/spark.cassandra.connection.port", getPort(0).toString)
+    cc.setConf("cluster2/spark.cassandra.connection.host", getHost(1).getHostAddress)
+    cc.setConf("cluster2/spark.cassandra.connection.port", getPort(1).toString)
   }
 
   it should "allow to join tables from different clusters" in {
