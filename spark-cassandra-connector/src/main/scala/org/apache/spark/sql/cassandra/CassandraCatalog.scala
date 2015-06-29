@@ -1,18 +1,18 @@
 package org.apache.spark.sql.cassandra
 
-import scala.collection.mutable
 import java.io.IOException
 
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
+import scala.collection.JavaConversions._
+
 import com.google.common.cache.{LoadingCache, CacheBuilder, CacheLoader}
 import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.analysis.Catalog
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
 import org.apache.spark.sql.sources.LogicalRelation
 
-import CassandraSourceRelation._
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
 
-import scala.collection.mutable.ListBuffer
+import CassandraSourceRelation._
 
 private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Catalog with Logging {
 
@@ -74,12 +74,12 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
 
   override def tableExists(tableIdentifier: Seq[String]): Boolean = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    val tableRef = TableRef(table, database, Option(cluster))
     val tableIdent = fullTableIdent(tableIdentifier)
     val cached = cachedDataSourceTables.asMap().containsKey(tableIdent)
     if (cached) {
       true
     } else {
+      val tableRef = TableRef(table, database, Option(cluster))
       val schema = Schema.fromCassandra(getCassandraConnector(tableRef))
       val tabDef =
         for (ksDef <- schema.keyspaceByName.get(database);
@@ -102,46 +102,23 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
   def getTablesFromCassandra(databaseName: Option[String]): Seq[(String, Boolean)] = {
     val cluster = csc.getCluster
     val tableRef = TableRef("", databaseName.getOrElse(""), Option(cluster))
-    val schema = Schema.fromCassandra(getCassandraConnector(tableRef))
-    if (databaseName.nonEmpty) {
-      val ksDef = schema.keyspaceByName.get(databaseName.get)
-      if (ksDef.nonEmpty) {
-        ksDef.get.tables.map(
-          tableDef => (s"${ksDef.get.keyspaceName}.${tableDef.tableName}", false)).toSeq
-      } else {
-        Seq.empty
-      }
-    } else {
-      val tables = mutable.Set[(String, Boolean)]()
-      for (ksDef <- schema.keyspaces) {
-        tables ++= ksDef.tables.map(
-          table => (s"${ksDef.keyspaceName}.${table.tableName}", false))
-      }
-      tables.toSeq
-    }
+    val schema = Schema.fromCassandra(getCassandraConnector(tableRef), databaseName)
+    for {
+      ksDef <- schema.keyspaces.toSeq
+      tableDef <- ksDef.tables
+    } yield (s"${ksDef.keyspaceName}.${tableDef.tableName}", false)
   }
 
   /** List all tables for a given database name and cluster from local cache */
   def getTablesFromCache(
       databaseName: Option[String],
       cluster: Option[String] = None): Seq[(String, Boolean)] = {
-    val iter = cachedDataSourceTables.asMap().keySet().iterator()
+
     val clusterName = cluster.getOrElse(csc.getCluster)
-    val names = ListBuffer[String]()
-    while (iter.hasNext) {
-      val ident = iter.next()
-      val c = ident(0)
-      val db = ident(1)
-      val table = ident(2)
-      if (clusterName == c) {
-        if (databaseName.nonEmpty && databaseName.get == db) {
-          names += table
-        } else if (databaseName.isEmpty) {
-          names += s"$db.$table"
-        }
-      }
+    for (Seq(c, db, table) <- cachedDataSourceTables.asMap().keySet().toSeq
+         if c == clusterName && databaseName.forall(_ == db)) yield {
+      (s"$db.$table", true)
     }
-    names.toList.map((_, true))
   }
 
   private def getCassandraConnector(tableRef: TableRef) : CassandraConnector = {
