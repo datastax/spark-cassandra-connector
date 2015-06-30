@@ -1,5 +1,6 @@
 1.4.0 M1
  * Upgrade Spark to 1.4.0 (SPARKC-192)
+ * Retrieve TableSize from Cassandra system table for datasource relation (SPARKC-164)
 
 ********************************************************************************
 
