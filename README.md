@@ -29,6 +29,7 @@ execute arbitrary CQL queries in your Spark applications.
  - Filters rows on the server side via the CQL `WHERE` clause 
  - Allows for execution of arbitrary CQL statements
  - Plays nice with Cassandra Virtual Nodes
+ - Works with PySpark DataFrames
 
 ## Version Compatibility
 
@@ -75,6 +76,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
   - [DataFrames](doc/14_data_frames.md)
+  - [Python](doc/15_python.md)
   - [Frequently Asked Questions](doc/FAQ.md)
     
 ## Community
