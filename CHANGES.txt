@@ -20,6 +20,8 @@
  * Fixed input_split_size_in_mb property (SPARKC-208)
  * Fixed DataSources tests when connecting to an external cluster (SPARKC-178)
  * Added Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
+ * Removed CassandraRelation by CassandraSourceRelation and Added cache to
+   CassandraCatalog (SPARKC-163)
 
 1.3.0 M1
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
