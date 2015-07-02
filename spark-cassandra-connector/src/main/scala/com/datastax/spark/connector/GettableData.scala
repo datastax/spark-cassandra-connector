@@ -88,11 +88,9 @@ object GettableData {
   /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
     * If the field is null, returns null (not Scala Option). */
   def get(row: Row, index: Int)(implicit protocolVersion: ProtocolVersion): AnyRef = {
-    val columnDefinitions = row.getColumnDefinitions
-    val columnType = columnDefinitions.getType(index)
-    val bytes = row.getBytesUnsafe(index)
-    if (bytes != null)
-      convert(columnType.deserialize(bytes, protocolVersion))
+    val data = row.getObject(index)
+    if (data != null)
+      convert(data)
     else
       null
   }
@@ -105,19 +103,17 @@ object GettableData {
 
   def get(value: DriverUDTValue, name: String)(implicit protocolVersion: ProtocolVersion): AnyRef = {
     val quotedName = "\"" + name + "\""
-    val valueType = value.getType.getFieldType(quotedName)
-    val bytes = value.getBytesUnsafe(quotedName)
-    if (bytes != null)
-      convert(valueType.deserialize(bytes, protocolVersion))
+    val data = value.getObject(quotedName)
+    if (data != null)
+      convert(data)
     else
       null
   }
 
   def get(value: DriverTupleValue, index: Int)(implicit protocolVersion: ProtocolVersion): AnyRef = {
-    val valueType = value.getType.getComponentTypes.get(index)
-    val bytes = value.getBytesUnsafe(index)
-    if (bytes != null)
-      convert(valueType.deserialize(bytes, protocolVersion))
+    val data = value.getObject(index)
+    if (data != null)
+      convert(data)
     else
       null
   }

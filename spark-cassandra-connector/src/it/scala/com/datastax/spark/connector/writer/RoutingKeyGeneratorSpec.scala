@@ -23,7 +23,7 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".two_keys (id INT, id2 TEXT, value TEXT, PRIMARY KEY ((id, id2)))""")
   }
 
-  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
+  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
   val cp = conn.withClusterDo(cluster => Class.forName(cluster.getMetadata.getPartitioner).newInstance().asInstanceOf[IPartitioner])
 
   "RoutingKeyGenerator" should "generate proper routing keys when there is one partition key column" in {

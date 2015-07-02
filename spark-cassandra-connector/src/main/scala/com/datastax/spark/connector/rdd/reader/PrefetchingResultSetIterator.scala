@@ -23,10 +23,10 @@ class PrefetchingResultSetIterator(resultSet: ResultSet, prefetchWindowSize: Int
   private[this] def maybePrefetch(): Unit = {
     if (!resultSet.isFullyFetched && resultSet.getAvailableWithoutFetching < prefetchWindowSize) {
       val t0 = System.nanoTime()
-      val future: ListenableFuture[Void] = resultSet.fetchMoreResults()
+      val future: ListenableFuture[ResultSet] = resultSet.fetchMoreResults()
       if (timer.isDefined)
-        Futures.addCallback(future, new FutureCallback[Void] {
-          override def onSuccess(ignored: Void): Unit = {
+        Futures.addCallback(future, new FutureCallback[ResultSet] {
+          override def onSuccess(ignored: ResultSet): Unit = {
             timer.get.update(System.nanoTime() - t0, TimeUnit.NANOSECONDS)
           }
 

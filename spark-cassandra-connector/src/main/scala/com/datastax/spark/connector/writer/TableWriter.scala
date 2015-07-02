@@ -30,7 +30,7 @@ class TableWriter[T] private (
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
   val columns = columnNames.map(tableDef.columnByName)
-  implicit val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
+  implicit val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersion }
 
   val defaultTTL = writeConf.ttl match {
     case TTLOption(StaticWriteOptionValue(value)) => Some(value)
