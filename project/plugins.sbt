@@ -16,8 +16,5 @@ resolvers += Classpaths.sbtPluginReleases
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.0.4")
 
-// Spark Packages Plugin
-resolvers += "Spark Package Main Repo" at "https://dl.bintray.com/spark-packages/maven"
-
 //SbtAssembly 0.12.0 is included in sbt-spark-package
-addSbtPlugin("org.spark-packages" % "sbt-spark-package" % "0.2.1")
+addSbtPlugin("org.spark-packages" % "sbt-spark-package" % "0.2.2")
