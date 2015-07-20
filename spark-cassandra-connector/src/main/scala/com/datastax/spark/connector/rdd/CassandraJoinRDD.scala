@@ -80,7 +80,7 @@ class CassandraJoinRDD[L, R] private[connector](
       }
   }
 
-  override def count(): Long = {
+  override def cassandraCount(): Long = {
     columnNames match {
       case SomeColumns(_) =>
         logWarning("You are about to count rows but an explicit projection has been specified.")

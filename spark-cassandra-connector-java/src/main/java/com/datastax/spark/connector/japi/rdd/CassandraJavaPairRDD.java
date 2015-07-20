@@ -199,4 +199,12 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     ) {
         return new PairRDDJavaFunctions<>(rdd()).spanBy(function, getClassTag(uClass));
     }
+
+    /**
+     * Counts the number of items in this RDD by selecting count(*) on Cassandra table.
+     */
+    public long cassandraCount() {
+        return rdd().cassandraCount();
+    }
+
 }

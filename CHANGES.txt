@@ -1,3 +1,6 @@
+1.2.4
+ * Cassandra native count is performed by `cassandraCount` method (SPARKC-215)
+
 1.2.3
  * Support for connection compressions configuration (SPARKC-124)
  * Support for connection encryption configuration (SPARKC-118)
