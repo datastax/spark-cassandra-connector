@@ -273,7 +273,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "have be able to be counted" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100))
-    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).count()
+    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).cassandraCount()
     someCass should be (201)
 
   }

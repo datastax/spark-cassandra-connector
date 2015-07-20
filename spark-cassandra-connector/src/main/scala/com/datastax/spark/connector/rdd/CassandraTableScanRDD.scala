@@ -250,7 +250,7 @@ class CassandraTableScanRDD[R] private[connector](
       readConf = readConf)
   }
 
-  override def count(): Long = {
+  override def cassandraCount(): Long = {
     columnNames match {
       case SomeColumns(_) =>
         logWarning("You are about to count rows but an explicit projection has been specified.")
