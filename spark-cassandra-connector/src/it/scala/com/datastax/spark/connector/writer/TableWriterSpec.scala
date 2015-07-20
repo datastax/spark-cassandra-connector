@@ -258,7 +258,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val rowCount = 10000
     val col = for (i <- 1 to rowCount) yield (i, 1)
     sc.parallelize(col).saveToCassandra(ks, "counters2", SomeColumns("pkey", "c"))
-    sc.cassandraTable(ks, "counters2").count should be(rowCount)
+    sc.cassandraTable(ks, "counters2").cassandraCount() should be(rowCount)
   }
 
   it should "write values of user-defined classes" in {

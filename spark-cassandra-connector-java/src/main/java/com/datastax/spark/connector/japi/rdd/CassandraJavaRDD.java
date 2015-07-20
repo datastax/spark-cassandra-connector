@@ -1,14 +1,10 @@
 package com.datastax.spark.connector.japi.rdd;
 
-import scala.collection.Seq;
-import scala.reflect.ClassTag;
-
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.toSelectableColumnRefs;
-import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
-import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import scala.collection.Seq;
+import scala.reflect.ClassTag;
 
 import com.datastax.spark.connector.SelectableColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
@@ -18,6 +14,10 @@ import com.datastax.spark.connector.japi.StreamingContextJavaFunctions;
 import com.datastax.spark.connector.rdd.CassandraRDD;
 import com.datastax.spark.connector.rdd.ReadConf;
 import com.datastax.spark.connector.util.JavaApiHelper;
+
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.toSelectableColumnRefs;
+import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
+import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 
 /**
  * A Java API wrapper over {@link CassandraRDD} to provide Spark Cassandra Connector functionality in
@@ -174,5 +174,12 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     public CassandraJavaRDD<R> toEmptyCassandraRDD() {
         CassandraRDD<R> newRDD = rdd().toEmptyCassandraRDD();
         return wrap(newRDD);
+    }
+
+    /**
+     * Counts the number of items in this RDD by selecting count(*) on Cassandra table.
+     */
+    public long cassandraCount() {
+        return rdd().cassandraCount();
     }
 }

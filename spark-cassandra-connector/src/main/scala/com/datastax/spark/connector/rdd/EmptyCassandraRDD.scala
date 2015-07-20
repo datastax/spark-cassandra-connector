@@ -41,6 +41,8 @@ class EmptyCassandraRDD[R : ClassTag](
       readConf = readConf)
   }
 
+  override val cassandraCount: Long = 0L
+
   override protected def getPartitions: Array[Partition] = Array.empty
 
   @DeveloperApi

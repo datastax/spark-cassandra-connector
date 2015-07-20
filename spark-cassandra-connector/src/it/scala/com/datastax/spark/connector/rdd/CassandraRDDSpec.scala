@@ -541,7 +541,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   // This is to trigger result set paging, unused in most other tests:
   it should "allow to count a high number of rows" in {
-    val count = sc.cassandraTable(ks, "big_table").count()
+    val count = sc.cassandraTable(ks, "big_table").cassandraCount()
     count should be (bigTableRowCount)
   }
 
@@ -700,12 +700,12 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "count the CassandraRDD items" in {
-    val result = sc.cassandraTable(ks, "big_table").count()
+    val result = sc.cassandraTable(ks, "big_table").cassandraCount()
     result shouldBe bigTableRowCount
   }
 
   it should "count the CassandraRDD items with where predicate" in {
-    val result = sc.cassandraTable(ks, "big_table").where("key=1").count()
+    val result = sc.cassandraTable(ks, "big_table").where("key=1").cassandraCount()
     result shouldBe 1
   }
 
