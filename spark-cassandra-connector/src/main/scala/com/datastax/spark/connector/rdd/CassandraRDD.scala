@@ -17,6 +17,8 @@ abstract class CassandraRDD[R : ClassTag](
     dep: Seq[Dependency[_]])
   extends RDD[R](sc, dep) {
 
+  require(limit.isEmpty || limit.get > 0, "Limit must be greater than 0")
+
   /** This is slightly different than Scala this.type.
     * this.type is the unique singleton type of an object which is not compatible with other
     * instances of the same type, so returning anything other than `this` is not really possible
@@ -38,13 +40,14 @@ abstract class CassandraRDD[R : ClassTag](
 
   protected def limit: Option[Long]
 
-  require(limit.isEmpty || limit.get > 0, "Limit must be greater than 0")
-
   protected def clusteringOrder: Option[ClusteringOrder]
 
   protected def connector: CassandraConnector
 
   def toEmptyCassandraRDD: EmptyCassandraRDD[R]
+
+  /** Counts the number of items in this RDD by selecting count(*) on Cassandra table */
+  def cassandraCount(): Long
 
   /** Allows to copy this RDD with changing some of the properties */
   protected def copy(
