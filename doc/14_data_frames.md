@@ -40,8 +40,8 @@ To add these properties add keys to your `SparkConf` in the format
 Example Changing Cluster/Keyspace Level Properties
 ```scala 
 val conf = new SparkConf()
-  .set("ClusterOne/spark.cassandra.input.split.size","1000") 
-  .set("default:test/spark.cassandra.input.split.size","5000")
+  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","64")
+  .set("default:test/spark.cassandra.input.split.size_in_mb","128")
 
 ...
 
@@ -49,13 +49,13 @@ val df = sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 5000
+  .load()// This DataFrame will use a spark.cassandra.input.split.size_in_mb of 128
 
 val otherdf =  sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 1000
+  .load()// This DataFrame will use a spark.cassandra.input.split.size_in_mb of 64
 
 val lastdf = sqlContext
   .read
@@ -64,9 +64,9 @@ val lastdf = sqlContext
     "table" -> "words", 
     "keyspace" -> "test" ,
     "cluster" -> "ClusterOne",
-    "spark.cassandra.input.split.size" -> 500
+    "spark.cassandra.input.split.size_in_mb" -> 32
     )
-  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 500
+  ).load()// This DataFrame will use a spark.cassandra.input.split.size_in_mb of 32
 ```
 
 ###Creating DataFrames using Read Commands
@@ -146,4 +146,4 @@ df.write
   .save()
 ```
 
-[Next - Python DataFrames](15_python.md) 
+[Next - Python DataFrames](15_python.md)
