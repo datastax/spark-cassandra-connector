@@ -295,6 +295,64 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be ("name")
   }
 
+  it should "allow to select UDT collection column and nested UDT column" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
+          |  category_id text,
+          |  metric_descriptors set <text>
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.object_metadata (
+          |  name text,
+          |  category_metadata frozen<category_metadata>,
+          |  bucket_size int
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.relation (
+          |  type text,
+          |  object_type text,
+          |  related_to text,
+          |  obj_id text
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TABLE IF NOT EXISTS sql_test.objects (
+          |  obj_id text,
+          |  metadata  frozen<object_metadata>,
+          |  relations set<frozen<relation>>,
+          |  ts timestamp, PRIMARY KEY(obj_id)
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |INSERT INTO sql_test.objects (obj_id, ts, metadata)
+          |values (
+          |  '123', '2015-06-16 15:53:23-0400',
+          |  {
+          |    name: 'foo',
+          |    category_metadata: {
+          |      category_id: 'thermostat',
+          |      metric_descriptors: {}
+          |    },
+          |    bucket_size: 0
+          |  }
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc.load("org.apache.spark.sql.cassandra",
+      options = Map( "c_table" -> "objects", "keyspace" -> "sql_test")).collect()
+    result should have length 1
+  }
+
   // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
   it should "allow to restrict a clustering timestamp column value" in {
     conn.withSessionDo { session =>
