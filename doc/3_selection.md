@@ -105,4 +105,13 @@ and put every RDD item into the same group as long as the key doesn't change.
 Whenever the key changes, a new group is started. You need enough memory
 to store the biggest group.
 
+### Counting rows
+
+Although Spark provides `count()` method, it requires all the rows to be fetched from Cassandra, which 
+adds significant memory and network overhead. Instead, `cassandraCount()` method can be used on any 
+Cassandra based RDD to push down selection of `count(*)` and fetching the number of rows directly.
+ 
+Note: Until release 1.2.4, Spark count was overridden by native Cassandra count in all Cassandra based
+RDDs. Since 1.2.4, `count()` is for Spark count and `cassandraCount()` is for Cassandra native count.
+
 [Next - Working with user-defined case classes and tuples](4_mapper.md)
