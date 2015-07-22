@@ -146,4 +146,78 @@ df.write
   .save()
 ```
 
+###Pushing down clauses to Cassandra
+The dataframe api will automatically pushdown valid where clauses to Cassandra as long as the
+pushdown option is enabled (defaults to enabled.)
+
+Example Table
+```sql
+CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+use test;
+create table words ( user text, word text, count int , PRIMARY KEY (user,word))
+INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'dino', 10 );
+INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'fad', 5 );
+INSERT INTO words (user, word, count ) VALUES ( 'Sam', 'alpha', 3 );
+INSERT INTO words (user, word, count ) VALUES ( 'Zebra', 'zed', 100 );
+```
+
+First we can create a DataFrame and see that it has no `pushdown filters` set in the log. This
+means all requests will go directly to C* and we will require reading all of the data to `show`
+this DataFrame.
+
+```scala
+val df = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test"))
+  .load
+df.explain                               
+//15/07/06 09:21:21 INFO CassandraSourceRelation: filters:
+//15/07/06 09:21:21 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
+//== Physical Plan ==
+//PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[2] at explain //at <console>:22
+
+df.show
+//...
+//15/07/06 09:26:03 INFO CassandraSourceRelation: filters:
+//15/07/06 09:26:03 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
+//
+//+-----+-----+-----+
+//| user| word|count|
+//+-----+-----+-----+
+//|Zebra|  zed|  100|
+//| Russ| dino|   10|
+//| Russ|  fad|    5|
+//|  Sam|alpha|    3|
+//+-----+-----+-----+
+```
+
+The example schema has a clustering key of "word" so we can pushdown filters on that column to C*. We
+do this by applying a normal DataFrame filter. The connector will automatically determine that the 
+filter can be pushed down and will add it to `pushdown filters`. All of the elements of 
+`pushdown filters` will be automatically added to the CQL requests made to C* for the 
+data from this table. The subsequent call will then only serialize data from C* which passes the filter,
+reducing the load on C*. 
+
+```scala
+val dfWithPushdown = df.filter(df("word") > "ham")
+
+dfWithPushdown.explain
+//15/07/06 09:29:10 INFO CassandraSourceRelation: filters: GreaterThan(word,ham)
+//15/07/06 09:29:10 INFO CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(word,ham))
+== Physical Plan ==
+Filter (word#1 > ham)
+ PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[18] at explain at <console>:24
+
+dfWithPushdown.show
+15/07/06 09:30:48 INFO CassandraSourceRelation: filters: GreaterThan(word,ham)
+15/07/06 09:30:48 INFO CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(word,ham))
++-----+----+-----+
+| user|word|count|
++-----+----+-----+
+|Zebra| zed|  100|
++-----+----+-----+
+
+```
+
 [Next - Python DataFrames](15_python.md) 
