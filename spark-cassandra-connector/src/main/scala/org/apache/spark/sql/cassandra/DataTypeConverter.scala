@@ -42,9 +42,9 @@ object DataTypeConverter extends Logging {
       StructField(field.columnName, catalystDataType(field.columnType, nullable = true), nullable = true)
 
     cassandraType match {
-      case connector.types.SetType(et)                => catalystTypes.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.ListType(et)               => catalystTypes.ArrayType(primitiveTypeMap(et), nullable)
-      case connector.types.MapType(kt, vt)            => catalystTypes.MapType(primitiveTypeMap(kt), primitiveTypeMap(vt), nullable)
+      case connector.types.SetType(et)                => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
+      case connector.types.ListType(et)               => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
+      case connector.types.MapType(kt, vt)            => catalystTypes.MapType(catalystDataType(kt, nullable), catalystDataType(vt, nullable), nullable)
       case connector.types.UserDefinedType(_, fields) => catalystTypes.StructType(fields.map(catalystStructField))
       case connector.types.VarIntType                 =>
         logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
