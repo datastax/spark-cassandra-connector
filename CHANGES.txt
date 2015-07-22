@@ -1,3 +1,6 @@
+1.3.0 RC1
+ * Fixed NoSuchElementException when using UDTs in SparkSQL (SPARKC-218)
+
 1.3.0 M2
  * Support for loading, saving and mapping Cassandra tuples (SPARKC-172)
  * Support for mapping case classes to UDTs on saving (SPARKC-190)
