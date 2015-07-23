@@ -1,3 +1,6 @@
+1.2.5
+ * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+
 1.2.4
  * Cassandra native count is performed by `cassandraCount` method (SPARKC-215)
  * Add a configurable delay between subsequent query retries (SPARKC-221)
