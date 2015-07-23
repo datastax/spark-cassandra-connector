@@ -294,13 +294,14 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be ("name")
   }
 
+  //TODO: SPARK-9269 is opened to address Set matching issue. I change the Set data type to List for now
   it should "allow to select UDT collection column and nested UDT column" in {
     conn.withSessionDo { session =>
       session.execute(
         s"""
           |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
           |  category_id text,
-          |  metric_descriptors set <text>
+          |  metric_descriptors list <text>
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
@@ -325,30 +326,53 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
           |CREATE TABLE IF NOT EXISTS sql_test.objects (
           |  obj_id text,
           |  metadata  frozen<object_metadata>,
-          |  relations set<frozen<relation>>,
+          |  relations list<frozen<relation>>,
           |  ts timestamp, PRIMARY KEY(obj_id)
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
         s"""
-          |INSERT INTO sql_test.objects (obj_id, ts, metadata)
+          |INSERT INTO sql_test.objects (obj_id, ts, metadata, relations)
           |values (
           |  '123', '2015-06-16 15:53:23-0400',
           |  {
           |    name: 'foo',
           |    category_metadata: {
           |      category_id: 'thermostat',
-          |      metric_descriptors: {}
+          |      metric_descriptors: []
           |    },
           |    bucket_size: 0
-          |  }
+          |  },
+          |  [
+          |    {
+          |      type: 'a',
+          |      object_type: 'b',
+          |      related_to: 'c',
+          |      obj_id: 'd'
+          |    },
+          |    {
+          |      type: 'a1',
+          |      object_type: 'b1',
+          |      related_to: 'c1',
+          |      obj_id: 'd1'
+          |    }
+          |  ]
           |)
       """.stripMargin.replaceAll("\n", " "))
     }
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
-    val result = cc.load("org.apache.spark.sql.cassandra",
-      options = Map( "c_table" -> "objects", "keyspace" -> "sql_test")).collect()
+    val result = cc
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "objects",
+          "keyspace" -> "sql_test"
+        )
+      )
+      .load()
+      .collect()
     result should have length 1
   }
 
