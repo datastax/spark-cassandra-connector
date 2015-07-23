@@ -1,9 +1,9 @@
 *.class
 *.log
-.DS_Store
+
 # sbt specific
-.cache/
-.history/
+.cache
+.history
 .lib/
 dist/*
 target/
@@ -15,7 +15,3 @@ project/plugins/project/
 # Scala-IDE specific
 .scala_dependencies
 .worksheet
-.idea
-.idea_modules
-
-checkpoint
