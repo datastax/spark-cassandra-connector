@@ -1,7 +1,13 @@
+ * (pulled) Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+ * (pulled) Add a configurable delay between subsequent query retries (SPARKC-221)
+
 1.4.0 M1
  * Upgrade Spark to 1.4.0 (SPARKC-192)
 
 ********************************************************************************
+
+ * (pulled) Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+ * (pulled) Add a configurable delay between subsequent query retries (SPARKC-221)
 
 1.3.0 RC1
  * Fixed NoSuchElementException when using UDTs in SparkSQL (SPARKC-218)
@@ -43,6 +49,10 @@
  * Added support to use aliases with Tuples (SPARKC-125)
 
 ********************************************************************************
+
+1.2.5
+ * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+ * Add a configurable delay between subsequent query retries (SPARKC-221)
 
 1.2.4
  * Cassandra native count is performed by `cassandraCount` method (SPARKC-215)
