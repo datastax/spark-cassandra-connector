@@ -5,13 +5,19 @@ import com.datastax.driver.core.policies.RetryPolicy.RetryDecision
 import com.datastax.driver.core.{ConsistencyLevel, Statement, WriteType}
 
 /** Always retries with the same CL, constant number of times, regardless of circumstances */
-class MultipleRetryPolicy(maxRetryCount: Int) extends RetryPolicy {
+class MultipleRetryPolicy(maxRetryCount: Int, retryDelay: CassandraConnectorConf.RetryDelayConf)
+  extends RetryPolicy {
 
   private def retryOrThrow(cl: ConsistencyLevel, nbRetry: Int): RetryDecision = {
-    if (nbRetry < maxRetryCount)
+    if (nbRetry < maxRetryCount) {
+      if (nbRetry > 0) {
+        val delay = retryDelay.forRetry(nbRetry).toMillis
+        if (delay > 0) Thread.sleep(delay)
+      }
       RetryDecision.retry(cl)
-    else
+    } else {
       RetryDecision.rethrow()
+    }
   }
 
   override def onReadTimeout(stmt: Statement, cl: ConsistencyLevel,
