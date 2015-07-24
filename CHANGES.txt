@@ -1,3 +1,5 @@
+ * Add a configurable delay between subsequent query retries (SPARKC-221)
+
 1.3.0 RC1
  * Fixed NoSuchElementException when using UDTs in SparkSQL (SPARKC-218)
 
@@ -41,6 +43,7 @@
 
 1.2.4
  * Cassandra native count is performed by `cassandraCount` method (SPARKC-215)
+ * Add a configurable delay between subsequent query retries (SPARKC-221)
 
 1.2.3
  * Support for connection compressions configuration (SPARKC-124)
