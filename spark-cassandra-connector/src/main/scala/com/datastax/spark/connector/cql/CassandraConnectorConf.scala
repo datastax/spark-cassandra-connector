@@ -108,7 +108,7 @@ object CassandraConnectorConf extends Logging {
   val DefaultQueryRetryCount = 10
   val DefaultQueryRetryDelay = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d)
   val DefaultConnectTimeoutMillis = 5000
-  val DefaultReadTimeoutMillis = 12000
+  val DefaultReadTimeoutMillis = 120000
   val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
 
   val DefaultCassandraSSLConf = CassandraSSLConf()

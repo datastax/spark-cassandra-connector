@@ -42,6 +42,7 @@ import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
   *   - `spark.cassandra.auth.conf.factory`:                    name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
   *   - `spark.cassandra.query.retry.count`:                    how many times to reattempt a failed query (default 10)
   *   - `spark.cassandra.query.retry.delay`:                    the delay between subsequent retries
+  *   - `spark.cassandra.read.timeout_ms`:                      maximum period of time to wait for a read to return
   *   - `spark.cassandra.connection.ssl.enabled`:               enable secure connection to Cassandra cluster
   *   - `spark.cassandra.connection.ssl.trustStore.path`:      path for the trust store being used
   *   - `spark.cassandra.connection.ssl.trustStore.password`:  trust store password
