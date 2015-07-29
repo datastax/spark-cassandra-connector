@@ -38,15 +38,12 @@ private[connector] class BoundStatementBuilder[T](
       val converter = converters(i)
       val columnName = columnNames(i)
       val columnValue = converter.convert(buffer(i))
-      val columnType = columnTypes(i)
-      val serializedValue =
-        if (columnValue != null) columnType.serialize(columnValue, protocolVersion)
-        else null
+      boundStatement.setObject(columnName, columnValue)
+      val serializedValue = boundStatement.getBytesUnsafe(i)
 
       if (serializedValue != null)
         bytesCount += serializedValue.remaining()
 
-      boundStatement.setBytesUnsafe(columnName, serializedValue)
     }
     boundStatement.bytesCount = bytesCount
     boundStatement

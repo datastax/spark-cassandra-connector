@@ -348,7 +348,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     val result = cc.load("org.apache.spark.sql.cassandra",
-      options = Map( "c_table" -> "objects", "keyspace" -> "sql_test")).collect()
+      options = Map( "table" -> "objects", "keyspace" -> "sql_test")).collect()
     result should have length 1
   }
 

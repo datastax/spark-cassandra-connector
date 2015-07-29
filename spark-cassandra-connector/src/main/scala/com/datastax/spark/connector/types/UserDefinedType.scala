@@ -70,11 +70,7 @@ object UserDefinedType {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
-          val fieldType = fieldTypes(i)
-          val serialized =
-            if (fieldValue != null) fieldType.serialize(fieldValue, protocolVersion)
-            else null
-          toSave.setBytesUnsafe(i, serialized)
+          toSave.setObject(i, fieldValue)
         }
         toSave
     }
