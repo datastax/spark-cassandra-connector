@@ -168,7 +168,7 @@ object CassandraConnectorConf extends Logging {
     val hostsStr = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
-      hostAddress <- resolveHost(hostName)
+      hostAddress <- resolveHost(hostName.trim)
     } yield hostAddress
     
     val port = conf.getInt(CassandraConnectionPortProperty, DefaultPort)
