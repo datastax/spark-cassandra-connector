@@ -294,7 +294,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be ("name")
   }
 
-  it should "allow to select UDT collection column and nested UDT column" in {
+  ignore should "allow to select UDT collection column and nested UDT column" in {
     conn.withSessionDo { session =>
       session.execute(
         s"""
