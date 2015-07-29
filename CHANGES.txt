@@ -1,13 +1,18 @@
+1.4.0 M2
  * (pulled) Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
  * (pulled) Add a configurable delay between subsequent query retries (SPARKC-221)
+ * (pulled) Add a configurable delay between subsequent query retries (SPARKC-221)
+ * (pulled) All 1.3.0-M2 and 1.3.0-RC1 changes.
 
 1.4.0 M1
  * Upgrade Spark to 1.4.0 (SPARKC-192)
 
 ********************************************************************************
 
+1.3.0 (unreleased)
  * (pulled) Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
  * (pulled) Add a configurable delay between subsequent query retries (SPARKC-221)
+ * Remove white spaces in c* connection host string (fix by Noorul Islam K M)
 
 1.3.0 RC1
  * Fixed NoSuchElementException when using UDTs in SparkSQL (SPARKC-218)
