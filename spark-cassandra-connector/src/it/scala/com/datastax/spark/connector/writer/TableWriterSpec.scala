@@ -334,7 +334,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "write Scala tuples nested in UDTValues" in {
+  ignore should "write Scala tuples nested in UDTValues" in {
     val number = (1, 2)
     val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
     val col = Seq((1, address))
@@ -352,7 +352,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "convert components in nested Scala tuples to proper types" in {
+  ignore should "convert components in nested Scala tuples to proper types" in {
     val number = ("1", "2")  // Strings, but should be Ints
     val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
     val col = Seq((1, address))

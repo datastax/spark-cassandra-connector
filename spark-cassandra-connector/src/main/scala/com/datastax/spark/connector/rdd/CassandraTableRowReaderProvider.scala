@@ -142,7 +142,7 @@ trait CassandraTableRowReaderProvider[R] {
     }
 
   def protocolVersion(session: Session): ProtocolVersion = {
-    session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
+    session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
   }
 
   /** Checks for existence of keyspace and table.*/

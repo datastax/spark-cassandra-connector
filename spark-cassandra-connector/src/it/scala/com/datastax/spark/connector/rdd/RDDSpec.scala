@@ -29,7 +29,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(defaultConf)
-  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
+  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
   private val ks = "RDDSpec"
   val tableName = "key_value"
   val otherTable = "other_table"

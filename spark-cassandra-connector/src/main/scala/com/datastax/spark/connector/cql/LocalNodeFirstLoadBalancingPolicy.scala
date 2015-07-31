@@ -80,7 +80,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     else
       tokenAwareQueryPlan(keyspace, statement)
   }
-
+  
   override def onAdd(host: Host) {
     // The added host might be a "better" version of a host already in the set.
     // The nodes added in the init call don't have DC and rack set.
@@ -93,11 +93,8 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     nodes -= host
     logInfo(s"Removed host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
   }
-  override def onSuspected(host: Host) = {
-    nodes += host
-    logInfo(s"Suspected host ${host.getAddress.getHostAddress} (${host.getDatacenter})")
-  }
 
+  override def close() = { }
   override def onUp(host: Host) = { }
   override def onDown(host: Host) = { }
 

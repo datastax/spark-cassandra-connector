@@ -24,7 +24,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tab (id INT PRIMARY KEY, value TEXT)""")
   }
 
-  val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
+  val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
   val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
   val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))

@@ -294,7 +294,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be ("name")
   }
 
-  it should "allow to select UDT collection column and nested UDT column" in {
+  ignore should "allow to select UDT collection column and nested UDT column" in {
     conn.withSessionDo { session =>
       session.execute(
         s"""
@@ -348,7 +348,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     val result = cc.load("org.apache.spark.sql.cassandra",
-      options = Map( "c_table" -> "objects", "keyspace" -> "sql_test")).collect()
+      options = Map( "table" -> "objects", "keyspace" -> "sql_test")).collect()
     result should have length 1
   }
 

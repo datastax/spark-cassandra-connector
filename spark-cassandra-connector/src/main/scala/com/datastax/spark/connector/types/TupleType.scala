@@ -111,11 +111,7 @@ object TupleType {
         for (i <- 0 until fieldTypes.size) {
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(tupleValue.getRaw(i))
-          val fieldType = fieldTypes(i)
-          val serialized =
-            if (fieldValue != null) fieldType.serialize(fieldValue, protocolVersion)
-            else null
-          toSave.setBytesUnsafe(i, serialized)
+          toSave.setObject(i, fieldValue)
         }
         toSave
     }
