@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.sql
 
 import org.apache.spark.Logging
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{SaveMode, DataFrame, SQLContext}
 import org.apache.spark.sql.SaveMode._
 
 import org.apache.spark.sql.cassandra.{TableRef, CassandraSourceRelation}
@@ -149,4 +149,54 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       " FROM tmpTable) AS tmpTable1 WHERE  a1=1 and b1=2 and c1=1 and e1=1 ").collect() should have length 2
   }
 
+  it should "be able to save DF with reversed order columns to a Cassandra table" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+        |CREATE TABLE sql_ds_test.df_test(
+        |  customer_id int,
+        |  uri text,
+        |  browser text,
+        |  epoch bigint,
+        |  PRIMARY KEY (customer_id, epoch, uri)
+        |)
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val test_df = Test(1400820884, "http://foobar", "Firefox", 123242)
+
+    import sqlContext.implicits._
+    val df = sc.parallelize(Seq(test_df)).toDF
+    df.save(
+      "org.apache.spark.sql.cassandra",
+      SaveMode.Overwrite,
+      options = Map( "c_table" -> "df_test", "keyspace" -> "sql_ds_test"))
+    cassandraTable(TableRef("df_test", "sql_ds_test")).collect() should have length 1
+  }
+
+  it should "be able to save DF with partial columns to a Cassandra table" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+        |CREATE TABLE sql_ds_test.df_test2(
+        |  customer_id int,
+        |  uri text,
+        |  browser text,
+        |  epoch bigint,
+        |  PRIMARY KEY (customer_id, epoch)
+        |)
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
+
+    import sqlContext.implicits._
+    val df = sc.parallelize(Seq(test_df)).toDF
+    df.save(
+      "org.apache.spark.sql.cassandra",
+      SaveMode.Overwrite,
+      options = Map( "c_table" -> "df_test2", "keyspace" -> "sql_ds_test"))
+    cassandraTable(TableRef("df_test2", "sql_ds_test")).collect() should have length 1
+  }
 }
+
+case class Test(val epoch:Long, val uri:String, val browser:String, val customer_id:Int)
+case class TestPartialColumns(val epoch:Long, val browser:String, val customer_id:Int)
