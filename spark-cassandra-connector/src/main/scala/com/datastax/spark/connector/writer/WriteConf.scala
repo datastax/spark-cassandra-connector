@@ -27,7 +27,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      batchGroupingKey: BatchGroupingKey = WriteConf.DefaultBatchGroupingKey,
                      consistencyLevel: ConsistencyLevel = WriteConf.DefaultConsistencyLevel,
                      parallelismLevel: Int = WriteConf.DefaultParallelismLevel,
-                     throughputMiBPS: Int = WriteConf.DefaultThroughputMiBPS,
+                     throughputMiBPS: Double = WriteConf.DefaultThroughputMiBPS,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue,
                      taskMetricsEnabled: Boolean = WriteConf.DefaultWriteTaskMetricsEnabled) {
@@ -114,7 +114,7 @@ object WriteConf {
     val parallelismLevel = conf.getInt(
       WriteParallelismLevelProperty, DefaultParallelismLevel)
 
-    val throughputMiBPS = conf.getInt(
+    val throughputMiBPS = conf.getDouble(
       WriteThroughputMiBPS, DefaultThroughputMiBPS)
 
     val metricsEnabled = conf.getBoolean(
