@@ -140,7 +140,7 @@ increase your performance based on your workload:
   - `spark.cassandra.output.batch.buffer.size`: how many batches per single Spark task can be stored in memory before sending to Cassandra; default 1000
   - `spark.cassandra.output.concurrent.writes`: maximum number of batches executed in parallel by a single Spark task; defaults to 5
   - `spark.cassandra.output.consistency.level`: consistency level for writing; defaults to LOCAL_ONE.
-  - `spark.cassandra.output.throughput_mb_per_sec`: maximum write throughput allowed per single core in MB/s
+  - `spark.cassandra.output.throughput_mb_per_sec`: (Floating points allowed) maximum write throughput allowed per single core in MB/s
                                                     limit this on long (+8 hour) runs to 70% of your max 
                                                     throughput as seen on a smaller job for stability
 
