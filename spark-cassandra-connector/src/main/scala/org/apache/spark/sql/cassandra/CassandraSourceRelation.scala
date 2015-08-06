@@ -17,6 +17,7 @@ import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnec
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.SomeColumns
 
 import DataTypeConverter._
 
@@ -67,7 +68,8 @@ private[cassandra] class CassandraSourceRelation(
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, AllColumns, writeConf)
+    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
+    data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
   }
 
   override def sizeInBytes: Long = {
