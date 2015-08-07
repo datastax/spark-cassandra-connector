@@ -9,14 +9,17 @@ import com.datastax.driver.core.{ProtocolVersion, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
 final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
-  extends ScalaGettableData
+  extends ScalaGettableData {
+  override def productArity: Int = columnValues.size
+  override def productElement(i: Int) = columnValues(i)
+}
 
 object UDTValue {
 
   def fromJavaDriverUDTValue(value: DriverUDTValue)(implicit protocolVersion: ProtocolVersion): UDTValue = {
     val fields = value.getType.getFieldNames.toIndexedSeq
     val values = fields.map(GettableData.get(value, _))
-    new UDTValue(fields, values)
+    UDTValue(fields, values)
   }
 
   def fromMap(map: Map[String, Any]): UDTValue =
