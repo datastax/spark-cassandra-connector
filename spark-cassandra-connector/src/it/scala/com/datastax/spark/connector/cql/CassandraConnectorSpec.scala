@@ -5,6 +5,7 @@ import org.apache.spark.SparkConf
 import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -94,6 +95,27 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     session2.isClosed shouldEqual false
     session2.close()
     session2.isClosed shouldEqual true
+  }
+
+  it should "cache session objects for reuse" in {
+    CassandraConnector(sc.getConf).withSessionDo(x => {})
+    CassandraConnector(sc.getConf).withSessionDo(x => {})
+    val sessionCache = CassandraConnector.sessionCache
+    sessionCache.contains(CassandraConnectorConf(sc.getConf)) should be (true)
+    sessionCache.cache.size should be (1)
+  }
+
+  it should "not make multiple clusters when writing multiple RDDs" in {
+    CassandraConnector(sc.getConf).withSessionDo{ session =>
+      session.execute("""CREATE KEYSPACE IF NOT EXISTS test WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
+      session.execute("""CREATE TABLE IF NOT EXISTS test.pair (x int, y int, PRIMARY KEY (x))""")
+    }
+    for (trial <- 1 to 3){
+      val rdd = sc.parallelize(1 to 100).map(x=> (x,x)).saveToCassandra("test","pair")
+    }
+    val sessionCache = CassandraConnector.sessionCache
+    sessionCache.contains(CassandraConnectorConf(sc.getConf)) should be (true)
+    sessionCache.cache.size should be (1)
   }
 
   it should "be configurable from SparkConf" in {

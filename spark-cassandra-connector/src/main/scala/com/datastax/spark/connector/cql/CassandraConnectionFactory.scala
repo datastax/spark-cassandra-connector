@@ -128,7 +128,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
         val context = SSLContext.getInstance(conf.protocol)
         context.init(null, tmf.getTrustManagers, new SecureRandom)
-        new SSLOptions(context, conf.enabledAlgorithms)
+        new SSLOptions(context, conf.enabledAlgorithms.toArray)
     }
   }
 
