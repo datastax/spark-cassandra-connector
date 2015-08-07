@@ -16,6 +16,13 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     SerializationUtils.roundtrip(conf)
   }
 
+  it should "match a conf with the same settings" in {
+    val conf_a = CassandraConnectorConf(new SparkConf)
+    val conf_1 = CassandraConnectorConf(new SparkConf)
+
+    conf_a should equal (conf_1)
+  }
+
   it should "resolve default SSL settings correctly" in {
     val sparkConf = new SparkConf(loadDefaults = false)
 
