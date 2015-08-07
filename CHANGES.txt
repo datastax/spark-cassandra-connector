@@ -47,7 +47,7 @@
 
 ********************************************************************************
 
-1.2.5 (unreleased)
+1.2.5
  * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
  * Add a configurable delay between subsequent query retries (SPARKC-221)
  * spark.cassandra.output.throughput_mb_per_sec can now be set to a decimal (SPARKC-226)
