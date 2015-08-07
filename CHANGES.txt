@@ -1,4 +1,4 @@
-1.2.5 (unreleased)
+1.2.5
  * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
  * spark.cassandra.output.throughput_mb_per_sec can now be set to a decimal (SPARKC-226)
  * Fixed Connection Caching, Changed SSL EnabledAlgorithms to Set (SPARKC-227)
