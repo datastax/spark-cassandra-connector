@@ -16,16 +16,16 @@ final class RefCountedCache[K, V](create: K => V,
                                   destroy: V => Any,
                                   keys: (K, V) => Set[K] = (_: K, _: V) => Set.empty[K]) {
 
-  private case class ReleaseTask(value: V, count: Int, scheduledTime: Long) extends Runnable {
+  private[cql] case class ReleaseTask(value: V, count: Int, scheduledTime: Long) extends Runnable {
     def run() {
       releaseImmediately(value, count)
     }
   }
 
-  private val refCounter = new RefCountMap[V]
-  private val cache = new TrieMap[K, V]
-  private val valuesToKeys = new TrieMap[V, Set[K]]
-  private val deferredReleases = new TrieMap[V, ReleaseTask]
+  private[cql] val refCounter = new RefCountMap[V]
+  private[cql] val cache = new TrieMap[K, V]
+  private[cql] val valuesToKeys = new TrieMap[V, Set[K]]
+  private[cql] val deferredReleases = new TrieMap[V, ReleaseTask]
 
   private def createNewValueAndKeys(key: K): (V, Set[K]) = {
     val value = create(key)
