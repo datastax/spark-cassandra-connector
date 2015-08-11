@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.sql
 
-import java.net.InetAddress
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 
 import org.apache.spark.sql.cassandra.CassandraSQLContext
+
+import scala.collection.mutable.ArrayBuffer
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -64,8 +64,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_data_type1 (a ASCII, b INT, c FLOAT, d DOUBLE, e BIGINT, f BOOLEAN, g DECIMAL, " +
       " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, PRIMARY KEY ((a), b, c))")
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_collection (a INT, b SET<INT>, c MAP<INT, INT>, PRIMARY KEY (a))")
-    session.execute("INSERT INTO sql_test.test_collection (a, b, c) VALUES (1, {1,2,3}, {1:2, 2:3})")
+    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_collection (a INT, b SET<INT>, c MAP<INT, INT>, d List<INT>, PRIMARY KEY (a))")
+    session.execute("INSERT INTO sql_test.test_collection (a, b, c, d) VALUES (1, {1,2,3}, {1:2, 2:3}, [8,6,7])")
 
     session.execute("CREATE TYPE sql_test.address (street text, city text, zip int)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
@@ -397,5 +397,40 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       "from custom_type " +
       "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
+  }
+
+  it should "allow to apply UDF to collection columns" in {
+    import org.apache.spark.sql.cassandra.udf.CollectionUDF._
+    cc.udf.register("set_size", collectionSize(_: Set[_]))
+    cc.udf.register("list_size", collectionSize(_: Seq[_]))
+    cc.udf.register("map_size", collectionSize(_: Map[_, _]))
+    cc.udf.register("set_contains", setContains[Int](_: Set[Int], _: Int))
+    cc.udf.register("seq_contains", seqContains[Int](_: Seq[Int], _: Int))
+    cc.udf.register("map_key_contains", mapKeyContains[Int](_: Map[Int, _], _: Int))
+    cc.udf.register("map_value_contains", mapValueContains[Int](_: Map[_, Int], _: Int))
+    cc.udf.register("map_values", mapValues[Int](_: Map[_, Int]))
+    cc.udf.register("map_keys", mapKeys[Int](_: Map[Int, _]))
+    cc.udf.register("sort_seq", sortSeq[Int](_: Seq[Int]))
+    cc.udf.register("map_value", mapValue[Int, Int](_: Map[Int, Int], _: Int))
+    val result = cc.sql("SELECT * FROM test_collection where set_size(b) = 3").collect()
+    result should have length 1
+    val result2 = cc.sql("SELECT * FROM test_collection where list_size(d) = 3").collect()
+    result2 should have length 1
+    val result3 = cc.sql("SELECT * FROM test_collection where map_size(c) = 2").collect()
+    result3 should have length 1
+    val result4 = cc.sql("SELECT * FROM test_collection where set_contains(b, 2) = true").collect()
+    result4 should have length 1
+    val result5 = cc.sql("SELECT * FROM test_collection where seq_contains(d, 7) = true").collect()
+    result5 should have length 1
+    val result6 = cc.sql("SELECT * FROM test_collection where map_key_contains(c, 1) = true").collect()
+    result6 should have length 1
+    val result7 = cc.sql("SELECT * FROM test_collection where map_value_contains(c, 3) = true").collect()
+    result7 should have length 1
+    val result8 = cc.sql("SELECT map_keys(c), map_values(c), sort_seq(d) FROM test_collection").collect().head
+    result8(0) shouldBe ArrayBuffer(1, 2)
+    result8(1) shouldBe List(2, 3)
+    result8(2) shouldBe List(6, 7, 8)
+    val result9 = cc.sql("SELECT * FROM test_collection where map_value(c, 1) = 2").collect()
+    result9 should have length 1
   }
 }
