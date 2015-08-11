@@ -19,20 +19,18 @@ import java.io.File
 import scala.collection.mutable
 import scala.language.postfixOps
 
-import sbt._
-import sbt.Keys._
-import sbtrelease.ReleasePlugin._
 import sbtassembly._
 import sbtassembly.AssemblyPlugin._
 import sbtassembly.AssemblyKeys._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
 import sbt._
-import sbtassembly.Plugin.AssemblyKeys._
-import sbtassembly.Plugin._
 import sbtrelease.ReleasePlugin._
 
 object Settings extends Build {
