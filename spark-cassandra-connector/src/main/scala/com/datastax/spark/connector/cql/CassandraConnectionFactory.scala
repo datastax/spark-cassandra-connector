@@ -1,17 +1,11 @@
 package com.datastax.spark.connector.cql
 
 import java.io.FileInputStream
-import java.net.InetAddress
 import java.security.{KeyStore, SecureRandom}
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
 
-import scala.collection.JavaConversions._
-
-import org.apache.cassandra.thrift._
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.TTransport
 
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core.{Cluster, SSLOptions, SocketOptions}
@@ -23,10 +17,6 @@ import com.datastax.spark.connector.util.ReflectionUtil
   * Other factories can be plugged in by setting `spark.cassandra.connection.factory` option. */
 trait CassandraConnectionFactory extends Serializable {
 
-  /** Creates and configures a Thrift client.
-    * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
-  def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress): (Cassandra.Iface, TTransport)
-
   /** Creates and configures native Cassandra connection */
   def createCluster(conf: CassandraConnectorConf): Cluster
 
@@ -37,48 +27,6 @@ trait CassandraConnectionFactory extends Serializable {
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 object DefaultConnectionFactory extends CassandraConnectionFactory {
 
-  /** Creates and configures a Thrift client.
-    * To be removed in the near future, when the dependency from Thrift will be completely dropped. */
-  override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = {
-    var transport: TTransport = null
-    try {
-      val transportFactory = createTransportFactory(conf.cassandraSSLConf)
-      val options = getTransportFactoryOptions(transportFactory.supportedOptions().toSet, conf)
-      transportFactory.setOptions(options)
-
-      transport = transportFactory.openTransport(hostAddress.getHostAddress, conf.rpcPort)
-      val client = new Cassandra.Client(new TBinaryProtocol(transport))
-      val creds = conf.authConf.thriftCredentials
-      if (creds.nonEmpty) {
-        client.login(new AuthenticationRequest(creds))
-      }
-      (client, transport)
-    }
-    catch {
-      case e: Throwable =>
-        if (transport != null)
-          transport.close()
-        throw e
-    }
-  }
-
-  def getTransportFactoryOptions(supportedOptions: Set[String], conf: CassandraConnectorConf) = Seq(
-    conf.cassandraSSLConf.trustStorePath.map("enc.truststore" → _),
-    conf.cassandraSSLConf.trustStorePassword.map("enc.truststore.password" → _),
-    Some("enc.protocol" → conf.cassandraSSLConf.protocol),
-    Some("enc.cipher.suites" → conf.cassandraSSLConf.enabledAlgorithms.mkString(","))
-  ).flatten.toMap.filterKeys(supportedOptions.contains)
-
-  def createTransportFactory(conf: CassandraSSLConf): ITransportFactory = {
-    conf.enabled match {
-      case false ⇒ new TFramedTransportFactory()
-      case true ⇒
-        val factoryClass = Class.forName("org.apache.cassandra.thrift.SSLTransportFactory")
-        val factory = factoryClass.newInstance()
-        factory.asInstanceOf[ITransportFactory]
-    }
-  }
-
   /** Returns the Cluster.Builder object used to setup Cluster instance. */
   def clusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
     val options = new SocketOptions()
@@ -87,7 +35,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
     val builder = Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
-      .withPort(conf.nativePort)
+      .withPort(conf.port)
       .withRetryPolicy(
         new MultipleRetryPolicy(conf.queryRetryCount, conf.queryRetryDelay))
       .withReconnectionPolicy(

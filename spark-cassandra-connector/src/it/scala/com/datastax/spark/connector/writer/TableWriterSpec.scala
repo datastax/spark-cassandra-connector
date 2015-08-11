@@ -2,15 +2,16 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.spark.connector.mapper.DefaultColumnMapper
 
 import scala.collection.JavaConversions._
+
+import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
+import com.datastax.spark.connector.embedded.SparkTemplate._
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
-import com.datastax.spark.connector.embedded._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
@@ -34,7 +35,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   val ks = "TableWriterSpec"
   
@@ -48,15 +49,22 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".blobs (key INT PRIMARY KEY, b blob)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".counters2 (pkey INT PRIMARY KEY, c counter)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".single_column (pk INT PRIMARY KEY)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
 
     session.execute(s"""CREATE TYPE "$ks".address (street text, city text, zip int)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
 
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+
+    session.execute(s"""CREATE TYPE "$ks".address2 (street text, number frozen<tuple<int, int>>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
   }
 
   private def verifyKeyValueTable(tableName: String) {
@@ -292,6 +300,72 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "write values of TupleValue type" in {
+    val tuple = TupleValue(1, 2, "three")
+    val col = Seq((1, tuple))
+    sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(1) shouldEqual 2
+        row.getTupleValue(1).getString(2) shouldEqual "three"
+      }
+    }
+  }
+
+  it should "write column values of tuple type given as Scala tuples" in {
+    val tuple = (1, 2, "three")  // Scala tuple
+    val col = Seq((1, tuple))
+    sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(0) shouldEqual 1
+        row.getTupleValue(1).getInt(1) shouldEqual 2
+        row.getTupleValue(1).getString(2) shouldEqual "three"
+      }
+    }
+  }
+
+  it should "write Scala tuples nested in UDTValues" in {
+    val number = (1, 2)
+    val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
+    val col = Seq((1, address))
+    sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getUDTValue(1).getString(0) shouldEqual "foo"
+        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+      }
+    }
+  }
+
+  it should "convert components in nested Scala tuples to proper types" in {
+    val number = ("1", "2")  // Strings, but should be Ints
+    val address = UDTValue.fromMap(Map("street" -> "foo", "number" -> number))
+    val col = Seq((1, address))
+    sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      for (row <- result) {
+        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+      }
+    }
+  }
 
   it should "write to single-column tables" in {
     val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
@@ -372,8 +446,10 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
   it should "write RDD of case class objects with per-row TTL with custom mapping" in {
     val col = Seq(KeyValueWithTTL(1, 1L, "value1", 100), KeyValueWithTTL(2, 2L, "value2", 200), KeyValueWithTTL(3, 3L, "value3", 300))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_15", writeConf = WriteConf(ttl = TTLOption.perRow("ttl_placeholder")))(
-      conn, DefaultRowWriter.factory(new DefaultColumnMapper(Map("ttl" -> "ttl_placeholder"))))
+    implicit val mapping = new DefaultColumnMapper[KeyValueWithTTL](Map("ttl" -> "ttl_placeholder"))
+
+    sc.parallelize(col).saveToCassandra(ks, "key_value_15",
+      writeConf = WriteConf(ttl = TTLOption.perRow("ttl_placeholder")))
 
     verifyKeyValueTable("key_value_15")
 
@@ -390,9 +466,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   it should "write RDD of case class objects with per-row timestamp with custom mapping" in {
     val ts = System.currentTimeMillis() - 1000L
     val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
+
+    implicit val mapper =
+      new DefaultColumnMapper[KeyValueWithTimestamp](Map("timestamp" -> "timestamp_placeholder"))
+
     sc.parallelize(col).saveToCassandra(ks, "key_value_16",
-      writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp_placeholder")))(
-        conn, DefaultRowWriter.factory(new DefaultColumnMapper(Map("timestamp" -> "timestamp_placeholder"))))
+      writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp_placeholder")))
 
     verifyKeyValueTable("key_value_16")
 
@@ -417,6 +496,55 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     verifyKeyValueTable("key_value_17")
   }
 
+  it should "write an RDD of tuples mapped to different ordering of fields" in {
+    val col = Seq (("x","a","b"))
+    sc.parallelize(col)
+      .saveToCassandra(ks,
+        "map_tuple",
+        SomeColumns(("a" as "_2"), ("c" as "_1")))
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT * FROM "$ks".map_tuple""").all()
+      result should have size 1
+      val row = result(0)
+      row.getString("a") should be ("a")
+      row.getString("c") should be ("x")
+    }
+  }
+
+  it should "write an RDD of tuples with only some fields aliased" in {
+     val col = Seq (("c","a","b"))
+    sc.parallelize(col)
+      .saveToCassandra(ks,
+        "map_tuple",
+        SomeColumns(("a" as "_2"),("b" as "_3"), ("c" as "_1")))
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT * FROM "$ks".map_tuple""").all()
+      result should have size 1
+      val row = result(0)
+      row.getString("a") should be ("a")
+      row.getString("b") should be ("b")
+      row.getString("c") should be ("c")
+    }
+  }
+
+  it should "throw an exception if you try to alias tuple fields which don't exist" in {
+    val col = Seq (("c"))
+    intercept[IllegalArgumentException] {
+      sc.parallelize(col).saveToCassandra(ks,
+        "map_tuple",
+        SomeColumns(("a" as "_2"),("b" as "_3"), ("c" as "_1")))
+    }
+  }
+
+  it should "throw an exception when aliasing some tuple fields explicitly and others implicitly" in {
+    val col = Seq (("c","a"))
+    intercept[IllegalArgumentException] {
+      sc.parallelize(col).saveToCassandra(ks,
+        "map_tuple",
+        SomeColumns(("a" as "_2"),("b")))
+    }
+  }
+
   it should "write RDD of objects with inherited fields" in {
     val col = Seq(
       new SubKeyValue(1, "value1", 1L),
@@ -431,6 +559,123 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq(KeyValueWithTransient(1, 1L, "value1", "a"), KeyValueWithTransient(2, 2L, "value2", "b"), KeyValueWithTransient(3, 3L, "value3", "c"))
     sc.parallelize(col).saveToCassandra(ks, "key_value_19")
     verifyKeyValueTable("key_value_19")
+  }
+
+  it should "be able to append and prepend elements to a C* list" in {
+
+    val listElements = sc.parallelize(Seq(
+      (1, Vector("One")),
+      (1, Vector("Two")),
+      (1, Vector("Three"))))
+
+    val prependElements = sc.parallelize(Seq(
+      (1, Vector("PrependOne")),
+      (1, Vector("PrependTwo")),
+      (1, Vector("PrependThree"))))
+
+    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
+    prependElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" prepend))
+
+    val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
+      .where("key = 1")
+      .select("lcol").take(1)(0)
+    testList.take(3) should contain allOf("PrependOne", "PrependTwo", "PrependThree")
+    testList.drop(3) should contain allOf("One", "Two", "Three")
+  }
+
+  it should "be able to remove elements from a C* list " in {
+    val listElements = sc.parallelize(Seq(
+      (2, Vector("One")),
+      (2, Vector("Two")),
+      (2, Vector("Three"))))
+    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
+
+    sc.parallelize(Seq(
+      (2, Vector("Two")),
+      (2, Vector("Three"))))
+      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" remove))
+
+    val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
+      .where("key = 2")
+      .select("lcol").take(1)(0)
+    testList should contain noneOf("Two", "Three")
+    testList should contain("One")
+  }
+
+  it should "be able to add elements to a C* set " in {
+    val setElements = sc.parallelize(Seq(
+      (3, Set("One")),
+      (3, Set("Two")),
+      (3, Set("Three"))))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
+    val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
+      .where("key = 3")
+      .select("scol").take(1)(0)
+
+    testSet should contain allOf("One", "Two", "Three")
+  }
+
+  it should "be able to remove elements from a C* set" in {
+    val setElements = sc.parallelize(Seq(
+      (4, Set("One")),
+      (4, Set("Two")),
+      (4, Set("Three"))))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
+
+    sc.parallelize(Seq((4, Set("Two")), (4, Set("Three"))))
+      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" remove))
+
+    val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
+      .where("key = 4")
+      .select("scol").take(1)(0)
+
+    testSet should contain noneOf("Two", "Three")
+    testSet should contain("One")
+  }
+
+  it should "be able to add key value pairs to a C* map" in {
+    val setElements = sc.parallelize(Seq(
+      (5, Map("One" -> "One")),
+      (5, Map("Two" -> "Two")),
+      (5, Map("Three" -> "Three"))))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" append))
+
+    val testMap = sc.cassandraTable[(Map[String, String])](ks, "collections_mod")
+      .where("key = 5")
+      .select("mcol").take(1)(0)
+
+    testMap.toSeq should contain allOf(("One", "One"), ("Two", "Two"), ("Three", "Three"))
+  }
+
+  it should "throw an exception if you try to apply a collection behavior to a normal column" in {
+    val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
+    val e = intercept[IllegalArgumentException] {
+      sc.parallelize(col).saveToCassandra(ks, "key_value_1", SomeColumns("key", "group"
+        overwrite, "value"))
+    }
+    e.getMessage should include("group")
+  }
+
+  it should "throw an exception if you try to remove values from a map" in {
+    val setElements = sc.parallelize(Seq(
+      (5, Map("One" -> "One")),
+      (5, Map("Two" -> "Two")),
+      (5, Map("Three" -> "Three"))))
+    val e = intercept[IllegalArgumentException] {
+      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" remove))
+    }
+    e.getMessage should include("mcol")
+  }
+
+  it should "throw an exception if you prepend anything but a list" in {
+    val setElements = sc.parallelize(Seq(
+      (5, Map("One" -> "One"), Set("One"))))
+    val e = intercept[IllegalArgumentException] {
+      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" prepend,
+        "scol" prepend))
+    }
+    e.getMessage should include("mcol")
+    e.getMessage should include("scol")
   }
 
 }

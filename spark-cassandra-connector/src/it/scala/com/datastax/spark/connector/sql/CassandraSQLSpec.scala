@@ -1,18 +1,18 @@
 package com.datastax.spark.connector.sql
 
+import java.net.InetAddress
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import org.apache.spark.SparkContext
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.{ConfigMap, FlatSpec, Matchers}
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
@@ -115,7 +115,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to select rows with in clause pushed down" in {
     val query = cc.sql("SELECT * FROM test2 WHERE a in (1,2)")
-    query.queryExecution.sparkPlan.nodeName should be ("CassandraTableScan")
+    query.queryExecution.sparkPlan.nodeName should be ("Filter")
     val result = query.collect()
     result should have length 6
   }
@@ -150,9 +150,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     result should have length 1
   }
 
-  //BETWEEN is not supported yet in Spark SQL
-  ignore should "allow to select rows with between clause" in {
-    val result = cc.sql("SELECT * FROM test2 WHERE a BETWEEN 1 AND 3 ").collect()
+  it should "allow to select rows with between clause" in {
+    val result = cc.sql("SELECT * FROM test2 WHERE a BETWEEN 1 AND 2 ").collect()
     result should have length 6
   }
 
@@ -212,13 +211,13 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to insert into another table" in {
-    val result = cc.sql("INSERT INTO test3 SELECT a, b, c FROM test2").collect()
+    val result = cc.sql("INSERT INTO TABLE test3 SELECT a, b, c FROM test2").collect()
     val result2 = cc.sql("SELECT a, b, c FROM test3").collect()
     result2 should have length 9
   }
 
   it should "allow to insert into another table in different keyspace" in {
-    val result = cc.sql("INSERT INTO sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
+    val result = cc.sql("INSERT INTO TABLE sql_test2.test3 SELECT test2.a, test2.b, test2.c FROM sql_test.test2 as test2").collect()
     val result2 = cc.sql("SELECT test3.a, test3.b, test3.c FROM sql_test2.test3 as test3").collect()
     result2 should have length 9
   }
@@ -282,7 +281,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
-    val result = cc.sql("INSERT INTO test_data_type1 SELECT * FROM test_data_type").collect()
+    val result = cc.sql("INSERT INTO TABLE test_data_type1 SELECT * FROM test_data_type").collect()
     val result1 = cc.sql("SELECT * FROM test_data_type1").collect()
     result1 should have length 1
   }
@@ -293,6 +292,67 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val row = result.head
     row.getInt(0) should be(1)
     row.getString(1) should be ("name")
+  }
+
+  it should "allow to select UDT collection column and nested UDT column" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
+          |  category_id text,
+          |  metric_descriptors set <text>
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.object_metadata (
+          |  name text,
+          |  category_metadata frozen<category_metadata>,
+          |  bucket_size int
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TYPE IF NOT EXISTS sql_test.relation (
+          |  type text,
+          |  object_type text,
+          |  related_to text,
+          |  obj_id text
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |CREATE TABLE IF NOT EXISTS sql_test.objects (
+          |  obj_id text,
+          |  metadata  frozen<object_metadata>,
+          |  relations set<frozen<relation>>,
+          |  ts timestamp, PRIMARY KEY(obj_id)
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+          |INSERT INTO sql_test.objects (obj_id, ts, metadata)
+          |values (
+          |  '123', '2015-06-16 15:53:23-0400',
+          |  {
+          |    name: 'foo',
+          |    category_metadata: {
+          |      category_id: 'thermostat',
+          |      metric_descriptors: {}
+          |    },
+          |    bucket_size: 0
+          |  }
+          |)
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc.read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map( "c_table" -> "objects", "keyspace" -> "sql_test"))
+      .load
+      .collect
+    result should have length 1
   }
 
   // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
@@ -317,5 +377,27 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+  }
+
+  it should "use InetAddressType and UUIDType" in {
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.custom_type (k INT, v INT, a INET, b UUID, primary key(k,v))")
+      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
+        "values (1, 1, '74.125.239.135', 123e4567-e89b-12d3-a456-426655440000)")
+      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
+        "values (1, 2, '74.125.239.136', 067e6162-3b6f-4ae2-a171-2470b63dff00)")
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc.cassandraSql(
+      "select k, v, a, b " +
+      "from custom_type " +
+      "where CAST(a as string) > '/74.125.239.135'").collect()
+    result should have length 1
+    val result1 = cc.cassandraSql(
+      "select k, v,  a, b " +
+      "from custom_type " +
+      "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
+    result1 should have length 1
   }
 }

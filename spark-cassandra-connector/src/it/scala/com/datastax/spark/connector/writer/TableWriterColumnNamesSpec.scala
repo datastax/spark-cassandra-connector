@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 
@@ -9,7 +10,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   case class KeyValue(key: Int, group: Long)
 
@@ -40,7 +41,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     }
 
     "distinguish and use only specified column names if provided" in {
-      val subset = Seq("key": NamedColumnRef, "group": NamedColumnRef)
+      val subset = Seq("key": ColumnRef, "group": ColumnRef)
 
       val writer = TableWriter(
         conn,
@@ -55,7 +56,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     }
 
     "distinguish and use only specified column names if provided, when aliases are specified" in {
-      val subset = Seq[NamedColumnRef]("key" as "keyAlias", "group" as "groupAlias")
+      val subset = Seq[ColumnRef]("key" as "keyAlias", "group" as "groupAlias")
 
       val writer = TableWriter(
         conn,

@@ -310,6 +310,25 @@ class TypeConverterTest {
   }
 
   @Test
+  def testPair(): Unit = {
+    val scalaPair = (1, 2)
+    val converter = TypeConverter.forType[org.apache.commons.lang3.tuple.Pair[Int, String]]
+    val commonsPair = converter.convert(scalaPair)
+    assertEquals(1, commonsPair.getLeft)
+    assertEquals("2", commonsPair.getRight)
+  }
+
+  @Test
+  def testTriple(): Unit = {
+    val scalaTriple = (1, 2, 3)
+    val converter = TypeConverter.forType[org.apache.commons.lang3.tuple.Triple[Int, String, Long]]
+    val commonsTriple = converter.convert(scalaTriple)
+    assertEquals(1, commonsTriple.getLeft)
+    assertEquals("2", commonsTriple.getMiddle)
+    assertEquals(3L, commonsTriple.getRight)
+  }
+
+  @Test
   def testOptionToNullConverter() {
     val c = new TypeConverter.OptionToNullConverter(TypeConverter.IntConverter)
     assertEquals(1.asInstanceOf[AnyRef], c.convert(Some(1)))

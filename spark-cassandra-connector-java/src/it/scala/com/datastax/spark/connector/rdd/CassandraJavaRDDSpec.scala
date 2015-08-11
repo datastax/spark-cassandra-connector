@@ -4,6 +4,7 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
@@ -18,7 +19,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     session.execute("DROP KEYSPACE IF EXISTS java_api_test")
@@ -50,6 +51,9 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TYPE java_api_test.address (street text, city text, zip int)")
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
     session.execute("INSERT INTO java_api_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+
+    session.execute("CREATE TABLE IF NOT EXISTS java_api_test.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)")
+    session.execute("INSERT INTO java_api_test.tuples(key, value) VALUES (1, (1, 'first'))")
 
     session.execute("CREATE TABLE IF NOT EXISTS java_api_test.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
     session.execute("INSERT INTO java_api_test.wide_rows(key, group, value) VALUES (10, 10, '1010')")
@@ -237,10 +241,11 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, null))
   }
 
-  it should "allow to read rows as an array of KV pairs of two single-column types" in {
+  it should "allow to transform rows into KV pairs of two single-column types" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapColumnTo(classOf[java.lang.Integer]), mapColumnTo(classOf[java.lang.String]))
+      .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.String]))
+      .select("value", "key")
+      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
       .collect()
 
     rows should have size 3
@@ -249,10 +254,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, null))
   }
 
-  it should "allow to read rows as an array of KV pairs of a single-column type and a multi-column type" in {
+  it should "allow to transform rows into KV pairs of a single-column type and a multi-column type" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapColumnTo(classOf[java.lang.Integer]), mapRowTo(classOf[SampleJavaBean]))
+      .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleJavaBean]))
+      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
       .collect().map { case (i, x) ⇒ (i, (x.getKey, x.getValue))}
 
     rows should have size 3
@@ -261,10 +266,11 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain((3, (3, null)))
   }
 
-  it should "allow to read rows as an array of KV pairs of a multi-column type and a single-column type" in {
+  it should "allow to transform rows into KV pairs of a multi-column type and a single-column type" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapRowTo(classOf[SampleJavaBean]), mapColumnTo(classOf[java.lang.Integer]))
+      .cassandraTable("java_api_test", "test_table", mapColumnTo(classOf[java.lang.Integer]))
+      .select("key", "value")
+      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
       .collect().map { case (x, i) ⇒ ((x.getKey, x.getValue), i)}
 
     rows should have size 3
@@ -273,10 +279,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     rows should contain(((3, null), 3))
   }
 
-  it should "allow to read rows as an array of KV pairs of multi-column types" in {
+  it should "allow to transform rows into KV pairs of multi-column types" in {
     val rows = javaFunctions(sc)
-      .cassandraTable("java_api_test", "test_table",
-        mapRowTo(classOf[SampleJavaBean]), mapRowTo(classOf[SampleJavaBean]))
+      .cassandraTable("java_api_test", "test_table", mapRowTo(classOf[SampleJavaBean]))
+      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
       .collect().map { case (x, y) ⇒ ((x.getKey, x.getValue), (y.getKey, y.getValue))}
 
     rows should have size 3
@@ -301,7 +307,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     javaFunctions(sc).cassandraTable("java_api_test", "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), nativePort = 9999, rpcPort = 9998)
+    val invalidConnector = CassandraConnector(Set(EmbeddedCassandra.getHost(0)), port = 9999)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable("java_api_test", "test_table").withConnector(invalidConnector).collect()
     }
@@ -335,6 +341,21 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getString("street") should be("Some Street")
     udtValue.getString("city") should be("Paris")
     udtValue.getInt("zip") should be(11120)
+  }
+
+  it should "allow to fetch tuple columns" in {
+    val result = javaFunctions(sc)
+      .cassandraTable("java_api_test", "tuples")
+      .select("key", "value").collect()
+
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+
+    val tupleValue = row.getTupleValue(1)
+    tupleValue.size should be(2)
+    tupleValue.getInt(0) shouldBe 1
+    tupleValue.getString(1) shouldBe "first"
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {

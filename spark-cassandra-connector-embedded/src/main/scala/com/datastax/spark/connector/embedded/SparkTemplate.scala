@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.embedded
 
 import akka.actor.ActorSystem
+import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 
 trait SparkTemplate {
@@ -24,7 +25,8 @@ object SparkTemplate {
 
   /** Default configuration for [[org.apache.spark.SparkContext SparkContext]]. */
   val defaultConf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", EmbeddedCassandra.getHost(0).getHostAddress)
+    .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
+    .set("spark.cassandra.connection.port", getPort(0).toString)
     .set("spark.cleaner.ttl", "3600")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[*]"))
     .setAppName("Test")

@@ -14,23 +14,16 @@ trait AuthConf extends Serializable {
 
   /** Returns auth provider to be passed to the `Cluster.Builder` object. */
   def authProvider: AuthProvider
-
-  /** Returns auth credentials to be set in the Thrift authentication request. */
-  def thriftCredentials: Map[String, String]
 }
 
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 case object NoAuthConf extends AuthConf {
   override def authProvider = AuthProvider.NONE
-
-  override def thriftCredentials: Map[String, String] = Map.empty
 }
 
 /** Performs plain-text password authentication. Use with `PasswordAuthenticator` in Cassandra. */
 case class PasswordAuthConf(user: String, password: String) extends AuthConf {
   override def authProvider = new PlainTextAuthProvider(user, password)
-
-  override def thriftCredentials: Map[String, String] = Map("username" -> user, "password" -> password)
 }
 
 /** Obtains authentication configuration by reading  [[org.apache.spark.SparkConf SparkConf]] object. */

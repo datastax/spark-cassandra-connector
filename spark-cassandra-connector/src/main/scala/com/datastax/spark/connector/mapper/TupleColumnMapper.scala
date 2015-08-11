@@ -1,39 +1,72 @@
 package com.datastax.spark.connector.mapper
 
 import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
 
-import com.datastax.spark.connector.{ColumnRef, ColumnIndex}
-import com.datastax.spark.connector.cql.{RegularColumn, PartitionKeyColumn, ColumnDef, TableDef}
+import com.datastax.spark.connector.{ColumnName, ColumnRef}
+import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
-class TupleColumnMapper[T <: Product : TypeTag : ClassTag] extends ColumnMapper[T] {
+class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
-  override val classTag: ClassTag[T] = implicitly[ClassTag[T]]
+  val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
+  val ctorLength = cls.getConstructors()(0).getParameterTypes.length
+  val methodNames = cls.getMethods.map(_.getName)
 
-  private def indexedColumnRefs(n: Int) =
-    (0 until n).map(ColumnIndex)
-
-  override def columnMap(tableDef: TableDef, aliases: Map[String, String]): ColumnMap = {
-
+  override def columnMapForReading(
+      struct: StructDef,
+      selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForReading = {
+    
+    require(
+      ctorLength <= selectedColumns.length,
+      s"Not enough columns selected from ${struct.name}. " +
+        s"Only ${selectedColumns.length} column(s) were selected, but $ctorLength are required. " +
+        s"Selected columns: [${selectedColumns.mkString(", ")}]")
+    
+    SimpleColumnMapForReading(
+      constructor = selectedColumns.take(ctorLength),
+      setters = Map.empty[String, ColumnRef],
+      allowsNull = false)
+  }
+  
+  override def columnMapForWriting(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]) = {
     val GetterRegex = "_([0-9]+)".r
-    val cls = implicitly[ClassTag[T]].runtimeClass
 
-    val constructor =
-      indexedColumnRefs(cls.getConstructors()(0).getParameterTypes.length)
+    require(
+      selectedColumns.forall(colName => colName.selectedAs == colName.columnName) ||
+        selectedColumns.forall(colName => colName.selectedAs != colName.columnName),
+      """No mixing of implicit and explicit column mapping when writing tuples
+        |1. All columns must be un-aliased or aliased to themselves OR
+        |2. Some columns aliased to fields (_1,_2 ...) but no columns are implicitly mapped"""
+        .stripMargin
+    )
 
-    val getters = {
-      for (name @ GetterRegex(id) <- cls.getMethods.map(_.getName))
-      yield (name, ColumnIndex(id.toInt - 1))
+    for (colName <- selectedColumns) {
+      val columnName = colName.columnName
+      val alias = colName.selectedAs
+      if (alias != columnName && !methodNames.contains(alias))
+        throw new IllegalArgumentException(
+          s"""Found Alias: $alias
+             |Tuple provided does not have a getter for that alias.'
+             |Provided getters are ${methodNames.mkString(",")}""".stripMargin)
+    }
+
+    val aliasToRef = selectedColumns.map(colRef => colRef.selectedAs -> colRef).toMap
+
+    //Implicit Mapping, Order of C* Columns == Tuple Field Order
+    val getters = if (selectedColumns.forall(colRef => colRef.columnName == colRef.selectedAs)) {
+      for (methodName @ GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
+        yield (methodName, selectedColumns(id.toInt - 1))
+    }.toMap
+    else {
+      //Explicit Mapping, Tuple field aliases used
+      for (methodName @ GetterRegex(id) <- methodNames if aliasToRef.contains(methodName))
+        yield (methodName, aliasToRef(methodName))
     }.toMap
 
-    val setters =
-      Map.empty[String, ColumnRef]
-
-    SimpleColumnMap(constructor, getters, setters)
+    SimpleColumnMapForWriting(getters)
   }
-
+  
   override def newTable(keyspaceName: String, tableName: String): TableDef = {
     val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
     val ctorSymbol = Reflect.constructor(tpe).asMethod

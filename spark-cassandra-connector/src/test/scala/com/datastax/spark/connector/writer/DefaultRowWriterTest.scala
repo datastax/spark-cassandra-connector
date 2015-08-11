@@ -26,7 +26,7 @@ class DefaultRowWriterTest {
   @Test
   def testSerializability(): Unit = {
     val table = TableDef("test", "table", Nil, Nil, Nil)
-    val rowWriter = new DefaultRowWriter[DefaultRowWriterTest](table, Nil, Map.empty)
+    val rowWriter = new DefaultRowWriter[DefaultRowWriterTest](table, IndexedSeq.empty)
     SerializationUtils.roundtrip(rowWriter)
   }
 
@@ -39,7 +39,7 @@ class DefaultRowWriterTest {
     val column3 = ColumnDef("c3", RegularColumn, TimestampType)
     val table = TableDef("test", "table", Seq(column1), Seq(column2), Seq(column3))
     val rowWriter = new DefaultRowWriter[RowOfStrings](
-      table, table.allColumns.map(_.columnName), Map.empty)
+      table, table.columnRefs)
 
     val obj = RowOfStrings("1", "1.11", "2015-01-01 12:11:34")
     val buf = Array.ofDim[Any](3)
@@ -57,12 +57,12 @@ class DefaultRowWriterTest {
 
   @Test
   def testTypeConversionsInUDTValuesAreApplied(): Unit = {
-    val udtColumn = FieldDef("field", IntType)
-    val udt = UserDefinedType("udt", Seq(udtColumn))
+    val udtColumn = UDTFieldDef("field", IntType)
+    val udt = UserDefinedType("udt", IndexedSeq(udtColumn))
 
     val column = ColumnDef("c1", PartitionKeyColumn, udt)
     val table = TableDef("test", "table", Seq(column), Nil, Nil)
-    val rowWriter = new DefaultRowWriter[RowWithUDT](table, Seq("c1"), Map.empty)
+    val rowWriter = new DefaultRowWriter[RowWithUDT](table, table.columnRefs)
 
     // we deliberately put a String 12345 here:
     val udtValue = UDTValue.fromMap(Map("field" -> "12345"))
@@ -86,7 +86,7 @@ class DefaultRowWriterTest {
     TypeConverter.registerConverter(StringWrapperConverter)
     val column = ColumnDef("c1", PartitionKeyColumn, TextType)
     val table = TableDef("test", "table", Seq(column), Nil, Nil)
-    val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, Seq("c1"), Map.empty)
+    val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, table.columnRefs)
 
     val obj = RowWithStringWrapper(StringWrapper("some text"))
     val buf = Array.ofDim[Any](1)
