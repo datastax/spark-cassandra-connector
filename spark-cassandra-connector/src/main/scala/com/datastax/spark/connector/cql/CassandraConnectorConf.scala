@@ -44,7 +44,7 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    enabledAlgorithms: Array[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES
+    enabledAlgorithms: Set[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES.toSet
   )
 
   trait RetryDelayConf {
@@ -198,7 +198,7 @@ object CassandraConnectorConf extends Logging {
     val sslProtocol = conf.get(CassandraConnectionSSLProtocolProperty,
       defaultValue = DefaultCassandraSSLConf.protocol)
     val sslEnabledAlgorithms = conf.getOption(CassandraConnectionSSLEnabledAlgorithmsProperty)
-      .map(_.split(",").map(_.trim)).getOrElse(DefaultCassandraSSLConf.enabledAlgorithms)
+      .map(_.split(",").map(_.trim).toSet).getOrElse(DefaultCassandraSSLConf.enabledAlgorithms)
 
     val cassandraSSLConf = CassandraSSLConf(
       enabled = sslEnabled,

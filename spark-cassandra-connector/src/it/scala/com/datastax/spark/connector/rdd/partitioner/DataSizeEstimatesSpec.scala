@@ -21,6 +21,9 @@ class DataSizeEstimatesSpec extends FlatSpec with Matchers with SharedEmbeddedCa
   }
 
   // TODO: enable this test once we upgrade to 2.1.5, which populates the size estimates table
+  // We cannot enable this test till we have a way of forcing the size estimates table to update
+  // https://issues.apache.org/jira/browse/CASSANDRA-9579 should provide us with the hook neccessary
+  // to trigger this event
   "DataSizeEstimates" should "fetch data size estimates for a known table" ignore {
     val tableName = "table1"
     conn.withSessionDo { session =>
