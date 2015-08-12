@@ -205,6 +205,7 @@ import org.apache.spark.sql.cassandra.CassandraSQLContext
 val sc: SparkContext = ...
 val cc = new CassandraSQLContext(sc)
 val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
+//or since 1.3.0 val rdd: DataFrame = ...
 ```
 
 
