@@ -14,8 +14,7 @@ The following options are available on `SparkConf` object:
 Property name                                        | Description                                                       | Default value
 -----------------------------------------------------|-------------------------------------------------------------------|--------------------
 spark.cassandra.connection.host                      | contact point to connect to the Cassandra cluster                 | address of the Spark master host
-spark.cassandra.connection.rpc.port                  | Cassandra thrift port                                             | 9160
-spark.cassandra.connection.native.port               | Cassandra native port                                             | 9042
+spark.cassandra.connection.port (1)                  | Cassandra native port                                             | 9042
 spark.cassandra.connection.conf.factory              | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
 spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                    | 250 ms
 spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node            | 5000 ms
@@ -35,6 +34,10 @@ spark.cassandra.connection.ssl.trustStore.password   | trust store password     
 spark.cassandra.connection.ssl.trustStore.type       | trust store type                                                  | JKS
 spark.cassandra.connection.ssl.protocol              | SSL protocol                                                      | TLS
 spark.cassandra.connection.ssl.enabledAlgorithms     | SSL cipher suites                                                 | TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA
+
+Notes:
+
+1. Prior to connector 1.3.0, this setting was named "spark.cassandra.connection.native.port".
 
 Example:
 
