@@ -66,7 +66,7 @@ Create a `SparkContext`. Substitute `127.0.0.1` with the actual address of your 
 val sc = new SparkContext("spark://127.0.0.1:7077", "test", conf)
 ```
 
-Enable Cassandra-specific functions on the `SparkContext` and `RDD`:
+Enable Cassandra-specific functions on the `SparkContext`, `RDD`, and `DataFrame`:
 
 ```scala
 import com.datastax.spark.connector._

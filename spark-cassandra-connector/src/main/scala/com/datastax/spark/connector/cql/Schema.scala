@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.ColumnMapper
+import com.datastax.spark.connector.mapper.{DataFrameColumnMapper, ColumnMapper}
 import org.apache.spark.Logging
+import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
@@ -169,6 +170,9 @@ object TableDef {
     * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T : ColumnMapper](keyspaceName: String, tableName: String): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName)
+
+  def fromDataFrame(dataFrame: DataFrame, keyspaceName: String, tableName: String): TableDef =
+    new DataFrameColumnMapper(dataFrame.schema).newTable(keyspaceName, tableName)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
