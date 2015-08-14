@@ -235,6 +235,10 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
       BroadcastNestedLoopJoin
     )
   }
+
+  def refreshCassandraSchema(): Unit = synchronized {
+    catalog.asInstanceOf[CassandraCatalog].schemas.invalidateAll
+  }
 }
 
 object CassandraSQLContext {

@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.sql
 
+import java.io.IOException
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
@@ -317,5 +319,18 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
+  }
+
+  it should "be able to refresh schema cache" in {
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val ioe = the [IOException] thrownBy cc.cassandraSql("select * from new_table").collect()
+    val message = ioe.getMessage
+    message should include ("Table not found: sql_test.new_table")
+    conn.withSessionDo { session =>
+      session.execute("create table sql_test.new_table (k int, v int, d timestamp, primary key(k,v))")
+    }
+    cc.refreshCassandraSchema()
+    cc.cassandraSql("select * from new_table").collect()
   }
 }
