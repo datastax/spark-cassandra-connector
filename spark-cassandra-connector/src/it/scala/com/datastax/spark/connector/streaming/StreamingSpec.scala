@@ -2,6 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector.testkit._
 import com.datastax.spark.connector.embedded._
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.scalatest.{ConfigMap, BeforeAndAfterAll}
 
 /**
@@ -41,17 +42,20 @@ trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with Spark
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  def ssc: StreamingContext
-
-  after {
-    // Spark Context is shared among all integration test so we don't want to stop it here
-    ssc.stop(stopSparkContext = false, stopGracefully = true)
-  }
-
-  override def afterAll(configMap: ConfigMap) {
-    if (ssc.sparkContext != null) {
-      ssc.sparkContext.stop()
+  def withStreamingContext(testCode: (StreamingContext) => Any, checkpointed: Option[(()=>StreamingContext,String)] = None): Unit = {
+    val ssc = checkpointed match {
+      case Some((contextGenerator, checkpointDir)) =>
+        StreamingContext.getOrCreate(checkpointDir, contextGenerator)
+      case None =>
+        new StreamingContext(sc, Milliseconds(200))
+    }
+    try {
+      testCode (ssc)
+    }
+    finally {
+      ssc.stop (stopSparkContext = checkpointed.isDefined, stopGracefully = true)
     }
   }
+
 
 }

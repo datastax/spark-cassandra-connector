@@ -2,18 +2,15 @@ package com.datastax.spark.connector.streaming
 
 import akka.actor.{ActorSystem, Props, Terminated}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.spark.connector.{RowsInBatch, SomeColumns}
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.spark.connector.streaming.StreamingEvent.ReceiverStarted
 import com.datastax.spark.connector.testkit._
-import com.datastax.spark.connector._
-import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.StreamingContext.toPairDStreamFunctions
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-import org.scalatest.ConfigMap
 
 class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSender {
   import com.datastax.spark.connector.testkit.TestEvent._
@@ -23,18 +20,19 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
     session.execute("CREATE KEYSPACE IF NOT EXISTS demo WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
-    for (word <- data) {
+    for (d <- dataSeq; word <- d) {
       session.execute("UPDATE demo.streaming_join set count = count + 10 where word = ?", word.trim)
     }
     session.execute("CREATE TABLE IF NOT EXISTS demo.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
     session.execute("CREATE TABLE IF NOT EXISTS demo.dstream_join_output (word TEXT PRIMARY KEY, count COUNTER)")
+
     session.execute("TRUNCATE demo.streaming_wordcount")
     session.execute("TRUNCATE demo.streaming_join_output")
     session.execute("TRUNCATE demo.dstream_join_output")
   }
 
   "actorStream" must {
-    "write from the actor stream to cassandra table: demo.streaming_wordcount" in {
+    "write from the actor stream to cassandra table: demo.streaming_wordcount" in withStreamingContext { ssc =>
 
       val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
 
@@ -56,10 +54,11 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_wordcount")
         awaitCond(rdd.collect.nonEmpty && rdd.map(_.count).reduce(_ + _) == scale * 2)
-        rdd.collect.size should be (data.size)
+        rdd.collect.size should be(data.size)
       }
     }
-    "be able to utilize joinWithCassandra during transforms " in {
+
+    "be able to utilize joinWithCassandra during transforms " in withStreamingContext { ssc =>
 
       val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
         .flatMap(_.split("\\s+"))
@@ -69,7 +68,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
         .reduceByKey(_ + _)
         .saveToCassandra("demo", "streaming_wordcount")
 
-      val jc = stream
+      stream
         .map(new Tuple1(_))
         .transform(rdd => rdd.joinWithCassandraTable("demo", "streaming_join"))
         .map(_._2)
@@ -86,11 +85,12 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
 
       expectMsgPF(duration) { case Terminated(ref) =>
         val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
-        awaitCond(rdd.collect.nonEmpty && rdd.collect.size == data.size)
+        awaitCond(rdd.collect.nonEmpty && rdd.collect.size == data.size, duration)
         ssc.sparkContext.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
       }
     }
-    "be able to utilize joinWithCassandra and repartitionByCassandraTable on a Dstream " in {
+
+    "be able to utilize joinWithCassandra and repartitionByCassandraTable on a Dstream " in withStreamingContext { ssc =>
 
       val stream = ssc.actorStream[String](Props[TestStreamingActor], actorName, StorageLevel.MEMORY_AND_DISK)
         .flatMap(_.split("\\s+"))
@@ -102,7 +102,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
 
       val jcRepart = stream
         .map(new Tuple1(_))
-        .repartitionByCassandraReplica("demo","streaming_join")
+        .repartitionByCassandraReplica("demo", "streaming_join")
 
       val conn = CassandraConnector(ssc.sparkContext.getConf)
 
@@ -113,7 +113,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
           fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
       })
 
-      jcRepart.joinWithCassandraTable("demo","streaming_join")
+      jcRepart.joinWithCassandraTable("demo", "streaming_join")
         .map(_._2)
         .saveToCassandra("demo", "dstream_join_output")
 
@@ -135,6 +135,7 @@ class ActorStreamingSpec extends ActorSpec with CounterFixture with ImplicitSend
   }
 }
 
+
 /** A very basic Akka actor which streams `String` event data to spark. */
 class TestStreamingActor extends TypedStreamingActor[String] with Counter {
 
@@ -144,15 +145,10 @@ class TestStreamingActor extends TypedStreamingActor[String] with Counter {
   }
 }
 
-abstract class ActorSpec(var ssc: StreamingContext, _system: ActorSystem)
+abstract class ActorSpec(_system: ActorSystem)
   extends TestKit(_system) with StreamingSpec {
 
-  def this() = this (new StreamingContext(SparkTemplate.useSparkConf(), Milliseconds(300)), SparkTemplate.actorSystem)
-
-  before {
-    //We can't re-use streaming contexts
-    ssc = new StreamingContext(sc, Milliseconds(300))
-  }
+  def this() = this (SparkTemplate.actorSystem)
 }
 
 
