@@ -19,7 +19,7 @@ For Scala 2.11 tasks:
     sbt -Dscala-2.11=true package
     sbt -Dscala-2.11=true assembly
 
-**Note:** The Spark Java API is currently not buildable with Scala 2.11; see [SPARKC-130](https://datastax-oss.atlassian.net/browse/SPARKC-130).
+Note: The Spark Java API was not buildable with Scala 2.11 until connector 1.2.2 (fixed via [SPARKC-130](https://datastax-oss.atlassian.net/browse/SPARKC-130)).
 
 #### Scala 2.10
 To use Scala 2.10 nothing extra is required.

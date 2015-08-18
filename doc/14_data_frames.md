@@ -80,7 +80,7 @@ Example Creating a DataFrame using a Read Command
 ```scala
 val df = sqlContext
   .read
-  .source("org.apache.spark.sql.cassandra")
+  .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" ))
   .load()
 df.show
