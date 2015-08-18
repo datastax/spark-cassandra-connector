@@ -46,7 +46,7 @@ class CheckpointStreamSpec extends StreamingSpec with TimeLimitedTests {
 
     "work with JWCTable and RPCassandra Replica with checkpointing" in {
 
-      val ipAddress = "localhost"
+      val ipAddress = "127.0.0.1"
       val port = 39400
 
       val checkpointDirName = "/tmp/checkpoint-streaming-dir"
@@ -102,7 +102,7 @@ class CheckpointStreamSpec extends StreamingSpec with TimeLimitedTests {
                     ).mkString
                 )
               osw.flush()
-              Thread.sleep(400)
+              Thread.sleep(200)
             }
           }
         })
@@ -118,12 +118,14 @@ class CheckpointStreamSpec extends StreamingSpec with TimeLimitedTests {
           val result = ssc.cassandraTable[(String, Int)]("demo", "checkpoint_wordcount")
             .map(_._1)
             .collect
-          val output = ssc.cassandraTable[(String, Int)]("demo", "checkpoint_wordcount")
+          val output = ssc.cassandraTable[(String, Int)]("demo", "checkpoint_output")
             .map(_._1)
             .collect
 
-          for (element <- dataSet)
+          for (element <- dataSet) {
             result should contain(element.trim)
+            output should contain(element.trim)
+          }
         }
         ,
         checkPointOptions)
