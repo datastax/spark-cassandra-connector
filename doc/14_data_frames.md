@@ -40,8 +40,8 @@ To add these properties add keys to your `SparkConf` in the format
 Example Changing Cluster/Keyspace Level Properties
 ```scala 
 val conf = new SparkConf()
-  .set("ClusterOne/spark.cassandra.input.split.size","1000") 
-  .set("default:test/spark.cassandra.input.split.size","5000")
+  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","1000") 
+  .set("default:test/spark.cassandra.input.split.size_in_mb","5000")
 
 ...
 
@@ -61,9 +61,9 @@ val lastdf = sqlContext.load(
                   "c_table" -> "words", 
                   "keyspace" -> "test" ,
                   "cluster" -> "ClusterOne",
-                  "spark.cassandra.input.split.size" -> 500
+                  "spark.cassandra.input.split.size_in_mb" -> 500
                 )
-)// This DataFrame will use a spark.cassandra.input.split.size of 500
+)// This DataFrame will use a spark.cassandra.input.split.size_in_mb of 500
 ```
 
 ###Creating DataFrames using Load Commands
@@ -91,8 +91,8 @@ source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table a
 establish a relation between the CassandraTable and the internally used DataSource.
 
 Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
-`.` characters replaced with `_`. This means `spark.cassandra.input.split.size` becomes 
-`spark_cassandra_input_split_size`. 
+`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes 
+`spark_cassandra_input_split_size_in_mb`. 
 
 Example Creating a Source Using Spark SQL:
 ```scala
