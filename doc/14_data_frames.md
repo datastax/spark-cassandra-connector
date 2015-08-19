@@ -40,8 +40,8 @@ To add these properties add keys to your `SparkConf` in the format
 Example Changing Cluster/Keyspace Level Properties
 ```scala 
 val conf = new SparkConf()
-  .set("ClusterOne/spark.cassandra.input.split.size","1000") 
-  .set("default:test/spark.cassandra.input.split.size","5000")
+  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","32") 
+  .set("default:test/spark.cassandra.input.split.size_in_mb","128")
 
 ...
 
@@ -49,13 +49,13 @@ val df = sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 5000
+  .load()// This DataFrame will use a spark.cassandra.input.size of 32
 
 val otherdf =  sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 1000
+  .load()// This DataFrame will use a spark.cassandra.input.size of 128
 
 val lastdf = sqlContext
   .read
@@ -64,9 +64,9 @@ val lastdf = sqlContext
     "table" -> "words", 
     "keyspace" -> "test" ,
     "cluster" -> "ClusterOne",
-    "spark.cassandra.input.split.size" -> 500
+    "spark.cassandra.input.split.size_in_mb" -> 48
     )
-  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 500
+  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 48
 ```
 
 ###Creating DataFrames using Read Commands
@@ -95,9 +95,9 @@ Accessing data Frames using Spark SQL involves creating temporary tables and spe
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Because of a limitation in SparkSQL 1.4.0 DDL parser, SparkSQL `OPTIONS` 
-do not accept "." and "_" characters in option names, so options containing these 
-characters can be only set in the `SparkConf` or `SQLConf` objects.
+Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
+`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes 
+`spark_cassandra_input_split_size_in_mb`. 
 
 Example Creating a Source Using Spark SQL:
 ```scala

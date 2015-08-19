@@ -104,6 +104,11 @@ the rpc_address is set to.
 When troubleshooting Cassandra connections it is sometimes useful to set the rpc_address in the
 C* yaml file to `0.0.0.0` so any incoming connection will work.
 
+### What does input.split.size_in_mb use to determine size?
+
+Input.split.size_in_mb uses a internal system table in C* ( >= 2.1.5) to determine the size
+of the data in C*. The table is called system.size_estimates is not meant to be absolutely accurate 
+so there will be some inaccuracy with smaller tables and split sizes. 
 
 ### Can I contribute to the Spark Cassandra Connector?
 
