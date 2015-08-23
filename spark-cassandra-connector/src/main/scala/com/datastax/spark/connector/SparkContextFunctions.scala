@@ -14,7 +14,7 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
     * This method is made available on [[org.apache.spark.SparkContext SparkContext]] by importing
     * `com.datastax.spark.connector._`
     *
-    * Depending on the type parameter passed to `cassandraTable`, every row is converted to one of the following:
+    * Depending on the type name passed to `cassandraTable`, every row is converted to one of the following:
     *   - an [[CassandraRow]] object (default, if no type given)
     *   - a tuple containing column values in the same order as columns selected by [[com.datastax.spark.connector.rdd.CassandraRDD#select CassandraRDD#select]]
     *   - object of a user defined class, populated by appropriate [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]]

@@ -10,7 +10,7 @@ import org.apache.spark.SparkConf
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core.{Cluster, SSLOptions, SocketOptions}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
-import com.datastax.spark.connector.util.ReflectionUtil
+import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -90,8 +90,19 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
+  val ReferenceSection = CassandraConnectorConf.ReferenceSection
   val ConnectionFactoryProperty = "spark.cassandra.connection.factory"
-  val Properties = Set(ConnectionFactoryProperty)
+  val ConnectionFactoryDescription =
+    """Name of a Scala module or class implementing
+      |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
+
+  val FactoryParam = ConfigParameter(
+    ConnectionFactoryProperty,
+    ReferenceSection,
+    Some("DefaultConnectionFactory"),
+    ConnectionFactoryDescription)
+
+  val Properties = Set(FactoryParam)
 
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
     conf.getOption(ConnectionFactoryProperty)

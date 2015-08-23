@@ -302,22 +302,7 @@ rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4")
 ```
 
 ## Tuning
-The following properties set in `SparkConf` can be used to fine-tune the saving process, 
-These values have been set to achieve stability and not performance. Changing these values may
-increase your performance based on your workload:
-
-  - `spark.cassandra.output.batch.size.rows`: number of rows per single batch; default is 'auto' which means the connector 
-     will adjust the number of rows based on the amount of data in each row  
-  - `spark.cassandra.output.batch.size.bytes`: maximum total size of the batch in bytes; defaults to 1 kB.
-  - `spark.cassandra.output.batch.grouping.key`: determines how insert statements are grouped into batches; available values are:
-     - `none`: a batch may contain any statements
-     - `replica_set`: a batch may contain only statements to be written to the same replica set
-     - `partition` (default): a batch may contain only statements for rows sharing the same partition key value
-  - `spark.cassandra.output.batch.buffer.size`: how many batches per single Spark task can be stored in memory before sending to Cassandra; default 1000
-  - `spark.cassandra.output.concurrent.writes`: maximum number of batches executed in parallel by a single Spark task; defaults to 5
-  - `spark.cassandra.output.consistency.level`: consistency level for writing; defaults to LOCAL_ONE.
-  - `spark.cassandra.output.throughput_mb_per_sec`: (Floating points allowed) maximum write throughput allowed per single core in MB/s
-                                                    limit this on long (+8 hour) runs to 70% of your max 
-                                                    throughput as seen on a smaller job for stability
+For a full listing of Write Tuning Parameters see the reference section
+[Write Tuning Parameters](reference.md#write-tuning-parameters)
 
 [Next - Customizing the object mapping](6_advanced_mapper.md)

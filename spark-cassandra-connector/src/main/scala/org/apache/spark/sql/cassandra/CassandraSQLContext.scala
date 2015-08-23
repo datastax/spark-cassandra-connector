@@ -2,10 +2,14 @@ package org.apache.spark.sql.cassandra
 
 import java.util.NoSuchElementException
 
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSourceRelation._
+import com.datastax.spark.connector.util.ConfigParameter
+
+import org.apache.commons.lang.StringUtils
+
+import org.apache.spark.sql.sources.DataSourceStrategy
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
 
 /** Allows to execute SQL queries against Cassandra and access results as
@@ -101,11 +105,26 @@ object CassandraSQLContext {
   // Other source tables don't have keyspace concept. We should make
   // an effort to set CassandraSQLContext a more database like to join
   // tables from other sources. Keyspace is equivalent to database in SQL world
+  val ReferenceSection = "Cassandra SQL Context Options"
+
   val CassandraSqlKSNameProperty = "spark.cassandra.sql.keyspace"
+  val CassandraSqlKSNameDescription = """Sets the default keyspace"""
+  val KSNameParam = ConfigParameter(
+   CassandraSqlKSNameProperty,
+   ReferenceSection,
+   None,
+   CassandraSqlKSNameDescription)
+
   val CassandraSqlClusterNameProperty = "spark.cassandra.sql.cluster"
+  val CassandraSqlClusterNameDescription = "Sets the default Cluster to inherit configuration from"
+  val SqlClusterParam = ConfigParameter(
+    CassandraSqlClusterNameProperty,
+    ReferenceSection,
+    None,
+    CassandraSqlClusterNameDescription)
 
   val Properties = Seq(
-    CassandraSqlKSNameProperty,
-    CassandraSqlClusterNameProperty
+    KSNameParam,
+    SqlClusterParam
   )
 }

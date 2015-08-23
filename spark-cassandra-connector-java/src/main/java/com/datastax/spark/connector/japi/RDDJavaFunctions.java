@@ -86,7 +86,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
      * <p/>
      * By default this method only uses the Partition Key for joining but any combination of columns
      * which are acceptable to C* can be used in the join. Specify columns using joinColumns as a
-     * parameter or the {@code on()} method.
+     * name or the {@code on()} method.
      */
     public <R> CassandraJavaPairRDD<T, R> joinWithCassandraTable(
             String keyspaceName,

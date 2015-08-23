@@ -19,7 +19,7 @@ object ConfigCheck {
 
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
-  val validStaticProperties =
+  val validStaticProperties: Set[ConfigParameter] =
     WriteConf.Properties ++
     ReadConf.Properties ++
     CassandraConnectorConf.Properties ++
@@ -27,6 +27,8 @@ object ConfigCheck {
     CassandraConnectionFactory.Properties ++
     CassandraSQLContext.Properties ++
     CassandraSourceRelation.Properties
+
+  val validStaticPropertyNames = validStaticProperties.map(_.name)
 
 
   /**
@@ -48,7 +50,7 @@ object ConfigCheck {
   }
 
   def unknownProperties(conf: SparkConf, extraProps: Set[String] = Set.empty): Seq[String] = {
-    val validProps = validStaticProperties ++ extraProps
+    val validProps = validStaticPropertyNames ++ extraProps
     val scEnv = for ((key, value) <- conf.getAll if key.startsWith(Prefix)) yield key
     for (key <- scEnv if !validProps.contains(key)) yield key
   }
@@ -65,7 +67,7 @@ object ConfigCheck {
    * Fuzziness is determined by MatchThreshold
    */
   def suggestedProperties(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
-    val validProps = validStaticProperties ++ extraProps
+    val validProps = validStaticPropertyNames ++ extraProps
     val unknownFragments = unknownProp.stripPrefix(Prefix).split("\\.")
     validProps.toSeq.filter { knownProp =>
       val knownFragments = knownProp.stripPrefix(Prefix).split("\\.")

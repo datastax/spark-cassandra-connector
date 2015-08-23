@@ -110,6 +110,11 @@ Then copy the generated test jar to your Spark nodes and run:
     export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
     ./sbt/sbt it:test
+    
+## Generating Documents
+To generate the Reference Document use 
+
+    ./sbt/sbt spark-cassandra-connector-doc/run
 
 ## License
 

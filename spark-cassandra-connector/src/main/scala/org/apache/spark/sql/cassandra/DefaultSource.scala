@@ -59,7 +59,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
   /**
    * Creates a new relation for a cassandra table given table, keyspace, cluster and push_down
-   * as parameters and explicitly pass schema [[StructType]] as a parameter
+   * as parameters and explicitly pass schema [[StructType]] as a name
    */
   override def createRelation(
     sqlContext: SQLContext,
@@ -126,10 +126,10 @@ object DefaultSource {
     (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
   }
 
-  val confProperties = ReadConf.Properties ++
-    WriteConf.Properties ++
-    CassandraConnectorConf.Properties ++
-    CassandraSourceRelation.Properties
+  val confProperties = ReadConf.Properties.map(_.name) ++
+    WriteConf.Properties.map(_.name) ++
+    CassandraConnectorConf.Properties.map(_.name) ++
+    CassandraSourceRelation.Properties.map(_.name)
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
   // Map converted property to origin property name

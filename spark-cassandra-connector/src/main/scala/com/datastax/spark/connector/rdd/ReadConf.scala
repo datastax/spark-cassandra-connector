@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.ConsistencyLevel
-import com.datastax.spark.connector.util.ConfigCheck
+import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
 import org.apache.spark.SparkConf
 
 /** Read settings for RDD
@@ -22,23 +22,56 @@ case class ReadConf(
 
 
 object ReadConf {
+  val ReferenceSection = "Read Tuning Parameters"
+
+  /** Input Split Size in MB **/
   val ReadSplitSizeInMBProperty = "spark.cassandra.input.split.size_in_mb"
+  val DefaultSplitSizeInMB = 64 // 64 MB
+  val ReadSplitSizeInMBDescription = """Approx amount of data to be fetched into a Spark partition"""
+  val SplitSizeInMBParam = ConfigParameter (
+    ReadSplitSizeInMBProperty,
+    ReferenceSection,
+    Some(DefaultSplitSizeInMB),
+    ReadSplitSizeInMBDescription)
+
+  /** Read Fetch Size **/
   val ReadFetchSizeInRowsProperty = "spark.cassandra.input.fetch.size_in_rows"
+  val DefaultFetchSizeInRows = 1000
+  val ReadFetchSizeInRowsDescription = """Number of CQL rows fetched per driver request"""
+  val FetchSizeInRowsParam = ConfigParameter(
+    ReadFetchSizeInRowsProperty,
+    ReferenceSection,
+    Some(DefaultFetchSizeInRows),
+    ReadFetchSizeInRowsDescription)
+
+  /** Read Consistency Level **/
   val ReadConsistencyLevelProperty = "spark.cassandra.input.consistency.level"
+  val DefaultConsistencyLevel = ConsistencyLevel.LOCAL_ONE
+  val ReadConsistencyLevelDescription = """Consistency level to use when reading	"""
+  val ConsistencyLevelParam = ConfigParameter(
+    ReadConsistencyLevelProperty,
+    ReferenceSection,
+    Some(DefaultConsistencyLevel),
+    ReadConsistencyLevelDescription)
+
+  /** Read Task Metrics **/
   val ReadTaskMetricsProperty = "spark.cassandra.input.metrics"
+  val DefaultReadTaskMetricsEnabled = true
+  val ReadTaskMetricsDescription ="""Sets whether to record connector specific metrics on write"""
+  val TaskMetricParam = ConfigParameter(
+    ReadTaskMetricsProperty,
+    ReferenceSection,
+    Some(DefaultReadTaskMetricsEnabled),
+    ReadTaskMetricsDescription
+  )
 
   // Whitelist for allowed Read environment variables
   val Properties = Set(
-    ReadSplitSizeInMBProperty,
-    ReadFetchSizeInRowsProperty,
-    ReadConsistencyLevelProperty,
-    ReadTaskMetricsProperty
+    SplitSizeInMBParam,
+    FetchSizeInRowsParam,
+    ConsistencyLevelParam,
+    TaskMetricParam
   )
-
-  val DefaultSplitSizeInMB = 64 // 64 MB
-  val DefaultFetchSizeInRows = 1000
-  val DefaultConsistencyLevel = ConsistencyLevel.LOCAL_ONE
-  val DefaultReadTaskMetricsEnabled = true
 
   def fromSparkConf(conf: SparkConf): ReadConf = {
 

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider}
-import com.datastax.spark.connector.util.ReflectionUtil
+import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 import org.apache.spark.SparkConf
 
 /** Stores credentials used to authenticate to a Cassandra cluster and uses them
@@ -36,8 +36,20 @@ trait AuthConfFactory {
 }
 
 object AuthConfFactory {
+  val ReferenceSection = "Cassandra Authentication Parameters"
+
   val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
-  val Properties = Set(AuthConfFactoryProperty)
+  val AuthConfFactoryDescription = "name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"
+
+  val FactoryParam = ConfigParameter(
+    AuthConfFactoryProperty,
+    ReferenceSection,
+    Some("DefaultAuthConfFactory"),
+    AuthConfFactoryDescription
+  )
+  val Properties = Set(FactoryParam,
+    DefaultAuthConfFactory.UserNameParam,
+    DefaultAuthConfFactory.PasswordParam)
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf
@@ -53,7 +65,20 @@ object AuthConfFactory {
 object DefaultAuthConfFactory extends AuthConfFactory {
 
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
+  val CassandraUserNameDescription = """Login name for password authentication"""
+  val UserNameParam = ConfigParameter(
+    CassandraUserNameProperty,
+    AuthConfFactory.ReferenceSection,
+    None,
+    CassandraUserNameDescription)
+
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
+  val CassandraPasswordDescription = """password for password authentication"""
+  val PasswordParam = ConfigParameter(
+    CassandraPasswordProperty,
+    AuthConfFactory.ReferenceSection,
+    None,
+    CassandraPasswordDescription)
 
   override val properties = Set(
     CassandraUserNameProperty,

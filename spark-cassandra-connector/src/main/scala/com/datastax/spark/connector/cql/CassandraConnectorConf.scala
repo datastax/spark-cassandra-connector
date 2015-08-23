@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
 import org.apache.spark.{Logging, SparkConf}
 
 import com.datastax.driver.core.{ProtocolOptions, SSLOptions}
-import com.datastax.spark.connector.util.ConfigCheck
+import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -100,58 +100,186 @@ object CassandraConnectorConf extends Logging {
     }
   }
 
-  val DefaultPort = 9042
 
-  val DefaultKeepAliveMillis = 250
-  val DefaultMinReconnectionDelayMillis = 1000
-  val DefaultMaxReconnectionDelayMillis = 60000
-  val DefaultQueryRetryCount = 10
-  val DefaultQueryRetryDelay = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d)
-  val DefaultConnectTimeoutMillis = 5000
-  val DefaultReadTimeoutMillis = 120000
-  val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
-
-  val DefaultCassandraSSLConf = CassandraSSLConf()
+  val ReferenceSection = "Cassandra Connection Parameters"
 
   val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
+  val DefaultCassandraConnectionHost = "localhost"
+  val CassandraConnectionHostDescription = """Contact point to connect to the Cassandra cluster"""
+  val ConnectionHostParam = ConfigParameter(
+    CassandraConnectionHostProperty,
+    ReferenceSection,
+    Some(DefaultCassandraConnectionHost),
+    CassandraConnectionHostDescription)
+
   val CassandraConnectionPortProperty = "spark.cassandra.connection.port"
+  val DefaultPort = 9042
+  val CassandraConnectionPortDescription = """Cassandra native connection port"""
+  val ConnectionPortParam = ConfigParameter(
+    CassandraConnectionPortProperty,
+    ReferenceSection,
+    Some(DefaultPort),
+    CassandraConnectionPortDescription)
 
   val CassandraConnectionLocalDCProperty = "spark.cassandra.connection.local_dc"
+  val CassandraConnectionLocalDCDescription = """The local DC to connect to (other nodes will be ignored)"""
+  val LocalDCParam = ConfigParameter(
+    CassandraConnectionLocalDCProperty,
+    ReferenceSection,
+    None,
+    CassandraConnectionLocalDCDescription)
+
   val CassandraConnectionTimeoutProperty = "spark.cassandra.connection.timeout_ms"
+  val DefaultConnectTimeoutMillis = 5000
+  val CassandraConnectionTimeoutDescription = """Maximum period of time to attempt connecting to a node"""
+  val ConnectionTimeoutParam = ConfigParameter(
+    CassandraConnectionTimeoutProperty,
+    ReferenceSection,
+    Some(DefaultConnectTimeoutMillis),
+    CassandraConnectionTimeoutDescription)
+
   val CassandraConnectionKeepAliveProperty = "spark.cassandra.connection.keep_alive_ms"
+  val DefaultKeepAliveMillis = 250
+  val CassandraConnectionKeepAliveDescription = """Period of time to keep unused connections open"""
+  val KeepAliveMillisParam = ConfigParameter(
+    CassandraConnectionKeepAliveProperty,
+    ReferenceSection,
+    Some(DefaultKeepAliveMillis),
+    CassandraConnectionKeepAliveDescription)
+
   val CassandraMinReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.min"
+  val DefaultMinReconnectionDelayMillis = 1000
+  val CassandraMinReconnectionDelayDescription = """Minimum period of time to wait before reconnecting to a dead node"""
+  val MinReconnectionDelayParam = ConfigParameter(
+    CassandraMinReconnectionDelayProperty,
+    ReferenceSection,
+    Some(DefaultMinReconnectionDelayMillis),
+    CassandraMinReconnectionDelayDescription)
+
   val CassandraMaxReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.max"
+  val DefaultMaxReconnectionDelayMillis = 60000
+  val CassandraMaxReconnectionDelayDescription = """Maximum period of time to wait before reconnecting to a dead node"""
+  val MaxReconnectionDelayParam = ConfigParameter(
+    CassandraMaxReconnectionDelayProperty,
+    ReferenceSection,
+    Some(DefaultMaxReconnectionDelayMillis),
+    CassandraMaxReconnectionDelayDescription)
+
   val CassandraConnectionCompressionProperty = "spark.cassandra.connection.compression"
+  val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
+  val CassandraConnectionCompressionDescription = """Compression to use (LZ4, SNAPPY or NONE)"""
+  val CompressionParam = ConfigParameter(
+    CassandraConnectionCompressionProperty,
+    ReferenceSection,
+    Some("NONE"), // Enum doesn't print correctly
+    CassandraConnectionCompressionDescription)
+
   val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
+  val DefaultQueryRetryCount = 10
+  val CassandraQueryRetryCountDescription = """Number of times to retry a timed-out query"""
+  val QueryRetryParam = ConfigParameter(
+    CassandraQueryRetryCountProperty,
+    ReferenceSection,
+    Some(DefaultQueryRetryCount),
+    CassandraQueryRetryCountDescription)
+
   val CassandraQueryRetryDelayProperty = "spark.cassandra.query.retry.delay"
+  val DefaultQueryRetryDelay = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d)
+  val CassandraQueryRetryDelayDescription =
+    """The delay between subsequent retries (can be constant,
+      | like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)""".stripMargin
+  val QueryRetryDelayParam = ConfigParameter(
+    CassandraQueryRetryDelayProperty,
+    ReferenceSection,
+    Some("4*1.5"), // To string doesn't match input format
+    CassandraQueryRetryDelayDescription)
+
   val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
+  val DefaultReadTimeoutMillis = 120000
+  val CassandraReadTimeoutDescription =""" Maximum period of time to wait for a read to return """
+  val ReadTimeoutParam = ConfigParameter(
+    CassandraReadTimeoutProperty,
+    ReferenceSection,
+    Some(DefaultReadTimeoutMillis),
+    CassandraReadTimeoutDescription)
+
+
+  val ReferenceSectionSSL = "Cassandra SSL Connection Options"
+  val DefaultCassandraSSLConf = CassandraSSLConf()
 
   val CassandraConnectionSSLEnabledProperty = "spark.cassandra.connection.ssl.enabled"
+  val DefaultSSLEnabled = DefaultCassandraSSLConf.enabled
+  val CassandraConnectionSSLEnabledDescription = """Enable secure connection to Cassandra cluster	"""
+  val SSLEnabledParam = ConfigParameter(
+    CassandraConnectionSSLEnabledProperty,
+    ReferenceSectionSSL,
+    Some(DefaultSSLEnabled),
+    CassandraConnectionSSLEnabledDescription)
+
   val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trustStore.path"
+  val DefaultSSLTrustStorePath = DefaultCassandraSSLConf.trustStorePath
+  val CassandraConnectionSSLTrustStorePathDescription = """Path for the trust store being used"""
+  val SSLTrustStorePathParam = ConfigParameter(
+    CassandraConnectionSSLTrustStorePathProperty,
+    ReferenceSectionSSL,
+    DefaultSSLTrustStorePath,
+    CassandraConnectionSSLTrustStorePathDescription)
+
   val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trustStore.password"
+  val DefaultSSLTrustStorePassword = DefaultCassandraSSLConf.trustStorePassword
+  val CassandraConnectionTrustStorePasswordDescription = """Trust store password"""
+  val SSLTrustStorePasswordParam = ConfigParameter(
+    CassandraConnectionSSLTrustStorePasswordProperty,
+    ReferenceSectionSSL,
+    DefaultSSLTrustStorePassword,
+    CassandraConnectionTrustStorePasswordDescription)
+
   val CassandraConnectionSSLTrustStoreTypeProperty = "spark.cassandra.connection.ssl.trustStore.type"
+  val DefaultSSLTrustStoreType = DefaultCassandraSSLConf.trustStoreType
+  val CassandraConnectionTrustStoreTypeDescription = """Trust store type"""
+  val SSLTrustStoreTypeParam = ConfigParameter(
+    CassandraConnectionSSLTrustStoreTypeProperty,
+    ReferenceSectionSSL,
+    Some(DefaultSSLTrustStoreType),
+    CassandraConnectionTrustStoreTypeDescription)
+
   val CassandraConnectionSSLProtocolProperty = "spark.cassandra.connection.ssl.protocol"
+  val DefaultSSLProtocol = DefaultCassandraSSLConf.protocol
+  val CassandraConnectionSSLProtocolDescription = """SSL protocol"""
+  val SSLProtocolParam = ConfigParameter(
+    CassandraConnectionSSLProtocolProperty,
+    ReferenceSectionSSL,
+    Some(DefaultSSLProtocol),
+    CassandraConnectionSSLProtocolDescription)
+
   val CassandraConnectionSSLEnabledAlgorithmsProperty = "spark.cassandra.connection.ssl.enabledAlgorithms"
+  val DefaultSSLEnabledAlgorithms = DefaultCassandraSSLConf.enabledAlgorithms
+  val CassandraConnectionSSLEnabledAlgorithmsDescription = """SSL cipher suites"""
+  val SSLEnabledAlgorithmsParam = ConfigParameter(
+    CassandraConnectionSSLEnabledAlgorithmsProperty,
+    ReferenceSectionSSL,
+    Some(DefaultSSLEnabledAlgorithms.mkString("<br>")),
+    CassandraConnectionSSLEnabledDescription)
 
   //Whitelist for allowed CassandraConnector environment variables
-  val Properties = Set(
-    CassandraConnectionHostProperty,
-    CassandraConnectionPortProperty,
-    CassandraConnectionLocalDCProperty,
-    CassandraConnectionTimeoutProperty,
-    CassandraConnectionKeepAliveProperty,
-    CassandraMinReconnectionDelayProperty,
-    CassandraMaxReconnectionDelayProperty,
-    CassandraConnectionCompressionProperty,
-    CassandraQueryRetryCountProperty,
-    CassandraQueryRetryDelayProperty,
-    CassandraReadTimeoutProperty,
-    CassandraConnectionSSLEnabledProperty,
-    CassandraConnectionSSLTrustStorePathProperty,
-    CassandraConnectionSSLTrustStorePasswordProperty,
-    CassandraConnectionSSLTrustStoreTypeProperty,
-    CassandraConnectionSSLProtocolProperty,
-    CassandraConnectionSSLEnabledAlgorithmsProperty
+  val Properties:Set[ConfigParameter] = Set(
+    ConnectionHostParam,
+    ConnectionPortParam,
+    LocalDCParam,
+    ConnectionTimeoutParam,
+    KeepAliveMillisParam,
+    MinReconnectionDelayParam,
+    MaxReconnectionDelayParam,
+    CompressionParam,
+    QueryRetryParam,
+    QueryRetryDelayParam,
+    ReadTimeoutParam,
+    SSLEnabledParam,
+    SSLTrustStoreTypeParam,
+    SSLTrustStorePathParam,
+    SSLTrustStorePasswordParam,
+    SSLProtocolParam,
+    SSLEnabledAlgorithmsParam
   )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {

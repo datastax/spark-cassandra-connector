@@ -7,7 +7,7 @@ import java.util.UUID
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.types.{UUIDType, InetType, VarIntType}
-import com.datastax.spark.connector.util.NameTools
+import com.datastax.spark.connector.util.{ConfigParameter, NameTools}
 import org.apache.spark.{SparkConf, Logging}
 
 import org.apache.spark.rdd.RDD
@@ -176,11 +176,19 @@ private[cassandra] class CassandraSourceRelation(
 }
 
 object CassandraSourceRelation {
-
+  val ReferenceSection = "Cassandra Dataframe Source Paramters"
   val tableSizeInBytesProperty = "spark.cassandra.table.size.in.bytes"
+  val TableSizeInBytesDescription = "Used by DataFrames Internally, will be updated in a future " +
+    "release to retreive size from C*. Can be set manually now"
+  val TableSizeInBytesParam = ConfigParameter(
+    tableSizeInBytesProperty,
+    ReferenceSection,
+    None,
+    TableSizeInBytesDescription
+  )
 
   val Properties = Seq(
-    tableSizeInBytesProperty
+    TableSizeInBytesParam
   )
 
   val defaultClusterName = "default"

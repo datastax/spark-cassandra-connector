@@ -9,35 +9,6 @@ how to execute CQL statements from Spark applications.
 To connect your Spark application to Cassandra, set connection options in the 
 `SparkConf` object. These are prefixed with `spark.` so that they can be recognized
 from the spark-shell and set within the $SPARK_HOME/conf/spark-default.conf.
-The following options are available on `SparkConf` object:
-
-Property name                                        | Description                                                       | Default value
------------------------------------------------------|-------------------------------------------------------------------|--------------------
-spark.cassandra.connection.host                      | contact point to connect to the Cassandra cluster                 | address of the Spark master host
-spark.cassandra.connection.port (1)                  | Cassandra native port                                             | 9042
-spark.cassandra.connection.factory                   | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
-spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                    | 250 ms
-spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node            | 5000 ms
-spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to wait before reconnecting to a dead node | 1000 ms
-spark.cassandra.connection.reconnection_delay_ms.max | maximum period of time to wait before reconnecting to a dead node | 60000 ms
-spark.cassandra.connection.compression               | compression to use (LZ4, SNAPPY or NONE)                          | NONE 
-spark.cassandra.connection.local_dc                  | the local DC to connect to (other nodes will be ignored)          | None
-spark.cassandra.auth.username                        | login name for password authentication                            |
-spark.cassandra.auth.password                        | password for password authentication                              |
-spark.cassandra.auth.conf.factory                    | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
-spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                        | 10
-spark.cassandra.query.retry.delay                    | the delay between subsequent retries (can be constant, like 1000; linearly increasing, like 1000+100; or exponential, like 1000\*2) | 4000\*1.5
-spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return               | 120000 ms
-spark.cassandra.connection.ssl.enabled               | enable secure connection to Cassandra cluster                     | false
-spark.cassandra.connection.ssl.trustStore.path       | path for the trust store being used                               | None
-spark.cassandra.connection.ssl.trustStore.password   | trust store password                                              | None
-spark.cassandra.connection.ssl.trustStore.type       | trust store type                                                  | JKS
-spark.cassandra.connection.ssl.protocol              | SSL protocol                                                      | TLS
-spark.cassandra.connection.ssl.enabledAlgorithms     | SSL cipher suites                                                 | TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA
-
-Notes:
-
-1. Prior to connector 1.3.0, this setting was named "spark.cassandra.connection.native.port".
 
 Example:
 
@@ -49,6 +20,10 @@ val conf = new SparkConf(true)
 
 val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 ```
+
+See the reference secition for a full list of options
+[Cassandra Connection Parameters](reference.md#cassandra-connection-parameters)
+
 
 To import Cassandra-specific functions on `SparkContext` and `RDD` objects, call:
 
