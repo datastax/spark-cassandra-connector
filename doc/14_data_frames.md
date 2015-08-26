@@ -250,7 +250,7 @@ df.filter("partitionkey1 = 1 AND partitionkey2 = 1 AND partitionkey3 = 1").show(
 // INFO  2015-08-26 00:37:40 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(partitionkey1,1), EqualTo(partitionkey2,1), EqualTo(partitionkey3,1))
 ```
 One partition key left out:
-```
+```scala
 df.filter("partitionkey1 = 1 AND partitionkey2 = 1").show()
 // INFO  2015-08-26 00:53:07 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(partitionkey1,1), EqualTo(partitionkey2,1)
 // INFO  2015-08-26 00:53:07 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer()
