@@ -4,7 +4,7 @@
 
 DataFrames provide a new api for manipulating data within Spark. These provide a more user
 friendly experience than pure scala for common queries. The Spark Cassandra Connector provides
-an integrated DataSource to make creating Cassandra DataFrames easy. 
+an integrated DataSource to make creating Cassandra DataFrames easy.
 
 Spark Docs:
 [Data Sources](https://spark.apache.org/docs/latest/sql-programming-guide.html#data-sources)
@@ -14,7 +14,7 @@ Spark Docs:
 ### Options
 DataSources in Spark take a map of Options which define how the source should act. The
 Connector provides a CassandraSource which recognizes the following Key Value pairs.
-Those followed with a default of N/A are required, all others are optional. 
+Those followed with a default of N/A are required, all others are optional.
 
 | Option Key  | Controls                                              | Values        | Default  |
 |-------------|-------------------------------------------------------|---------------|----------|
@@ -25,7 +25,7 @@ Those followed with a default of N/A are required, all others are optional.
 
 ####Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
-can be passed through as DataFrame options as well. When using the `read` command below these 
+can be passed through as DataFrame options as well. When using the `read` command below these
 options should appear exactly the same as when set in the SparkConf.
 
 ####Setting Cluster and Keyspace Level Options
@@ -34,13 +34,13 @@ DataFrames within a cluster or within a keyspace. When a property has been speci
 table level it will override the default keyspace or cluster property.
 
 To add these properties add keys to your `SparkConf` in the format
-    
+
     clusterName:keyspaceName/propertyName.
-    
+
 Example Changing Cluster/Keyspace Level Properties
-```scala 
+```scala
 val conf = new SparkConf()
-  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","32") 
+  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","32")
   .set("default:test/spark.cassandra.input.split.size_in_mb","128")
 
 ...
@@ -60,8 +60,8 @@ val otherdf =  sqlContext
 val lastdf = sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
-  .options(Map( 
-    "table" -> "words", 
+  .options(Map(
+    "table" -> "words",
     "keyspace" -> "test" ,
     "cluster" -> "ClusterOne",
     "spark.cassandra.input.split.size_in_mb" -> 48
@@ -72,8 +72,8 @@ val lastdf = sqlContext
 ###Creating DataFrames using Read Commands
 
 The most programmatic way to create a data frame is to invoke a `read` command on the SQLContext. This
- will build a `DataFrameReader`. Specify `format` as `org.apache.spark.sql.cassandra`. 
- You can then use `options` to give a map of `Map[String,String]` of options as described above. 
+ will build a `DataFrameReader`. Specify `format` as `org.apache.spark.sql.cassandra`.
+ You can then use `options` to give a map of `Map[String,String]` of options as described above.
  Then finish by calling `load` to actually get a `DataFrame`.
 
 Example Creating a DataFrame using a Read Command
@@ -96,20 +96,20 @@ source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table a
 establish a relation between the CassandraTable and the internally used DataSource.
 
 Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
-`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes 
-`spark_cassandra_input_split_size_in_mb`. 
+`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes
+`spark_cassandra_input_split_size_in_mb`.
 
 Example Creating a Source Using Spark SQL:
 ```scala
 //Create Relation with the cassandra table test.words
 scala> sqlContext.sql(
-   """CREATE TEMPORARY TABLE words 
-     |USING org.apache.spark.sql.cassandra 
-     |OPTIONS ( 
+   """CREATE TEMPORARY TABLE words
+     |USING org.apache.spark.sql.cassandra
+     |OPTIONS (
      |  table "words",
-     |  keyspace "test", 
-     |  cluster "Test Cluster", 
-     |  pushdown "true" 
+     |  keyspace "test",
+     |  cluster "Test Cluster",
+     |  pushdown "true"
      |)""".stripMargin)
 scala> val df = sqlContext.sql("SELECT * FROM words")
 scala> df.show()
@@ -171,7 +171,7 @@ val df = sqlContext
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test"))
   .load
-df.explain                               
+df.explain
 //15/07/06 09:21:21 INFO CassandraSourceRelation: filters:
 //15/07/06 09:21:21 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
 //== Physical Plan ==
@@ -193,11 +193,11 @@ df.show
 ```
 
 The example schema has a clustering key of "word" so we can pushdown filters on that column to C*. We
-do this by applying a normal DataFrame filter. The connector will automatically determine that the 
-filter can be pushed down and will add it to `pushdown filters`. All of the elements of 
-`pushdown filters` will be automatically added to the CQL requests made to C* for the 
+do this by applying a normal DataFrame filter. The connector will automatically determine that the
+filter can be pushed down and will add it to `pushdown filters`. All of the elements of
+`pushdown filters` will be automatically added to the CQL requests made to C* for the
 data from this table. The subsequent call will then only serialize data from C* which passes the filter,
-reducing the load on C*. 
+reducing the load on C*.
 
 ```scala
 val dfWithPushdown = df.filter(df("word") > "ham")
@@ -217,7 +217,67 @@ dfWithPushdown.show
 +-----+----+-----+
 |Zebra| zed|  100|
 +-----+----+-----+
-
 ```
 
-[Next - Python DataFrames](15_python.md) 
+####Pushdown Filter Examples
+Example table
+```sql
+create keyspace if not exists pushdowns WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
+use pushdowns;
+
+CREATE TABLE pushdownexample
+(
+    partitionkey1 bigint,
+    partitionkey2 bigint,
+    partitionkey3 bigint,
+    clusterkey1 bigint,
+    clusterkey2 bigint,
+    clusterkey3 bigint,
+    regularcolumn bigint,
+    PRIMARY KEY ((partitionkey1, partitionkey2, partitionkey3), clusterkey1, clusterkey2, clusterkey3)
+);
+```
+```scala
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+import sqlContext.implicits._
+
+val df = sqlContext.read.format("org.apache.spark.sql.cassandra").options(Map( "table" -> "pushdownexample", "keyspace" -> "pushdowns" )).load()
+```
+To push down partition keys, all of them must be included, but not more than one predicate per partition key, otherwise nothing is pushed down.
+```scala
+df.filter("partitionkey1 = 1 AND partitionkey2 = 1 AND partitionkey3 = 1").show()
+// INFO  2015-08-26 00:37:40 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(partitionkey1,1), EqualTo(partitionkey2,1), EqualTo(partitionkey3,1)
+// INFO  2015-08-26 00:37:40 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(partitionkey1,1), EqualTo(partitionkey2,1), EqualTo(partitionkey3,1))
+```
+One partition key left out:
+```
+df.filter("partitionkey1 = 1 AND partitionkey2 = 1").show()
+// INFO  2015-08-26 00:53:07 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(partitionkey1,1), EqualTo(partitionkey2,1)
+// INFO  2015-08-26 00:53:07 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer()
+```
+More than one predicate for ```partitionkey3```:
+```scala
+df.filter("partitionkey1 = 1 AND partitionkey2 = 1 AND partitionkey3 > 0 AND partitionkey3 < 5").show()
+// INFO  2015-08-26 00:54:03 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(partitionkey1,1), EqualTo(partitionkey2,1), GreaterThan(partitionkey3,0), LessThan(partitionkey3,5)
+// INFO  2015-08-26 00:54:03 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer()
+```
+Clustering keys are more relaxed. But only the last predicate can be non-EQ, and if there is more than one predicate for a column, they must not be EQ or IN, otherwise only some predicates may be pushed down.
+```scala
+df.filter("clusterkey1 = 1 AND clusterkey2 > 0 AND clusterkey2 < 10").show()
+// INFO  2015-08-26 01:01:02 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(clusterkey1,1), GreaterThan(clusterkey2,0), LessThan(clusterkey2,10)
+// INFO  2015-08-26 01:01:02 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(clusterkey1,1), GreaterThan(clusterkey2,0), LessThan(clusterkey2,10))
+```
+First predicate not EQ:
+```scala
+df.filter("clusterkey1 > 1 AND clusterkey2 > 1").show()
+// INFO  2015-08-26 00:55:01 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: GreaterThan(clusterkey1,1), GreaterThan(clusterkey2,1)
+// INFO  2015-08-26 00:55:01 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(clusterkey1,1))
+```
+```clusterkey2``` EQ predicate:
+```scala
+df.filter("clusterkey1 = 1 AND clusterkey2 = 1 AND clusterkey2 < 10").show()
+// INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation: filters: EqualTo(clusterkey1,1), EqualTo(clusterkey2,1), LessThan(clusterkey2,10)
+// INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(clusterkey1,1), EqualTo(clusterkey2,1))
+```
+
+[Next - Python DataFrames](15_python.md)
