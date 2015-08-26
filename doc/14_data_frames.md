@@ -1,6 +1,6 @@
 # Documentation
 
-## DataFrames - Experimental
+## DataFrames
 
 DataFrames provide a new api for manipulating data within Spark. These provide a more user
 friendly experience than pure scala for common queries. The Spark Cassandra Connector provides
