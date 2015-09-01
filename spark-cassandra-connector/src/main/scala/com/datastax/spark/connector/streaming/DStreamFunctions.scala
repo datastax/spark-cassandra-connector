@@ -4,7 +4,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ValidRDDType
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-import com.datastax.spark.connector.writer.{TableWriter, WriteConf, RowWriterFactory, WritableToCassandra}
+import com.datastax.spark.connector.writer._
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.DStream
 
@@ -48,8 +48,9 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): DStream[T] = {
 
+    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
     dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
+      rdd.repartitionByCassandraReplica(converter, keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
   }
 
   /**

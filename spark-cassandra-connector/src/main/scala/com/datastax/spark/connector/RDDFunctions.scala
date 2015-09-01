@@ -15,7 +15,6 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-
 /** Provides Cassandra-specific methods on [[org.apache.spark.rdd.RDD RDD]] */
 class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
 
@@ -159,13 +158,38 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     currentType: ClassTag[T],
-    rwf: RowWriterFactory[T]) = {
+    rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
+
+    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    rdd.repartitionByCassandraReplica(
+      converter,
+      keyspaceName,
+      tableName,
+      partitionsPerHost,
+      partitionKeyMapper)
+  }
+
+
+  /**
+   * A Serializable version of repartitionByCassandraReplica which removes
+   * the implicit RowWriterFactory Dependency
+   */
+  private[connector] def repartitionByCassandraReplica(
+    converter: ReplicaMapper[T],
+    keyspaceName: String,
+    tableName: String,
+    partitionsPerHost: Int,
+    partitionKeyMapper: ColumnSelector)(
+  implicit
+    connector: CassandraConnector,
+    currentType: ClassTag[T]): CassandraPartitionedRDD[T] = {
 
     val part = new ReplicaPartitioner(partitionsPerHost, connector)
-    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName, partitionKeyMapper).partitionBy(part)
+    val repart = rdd.keyByCassandraReplica(converter).partitionBy(part)
     val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
     new CassandraPartitionedRDD[T](output, keyspaceName, tableName)
   }
+
 
   /**
    * Key every row in the RDD by with the IP Adresses of all of the Cassandra nodes which a contain a replica
@@ -182,10 +206,21 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
 
     val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    rdd.keyByCassandraReplica(converter)
+  }
+
+  /**
+   * A Serializable version of keyByCassandraReplica which removes the implicit
+   * RowWriterFactory Dependency
+   */
+  private[connector] def keyByCassandraReplica(
+    converter: ReplicaMapper[T])(
+  implicit
+    connector: CassandraConnector,
+    currentType: ClassTag[T]): RDD[(Set[InetAddress], T)] = {
     rdd.mapPartitions(primaryKey =>
       converter.keyByReplicas(primaryKey)
     )
   }
-
 
 }
