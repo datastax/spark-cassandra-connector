@@ -195,7 +195,7 @@ object Settings extends Build {
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     javaOptions in IntegrationTest ++= Seq(
-      "-XX:MaxPermSize=256M", "-Xmx1g"
+      "-XX:MaxPermSize=256M", "-Xmx1g", "-Dsun.io.serialization.extendedDebugInfo=true"
     ),
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
