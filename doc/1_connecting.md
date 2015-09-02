@@ -16,7 +16,7 @@ Property name                                  | Description                    
 spark.cassandra.connection.host                | contact point to connect to the Cassandra cluster | address of the Spark master host
 spark.cassandra.connection.rpc.port            | Cassandra thrift port                             | 9160
 spark.cassandra.connection.native.port         | Cassandra native port                             | 9042
-spark.cassandra.connection.conf.factory        | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
+spark.cassandra.connection.factory             | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
 spark.cassandra.auth.username                  | login name for password authentication            |
 spark.cassandra.auth.password                  | password for password authentication              |
 spark.cassandra.auth.conf.factory              | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
