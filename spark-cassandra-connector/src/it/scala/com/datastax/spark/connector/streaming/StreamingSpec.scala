@@ -42,18 +42,13 @@ trait StreamingSpec extends AbstractSpec with SharedEmbeddedCassandra with Spark
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
 
-  def withStreamingContext(testCode: (StreamingContext) => Any, checkpointed: Option[(()=>StreamingContext,String)] = None): Unit = {
-    val ssc = checkpointed match {
-      case Some((contextGenerator, checkpointDir)) =>
-        StreamingContext.getOrCreate(checkpointDir, contextGenerator)
-      case None =>
-        new StreamingContext(sc, Milliseconds(200))
-    }
+  def withStreamingContext(testCode: (StreamingContext) => Any): Unit = {
+    val ssc = new StreamingContext(sc, Milliseconds(400))
     try {
       testCode (ssc)
     }
     finally {
-      ssc.stop (stopSparkContext = checkpointed.isDefined, stopGracefully = true)
+      ssc.stop (stopSparkContext = false, stopGracefully = true)
     }
   }
 
