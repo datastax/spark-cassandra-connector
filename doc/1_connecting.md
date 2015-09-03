@@ -15,7 +15,7 @@ Property name                                        | Description              
 -----------------------------------------------------|-------------------------------------------------------------------|--------------------
 spark.cassandra.connection.host                      | contact point to connect to the Cassandra cluster                 | address of the Spark master host
 spark.cassandra.connection.port (1)                  | Cassandra native port                                             | 9042
-spark.cassandra.connection.conf.factory              | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
+spark.cassandra.connection.factory                   | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
 spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                    | 250 ms
 spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node            | 5000 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to wait before reconnecting to a dead node | 1000 ms
