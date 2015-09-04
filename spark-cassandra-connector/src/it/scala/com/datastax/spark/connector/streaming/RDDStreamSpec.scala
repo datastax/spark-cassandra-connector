@@ -75,10 +75,12 @@ class RDDStreamingSpec
     ssc.start()
     eventually ( timeout(1 seconds) ){dataRDDs.isEmpty}
 
-    val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_wordcount")
-    val result = rdd.collect
-    result.nonEmpty should be (true)
-    result.size should be (data.size)
+    eventually ( timeout(2 seconds)) {
+      val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_wordcount")
+      val result = rdd.collect
+      result.nonEmpty should be(true)
+      result.size should be(data.size)
+    }
   }
 
    it should "be able to utilize joinWithCassandra during transforms " in withStreamingContext { ssc =>
@@ -99,12 +101,14 @@ class RDDStreamingSpec
 
      eventually ( timeout(1 seconds) ){dataRDDs.isEmpty}
 
-     val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
-     val result = rdd.collect
-     result.nonEmpty should be (true)
-     result.size should be (data.size)
-     rdd.collect.nonEmpty && rdd.collect.size == data.size
-     ssc.sparkContext.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
+     eventually ( timeout(2 seconds)) {
+       val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
+       val result = rdd.collect
+       result.nonEmpty should be(true)
+       result.size should be(data.size)
+       rdd.collect.nonEmpty && rdd.collect.size == data.size
+       ssc.sparkContext.cassandraTable("demo", "streaming_join_output").collect.size should be(data.size)
+     }
    }
 
     it should "be able to utilize joinWithCassandra and repartitionByCassandraTable on a Dstream " in withStreamingContext{ ssc =>
