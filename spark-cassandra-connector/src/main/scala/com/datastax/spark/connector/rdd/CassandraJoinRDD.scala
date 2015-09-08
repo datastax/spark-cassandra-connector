@@ -50,7 +50,7 @@ class CassandraJoinRDD[L, R] private[connector](
   override protected val classTag = rightClassTag
 
   override protected[connector] lazy val rowReader: RowReader[R] = manualRowReader match {
-    case Some(rowReader) => rowReader
+    case Some(rr) => rr
     case None => rowReaderFactory.rowReader (tableDef, columnNames.selectFrom (tableDef) )
   }
 

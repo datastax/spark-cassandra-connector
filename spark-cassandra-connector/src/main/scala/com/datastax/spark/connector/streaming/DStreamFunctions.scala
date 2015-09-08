@@ -49,9 +49,9 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): DStream[T] = {
 
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
     dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(converter, keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
+      rdd.repartitionByCassandraReplica(replicaLocator, keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
   }
 
   /**

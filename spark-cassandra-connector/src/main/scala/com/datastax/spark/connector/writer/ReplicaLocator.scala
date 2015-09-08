@@ -18,7 +18,7 @@ import scala.collection._
  * by the [[com.datastax.spark.connector.RDDFunctions.keyByCassandraReplica]] method. Uses the Java
  * Driver to obtain replica information.
  */
-class ReplicaMapper[T] private(
+class ReplicaLocator[T] private(
     connector: CassandraConnector,
     tableDef: TableDef,
     rowWriter: RowWriter[T]) extends Serializable with Logging {
@@ -77,12 +77,12 @@ class ReplicaMapper[T] private(
 /**
  * Helper methods for mapping a set of data to their relative locations in a Cassandra Cluster.
  */
-object ReplicaMapper {
+object ReplicaLocator {
   def apply[T: RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
       tableName: String,
-      partitionKeyMapper: ColumnSelector): ReplicaMapper[T] = {
+      partitionKeyMapper: ColumnSelector): ReplicaLocator[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
@@ -91,7 +91,7 @@ object ReplicaMapper {
       tableDef,
       partitionKeyMapper.selectFrom(tableDef)
     )
-    new ReplicaMapper[T](connector, tableDef, rowWriter)
+    new ReplicaLocator[T](connector, tableDef, rowWriter)
   }
 
 }

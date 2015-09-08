@@ -8,7 +8,7 @@ import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, SpannedRDD, ValidRDDType}
-import com.datastax.spark.connector.writer.{ReplicaMapper, _}
+import com.datastax.spark.connector.writer.{ReplicaLocator, _}
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
@@ -160,7 +160,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
 
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    val converter = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
     rdd.repartitionByCassandraReplica(
       converter,
       keyspaceName,
@@ -175,7 +175,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * the implicit RowWriterFactory Dependency
    */
   private[connector] def repartitionByCassandraReplica(
-    converter: ReplicaMapper[T],
+    converter: ReplicaLocator[T],
     keyspaceName: String,
     tableName: String,
     partitionsPerHost: Int,
@@ -205,8 +205,8 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
 
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName, partitionKeyMapper)
-    rdd.keyByCassandraReplica(converter)
+    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    rdd.keyByCassandraReplica(replicaLocator)
   }
 
   /**
@@ -214,7 +214,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * RowWriterFactory Dependency
    */
   private[connector] def keyByCassandraReplica(
-    converter: ReplicaMapper[T])(
+    converter: ReplicaLocator[T])(
   implicit
     connector: CassandraConnector,
     currentType: ClassTag[T]): RDD[(Set[InetAddress], T)] = {
