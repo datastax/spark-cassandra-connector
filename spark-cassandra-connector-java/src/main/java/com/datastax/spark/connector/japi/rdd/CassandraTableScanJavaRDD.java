@@ -32,11 +32,6 @@ public class CassandraTableScanJavaRDD<R> extends CassandraJavaRDD<R> {
     }
 
     @Override
-    public CassandraTableScanJavaRDD<R> wrapRDD(RDD<R> newRDD) {
-        return new CassandraTableScanJavaRDD<>((CassandraTableScanRDD<R>) newRDD, classTag());
-    }
-
-    @Override
     protected CassandraTableScanJavaRDD<R> wrap(CassandraRDD<R> newRDD) {
         return new CassandraTableScanJavaRDD<>((CassandraTableScanRDD<R>) newRDD, classTag());
     }
