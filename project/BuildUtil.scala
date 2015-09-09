@@ -1,6 +1,46 @@
+import java.io.IOException
+import java.net.URLDecoder
+import java.nio.file.Paths
+
+import org.xml.sax.SAXParseException
 import sbt._
 
+import scala.xml.XML
+
 object BuildUtil {
+
+  private def mavenLocalDir = {
+    def loadHomeFromSettings(f: () => File): Option[String] =
+      try {
+        val file = f()
+        if (!file.exists) None
+        else (XML.loadFile(file) \ "localRepository").text match {
+          case "" => None
+          case e@_ => Some(e)
+        }
+      } catch {
+        // Occurs inside File constructor when property or environment variable does not exist
+        case _: NullPointerException => None
+        // Occurs when File does not exist
+        case _: IOException => None
+        case e: SAXParseException => System.err.println(s"WARNING: Problem parsing ${f().getAbsolutePath}, ${e.getMessage}"); None
+      }
+    sys.env.get("M2_REPO") orElse
+      loadHomeFromSettings(() => new File(Path.userHome, ".m2/settings.xml")) orElse
+      loadHomeFromSettings(() => new File(new File(System.getenv("M2_HOME")), "conf/settings.xml")) getOrElse
+      Paths.get(Path.userHome.getAbsolutePath, ".m2", "repository").toString
+  }
+
+  def resolveEnvVars(s: String): String = {
+    val pattern = """\$\{env\.([^\}]+)\}""".r
+    pattern.replaceAllIn(URLDecoder.decode(s, "utf-8"),
+      matched => sys.env.getOrElse(matched.group(1), ""))
+  }
+
+  val mavenLocalResolver = {
+    val repoPath = mavenLocalDir
+    "Maven local repository" at Paths.get(resolveEnvVars(repoPath)).toUri.toString
+  }
 
   case class DocumentationMapping(url: URL, jarFileMatcher: Attributed[File] ⇒ Boolean)
 
