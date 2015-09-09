@@ -47,6 +47,15 @@ object Versions {
   val ScalaTest       = "2.2.2"
   val Scalactic       = "2.2.2"
   val Slf4j           = "1.6.1"//1.7.7"
+
+  // Spark version can be specified as:
+  // - regular version which is present in some public Maven repository
+  // - a release tag in https://github.com/apache/spark
+  // - one of main branches, like master or branch-x.y, followed by "-SNAPSHOT" suffix
+  // The last two cases trigger the build to clone the given revision of Spark from GitHub, build it
+  // and install in a local Maven repository. This is all done automatically, however it will work
+  // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
+  // desired version is not yet published into a public Maven repository.
   val Spark           = "1.4.0"
   val SparkJetty      = "8.1.14.v20131031"
   val JSR166e         = "1.1.0"

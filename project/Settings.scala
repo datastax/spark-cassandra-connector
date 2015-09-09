@@ -15,9 +15,7 @@
  */
 
 import java.io.File
-
-import scala.collection.mutable
-import scala.language.postfixOps
+import java.net.URLDecoder
 
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 import com.typesafe.sbt.SbtScalariform
@@ -31,19 +29,23 @@ import sbtassembly.Plugin.AssemblyKeys._
 import sbtassembly.Plugin._
 import sbtrelease.ReleasePlugin._
 
+import scala.language.postfixOps
+
 object Settings extends Build {
 
   import BuildUtil._
 
   val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
 
+  val mavenLocalResolver = BuildUtil.mavenLocalResolver
+
   def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
   def versionSuffix = {
     sys.props.get("publish.version.type").map(_.toLowerCase) match {
-      case Some("release") ⇒ ""
-      case Some("commit-release") ⇒ s"-$currentCommitSha"
-      case _ ⇒ "-SNAPSHOT"
+      case Some("release") => ""
+      case Some("commit-release") => s"-$currentCommitSha"
+      case _ => "-SNAPSHOT"
     }
   }
 
@@ -81,6 +83,8 @@ object Settings extends Build {
   )
 
   val encoding = Seq("-encoding", "UTF-8")
+
+  val installSparkTask = taskKey[Unit]("Optionally install Spark from Git to local Maven repository")
 
   lazy val projectSettings = graphSettings ++ Seq(
 
@@ -134,7 +138,13 @@ object Settings extends Build {
     parallelExecution in Global := false,
     apiMappings ++= DocumentationMapping.mapJarToDocURL(
       (managedClasspath in (Compile, doc)).value,
-      Dependencies.documentationMappings)
+      Dependencies.documentationMappings),
+    installSparkTask := {
+      val dir = new File(".").toPath
+      SparkInstaller(scalaBinaryVersion.value, dir)
+    },
+    resolvers += mavenLocalResolver,
+    update <<= (installSparkTask, update) map {(_, out) => out}
   )
 
   lazy val mimaSettings = mimaDefaultSettings ++ Seq(
@@ -203,7 +213,7 @@ object Settings extends Build {
     fork in IntegrationTest := true,
     managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
+    (internalDependencyClasspath in IntegrationTest) <<= Classpaths.concat(internalDependencyClasspath in IntegrationTest, exportedProducts in Test)
   )
 
   lazy val japiSettings = Seq(
