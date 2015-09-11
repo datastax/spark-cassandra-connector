@@ -145,6 +145,7 @@ object Dependencies {
 
     /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
+    val sparkUnsafe         = "org.apache.spark"        %% "spark-unsafe"          % Spark guavaExclude           // ApacheV2
     val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark guavaExclude           // ApacheV2
     val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark sparkExclusions        // ApacheV2
     val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions        // ApacheV2
@@ -215,7 +216,7 @@ object Dependencies {
 
   val cassandra = Seq(cassandraClient, cassandraDriver)
 
-  val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
+  val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)

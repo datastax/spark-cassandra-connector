@@ -1,5 +1,6 @@
 1.5.0 M1
  * Added ability to build against unreleased Spark versions (SPARKC-242)
+ * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
 

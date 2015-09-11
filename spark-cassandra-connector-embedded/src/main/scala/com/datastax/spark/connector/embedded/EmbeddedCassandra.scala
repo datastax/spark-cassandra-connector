@@ -4,11 +4,12 @@ import java.net.InetAddress
 
 import org.apache.commons.configuration.ConfigurationException
 
+import scala.collection.JavaConversions._
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
   * This is not thread safe, and test suites must not be run in parallel,
-  * because they will "steal" the server.*/
+  * because they will "steal" the server. */
 trait EmbeddedCassandra {
 
   /** Implementation hook. */
@@ -19,7 +20,7 @@ trait EmbeddedCassandra {
     * the state (including data) of the previously running cassandra cluster is lost.
     * @param configTemplates name of the cassandra.yaml template resources
     * @param forceReload if set to true, the server will be reloaded fresh
-    *   even if the configuration didn't change */
+    *                    even if the configuration didn't change */
   def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
     import EmbeddedCassandra._
     import UserDefinedProperty._
@@ -49,32 +50,40 @@ object UserDefinedProperty {
 
   trait TypedProperty {
     type ValueType
+
     def convertValueFromString(str: String): ValueType
+
     def checkValueType(obj: Any): ValueType
   }
 
   trait IntProperty extends TypedProperty {
     type ValueType = Int
+
     def convertValueFromString(str: String) = str.toInt
+
     def checkValueType(obj: Any) =
       obj match {
         case x: Int => x
-        case _ => throw new ClassCastException (s"Expected Int but found ${obj.getClass.getName}")
+        case _ => throw new ClassCastException(s"Expected Int but found ${obj.getClass.getName}")
       }
   }
 
   trait InetAddressProperty extends TypedProperty {
     type ValueType = InetAddress
+
     def convertValueFromString(str: String) = InetAddress.getByName(str)
+
     def checkValueType(obj: Any) =
       obj match {
         case x: InetAddress => x
-        case _ => throw new ClassCastException (s"Expected InetAddress but found ${obj.getClass.getName}")
+        case _ => throw new ClassCastException(s"Expected InetAddress but found ${obj.getClass.getName}")
       }
   }
 
   abstract sealed class NodeProperty(val propertyName: String) extends TypedProperty
+
   case object HostProperty extends NodeProperty("IT_TEST_CASSANDRA_HOSTS") with InetAddressProperty
+
   case object PortProperty extends NodeProperty("IT_TEST_CASSANDRA_PORTS") with IntProperty
 
   private def getValueSeq(propertyName: String): Seq[String] = {
@@ -92,7 +101,7 @@ object UserDefinedProperty {
 
   def getProperty(nodeProperty: NodeProperty): Option[String] =
     sys.env.get(nodeProperty.propertyName)
-  
+
   def getPropertyOrThrowIfNotFound(nodeProperty: NodeProperty): String =
     getProperty(nodeProperty).getOrElse(
       throw new ConfigurationException(s"Missing ${nodeProperty.propertyName} in system environment"))
@@ -101,10 +110,10 @@ object UserDefinedProperty {
 object EmbeddedCassandra {
 
   import UserDefinedProperty._
-  
-  private def countCommaSeparatedItemsIn(s: String): Int = 
+
+  private def countCommaSeparatedItemsIn(s: String): Int =
     s.count(_ == ',')
-  
+
   getProperty(HostProperty) match {
     case None =>
     case Some(hostsStr) =>
@@ -124,23 +133,27 @@ object EmbeddedCassandra {
     require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
     Map(
-      "seeds"                 -> host,
-      "storage_port"          -> getStoragePort(index).toString,
-      "ssl_storage_port"      -> getSslStoragePort(index).toString,
+      "seeds" -> host,
+      "storage_port" -> getStoragePort(index).toString,
+      "ssl_storage_port" -> getSslStoragePort(index).toString,
       "native_transport_port" -> getPort(index).toString,
-      "jmx_port"              -> getJmxPort(index).toString,
-      "rpc_address"           -> host,
-      "listen_address"        -> host,
-      "cluster_name"          -> getClusterName(index),
-      "keystore_path"         -> ClassLoader.getSystemResource("keystore").getPath)
+      "jmx_port" -> getJmxPort(index).toString,
+      "rpc_address" -> host,
+      "listen_address" -> host,
+      "cluster_name" -> getClusterName(index),
+      "keystore_path" -> ClassLoader.getSystemResource("keystore").getPath)
   }
 
   def getStoragePort(index: Integer) = 7000 + index
+
   def getSslStoragePort(index: Integer) = 7100 + index
+
   def getJmxPort(index: Integer) = CassandraRunner.DefaultJmxPort + index
+
   def getClusterName(index: Integer) = s"Test Cluster$index"
 
   def getHost(index: Integer): InetAddress = getNodeProperty(index, HostProperty)
+
   def getPort(index: Integer) = getNodeProperty(index, PortProperty)
 
   private def getNodeProperty(index: Integer, nodeProperty: NodeProperty): nodeProperty.ValueType = {
@@ -153,7 +166,7 @@ object EmbeddedCassandra {
         case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
       }
     }
-  }   
+  }
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
     override def run() = cassandraRunners.flatten.foreach(_.destroy())
@@ -164,9 +177,10 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   extends Embedded {
 
   import java.io.{File, FileOutputStream, IOException}
-  import org.apache.cassandra.io.util.FileUtils
-  import com.google.common.io.Files
+
   import CassandraRunner._
+  import com.google.common.io.Files
+  import org.apache.cassandra.io.util.FileUtils
 
   val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
@@ -183,7 +197,16 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     }
   }
 
-  private val classPath = System.getProperty("java.class.path")
+  private val classPath = sys.env.get("IT_CASSANDRA_PATH") match {
+    case Some(customCassandraDir) =>
+      val entries = (for (f <- Files.fileTreeTraverser().breadthFirstTraversal(new File(customCassandraDir, "lib")).toIterator
+                          if f.isDirectory || f.getName.endsWith(".jar")) yield {
+        f.getAbsolutePath
+      }).toList ::: new File(customCassandraDir, "conf") :: Nil
+      entries.mkString(File.pathSeparator)
+    case _ => System.getProperty("java.class.path")
+  }
+
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
@@ -204,7 +227,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     .inheritIO()
     .start()
 
-  val nativePort =  props.get("native_transport_port").get.toInt
+  val nativePort = props.get("native_transport_port").get.toInt
   if (!waitForPortOpen(InetAddress.getByName(props.get("rpc_address").get), nativePort, 100000))
     throw new IOException("Failed to start Cassandra.")
 

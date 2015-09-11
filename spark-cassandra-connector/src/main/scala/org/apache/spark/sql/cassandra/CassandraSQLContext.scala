@@ -2,15 +2,11 @@ package org.apache.spark.sql.cassandra
 
 import java.util.NoSuchElementException
 
-import org.apache.commons.lang.StringUtils
-import org.apache.spark.sql.sources.DataSourceStrategy
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.{DataFrame, Strategy, SQLContext}
-
-import CassandraSQLContext._
-import CassandraSourceRelation._
+import org.apache.spark.sql.execution.datasources.DataSourceStrategy
+import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * `SchemaRDD` collections. Predicate pushdown to Cassandra is supported.
@@ -36,7 +32,7 @@ import CassandraSourceRelation._
   *
   * }}} */
 class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
-  import CassandraSQLContext._
+  import org.apache.spark.sql.cassandra.CassandraSQLContext._
 
   override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
     new this.QueryExecution(plan)
@@ -87,12 +83,12 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
     override val strategies: Seq[Strategy] = Seq(
       DataSourceStrategy,
       DDLStrategy,
-      TakeOrdered,
-      ParquetOperations,
+      TakeOrderedAndProject,
       InMemoryScans,
       HashAggregation,
+      Aggregation,
       LeftSemiJoin,
-      HashJoin,
+      EquiJoinSelection,
       BasicOperators,
       CartesianProduct,
       BroadcastNestedLoopJoin

@@ -2,23 +2,17 @@ package org.apache.spark.sql.cassandra
 
 import java.io.IOException
 
-import org.apache.spark.sql.catalyst.{SimpleCatalystConf, CatalystConf}
-
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.google.common.cache.{CacheBuilder, CacheLoader}
-
 import scala.collection.JavaConversions._
 
-import com.google.common.cache.{LoadingCache, CacheBuilder, CacheLoader}
+import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import org.apache.spark.Logging
-
+import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.analysis.Catalog
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
-import org.apache.spark.sql.sources.LogicalRelation
+import org.apache.spark.sql.catalyst.{CatalystConf, SimpleCatalystConf, TableIdentifier}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
-
-import CassandraSourceRelation._
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 
 private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Catalog with Logging {
 
@@ -136,7 +130,7 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
 
   override val conf: CatalystConf = SimpleCatalystConf(caseSensitive)
 
-  def refreshTable(databaseName: String, tableName: String): Unit = {
-    cachedDataSourceTables.refresh(Seq(csc.getCluster, databaseName, tableName))
+  override def refreshTable(tableIdent: TableIdentifier): Unit = {
+    cachedDataSourceTables.refresh(tableIdent.toSeq)
   }
 }

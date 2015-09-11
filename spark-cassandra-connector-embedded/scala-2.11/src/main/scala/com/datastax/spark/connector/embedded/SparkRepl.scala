@@ -4,7 +4,8 @@ import java.io.{PrintWriter, StringWriter, StringReader, BufferedReader}
 import java.net.URLClassLoader
 
 import scala.collection.mutable.ArrayBuffer
-import scala.tools.nsc.interpreter.SparkILoop
+
+import org.apache.spark.repl.SparkILoop
 
 trait SparkRepl {
 
