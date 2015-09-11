@@ -15,8 +15,8 @@ If you see that only a single task has been created this means that the Cassandr
 not been split into a enough tasks to be well parallelized on your cluster. The number of 
 Spark partitions(tasks) created is directly controlled by the setting 
 `spark.cassandra.input.split.size_in_mb`.
-This number reflects the approximate number of live Cassandra Partitions in a given Spark partition.
-To increase the number of Spark Partitions decrease this number from the default (100k) to one that
+This number reflects the approximate amount of Cassandra Data in any given Spark partition.
+To increase the number of Spark Partitions decrease this number from the default (64mb) to one that
 will sufficiently break up your C* token range. This can also be adjusted on a per cassandraTable basis
 with the function `withReadConf` and specifying a new `ReadConf` object.
 
