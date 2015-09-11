@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
-import org.apache.spark.sql.catalyst.expressions.Row
+import org.apache.spark.sql.Row
 
 /** A [[RowWriter]] that can write SparkSQL `Row` objects. */
 class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRef])

@@ -25,8 +25,8 @@ object DataTypeConverter extends Logging {
     connector.types.FloatType      -> catalystTypes.FloatType,
     connector.types.DoubleType     -> catalystTypes.DoubleType,
 
-    connector.types.VarIntType     -> catalystTypes.DecimalType(), // no native arbitrary-size integer type
-    connector.types.DecimalType    -> catalystTypes.DecimalType(),
+    connector.types.VarIntType     -> catalystTypes.DecimalType(38, 0), // no native arbitrary-size integer type
+    connector.types.DecimalType    -> catalystTypes.DecimalType(38, 18),
 
     connector.types.TimestampType  -> catalystTypes.TimestampType,
     connector.types.InetType       -> InetAddressType,
