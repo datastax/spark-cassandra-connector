@@ -7,7 +7,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.rdd.{CassandraJoinRDD, SpannedRDD, ValidRDDType}
+import com.datastax.spark.connector.rdd.{CassandraLeftJoinRDD, CassandraJoinRDD, SpannedRDD, ValidRDDType}
 import com.datastax.spark.connector.writer.{ReplicaMapper, _}
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
@@ -128,6 +128,15 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
                                 newType: ClassTag[R], rrf: RowReaderFactory[R], ev: ValidRDDType[R],
                                 currentType: ClassTag[T], rwf: RowWriterFactory[T]): CassandraJoinRDD[T, R] = {
     new CassandraJoinRDD[T, R](rdd, keyspaceName, tableName, connector, columnNames = selectedColumns, joinColumns = joinColumns)
+  }
+
+  def leftJoinWithCassandraTable[R](keyspaceName: String, tableName: String,
+                                    selectedColumns: ColumnSelector = AllColumns,
+                                    joinColumns: ColumnSelector = PartitionKeyColumns)
+                                   (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+                                    newType: ClassTag[R], rrf: RowReaderFactory[R], ev: ValidRDDType[R],
+                                    currentType: ClassTag[T], rwf: RowWriterFactory[T]): CassandraLeftJoinRDD[T, R] = {
+    new CassandraLeftJoinRDD[T, R](rdd, keyspaceName, tableName, connector, columnNames = selectedColumns, joinColumns = joinColumns)
   }
 
 
