@@ -25,7 +25,7 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
         case ("isClosed", Array()) =>
           closed.asInstanceOf[AnyRef]
         case ("prepare", Array(StringClass)) =>
-          PreparedStatementCache.prepareStatement(session, new SimpleStatement(args(0).asInstanceOf[String]))
+          PreparedStatementCache.prepareStatement(session, session.newSimpleStatement(args(0).asInstanceOf[String]))
         case ("prepare", Array(RegularStatementClass)) =>
           PreparedStatementCache.prepareStatement(session, args(0).asInstanceOf[RegularStatement])
         case _ =>

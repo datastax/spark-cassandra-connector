@@ -12,19 +12,18 @@ import org.apache.spark.Logging
 private[connector] class BoundStatementBuilder[T](
     val rowWriter: RowWriter[T],
     val preparedStmt: PreparedStatement,
-    val protocolVersion: ProtocolVersion,
     val prefixVals: Seq[Any] = Seq.empty) extends Logging {
 
   private val columnNames = rowWriter.columnNames.toIndexedSeq
   private val columnTypes = columnNames.map(preparedStmt.getVariables.getType)
-  private val converters = columnTypes.map(ColumnType.converterToCassandra(_)(protocolVersion))
+  private val converters = columnTypes.map(ColumnType.converterToCassandra(_))
   private val buffer = Array.ofDim[Any](columnNames.size)
 
   private val prefixConverted = for {
     prefixIndex: Int <- 0 until prefixVals.length
     prefixVal = prefixVals(prefixIndex)
     prefixType = preparedStmt.getVariables.getType(prefixIndex)
-    prefixConverter =  ColumnType.converterToCassandra(prefixType)(protocolVersion)
+    prefixConverter =  ColumnType.converterToCassandra(prefixType)
   } yield prefixConverter.convert(prefixVal)
 
   /** Creates `BoundStatement` from the given data item */
@@ -38,15 +37,12 @@ private[connector] class BoundStatementBuilder[T](
       val converter = converters(i)
       val columnName = columnNames(i)
       val columnValue = converter.convert(buffer(i))
-      val columnType = columnTypes(i)
-      val serializedValue =
-        if (columnValue != null) columnType.serialize(columnValue, protocolVersion)
-        else null
+      boundStatement.setObject(columnName, columnValue)
+      val serializedValue = boundStatement.getBytesUnsafe(i)
 
       if (serializedValue != null)
         bytesCount += serializedValue.remaining()
 
-      boundStatement.setBytesUnsafe(columnName, serializedValue)
     }
     boundStatement.bytesCount = bytesCount
     boundStatement

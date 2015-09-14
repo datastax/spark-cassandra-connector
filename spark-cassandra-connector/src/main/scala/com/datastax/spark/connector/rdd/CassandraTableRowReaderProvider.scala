@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{Metadata, ConsistencyLevel, ProtocolVersion, Session}
+import com.datastax.driver.core.{Metadata, ConsistencyLevel}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{TableDef, CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.reader._
@@ -140,10 +140,6 @@ trait CassandraTableRowReaderProvider[R] {
       session =>
         session.execute("SELECT partitioner FROM system.local").one().getString(0)
     }
-
-  def protocolVersion(session: Session): ProtocolVersion = {
-    session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersionEnum
-  }
 
   /** Checks for existence of keyspace and table.*/
   def verify() = {

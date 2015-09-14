@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
-import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, ProtocolVersion, DataType}
+import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, DataType}
 import com.datastax.spark.connector.util.Symbols
 
 import scala.collection.JavaConversions._
@@ -135,7 +135,7 @@ object ColumnType {
 
   /** Returns a converter that converts values to the type of this column expected by the
     * Cassandra Java driver when saving the row.*/
-  def converterToCassandra(dataType: DataType)(implicit protocolVersion: ProtocolVersion)
+  def converterToCassandra(dataType: DataType)
       : TypeConverter[_ <: AnyRef] = {
 
     val typeArgs = dataType.getTypeArguments.map(converterToCassandra)

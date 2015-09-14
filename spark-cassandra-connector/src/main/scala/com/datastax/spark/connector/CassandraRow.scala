@@ -1,6 +1,6 @@
 package com.datastax.spark.connector
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.driver.core.Row
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -86,7 +86,7 @@ object CassandraRow {
     * the newly created `CassandraRow`, but it is not used to fetch data from
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
-  def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices)
       data(i) = GettableData.get(row, i)

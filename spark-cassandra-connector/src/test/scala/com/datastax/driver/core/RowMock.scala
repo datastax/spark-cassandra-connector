@@ -36,4 +36,6 @@ class RowMock(columnSizes: Option[Int]*)
   override def getValue(i: Int): ByteBuffer = ???
 
   override def getName(i: Int): String = ???
+
+  override def getCodecRegistry = ???
 }

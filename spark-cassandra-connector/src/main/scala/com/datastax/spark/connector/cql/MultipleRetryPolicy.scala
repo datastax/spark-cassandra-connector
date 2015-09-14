@@ -19,6 +19,9 @@ class MultipleRetryPolicy(maxRetryCount: Int, retryDelay: CassandraConnectorConf
       RetryDecision.rethrow()
     }
   }
+  
+  override def init(cluster: com.datastax.driver.core.Cluster): Unit = {}
+  override def close(): Unit = { }
 
   override def onReadTimeout(stmt: Statement, cl: ConsistencyLevel,
                              requiredResponses: Int, receivedResponses: Int,

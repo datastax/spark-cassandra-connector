@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.driver.core.Row
 import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.types.TypeConverter
 
@@ -19,7 +19,7 @@ trait FunctionBasedRowReader[R] extends RowReader[R] with ThisRowReaderAsFactory
 class FunctionBasedRowReader1[R, A0](f: A0 => R)(
   implicit a0c: TypeConverter[A0], @transient override val ct: ClassTag[R]) extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(a0c.convert(GettableData.get(row, 0)))
 
 }
@@ -31,7 +31,7 @@ class FunctionBasedRowReader2[R, A0, A1](f: (A0, A1) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1))
@@ -46,7 +46,7 @@ class FunctionBasedRowReader3[R, A0, A1, A2](f: (A0, A1, A2) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -63,7 +63,7 @@ class FunctionBasedRowReader4[R, A0, A1, A2, A3](f: (A0, A1, A2, A3) => R)(
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -82,7 +82,7 @@ class FunctionBasedRowReader5[R, A0, A1, A2, A3, A4](f: (A0, A1, A2, A3, A4) => 
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -103,7 +103,7 @@ class FunctionBasedRowReader6[R, A0, A1, A2, A3, A4, A5](f: (A0, A1, A2, A3, A4,
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -126,7 +126,7 @@ class FunctionBasedRowReader7[R, A0, A1, A2, A3, A4, A5, A6](f: (A0, A1, A2, A3,
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -152,7 +152,7 @@ class FunctionBasedRowReader8[R, A0, A1, A2, A3, A4, A5, A6, A7]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -180,7 +180,7 @@ class FunctionBasedRowReader9[R, A0, A1, A2, A3, A4, A5, A6, A7, A8]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -210,7 +210,7 @@ class FunctionBasedRowReader10[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -242,7 +242,7 @@ class FunctionBasedRowReader11[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10]
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),
@@ -276,7 +276,7 @@ class FunctionBasedRowReader12[R, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A
   @transient override val ct: ClassTag[R])
   extends FunctionBasedRowReader[R] {
 
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion) =
+  override def read(row: Row, columnNames: Array[String]) =
     f(
       a0c.convert(GettableData.get(row, 0)),
       a1c.convert(GettableData.get(row, 1)),

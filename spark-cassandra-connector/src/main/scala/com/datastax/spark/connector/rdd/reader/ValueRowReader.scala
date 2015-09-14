@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.driver.core.Row
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TypeConverter
@@ -13,7 +13,7 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
   /** Reads column values from low-level `Row` and turns them into higher level representation.
     * @param row row fetched from Cassandra
     * @param columnNames column names available in the `row` */
-  override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): T =
+  override def read(row: Row, columnNames: Array[String]): T =
     converter.convert(GettableData.get(row, columnRef.cqlValueName))
 
   /** List of columns this `RowReader` is going to read.
