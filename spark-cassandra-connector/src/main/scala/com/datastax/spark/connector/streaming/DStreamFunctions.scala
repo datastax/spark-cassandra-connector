@@ -2,10 +2,11 @@ package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.ValidRDDType
+import com.datastax.spark.connector.rdd.{EmptyCassandraRDD, ValidRDDType}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-import com.datastax.spark.connector.writer.{TableWriter, WriteConf, RowWriterFactory, WritableToCassandra}
+import com.datastax.spark.connector.writer._
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.dstream.DStream
 
 import scala.reflect.ClassTag
@@ -48,8 +49,9 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): DStream[T] = {
 
+    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
     dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
+      rdd.repartitionByCassandraReplica(replicaLocator, keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
   }
 
   /**
@@ -63,12 +65,19 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     newType: ClassTag[R],
-    rrf: RowReaderFactory[R],
+    @transient rrf: RowReaderFactory[R],
     ev: ValidRDDType[R],
     currentType: ClassTag[T],
-    rwf: RowWriterFactory[T]): DStream[(T,R)] = {
+    @transient rwf: RowWriterFactory[T]): DStream[(T,R)] = {
+
+    /**
+     * To make this function serializable for Checkpointing we will make a rowWriter and the use
+     * that to create our future joinRDDs.
+     */
+    val rdd = dstream.context.sparkContext.emptyRDD[T]
+    val cjRdd = rdd.joinWithCassandraTable[R](keyspaceName, tableName, selectedColumns, joinColumns)
 
     dstream.transform(rdd =>
-      rdd.joinWithCassandraTable[R](keyspaceName, tableName, selectedColumns, joinColumns))
+      cjRdd.applyToRDD(rdd))
   }
 }
