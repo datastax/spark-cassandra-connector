@@ -170,7 +170,6 @@ class CassandraTableScanRDD[R] private[connector](
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
     try {
-      implicit val pv = protocolVersion(session)
       val stmt = session.prepare(cql)
       stmt.setConsistencyLevel(consistencyLevel)
       val converters = stmt.getVariables
@@ -203,7 +202,6 @@ class CassandraTableScanRDD[R] private[connector](
     val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
 
     try {
-      implicit val pv = protocolVersion(session)
       val rs = session.execute(stmt)
       val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)

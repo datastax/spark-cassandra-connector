@@ -1,13 +1,9 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.embedded.SparkTemplate._
-
-import scala.collection.immutable.Map
-
 import org.apache.cassandra.dht.IPartitioner
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import com.datastax.spark.connector.{CassandraRow, SparkCassandraITFlatSpecBase}
 
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
@@ -23,7 +19,6 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".two_keys (id INT, id2 TEXT, value TEXT, PRIMARY KEY ((id, id2)))""")
   }
 
-  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
   val cp = conn.withClusterDo(cluster => Class.forName(cluster.getMetadata.getPartitioner).newInstance().asInstanceOf[IPartitioner])
 
   "RoutingKeyGenerator" should "generate proper routing keys when there is one partition key column" in {

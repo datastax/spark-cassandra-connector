@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 
 
@@ -29,7 +28,6 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(defaultConf)
-  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
   private val ks = "RDDSpec"
   val tableName = "key_value"
   val otherTable = "other_table"

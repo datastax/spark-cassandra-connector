@@ -25,9 +25,6 @@ class ReplicaMapper[T] private(
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
-  implicit val protocolVersion = connector.withClusterDo {
-    _.getConfiguration.getProtocolOptions.getProtocolVersion
-  }
 
   /**
    * This query is only used to build a prepared statement so we can more easily extract
@@ -60,7 +57,7 @@ class ReplicaMapper[T] private(
       connector.withSessionDo { session =>
         val stmt = prepareDummyStatement(session)
         val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
-        val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+        val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
         val clusterMetadata = session.getCluster.getMetadata
         data.map { row =>
           val hosts = clusterMetadata

@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.tuple.{Triple, Pair}
 
-import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => DriverTupleType, ProtocolVersion, DataType}
+import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => DriverTupleType, DataType}
 
 import com.datastax.spark.connector.{TupleValue, ColumnName}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
@@ -96,7 +96,7 @@ object TupleType {
 
   /** Converts connector's UDTValue to Cassandra Java Driver UDTValue.
     * Used when saving data to Cassandra.  */
-  class DriverTupleValueConverter(dataType: DriverTupleType)(implicit protocolVersion: ProtocolVersion)
+  class DriverTupleValueConverter(dataType: DriverTupleType)
     extends TypeConverter[DriverTupleValue] {
 
     val fieldTypes = dataType.getComponentTypes
@@ -125,7 +125,7 @@ object TupleType {
 
   }
 
-  def driverTupleValueConverter(dataType: DataType)(implicit protocolVersion: ProtocolVersion): TypeConverter[_] = {
+  def driverTupleValueConverter(dataType: DataType): TypeConverter[_] = {
     dataType match {
       case dt: DriverTupleType => new DriverTupleValueConverter(dt)
       case _ => throw new IllegalArgumentException(s"${classOf[DriverTupleType]} expected.")

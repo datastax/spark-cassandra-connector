@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.sql.Timestamp
 import java.util.Date
 
-import com.datastax.driver.core.{Row, ProtocolVersion}
+import com.datastax.driver.core.Row
 import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
 import com.datastax.spark.connector.types.TypeConverter
@@ -46,7 +46,7 @@ final class CassandraSQLRow(val columnNames: IndexedSeq[String], val columnValue
 
 object CassandraSQLRow {
 
-  def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraSQLRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices) {
       data(i) = GettableData.get(row, i)
@@ -63,7 +63,7 @@ object CassandraSQLRow {
 
   implicit object CassandraSQLRowReader extends RowReader[CassandraSQLRow] with ThisRowReaderAsFactory[CassandraSQLRow] {
 
-    override def read(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraSQLRow =
+    override def read(row: Row, columnNames: Array[String]): CassandraSQLRow =
       fromJavaDriverRow(row, columnNames)
 
     override def neededColumns = None
