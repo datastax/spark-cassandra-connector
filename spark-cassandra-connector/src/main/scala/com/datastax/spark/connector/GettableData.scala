@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
-import com.datastax.driver.core.{ProtocolVersion, Row, UDTValue => DriverUDTValue, TupleValue => DriverTupleValue}
+import com.datastax.driver.core.{Row, UDTValue => DriverUDTValue, TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
 
@@ -72,7 +72,7 @@ object GettableData {
 
   /* ByteBuffers are not serializable, so we need to convert them to something that is serializable.
      Array[Byte] seems reasonable candidate. Additionally converts Java collections to Scala ones. */
-  private[connector] def convert(obj: Any)(implicit protocolVersion: ProtocolVersion): AnyRef = {
+  private[connector] def convert(obj: Any): AnyRef = {
     obj match {
       case bb: ByteBuffer => ByteBufferUtil.toArray(bb)
       case list: java.util.List[_] => list.view.map(convert).toList
@@ -87,37 +87,33 @@ object GettableData {
 
   /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type.
     * If the field is null, returns null (not Scala Option). */
-  def get(row: Row, index: Int)(implicit protocolVersion: ProtocolVersion): AnyRef = {
-    val columnDefinitions = row.getColumnDefinitions
-    val columnType = columnDefinitions.getType(index)
-    val bytes = row.getBytesUnsafe(index)
-    if (bytes != null)
-      convert(columnType.deserialize(bytes, protocolVersion))
+  def get(row: Row, index: Int): AnyRef = {
+    val data = row.getObject(index)
+    if (data != null)
+      convert(data)
     else
       null
   }
 
-  def get(row: Row, name: String)(implicit protocolVersion: ProtocolVersion): AnyRef = {
+  def get(row: Row, name: String): AnyRef = {
     val index = row.getColumnDefinitions.getIndexOf(name)
     require(index >= 0, s"Column not found in Java driver Row: $name")
     get(row, index)
   }
 
-  def get(value: DriverUDTValue, name: String)(implicit protocolVersion: ProtocolVersion): AnyRef = {
+  def get(value: DriverUDTValue, name: String): AnyRef = {
     val quotedName = "\"" + name + "\""
-    val valueType = value.getType.getFieldType(quotedName)
-    val bytes = value.getBytesUnsafe(quotedName)
-    if (bytes != null)
-      convert(valueType.deserialize(bytes, protocolVersion))
+    val data = value.getObject(quotedName)
+    if (data != null)
+      convert(data)
     else
       null
   }
 
-  def get(value: DriverTupleValue, index: Int)(implicit protocolVersion: ProtocolVersion): AnyRef = {
-    val valueType = value.getType.getComponentTypes.get(index)
-    val bytes = value.getBytesUnsafe(index)
-    if (bytes != null)
-      convert(valueType.deserialize(bytes, protocolVersion))
+  def get(value: DriverTupleValue, index: Int): AnyRef = {
+    val data = value.getObject(index)
+    if (data != null)
+      convert(data)
     else
       null
   }

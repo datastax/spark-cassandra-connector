@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.japi
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.driver.core.Row
 import com.datastax.spark.connector.GettableData
 
 final class CassandraRow(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
@@ -27,7 +27,7 @@ object CassandraRow {
     * the newly created `CassandraRow`, but it is not used to fetch data from
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
-  def fromJavaDriverRow(row: Row, columnNames: Array[String])(implicit protocolVersion: ProtocolVersion): CassandraRow = {
+  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices)
       data(i) = GettableData.get(row, i)

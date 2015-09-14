@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.driver.core.Row
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
@@ -30,7 +30,7 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
     Some(ctorRefs ++ setterRefs)
   }
 
-  override def read(row: Row, ignored: Array[String])(implicit protocolVersion: ProtocolVersion): R = {
+  override def read(row: Row, ignored: Array[String]): R = {
     // can't use passed array of column names, because it is already after applying aliases
     val columnNames = row.getColumnDefinitions.iterator.map(_.getName).toArray
     val cassandraRow = CassandraRow.fromJavaDriverRow(row, columnNames)

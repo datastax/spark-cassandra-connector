@@ -1,3 +1,5 @@
+ * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
+
 1.5.0 M1
  * Added ability to build against unreleased Spark versions (SPARKC-242)
  * Spark 1.5 initial integration (SPARKC-241)

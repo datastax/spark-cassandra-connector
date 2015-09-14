@@ -5,7 +5,7 @@ import java.io.ObjectOutputStream
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
+import com.datastax.driver.core.{UDTValue => DriverUDTValue, UserType, DataType}
 import com.datastax.spark.connector.{ColumnName, UDTValue}
 import com.datastax.spark.connector.cql.{StructDef, FieldDef}
 
@@ -54,7 +54,7 @@ object UserDefinedType {
 
   /** Converts connector's UDTValue to Cassandra Java Driver UDTValue.
     * Used when saving data to Cassandra.  */
-  class DriverUDTValueConverter(dataType: UserType)(implicit protocolVersion: ProtocolVersion)
+  class DriverUDTValueConverter(dataType: UserType)
     extends TypeConverter[DriverUDTValue] {
 
     val fieldNames = dataType.getFieldNames.toIndexedSeq
@@ -70,11 +70,7 @@ object UserDefinedType {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
-          val fieldType = fieldTypes(i)
-          val serialized =
-            if (fieldValue != null) fieldType.serialize(fieldValue, protocolVersion)
-            else null
-          toSave.setBytesUnsafe(i, serialized)
+          toSave.setObject(i, fieldValue)
         }
         toSave
     }
@@ -88,7 +84,7 @@ object UserDefinedType {
 
   }
 
-  def driverUDTValueConverter(dataType: DataType)(implicit protocolVersion: ProtocolVersion) =
+  def driverUDTValueConverter(dataType: DataType) =
     dataType match {
       case dt: UserType => new DriverUDTValueConverter(dt)
       case _            => throw new IllegalArgumentException("UserType expected.")

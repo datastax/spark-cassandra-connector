@@ -203,9 +203,8 @@ class CassandraJoinRDD[L, R] private[connector](
    */
   override def compute(split: Partition, context: TaskContext): Iterator[(L, R)] = {
     val session = connector.openSession()
-    implicit val pv = protocolVersion(session)
     val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
-    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, pv, where.values)
+    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, where.values)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, limit)
@@ -227,7 +226,6 @@ class CassandraJoinRDD[L, R] private[connector](
     lastIt: Iterator[L]): Iterator[(L, R)] = {
 
     val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
-    implicit val pv = protocolVersion(session)
     for (leftSide <- lastIt;
          rightSide <- {
            val rs = session.execute(bsb.bind(leftSide))

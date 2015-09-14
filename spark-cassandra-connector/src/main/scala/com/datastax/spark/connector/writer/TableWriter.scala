@@ -30,7 +30,6 @@ class TableWriter[T] private (
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
   val columns = columnNames.map(tableDef.columnByName)
-  implicit val protocolVersion = connector.withClusterDo { _.getConfiguration.getProtocolOptions.getProtocolVersionEnum }
 
   val defaultTTL = writeConf.ttl match {
     case TTLOption(StaticWriteOptionValue(value)) => Some(value)
@@ -143,7 +142,7 @@ class TableWriter[T] private (
         Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
-      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion)
+      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,

@@ -2,7 +2,7 @@ package com.datastax.spark.connector
 
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.{ProtocolVersion, TupleValue => DriverTupleValue}
+import com.datastax.driver.core.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
 final case class TupleValue(values: Any*) extends ScalaGettableByIndexData {
@@ -13,7 +13,7 @@ object TupleValue {
 
   def fromJavaDriverTupleValue
       (value: DriverTupleValue)
-      (implicit protocolVersion: ProtocolVersion): TupleValue = {
+      : TupleValue = {
     val values =
       for (i <- 0 until value.getType.getComponentTypes.size()) yield
         GettableData.get(value, i)

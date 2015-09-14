@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 
 
@@ -29,7 +28,6 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(defaultConf)
-  implicit val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
   private val ks = "RDDSpec"
   val tableName = "key_value"
   val otherTable = "other_table"
@@ -189,7 +187,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
 
     val ex = the [Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
-    ex.getMessage should include("Invalid null value for partition key part key")
+    ex.getMessage.toLowerCase should include("invalid null value")
+    ex.getMessage.toLowerCase should include("key")
   }
 
   it should "throw a meaningful exception if partition column is null when repartitioning by replica" in {

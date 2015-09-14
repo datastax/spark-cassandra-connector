@@ -3,9 +3,7 @@ package com.datastax.spark.connector
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import org.apache.commons.lang3.tuple
-
-import com.datastax.driver.core.{ProtocolVersion, UDTValue => DriverUDTValue}
+import com.datastax.driver.core.{UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
 final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
@@ -16,7 +14,7 @@ final case class UDTValue(columnNames: IndexedSeq[String], columnValues: Indexed
 
 object UDTValue {
 
-  def fromJavaDriverUDTValue(value: DriverUDTValue)(implicit protocolVersion: ProtocolVersion): UDTValue = {
+  def fromJavaDriverUDTValue(value: DriverUDTValue): UDTValue = {
     val fields = value.getType.getFieldNames.toIndexedSeq
     val values = fields.map(GettableData.get(value, _))
     UDTValue(fields, values)
