@@ -5,6 +5,7 @@ import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.driver.core._
+import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.Logging
@@ -17,7 +18,7 @@ import scala.collection._
  * by the [[com.datastax.spark.connector.RDDFunctions.keyByCassandraReplica]] method. Uses the Java
  * Driver to obtain replica information.
  */
-class ReplicaMapper[T] private(
+class ReplicaLocator[T] private(
     connector: CassandraConnector,
     tableDef: TableDef,
     rowWriter: RowWriter[T]) extends Serializable with Logging {
@@ -73,18 +74,21 @@ class ReplicaMapper[T] private(
 /**
  * Helper methods for mapping a set of data to their relative locations in a Cassandra Cluster.
  */
-object ReplicaMapper {
+object ReplicaLocator {
   def apply[T: RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
-      tableName: String): ReplicaMapper[T] = {
+      tableName: String,
+      partitionKeyMapper: ColumnSelector): ReplicaLocator[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = tableDef.partitionKey.map(_.ref).toIndexedSeq
-    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
-    new ReplicaMapper[T](connector, tableDef, rowWriter)
+    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
+      tableDef,
+      partitionKeyMapper.selectFrom(tableDef)
+    )
+    new ReplicaLocator[T](connector, tableDef, rowWriter)
   }
 
 }

@@ -37,7 +37,7 @@ trait CassandraTableRowReaderProvider[R] {
 
   protected def consistencyLevel: ConsistencyLevel = readConf.consistencyLevel
 
-  /** RowReaderFactory and ClassTag should be exit provided from implicit parameters in the constructor
+  /** RowReaderFactory and ClassTag should be provided from implicit parameters in the constructor
     * of the class implementing this trait
     * @see CassandraTableScanRDD */
   protected val rowReaderFactory: RowReaderFactory[R]

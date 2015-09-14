@@ -182,6 +182,7 @@ object Dependencies {
       val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
       val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
+      val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
       val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
@@ -207,6 +208,7 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
+    Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
     Test.powerMockMockito
