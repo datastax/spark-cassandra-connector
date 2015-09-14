@@ -357,6 +357,7 @@ object TypeConverter {
       case x: java.lang.Integer => new java.math.BigInteger(x.toString)
       case x: java.lang.Long => new java.math.BigInteger(x.toString)
       case x: String => new java.math.BigInteger(x)
+      case x: java.math.BigDecimal if x.scale() <= 0 => x.toBigInteger
     }
   }
 

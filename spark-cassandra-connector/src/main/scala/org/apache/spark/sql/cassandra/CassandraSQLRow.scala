@@ -1,15 +1,16 @@
 package org.apache.spark.sql.cassandra
 
+import java.math.BigInteger
 import java.sql.Timestamp
 import java.util.Date
-
-import org.apache.spark.sql.types.UTF8String
 
 import com.datastax.driver.core.{Row, ProtocolVersion}
 import com.datastax.spark.connector.GettableData
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
 import com.datastax.spark.connector.types.TypeConverter
-import org.apache.spark.sql.catalyst.expressions.{Row => SparkRow}
+import org.apache.spark.sql.{Row => SparkRow}
+import org.apache.spark.unsafe.types.UTF8String
+import java.math.{BigDecimal => JBigDecimal}
 
 final class CassandraSQLRow(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
   extends GettableData with SparkRow with Serializable {
@@ -35,6 +36,10 @@ final class CassandraSQLRow(val columnNames: IndexedSeq[String], val columnValue
   override def getShort(i: Int) = get[Short](i)
   override def getInt(i: Int) = get[Int](i)
   override def getString(i: Int) = get[String](i)
+  override def get(i: Int) = get[Any](i)
+
+  override def isNullAt(i: Int): Boolean = super[GettableData].isNullAt(i)
+
   override def toSeq: Seq[Any] = columnValues
 }
 
@@ -47,7 +52,8 @@ object CassandraSQLRow {
       data(i) = GettableData.get(row, i)
       data(i) match {
         case date: Date => data.update(i, new Timestamp(date.getTime))
-        case str: String => data.update(i, UTF8String(str))
+        case bigInt: BigInteger => data.update(i, new JBigDecimal(bigInt))
+        case str: String => data.update(i, UTF8String.fromString(str))
         case set: Set[_] => data.update(i, set.toSeq)
         case _ =>
       }

@@ -26,7 +26,7 @@ class ReplicaMapper[T] private(
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
   implicit val protocolVersion = connector.withClusterDo {
-    _.getConfiguration.getProtocolOptions.getProtocolVersionEnum
+    _.getConfiguration.getProtocolOptions.getProtocolVersion
   }
 
   /**
