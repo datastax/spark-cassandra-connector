@@ -4,8 +4,6 @@ addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.3.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.4")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
-
 addSbtPlugin("com.scalapenos" % "sbt-prompt" % "0.2.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
@@ -17,3 +15,8 @@ resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositori
 resolvers += Classpaths.sbtPluginReleases
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.0.4")
+
+//SbtAssembly 0.12.0 is included in sbt-spark-package
+resolvers += "Spark Packages Main repo" at "https://dl.bintray.com/spark-packages/maven" 
+
+addSbtPlugin("org.spark-packages" %% "sbt-spark-package" % "0.2.3")

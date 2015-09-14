@@ -17,9 +17,11 @@
 
 import sbt._
 import sbt.Keys._
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 
 object CassandraSparkBuild extends Build {
   import Settings._
+  import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
 
   val namespace = "spark-cassandra-connector"
@@ -49,7 +51,7 @@ object CassandraSparkBuild extends Build {
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
-    settings = japiSettings ++ connector.settings,
+    settings = japiSettings ++ connector.settings :+ (spName := s"datastax/$namespace-java"),
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs IntegrationTest
 
