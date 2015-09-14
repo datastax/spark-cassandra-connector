@@ -34,7 +34,9 @@ class CassandraJoinRDD[L, R] private[connector](
     val where: CqlWhereClause = CqlWhereClause.empty,
     val limit: Option[Long] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
-    val readConf: ReadConf = ReadConf())(
+    val readConf: ReadConf = ReadConf(),
+    manualRowReader: Option[RowReader[R]] = None,
+    manualRowWriter: Option[RowWriter[L]] = None)(
   implicit
     val leftClassTag: ClassTag[L],
     val rightClassTag: ClassTag[R],
@@ -46,6 +48,11 @@ class CassandraJoinRDD[L, R] private[connector](
   override type Self = CassandraJoinRDD[L, R]
 
   override protected val classTag = rightClassTag
+
+  override protected[connector] lazy val rowReader: RowReader[R] = manualRowReader match {
+    case Some(rr) => rr
+    case None => rowReaderFactory.rowReader (tableDef, columnNames.selectFrom (tableDef) )
+  }
 
   override protected def copy(
     columnNames: ColumnSelector = columnNames,
@@ -143,8 +150,10 @@ class CassandraJoinRDD[L, R] private[connector](
     joinColumnNames
   }
 
-  lazy val rowWriter = implicitly[RowWriterFactory[L]].rowWriter(
-    tableDef, joinColumnNames.toIndexedSeq)
+  lazy val rowWriter = manualRowWriter match {
+    case Some(rowWriter) => rowWriter
+    case None => implicitly[RowWriterFactory[L]].rowWriter (tableDef, joinColumnNames.toIndexedSeq)
+  }
 
   def on(joinColumns: ColumnSelector): CassandraJoinRDD[L, R] = {
     new CassandraJoinRDD[L, R](
@@ -254,4 +263,27 @@ class CassandraJoinRDD[L, R] private[connector](
       limit = limit,
       clusteringOrder = clusteringOrder,
       readConf = readConf)
+
+  /**
+   * Turns this CassandraJoinRDD into a factory for converting other RDD's after being serialized
+   * This method is for streaming operations as it allows us to Serialize a template JoinRDD
+   * and the use that serializable template in the DStream closure. This gives us a fully serializable
+   * joinWithCassandra operation
+   */
+  private[connector] def applyToRDD( left:RDD[L]): CassandraJoinRDD[L,R] =  {
+    new CassandraJoinRDD[L,R](
+      left,
+      keyspaceName,
+      tableName,
+      connector,
+      columnNames,
+      joinColumns,
+      where,
+      limit,
+      clusteringOrder,
+      readConf,
+      Some(rowReader),
+      Some(rowWriter)
+    )
+  }
 }

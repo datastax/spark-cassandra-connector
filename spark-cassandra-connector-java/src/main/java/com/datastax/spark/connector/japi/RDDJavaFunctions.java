@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.japi;
 
+import com.datastax.spark.connector.rdd.reader.RowReader;
+import com.datastax.spark.connector.writer.RowWriter;
 import scala.Option;
 import scala.Tuple2;
 import scala.reflect.ClassTag;
@@ -114,6 +116,8 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
                 limit,
                 clusteringOrder,
                 readConf,
+                Option.<RowReader<R>>empty(),
+                Option.<RowWriter<T>>empty(),
                 classTagT,
                 classTagR,
                 rowWriterFactory,
@@ -150,4 +154,6 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
     }
 
 }
+
+
 
