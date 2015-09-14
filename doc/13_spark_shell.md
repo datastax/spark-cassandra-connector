@@ -85,12 +85,22 @@ Now, we obtain the IP Address that docker assigned to the container:
 CASSANDRA_CONTAINER_IP=$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' $CASSANDRA_CONTAINER_ID)
 ```
 
+We could also run a named container using `--name` and query for IP using the name, e.g.
+
+```bash
+$ docker run --name cassie -d tobert/cassandra
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                               NAMES
+3e9a39418f6a        tobert/cassandra    "/bin/cassandra-docke"   2 seconds ago       Up 2 seconds        7000/tcp, 7199/tcp, 9042/tcp, 9160/tcp, 61621/tcp   cassie
+$ CASSANDRA_CONTAINER_IP=$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' cassie)
+```
+
 And we can start the spark shell using that running container:
 
 ```bash
 cd spark/install/dir
 #Include the --master if you want to run against a spark cluster and not local mode
-./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --conf spark.cassandra.connection.host=$IP
+./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --conf spark.cassandra.connection.host=$CASSANDRA_CONTAINER_IP
 ```
 
 [Next - DataFrames](14_data_frames.md) 
