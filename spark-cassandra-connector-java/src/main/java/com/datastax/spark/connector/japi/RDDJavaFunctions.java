@@ -137,6 +137,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
             String keyspaceName,
             String tableName,
             int partitionsPerHost,
+            ColumnSelector partitionkeyMapper,
             RowWriterFactory<T> rowWriterFactory
     ) {
         CassandraConnector connector = defaultConnector();
@@ -146,6 +147,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
                 keyspaceName,
                 tableName,
                 partitionsPerHost,
+                partitionkeyMapper,
                 connector,
                 ctT,
                 rowWriterFactory);
