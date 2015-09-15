@@ -37,6 +37,8 @@ object Settings extends Build {
 
   val versionStatus = settingKey[Unit]("The Scala version used in cross-build reapply for '+ package', '+ publish'.")
 
+  val cassandraServerClasspath = taskKey[String]("Cassandra server classpath")
+
   val mavenLocalResolver = BuildUtil.mavenLocalResolver
 
   def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
@@ -214,6 +216,15 @@ object Settings extends Build {
     managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
     (internalDependencyClasspath in IntegrationTest) <<= Classpaths.concat(internalDependencyClasspath in IntegrationTest, exportedProducts in Test)
+  )
+
+  lazy val pureCassandraSettings = Seq(
+    test in IntegrationTest <<= (cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest, test in IntegrationTest) {
+          case (cassandraServerClasspathTask, testTask) => cassandraServerClasspathTask.flatMap(_ => testTask)
+    },
+    envVars in IntegrationTest := sys.env +
+      ("CASSANDRA_CLASSPATH" -> (cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest).value) +
+      ("SPARK_LOCAL_IP" -> "127.0.0.1")
   )
 
   lazy val japiSettings = Seq(
