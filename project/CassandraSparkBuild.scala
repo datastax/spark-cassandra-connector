@@ -182,12 +182,14 @@ object Dependencies {
       val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
       val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
+      val sparkT            = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
       val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
       val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
       val powerMock         = "org.powermock"           % "powermock-module-junit4"       % "1.6.2"   % "test,it"       // ApacheV2
       val powerMockMockito  = "org.powermock"           % "powermock-api-mockito"         % "1.6.2"   % "test,it"       // ApacheV2
+      val netty             = "io.netty"                % "netty-all"                     % "4.0.23.Final" % "test,it" force()
     }
   }
 
@@ -208,10 +210,12 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
+    Test.sparkT,
     Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
-    Test.powerMockMockito
+    Test.powerMockMockito,
+    Test.netty
   )
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
@@ -219,6 +223,7 @@ object Dependencies {
   val cassandra = Seq(cassandraClient, cassandraDriver)
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
+    .map(_ exclude(org = "io.netty", name = "netty-all"))
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
