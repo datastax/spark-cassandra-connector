@@ -48,23 +48,30 @@ class CheckpointStreamSpec
     }
   }
 
-  override def afterAll(): Unit ={
+  override def afterAll(): Unit = {
+    //Force the recreation of the template Spark Context
+    useSparkConf(sc.getConf, true)
   }
 
   "Spark Streaming + Checkpointing" should "work with JWCTable and RPCassandra Replica" in {
     val r = new Random()
     val dataTrim = dataSeq.map(_.map(_.trim))
 
+
     val dataSets = for ( d <- dataTrim ) yield
-      (1 to 200).map( x => d.toList(r.nextInt(d.size))).toSeq
+      (1 to 50).map( x => d.toList(r.nextInt(d.size))).toSeq
+
+    //println (dataSets.map(_.distinct))
+    //println (dataTrim)
 
     val repartJoinOpt = (dstream: DStream[String]) => {
-         dstream
+      val joined = dstream
            .map(Tuple1(_))
            .repartitionByCassandraReplica("demo", "streaming_join")
            .joinWithCassandraTable[WordCountRow]("demo", "streaming_join")
            .map(_._2)
            .map(_.word)
+      joined
     }
 
     /**
