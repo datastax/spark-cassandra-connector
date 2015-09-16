@@ -75,7 +75,7 @@ class RDDStreamingSpec
     ssc.start()
     eventually ( timeout(1 seconds) ){dataRDDs.isEmpty}
 
-    eventually ( timeout(2 seconds)) {
+    eventually ( timeout(5 seconds)) {
       val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_wordcount")
       val result = rdd.collect
       result.nonEmpty should be(true)
@@ -101,7 +101,7 @@ class RDDStreamingSpec
 
      eventually ( timeout(1 seconds) ){dataRDDs.isEmpty}
 
-     eventually ( timeout(2 seconds)) {
+     eventually ( timeout(5 seconds)) {
        val rdd = ssc.cassandraTable[WordCount]("demo", "streaming_join_output")
        val result = rdd.collect
        result.nonEmpty should be(true)
@@ -140,7 +140,7 @@ class RDDStreamingSpec
 
       eventually ( timeout(1 seconds) ){dataRDDs.isEmpty}
 
-      eventually ( timeout(2 seconds)) {
+      eventually ( timeout(5 seconds)) {
         val rdd = ssc.cassandraTable[WordCount]("demo", "dstream_join_output")
         val result = rdd.collect
         result should have size (data.size)

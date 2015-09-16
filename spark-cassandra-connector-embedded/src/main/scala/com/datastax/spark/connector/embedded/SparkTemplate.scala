@@ -28,6 +28,7 @@ object SparkTemplate {
   val defaultConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", getHost(0).getHostAddress)
     .set("spark.cassandra.connection.port", getPort(0).toString)
+    .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[*]"))
     .setAppName("Test")

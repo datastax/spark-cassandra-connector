@@ -2,9 +2,10 @@ package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
 
-import org.apache.commons.configuration.ConfigurationException
-
 import scala.collection.JavaConversions._
+
+import org.apache.commons.configuration.ConfigurationException
+import org.apache.commons.io.FileUtils
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -22,8 +23,8 @@ trait EmbeddedCassandra {
     * @param forceReload if set to true, the server will be reloaded fresh
     *                    even if the configuration didn't change */
   def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
-    import EmbeddedCassandra._
-    import UserDefinedProperty._
+    import com.datastax.spark.connector.embedded.EmbeddedCassandra._
+    import com.datastax.spark.connector.embedded.UserDefinedProperty._
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
       "Configuration templates can't be more than the number of specified hosts")
 
@@ -109,7 +110,7 @@ object UserDefinedProperty {
 
 object EmbeddedCassandra {
 
-  import UserDefinedProperty._
+  import com.datastax.spark.connector.embedded.UserDefinedProperty._
 
   private def countCommaSeparatedItemsIn(s: String): Int =
     s.count(_ == ',')
@@ -180,9 +181,8 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
 
   import CassandraRunner._
   import com.google.common.io.Files
-  import org.apache.cassandra.io.util.FileUtils
 
-  val tempDir = mkdir(new File(Files.createTempDir(), "cassandra-driver-spark"))
+  val tempDir = mkdir(new File(Files.createTempDir(), "spark-cassandra-connector"))
   val workDir = mkdir(new File(tempDir, "cassandra"))
   val dataDir = mkdir(new File(workDir, "data"))
   val commitLogDir = mkdir(new File(workDir, "commitlog"))
@@ -197,15 +197,13 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     }
   }
 
-  private val classPath = sys.env.get("IT_CASSANDRA_PATH") match {
-    case Some(customCassandraDir) =>
-      val entries = (for (f <- Files.fileTreeTraverser().breadthFirstTraversal(new File(customCassandraDir, "lib")).toIterator
-                          if f.isDirectory || f.getName.endsWith(".jar")) yield {
-        f.getAbsolutePath
-      }).toList ::: new File(customCassandraDir, "conf") :: Nil
-      entries.mkString(File.pathSeparator)
-    case _ => System.getProperty("java.class.path")
-  }
+  private val classPath = sys.env.get("IT_CASSANDRA_PATH").map { customCassandraDir =>
+    val entries = (for (f <- Files.fileTreeTraverser().breadthFirstTraversal(new File(customCassandraDir, "lib")).toIterator
+                        if f.isDirectory || f.getName.endsWith(".jar")) yield {
+      f.getAbsolutePath
+    }).toList ::: new File(customCassandraDir, "conf") :: Nil
+    entries.mkString(File.pathSeparator)
+  } orElse sys.env.get("CASSANDRA_CLASSPATH") getOrElse System.getProperty("java.class.path")
 
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
@@ -234,7 +232,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   def destroy() {
     process.destroy()
     process.waitFor()
-    FileUtils.deleteRecursive(tempDir)
+    FileUtils.forceDelete(tempDir)
     tempDir.delete()
   }
 }
