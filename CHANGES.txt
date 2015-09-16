@@ -1,3 +1,11 @@
+1.4.0 RC1
+ * Added TTL and WRITETIME documentation (SPARKC-244)
+ * Reduced the amount of unneccessary error logging in integration tests (SPARKC-223)
+ * Fixed Repartition and JWC and Streaming Checkpointing broken by serialization
+   errors related to passing RowWriteFactory / DefaultRowWriter (SPARKC-202)
+ * Fixed exceptions occuring when performing RDD operations on any 
+   CassandraTableScanJavaRDD (SPARKC-236)
+
 1.4.0 M3
  * Fixed UDT column bug in SparkSQL (SPARKC-219)
  * Includes all patches up to release 1.2.5 and 1.3.0
