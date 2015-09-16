@@ -181,6 +181,76 @@ val company = Company("DataStax", address)
 sc.parallelize(Seq(company)).saveToCassandra("test", "companies")
 ```
 
+## Specifying TTL and WRITETIME
+Spark Cassandra Connector saves the data without explicitly specifying TTL or WRITETIME. If a certain 
+values for them have to be used, there are a couple options provided by the API. 
+
+TTL and WRITETIME options are specified as properties of `WriteConf` object, which can be optionally 
+passed to `saveToCassandra` method. TTL and WRITETIME options are specified independently from one 
+another. 
+
+### Using a constant value for all rows
+When the same value should be used for all the rows, one can use the following syntax:
+
+```scala
+import com.datastax.spark.connector.writer._
+...
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.constant(100)))
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(timestamp = TimestampOption.constant(ts)))
+```
+
+`TTLOption.constant` accepts one of the following values:
+  - `Int` / the number of seconds
+  - `scala.concurrent.duration.Duration`
+  - `org.joda.time.Duration`
+
+`TimestampOption.constant` accepts one of the following values:
+  - `Long` / the number of microseconds
+  - `java.util.Date`
+  - `org.joda.time.DateTime`
+
+### Using a different value for each row
+When a different value of TTL or WRITETIME has to be used for each row, one can use the following syntax:
+
+```scala
+import com.datastax.spark.connector.writer._
+...
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
+```
+
+`perRow(String)` method accepts a name of a property in each RDD item, which value will be used as TTL 
+or WRITETIME value for the row. 
+
+Say we have an RDD with `KeyValueWithTTL` objects, defined as follows:
+```scala
+case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
+
+val rdd = sc.makeRDD(Seq(
+  KeyValueWithTTL(1, 1L, "value1", 100), 
+  KeyValueWithTTL(2, 2L, "value2", 200), 
+  KeyValueWithTTL(3, 3L, "value3", 300)))
+```
+
+and a CQL table:
+```sql
+CREATE TABLE IF NOT EXISTS test.tab (
+    key INT, 
+    group BIGINT, 
+    value TEXT, 
+    PRIMARY KEY (key, group)
+)
+```
+
+When we run the following command:
+```scala
+import com.datastax.spark.connector.writer._
+...
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
+```
+
+the TTL for the 1st row will be 100, TTL for the 2nd row will be 200 and TTL for the 3rd row will be 300.
+
 ## Saving RDDs as new tables
 Use `saveAsCassandraTable` method to automatically create a new table with given name
 and save the `RDD` into it. The keyspace you're saving to must exist.
