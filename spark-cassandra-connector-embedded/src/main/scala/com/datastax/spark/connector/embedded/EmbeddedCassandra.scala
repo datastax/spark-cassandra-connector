@@ -92,7 +92,7 @@ object UserDefinedProperty {
 
   def getProperty(nodeProperty: NodeProperty): Option[String] =
     sys.env.get(nodeProperty.propertyName)
-  
+
   def getPropertyOrThrowIfNotFound(nodeProperty: NodeProperty): String =
     getProperty(nodeProperty).getOrElse(
       throw new ConfigurationException(s"Missing ${nodeProperty.propertyName} in system environment"))
@@ -101,10 +101,10 @@ object UserDefinedProperty {
 object EmbeddedCassandra {
 
   import UserDefinedProperty._
-  
-  private def countCommaSeparatedItemsIn(s: String): Int = 
+
+  private def countCommaSeparatedItemsIn(s: String): Int =
     s.count(_ == ',')
-  
+
   getProperty(HostProperty) match {
     case None =>
     case Some(hostsStr) =>
@@ -153,7 +153,7 @@ object EmbeddedCassandra {
         case _ => throw new RuntimeException(s"$index index is overflow the size of ${hosts.size}")
       }
     }
-  }   
+  }
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
     override def run() = cassandraRunners.flatten.foreach(_.destroy())
@@ -189,11 +189,13 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
   private val jmxPort = props.getOrElse("jmx_port", DefaultJmxPort)
   private val jmxPortProperty = s"-Dcassandra.jmx.local.port=$jmxPort"
+  private val host = props.getOrElse("listen_address", "127.0.0.1")
   private val sizeEstimatesUpdateIntervalProperty =
     s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
   private val jammAgent = classPath.split(File.pathSeparator).find(_.matches(".*jamm.*\\.jar"))
   private val jammAgentProperty = jammAgent.map("-javaagent:" + _).getOrElse("")
   private val cassandraMainClass = "org.apache.cassandra.service.CassandraDaemon"
+  private val nodeToolMainClass = "org.apache.cassandra.tools.NodeTool"
 
   private val process = new ProcessBuilder()
     .command(javaBin,
@@ -203,6 +205,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
       "-cp", classPath, cassandraMainClass, "-f")
     .inheritIO()
     .start()
+  val startupTime = System.currentTimeMillis()
 
   val nativePort =  props.get("native_transport_port").get.toInt
   if (!waitForPortOpen(InetAddress.getByName(props.get("rpc_address").get), nativePort, 100000))
@@ -213,6 +216,17 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     process.waitFor()
     FileUtils.deleteRecursive(tempDir)
     tempDir.delete()
+  }
+
+  def nodeToolCmd(params: String*): Unit = {
+    val cmd = List(javaBin, "-Xms512M", "-Xmx512M", "-Xmn384M", cassandraConfProperty, "-cp", classPath,
+      nodeToolMainClass, "-h", host, "-p", jmxPort.toString) ++ params
+    val nodeToolCmdProcess = new ProcessBuilder()
+      .command(cmd: _*)
+      .inheritIO()
+      .start()
+    nodeToolCmdProcess.waitFor()
+    nodeToolCmdProcess.destroy()
   }
 }
 
