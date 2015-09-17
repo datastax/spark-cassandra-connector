@@ -1,6 +1,7 @@
 1.3.1
  * Remove wrapRDD from CassandraTableScanJavaRDD. Fixes exception occuring
    when performing RDD operations on any CassandraTableScanJavaRDD (SPARKC-236)
+ * Backport synchronization fixes from 1.4.0 (SPARKC-247)
 
 1.3.0
  * Remove white spaces in c* connection host string (fix by Noorul Islam K M)
