@@ -1,3 +1,9 @@
+1.4.0
+ * Fixed broken integration tests (SPARKC-247):
+  - Fixed Scala reflection race condition in TupleColumnMapper.
+  - Fixed dev/run-real-tests script.
+  - Fixed CheckpointStreamSpec test.
+
 1.4.0 RC1
  * Added TTL and WRITETIME documentation (SPARKC-244)
  * Reduced the amount of unneccessary error logging in integration tests (SPARKC-223)
