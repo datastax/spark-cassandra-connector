@@ -49,6 +49,8 @@ class CheckpointStreamSpec
   }
 
   override def afterAll(): Unit ={
+    //Force the recreation of the template Spark Context
+    useSparkConf(sc.getConf, true)
   }
 
   "Spark Streaming + Checkpointing" should "work with JWCTable and RPCassandra Replica" in {
