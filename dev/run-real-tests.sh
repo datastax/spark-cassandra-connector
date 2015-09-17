@@ -22,6 +22,11 @@ SPARK_ARCHIVES_DIR="target/spark-archives"
 TARGET_SPARK_VERSION="$1"
 TARGET_SCALA_VERSION="$2"
 
+scala211=""
+if [ "$TARGET_SCALA_VERSION" = "2.11" ]; then
+    scala211="-Dscala-2.11=true"
+fi
+
 function downloadSpark {
     mirror="$(curl -s 'https://www.apache.org/dyn/closer.cgi' | grep -o '<strong>[^<]*</strong>' | sed 's/<[^>]*>//g' | head -1)"
 
@@ -78,13 +83,13 @@ function shutdown {
 function prepareClasspath {
     echo "Preparing classpath"
     classPathEntries=""
-    for pathEntry in $(find . -name "*.jar" | grep -s --colour=never "/target/")
+    for pathEntry in $(find . -name "*.jar" | grep -s --colour=never "/target/" | grep -v "/cassandra-server/")
     do
         classPathEntries+=":$(toAbsolutePath "$pathEntry")"
     done
 
     testClassPathEntries=""
-    for pathEntry in $(sbt/sbt pureTestClasspath | grep "TEST_CLASSPATH=" | sed -n 's/^TEST_CLASSPATH\=\(.*\)$/\1/p')
+    for pathEntry in $(sbt/sbt "$scala211" pureTestClasspath | grep -s --colour=never "TEST_CLASSPATH=" | sed -n 's/^TEST_CLASSPATH\=\(.*\)$/\1/p')
     do
         testClassPathEntries+=":$pathEntry"
     done
@@ -94,11 +99,7 @@ function prepareClasspath {
 
 
 echo "Compiling everything and packaging against Scala $TARGET_SCALA_VERSION"
-scala211=""
-if [ "$TARGET_SCALA_VERSION" = "2.11" ]; then
-    scala211="-Dscala-2.11=true"
-fi
-sbt/sbt "$scala211" clean it:package assembly
+sbt/sbt "$scala211" clean test:package it:package assembly
 if [ "$?" != "0" ]; then
     echo "Failed to build artifacts"
     exit 1
@@ -131,7 +132,7 @@ export IT_TEST_SPARK_MASTER="spark://$SPARK_MASTER_IP:$SPARK_MASTER_PORT"
 "$SPARK_HOME"/sbin/spark-daemon.sh start org.apache.spark.deploy.worker.Worker 2 "$IT_TEST_SPARK_MASTER"
 
 echo "Running tests for Spark $TARGET_SPARK_VERSION and Scala $TARGET_SCALA_VERSION"
-sbt/sbt it:test
+sbt/sbt "$scala211" it:test
 if [ "$?" = "0" ]; then
   echo "Tests succeeded"
 else
