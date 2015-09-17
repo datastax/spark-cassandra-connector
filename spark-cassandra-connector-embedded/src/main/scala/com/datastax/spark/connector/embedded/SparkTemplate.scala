@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.embedded
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.log4j.{Level, Logger}
@@ -49,6 +51,11 @@ object SparkTemplate {
     }
 
     System.err.println("Starting SparkContext with the following configuration:\n" + defaultConf.toDebugString)
+    for (cp <- sys.env.get("SPARK_SUBMIT_CLASSPATH"))
+      conf.setJars(
+        cp.split(File.pathSeparatorChar)
+          .filter(_.endsWith(".jar"))
+          .map(new File(_).getAbsoluteFile.toURI.toString))
     _sc = new SparkContext(conf)
     _sc
   }
