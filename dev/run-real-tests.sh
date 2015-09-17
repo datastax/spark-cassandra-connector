@@ -78,12 +78,13 @@ function remove_duplicates {
 function shutdown {
     "$SPARK_HOME"/sbin/spark-daemon.sh stop org.apache.spark.deploy.worker.Worker 2
     "$SPARK_HOME"/sbin/stop-master.sh
+    rm -rf "$SPARK_DIR"/work
 }
 
 function prepareClasspath {
     echo "Preparing classpath"
     classPathEntries=""
-    for pathEntry in $(find . -name "*.jar" | grep -s --colour=never "/target/" | grep -v "/cassandra-server/")
+    for pathEntry in $(find . -name "spark-cassandra-connector*.jar" | grep -s --colour=never "/target/scala-$TARGET_SCALA_VERSION" | grep -s --colour=never -v "/cassandra-server/" | grep -s --colour=never -v "$SPARK_DIR")
     do
         classPathEntries+=":$(toAbsolutePath "$pathEntry")"
     done
