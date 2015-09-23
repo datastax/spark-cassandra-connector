@@ -23,6 +23,7 @@ object CassandraSparkBuild extends Build {
   import Settings._
   import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
+  import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
 
@@ -33,12 +34,12 @@ object CassandraSparkBuild extends Build {
     dir = file("."),
     settings = rootSettings,
     contains = Seq(embedded, connector, demos, jconnector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs IntegrationTest
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
@@ -58,16 +59,16 @@ object CassandraSparkBuild extends Build {
   lazy val demos = RootProject(
     name = "demos",
     dir = demosPath,
-    contains = Seq(simpleDemos, kafkaStreaming, twitterStreaming)
-  )
+    contains = Seq(simpleDemos/*, kafkaStreaming*/, twitterStreaming)
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val simpleDemos = Project(
     id = "simple-demos",
     base = demosPath / "simple-demos",
     settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
-  )
-
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+/*
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
     conf = demoSettings ++ kafkaDemoSettings ++ Seq(
@@ -75,13 +76,13 @@ object CassandraSparkBuild extends Build {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
    }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
-
+*/
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -98,9 +99,16 @@ object CassandraSparkBuild extends Build {
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value)
     ))
 
-  def RootProject(name: String, dir: sbt.File, settings: => scala.Seq[sbt.Def.Setting[_]] = Seq.empty, contains: Seq[ProjectReference]): Project =
-    Project(id = name, base = dir, settings = parentSettings ++ settings, aggregate = contains)
-
+  def RootProject(
+    name: String,
+    dir: sbt.File, settings: =>
+    scala.Seq[sbt.Def.Setting[_]] = Seq.empty,
+    contains: Seq[ProjectReference]): Project =
+      Project(
+        id = name,
+        base = dir,
+        settings = parentSettings ++ settings,
+        aggregate = contains)
 }
 
 object Dependencies {
