@@ -5,6 +5,7 @@
  * Fix merge strategy for netty.io.properties (SPARKC-249)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
    to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
+ * Make OptionConverter handle Nones as well as nulls (SPARKC-275)
 
 1.4.0
  * Fixed broken integration tests (SPARKC-247):

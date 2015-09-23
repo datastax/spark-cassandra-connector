@@ -492,6 +492,7 @@ object TypeConverter {
 
     def convertPF = {
       case null => None
+      case None => None
       case other => Some(c.convert(other))
     }
   }

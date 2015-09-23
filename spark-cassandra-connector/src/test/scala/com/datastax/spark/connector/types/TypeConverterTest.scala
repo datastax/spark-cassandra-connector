@@ -192,6 +192,7 @@ class TypeConverterTest {
   def testOption() {
     val c = TypeConverter.forType[Option[String]]
     assertEquals(None, c.convert(null))
+    assertEquals(None, c.convert(None))
     assertEquals(Some("not-null"), c.convert("not-null"))
   }
 
