@@ -244,6 +244,7 @@ object Settings extends Build {
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     mergeStrategy in assembly <<= (mergeStrategy in assembly) {
       (old) => {
+        case PathList("META-INF", "io.netty.versions.properties", xs @ _*) => MergeStrategy.last
         case PathList("com", "google", xs @ _*) => MergeStrategy.last
         case x => old(x)
       }
