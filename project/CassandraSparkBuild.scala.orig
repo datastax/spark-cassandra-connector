@@ -17,15 +17,24 @@
 
 import java.io.File
 
-import sbt._
 import sbt.Keys._
+<<<<<<< HEAD
+import sbt._
+||||||| merged common ancestors
+=======
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
+>>>>>>> b1.4
 
 object CassandraSparkBuild extends Build {
   import Settings._
+<<<<<<< HEAD
+||||||| merged common ancestors
+  import Versions.scalaBinary
+=======
   import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
   import sbtsparkpackage.SparkPackagePlugin
+>>>>>>> b1.4
 
   val namespace = "spark-cassandra-connector"
 
@@ -34,9 +43,19 @@ object CassandraSparkBuild extends Build {
   lazy val root = RootProject(
     name = "root",
     dir = file("."),
+<<<<<<< HEAD
     settings = rootSettings ++ Seq(cassandraServerClasspath := { "" }),
+    contains = Seq(cassandraServerProject, embedded, connector, demos, jconnector)
+  )
+||||||| merged common ancestors
+    settings = rootSettings,
+    contains = Seq(embedded, connector, demos, jconnector)
+  )
+=======
+    settings = rootSettings,
     contains = Seq(embedded, connector, demos, jconnector)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+>>>>>>> b1.4
 
   lazy val cassandraServerProject = Project(
     id = "cassandra-server",
