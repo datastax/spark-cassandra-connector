@@ -1,10 +1,25 @@
+1.5.0 M2 (unreleased)
  * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
+ * Includes all patches up to 1.4.0.
 
 1.5.0 M1
  * Added ability to build against unreleased Spark versions (SPARKC-242)
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+1.4.0
+ * Fixed broken integration tests (SPARKC-247):
+   - Fixed Scala reflection race condition in TupleColumnMapper.
+   - Fixed dev/run-real-tests script.
+   - Fixed CheckpointStreamSpec test.
+
+1.4.0 RC1
+ * Added TTL and WRITETIME documentation (SPARKC-244)
+ * Reduced the amount of unneccessary error logging in integration tests (SPARKC-223)
+ * Fixed Repartition and JWC and Streaming Checkpointing broken by serialization
+   errors related to passing RowWriteFactory / DefaultRowWriter (SPARKC-202)
+ * Fixed exceptions occuring when performing RDD operations on any 
+   CassandraTableScanJavaRDD (SPARKC-236)
 
 1.4.0 M3
  * Fixed UDT column bug in SparkSQL (SPARKC-219)
