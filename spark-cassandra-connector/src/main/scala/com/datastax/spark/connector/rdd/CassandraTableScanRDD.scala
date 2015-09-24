@@ -6,17 +6,18 @@ import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
 
+import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.InputMetricsUpdater
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
+import com.datastax.spark.connector.rdd.partitioner.{NodeAddresses, CassandraPartition, CassandraRDDPartitioner, CqlTokenRange}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
 
 
 /** RDD representing a Table Scan of A Cassandra table.
@@ -37,9 +38,9 @@ import com.datastax.spark.connector.util.CountingIterator
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
   * The following properties control the number of partitions and the fetch size:
-  * - spark.cassandra.input.split.size: approx number of Cassandra partitions in a Spark partition,
-  *   default 100000
-  * - spark.cassandra.input.page.row.size:  number of CQL rows fetched per roundtrip,
+  * - spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
+  *   partition, default 64 MB
+  * - spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
   *   default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then
@@ -113,18 +114,44 @@ class CassandraTableScanRDD[R] private[connector](
       readConf = readConf)
   }
 
+  /** Selects a subset of columns mapped to the key and returns an RDD of pairs.
+    * Similar to the builtin Spark keyBy method, but this one uses implicit
+    * RowReaderFactory to construct the key objects.
+    * The selected columns must be available in the CassandraRDD.
+    *
+    * @param columns column selector passed to the rrf to create the row reader,
+    *                useful when the key is mapped to a tuple or a single value
+    */
+  def keyBy[K : RowReaderFactory](columns: ColumnSelector): CassandraTableScanRDD[(K, R)] = {
+    val kRRF = implicitly[RowReaderFactory[K]]
+    val vRRF = rowReaderFactory
+    implicit val kvRRF = new KeyValueRowReaderFactory[K, R](columns, kRRF, vRRF)
+    convertTo[(K, R)]
+  }
+
+  /** Extracts a key of the given class from the given columns.
+    *  @see `keyBy(ColumnSelector)` */
+  def keyBy[K : RowReaderFactory](columns: ColumnRef*): CassandraTableScanRDD[(K, R)] =
+    keyBy(SomeColumns(columns: _*))
+
+  /** Extracts a key of the given class from all the available columns.
+    * @see `keyBy(ColumnSelector)` */
+  def keyBy[K : RowReaderFactory]: CassandraTableScanRDD[(K, R)] =
+    keyBy(AllColumns)
+
   override def getPartitions: Array[Partition] = {
     verify() // let's fail fast
-    val tf = TokenFactory.forCassandraPartitioner(cassandraPartitionerClassName)
-    val partitions = new CassandraRDDPartitioner(connector, tableDef, splitSize)(tf).partitions(where)
+    val partitioner = CassandraRDDPartitioner(connector, tableDef, splitCount, splitSize)
+    val partitions = partitioner.partitions(where)
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
 
+  private lazy val nodeAddresses = new NodeAddresses(connector)
+
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition]
-      .endpoints.flatMap(inet => Seq(inet.getHostName, inet.getHostAddress)).toSeq.distinct
+    split.asInstanceOf[CassandraPartition].endpoints.flatMap(nodeAddresses.hostNames).toSeq
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange): (String, Seq[Any]) = {
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")

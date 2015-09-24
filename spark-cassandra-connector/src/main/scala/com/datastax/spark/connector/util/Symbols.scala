@@ -3,6 +3,8 @@ package com.datastax.spark.connector.util
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
 
+import org.apache.commons.lang3.tuple
+
 object Symbols {
   val OptionSymbol = typeOf[Option[Any]].asInstanceOf[TypeRef].sym
   val ListSymbol = typeOf[List[Any]].asInstanceOf[TypeRef].sym
@@ -21,6 +23,9 @@ object Symbols {
   val JavaHashSetSymbol = typeOf[java.util.HashSet[Any]].asInstanceOf[TypeRef].sym
   val JavaMapSymbol = typeOf[java.util.Map[Any, Any]].asInstanceOf[TypeRef].sym
   val JavaHashMapSymbol = typeOf[java.util.HashMap[Any, Any]].asInstanceOf[TypeRef].sym
+
+  val PairSymbol = typeOf[tuple.Pair[Any, Any]].asInstanceOf[TypeRef].sym
+  val TripleSymbol = typeOf[tuple.Triple[Any, Any, Any]].asInstanceOf[TypeRef].sym
 
   val ListSymbols = Set(
     ListSymbol, VectorSymbol, SeqSymbol, IndexedSeqSymbol, IterableSymbol,

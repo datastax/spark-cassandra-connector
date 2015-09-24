@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.spark.connector.embedded.SparkTemplate._
+
 import scala.collection.JavaConversions._
 import scala.collection.immutable.Map
 import scala.util.Random
@@ -13,7 +15,7 @@ import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, Spark
 class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   private val ks = "GroupingBatchBuilder"
 
@@ -24,7 +26,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
 
   val protocolVersion = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersionEnum)
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
-  val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, Seq("id", "value"), Map.empty)
+  val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
   val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
   def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {

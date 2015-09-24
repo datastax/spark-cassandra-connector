@@ -17,10 +17,13 @@
 
 import sbt._
 import sbt.Keys._
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 
 object CassandraSparkBuild extends Build {
   import Settings._
+  import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
+  import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
 
@@ -31,12 +34,12 @@ object CassandraSparkBuild extends Build {
     dir = file("."),
     settings = rootSettings,
     contains = Seq(embedded, connector, demos, jconnector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs IntegrationTest
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
@@ -49,23 +52,23 @@ object CassandraSparkBuild extends Build {
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
-    settings = japiSettings ++ connector.settings,
+    settings = japiSettings ++ connector.settings :+ (spName := s"datastax/$namespace-java"),
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs IntegrationTest
 
   lazy val demos = RootProject(
     name = "demos",
     dir = demosPath,
-    contains = Seq(simpleDemos, kafkaStreaming, twitterStreaming)
-  )
+    contains = Seq(simpleDemos/*, kafkaStreaming*/, twitterStreaming)
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val simpleDemos = Project(
     id = "simple-demos",
     base = demosPath / "simple-demos",
     settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
-  )
-
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+/*
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
     conf = demoSettings ++ kafkaDemoSettings ++ Seq(
@@ -73,13 +76,13 @@ object CassandraSparkBuild extends Build {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
    }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
-
+*/
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -96,9 +99,16 @@ object CassandraSparkBuild extends Build {
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value)
     ))
 
-  def RootProject(name: String, dir: sbt.File, settings: => scala.Seq[sbt.Def.Setting[_]] = Seq.empty, contains: Seq[ProjectReference]): Project =
-    Project(id = name, base = dir, settings = parentSettings ++ settings, aggregate = contains)
-
+  def RootProject(
+    name: String,
+    dir: sbt.File, settings: =>
+    scala.Seq[sbt.Def.Setting[_]] = Seq.empty,
+    contains: Seq[ProjectReference]): Project =
+      Project(
+        id = name,
+        base = dir,
+        settings = parentSettings ++ settings,
+        aggregate = contains)
 }
 
 object Dependencies {
@@ -125,9 +135,6 @@ object Dependencies {
        .exclude("com.sun.jmx", "jmxri")
        .exclude("com.sun.jdmk", "jmxtools")
        .exclude("net.sf.jopt-simple", "jopt-simple")
-
-    def cassandraServerExclusions: ModuleID = module.logbackExclude
-      .exclude("org.antlr", "stringtemplate")
   }
 
   object Compile {
@@ -135,9 +142,7 @@ object Dependencies {
     val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
     val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
     val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
-    val cassandraThrift     = "org.apache.cassandra"    % "cassandra-thrift"       % Cassandra       guavaExclude // ApacheV2
     val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude // ApacheV2
-    val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Cassandra      % "test,it" cassandraServerExclusions // ApacheV2
     val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
     val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
     val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
@@ -158,6 +163,11 @@ object Dependencies {
     object Metrics {
       val metricsCore       = "com.codahale.metrics"    % "metrics-core"           % CodaHaleMetrics % "provided"
       val metricsJson       = "com.codahale.metrics"    % "metrics-json"           % CodaHaleMetrics % "provided"
+    }
+
+    object Jetty {
+      val jettyServer       = "org.eclipse.jetty"       % "jetty-server"            % SparkJetty % "provided"
+      val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
     }
 
     object Embedded {
@@ -181,6 +191,7 @@ object Dependencies {
       val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
       val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
+      val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
       val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
@@ -196,6 +207,8 @@ object Dependencies {
 
   val metrics = Seq(Metrics.metricsCore, Metrics.metricsJson)
 
+  val jetty = Seq(Jetty.jettyServer, Jetty.jettyServlet)
+
   val testKit = Seq(
     Test.akkaTestKit,
     Test.commonsIO,
@@ -204,6 +217,7 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
+    Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
     Test.powerMockMockito
@@ -211,11 +225,11 @@ object Dependencies {
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
-  val cassandra = Seq(cassandraThrift, cassandraClient, cassandraServer, cassandraDriver)
+  val cassandra = Seq(cassandraClient, cassandraDriver)
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive)
 
-  val connector = testKit ++ metrics ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
+  val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(

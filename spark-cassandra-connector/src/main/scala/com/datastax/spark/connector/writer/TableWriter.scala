@@ -2,12 +2,15 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.spark.connector.types.{MapType, ListType, ColumnType}
+import org.apache.spark.metrics.OutputMetricsUpdater
+
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.metrics.OutputMetricsUpdater
 import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.{Logging, TaskContext}
 
 import scala.collection._
@@ -19,6 +22,7 @@ import scala.collection._
 class TableWriter[T] private (
     connector: CassandraConnector,
     tableDef: TableDef,
+    columnSelector: IndexedSeq[ColumnRef],
     rowWriter: RowWriter[T],
     writeConf: WriteConf) extends Serializable with Logging {
 
@@ -37,9 +41,6 @@ class TableWriter[T] private (
     case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
     case _ => None
   }
-
-  private def quote(name: String): String =
-    "\"" + name + "\""
 
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
@@ -68,8 +69,23 @@ class TableWriter[T] private (
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
 
+    val nameToBehavior = (columnSelector collect {
+        case cn:CollectionColumnName => cn.columnName -> cn.collectionBehavior
+      }).toMap
+
+    val setNonCounterColumnsClause = for {
+      colDef <- nonCounterColumns
+      name = colDef.columnName
+      collectionBehavior = nameToBehavior.get(name)
+      quotedName = quote(name)
+    } yield collectionBehavior match {
+        case Some(CollectionAppend)           => s"$quotedName = $quotedName + :$quotedName"
+        case Some(CollectionPrepend)          => s"$quotedName = :$quotedName + $quotedName"
+        case Some(CollectionRemove)           => s"$quotedName = $quotedName - :$quotedName"
+        case Some(CollectionOverwrite) | None => s"$quotedName = :$quotedName"
+      }
+
     def quotedColumnNames(columns: Seq[ColumnDef]) = columns.map(_.columnName).map(quote)
-    val setNonCounterColumnsClause = quotedColumnNames(nonCounterColumns).map(c => s"$c = :$c")
     val setCounterColumnsClause = quotedColumnNames(counterColumns).map(c => s"$c = $c + :$c")
     val setClause = (setNonCounterColumnsClause ++ setCounterColumnsClause).mkString(", ")
     val whereClause = quotedColumnNames(primaryKey).map(c => s"$c = :$c").mkString(" AND ")
@@ -78,10 +94,13 @@ class TableWriter[T] private (
   }
 
   private val isCounterUpdate =
-    tableDef.allColumns.exists(_.isCounterColumn)
+    tableDef.columns.exists(_.isCounterColumn)
+
+  private val containsCollectionBehaviors =
+    columnSelector.exists(_.isInstanceOf[CollectionColumnName])
 
   private val queryTemplate: String = {
-    if (isCounterUpdate)
+    if (isCounterUpdate || containsCollectionBehaviors)
       queryTemplateUsingUpdate
     else
       queryTemplateUsingInsert
@@ -152,13 +171,8 @@ class TableWriter[T] private (
 
 object TableWriter {
 
-  private def checkColumns(table: TableDef, columnNames: Seq[String]) = {
-    checkMissingColumns(table, columnNames)
-    checkMissingPrimaryKeyColumns(table, columnNames)
-  }
-
   private def checkMissingColumns(table: TableDef, columnNames: Seq[String]) {
-    val allColumnNames = table.allColumns.map(_.columnName)
+    val allColumnNames = table.columns.map(_.columnName)
     val missingColumns = columnNames.toSet -- allColumnNames
     if (missingColumns.nonEmpty)
       throw new IllegalArgumentException(
@@ -173,6 +187,73 @@ object TableWriter {
         s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")}")
   }
 
+  /**
+   * Check whether a collection behavior is being applied to a non collection column
+   * Check whether prepend is used on any Sets or Maps
+   * Check whether remove is used on Maps
+   */
+  private def checkCollectionBehaviors(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) {
+    val tableCollectionColumns = table.columns.filter(cd => cd.isCollection)
+    val tableCollectionColumnNames = tableCollectionColumns.map(_.columnName)
+    val tableListColumnNames = tableCollectionColumns
+      .map(c => (c.columnName, c.columnType))
+      .collect { case (name, x: ListType[_]) => name }
+
+    val tableMapColumnNames = tableCollectionColumns
+      .map(c => (c.columnName, c.columnType))
+      .collect { case (name, x: MapType[_, _]) => name }
+
+    val refsWithCollectionBehavior = columnRefs collect {
+      case columnName: CollectionColumnName => columnName
+    }
+
+    val collectionBehaviorColumnNames = refsWithCollectionBehavior.map(_.columnName)
+
+    //Check for non-collection columns with a collection Behavior
+    val collectionBehaviorNormalColumn =
+      collectionBehaviorColumnNames.toSet -- tableCollectionColumnNames.toSet
+
+    if (collectionBehaviorNormalColumn.nonEmpty)
+      throw new IllegalArgumentException(
+        s"""Collection behaviors (add/remove/append/prepend) are only allowed on collection columns.
+           |Normal Columns with illegal behavior: ${collectionBehaviorNormalColumn.mkString}"""
+          .stripMargin
+      )
+
+    //Check that prepend is used only on lists
+    val prependBehaviorColumnNames = refsWithCollectionBehavior
+      .filter(_.collectionBehavior == CollectionPrepend)
+      .map(_.columnName)
+    val prependOnNonList = prependBehaviorColumnNames.toSet -- tableListColumnNames.toSet
+
+    if (prependOnNonList.nonEmpty)
+      throw new IllegalArgumentException(
+        s"""The prepend collection behavior only applies to Lists. Prepend used on:
+           |${prependOnNonList.mkString}""".stripMargin
+      )
+
+    //Check that remove is not used on Maps
+
+    val removeBehaviorColumnNames = refsWithCollectionBehavior
+      .filter(_.collectionBehavior == CollectionRemove)
+      .map(_.columnName)
+
+    val removeOnMap = removeBehaviorColumnNames.toSet & tableMapColumnNames.toSet
+
+    if (removeOnMap.nonEmpty)
+      throw new IllegalArgumentException(
+        s"The remove operation is currently not supported for Maps. Remove used on: ${removeOnMap
+          .mkString}"
+      )
+  }
+
+  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) = {
+    val columnNames = columnRefs.map(_.columnName)
+    checkMissingColumns(table, columnNames)
+    checkMissingPrimaryKeyColumns(table, columnNames)
+    checkCollectionBehaviors(table, columnRefs)
+  }
+
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
@@ -183,12 +264,13 @@ object TableWriter {
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
       .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
-    val selectedColumns = tableDef.select(columnNames).map(_.columnName)
+    val selectedColumns = columnNames.selectFrom(tableDef)
+    val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
-      tableDef.copy(regularColumns = tableDef.regularColumns ++ writeConf.optionsAsColumns(keyspaceName, tableName)),
-      selectedColumns ++ writeConf.optionPlaceholders, columnNames.aliases)
-    
+      tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
+      selectedColumns ++ optionColumns.map(_.ref))
+
     checkColumns(tableDef, selectedColumns)
-    new TableWriter[T](connector, tableDef, rowWriter, writeConf)
+    new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
   }
 }

@@ -3,18 +3,18 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import scala.collection.JavaConversions
-import scala.reflect.runtime.universe.typeTag
 
 import org.joda.time.DateTime
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
 
-import JavaConversions._
+import scala.reflect.runtime.universe.typeTag
+import scala.collection.JavaConversions._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -43,12 +43,16 @@ class SubKeyValue extends SuperKeyValue {
   var group: Long = 0L
 }
 
+case class Address(street: String, city: String, zip: Int)
+case class ClassWithUDT(key: Int, name: String, addr: Address)
+case class ClassWithTuple(key: Int, value: (Int, String))
+
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000
 
   private val ks = "CassandraRDDSpec"
@@ -88,6 +92,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     session.execute(s"""CREATE TYPE IF NOT EXISTS "$ks".address (street text, city text, zip int)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
     session.execute(s"""INSERT INTO "$ks".udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)""")
+    session.execute(s"""INSERT INTO "$ks".tuples(key, value) VALUES (1, (1, 'first'))""")
 
     session.execute("""CREATE KEYSPACE IF NOT EXISTS "MixedSpace" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
     session.execute("""CREATE TABLE IF NOT EXISTS "MixedSpace"."MixedCase"(key INT PRIMARY KEY, value INT)""")
@@ -268,9 +275,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result.head.getString("value") should startWith("000")
   }
 
-  it should "use a single partition for a tiny table" in {
+  it should "use a single partition per node for a tiny table" in {
     val rdd = sc.cassandraTable(ks, "key_value")
-    rdd.partitions should have length 1
+    rdd.partitions should have length conn.hosts.size
   }
 
   it should "allow for reading collections" in {
@@ -374,7 +381,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     row.getString(1) should be("name")
   }
 
-  it should "allow to fetch UDT columns" in {
+  it should "allow to fetch UDT columns as UDTValue objects" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name", "addr").collect()
     result should have length 1
     val row = result.head
@@ -386,6 +393,40 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getString("street") should be("Some Street")
     udtValue.getString("city") should be("Paris")
     udtValue.getInt("zip") should be(11120)
+  }
+
+  it should "allow to fetch UDT columns as objects of case classes" in {
+    val result = sc.cassandraTable[ClassWithUDT](ks, "udts").select("key", "name", "addr").collect()
+    result should have length 1
+    val row = result.head
+    row.key should be(1)
+    row.name should be("name")
+
+    val udtValue = row.addr
+    udtValue.street should be("Some Street")
+    udtValue.city should be("Paris")
+    udtValue.zip should be(11120)
+  }
+
+  it should "allow to fetch tuple columns as TupleValue objects" in {
+    val result = sc.cassandraTable(ks, "tuples").select("key", "value").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+
+    val tuple = row.getTupleValue(1)
+    tuple.size should be(2)
+    tuple.getInt(0) should be(1)
+    tuple.getString(1) should be("first")
+  }
+
+  it should "allow to fetch tuple columns as Scala tuples" in {
+    val result = sc.cassandraTable[ClassWithTuple](ks, "tuples").select("key", "value").collect()
+    result should have length 1
+    val row = result.head
+    row.key should be(1)
+    row.value._1 should be(1)
+    row.value._2 should be("first")
   }
 
   it should "throw appropriate IOException when the table was not found at the computation time" in {
@@ -435,7 +476,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of two pairs" in {
-    val results = sc.cassandraTable[((Int, Int), (Int, String))](ks, "composite_key").select("key_c1", "key_c2" ,"group", "value").collect()
+    val results = sc
+      .cassandraTable[(Int, String)](ks, "composite_key")
+      .select("group", "value", "key_c1", "key_c2")
+      .keyBy[(Int, Int)]("key_c1", "key_c2")
+      .collect()
     results should have length 4
     results should contain (((1, 1), (1, "value1")))
     results should contain (((1, 1), (2, "value2")))
@@ -444,7 +489,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a pair and a case class" in {
-    val results = sc.cassandraTable[((Int, Int), Value)](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc
+      .cassandraTable[Value](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[(Int, Int)]("key", "group")
+      .collect()
     results should have length 3
     val map = results.toMap
     map((1, 100)) should be (Value("0001"))
@@ -453,7 +502,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple" in {
-    val results = sc.cassandraTable[(KeyGroup, (Int, Int, String))](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc
+      .cassandraTable[(Int, Int, String)](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[KeyGroup]
+      .collect()
     results should have length 3
     results should contain ((KeyGroup(1, 100), (1, 100, "0001")))
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
@@ -473,8 +526,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     }
 
     val results = sc
-      .cassandraTable[(Key, (Int, Int, String))](ks, "wide_rows")
+      .cassandraTable[(Int, Int, String)](ks, "wide_rows")
       .select("key", "group", "value")
+      .keyBy[Key]
       .spanByKey
       .collect()
       .toMap
@@ -494,9 +548,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       (20, 22, "2022"))
   }
 
-
   it should "allow to read Cassandra table as Array of tuples of two case classes" in {
-    val results = sc.cassandraTable[(KeyGroup, Value)](ks, "key_value").select("key", "group", "value").collect()
+    val results = sc.cassandraTable[Value](ks, "key_value")
+      .select("key", "group", "value")
+      .keyBy[KeyGroup]
+      .collect()
     results should have length 3
     results should contain((KeyGroup(1, 100), Value("0001")))
     results should contain((KeyGroup(2, 100), Value("0002")))
@@ -623,7 +679,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       session.execute(s"""TRUNCATE "$ks".write_time_ttl_test""")
       session.execute(s"""INSERT INTO "$ks".write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TIMESTAMP $writeTime""")
     }
-    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedFromCassandraAs))
+    implicit val mapper = new DefaultColumnMapper[WriteTimeClass](Map("writeTimeOfValue" -> "value".writeTime.selectedAs))
     val results = sc.cassandraTable[WriteTimeClass](ks, "write_time_ttl_test")
       .select("id", "value", "value".writeTime).collect().headOption
     results.isDefined should be (true)
@@ -636,7 +692,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       session.execute(s"""TRUNCATE "$ks".write_time_ttl_test""")
       session.execute(s"""INSERT INTO "$ks".write_time_ttl_test (id, value, value2) VALUES (1, 'test', 'test2') USING TTL $ttl""")
     }
-    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedFromCassandraAs))
+    implicit val mapper = new DefaultColumnMapper[TTLClass](Map("ttlOfValue" -> "value".ttl.selectedAs))
     val results = sc.cassandraTable[TTLClass](ks, "write_time_ttl_test")
       .select("id", "value", "value".ttl).collect().headOption
     results.isDefined should be (true)

@@ -1,11 +1,60 @@
+1.3.0
+ * Remove white spaces in c* connection host string (fix by Noorul Islam K M)
+ * Included from 1.2.5
+   - Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+   - Add a configurable delay between subsequent query retries (SPARKC-221)
+   - spark.cassandra.output.throughput_mb_per_sec can now be set to a decimal (SPARKC-226)
+   - Fixed connection caching, changed SSL EnabledAlgorithms to Set (SPARKC-227)
+
+1.3.0 RC1
+ * Fixed NoSuchElementException when using UDTs in SparkSQL (SPARKC-218)
+
+1.3.0 M2
+ * Support for loading, saving and mapping Cassandra tuples (SPARKC-172)
+ * Support for mapping case classes to UDTs on saving (SPARKC-190)
+ * Table and keyspace Name suggestions in DataFrames API (SPARKC-186)
+ * Removed thrift completely (SPARKC-94)
+   - removed cassandra-thrift.jar dependency
+   - automatic split sizing based on system.size_estimates table
+   - add option to manually force the number of splits
+   - Cassandra listen addresses fetched from system.peers table
+   - spark.cassandra.connection.(rpc|native).port replaced with spark.cassandra.connection.port
+ * Refactored ColumnSelector to avoid circular dependency on TableDef (SPARKC-177)
+ * Support for modifying C* Collections using saveToCassandra (SPARKC-147)
+ * Added the ability to use Custom Mappers with repartitionByCassandraReplica (SPARKC-104)
+ * Added methods to work with tuples in Java API (SPARKC-206)
+ * Fixed input_split_size_in_mb property (SPARKC-208)
+ * Fixed DataSources tests when connecting to an external cluster (SPARKC-178)
+ * Added Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
+ * Removed CassandraRelation by CassandraSourceRelation and Added cache to
+   CassandraCatalog (SPARKC-163)
+
+1.3.0 M1
+ * Removed use of Thrift describe_ring and replaced it with native Java Driver
+   support for fetching TokenRanges (SPARKC-93)
+ * Support for converting Cassandra UDT column values to Scala case-class objects (SPARKC-4)
+   - Introduced a common interface for TableDef and UserDefinedType
+   - Removed ClassTag from ColumnMapper
+   - Removed by-index column references and replaced them with by-name ColumnRefs
+   - Created a GettableDataToMappedTypeConverter that can handle UDTs
+   - ClassBasedRowReader delegates object conversion instead of doing it by itself;
+     this improves unit-testability of code
+ * Decoupled PredicatePushDown logic from Spark (SPARKC-166)
+   - added support for Filter and Expression predicates
+   - improved code testability and added unit-tests
+ * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
+ * Added support to use aliases with Tuples (SPARKC-125)
+
+********************************************************************************
+
 1.2.5
  * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
+ * Add a configurable delay between subsequent query retries (SPARKC-221)
  * spark.cassandra.output.throughput_mb_per_sec can now be set to a decimal (SPARKC-226)
- * Fixed Connection Caching, Changed SSL EnabledAlgorithms to Set (SPARKC-227)
+ * Fixed connection caching, changed SSL EnabledAlgorithms to Set (SPARKC-227)
 
 1.2.4
  * Cassandra native count is performed by `cassandraCount` method (SPARKC-215)
- * Add a configurable delay between subsequent query retries (SPARKC-221)
 
 1.2.3
  * Support for connection compressions configuration (SPARKC-124)

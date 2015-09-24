@@ -27,9 +27,4 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "be able to use a secure connection when using thrift" in {
-    conn.withCassandraClientDo { client =>
-      assert(client.describe_cluster_name() === "Test Cluster0")
-    }
-  }
 }

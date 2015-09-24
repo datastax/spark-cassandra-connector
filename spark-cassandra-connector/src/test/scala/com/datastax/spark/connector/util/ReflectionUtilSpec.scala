@@ -118,4 +118,28 @@ class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
     assert(setters("arg1_$eq") =:= typeOf[Int])
     assert(setters("arg2_$eq") =:= typeOf[List[String]])
   }
+
+  "ReflectionUtil.methodParamTypes" should "return method param types" in {
+    val paramTypes = ReflectionUtil.methodParamTypes(typeOf[ClassWithGetters], "otherMethod")
+    paramTypes should have size 1
+    assert(paramTypes.head =:= typeOf[String])
+  }
+
+  private class GenericClass[T] {
+    def genericMethod(param: T): Unit = {}
+  }
+
+  it should "return proper method param types for generic type" in {
+    val paramTypes = ReflectionUtil.methodParamTypes(typeOf[GenericClass[Int]], "genericMethod")
+    paramTypes should have size 1
+    assert(paramTypes.head =:= typeOf[Int], "because returned param type should be Int")
+  }
+
+  it should "throw IllegalArgumentException if the requested method is missing" in {
+    val exception = the [IllegalArgumentException] thrownBy
+      ReflectionUtil.methodParamTypes(typeOf[ClassWithGetters], "unknownMethodName")
+    exception.getMessage should include ("unknownMethodName")
+    exception.getMessage should include ("ClassWithGetters")
+  }
+
 }

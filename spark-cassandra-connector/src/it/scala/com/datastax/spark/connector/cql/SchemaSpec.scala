@@ -3,6 +3,7 @@ package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.types._
 import org.scalatest.Inspectors._
 
@@ -10,7 +11,7 @@ import org.scalatest.Inspectors._
 class SchemaSpec extends SparkCassandraITWordSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
+  val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     session.execute(
@@ -126,8 +127,8 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
 
     "allow to list fields of a user defined type" in {
       val udt = table.columnByName("d16_address").columnType.asInstanceOf[UserDefinedType]
-      udt.fieldNames shouldBe Seq("street", "city", "zip")
-      udt.fieldTypes shouldBe Seq(VarCharType, VarCharType, IntType)
+      udt.columnNames shouldBe Seq("street", "city", "zip")
+      udt.columnTypes shouldBe Seq(VarCharType, VarCharType, IntType)
     }
   }
 

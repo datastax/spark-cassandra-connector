@@ -11,7 +11,6 @@ import com.datastax.spark.connector.cql.{AuthConfFactory, AuthConf, CassandraCon
 object CustomConnectionFactory extends CassandraConnectionFactory {
   val CustomProperty = "spark.cassandra.connection.custom.property"
   override def properties = Set(CustomProperty)
-  override def createThriftClient(conf: CassandraConnectorConf, hostAddress: InetAddress) = ???
   override def createCluster(conf: CassandraConnectorConf) = ???
 }
 

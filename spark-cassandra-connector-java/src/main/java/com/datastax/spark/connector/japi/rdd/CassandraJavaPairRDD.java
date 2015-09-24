@@ -12,7 +12,7 @@ import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 
-import com.datastax.spark.connector.SelectableColumnRef;
+import com.datastax.spark.connector.ColumnRef;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.PairRDDJavaFunctions;
 import com.datastax.spark.connector.rdd.CassandraRDD;
@@ -56,7 +56,7 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
      */
     @SuppressWarnings("unchecked")
     public CassandraJavaPairRDD<K, V> select(String... columnNames) {
-        Seq<SelectableColumnRef> columnRefs = toScalaSeq(toSelectableColumnRefs(columnNames));
+        Seq<ColumnRef> columnRefs = toScalaSeq(toSelectableColumnRefs(columnNames));
         CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs);
         return wrap(newRDD);
     }
@@ -69,8 +69,8 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
      * was removed by the previous {@code select} call, it is not possible to add it back.
      */
     @SuppressWarnings("unchecked")
-    public CassandraJavaPairRDD<K, V> select(SelectableColumnRef... selectionColumns) {
-        Seq<SelectableColumnRef> columnRefs = JavaApiHelper.toScalaSeq(selectionColumns);
+    public CassandraJavaPairRDD<K, V> select(ColumnRef... selectionColumns) {
+        Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(selectionColumns);
         CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs);
         return wrap(newRDD);
     }
@@ -127,9 +127,9 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
      * Returns the names of columns to be selected from the table.
      */
     @SuppressWarnings("RedundantCast")
-    public SelectableColumnRef[] selectedColumnRefs() {
-        ClassTag<SelectableColumnRef> classTag = getClassTag(SelectableColumnRef.class);
-        return (SelectableColumnRef[]) rdd().selectedColumnRefs().toArray(classTag);
+    public ColumnRef[] selectedColumnRefs() {
+        ClassTag<ColumnRef> classTag = getClassTag(ColumnRef.class);
+        return (ColumnRef[]) rdd().selectedColumnRefs().toArray(classTag);
     }
 
     /**

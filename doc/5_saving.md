@@ -37,6 +37,26 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
 
     (4 rows)
    
+Using a custom mapper is also supported with tuples
+
+```sql
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+```
+
+```scala
+val collection = sc.parallelize(Seq((30, "cat"), (40, "fox")))
+collection.saveToCassandra("test", "words", SomeColumns("word" as "_2", "count" as "_1"))
+```
+    
+    cqlsh:test> select * from words;
+
+     word | count
+    ------+-------
+      cat |    30
+      fox |    40
+
+    (2 rows)
+
 ## Saving a collection of objects
 When saving a collection of objects of a user-defined class, the items to be saved
 must provide appropriately named public property accessors for getting every column
@@ -75,6 +95,70 @@ Say you want to save `WordCount` objects to the table which has columns `word TE
 case class WordCount(word: String, count: Long)
 val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
 collection.saveToCassandra("test", "words2", SomeColumns("word", "num" as "count"))
+```
+
+## Modifying CQL Collections
+The default behavior of the Spark Cassandra Connector is to overwrite collections when inserted into
+a cassandra table. To override this behavior you can specify a custom mapper with instructions on
+how you would like the collection to be treated.
+
+The following operations are supported
+
+- append/add  (lists, sets, maps)
+- prepend (lists)
+- remove  (lists, sets)
+- overwrite (lists, sets, maps) :: Default
+
+Remove is not supported for Maps.
+
+These are applied by adding the desired behavior to the ColumnSelector
+
+Example Usage
+
+Takes the elements from rddSetField and removes them from corrosponding C* column
+"a_set" and takes elements from "rddMapField" and adds them to C* column "a_map" where C*
+column key == key in the RDD elements. 
+   
+    ("key", "a_set" as "rddSetField" remove , "a_map" as "rddMapField" append)
+
+
+Example Schema
+
+```sql
+CREATE TABLE ks.collections_mod (
+      key int PRIMARY KEY,
+      lcol list<text>,
+      mcol map<text, text>,
+      scol set<text>
+  )
+```
+
+Example Appending/Prepending Lists
+
+```scala
+val listElements = sc.parallelize(Seq(
+  (1,Vector("One")),
+  (1,Vector("Two")),
+  (1,Vector("Three"))))
+
+val prependElements = sc.parallelize(Seq(
+  (1,Vector("PrependOne")),
+  (1,Vector("PrependTwo")),
+  (1,Vector("PrependThree"))))
+
+listElements.saveToCassandra("ks", "collections_mod", SomeColumns("key", "lcol" append))
+prependElements.saveToCassandra("ks", "collections_mod", SomeColumns("key", "lcol" prepend))
+```
+
+```sql
+cqlsh> Select * from ks.collections_mod where key = 1
+   ... ;
+
+ key | lcol                                                                | mcol | scol
+-----+---------------------------------------------------------------------+------+------
+   1 | ['PrependThree', 'PrependTwo', 'PrependOne', 'One', 'Two', 'Three'] | null | null
+
+(1 rows)
 ```
 
 ## Saving objects of Cassandra User Defined Types

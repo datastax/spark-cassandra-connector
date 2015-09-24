@@ -2,10 +2,11 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{CassandraNode, BigIntToken, TokenFactory}
 import org.junit.Assert._
 import org.junit.Test
 
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.RandomPartitionerTokenFactory
+import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFactory}
 
 class RandomPartitionerTokenRangeSplitterTest {
 
@@ -16,33 +17,37 @@ class RandomPartitionerTokenRangeSplitterTest {
       assertEquals(range1.end, range2.start)
   }
 
+  private def assertSimilarSize(tokenRanges: Seq[TokenRange]): Unit = {
+    val sizes = tokenRanges.map(r => RandomPartitionerTokenFactory.distance(r.start, r.end)).toVector
+    val maxSize = sizes.max.toDouble
+    val minSize = sizes.min.toDouble
+    assertTrue(s"maxSize / minSize = ${maxSize / minSize} > 1.01", maxSize / minSize <= 1.01)
+  }
+
   @Test
   def testSplit() {
-    val node = CassandraNode(InetAddress.getLocalHost, InetAddress.getLocalHost)
-    val splitter = new RandomPartitionerTokenRangeSplitter(2.0)
+    val dataSize = 1000
+    val node = InetAddress.getLocalHost
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
     val rangeLeft = BigInt("0")
-    val rangeRight = BigInt("100")
-    val range = new TokenRange(
-      new BigIntToken(rangeLeft),
-      new BigIntToken(rangeRight), Set(node), None)
-    val out = splitter.split(range, 20)
+    val rangeRight = BigInt("0")
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set(node), dataSize)
+    val out = splitter.split(range, 100)
 
-    // 2 rows per token on average; to so 10 tokens = 20 rows; therefore 10 splits
     assertEquals(10, out.size)
     assertEquals(rangeLeft, out.head.start.value)
     assertEquals(rangeRight, out.last.end.value)
-    assertTrue(out.forall(_.endpoints == Set(node)))
+    assertTrue(out.forall(_.replicas == Set(node)))
     assertNoHoles(out)
+    assertSimilarSize(out)
   }
 
   @Test
   def testNoSplit() {
-    val splitter = new RandomPartitionerTokenRangeSplitter(2.0)
+    val splitter = new RandomPartitionerTokenRangeSplitter(1000)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("100")
-    val range = new TokenRange(
-      new BigIntToken(rangeLeft),
-      new BigIntToken(rangeRight), Set.empty, None)
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, 0)
     val out = splitter.split(range, 500)
 
     // range is too small to contain 500 rows
@@ -53,12 +58,10 @@ class RandomPartitionerTokenRangeSplitterTest {
 
   @Test
   def testZeroRows() {
-    val splitter = new RandomPartitionerTokenRangeSplitter(0.0)
+    val splitter = new RandomPartitionerTokenRangeSplitter(0)
     val rangeLeft = BigInt("0")
     val rangeRight = BigInt("100")
-    val range = new TokenRange(
-      new BigIntToken(rangeLeft),
-      new BigIntToken(rangeRight), Set.empty, None)
+    val range = new TokenRange(BigIntToken(rangeLeft), BigIntToken(rangeRight), Set.empty, 0)
     val out = splitter.split(range, 500)
     assertEquals(1, out.size)
     assertEquals(rangeLeft, out.head.start.value)
@@ -67,17 +70,22 @@ class RandomPartitionerTokenRangeSplitterTest {
 
   @Test
   def testWrapAround() {
-    val splitter = new RandomPartitionerTokenRangeSplitter(2.0)
-    val rangeLeft = TokenFactory.RandomPartitionerTokenFactory.maxToken.value - 100
-    val rangeRight = BigInt("100")
+    val dataSize = 2000
+    val splitter = new RandomPartitionerTokenRangeSplitter(dataSize)
+    val totalTokenCount = RandomPartitionerTokenFactory.totalTokenCount
+    val rangeLeft = RandomPartitionerTokenFactory.maxToken.value - totalTokenCount / 4
+    val rangeRight = RandomPartitionerTokenFactory.minToken.value + totalTokenCount / 4
     val range = new TokenRange(
       new BigIntToken(rangeLeft),
-      new BigIntToken(rangeRight), Set.empty, None)
-    val out = splitter.split(range, 20)
-    assertEquals(20, out.size)
+      new BigIntToken(rangeRight),
+      Set.empty,
+      dataSize / 2)
+    val out = splitter.split(range, 100)
+    assertEquals(10, out.size)
     assertEquals(rangeLeft, out.head.start.value)
     assertEquals(rangeRight, out.last.end.value)
     assertNoHoles(out)
+    assertSimilarSize(out)
   }
 
 }

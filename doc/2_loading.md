@@ -187,6 +187,7 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `timeuuid`        | `java.util.UUID` 
 | `varchar`         | `String` 
 | `varint`          | `BigInt`, `java.math.BigInteger`
+| `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
 
 Other conversions might work, but may cause loss of precision or may not work for all values. 
@@ -227,6 +228,27 @@ scala> repartitioned
 //res2: com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD[CustomerID] = CassandraPartitionedRDD[5] at RDD at CassandraPartitionedRDD.scala:12
 ```
 
+Specifying the RDD Field mapping to Cassandra Partition Keys can be done using the partitionKeyMapper parameter.
+
+```scala
+//CREATE TABLE test.shopping_history ( cust_id INT, date TIMESTAMP,  product TEXT, quantity INT, PRIMARY KEY (cust_id, date, product));
+case class OtherId(aCol: Int, bCol: Int) // Defines partition key
+val idsOfInterest = sc.parallelize(1 to 1000).map(id => OtherId(id, id + 1))
+val repartitionedOnA = idsOfInterest.repartitionByCassandraReplica(
+  "test", 
+  "shopping_history", 
+  10, 
+  partitionKeyMapper = SomeColumns("cust_id" as "aCol") 
+)
+
+val repartitionedOnB = idsOfInterest.repartitionByCassandraReplica(
+  "test", 
+  "shopping_history", 
+  10, 
+  partitionKeyMapper = SomeColumns("cust_id" as "bCol") 
+)
+```
+
 
 ### Using joinWithCassandraTable
 The connector supports using any RDD as a source of a direct join with a Cassandra Table through `joinWithCassandraTable`.
@@ -239,7 +261,7 @@ and a Cassandra Table can be preformed without doing a full table scan. . When p
 between two Cassandra Tables which share the same partition key this will *not* require movement of data between machines.
 In all cases this method will use the source RDD's partitioning and placement for data locality.
 
-`joinWithCassandraTable` is not affected by `cassandra.input.split.size` since partitions are automatically inherited from
+`joinWithCassandraTable` is not affected by `cassandra.input.split.size_in_mb` since partitions are automatically inherited from
 the source RDD. The other input properties have their normal effects.
 
 ####Join between two Cassandra Tables Sharing a Partition Key
@@ -300,10 +322,35 @@ val emptyJoin = internalJoin.toEmptyCassandraRDD // Makes an EmptyRDD
 The following options can be specified in the SparkConf object or as a jvm
 -Doption to adjust the read parameters of a Cassandra table.
 
-| Environment Variable                    | Controls                                                   | Default
-|-----------------------------------------|------------------------------------------------------------|---------
-| spark.cassandra.input.split.size        | approx number of Cassandra partitions in a Spark partition | 100000
-| spark.cassandra.input.page.row.size     | number of CQL rows fetched per driver request              | 1000
-| spark.cassandra.input.consistency.level | consistency level to use when reading                      | LOCAL_ONE
+| Environment Variable                      | Controls                                                   | Default
+|-------------------------------------------|------------------------------------------------------------|---------
+| spark.cassandra.input.split.size_in_mb    | approx amount of data to be fetched into a Spark partition | 64 MB
+| spark.cassandra.input.fetch.size_in_rows  | number of CQL rows fetched per driver request              | 1000
+| spark.cassandra.input.consistency.level   | consistency level to use when reading                      | LOCAL_ONE
+
+### Using Implicits for Configuration
+
+In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
+allows a user to define a set of parameters in a separate object and import them into a block of 
+code rather than repeatedly passing the same [`ReadConf` object] (https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
+
+```scala
+object ReadConfigurationOne {
+  implicit val readConf = ReadConf(100,100)
+}
+import ReadConfigurationOne._
+val rdd = sc.cassandraTable("write_test","collections")
+rdd.readConf
+//com.datastax.spark.connector.rdd.ReadConf = ReadConf(100,100,LOCAL_ONE,true)
+```
+   
+Or you can define them implicitly in the same block as the `cassandraTable` call
+
+```scala
+implicit val anotherConf = ReadConf(200,200)
+val rddWithADifferentConf = sc.cassandraTable("write_test","collections")
+rddWithADifferentConf.readConf
+//com.datastax.spark.connector.rdd.ReadConf = ReadConf(200,200,LOCAL_ONE,true)
+```
 
 [Next - Server-side data selection and filtering](3_selection.md)
