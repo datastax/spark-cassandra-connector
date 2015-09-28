@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 import com.datastax.driver.core.{Row, ProtocolVersion}
-import com.datastax.spark.connector.GettableData
+import com.datastax.spark.connector.{TupleValue, UDTValue, GettableData}
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.spark.sql.catalyst.expressions.{Row => SparkRow}
@@ -43,8 +43,7 @@ object CassandraSQLRow {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices) {
       data(i) = GettableData.get(row, i)
-      if (data(i).isInstanceOf[Date])
-        data(i) = new Timestamp(data(i).asInstanceOf[Date].getTime)
+      data(i) = toSparkSqlType(data(i))
     }
     new CassandraSQLRow(columnNames, data)
   }
@@ -57,4 +56,17 @@ object CassandraSQLRow {
     override def neededColumns = None
     override def targetClass = classOf[CassandraSQLRow]
   }
+
+  private def toSparkSqlType(value: Any): AnyRef = {
+    value match {
+      case date: Date => new Timestamp(date.getTime)
+      case set: Set[_] => set.map(toSparkSqlType).toSeq
+      case list: List[_] => list.map(toSparkSqlType)
+      case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
+      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
+      case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType))
+      case _ => value.asInstanceOf[AnyRef]
+    }
+  }
 }
+
