@@ -348,6 +348,41 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "write null values of user-defined-types in Cassandra" in {
+    val address = null
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2) should be (null)
+      }
+    }
+  }
+
+  it should "write values of user-defined-types with null fields in Cassandra" in {
+    val address = UDTValue.fromMap(Map("city" -> "Warsaw", "zip" -> 10000, "street" -> null))
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUDTValue(2).getString("street") should be (null)
+        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+      }
+    }
+  }
+
+
   it should "write values of TupleValue type" in {
     val tuple = TupleValue(1, 2, "three")
     val col = Seq((1, tuple))
