@@ -1,7 +1,8 @@
 package org.apache.spark.sql.cassandra
 
+import java.net.InetAddress
 import java.sql.Timestamp
-import java.util.Date
+import java.util.{UUID, Date}
 
 import org.apache.spark.sql.types.UTF8String
 
@@ -49,6 +50,8 @@ object CassandraSQLRow {
         case date: Date => data.update(i, new Timestamp(date.getTime))
         case str: String => data.update(i, UTF8String(str))
         case set: Set[_] => data.update(i, set.toSeq)
+        case inetAddress: InetAddress => data.update(i, inetAddress.getHostAddress)
+        case uuid: UUID => data.update(i, UUIDUtil.asBytes(uuid))
         case _ =>
       }
     }
