@@ -1,6 +1,6 @@
 # Documentation
 
-## PySpark with Data Frames - Experimental
+## PySpark with Data Frames
 
 With the inclusion of the Cassandra Data Source, PySpark can now be used with the Connector to 
 access Cassandra data. This does not require DataStax Enterprise but you are limited to DataFrame
