@@ -40,6 +40,10 @@
 
 ********************************************************************************
 
+1.3.1
+ * Remove wrapRDD from CassandraTableScanJavaRDD. Fixes exception occuring
+   when performing RDD operations on any CassandraTableScanJavaRDD (SPARKC-236)
+
 1.3.0
  * Remove white spaces in c* connection host string (fix by Noorul Islam K M)
  * Included from 1.2.5
