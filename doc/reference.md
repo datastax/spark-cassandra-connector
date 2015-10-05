@@ -228,7 +228,7 @@ in each row</td>
 </tr>
 <tr>
   <td><code>output.consistency.level</code></td>
-  <td>LOCAL_ONE</td>
+  <td>LOCAL_QUORUM</td>
   <td>Consistency level for writing</td>
 </tr>
 <tr>
