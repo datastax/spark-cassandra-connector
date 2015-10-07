@@ -10,12 +10,13 @@ only operations.
 
 To enable Cassandra access the Spark Cassandra Connector assembly jar must be included on both the
 driver and executor classpath for the PySpark Java Gateway. This can be done by starting the PySpark
-shell similarlly to how the spark shell is started.
+shell similarlly to how the spark shell is started. The preferred method is now to use the Spark Packages
+website. 
+http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 ```bash
 ./bin/pyspark \
-  --driver-class-path spark-cassandra-connector-assembly-1.4.0-M1-SNAPSHOT.jar \
-  --jars spark-cassandra-connector-assembly-1.4.0-M1-SNAPSHOT.jar
+  --packages com.datastax.spark:spark-cassandra-connector_2.10:1.4.0
 ```
 
 ### Loading a DataFrame in Python
