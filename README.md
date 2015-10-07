@@ -39,7 +39,10 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 | 1.0       | 1.0, 0.9      | 2.0       | 2.0                   |
 
 ## Download
-This project has been published to the Maven Central Repository.
+This project is available on Spark Packages, this is the easiest way to start using the connector
+http://spark-packages.org/package/datastax/spark-cassandra-connector
+
+This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
