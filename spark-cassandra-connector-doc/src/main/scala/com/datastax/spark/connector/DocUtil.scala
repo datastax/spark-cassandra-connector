@@ -15,13 +15,8 @@ object DocUtil {
     println(markdown)
 
     val output = Try(new File(args(0))).getOrElse(new File("doc/reference.md"))
-    val htmlOutput = Try(new File(args(0))).getOrElse(new File("doc/reference.html"))
     val fb = new FileWriter(output)
     fb.write(RefBuilder.getMarkDown())
     fb.close()
-    val refOut = new FileWriter(htmlOutput)
-    refOut.write(RefBuilder.getHtmlDoc())
-    refOut.close()
-
   }
 }

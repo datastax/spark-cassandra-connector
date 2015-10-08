@@ -13,7 +13,6 @@ object RefBuilder {
       |
       |
     """.stripMargin
-  val TableHeader = "Property Name | Default | Description"
   val Footer = "\n"
 
   val HtmlTableHeader =
@@ -50,26 +49,4 @@ object RefBuilder {
     Header + markdown.mkString("\n\n") + Footer
   }
 
-
-
-  def getHtmlDoc(): String = {
-    val configBySection = allConfigs.groupBy( x => x.section)
-    val sections = configBySection.keys.toSeq.sorted
-    val markdown = for (section <- sections) yield {
-      val parameters = configBySection.get(section).get
-      val paramTable = parameters.map { case parameter: ConfigParameter =>
-        val default = parameter.default match {
-          case Some(defaultValue) => defaultValue
-          case None => None
-        }
-        s"<tr><td>${parameter.name}</td><td>$default</td><td>${parameter.description}</td></tr>"
-      }.mkString("\n")
-
-      s"""## $section
-           |$HtmlTableHeader
-           |$paramTable
-           |</table>""".stripMargin
-    }
-    Header + markdown.mkString("\n\n") + Footer
-  }
 }
