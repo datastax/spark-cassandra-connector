@@ -1,4 +1,5 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
+### [Spark Cassandra Connector Spark Packages Website](http://spark-packages.org/package/datastax/spark-cassandra-connector)
 
 ## Lightning-fast cluster computing with Spark and Cassandra
 
@@ -40,6 +41,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 ## Download
 This project is available on Spark Packages, this is the easiest way to start using the connector
+
 http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 This project has also been published to the Maven Central Repository.
