@@ -86,6 +86,9 @@ reproducible case with sample code is ideal.
 ### Mailing List
 Questions and requests for help may be submitted to the [user mailing list](http://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user).
 
+### IRC
+\#spark-cassandra-connector on irc.freenode.net
+
 ### Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
 Make sure you have installed and enabled the Scala Plugin.
