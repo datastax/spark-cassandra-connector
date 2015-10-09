@@ -1,4 +1,4 @@
-1.5.0 M2 (unreleased)
+1.5.0 M2
  * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
  * Includes all patches up to 1.4.0.
 
@@ -7,6 +7,9 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+ * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
+   to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
+
 1.4.0
  * Fixed broken integration tests (SPARKC-247):
    - Fixed Scala reflection race condition in TupleColumnMapper.
@@ -39,6 +42,11 @@
  * Upgrade Spark to 1.4.0 (SPARKC-192)
 
 ********************************************************************************
+
+1.3.1
+ * Remove wrapRDD from CassandraTableScanJavaRDD. Fixes exception occuring
+   when performing RDD operations on any CassandraTableScanJavaRDD (SPARKC-236)
+ * Backport synchronization fixes from 1.4.0 (SPARKC-247)
 
 1.3.0
  * Remove white spaces in c* connection host string (fix by Noorul Islam K M)

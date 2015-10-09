@@ -32,7 +32,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
-| 1.5       | 1.5           | 2.1.5+    | 2.1 (planned 2.2)     |
+| 1.5       | 1.5           | 2.1.5+    | 2.2                   |
 | 1.4       | 1.4           | 2.1.5+    | 2.1                   |
 | 1.3       | 1.3           | 2.1.5+    | 2.1                   |
 | 1.2       | 1.2           | 2.1, 2.0  | 2.1                   |
@@ -48,11 +48,11 @@ This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.5.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.5.0-M2"
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.5.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.5.0-M2"
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)

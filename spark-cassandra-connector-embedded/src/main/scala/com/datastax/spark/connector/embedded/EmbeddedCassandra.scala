@@ -210,11 +210,13 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
   private val jmxPort = props.getOrElse("jmx_port", DefaultJmxPort)
   private val jmxPortProperty = s"-Dcassandra.jmx.local.port=$jmxPort"
+  private val host = props.getOrElse("listen_address", "127.0.0.1")
   private val sizeEstimatesUpdateIntervalProperty =
     s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
   private val jammAgent = classPath.split(File.pathSeparator).find(_.matches(".*jamm.*\\.jar"))
   private val jammAgentProperty = jammAgent.map("-javaagent:" + _).getOrElse("")
   private val cassandraMainClass = "org.apache.cassandra.service.CassandraDaemon"
+  private val nodeToolMainClass = "org.apache.cassandra.tools.NodeTool"
 
   private val process = new ProcessBuilder()
     .command(javaBin,
@@ -224,6 +226,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
       "-cp", classPath, cassandraMainClass, "-f")
     .inheritIO()
     .start()
+  val startupTime = System.currentTimeMillis()
 
   val nativePort = props.get("native_transport_port").get.toInt
   if (!waitForPortOpen(InetAddress.getByName(props.get("rpc_address").get), nativePort, 100000))
@@ -234,6 +237,17 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     process.waitFor()
     FileUtils.forceDelete(tempDir)
     tempDir.delete()
+  }
+
+  def nodeToolCmd(params: String*): Unit = {
+    val cmd = List(javaBin, "-Xms512M", "-Xmx512M", "-Xmn384M", cassandraConfProperty, "-cp", classPath,
+      nodeToolMainClass, "-h", host, "-p", jmxPort.toString) ++ params
+    val nodeToolCmdProcess = new ProcessBuilder()
+      .command(cmd: _*)
+      .inheritIO()
+      .start()
+    nodeToolCmdProcess.waitFor()
+    nodeToolCmdProcess.destroy()
   }
 }
 
