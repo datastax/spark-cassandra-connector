@@ -46,7 +46,7 @@ object CassandraSparkBuild extends Build {
     conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
-    ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
+    ).copy(dependencies = Seq(embedded % "test->test,compile;it->it,test,compile;")
   ) configs IntegrationTest
 
   lazy val jconnector = Project(
@@ -152,6 +152,7 @@ object Dependencies {
     val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
     val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
     val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
+    val airlift             = "io.airlift"              % "airline"                % Airlift
 
     /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
@@ -191,6 +192,7 @@ object Dependencies {
       val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
       val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
+      val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
       val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
       val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
@@ -217,6 +219,7 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
+    Test.sparkCoreT,
     Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
@@ -233,7 +236,7 @@ object Dependencies {
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy)
+    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, airlift)
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
