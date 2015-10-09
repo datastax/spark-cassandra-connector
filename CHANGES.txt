@@ -7,6 +7,9 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+ * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
+   to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
+
 1.4.0
  * Fixed broken integration tests (SPARKC-247):
    - Fixed Scala reflection race condition in TupleColumnMapper.

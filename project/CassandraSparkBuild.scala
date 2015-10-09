@@ -42,7 +42,7 @@ object CassandraSparkBuild extends Build {
     id = "cassandra-server",
     base = file("cassandra-server"),
     settings = defaultSettings ++ Seq(
-      libraryDependencies += Artifacts.cassandraServer % "it",
+      libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
       cassandraServerClasspath := {
         (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
       }
@@ -163,6 +163,7 @@ object Artifacts {
   val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
   val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
   val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
+  val airlift             = "io.airlift"              % "airline"                % Airlift
 
   /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
   val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
@@ -204,7 +205,7 @@ object Artifacts {
     val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
     val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
-    val sparkT            = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
+    val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
     val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
     val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
@@ -234,7 +235,7 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
-    Test.sparkT,
+    Test.sparkCoreT,
     Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
