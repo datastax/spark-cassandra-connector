@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.doc
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.util.ConfigCheck
+import com.datastax.spark.connector.util.{RefBuilder, ConfigCheck}
 import java.io.File
 import scala.collection.JavaConversions._
 
@@ -20,6 +20,12 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
     missingProperties should be ('empty)
 
     info(s"Reference contains ${ConfigCheck.validStaticPropertyNames.size} entries")
+  }
+
+  "it" should "match a freshly created reference file" in {
+    val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
+    RefBuilder.getMarkDown() should be(refFile)
+
   }
 
   case class ParameterFound (parameter: String, fileName : String)

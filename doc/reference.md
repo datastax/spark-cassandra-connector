@@ -115,7 +115,7 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
   <td><code>sql.cluster</code></td>
-  <td>None</td>
+  <td>default</td>
   <td>Sets the default Cluster to inherit configuration from</td>
 </tr>
 <tr>
