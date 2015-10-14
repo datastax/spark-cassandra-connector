@@ -43,6 +43,8 @@ object Settings extends Build {
 
   val mavenLocalResolver = BuildUtil.mavenLocalResolver
 
+  val asfSnapshotsResolver = "ASF Snapshots" at "https://repository.apache.org/content/groups/snapshots"
+
   def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
   def versionSuffix = {
@@ -156,7 +158,7 @@ object Settings extends Build {
       val dir = new File(".").toPath
       SparkInstaller(scalaBinaryVersion.value, dir)
     },
-    resolvers += mavenLocalResolver,
+    resolvers ++= Seq(mavenLocalResolver, asfSnapshotsResolver),
     update <<= (installSparkTask, update) map {(_, out) => out}
   )
 
