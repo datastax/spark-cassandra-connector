@@ -410,15 +410,17 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     }
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
+    import org.apache.spark.sql.cassandra.udf.UUIDUdf._
+    cc.udf.register("uuid_to_string", uuidToString(_: Array[Byte]))
     val result = cc.cassandraSql(
       "select k, v, a, b " +
       "from custom_type " +
-      "where CAST(a as string) > '/74.125.239.135'").collect()
+      "where a > '74.125.239.135'").collect()
     result should have length 1
     val result1 = cc.cassandraSql(
       "select k, v,  a, b " +
       "from custom_type " +
-      "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
+      "where uuid_to_string(b) < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
   }
 }
