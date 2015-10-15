@@ -91,6 +91,7 @@ object ColumnType {
     else if (dataType =:= typeOf[java.lang.Integer]) IntType
     else if (dataType =:= typeOf[Long]) BigIntType
     else if (dataType =:= typeOf[java.lang.Long]) BigIntType
+    else if (dataType =:= typeOf[Short]) SmallIntType
     else if (dataType =:= typeOf[java.lang.Short]) SmallIntType
     else if (dataType =:= typeOf[Float]) FloatType
     else if (dataType =:= typeOf[java.lang.Float]) FloatType
