@@ -6,7 +6,7 @@ import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
-import com.datastax.driver.core.{ColumnMetadata, Metadata, TableMetadata, KeyspaceMetadata}
+import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
 
@@ -113,9 +113,9 @@ case class ColumnDef(
 
 object ColumnDef {
 
-  def apply(column: ColumnMetadata, columnRole: ColumnRole): ColumnDef = {
+  def apply(column: ColumnMetadata, columnRole: ColumnRole, isIndexed: Boolean): ColumnDef = {
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(column.getName, columnRole, columnType, column.getIndex != null)
+    ColumnDef(column.getName, columnRole, columnType, isIndexed)
   }
 }
 
@@ -189,23 +189,31 @@ case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
 }
 
 object Schema extends Logging {
+  def getIndexMap(table: TableMetadata): Map[String, IndexMetadata] = {
+    for ( index <- table.getIndexes ) yield (index.getTarget, index)
+  }.toMap
 
-  private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] =
+  private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] = {
+    val indexMap = getIndexMap(table)
     for (column <- table.getPartitionKey) yield
-      ColumnDef(column, PartitionKeyColumn)
+      ColumnDef(column, PartitionKeyColumn, indexMap.contains(column.getName))
+  }
 
-  private def fetchClusteringColumns(table: TableMetadata): Seq[ColumnDef] =
+  private def fetchClusteringColumns(table: TableMetadata): Seq[ColumnDef] = {
+    val indexMap = getIndexMap(table)
     for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
-      ColumnDef(column, ClusteringColumn(index))
+      ColumnDef(column, ClusteringColumn(index), indexMap.contains(column.getName))
+  }
 
   private def fetchRegularColumns(table: TableMetadata) = {
+    val indexMap = getIndexMap(table)
     val primaryKey = table.getPrimaryKey.toSet
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
     for (column <- regularColumns) yield
       if (column.isStatic)
-        ColumnDef(column, StaticColumn)
+        ColumnDef(column, StaticColumn, indexMap.contains(column.getName))
       else
-        ColumnDef(column, RegularColumn)
+        ColumnDef(column, RegularColumn, indexMap.contains(column.getName))
   }
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
