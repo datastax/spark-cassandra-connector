@@ -50,6 +50,12 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
       "given a String should return VarcharType" in {
         assert (ColumnType.fromScalaType(typeOf[String]) === VarCharType)
       }
+      "given a java.lang.Short should return a SmallIntType" in {
+        assert (ColumnType.fromScalaType(typeOf[java.lang.Short]) === SmallIntType)
+      }
+      "given a Short should return a SmallIntType" in {
+        assert (ColumnType.fromScalaType(typeOf[Short]) === SmallIntType)
+      }
       "given a java.util.Date should return TimestampType" in {
         assert (ColumnType.fromScalaType(typeOf[java.util.Date]) === TimestampType)
       }
