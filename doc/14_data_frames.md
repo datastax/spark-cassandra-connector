@@ -154,7 +154,7 @@ Example Table
 ```sql
 CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
 use test;
-create table words ( user text, word text, count int , PRIMARY KEY (user,word))
+CREATE table words ( user text, word text, count int , PRIMARY KEY (user,word));
 INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'dino', 10 );
 INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'fad', 5 );
 INSERT INTO words (user, word, count ) VALUES ( 'Sam', 'alpha', 3 );
