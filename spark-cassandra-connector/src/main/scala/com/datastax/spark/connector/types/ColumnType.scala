@@ -42,6 +42,7 @@ object ColumnType {
     DataType.cint() -> IntType,
     DataType.bigint() -> BigIntType,
     DataType.smallint() -> SmallIntType,
+    DataType.tinyint() -> TinyIntType,
     DataType.cfloat() -> FloatType,
     DataType.cdouble() -> DoubleType,
     DataType.cboolean() -> BooleanType,
@@ -93,6 +94,8 @@ object ColumnType {
     else if (dataType =:= typeOf[java.lang.Long]) BigIntType
     else if (dataType =:= typeOf[Short]) SmallIntType
     else if (dataType =:= typeOf[java.lang.Short]) SmallIntType
+    else if (dataType =:= typeOf[Byte]) TinyIntType
+    else if (dataType =:= typeOf[java.lang.Byte]) TinyIntType
     else if (dataType =:= typeOf[Float]) FloatType
     else if (dataType =:= typeOf[java.lang.Float]) FloatType
     else if (dataType =:= typeOf[Double]) DoubleType
