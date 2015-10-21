@@ -110,10 +110,12 @@ Cassandra column type | Object type to convert from / to
  `float`              | `java.lang.Float`    
  `inet`               | `java.net.InetAddress` 
  `int`                | `java.lang.Integer`  
+ `smallint`           | `java.lang.Short`
  `text`               | `java.lang.String` 
  `timestamp`          | `java.util.Date` 
- `uuid`               | `java.util.UUID` 
  `timeuuid`           | `java.util.UUID` 
+ `tinyint`            | `java.lang.Byte`
+ `uuid`               | `java.util.UUID` 
  `varchar`            | `java.lang.String` 
  `varint`             | `java.math.BigInteger`
  user defined         | `com.datastax.spark.connector.UDTValue`

@@ -46,6 +46,20 @@ case object BigIntType extends PrimitiveColumnType[Long] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Long])
 }
 
+case object SmallIntType extends PrimitiveColumnType[Short] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Short]] }
+  def cqlTypeName = "smallint"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Short])
+}
+
+case object TinyIntType extends PrimitiveColumnType[Byte] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Byte]]}
+  def cqlTypeName = "tinyint"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Byte])
+}
+
 case object FloatType extends PrimitiveColumnType[Float] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Float]] }
   def cqlTypeName = "float"

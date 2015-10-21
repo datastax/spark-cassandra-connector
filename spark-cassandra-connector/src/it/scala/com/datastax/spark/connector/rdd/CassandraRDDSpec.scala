@@ -46,6 +46,7 @@ class SubKeyValue extends SuperKeyValue {
 case class Address(street: String, city: String, zip: Int)
 case class ClassWithUDT(key: Int, name: String, addr: Address)
 case class ClassWithTuple(key: Int, value: (Int, String))
+case class ClassWithSmallInt(key: Int, value: Short)
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
@@ -59,6 +60,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   conn.withSessionDo { session =>
     session.execute(s"""CREATE KEYSPACE IF NOT EXISTS "$ks" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
+
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
+    session.execute(s"""INSERT INTO "$ks".short_value (key, value) VALUES (1,100)""")
+    session.execute(s"""INSERT INTO "$ks".short_value (key, value) VALUES (2,200)""")
+    session.execute(s"""INSERT INTO "$ks".short_value (key, value) VALUES (3,300)""")
 
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
     session.execute(s"""INSERT INTO "$ks".key_value (key, group, value) VALUES (1, 100, '0001')""")
@@ -845,5 +851,13 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     val tableRdd = sc.cassandraTable("CassandraRDDSpec", "Interaction")
     val dataColumns = tableRdd.map(row => row.getString("ContactId"))
     dataColumns.count shouldBe 1
+  }
+
+  it should "be able to read SMALLINT columns from" in {
+    val result = sc.cassandraTable[(Int, Short)](ks, "short_value").collect
+    result should contain ((1, 100))
+    result should contain ((2, 200))
+    result should contain ((3, 300))
+
   }
 }
