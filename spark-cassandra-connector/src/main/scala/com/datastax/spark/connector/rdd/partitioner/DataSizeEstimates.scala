@@ -78,10 +78,14 @@ class DataSizeEstimates[V, T <: Token[V]](
 
   /** Estimates the total amount of data in a table assuming no replication. */
   lazy val dataSizeInBytes: Long = {
-    val byteCount = tokenRanges.map(_.totalSizeInBytes).sum
-    val normalizedCount = (byteCount / ringFraction).toLong
+    val normalizedCount = (totalDataSizeInBytes / ringFraction).toLong
     logDebug(s"Estimated size of $keyspaceName.$tableName is $normalizedCount bytes")
     normalizedCount
+  }
+
+  /** Estimates the total amount of data in a table without normalization assuming no replication. */
+  lazy val totalDataSizeInBytes: Long = {
+    tokenRanges.map(_.totalSizeInBytes).sum
   }
 }
 
