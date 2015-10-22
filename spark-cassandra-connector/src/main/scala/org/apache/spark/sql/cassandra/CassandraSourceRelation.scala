@@ -3,6 +3,8 @@ package org.apache.spark.sql.cassandra
 import java.io.IOException
 
 import com.datastax.driver.core.Metadata
+import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.util.NameTools
 import org.apache.spark.{SparkConf, Logging}
 
@@ -20,6 +22,7 @@ import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.SomeColumns
 
 import DataTypeConverter._
+import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -73,7 +76,6 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   override def sizeInBytes: Long = {
-    //TODO  Retrieve table size from C* system table from Cassandra 2.1.4
     // If it's not found, use SQLConf default setting
     tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
   }
@@ -169,15 +171,23 @@ object CassandraSourceRelation {
     val conf =
       consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
-    val tableSizeInBytes = {
-      if (tableSizeInBytesString.nonEmpty) {
-        Option(tableSizeInBytesString.get.toLong)
-      } else {
-        None
-      }
-    }
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
+    val tableSizeInBytes = tableSizeInBytesString match {
+      case Some(size) => Option(size.toLong)
+      case None =>
+        val tokenFactory = getTokenFactory(cassandraConnector)
+        val dataSizeInBytes =
+          new DataSizeEstimates(
+            cassandraConnector,
+            tableRef.keyspace,
+            tableRef.table)(tokenFactory).totalDataSizeInBytes
+        if (dataSizeInBytes <= 0L) {
+          None
+        } else {
+          Option(dataSizeInBytes)
+        }
+    }
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
 
