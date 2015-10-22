@@ -64,12 +64,23 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_data_type1 (a ASCII, b INT, c FLOAT, d DOUBLE, e BIGINT, f BOOLEAN, g DECIMAL, " +
       " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, PRIMARY KEY ((a), b, c))")
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_collection (a INT, b SET<INT>, c MAP<INT, INT>, PRIMARY KEY (a))")
-    session.execute("INSERT INTO sql_test.test_collection (a, b, c) VALUES (1, {1,2,3}, {1:2, 2:3})")
+    session.execute(
+      s"""
+         |CREATE TABLE IF NOT EXISTS sql_test.test_collection
+         | (a INT, b SET<TIMESTAMP>, c MAP<TIMESTAMP, TIMESTAMP>, d List<TIMESTAMP>, PRIMARY KEY (a))
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |INSERT INTO sql_test.test_collection (a, b, c, d)
+         |VALUES (1,
+         |        {'2011-02-03','2011-02-04'},
+         |        {'2011-02-03':'2011-02-04', '2011-02-06':'2011-02-07'},
+         |        ['2011-02-03','2011-02-04'])
+      """.stripMargin.replaceAll("\n", " "))
 
-    session.execute("CREATE TYPE sql_test.address (street text, city text, zip int)")
+    session.execute("CREATE TYPE sql_test.address (street text, city text, zip int, date TIMESTAMP)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
-    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120, date: '2011-02-03'})")
   }
 
   override def beforeAll() {
@@ -301,7 +312,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
         s"""
           |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
           |  category_id text,
-          |  metric_descriptors set <text>
+          |  metric_descriptors list <text>
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
@@ -318,7 +329,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
           |  type text,
           |  object_type text,
           |  related_to text,
-          |  obj_id text
+          |  obj_id text,
+          |  ts timestamp,
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
@@ -326,23 +338,39 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
           |CREATE TABLE IF NOT EXISTS sql_test.objects (
           |  obj_id text,
           |  metadata  frozen<object_metadata>,
-          |  relations set<frozen<relation>>,
+          |  relations list<frozen<relation>>,
           |  ts timestamp, PRIMARY KEY(obj_id)
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
         s"""
-          |INSERT INTO sql_test.objects (obj_id, ts, metadata)
+          |INSERT INTO sql_test.objects (obj_id, ts, metadata, relations)
           |values (
           |  '123', '2015-06-16 15:53:23-0400',
           |  {
           |    name: 'foo',
           |    category_metadata: {
           |      category_id: 'thermostat',
-          |      metric_descriptors: {}
+          |      metric_descriptors: []
           |    },
           |    bucket_size: 0
-          |  }
+          |  },
+          |  [
+          |    {
+          |      type: 'a',
+          |      object_type: 'b',
+          |      related_to: 'c',
+          |      obj_id: 'd',
+          |      ts: '2012-03-04'
+          |    },
+          |    {
+          |      type: 'a1',
+          |      object_type: 'b1',
+          |      related_to: 'c1',
+          |      obj_id: 'd1',
+          |      ts: '2013-04-05'
+          |    }
+          |  ]
           |)
       """.stripMargin.replaceAll("\n", " "))
     }
