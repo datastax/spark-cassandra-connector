@@ -1,3 +1,4 @@
+ * Added FunctionCallRef extending ColumnRef whose goal is to allow UDF selects.
  * Bump Spark version to 1.6-SNAPSHOT and add Apache Snapshot repository to resolvers (SPARKC-272)
 
 ********************************************************************************
