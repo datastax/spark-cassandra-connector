@@ -95,3 +95,28 @@ case object RowCountRef extends ColumnRef {
   override def cqlValueName: String = "count"
   override def cql: String = "count(*)"
 }
+
+/** References a function call **/
+case class FunctionCallRef(
+  columnName: String,
+  actualParams: Seq[Either[ColumnRef, String]] = Seq.empty,
+  alias: Option[String] = None) extends ColumnRef {
+
+  override def selectedAs: String = alias.getOrElse(cqlValueName)
+  override def cqlValueName: String = s"$columnName(${stringifyArguments(actualParams, _.cqlValueName)})"
+  override def cql: String = s"$columnName(${stringifyArguments(actualParams, _.cql)})"
+
+  def requiredColumns: Seq[ColumnRef] = actualParams flatMap {
+    case Left(fcall: FunctionCallRef) => fcall.requiredColumns
+    case Left(cref) => Seq(cref)
+    case Right(_) => Seq.empty
+  }
+
+  private def stringifyArguments(
+    child: Seq[Either[ColumnRef, String]],
+    stringifyColumn: ColumnRef => String): String = child map {
+      case Left(cr) => stringifyColumn(cr)
+      case Right(str) => str
+    } mkString ","
+
+}
