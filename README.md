@@ -1,13 +1,5 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 
-## Important notice : Do NOT use GitHub issue tracker!
-We are going to disable it and no issues created there will be accessible.
-
-If you have problems and you are looking for help, please use a forum at: https://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user
-
-If you want to report bugs, improvement or feature requests, please use JIRA at:
-https://datastax-oss.atlassian.net/browse/SPARKC
-
 ## Lightning-fast cluster computing with Spark and Cassandra
 
 This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
@@ -29,6 +21,7 @@ execute arbitrary CQL queries in your Spark applications.
  - Filters rows on the server side via the CQL `WHERE` clause 
  - Allows for execution of arbitrary CQL statements
  - Plays nice with Cassandra Virtual Nodes
+ - Works with PySpark DataFrames
 
 ## Version Compatibility
 
@@ -38,8 +31,8 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
-| 1.4       | 1.4           | 2.1, 2.0  | 2.1                   |
-| 1.3       | 1.3           | 2.1, 2.0  | 2.1                   |
+| 1.4       | 1.4           | 2.1.5+    | 2.1                   |
+| 1.3       | 1.3           | 2.1.5+    | 2.1                   |
 | 1.2       | 1.2           | 2.1, 2.0  | 2.1                   |
 | 1.1       | 1.1, 1.0      | 2.1, 2.0  | 2.1                   |
 | 1.0       | 1.0, 0.9      | 2.0       | 2.0                   |
@@ -49,11 +42,11 @@ This project has been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.4.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.4.0"
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.4.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.4.0"
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)
@@ -75,16 +68,17 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
   - [DataFrames](doc/14_data_frames.md)
+  - [Python](doc/15_python.md)
   - [Frequently Asked Questions](doc/FAQ.md)
     
 ## Community
 ### Reporting Bugs
-New issues should be reported using [JIRA](https://datastax-oss.atlassian.net/browse/SPARKC/).
-Please do not use the built-in GitHub issue tracker.
-It is left for archival purposes and it will be disabled soon.
+New issues may be reported using [JIRA](https://datastax-oss.atlassian.net/browse/SPARKC/). Please include
+all relevant details including versions of Spark, Spark Cassandra Connector, Cassandra and/or DSE. A minimal
+reproducible case with sample code is ideal.
 
 ### Mailing List
-Questions etc can be submitted to the [user mailing list](http://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user).
+Questions and requests for help may be submitted to the [user mailing list](http://groups.google.com/a/lists.datastax.com/forum/#!forum/spark-connector-user).
 
 ### Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
@@ -96,8 +90,7 @@ Before contributing your changes to the project, please make sure that all unit 
 Don't forget to add an appropriate entry at the top of CHANGES.txt.
 Finally open a pull-request on GitHub and await review. 
 
-If your pull-request is going to resolve some opened issue, please add *Fixes \#xx* at the 
-end of each commit message (where *xx* is the number of the issue).
+Please prefix pull request description with the JIRA number, for example: "SPARKC-123: Fix the ...".
 
 ## Testing
 To run unit and integration tests:

@@ -14,9 +14,8 @@ The following options are available on `SparkConf` object:
 Property name                                        | Description                                                       | Default value
 -----------------------------------------------------|-------------------------------------------------------------------|--------------------
 spark.cassandra.connection.host                      | contact point to connect to the Cassandra cluster                 | address of the Spark master host
-spark.cassandra.connection.rpc.port                  | Cassandra thrift port                                             | 9160
-spark.cassandra.connection.native.port               | Cassandra native port                                             | 9042
-spark.cassandra.connection.conf.factory              | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
+spark.cassandra.connection.port (1)                  | Cassandra native port                                             | 9042
+spark.cassandra.connection.factory                   | name of a Scala module or class implementing `CassandraConnectionFactory` providing connections to the Cassandra cluster | `com.datastax.spark.connector.cql.DefaultConnectionFactory`
 spark.cassandra.connection.keep_alive_ms             | period of time to keep unused connections open                    | 250 ms
 spark.cassandra.connection.timeout_ms                | maximum period of time to attempt connecting to a node            | 5000 ms
 spark.cassandra.connection.reconnection_delay_ms.min | minimum period of time to wait before reconnecting to a dead node | 1000 ms
@@ -27,13 +26,18 @@ spark.cassandra.auth.username                        | login name for password a
 spark.cassandra.auth.password                        | password for password authentication                              |
 spark.cassandra.auth.conf.factory                    | name of a Scala module or class implementing `AuthConfFactory` providing custom authentication configuration | `com.datastax.spark.connector.cql.DefaultAuthConfFactory`
 spark.cassandra.query.retry.count                    | number of times to retry a timed-out query                        | 10
-spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return               | 12000 ms
+spark.cassandra.query.retry.delay                    | the delay between subsequent retries (can be constant, like 1000; linearly increasing, like 1000+100; or exponential, like 1000\*2) | 4000\*1.5
+spark.cassandra.read.timeout_ms                      | maximum period of time to wait for a read to return               | 120000 ms
 spark.cassandra.connection.ssl.enabled               | enable secure connection to Cassandra cluster                     | false
 spark.cassandra.connection.ssl.trustStore.path       | path for the trust store being used                               | None
 spark.cassandra.connection.ssl.trustStore.password   | trust store password                                              | None
 spark.cassandra.connection.ssl.trustStore.type       | trust store type                                                  | JKS
 spark.cassandra.connection.ssl.protocol              | SSL protocol                                                      | TLS
 spark.cassandra.connection.ssl.enabledAlgorithms     | SSL cipher suites                                                 | TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA
+
+Notes:
+
+1. Prior to connector 1.3.0, this setting was named "spark.cassandra.connection.native.port".
 
 Example:
 
@@ -51,6 +55,14 @@ To import Cassandra-specific functions on `SparkContext` and `RDD` objects, call
 ```scala
 import com.datastax.spark.connector._                                    
 ```
+
+Query retry delay can be configured in few different ways:
+* `<delay in ms>` - for a constant delay before each retry
+* `<initial delay in ms>+<increase in ms>` - for a linearly increasing delay - delay before each retry
+  will be longer than the delay before the previous retry by increase factor
+* `<initial delay in ms>*<increase multiplier, float>` - for an exponentially increasing delay - delay 
+  before each retry will be as many times longer than the previous retry delay as specified 
+  by the multiplier
 
 ### Connection management
 

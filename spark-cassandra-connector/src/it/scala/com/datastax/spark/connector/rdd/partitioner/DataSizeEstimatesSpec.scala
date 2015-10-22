@@ -1,9 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import scala.language.postfixOps
+
 import org.scalatest.{Matchers, FlatSpec}
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra}
 import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 
@@ -21,7 +23,10 @@ class DataSizeEstimatesSpec extends FlatSpec with Matchers with SharedEmbeddedCa
   }
 
   // TODO: enable this test once we upgrade to 2.1.5, which populates the size estimates table
-  "DataSizeEstimates" should "fetch data size estimates for a known table" ignore {
+  // We cannot enable this test till we have a way of forcing the size estimates table to update
+  // https://issues.apache.org/jira/browse/CASSANDRA-9579 should provide us with the hook neccessary
+  // to trigger this event
+  "DataSizeEstimates" should "fetch data size estimates for a known table" in {
     val tableName = "table1"
     conn.withSessionDo { session =>
       session.execute(
@@ -31,6 +36,15 @@ class DataSizeEstimatesSpec extends FlatSpec with Matchers with SharedEmbeddedCa
           s"INSERT INTO $keyspaceName.$tableName(key, value) VALUES (?, ?)",
           i.asInstanceOf[AnyRef],
           "value" + i)
+    }
+
+    import scala.concurrent.duration._
+    for (runner <- EmbeddedCassandra.cassandraRunners(0)) {
+      runner.nodeToolCmd("flush")
+      val initialDelay =
+        Math.max(runner.startupTime + (45 seconds).toMillis - System.currentTimeMillis(), 0L)
+      Thread.sleep(
+        initialDelay + 2L * (CassandraRunner.SizeEstimatesUpdateIntervalInSeconds seconds).toMillis)
     }
 
     val estimates = new DataSizeEstimates[Long, LongToken](conn, keyspaceName, tableName)

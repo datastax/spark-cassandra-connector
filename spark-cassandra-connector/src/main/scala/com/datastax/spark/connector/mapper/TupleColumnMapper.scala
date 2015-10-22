@@ -9,7 +9,7 @@ import com.datastax.spark.connector.util.Reflect
 
 class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
-  val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
+  val cls = TypeTag.synchronized { typeTag[T].mirror.runtimeClass(typeTag[T].tpe) }
   val ctorLength = cls.getConstructors()(0).getParameterTypes.length
   val methodNames = cls.getMethods.map(_.getName)
 

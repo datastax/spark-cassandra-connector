@@ -17,10 +17,13 @@
 
 import sbt._
 import sbt.Keys._
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 
 object CassandraSparkBuild extends Build {
   import Settings._
+  import sbtassembly.AssemblyPlugin
   import Versions.scalaBinary
+  import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
 
@@ -31,41 +34,41 @@ object CassandraSparkBuild extends Build {
     dir = file("."),
     settings = rootSettings,
     contains = Seq(embedded, connector, demos, jconnector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.embedded)
-  ) configs IntegrationTest
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
     conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
-    ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
+    ).copy(dependencies = Seq(embedded % "test->test,compile;it->it,test,compile;")
   ) configs IntegrationTest
 
   lazy val jconnector = Project(
     id = s"$namespace-java",
     base = file(s"$namespace-java"),
-    settings = japiSettings ++ connector.settings,
+    settings = japiSettings ++ connector.settings :+ (spName := s"datastax/$namespace-java"),
     dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
   ) configs IntegrationTest
 
   lazy val demos = RootProject(
     name = "demos",
     dir = demosPath,
-    contains = Seq(simpleDemos, kafkaStreaming, twitterStreaming)
-  )
+    contains = Seq(simpleDemos/*, kafkaStreaming*/, twitterStreaming)
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val simpleDemos = Project(
     id = "simple-demos",
     base = demosPath / "simple-demos",
     settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
-  )
-
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+/*
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
     conf = demoSettings ++ kafkaDemoSettings ++ Seq(
@@ -73,13 +76,13 @@ object CassandraSparkBuild extends Build {
         case Some((2, minor)) if minor < 11 => Dependencies.kafka
         case _ => Seq.empty
    }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
-
+*/
   lazy val twitterStreaming = Project(
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector)
-  )
+  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -96,9 +99,16 @@ object CassandraSparkBuild extends Build {
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value)
     ))
 
-  def RootProject(name: String, dir: sbt.File, settings: => scala.Seq[sbt.Def.Setting[_]] = Seq.empty, contains: Seq[ProjectReference]): Project =
-    Project(id = name, base = dir, settings = parentSettings ++ settings, aggregate = contains)
-
+  def RootProject(
+    name: String,
+    dir: sbt.File, settings: =>
+    scala.Seq[sbt.Def.Setting[_]] = Seq.empty,
+    contains: Seq[ProjectReference]): Project =
+      Project(
+        id = name,
+        base = dir,
+        settings = parentSettings ++ settings,
+        aggregate = contains)
 }
 
 object Dependencies {
@@ -142,6 +152,7 @@ object Dependencies {
     val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
     val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
     val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
+    val airlift             = "io.airlift"              % "airline"                % Airlift
 
     /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
     val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
@@ -181,6 +192,8 @@ object Dependencies {
       val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
       val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
       val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
+      val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
+      val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % Spark     % "test,it" classifier "tests"
       val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
       val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
       val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
@@ -206,6 +219,8 @@ object Dependencies {
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
+    Test.sparkCoreT,
+    Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
     Test.powerMockMockito
@@ -221,7 +236,7 @@ object Dependencies {
     commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy)
+    Embedded.cassandraServer, Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, airlift)
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 

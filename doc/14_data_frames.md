@@ -1,6 +1,6 @@
 # Documentation
 
-## DataFrames - Experimental
+## DataFrames
 
 DataFrames provide a new api for manipulating data within Spark. These provide a more user
 friendly experience than pure scala for common queries. The Spark Cassandra Connector provides
@@ -40,8 +40,8 @@ To add these properties add keys to your `SparkConf` in the format
 Example Changing Cluster/Keyspace Level Properties
 ```scala 
 val conf = new SparkConf()
-  .set("ClusterOne/spark.cassandra.input.split.size","1000") 
-  .set("default:test/spark.cassandra.input.split.size","5000")
+  .set("ClusterOne/spark.cassandra.input.split.size_in_mb","32") 
+  .set("default:test/spark.cassandra.input.split.size_in_mb","128")
 
 ...
 
@@ -49,13 +49,13 @@ val df = sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 5000
+  .load()// This DataFrame will use a spark.cassandra.input.size of 32
 
 val otherdf =  sqlContext
   .read
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" , "cluster" -> "ClusterOne"))
-  .load()// This DataFrame will use a spark.cassandra.input.size of 1000
+  .load()// This DataFrame will use a spark.cassandra.input.size of 128
 
 val lastdf = sqlContext
   .read
@@ -64,9 +64,9 @@ val lastdf = sqlContext
     "table" -> "words", 
     "keyspace" -> "test" ,
     "cluster" -> "ClusterOne",
-    "spark.cassandra.input.split.size" -> 500
+    "spark.cassandra.input.split.size_in_mb" -> 48
     )
-  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 500
+  ).load()// This DataFrame will use a spark.cassandra.input.split.size of 48
 ```
 
 ###Creating DataFrames using Read Commands
@@ -80,7 +80,7 @@ Example Creating a DataFrame using a Read Command
 ```scala
 val df = sqlContext
   .read
-  .source("org.apache.spark.sql.cassandra")
+  .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" ))
   .load()
 df.show
@@ -95,9 +95,9 @@ Accessing data Frames using Spark SQL involves creating temporary tables and spe
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Because of a limitation in SparkSQL 1.4.0 DDL parser, SparkSQL `OPTIONS` 
-do not accept "." and "_" characters in option names, so options containing these 
-characters can be only set in the `SparkConf` or `SQLConf` objects.
+Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
+`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes 
+`spark_cassandra_input_split_size_in_mb`. 
 
 Example Creating a Source Using Spark SQL:
 ```scala
@@ -145,3 +145,79 @@ df.write
   .options(Map( "table" -> "words_copy", "keyspace" -> "test"))
   .save()
 ```
+
+###Pushing down clauses to Cassandra
+The dataframe api will automatically pushdown valid where clauses to Cassandra as long as the
+pushdown option is enabled (defaults to enabled.)
+
+Example Table
+```sql
+CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+use test;
+create table words ( user text, word text, count int , PRIMARY KEY (user,word))
+INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'dino', 10 );
+INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'fad', 5 );
+INSERT INTO words (user, word, count ) VALUES ( 'Sam', 'alpha', 3 );
+INSERT INTO words (user, word, count ) VALUES ( 'Zebra', 'zed', 100 );
+```
+
+First we can create a DataFrame and see that it has no `pushdown filters` set in the log. This
+means all requests will go directly to C* and we will require reading all of the data to `show`
+this DataFrame.
+
+```scala
+val df = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "words", "keyspace" -> "test"))
+  .load
+df.explain                               
+//15/07/06 09:21:21 INFO CassandraSourceRelation: filters:
+//15/07/06 09:21:21 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
+//== Physical Plan ==
+//PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[2] at explain //at <console>:22
+
+df.show
+//...
+//15/07/06 09:26:03 INFO CassandraSourceRelation: filters:
+//15/07/06 09:26:03 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
+//
+//+-----+-----+-----+
+//| user| word|count|
+//+-----+-----+-----+
+//|Zebra|  zed|  100|
+//| Russ| dino|   10|
+//| Russ|  fad|    5|
+//|  Sam|alpha|    3|
+//+-----+-----+-----+
+```
+
+The example schema has a clustering key of "word" so we can pushdown filters on that column to C*. We
+do this by applying a normal DataFrame filter. The connector will automatically determine that the 
+filter can be pushed down and will add it to `pushdown filters`. All of the elements of 
+`pushdown filters` will be automatically added to the CQL requests made to C* for the 
+data from this table. The subsequent call will then only serialize data from C* which passes the filter,
+reducing the load on C*. 
+
+```scala
+val dfWithPushdown = df.filter(df("word") > "ham")
+
+dfWithPushdown.explain
+//15/07/06 09:29:10 INFO CassandraSourceRelation: filters: GreaterThan(word,ham)
+//15/07/06 09:29:10 INFO CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(word,ham))
+== Physical Plan ==
+Filter (word#1 > ham)
+ PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[18] at explain at <console>:24
+
+dfWithPushdown.show
+15/07/06 09:30:48 INFO CassandraSourceRelation: filters: GreaterThan(word,ham)
+15/07/06 09:30:48 INFO CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(word,ham))
++-----+----+-----+
+| user|word|count|
++-----+----+-----+
+|Zebra| zed|  100|
++-----+----+-----+
+
+```
+
+[Next - Python DataFrames](15_python.md) 

@@ -8,13 +8,12 @@ import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, SpannedRDD, ValidRDDType}
-import com.datastax.spark.connector.writer.{ReplicaMapper, _}
+import com.datastax.spark.connector.writer.{ReplicaLocator, _}
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
-
 
 /** Provides Cassandra-specific methods on [[org.apache.spark.rdd.RDD RDD]] */
 class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializable {
@@ -25,12 +24,14 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a Cassandra table. Uses the specified column names.
    * @see [[com.datastax.spark.connector.writer.WritableToCassandra]]
    */
-  def saveToCassandra(keyspaceName: String,
-                      tableName: String,
-                      columns: ColumnSelector = AllColumns,
-                      writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))
-                     (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                      rwf: RowWriterFactory[T]): Unit = {
+  def saveToCassandra(
+    keyspaceName: String,
+    tableName: String,
+    columns: ColumnSelector = AllColumns,
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T]): Unit = {
 
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
     rdd.sparkContext.runJob(rdd, writer.write _)
@@ -53,11 +54,13 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * @param rwf factory for obtaining the row writer to be used to extract column values
    *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    */
-  def saveAsCassandraTableEx(table: TableDef,
-                             columns: ColumnSelector = AllColumns,
-                             writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))
-                            (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                             rwf: RowWriterFactory[T]): Unit = {
+  def saveAsCassandraTableEx(
+    table: TableDef,
+    columns: ColumnSelector = AllColumns,
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T]): Unit = {
 
     connector.withSessionDo(session => session.execute(table.cql))
     saveToCassandra(table.keyspaceName, table.tableName, columns, writeConf)
@@ -79,13 +82,15 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    * @param columnMapper a column mapper determining the definition of the table
    */
-  def saveAsCassandraTable(keyspaceName: String,
-                           tableName: String,
-                           columns: ColumnSelector = AllColumns,
-                           writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))
-                          (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                           rwf: RowWriterFactory[T],
-                           columnMapper: ColumnMapper[T]): Unit = {
+  def saveAsCassandraTable(
+    keyspaceName: String,
+    tableName: String,
+    columns: ColumnSelector = AllColumns,
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T],
+    columnMapper: ColumnMapper[T]): Unit = {
 
     val table = TableDef.fromType[T](keyspaceName, tableName)
     saveAsCassandraTableEx(table, columns, writeConf)
@@ -121,45 +126,101 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    * val someCass = source.joinWithCassandraTable(keyspace, wideTable).on(SomeColumns("key", "group"))
    * }}}
    **/
-  def joinWithCassandraTable[R](keyspaceName: String, tableName: String,
-                                selectedColumns: ColumnSelector = AllColumns,
-                                joinColumns: ColumnSelector = PartitionKeyColumns)
-                               (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                                newType: ClassTag[R], rrf: RowReaderFactory[R], ev: ValidRDDType[R],
-                                currentType: ClassTag[T], rwf: RowWriterFactory[T]): CassandraJoinRDD[T, R] = {
+  def joinWithCassandraTable[R](
+    keyspaceName: String,
+    tableName: String,
+    selectedColumns: ColumnSelector = AllColumns,
+    joinColumns: ColumnSelector = PartitionKeyColumns)(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    newType: ClassTag[R],
+    rrf: RowReaderFactory[R],
+    ev: ValidRDDType[R],
+    currentType: ClassTag[T],
+    rwf: RowWriterFactory[T]): CassandraJoinRDD[T, R] = {
+
     new CassandraJoinRDD[T, R](rdd, keyspaceName, tableName, connector, columnNames = selectedColumns, joinColumns = joinColumns)
   }
 
 
   /**
-   * Repartitions the data (via a shuffle) based upon the replication of the given `keyspaceName` and `tableName`. 
+   * Repartitions the data (via a shuffle) based upon the replication of the given `keyspaceName` and `tableName`.
    * Calling this method before using joinWithCassandraTable will ensure that requests will be coordinator
    * local. `partitionsPerHost` Controls the number of Spark Partitions that will be created in this repartitioning
    * event.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
    **/
-  def repartitionByCassandraReplica(keyspaceName: String, tableName: String, partitionsPerHost: Int = 10)
-                                   (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                                    currentType: ClassTag[T], rwf: RowWriterFactory[T]) = {
+  def repartitionByCassandraReplica(
+    keyspaceName: String,
+    tableName: String,
+    partitionsPerHost: Int = 10,
+    partitionKeyMapper: ColumnSelector = PartitionKeyColumns)(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    currentType: ClassTag[T],
+    rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
+
+    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    rdd.repartitionByCassandraReplica(
+      replicaLocator,
+      keyspaceName,
+      tableName,
+      partitionsPerHost,
+      partitionKeyMapper)
+  }
+
+
+  /**
+   * A Serializable version of repartitionByCassandraReplica which removes
+   * the implicit RowWriterFactory Dependency
+   */
+  private[connector] def repartitionByCassandraReplica(
+    replicaLocator: ReplicaLocator[T],
+    keyspaceName: String,
+    tableName: String,
+    partitionsPerHost: Int,
+    partitionKeyMapper: ColumnSelector)(
+  implicit
+    connector: CassandraConnector,
+    currentType: ClassTag[T]): CassandraPartitionedRDD[T] = {
+
     val part = new ReplicaPartitioner(partitionsPerHost, connector)
-    val repart = rdd.keyByCassandraReplica(keyspaceName, tableName).partitionBy(part)
+    val repart = rdd.keyByCassandraReplica(replicaLocator).partitionBy(part)
     val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
     new CassandraPartitionedRDD[T](output, keyspaceName, tableName)
   }
+
 
   /**
    * Key every row in the RDD by with the IP Adresses of all of the Cassandra nodes which a contain a replica
    * of the data specified by that row.
    * The calling RDD must have rows that can be converted into the partition key of the given Cassandra Table.
    */
-  def keyByCassandraReplica(keyspaceName: String, tableName: String)
-                           (implicit connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
-                            currentType: ClassTag[T], rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
-    val converter = ReplicaMapper[T](connector, keyspaceName, tableName)
-    rdd.mapPartitions(primaryKey =>
-      converter.keyByReplicas(primaryKey)
-    )
+  def keyByCassandraReplica(
+    keyspaceName: String,
+    tableName: String,
+    partitionKeyMapper: ColumnSelector = PartitionKeyColumns)(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    currentType: ClassTag[T],
+    rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
+
+    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
+    rdd.keyByCassandraReplica(replicaLocator)
   }
 
+  /**
+   * A Serializable version of keyByCassandraReplica which removes the implicit
+   * RowWriterFactory Dependency
+   */
+  private[connector] def keyByCassandraReplica(
+    replicaLocator: ReplicaLocator[T])(
+  implicit
+    connector: CassandraConnector,
+    currentType: ClassTag[T]): RDD[(Set[InetAddress], T)] = {
+    rdd.mapPartitions(primaryKey =>
+      replicaLocator.keyByReplicas(primaryKey)
+    )
+  }
 
 }

@@ -37,7 +37,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.port)
       .withRetryPolicy(
-        new MultipleRetryPolicy(conf.queryRetryCount))
+        new MultipleRetryPolicy(conf.queryRetryCount, conf.queryRetryDelay))
       .withReconnectionPolicy(
         new ExponentialReconnectionPolicy(conf.minReconnectionDelayMillis, conf.maxReconnectionDelayMillis))
       .withLoadBalancingPolicy(
@@ -76,7 +76,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
         val context = SSLContext.getInstance(conf.protocol)
         context.init(null, tmf.getTrustManagers, new SecureRandom)
-        new SSLOptions(context, conf.enabledAlgorithms)
+        new SSLOptions(context, conf.enabledAlgorithms.toArray)
     }
   }
 

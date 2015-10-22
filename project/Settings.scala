@@ -19,6 +19,10 @@ import java.io.File
 import scala.collection.mutable
 import scala.language.postfixOps
 
+import sbtassembly._
+import sbtassembly.AssemblyPlugin._
+import sbtassembly.AssemblyKeys._
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
@@ -27,8 +31,6 @@ import com.typesafe.tools.mima.plugin.MimaPlugin._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
 import sbt._
-import sbtassembly.Plugin.AssemblyKeys._
-import sbtassembly.Plugin._
 import sbtrelease.ReleasePlugin._
 
 object Settings extends Build {
@@ -49,11 +51,20 @@ object Settings extends Build {
 
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := s"1.4.0-M1$versionSuffix",
+    version in ThisBuild := s"1.4.0$versionSuffix",
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
     versionStatus        := Versions.status(scalaVersion.value, scalaBinaryVersion.value)
+  )
+
+  lazy val sparkPackageSettings = Seq(
+    spName := "datastax/spark-cassandra-connector",
+    sparkVersion := Versions.Spark,
+    spAppendScalaVersion := true,
+    spIncludeMaven := true,
+    spIgnoreProvided := true,
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 
   override lazy val settings = super.settings ++ buildSettings ++ Seq(
@@ -64,7 +75,7 @@ object Settings extends Build {
                   |A library that exposes Cassandra tables as Spark RDDs, writes Spark RDDs to
                   |Cassandra tables, and executes CQL queries in Spark applications.""".stringPrefix,
     homepage := Some(url("https://github.com/datastax/spark-cassandra-connector")),
-    licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
+    licenses := Seq(("Apache License 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
     promptTheme := ScalapenosTheme
   )
 
@@ -170,7 +181,7 @@ object Settings extends Build {
       cp
     }
   )
-  lazy val assembledSettings = defaultSettings ++ customTasks ++ sbtAssemblySettings
+  lazy val assembledSettings = defaultSettings ++ customTasks ++ sparkPackageSettings ++ sbtAssemblySettings
 
   val testOptionSettings = Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
@@ -195,7 +206,7 @@ object Settings extends Build {
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     javaOptions in IntegrationTest ++= Seq(
-      "-XX:MaxPermSize=256M", "-Xmx1g"
+      "-XX:MaxPermSize=256M", "-Xmx1g", "-Dsun.io.serialization.extendedDebugInfo=true"
     ),
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
@@ -203,7 +214,7 @@ object Settings extends Build {
     fork in IntegrationTest := true,
     managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    managedClasspath in IntegrationTest <<= Classpaths.concat(managedClasspath in IntegrationTest, exportedProducts in Test)
+    (internalDependencyClasspath in IntegrationTest) <<= Classpaths.concat(internalDependencyClasspath in IntegrationTest, exportedProducts in Test)
   )
 
   lazy val japiSettings = Seq(
@@ -221,9 +232,10 @@ object Settings extends Build {
     jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)),
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
-    mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+    assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) {
       (old) => {
         case PathList("com", "google", xs @ _*) => MergeStrategy.last
+        case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.last
         case x => old(x)
       }
     }

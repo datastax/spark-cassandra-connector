@@ -1,14 +1,26 @@
 package com.datastax.spark.connector.cql
 
+import scala.language.postfixOps
+
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
+import scala.concurrent.duration._
 import org.scalatest.{Matchers, FlatSpec}
+
+import com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf
 
 class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
   it should "be serializable" in {
     val conf = CassandraConnectorConf(new SparkConf)
     SerializationUtils.roundtrip(conf)
+  }
+
+  it should "match a conf with the same settings" in {
+    val conf_a = CassandraConnectorConf(new SparkConf)
+    val conf_1 = CassandraConnectorConf(new SparkConf)
+
+    conf_a should equal (conf_1)
   }
 
   it should "resolve default SSL settings correctly" in {
@@ -39,6 +51,37 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.trustStoreType shouldBe "JCEKS"
     connConf.cassandraSSLConf.protocol shouldBe "SSLv3"
     connConf.cassandraSSLConf.enabledAlgorithms should contain theSameElementsAs Seq("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
+  }
+
+  it should "resolve default retry delay settings correctly" in {
+    val sparkConf = new SparkConf(loadDefaults = false)
+
+    val connConf = CassandraConnectorConf(sparkConf)
+    connConf.queryRetryDelay shouldBe CassandraConnectorConf.DefaultQueryRetryDelay
+  }
+
+  it should "resolve constant retry delay settings" in {
+    val sparkConf = new SparkConf(loadDefaults = false)
+    sparkConf.set("spark.cassandra.query.retry.delay", "1234")
+
+    val connConf = CassandraConnectorConf(sparkConf)
+    connConf.queryRetryDelay shouldBe RetryDelayConf.ConstantDelay(1234 milliseconds)
+  }
+
+  it should "resolve linear retry delay settings" in {
+    val sparkConf = new SparkConf(loadDefaults = false)
+    sparkConf.set("spark.cassandra.query.retry.delay", "1234+2000")
+
+    val connConf = CassandraConnectorConf(sparkConf)
+    connConf.queryRetryDelay shouldBe RetryDelayConf.LinearDelay(1234 milliseconds, 2000 milliseconds)
+  }
+
+  it should "resolve exponential retry delay settings" in {
+    val sparkConf = new SparkConf(loadDefaults = false)
+    sparkConf.set("spark.cassandra.query.retry.delay", "1234*2.3")
+
+    val connConf = CassandraConnectorConf(sparkConf)
+    connConf.queryRetryDelay shouldBe RetryDelayConf.ExponentialDelay(1234 milliseconds, 2.3d)
   }
 
 }

@@ -1,7 +1,10 @@
 package com.datastax.spark.connector.embedded
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 
 trait SparkTemplate {
@@ -48,6 +51,11 @@ object SparkTemplate {
     }
 
     System.err.println("Starting SparkContext with the following configuration:\n" + defaultConf.toDebugString)
+    for (cp <- sys.env.get("SPARK_SUBMIT_CLASSPATH"))
+      conf.setJars(
+        cp.split(File.pathSeparatorChar)
+          .filter(_.endsWith(".jar"))
+          .map(new File(_).getAbsoluteFile.toURI.toString))
     _sc = new SparkContext(conf)
     _sc
   }
@@ -58,6 +66,14 @@ object SparkTemplate {
   /** Obtains the [[akka.actor.ActorSystem ActorSystem]] associated with the active
     * `SparkEnv`. */
   def actorSystem: ActorSystem = SparkEnv.get.actorSystem
+
+  def withoutLogging[T]( f: => T): T={
+    val level = Logger.getRootLogger.getLevel
+    Logger.getRootLogger.setLevel(Level.OFF)
+    val ret = f
+    Logger.getRootLogger.setLevel(level)
+    ret
+  }
 
   resetSparkContext(defaultConf)
 }
