@@ -95,3 +95,19 @@ case object RowCountRef extends ColumnRef {
   override def cqlValueName: String = "count"
   override def cql: String = "count(*)"
 }
+
+/** References a function call **/
+case class FunctionCallRef(columnName: String,
+                           actualParams: Seq[Either[ColumnRef, String]] = Seq.empty,
+                           alias: Option[String] = None) extends ColumnRef {
+
+  override def selectedAs: String = alias.getOrElse(cqlValueName)
+  override def cqlValueName: String = s"$columnName(${resolve(actualParams, _.cqlValueName)})"
+  override def cql: String = s"$columnName(${resolve(actualParams, _.cql)})"
+
+  private def resolve(child: Seq[Either[ColumnRef, String]], refResolv: ColumnRef => String): String = child map {
+    case Left(cr) => refResolv(cr)
+    case Right(str) => str
+  } mkString ","
+
+}
