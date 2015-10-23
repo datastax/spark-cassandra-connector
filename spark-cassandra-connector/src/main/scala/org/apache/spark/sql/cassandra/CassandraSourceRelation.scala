@@ -146,14 +146,12 @@ private[cassandra] class CassandraSourceRelation(
 
   /** If column is VarInt column, convert data to BigInteger */
   private def toCqlValue(columnName: String, value: Any): Any = {
-    val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
-    if (isVarIntColumn) {
-      value match {
-        case decimal: org.apache.spark.sql.types.Decimal =>
-          return decimal.toJavaBigDecimal.toBigInteger
-      }
+    value match {
+      case decimal: Decimal =>
+        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else value
+      case other => value
     }
-    value
   }
 
   /** Construct where clause from pushdown filters */
