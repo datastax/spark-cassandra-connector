@@ -1,9 +1,13 @@
 package com.datastax.spark.connector.writer
 
+import java.net.InetAddress
+import java.util.UUID
+
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.types.{VarIntType, ColumnType}
+import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType, ColumnType}
 import org.apache.spark.sql.catalyst.expressions.Row
+
 
 /** A [[RowWriter]] that can write SparkSQL `Row` objects. */
 class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRef])
@@ -25,6 +29,8 @@ class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRe
           case bigDecimal: java.math.BigDecimal => bigDecimal.toBigInteger
           case bigInteger: java.math.BigInteger => bigInteger
         }
+        case UUIDType => UUID.fromString(row(i).asInstanceOf[String])
+        case InetType => InetAddress.getByName(row(i).asInstanceOf[String])
         case other: ColumnType[_] => other.converterToCassandra.convert(row(i))
       }
     }

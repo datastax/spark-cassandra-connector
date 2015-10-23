@@ -1,7 +1,8 @@
 package org.apache.spark.sql.cassandra
 
+import java.net.InetAddress
 import java.sql.Timestamp
-import java.util.Date
+import java.util.{UUID, Date}
 import java.math.BigInteger
 
 import org.apache.spark.sql.types.UTF8String
@@ -66,6 +67,8 @@ object CassandraSQLRow {
       case date: Date => new Timestamp(date.getTime)
       case str: String => UTF8String(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
+      case inetAddress: InetAddress => UTF8String(inetAddress.getHostAddress)
+      case uuid: UUID => UTF8String(uuid.toString)
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
