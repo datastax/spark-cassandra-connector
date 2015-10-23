@@ -1,3 +1,4 @@
+ * VarInt Column is converted to decimal stored n Spark SQL (SPARKC-266)
  * Retrieve TableSize from Cassandra system table for datasource relation (SPARKC-164)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
    to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)

@@ -2,8 +2,10 @@ package org.apache.spark.sql.cassandra
 
 import java.sql.Timestamp
 import java.util.Date
+import java.math.BigInteger
 
 import org.apache.spark.sql.types.UTF8String
+import org.apache.spark.sql.types.Decimal
 
 import com.datastax.driver.core.{Row, ProtocolVersion}
 import com.datastax.spark.connector.{TupleValue, UDTValue, GettableData}
@@ -63,6 +65,7 @@ object CassandraSQLRow {
     value match {
       case date: Date => new Timestamp(date.getTime)
       case str: String => UTF8String(str)
+      case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
