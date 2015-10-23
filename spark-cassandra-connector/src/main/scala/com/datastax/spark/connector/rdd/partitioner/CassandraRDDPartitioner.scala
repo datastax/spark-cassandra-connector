@@ -168,11 +168,14 @@ object CassandraRDDPartitioner {
       splitCount: Option[Int],
       splitSize: Int): CassandraRDDPartitioner[V, T] = {
 
-    val partitionerClassName =
-      conn.withSessionDo { session =>
-        session.execute("SELECT partitioner FROM system.local").one().getString(0)
-      }
-    val tokenFactory = TokenFactory.forCassandraPartitioner(partitionerClassName)
+    val tokenFactory = getTokenFactory(conn)
     new CassandraRDDPartitioner(conn, tableDef, splitCount, splitSize)(tokenFactory)
+  }
+
+  def getTokenFactory(conn: CassandraConnector) : TokenFactory[V, T] = {
+    val partitionerName = conn.withSessionDo { session =>
+      session.execute("SELECT partitioner FROM system.local").one().getString(0)
+    }
+    TokenFactory.forCassandraPartitioner(partitionerName)
   }
 }
