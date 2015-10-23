@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 1.5.0 M3 (unreleased)
  * Added support for tinyint and smallint types (SPARKC-269)
  * Updated Java driver version to 3.0.0-alpha3.
@@ -11,7 +12,7 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
- * VarInt Column is converted to decimal stored n Spark SQL (SPARKC-266)
+ * VarInt Column is converted to decimal stored in Spark SQL (SPARKC-266)
  * Retrieve TableSize from Cassandra system table for datasource relation (SPARKC-164)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
    to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
