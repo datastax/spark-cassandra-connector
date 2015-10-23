@@ -435,4 +435,34 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
   }
+
+
+  it should "be able to push down filter on varint columns" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+        |CREATE TABLE sql_test.blob_test(
+        |  id varint,
+        |  series varint,
+        |  rollup_minutes varint,
+        |  event text,
+        |  PRIMARY KEY ((id, series, rollup_minutes), event)
+        |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+        |INSERT INTO sql_test.blob_test(id, series, rollup_minutes, event)
+        |VALUES(1234567891234, 1234567891235, 1234567891236, 'event')
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.sql(
+      s"""
+        |SELECT * FROM sql_test.blob_test
+        |WHERE id = 1234567891234
+        | AND series = 1234567891235
+        | AND rollup_minutes = 1234567891236
+      """.stripMargin.replaceAll("\n", " ")
+    ).collect()  should have length 1
+  }
 }

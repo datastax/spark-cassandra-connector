@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.types.VarIntType
 import com.datastax.spark.connector.util.NameTools
 import org.apache.spark.{SparkConf, Logging}
 
@@ -15,7 +15,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{sources, DataFrame, Row, SQLContext}
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema, ColumnDef}
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import com.datastax.spark.connector.util.Quote._
@@ -127,16 +127,30 @@ private[cassandra] class CassandraSourceRelation(
   /** Construct Cql clause and retrieve the values from filter */
   private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
     filter match {
-      case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(value))
-      case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(value))
-      case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(value))
-      case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(value))
-      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(value))
+      case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(toCqlValue(attribute, value)))
+      case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(toCqlValue(attribute, value)))
+      case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(toCqlValue(attribute, value)))
+      case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(toCqlValue(attribute, value)))
+      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(toCqlValue(attribute, value)))
       case sources.In(attribute, values)                 =>
-        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
+        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), toCqlValues(attribute, values))
       case _ =>
         throw new UnsupportedOperationException(
           s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
+    }
+  }
+
+  private def toCqlValues(columnName: String, values: Array[Any]): Seq[Any] = {
+    values.map(toCqlValue(columnName, _)).toSeq
+  }
+
+  /** If column is VarInt column, convert data to BigInteger */
+  private def toCqlValue(columnName: String, value: Any): Any = {
+    value match {
+      case decimal: Decimal =>
+        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else value
+      case other => value
     }
   }
 
