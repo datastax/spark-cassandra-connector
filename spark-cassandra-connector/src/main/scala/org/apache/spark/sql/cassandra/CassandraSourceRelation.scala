@@ -152,14 +152,16 @@ private[cassandra] class CassandraSourceRelation(
       case decimal: Decimal =>
         val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
         if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else value
-      case uTF8String: UTF8String =>
+      case utf8String: UTF8String =>
         val columnType = tableDef.columnByName(columnName).columnType
         if (columnType == InetType) {
-          InetAddress.getByName(uTF8String.toString)
+          InetAddress.getByName(utf8String.toString)
         } else if(columnType == UUIDType) {
-          UUID.fromString(uTF8String.toString)
+          UUID.fromString(utf8String.toString)
+        } else {
+          utf8String
         }
-      case other => value
+      case other => other
     }
   }
 
