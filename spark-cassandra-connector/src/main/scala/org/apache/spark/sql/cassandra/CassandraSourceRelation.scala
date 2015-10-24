@@ -151,7 +151,7 @@ private[cassandra] class CassandraSourceRelation(
     value match {
       case decimal: Decimal =>
         val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
-        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else value
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
       case utf8String: UTF8String =>
         val columnType = tableDef.columnByName(columnName).columnType
         if (columnType == InetType) {
