@@ -1,10 +1,12 @@
 package org.apache.spark.sql.cassandra
 
 import java.io.IOException
+import java.net.InetAddress
+import java.util.UUID
 
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
-import com.datastax.spark.connector.types.VarIntType
+import com.datastax.spark.connector.types.{UUIDType, InetType, VarIntType}
 import com.datastax.spark.connector.util.NameTools
 import org.apache.spark.{SparkConf, Logging}
 
@@ -149,8 +151,17 @@ private[cassandra] class CassandraSourceRelation(
     value match {
       case decimal: Decimal =>
         val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
-        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else value
-      case other => value
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
+      case utf8String: UTF8String =>
+        val columnType = tableDef.columnByName(columnName).columnType
+        if (columnType == InetType) {
+          InetAddress.getByName(utf8String.toString)
+        } else if(columnType == UUIDType) {
+          UUID.fromString(utf8String.toString)
+        } else {
+          utf8String
+        }
+      case other => other
     }
   }
 
@@ -162,7 +173,6 @@ private[cassandra] class CassandraSourceRelation(
     (cql, args)
   }
 }
-
 
 object CassandraSourceRelation {
 

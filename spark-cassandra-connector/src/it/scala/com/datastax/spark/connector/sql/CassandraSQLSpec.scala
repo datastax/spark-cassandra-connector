@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.sql
 
-import java.net.InetAddress
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -414,34 +412,38 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
   }
 
-  it should "use InetAddressType and UUIDType" in {
+  it should "be able to push down filter on UUID and Inet columns" in {
     conn.withSessionDo { session =>
-      session.execute("create table sql_test.custom_type (k INT, v INT, a INET, b UUID, primary key(k,v))")
-      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
-        "values (1, 1, '74.125.239.135', 123e4567-e89b-12d3-a456-426655440000)")
-      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
-        "values (1, 2, '74.125.239.136', 067e6162-3b6f-4ae2-a171-2470b63dff00)")
+      session.execute("create table sql_test.uuid_inet_type (a UUID, b INET, c INT, primary key(a,b))")
+      session.execute("insert into sql_test.uuid_inet_type (a, b, c) " +
+        "values (123e4567-e89b-12d3-a456-426655440000,'74.125.239.135', 1)")
+      session.execute("insert into sql_test.uuid_inet_type (a, b, c) " +
+        "values (067e6162-3b6f-4ae2-a171-2470b63dff00, '74.125.239.136', 2)")
     }
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     val result = cc.cassandraSql(
-      "select k, v, a, b " +
-      "from custom_type " +
-      "where CAST(a as string) > '/74.125.239.135'").collect()
+      "select * " +
+        "from uuid_inet_type " +
+        "where b > '74.125.239.135'").collect()
     result should have length 1
     val result1 = cc.cassandraSql(
-      "select k, v,  a, b " +
-      "from custom_type " +
-      "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
+      "select * " +
+        "from uuid_inet_type " +
+        "where a < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
+    val result2 = cc.cassandraSql(
+      "select * " +
+        "from uuid_inet_type " +
+        "where a = '123e4567-e89b-12d3-a456-426655440000' and b = '74.125.239.135'").collect()
+    result2 should have length 1
   }
-
 
   it should "be able to push down filter on varint columns" in {
     conn.withSessionDo { session =>
       session.execute(
         s"""
-        |CREATE TABLE sql_test.blob_test(
+        |CREATE TABLE sql_test.varint_test(
         |  id varint,
         |  series varint,
         |  rollup_minutes varint,
@@ -451,14 +453,14 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
         s"""
-        |INSERT INTO sql_test.blob_test(id, series, rollup_minutes, event)
+        |INSERT INTO sql_test.varint_test(id, series, rollup_minutes, event)
         |VALUES(1234567891234, 1234567891235, 1234567891236, 'event')
       """.stripMargin.replaceAll("\n", " "))
     }
     val cc = new CassandraSQLContext(sc)
     cc.sql(
       s"""
-        |SELECT * FROM sql_test.blob_test
+        |SELECT * FROM sql_test.varint_test
         |WHERE id = 1234567891234
         | AND series = 1234567891235
         | AND rollup_minutes = 1234567891236

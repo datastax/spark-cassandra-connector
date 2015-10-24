@@ -1,3 +1,4 @@
+ * Map InetAddress and UUID to string and store it as StringType in Spark SQL (SPARKC-259)
  * VarInt Column is converted to decimal stored in Spark SQL (SPARKC-266)
  * Retrieve TableSize from Cassandra system table for datasource relation (SPARKC-164)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
