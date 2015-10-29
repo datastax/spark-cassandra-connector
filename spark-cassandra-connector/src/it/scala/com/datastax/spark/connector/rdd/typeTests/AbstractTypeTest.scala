@@ -66,7 +66,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   protected val keyspaceName: String = s"${typeName}_ks"
 
   /**
-   * Override this function if TestType does no
+   * Override this function if TestType is different than DriverType
    */
   def convertToDriverInsertable(testValue: TestType): DriverType = testValue match {
     case javaValue: DriverType => javaValue
@@ -186,7 +186,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   def checkSparkReadNormal() {
     typeNormalTables.foreach { table: String =>
-      val result = sc.cassandraTable[(TestType,TestType,TestType)](keyspaceName, table).collect
+      val result = sc.cassandraTable[(TestType, TestType, TestType)](keyspaceName, table).collect
       result.size should equal(typeData.length)
       checkNormalRowConsistency(typeData, result)
     }
@@ -196,8 +196,9 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     expectedKeys: Seq[TestType],
     results: Seq[(TestType, TestType, TestType)]) {
 
-    val foundKeys = results.filter { case (pkey: TestType, ckey: TestType, data: TestType) =>
-      expectedKeys.contains(pkey) }
+    val foundKeys = results.filter {
+      case (pkey, ckey, data) => expectedKeys.contains(pkey)
+    }
     foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, x, x))
   }
 
@@ -206,7 +207,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     expectedSet: Set[TestType],
     results: Seq[(TestType, Set[TestType])]) {
 
-    val foundKeys = results.filter { case (pkey: TestType, _) => expectedKeys.contains(pkey) }
+    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
     foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedSet))
   }
 
@@ -215,7 +216,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     expectedMap: Map[String, TestType],
     results: Seq[(TestType, Map[String, TestType])]) {
 
-    val foundKeys = results.filter { case (pkey: TestType, _) => expectedKeys.contains(pkey) }
+    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
     foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedMap))
   }
 
@@ -224,7 +225,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     expectedMap: Map[TestType, String],
     results: Seq[(TestType, Map[TestType, String])]) {
 
-    val foundKeys = results.filter { case (pkey: TestType, _) => expectedKeys.contains(pkey) }
+    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
     foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedMap))
   }
 
@@ -246,12 +247,12 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     result.size should equal(typeData.length)
     var keys = result.map {
       case (
-        pkey: TestType,
-        data: TestType,
-        nulldata: Option[TestType],
-        nullset: Set[TestType],
-        nullmap: Map[TestType, TestType],
-        nulllist: Seq[TestType]) => {
+        pkey,
+        data,
+        nulldata,
+        nullset,
+        nullmap,
+        nulllist) => {
 
         nulldata should be(None)
         nullset should be(Set.empty)
@@ -324,12 +325,12 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
     var keys = result.map {
       case (
-        pkey: TestType,
-        data: TestType,
-        nulldata: Option[TestType],
-        nullset: Set[TestType],
-        nullmap: Map[TestType, TestType],
-        nulllist: Seq[TestType]) => {
+        pkey,
+        data,
+        nulldata,
+        nullset,
+        nullmap,
+        nulllist) => {
 
         nulldata should be(None)
         nullset should be(Set.empty)
