@@ -204,39 +204,41 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   def checkNormalRowConsistency(
     expectedKeys: Seq[TestType],
-    results: Seq[(TestType, TestType, TestType)]) {
+    foundRows: Seq[(TestType, TestType, TestType)]) {
 
-    val foundKeys = results.filter {
-      case (pkey, ckey, data) => expectedKeys.contains(pkey)
-    }
-    foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, x, x))
+    val expectedRows = expectedKeys.map(x => (x, x, x)).toSet
+    val missingRows = expectedRows -- foundRows
+    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
   }
 
   def checkCollectionConsistency(
     expectedKeys: Seq[TestType],
     expectedSet: Set[TestType],
-    results: Seq[(TestType, Set[TestType])]) {
+    foundRows: Seq[(TestType, Set[TestType])]) {
 
-    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
-    foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedSet))
+    val expectedRows = expectedKeys.map(x => (x, expectedSet)).toSet
+    val missingRows = expectedRows -- foundRows
+    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
   }
 
   def checkMap1Consistenecy(
     expectedKeys: Seq[TestType],
     expectedMap: Map[String, TestType],
-    results: Seq[(TestType, Map[String, TestType])]) {
+    foundRows: Seq[(TestType, Map[String, TestType])]) {
 
-    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
-    foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedMap))
+    val expectedRows = expectedKeys.map(x => (x, expectedMap)).toSet
+    val missingRows = expectedRows -- foundRows
+    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
   }
 
   def checkMap2Consistenecy(
     expectedKeys: Seq[TestType],
     expectedMap: Map[TestType, String],
-    results: Seq[(TestType, Map[TestType, String])]) {
+    foundRows: Seq[(TestType, Map[TestType, String])]) {
 
-    val foundKeys = results.filter { case (pkey, _) => expectedKeys.contains(pkey) }
-    foundKeys should contain theSameElementsAs expectedKeys.map(x => (x, expectedMap))
+    val expectedRows = expectedKeys.map(x => (x, expectedMap)).toSet
+    val missingRows = expectedRows -- foundRows
+    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
   }
 
   def checkSparkReadCollections() {
