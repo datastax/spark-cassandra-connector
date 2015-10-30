@@ -6,6 +6,7 @@ import java.util.{UUID, Date}
 import java.math.BigInteger
 
 import com.datastax.driver.core.Row
+import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.{TupleValue, UDTValue, GettableData}
 import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
 import com.datastax.spark.connector.types.TypeConverter
@@ -69,6 +70,7 @@ object CassandraSQLRow {
   private def toSparkSqlType(value: Any): AnyRef = {
     value match {
       case date: Date => new Timestamp(date.getTime)
+      case localDate: LocalDate => java.sql.Date(localDate.getMillisSinceEpoch)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)

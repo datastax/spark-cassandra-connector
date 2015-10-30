@@ -12,6 +12,8 @@ import org.junit.Test
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
+
+import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.testkit._
 
 class TypeConverterTest {
@@ -130,8 +132,14 @@ class TypeConverterTest {
   def testDate() {
     val c = TypeConverter.forType[Date]
     val dateStr = "2014-04-23 11:21:32+0100"
+    val dayOnlyStr = "2014-04-23 0:0:0+0000"
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+
     val date = dateFormat.parse(dateStr)
+    val dateDayOnly = dateFormat.parse(dayOnlyStr)
+
+    assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(date, c.convert(dateStr))
   }
 
@@ -186,6 +194,17 @@ class TypeConverterTest {
     buf.rewind()
     assertSame(array, c.convert(array))
     assertEquals(array.deep, c.convert(buf).deep)
+  }
+
+  @Test
+  def testLocalDate(): Unit = {
+    val c = TypeConverter.forType[LocalDate]
+    val testDate = LocalDate.fromYearMonthDay(1985, 8, 3)
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    val date = dateFormat.parse("1985-08-03")
+    assertEquals(testDate, c.convert("1985-08-03"))
+    assertEquals(testDate, c.convert(5693))
+    assertEquals(testDate, c.convert(date))
   }
 
   @Test

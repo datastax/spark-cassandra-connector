@@ -33,7 +33,8 @@ object DataTypeConverter extends Logging {
     connector.types.InetType       -> catalystTypes.StringType,
     connector.types.UUIDType       -> catalystTypes.StringType,
     connector.types.TimeUUIDType   -> catalystTypes.StringType,
-    connector.types.BlobType       -> catalystTypes.BinaryType
+    connector.types.BlobType       -> catalystTypes.BinaryType,
+    connector.types.DateType       -> catalystTypes.DateType
   )
 
   /** Convert Cassandra data type to Catalyst data type */
@@ -56,6 +57,6 @@ object DataTypeConverter extends Logging {
 
   /** Create a Catalyst StructField from a Cassandra Column */
   def toStructField(column: ColumnDef): StructField =
-    StructField(column.columnName,catalystDataType(column.columnType, nullable = true))
+    StructField(column.columnName, catalystDataType(column.columnType, nullable = true))
 
 }

@@ -172,7 +172,8 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `bigint`          | `Long`                                       
 | `blob`            | `ByteBuffer`, `Array[Byte]` 
 | `boolean`         | `Boolean`, `Int`              
-| `counter`         | `Long`                       
+| `counter`         | `Long` 
+| `date`            | `Int`, `String` (YYYY-MM-DD), `java.util.Date`, `java.sql.date`, `org.joda.time.DateTime`
 | `decimal`         | `BigDecimal`, `java.math.BigDecimal` 
 | `double`          | `Double`    
 | `float`           | `Float`    

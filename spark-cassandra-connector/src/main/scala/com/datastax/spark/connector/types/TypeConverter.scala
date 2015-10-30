@@ -11,6 +11,8 @@ import scala.reflect.runtime.universe._
 import org.apache.commons.lang3.tuple
 import org.joda.time.DateTime
 
+import com.datastax.driver.core.LocalDate
+
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
@@ -294,6 +296,7 @@ object TypeConverter {
       case x: Calendar => x.getTime
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
+      case x: LocalDate => new Date(x.getMillisSinceEpoch)
       case x: String => TimestampParser.parse(x)
     }
   }
@@ -406,6 +409,23 @@ object TypeConverter {
     def convertPF = {
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
+    }
+  }
+
+  private val LocalDateTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[LocalDate]]
+  }
+
+  implicit object LocalDateConverter extends NullableTypeConverter[LocalDate] {
+    def targetTypeTag = LocalDateTypeTag
+    val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+
+    def convertPF = {
+      case x: LocalDate => x
+      case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
+      case x: Int => LocalDate.fromDaysSinceEpoch(x)
+      case x: String => x match { case dateRegx(year,month,day) =>
+        LocalDate.fromYearMonthDay(year.toInt, month.toInt, day.toInt)}
     }
   }
 
@@ -755,7 +775,8 @@ object TypeConverter {
     UUIDConverter,
     ByteBufferConverter,
     ByteArrayConverter,
-    UDTValueConverter
+    UDTValueConverter,
+    LocalDateConverter
   )
 
   private def forCollectionType(tpe: Type, moreConverters: Seq[TypeConverter[_]]): TypeConverter[_] = TypeTag.synchronized {

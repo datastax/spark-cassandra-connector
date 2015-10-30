@@ -28,6 +28,7 @@ class TypeSerializationTest {
     testSerialization(CounterType)
     testSerialization(SmallIntType)
     testSerialization(TinyIntType)
+    testSerialization(DateType)
   }
 
   @Test

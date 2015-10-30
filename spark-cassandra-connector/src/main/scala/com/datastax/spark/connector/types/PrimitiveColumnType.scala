@@ -7,6 +7,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
+import com.datastax.driver.core.LocalDate
+
 trait PrimitiveColumnType[T] extends ColumnType[T] {
   def isCollection = false
 }
@@ -135,4 +137,11 @@ case object BlobType extends PrimitiveColumnType[ByteBuffer] {
   def cqlTypeName = "blob"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.nio.ByteBuffer])
+}
+
+case object DateType extends PrimitiveColumnType[Int] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Int]] }
+  def cqlTypeName = "date"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[LocalDate])
 }

@@ -7,6 +7,7 @@ import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
+import org.apache.spark.sql.SQLContext
 
 import scala.collection.JavaConverters._
 import scala.reflect._
@@ -84,6 +85,8 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultSparkConf)
 
+  lazy val sqlContext = new SQLContext(sc)
+
   val conn = CassandraConnector(defaultConf)
 
   s"This type" should "be insertable via the CassandraConnector" in {
@@ -114,8 +117,12 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     sparkWriteMaps
   }
 
-  it should "be able to write NULLS to a C* table via saveToCassandra in" in {
+  it should "be able to write NULLS to a C* table via saveToCassandra" in {
     sparkWriteNulls
+  }
+
+  it should "be readable and writable with DataFrames" in {
+    dataframeReadWrite
   }
 
   override def beforeAll() {
@@ -154,9 +161,10 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     var resultSet = session.execute(s"SELECT * FROM ${typeName}_set")
     var rows = resultSet.all().asScala
     rows.size should equal(typeData.length)
+    val convertedSet = typeSet.map(convertToDriverInsertable(_))
     rows.foreach { row =>
       val resSet = row.getSet("data1", classTag[DriverType].runtimeClass).asScala
-      resSet should contain theSameElementsAs typeSet
+      resSet should contain theSameElementsAs convertedSet
     }
 
     resultSet = session.execute(s"SELECT * FROM ${typeName}_list")
@@ -164,23 +172,25 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     rows.size should equal(typeData.length)
     rows.foreach { row =>
       val resSet = row.getList("data1", classTag[DriverType].runtimeClass).asScala
-      resSet should contain theSameElementsAs typeSet
+      resSet should contain theSameElementsAs convertedSet
     }
 
     resultSet = session.execute(s"SELECT * FROM ${typeName}_map_1")
     rows = resultSet.all().asScala
     rows.size should equal(typeData.length)
+    val convertedMap1 = typeMap1.mapValues(convertToDriverInsertable(_))
     rows.foreach { row =>
       val resSet = row.getMap("data1", classOf[String], classTag[DriverType].runtimeClass).asScala
-      resSet should contain theSameElementsAs typeMap1
+      resSet should contain theSameElementsAs convertedMap1
     }
 
     resultSet = session.execute(s"SELECT * FROM ${typeName}_map_2")
     rows = resultSet.all().asScala
     rows.size should equal(typeData.length)
+    val convertedMap2 = typeMap2.map{ case (k,v) => (convertToDriverInsertable(k), v)}
     rows.foreach { row =>
       val resSet = row.getMap("data1", classTag[DriverType].runtimeClass, classOf[String]).asScala
-      resSet should contain theSameElementsAs typeMap2
+      resSet should contain theSameElementsAs convertedMap2
     }
   }
 
@@ -340,6 +350,37 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     }
   }
 
+  def dataframeReadWrite(): Unit = {
+    val cassandraFormat = "org.apache.spark.sql.cassandra"
+
+    println("DF WRITE")
+
+    val readTableOptions = Map(
+      "keyspace" -> keyspaceName,
+      "table" -> s"${typeName}_compound"
+    )
+
+    val writeTableOptions = Map(
+      "keyspace" -> keyspaceName,
+      "table" -> s"${typeName}_dataframe"
+    )
+
+    val readDF = sqlContext
+      .read
+      .format(cassandraFormat)
+      .options(readTableOptions)
+      .load()
+
+    readDF
+      .write
+      .format(cassandraFormat)
+      .options(writeTableOptions)
+      .save()
+
+    val dataCopied = sc.cassandraTable[(TestType, TestType, TestType)](keyspaceName,s"${typeName}_dataframe").collect
+    checkNormalRowConsistency(typeData, dataCopied)
+  }
+
   /**
    * A method to insert expectedKeys which will be used during the typeTests test using the java
    * driver
@@ -430,6 +471,11 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
     session.execute(
       s"""CREATE TABLE IF NOT EXISTS ${typeName}_compound
+         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY (pkey,ckey1))"""
+        .stripMargin)
+
+    session.execute(
+      s"""CREATE TABLE IF NOT EXISTS ${typeName}_dataframe
          |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY (pkey,ckey1))"""
         .stripMargin)
 
