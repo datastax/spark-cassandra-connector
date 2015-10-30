@@ -353,8 +353,6 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   def dataframeReadWrite(): Unit = {
     val cassandraFormat = "org.apache.spark.sql.cassandra"
 
-    println("DF WRITE")
-
     val readTableOptions = Map(
       "keyspace" -> keyspaceName,
       "table" -> s"${typeName}_compound"

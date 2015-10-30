@@ -70,7 +70,7 @@ object CassandraSQLRow {
   private def toSparkSqlType(value: Any): AnyRef = {
     value match {
       case date: Date => new Timestamp(date.getTime)
-      case localDate: LocalDate => java.sql.Date(localDate.getMillisSinceEpoch)
+      case localDate: LocalDate => new java.sql.Date(localDate.getMillisSinceEpoch)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
