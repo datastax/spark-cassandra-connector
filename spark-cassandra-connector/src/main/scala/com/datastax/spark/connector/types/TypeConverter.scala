@@ -434,8 +434,6 @@ object TypeConverter {
     def targetTypeTag = JavaLongTypeTag
     def convertPF = {
       case x: Long => x.toLong
-      case x: java.sql.Time => x.getTime * NANOS_TO_MILLIS
-      case x: java.util.Date => x.getTime * NANOS_TO_MILLIS
     }
   }
 

@@ -184,6 +184,7 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `set`             | `Set`, `TreeSet`, `java.util.HashSet` 
 | `smallint`        | `Short`
 | `text`            | `String` 
+| `time`            | `Long`
 | `timestamp`       | `Long`, `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime` 
 | `timeuuid`        | `java.util.UUID` 
 | `tinyint`         | `Byte`

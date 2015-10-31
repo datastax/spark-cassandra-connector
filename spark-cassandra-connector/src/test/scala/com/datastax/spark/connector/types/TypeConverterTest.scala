@@ -212,10 +212,6 @@ class TypeConverterTest {
   def testTimeType(): Unit = {
     val c = TypeConverter.TimeTypeConverter
     val targetTime = 1482000000L
-    val jDate = new java.util.Date(1482L)
-    val sqlDate = new java.sql.Date(1482L)
-    assertEquals(targetTime, c.convert(jDate))
-    assertEquals(targetTime, c.convert(sqlDate))
     assertEquals(targetTime, c.convert(targetTime))
   }
 
