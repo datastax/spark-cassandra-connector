@@ -34,7 +34,8 @@ object DataTypeConverter extends Logging {
     connector.types.UUIDType       -> catalystTypes.StringType,
     connector.types.TimeUUIDType   -> catalystTypes.StringType,
     connector.types.BlobType       -> catalystTypes.BinaryType,
-    connector.types.DateType       -> catalystTypes.DateType
+    connector.types.DateType       -> catalystTypes.DateType,
+    connector.types.TimeType       -> catalystTypes.LongType
   )
 
   /** Convert Cassandra data type to Catalyst data type */

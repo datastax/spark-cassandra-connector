@@ -145,3 +145,15 @@ case object DateType extends PrimitiveColumnType[Int] {
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[LocalDate])
 }
+
+/* The implicit conversions we usually do between types will not work as expected here, Since the
+time representation is stored as nanoseconds from midnight (epoch) we need to make sure any
+translations of Types take this into account. Because of this we use a special TypeConverter which
+does not use the chaining present in all the other type converters.
+ */
+case object TimeType extends PrimitiveColumnType[Long] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Long]]}
+  def cqlTypeName = "time"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
+}

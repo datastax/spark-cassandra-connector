@@ -429,6 +429,16 @@ object TypeConverter {
     }
   }
 
+  object TimeTypeConverter extends NullableTypeConverter[java.lang.Long] {
+    val NANOS_TO_MILLIS = 1000000L
+    def targetTypeTag = JavaLongTypeTag
+    def convertPF = {
+      case x: Long => x.toLong
+      case x: java.sql.Time => x.getTime * NANOS_TO_MILLIS
+      case x: java.util.Date => x.getTime * NANOS_TO_MILLIS
+    }
+  }
+
   class Tuple2Converter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
@@ -776,7 +786,8 @@ object TypeConverter {
     ByteBufferConverter,
     ByteArrayConverter,
     UDTValueConverter,
-    LocalDateConverter
+    LocalDateConverter,
+    TimeTypeConverter
   )
 
   private def forCollectionType(tpe: Type, moreConverters: Seq[TypeConverter[_]]): TypeConverter[_] = TypeTag.synchronized {

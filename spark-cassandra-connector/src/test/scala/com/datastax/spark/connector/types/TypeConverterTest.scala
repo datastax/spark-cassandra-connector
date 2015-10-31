@@ -3,6 +3,7 @@ package com.datastax.spark.connector.types
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.{GregorianCalendar, Date, UUID}
 import org.apache.commons.lang3.SerializationUtils
@@ -205,6 +206,17 @@ class TypeConverterTest {
     assertEquals(testDate, c.convert("1985-08-03"))
     assertEquals(testDate, c.convert(5693))
     assertEquals(testDate, c.convert(date))
+  }
+
+  @Test
+  def testTimeType(): Unit = {
+    val c = TypeConverter.TimeTypeConverter
+    val targetTime = 1482000000L
+    val jDate = new java.util.Date(1482L)
+    val sqlDate = new java.sql.Date(1482L)
+    assertEquals(targetTime, c.convert(jDate))
+    assertEquals(targetTime, c.convert(sqlDate))
+    assertEquals(targetTime, c.convert(targetTime))
   }
 
   @Test
