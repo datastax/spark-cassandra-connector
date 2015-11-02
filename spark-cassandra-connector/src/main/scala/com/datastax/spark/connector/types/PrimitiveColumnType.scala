@@ -148,8 +148,8 @@ case object DateType extends PrimitiveColumnType[Int] {
 
 /* The implicit conversions we usually do between types will not work as expected here, Since the
 time representation is stored as nanoseconds from midnight (epoch) we need to make sure any
-translations of Types take this into account. Because of this we use a special TypeConverter which
-does not use the chaining present in all the other type converters.
+translations of Types take this into account. In particular we need to be careful of reading this
+time out and converting it to Dates since they will be off by a factor of a million.
  */
 case object TimeType extends PrimitiveColumnType[Long] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Long]]}

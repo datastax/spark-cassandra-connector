@@ -212,7 +212,9 @@ class TypeConverterTest {
   def testTimeType(): Unit = {
     val c = TypeConverter.TimeTypeConverter
     val targetTime = 1482000000L
+    val date = new Date(1482)
     assertEquals(targetTime, c.convert(targetTime))
+    assertEquals(targetTime, c.convert(date))
   }
 
   @Test

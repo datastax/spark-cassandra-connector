@@ -184,7 +184,7 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `set`             | `Set`, `TreeSet`, `java.util.HashSet` 
 | `smallint`        | `Short`
 | `text`            | `String` 
-| `time`            | `Long`
+| `time`            | `Long`, *Do Not Read this Column as a Date**
 | `timestamp`       | `Long`, `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime` 
 | `timeuuid`        | `java.util.UUID` 
 | `tinyint`         | `Byte`
@@ -193,6 +193,9 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `varint`          | `BigInt`, `java.math.BigInteger`
 | `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
+
+*Since `time` is encoded in nanoseconds from epoch rather than milliseconds there will be Scale
+error with an automatic conversion to `java.util.Date`*
 
 Other conversions might work, but may cause loss of precision or may not work for all values. 
 All types are convertible to strings. Converting strings to numbers, dates, 

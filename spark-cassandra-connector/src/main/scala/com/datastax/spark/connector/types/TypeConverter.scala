@@ -433,6 +433,7 @@ object TypeConverter {
     val NANOS_TO_MILLIS = 1000000L
     def targetTypeTag = JavaLongTypeTag
     def convertPF = {
+      case x: Date => x.getTime * NANOS_TO_MILLIS
       case x: Long => x.toLong
     }
   }
