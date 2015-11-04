@@ -40,11 +40,11 @@ trait CassandraTableRowReaderProvider[R] {
   /** RowReaderFactory and ClassTag should be provided from implicit parameters in the constructor
     * of the class implementing this trait
     * @see CassandraTableScanRDD */
-  val rowReaderFactory: RowReaderFactory[R]
+  protected val rowReaderFactory: RowReaderFactory[R]
 
   protected val classTag: ClassTag[R]
 
-  protected lazy val rowReader: RowReader[R] =
+  lazy val rowReader: RowReader[R] =
     rowReaderFactory.rowReader(tableDef, columnNames.selectFrom(tableDef))
 
   lazy val tableDef: TableDef = {
