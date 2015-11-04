@@ -74,7 +74,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
       for ((paramName, _) <- constructorParams) yield {
         val column = ctorParamToColumnName(paramName, columns)
         column.getOrElse(throw new IllegalArgumentException(
-          s"Failed to map constructor name $paramName in $tpe to a column of ${struct.name}"))
+          s"Failed to map constructor parameter $paramName in $tpe to a column of ${struct.name}"))
       }
 
     val setterMap = {

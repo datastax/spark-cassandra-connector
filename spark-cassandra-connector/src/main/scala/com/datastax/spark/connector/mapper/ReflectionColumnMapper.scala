@@ -44,7 +44,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
     def columnRefOrThrow(paramName: String) = {
       constructorParamToColumnName(paramName, columnByName).getOrElse {
         throw new IllegalArgumentException(
-          s"Failed to map constructor name $paramName in $cls to a column of ${struct.name}")
+          s"Failed to map constructor parameter $paramName in $cls to a column of ${struct.name}")
       }
     }
 

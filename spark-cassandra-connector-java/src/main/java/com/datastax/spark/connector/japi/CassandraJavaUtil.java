@@ -163,7 +163,7 @@ public class CassandraJavaUtil {
      * Creates a type tag representing a given class type with given type parameters.
      * <p/>
      * This is the most generic method to create type tags. One can use it to create type tags of
-     * arbitrary class types with any number of type parameters and any depth of type name nesting.
+     * arbitrary class types with any number of type parameters and any depth of type parameter nesting.
      * <p/>
      * For example, the following code: {@code typeTag(Map.class, typeTag(String.class),
      * typeTag(List.class, typeTag(String.class))} returns the type tag of {@code Map<String,
@@ -284,7 +284,7 @@ public class CassandraJavaUtil {
      * mapColumnToListOf(String.class))} returns an RDD of {@code List<String>}.
      * <p/>
      * It is a short-hand method for calling {@link #mapColumnTo(Class, Class, Class[])} with the main
-     * type being {@link java.util.List} and the type name being the given target class.
+     * type being {@link java.util.List} and the type parameter being the given target class.
      */
     public static <T> RowReaderFactory<List<T>> mapColumnToListOf(Class<T> targetClass) {
         return new ValueRowReaderFactory<>(CassandraJavaUtil.<List<T>>typeConverter(List.class, targetClass));
@@ -301,7 +301,7 @@ public class CassandraJavaUtil {
      * mapColumnToSetOf(String.class))} returns an RDD of {@code Set<String>}.
      * <p/>
      * It is a short-hand method for calling {@link #mapColumnTo(Class, Class, Class[])} with the main
-     * type being {@link java.util.Set} and the type name being the given target class.
+     * type being {@link java.util.Set} and the type parameter being the given target class.
      */
     public static <T> RowReaderFactory<Set<T>> mapColumnToSetOf(Class<T> targetClass) {
         return new ValueRowReaderFactory<>(CassandraJavaUtil.<Set<T>>typeConverter(Set.class, targetClass));
@@ -412,7 +412,7 @@ public class CassandraJavaUtil {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A> RowReaderFactory<Tuple1<A>> mapRowToTuple(
             Class<A> a
@@ -425,7 +425,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B> RowReaderFactory<Tuple2<A, B>> mapRowToTuple(
             Class<A> a,
@@ -440,7 +440,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C> RowReaderFactory<Tuple3<A, B, C>> mapRowToTuple(
             Class<A> a,
@@ -457,7 +457,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D> RowReaderFactory<Tuple4<A, B, C, D>> mapRowToTuple(
             Class<A> a,
@@ -476,7 +476,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E> RowReaderFactory<Tuple5<A, B, C, D, E>> mapRowToTuple(
             Class<A> a,
@@ -497,7 +497,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F> RowReaderFactory<Tuple6<A, B, C, D, E, F>> mapRowToTuple(
             Class<A> a,
@@ -520,7 +520,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G> RowReaderFactory<Tuple7<A, B, C, D, E, F, G>> mapRowToTuple(
             Class<A> a,
@@ -545,7 +545,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H> RowReaderFactory<Tuple8<A, B, C, D, E, F, G, H>> mapRowToTuple(
             Class<A> a,
@@ -572,7 +572,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I> RowReaderFactory<Tuple9<A, B, C, D, E, F, G, H, I>> mapRowToTuple(
             Class<A> a,
@@ -601,7 +601,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J> RowReaderFactory<Tuple10<A, B, C, D, E, F, G, H, I, J>> mapRowToTuple(
             Class<A> a,
@@ -632,7 +632,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K> RowReaderFactory<Tuple11<A, B, C, D, E, F, G, H, I, J, K>> mapRowToTuple(
             Class<A> a,
@@ -665,7 +665,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L> RowReaderFactory<Tuple12<A, B, C, D, E, F, G, H, I, J, K, L>> mapRowToTuple(
             Class<A> a,
@@ -700,7 +700,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M> RowReaderFactory<Tuple13<A, B, C, D, E, F, G, H, I, J, K, L, M>> mapRowToTuple(
             Class<A> a,
@@ -737,7 +737,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N> RowReaderFactory<Tuple14<A, B, C, D, E, F, G, H, I, J, K, L, M, N>> mapRowToTuple(
             Class<A> a,
@@ -776,7 +776,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> RowReaderFactory<Tuple15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>> mapRowToTuple(
             Class<A> a,
@@ -817,7 +817,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> RowReaderFactory<Tuple16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>> mapRowToTuple(
             Class<A> a,
@@ -860,7 +860,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q> RowReaderFactory<Tuple17<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>> mapRowToTuple(
             Class<A> a,
@@ -905,7 +905,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R> RowReaderFactory<Tuple18<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>> mapRowToTuple(
             Class<A> a,
@@ -952,7 +952,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S> RowReaderFactory<Tuple19<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>> mapRowToTuple(
             Class<A> a,
@@ -1001,7 +1001,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T> RowReaderFactory<Tuple20<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>> mapRowToTuple(
             Class<A> a,
@@ -1052,7 +1052,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U> RowReaderFactory<Tuple21<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>> mapRowToTuple(
             Class<A> a,
@@ -1105,7 +1105,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowReaderFactory instance for reading tuples with given name types.
+     * Creates a RowReaderFactory instance for reading tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V> RowReaderFactory<Tuple22<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V>> mapRowToTuple(
             Class<A> a,
@@ -1227,7 +1227,7 @@ public class CassandraJavaUtil {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A> RowWriterFactory<Tuple1<A>> mapTupleToRow(
             Class<A> a
@@ -1236,7 +1236,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B> RowWriterFactory<Tuple2<A, B>> mapTupleToRow(
             Class<A> a,
@@ -1246,7 +1246,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C> RowWriterFactory<Tuple3<A, B, C>> mapTupleToRow(
             Class<A> a,
@@ -1257,7 +1257,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D> RowWriterFactory<Tuple4<A, B, C, D>> mapTupleToRow(
             Class<A> a,
@@ -1269,7 +1269,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E> RowWriterFactory<Tuple5<A, B, C, D, E>> mapTupleToRow(
             Class<A> a,
@@ -1282,7 +1282,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F> RowWriterFactory<Tuple6<A, B, C, D, E, F>> mapTupleToRow(
             Class<A> a,
@@ -1296,7 +1296,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G> RowWriterFactory<Tuple7<A, B, C, D, E, F, G>> mapTupleToRow(
             Class<A> a,
@@ -1311,7 +1311,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H> RowWriterFactory<Tuple8<A, B, C, D, E, F, G, H>> mapTupleToRow(
             Class<A> a,
@@ -1327,7 +1327,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I> RowWriterFactory<Tuple9<A, B, C, D, E, F, G, H, I>> mapTupleToRow(
             Class<A> a,
@@ -1344,7 +1344,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J> RowWriterFactory<Tuple10<A, B, C, D, E, F, G, H, I, J>> mapTupleToRow(
             Class<A> a,
@@ -1362,7 +1362,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K> RowWriterFactory<Tuple11<A, B, C, D, E, F, G, H, I, J, K>> mapTupleToRow(
             Class<A> a,
@@ -1381,7 +1381,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L> RowWriterFactory<Tuple12<A, B, C, D, E, F, G, H, I, J, K, L>> mapTupleToRow(
             Class<A> a,
@@ -1401,7 +1401,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M> RowWriterFactory<Tuple13<A, B, C, D, E, F, G, H, I, J, K, L, M>> mapTupleToRow(
             Class<A> a,
@@ -1422,7 +1422,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N> RowWriterFactory<Tuple14<A, B, C, D, E, F, G, H, I, J, K, L, M, N>> mapTupleToRow(
             Class<A> a,
@@ -1444,7 +1444,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> RowWriterFactory<Tuple15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>> mapTupleToRow(
             Class<A> a,
@@ -1467,7 +1467,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> RowWriterFactory<Tuple16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>> mapTupleToRow(
             Class<A> a,
@@ -1491,7 +1491,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q> RowWriterFactory<Tuple17<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>> mapTupleToRow(
             Class<A> a,
@@ -1516,7 +1516,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R> RowWriterFactory<Tuple18<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>> mapTupleToRow(
             Class<A> a,
@@ -1542,7 +1542,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S> RowWriterFactory<Tuple19<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>> mapTupleToRow(
             Class<A> a,
@@ -1569,7 +1569,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T> RowWriterFactory<Tuple20<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>> mapTupleToRow(
             Class<A> a,
@@ -1597,7 +1597,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U> RowWriterFactory<Tuple21<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>> mapTupleToRow(
             Class<A> a,
@@ -1626,7 +1626,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Creates a RowWriterFactory instance for writing tuples with given name types.
+     * Creates a RowWriterFactory instance for writing tuples with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V> RowWriterFactory<Tuple22<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V>> mapTupleToRow(
             Class<A> a,
@@ -1753,7 +1753,7 @@ public class CassandraJavaUtil {
     // -------------------------------------------------------------------------
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A> TupleColumnMapper<Tuple1<A>> tuple1ColumnMapper(
             Class<A> a
@@ -1766,7 +1766,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B> TupleColumnMapper<Tuple2<A, B>> tuple2ColumnMapper(
             Class<A> a,
@@ -1781,7 +1781,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C> TupleColumnMapper<Tuple3<A, B, C>> tuple3ColumnMapper(
             Class<A> a,
@@ -1798,7 +1798,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D> TupleColumnMapper<Tuple4<A, B, C, D>> tuple4ColumnMapper(
             Class<A> a,
@@ -1817,7 +1817,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E> TupleColumnMapper<Tuple5<A, B, C, D, E>> tuple5ColumnMapper(
             Class<A> a,
@@ -1838,7 +1838,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F> TupleColumnMapper<Tuple6<A, B, C, D, E, F>> tuple6ColumnMapper(
             Class<A> a,
@@ -1861,7 +1861,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G> TupleColumnMapper<Tuple7<A, B, C, D, E, F, G>> tuple7ColumnMapper(
             Class<A> a,
@@ -1886,7 +1886,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H> TupleColumnMapper<Tuple8<A, B, C, D, E, F, G, H>> tuple8ColumnMapper(
             Class<A> a,
@@ -1913,7 +1913,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I> TupleColumnMapper<Tuple9<A, B, C, D, E, F, G, H, I>> tuple9ColumnMapper(
             Class<A> a,
@@ -1942,7 +1942,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J> TupleColumnMapper<Tuple10<A, B, C, D, E, F, G, H, I, J>> tuple10ColumnMapper(
             Class<A> a,
@@ -1973,7 +1973,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K> TupleColumnMapper<Tuple11<A, B, C, D, E, F, G, H, I, J, K>> tuple11ColumnMapper(
             Class<A> a,
@@ -2006,7 +2006,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L> TupleColumnMapper<Tuple12<A, B, C, D, E, F, G, H, I, J, K, L>> tuple12ColumnMapper(
             Class<A> a,
@@ -2041,7 +2041,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M> TupleColumnMapper<Tuple13<A, B, C, D, E, F, G, H, I, J, K, L, M>> tuple13ColumnMapper(
             Class<A> a,
@@ -2078,7 +2078,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N> TupleColumnMapper<Tuple14<A, B, C, D, E, F, G, H, I, J, K, L, M, N>> tuple14ColumnMapper(
             Class<A> a,
@@ -2117,7 +2117,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> TupleColumnMapper<Tuple15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>> tuple15ColumnMapper(
             Class<A> a,
@@ -2158,7 +2158,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> TupleColumnMapper<Tuple16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>> tuple16ColumnMapper(
             Class<A> a,
@@ -2201,7 +2201,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q> TupleColumnMapper<Tuple17<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>> tuple17ColumnMapper(
             Class<A> a,
@@ -2246,7 +2246,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R> TupleColumnMapper<Tuple18<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>> tuple18ColumnMapper(
             Class<A> a,
@@ -2293,7 +2293,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S> TupleColumnMapper<Tuple19<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>> tuple19ColumnMapper(
             Class<A> a,
@@ -2342,7 +2342,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T> TupleColumnMapper<Tuple20<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>> tuple20ColumnMapper(
             Class<A> a,
@@ -2393,7 +2393,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U> TupleColumnMapper<Tuple21<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>> tuple21ColumnMapper(
             Class<A> a,
@@ -2446,7 +2446,7 @@ public class CassandraJavaUtil {
     }
 
     /**
-     * Provides a column mapper for the tuple with given name types.
+     * Provides a column mapper for the tuple with given parameter types.
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V> TupleColumnMapper<Tuple22<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V>> tuple22ColumnMapper(
             Class<A> a,

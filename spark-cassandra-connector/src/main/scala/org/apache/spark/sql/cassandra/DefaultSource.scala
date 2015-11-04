@@ -59,7 +59,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
   /**
    * Creates a new relation for a cassandra table given table, keyspace, cluster and push_down
-   * as parameters and explicitly pass schema [[StructType]] as a name
+   * as parameters and explicitly pass schema [[StructType]] as a parameter
    */
   override def createRelation(
     sqlContext: SQLContext,

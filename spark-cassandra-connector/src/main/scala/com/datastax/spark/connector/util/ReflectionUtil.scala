@@ -54,7 +54,7 @@ object ReflectionUtil {
     }
   }
 
-  /** Returns a list of name names and types of the main constructor.
+  /** Returns a list of parameter names and types of the main constructor.
     * The main constructor is assumed to be the one that has the highest number of parameters.
     * In case on ambiguity, this method throws IllegalArgumentException.*/
   def constructorParams(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
@@ -114,7 +114,7 @@ object ReflectionUtil {
     }
   }
 
-  /** Returns a list of names and name types of 1-argument public methods of a Scala type,
+  /** Returns a list of names and parameter types of 1-argument public methods of a Scala type,
     * returning no result (Unit) */
   def setters(tpe: Type): Seq[(String, Type)] = TypeTag.synchronized {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod

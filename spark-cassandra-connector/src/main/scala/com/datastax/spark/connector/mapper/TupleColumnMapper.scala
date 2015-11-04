@@ -72,7 +72,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     val ctorSymbol = Reflect.constructor(tpe).asMethod
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
     val ctorParamTypes = ctorMethod.params.map(_.typeSignature)
-    require(ctorParamTypes.nonEmpty, "Expected a constructor with at least one name")
+    require(ctorParamTypes.nonEmpty, "Expected a constructor with at least one parameter")
 
     val columnTypes = ctorParamTypes.map(ColumnType.fromScalaType)
     val columns = {
