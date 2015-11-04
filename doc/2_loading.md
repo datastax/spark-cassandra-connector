@@ -181,10 +181,12 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `list`            | `Vector`, `List`, `Iterable`, `Seq`, `IndexedSeq`, `java.util.List` 
 | `map`             | `Map`, `TreeMap`, `java.util.HashMap` 
 | `set`             | `Set`, `TreeSet`, `java.util.HashSet` 
+| `smallint`        | `Short`
 | `text`            | `String` 
 | `timestamp`       | `Long`, `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime` 
-| `uuid`            | `java.util.UUID` 
 | `timeuuid`        | `java.util.UUID` 
+| `tinyint`         | `Byte`
+| `uuid`            | `java.util.UUID` 
 | `varchar`         | `String` 
 | `varint`          | `BigInt`, `java.math.BigInteger`
 | `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  

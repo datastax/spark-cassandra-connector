@@ -2,7 +2,6 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.types.UDTFieldDef
 import org.apache.spark.Logging
-import org.apache.spark.sql.cassandra.types.{UUIDType, InetAddressType}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
 
@@ -24,14 +23,16 @@ object DataTypeConverter extends Logging {
     connector.types.CounterType    -> catalystTypes.LongType,
     connector.types.FloatType      -> catalystTypes.FloatType,
     connector.types.DoubleType     -> catalystTypes.DoubleType,
+    connector.types.SmallIntType   -> catalystTypes.ShortType,
+    connector.types.TinyIntType    -> catalystTypes.ByteType,
 
     connector.types.VarIntType     -> catalystTypes.DecimalType(38, 0), // no native arbitrary-size integer type
     connector.types.DecimalType    -> catalystTypes.DecimalType(38, 18),
 
     connector.types.TimestampType  -> catalystTypes.TimestampType,
-    connector.types.InetType       -> InetAddressType,
-    connector.types.UUIDType       -> UUIDType,
-    connector.types.TimeUUIDType   -> UUIDType,
+    connector.types.InetType       -> catalystTypes.StringType,
+    connector.types.UUIDType       -> catalystTypes.StringType,
+    connector.types.TimeUUIDType   -> catalystTypes.StringType,
     connector.types.BlobType       -> catalystTypes.BinaryType
   )
 

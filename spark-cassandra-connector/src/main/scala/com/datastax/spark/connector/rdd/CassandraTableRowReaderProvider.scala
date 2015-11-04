@@ -44,7 +44,7 @@ trait CassandraTableRowReaderProvider[R] {
 
   protected val classTag: ClassTag[R]
 
-  protected lazy val rowReader: RowReader[R] =
+  lazy val rowReader: RowReader[R] =
     rowReaderFactory.rowReader(tableDef, columnNames.selectFrom(tableDef))
 
   lazy val tableDef: TableDef = {

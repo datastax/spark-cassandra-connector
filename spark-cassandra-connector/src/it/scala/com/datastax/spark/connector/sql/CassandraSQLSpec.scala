@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.sql
 
-import java.net.InetAddress
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -57,19 +55,30 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     session.execute("INSERT INTO sql_test2.test2 (a, b, c) VALUES (3, 3, 3)")
 
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_data_type (a ASCII, b INT, c FLOAT, d DOUBLE, e BIGINT, f BOOLEAN, g DECIMAL, " +
-      " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, PRIMARY KEY ((a), b, c))")
-    session.execute("INSERT INTO sql_test.test_data_type (a, b, c, d, e, f, g, h, i, j, k, l) VALUES (" +
-      "'ascii', 10, 12.34, 12.3456789, 123344556, true, 12.36, '74.125.239.135', 'text', '2011-02-03 04:05+0000', 123e4567-e89b-12d3-a456-426655440000 ,123456)")
+      " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, m SMALLINT, n TINYINT,  PRIMARY KEY ((a), b, c))")
+    session.execute("INSERT INTO sql_test.test_data_type (a, b, c, d, e, f, g, h, i, j, k, l, m, n) VALUES (" +
+      "'ascii', 10, 12.34, 12.3456789, 123344556, true, 12.36, '74.125.239.135', 'text', '2011-02-03 04:05+0000', 123e4567-e89b-12d3-a456-426655440000 ,123456, 22, 4)")
 
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_data_type1 (a ASCII, b INT, c FLOAT, d DOUBLE, e BIGINT, f BOOLEAN, g DECIMAL, " +
-      " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, PRIMARY KEY ((a), b, c))")
+      " h INET, i TEXT, j TIMESTAMP, k UUID, l VARINT, m SMALLINT, n TINYINT, PRIMARY KEY ((a), b, c))")
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_test.test_collection (a INT, b SET<INT>, c MAP<INT, INT>, PRIMARY KEY (a))")
-    session.execute("INSERT INTO sql_test.test_collection (a, b, c) VALUES (1, {1,2,3}, {1:2, 2:3})")
+    session.execute(
+      s"""
+         |CREATE TABLE IF NOT EXISTS sql_test.test_collection
+         | (a INT, b SET<TIMESTAMP>, c MAP<TIMESTAMP, TIMESTAMP>, d List<TIMESTAMP>, PRIMARY KEY (a))
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |INSERT INTO sql_test.test_collection (a, b, c, d)
+         |VALUES (1,
+         |        {'2011-02-03','2011-02-04'},
+         |        {'2011-02-03':'2011-02-04', '2011-02-06':'2011-02-07'},
+         |        ['2011-02-03','2011-02-04'])
+      """.stripMargin.replaceAll("\n", " "))
 
-    session.execute("CREATE TYPE sql_test.address (street text, city text, zip int)")
+    session.execute("CREATE TYPE sql_test.address (street text, city text, zip int, date TIMESTAMP)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
-    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120, date: '2011-02-03'})")
   }
 
   override def beforeAll() {
@@ -275,12 +284,12 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     result should have length 1
   }
 
-  it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
+  it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in {
     val result = cc.sql("SELECT * FROM test_data_type").collect()
     result should have length 1
   }
 
-  it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT" in {
+  it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in {
     val result = cc.sql("INSERT INTO TABLE test_data_type1 SELECT * FROM test_data_type").collect()
     val result1 = cc.sql("SELECT * FROM test_data_type1").collect()
     result1 should have length 1
@@ -318,7 +327,8 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
           |  type text,
           |  object_type text,
           |  related_to text,
-          |  obj_id text
+          |  obj_id text,
+          |  ts timestamp,
           |)
       """.stripMargin.replaceAll("\n", " "))
       session.execute(
@@ -348,13 +358,15 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
           |      type: 'a',
           |      object_type: 'b',
           |      related_to: 'c',
-          |      obj_id: 'd'
+          |      obj_id: 'd',
+          |      ts: '2012-03-04'
           |    },
           |    {
           |      type: 'a1',
           |      object_type: 'b1',
           |      related_to: 'c1',
-          |      obj_id: 'd1'
+          |      obj_id: 'd1',
+          |      ts: '2013-04-05'
           |    }
           |  ]
           |)
@@ -400,25 +412,59 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
     cc.cassandraSql("select k, min(d), max(d) from timestamp_conversion_bug group by k").collect()
   }
 
-  it should "use InetAddressType and UUIDType" in {
+  it should "be able to push down filter on UUID and Inet columns" in {
     conn.withSessionDo { session =>
-      session.execute("create table sql_test.custom_type (k INT, v INT, a INET, b UUID, primary key(k,v))")
-      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
-        "values (1, 1, '74.125.239.135', 123e4567-e89b-12d3-a456-426655440000)")
-      session.execute("insert into sql_test.custom_type (k, v, a, b) " +
-        "values (1, 2, '74.125.239.136', 067e6162-3b6f-4ae2-a171-2470b63dff00)")
+      session.execute("create table sql_test.uuid_inet_type (a UUID, b INET, c INT, primary key(a,b))")
+      session.execute("insert into sql_test.uuid_inet_type (a, b, c) " +
+        "values (123e4567-e89b-12d3-a456-426655440000,'74.125.239.135', 1)")
+      session.execute("insert into sql_test.uuid_inet_type (a, b, c) " +
+        "values (067e6162-3b6f-4ae2-a171-2470b63dff00, '74.125.239.136', 2)")
     }
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     val result = cc.cassandraSql(
-      "select k, v, a, b " +
-      "from custom_type " +
-      "where CAST(a as string) > '/74.125.239.135'").collect()
+      "select * " +
+        "from uuid_inet_type " +
+        "where b > '74.125.239.135'").collect()
     result should have length 1
     val result1 = cc.cassandraSql(
-      "select k, v,  a, b " +
-      "from custom_type " +
-      "where CAST(b as string) < '123e4567-e89b-12d3-a456-426655440000'").collect()
+      "select * " +
+        "from uuid_inet_type " +
+        "where a < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
+    val result2 = cc.cassandraSql(
+      "select * " +
+        "from uuid_inet_type " +
+        "where a = '123e4567-e89b-12d3-a456-426655440000' and b = '74.125.239.135'").collect()
+    result2 should have length 1
+  }
+
+  it should "be able to push down filter on varint columns" in {
+    conn.withSessionDo { session =>
+      session.execute(
+        s"""
+        |CREATE TABLE sql_test.varint_test(
+        |  id varint,
+        |  series varint,
+        |  rollup_minutes varint,
+        |  event text,
+        |  PRIMARY KEY ((id, series, rollup_minutes), event)
+        |)
+      """.stripMargin.replaceAll("\n", " "))
+      session.execute(
+        s"""
+        |INSERT INTO sql_test.varint_test(id, series, rollup_minutes, event)
+        |VALUES(1234567891234, 1234567891235, 1234567891236, 'event')
+      """.stripMargin.replaceAll("\n", " "))
+    }
+    val cc = new CassandraSQLContext(sc)
+    cc.sql(
+      s"""
+        |SELECT * FROM sql_test.varint_test
+        |WHERE id = 1234567891234
+        | AND series = 1234567891235
+        | AND rollup_minutes = 1234567891236
+      """.stripMargin.replaceAll("\n", " ")
+    ).collect()  should have length 1
   }
 }

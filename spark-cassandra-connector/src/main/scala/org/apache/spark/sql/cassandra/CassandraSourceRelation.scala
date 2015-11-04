@@ -1,8 +1,12 @@
 package org.apache.spark.sql.cassandra
 
 import java.io.IOException
+import java.net.InetAddress
+import java.util.UUID
 
 import com.datastax.driver.core.Metadata
+import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
+import com.datastax.spark.connector.types.{UUIDType, InetType, VarIntType}
 import com.datastax.spark.connector.util.NameTools
 import org.apache.spark.{SparkConf, Logging}
 
@@ -11,15 +15,17 @@ import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{sources, DataFrame, Row, SQLContext}
+import org.apache.spark.unsafe.types.UTF8String
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema, ColumnDef}
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.SomeColumns
 
 import DataTypeConverter._
+import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -73,7 +79,6 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   override def sizeInBytes: Long = {
-    //TODO  Retrieve table size from C* system table from Cassandra 2.1.4
     // If it's not found, use SQLConf default setting
     tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
   }
@@ -125,16 +130,39 @@ private[cassandra] class CassandraSourceRelation(
   /** Construct Cql clause and retrieve the values from filter */
   private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
     filter match {
-      case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(value))
-      case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(value))
-      case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(value))
-      case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(value))
-      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(value))
+      case sources.EqualTo(attribute, value)            => (s"${quote(attribute)} = ?", Seq(toCqlValue(attribute, value)))
+      case sources.LessThan(attribute, value)           => (s"${quote(attribute)} < ?", Seq(toCqlValue(attribute, value)))
+      case sources.LessThanOrEqual(attribute, value)    => (s"${quote(attribute)} <= ?", Seq(toCqlValue(attribute, value)))
+      case sources.GreaterThan(attribute, value)        => (s"${quote(attribute)} > ?", Seq(toCqlValue(attribute, value)))
+      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(toCqlValue(attribute, value)))
       case sources.In(attribute, values)                 =>
-        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), values.toSeq)
+        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), toCqlValues(attribute, values))
       case _ =>
         throw new UnsupportedOperationException(
           s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
+    }
+  }
+
+  private def toCqlValues(columnName: String, values: Array[Any]): Seq[Any] = {
+    values.map(toCqlValue(columnName, _)).toSeq
+  }
+
+  /** If column is VarInt column, convert data to BigInteger */
+  private def toCqlValue(columnName: String, value: Any): Any = {
+    value match {
+      case decimal: Decimal =>
+        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
+      case utf8String: UTF8String =>
+        val columnType = tableDef.columnByName(columnName).columnType
+        if (columnType == InetType) {
+          InetAddress.getByName(utf8String.toString)
+        } else if(columnType == UUIDType) {
+          UUID.fromString(utf8String.toString)
+        } else {
+          utf8String
+        }
+      case other => other
     }
   }
 
@@ -146,7 +174,6 @@ private[cassandra] class CassandraSourceRelation(
     (cql, args)
   }
 }
-
 
 object CassandraSourceRelation {
 
@@ -169,15 +196,23 @@ object CassandraSourceRelation {
     val conf =
       consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
-    val tableSizeInBytes = {
-      if (tableSizeInBytesString.nonEmpty) {
-        Option(tableSizeInBytesString.get.toLong)
-      } else {
-        None
-      }
-    }
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
+    val tableSizeInBytes = tableSizeInBytesString match {
+      case Some(size) => Option(size.toLong)
+      case None =>
+        val tokenFactory = getTokenFactory(cassandraConnector)
+        val dataSizeInBytes =
+          new DataSizeEstimates(
+            cassandraConnector,
+            tableRef.keyspace,
+            tableRef.table)(tokenFactory).totalDataSizeInBytes
+        if (dataSizeInBytes <= 0L) {
+          None
+        } else {
+          Option(dataSizeInBytes)
+        }
+    }
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
 
