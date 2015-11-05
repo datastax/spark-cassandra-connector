@@ -9,7 +9,7 @@
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
   <td><code>auth.conf.factory</code></td>
-  <td>com.datastax.spark.connector.cql.DefaultAuthConfFactory$</td>
+  <td>DefaultAuthConfFactory</td>
   <td>Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration</td>
 </tr>
 <tr>
@@ -37,7 +37,7 @@
 </tr>
 <tr>
   <td><code>connection.factory</code></td>
-  <td>com.datastax.spark.connector.cql.DefaultConnectionFactory$</td>
+  <td>DefaultConnectionFactory</td>
   <td>Name of a Scala module or class implementing
 CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </tr>

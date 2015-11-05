@@ -30,8 +30,9 @@ object RefBuilder {
       val parameters = configBySection.get(section).get
       val paramTable = parameters.toList.sortBy(_.name).map { case parameter: ConfigParameter[_] =>
         val default = parameter.default match {
-          case x: CassandraConnectionFactory => x.getClass.getCanonicalName
-          case x: AuthConfFactory => x.getClass.getCanonicalName
+          case x: CassandraConnectionFactory => x.getClass.getSimpleName.stripSuffix("$")
+          case x: AuthConfFactory => x.getClass.getSimpleName.stripSuffix("$")
+          case x: Seq[_] => x.mkString(",")
           case Some(defaultValue) => defaultValue
           case None => None
           case value => value
