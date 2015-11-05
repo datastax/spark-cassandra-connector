@@ -29,7 +29,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
   it should "pick up user and password from SparkConf" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
     val conf = defaultConf
-      .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
+      .set(CassandraConnectorConf.ConnectionHostParam.name, host)
       .set(DefaultAuthConfFactory.CassandraUserNameProperty, "cassandra")
       .set(DefaultAuthConfFactory.CassandraPasswordProperty, "cassandra")
 

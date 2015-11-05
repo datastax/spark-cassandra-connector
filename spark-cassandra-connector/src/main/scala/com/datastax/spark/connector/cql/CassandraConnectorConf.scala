@@ -2,6 +2,8 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
+import com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Try
@@ -16,19 +18,19 @@ import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
 case class CassandraConnectorConf(
   hosts: Set[InetAddress],
-  port: Int = CassandraConnectorConf.DefaultPort,
+  port: Int = CassandraConnectorConf.ConnectionPortParam.default,
   authConf: AuthConf = NoAuthConf,
   localDC: Option[String] = None,
-  keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
-  minReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMinReconnectionDelayMillis,
-  maxReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMaxReconnectionDelayMillis,
-  compression: ProtocolOptions.Compression = CassandraConnectorConf.DefaultCassandraConnectionCompression,
-  queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
-  connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
-  readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
+  keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
+  minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
+  maxReconnectionDelayMillis: Int = CassandraConnectorConf.MaxReconnectionDelayParam.default,
+  compression: ProtocolOptions.Compression = CassandraConnectorConf.CompressionParam.default,
+  queryRetryCount: Int = CassandraConnectorConf.QueryRetryParam.default,
+  connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
+  readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
-  queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.DefaultQueryRetryDelay
+  queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default
 )
 
 /** A factory for [[CassandraConnectorConf]] objects.
@@ -57,6 +59,7 @@ object CassandraConnectorConf extends Logging {
       require(delay.length >= 0, "Delay must not be negative")
 
       override def forRetry(nbRetry: Int) = delay
+      override def toString() = s"${delay.length}"
     }
 
     case class LinearDelay(initialDelay: Duration, increaseBy: Duration) extends RetryDelayConf {
@@ -64,6 +67,7 @@ object CassandraConnectorConf extends Logging {
       require(increaseBy.length > 0, "Delay increase must be greater than 0")
 
       override def forRetry(nbRetry: Int) = initialDelay + (increaseBy * (nbRetry - 1).max(0))
+      override def toString() = s"${initialDelay.length} + ${increaseBy}"
     }
 
     case class ExponentialDelay(initialDelay: Duration, increaseBy: Double) extends RetryDelayConf {
@@ -72,6 +76,7 @@ object CassandraConnectorConf extends Logging {
 
       override def forRetry(nbRetry: Int) =
         (initialDelay.toMillis * math.pow(increaseBy, (nbRetry - 1).max(0))).toLong milliseconds
+      override def toString() = s"${initialDelay.length} * $increaseBy"
     }
 
     private val ConstantDelayEx = """(\d+)""".r
@@ -103,166 +108,118 @@ object CassandraConnectorConf extends Logging {
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
-  val CassandraConnectionHostProperty = "spark.cassandra.connection.host"
-  val DefaultCassandraConnectionHost = "localhost"
-  val CassandraConnectionHostDescription = """Contact point to connect to the Cassandra cluster"""
-  val ConnectionHostParam = ConfigParameter(
-    CassandraConnectionHostProperty,
-    ReferenceSection,
-    Some(DefaultCassandraConnectionHost),
-    CassandraConnectionHostDescription)
+  val ConnectionHostParam = ConfigParameter[String](
+    name = "spark.cassandra.connection.host",
+    section = ReferenceSection,
+    default = "localhost",
+    description = """Contact point to connect to the Cassandra cluster""")
 
-  val CassandraConnectionPortProperty = "spark.cassandra.connection.port"
-  val DefaultPort = 9042
-  val CassandraConnectionPortDescription = """Cassandra native connection port"""
-  val ConnectionPortParam = ConfigParameter(
-    CassandraConnectionPortProperty,
-    ReferenceSection,
-    Some(DefaultPort),
-    CassandraConnectionPortDescription)
+  val ConnectionPortParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.port",
+    section = ReferenceSection,
+    default = 9042,
+    description = """Cassandra native connection port""")
 
-  val CassandraConnectionLocalDCProperty = "spark.cassandra.connection.local_dc"
-  val CassandraConnectionLocalDCDescription = """The local DC to connect to (other nodes will be ignored)"""
-  val LocalDCParam = ConfigParameter(
-    CassandraConnectionLocalDCProperty,
-    ReferenceSection,
-    None,
-    CassandraConnectionLocalDCDescription)
+  val LocalDCParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.local_dc",
+    section = ReferenceSection,
+    default = None,
+    description = """The local DC to connect to (other nodes will be ignored)""")
 
-  val CassandraConnectionTimeoutProperty = "spark.cassandra.connection.timeout_ms"
-  val DefaultConnectTimeoutMillis = 5000
-  val CassandraConnectionTimeoutDescription = """Maximum period of time to attempt connecting to a node"""
-  val ConnectionTimeoutParam = ConfigParameter(
-    CassandraConnectionTimeoutProperty,
-    ReferenceSection,
-    Some(DefaultConnectTimeoutMillis),
-    CassandraConnectionTimeoutDescription)
+  val ConnectionTimeoutParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.timeout_ms",
+    section = ReferenceSection,
+    default = 5000,
+    description = """Maximum period of time to attempt connecting to a node""")
 
-  val CassandraConnectionKeepAliveProperty = "spark.cassandra.connection.keep_alive_ms"
-  val DefaultKeepAliveMillis = 250
-  val CassandraConnectionKeepAliveDescription = """Period of time to keep unused connections open"""
-  val KeepAliveMillisParam = ConfigParameter(
-    CassandraConnectionKeepAliveProperty,
-    ReferenceSection,
-    Some(DefaultKeepAliveMillis),
-    CassandraConnectionKeepAliveDescription)
+  val KeepAliveMillisParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.keep_alive_ms",
+    section = ReferenceSection,
+    default = 250,
+    description = """Period of time to keep unused connections open""")
 
-  val CassandraMinReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.min"
-  val DefaultMinReconnectionDelayMillis = 1000
-  val CassandraMinReconnectionDelayDescription = """Minimum period of time to wait before reconnecting to a dead node"""
-  val MinReconnectionDelayParam = ConfigParameter(
-    CassandraMinReconnectionDelayProperty,
-    ReferenceSection,
-    Some(DefaultMinReconnectionDelayMillis),
-    CassandraMinReconnectionDelayDescription)
+  val MinReconnectionDelayParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.reconnection_delay_ms.min",
+    section = ReferenceSection,
+    default = 1000,
+    description = """Minimum period of time to wait before reconnecting to a dead node""")
 
-  val CassandraMaxReconnectionDelayProperty = "spark.cassandra.connection.reconnection_delay_ms.max"
-  val DefaultMaxReconnectionDelayMillis = 60000
-  val CassandraMaxReconnectionDelayDescription = """Maximum period of time to wait before reconnecting to a dead node"""
-  val MaxReconnectionDelayParam = ConfigParameter(
-    CassandraMaxReconnectionDelayProperty,
-    ReferenceSection,
-    Some(DefaultMaxReconnectionDelayMillis),
-    CassandraMaxReconnectionDelayDescription)
+  val MaxReconnectionDelayParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.reconnection_delay_ms.max",
+    section = ReferenceSection,
+    default = 60000,
+    description = """Maximum period of time to wait before reconnecting to a dead node""")
 
-  val CassandraConnectionCompressionProperty = "spark.cassandra.connection.compression"
-  val DefaultCassandraConnectionCompression = ProtocolOptions.Compression.NONE
-  val CassandraConnectionCompressionDescription = """Compression to use (LZ4, SNAPPY or NONE)"""
-  val CompressionParam = ConfigParameter(
-    CassandraConnectionCompressionProperty,
-    ReferenceSection,
-    Some("NONE"), // Enum doesn't print correctly
-    CassandraConnectionCompressionDescription)
+  val CompressionParam = ConfigParameter[ProtocolOptions.Compression](
+    name = "spark.cassandra.connection.compression",
+    section = ReferenceSection,
+    default = ProtocolOptions.Compression.NONE,
+    description = """Compression to use (LZ4, SNAPPY or NONE)""")
 
-  val CassandraQueryRetryCountProperty = "spark.cassandra.query.retry.count"
-  val DefaultQueryRetryCount = 10
-  val CassandraQueryRetryCountDescription = """Number of times to retry a timed-out query"""
-  val QueryRetryParam = ConfigParameter(
-    CassandraQueryRetryCountProperty,
-    ReferenceSection,
-    Some(DefaultQueryRetryCount),
-    CassandraQueryRetryCountDescription)
+  val QueryRetryParam = ConfigParameter[Int](
+    name = "spark.cassandra.query.retry.count",
+    section = ReferenceSection,
+    default = 10,
+    description = """Number of times to retry a timed-out query""")
 
-  val CassandraQueryRetryDelayProperty = "spark.cassandra.query.retry.delay"
-  val DefaultQueryRetryDelay = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d)
-  val CassandraQueryRetryDelayDescription =
-    """The delay between subsequent retries (can be constant,
-      | like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)""".stripMargin
-  val QueryRetryDelayParam = ConfigParameter(
-    CassandraQueryRetryDelayProperty,
-    ReferenceSection,
-    Some("4*1.5"), // To string doesn't match input format
-    CassandraQueryRetryDelayDescription)
+  val QueryRetryDelayParam = ConfigParameter[RetryDelayConf](
+    name = "spark.cassandra.query.retry.delay",
+    section = ReferenceSection,
+    default = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d),
+    description = """The delay between subsequent retries (can be constant,
+      | like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)""".stripMargin)
 
-  val CassandraReadTimeoutProperty = "spark.cassandra.read.timeout_ms"
-  val DefaultReadTimeoutMillis = 120000
-  val CassandraReadTimeoutDescription =""" Maximum period of time to wait for a read to return """
-  val ReadTimeoutParam = ConfigParameter(
-    CassandraReadTimeoutProperty,
-    ReferenceSection,
-    Some(DefaultReadTimeoutMillis),
-    CassandraReadTimeoutDescription)
+  val ReadTimeoutParam = ConfigParameter[Int](
+    name = "spark.cassandra.read.timeout_ms",
+    section = ReferenceSection,
+    default = 120000,
+    description = """Maximum period of time to wait for a read to return """)
 
 
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
   val DefaultCassandraSSLConf = CassandraSSLConf()
 
-  val CassandraConnectionSSLEnabledProperty = "spark.cassandra.connection.ssl.enabled"
-  val DefaultSSLEnabled = DefaultCassandraSSLConf.enabled
-  val CassandraConnectionSSLEnabledDescription = """Enable secure connection to Cassandra cluster	"""
-  val SSLEnabledParam = ConfigParameter(
-    CassandraConnectionSSLEnabledProperty,
-    ReferenceSectionSSL,
-    Some(DefaultSSLEnabled),
-    CassandraConnectionSSLEnabledDescription)
+  val SSLEnabledParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.connection.ssl.enabled",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.enabled,
+    description = """Enable secure connection to Cassandra cluster""")
 
-  val CassandraConnectionSSLTrustStorePathProperty = "spark.cassandra.connection.ssl.trustStore.path"
-  val DefaultSSLTrustStorePath = DefaultCassandraSSLConf.trustStorePath
-  val CassandraConnectionSSLTrustStorePathDescription = """Path for the trust store being used"""
-  val SSLTrustStorePathParam = ConfigParameter(
-    CassandraConnectionSSLTrustStorePathProperty,
-    ReferenceSectionSSL,
-    DefaultSSLTrustStorePath,
-    CassandraConnectionSSLTrustStorePathDescription)
+  val SSLTrustStorePathParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.trustStore.path",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.trustStorePath,
+    description = """Path for the trust store being used""")
 
-  val CassandraConnectionSSLTrustStorePasswordProperty = "spark.cassandra.connection.ssl.trustStore.password"
-  val DefaultSSLTrustStorePassword = DefaultCassandraSSLConf.trustStorePassword
-  val CassandraConnectionTrustStorePasswordDescription = """Trust store password"""
-  val SSLTrustStorePasswordParam = ConfigParameter(
-    CassandraConnectionSSLTrustStorePasswordProperty,
-    ReferenceSectionSSL,
-    DefaultSSLTrustStorePassword,
-    CassandraConnectionTrustStorePasswordDescription)
+  val SSLTrustStorePasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.trustStore.password",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.trustStorePassword,
+    description = """Trust store password""")
 
-  val CassandraConnectionSSLTrustStoreTypeProperty = "spark.cassandra.connection.ssl.trustStore.type"
-  val DefaultSSLTrustStoreType = DefaultCassandraSSLConf.trustStoreType
-  val CassandraConnectionTrustStoreTypeDescription = """Trust store type"""
-  val SSLTrustStoreTypeParam = ConfigParameter(
-    CassandraConnectionSSLTrustStoreTypeProperty,
-    ReferenceSectionSSL,
-    Some(DefaultSSLTrustStoreType),
-    CassandraConnectionTrustStoreTypeDescription)
+  val SSLTrustStoreTypeParam = ConfigParameter[String](
+    name = "spark.cassandra.connection.ssl.trustStore.type",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.trustStoreType,
+    description = """Trust store type""")
 
-  val CassandraConnectionSSLProtocolProperty = "spark.cassandra.connection.ssl.protocol"
-  val DefaultSSLProtocol = DefaultCassandraSSLConf.protocol
-  val CassandraConnectionSSLProtocolDescription = """SSL protocol"""
-  val SSLProtocolParam = ConfigParameter(
-    CassandraConnectionSSLProtocolProperty,
-    ReferenceSectionSSL,
-    Some(DefaultSSLProtocol),
-    CassandraConnectionSSLProtocolDescription)
+  val SSLProtocolParam = ConfigParameter[String](
+    name = "spark.cassandra.connection.ssl.protocol",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.protocol,
+    description = """SSL protocol""")
 
   val CassandraConnectionSSLEnabledAlgorithmsProperty = "spark.cassandra.connection.ssl.enabledAlgorithms"
   val DefaultSSLEnabledAlgorithms = DefaultCassandraSSLConf.enabledAlgorithms
   val CassandraConnectionSSLEnabledAlgorithmsDescription = """SSL cipher suites"""
-  val SSLEnabledAlgorithmsParam = ConfigParameter(
-    CassandraConnectionSSLEnabledAlgorithmsProperty,
-    ReferenceSectionSSL,
-    Some(DefaultSSLEnabledAlgorithms.mkString("<br>")),
-    CassandraConnectionSSLEnabledDescription)
+  val SSLEnabledAlgorithmsParam = ConfigParameter[Set[String]](
+    name = "spark.cassandra.connection.ssl.enabledAlgorithms",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.enabledAlgorithms,
+    description = """SSL cipher suites""")
 
   //Whitelist for allowed CassandraConnector environment variables
-  val Properties:Set[ConfigParameter] = Set(
+  val Properties: Set[ConfigParameter[_]] = Set(
     ConnectionHostParam,
     ConnectionPortParam,
     LocalDCParam,
@@ -293,40 +250,37 @@ object CassandraConnectorConf extends Logging {
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
     ConfigCheck.checkConfig(conf)
-    val hostsStr = conf.get(CassandraConnectionHostProperty, InetAddress.getLocalHost.getHostAddress)
+    val hostsStr = conf.get(ConnectionHostParam.name, InetAddress.getLocalHost.getHostAddress)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
       hostAddress <- resolveHost(hostName.trim)
     } yield hostAddress
     
-    val port = conf.getInt(CassandraConnectionPortProperty, DefaultPort)
+    val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
     val authConf = AuthConf.fromSparkConf(conf)
-    val keepAlive = conf.getInt(CassandraConnectionKeepAliveProperty, DefaultKeepAliveMillis)
+    val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
 
-    val localDC = conf.getOption(CassandraConnectionLocalDCProperty)
-    val minReconnectionDelay = conf.getInt(CassandraMinReconnectionDelayProperty, DefaultMinReconnectionDelayMillis)
-    val maxReconnectionDelay = conf.getInt(CassandraMaxReconnectionDelayProperty, DefaultMaxReconnectionDelayMillis)
-    val queryRetryCount = conf.getInt(CassandraQueryRetryCountProperty, DefaultQueryRetryCount)
-    val queryRetryDelay = RetryDelayConf.fromString(conf.get(CassandraQueryRetryDelayProperty, ""))
-      .getOrElse(DefaultQueryRetryDelay)
-    val connectTimeout = conf.getInt(CassandraConnectionTimeoutProperty, DefaultConnectTimeoutMillis)
-    val readTimeout = conf.getInt(CassandraReadTimeoutProperty, DefaultReadTimeoutMillis)
+    val localDC = conf.getOption(LocalDCParam.name)
+    val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
+    val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
+    val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
+    val queryRetryDelay = RetryDelayConf.fromString(conf.get(QueryRetryDelayParam.name, ""))
+      .getOrElse(QueryRetryDelayParam.default)
+    val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
+    val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
 
-    val compression = conf.getOption(CassandraConnectionCompressionProperty)
-      .map(ProtocolOptions.Compression.valueOf).getOrElse(DefaultCassandraConnectionCompression)
+    val compression = conf.getOption(CompressionParam.name)
+      .map(ProtocolOptions.Compression.valueOf).getOrElse(CompressionParam.default)
 
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
 
-    val sslEnabled = conf.getBoolean(CassandraConnectionSSLEnabledProperty,
-      defaultValue = DefaultCassandraSSLConf.enabled)
-    val sslTrustStorePath = conf.getOption(CassandraConnectionSSLTrustStorePathProperty)
-    val sslTrustStorePassword = conf.getOption(CassandraConnectionSSLTrustStorePasswordProperty)
-    val sslTrustStoreType = conf.get(CassandraConnectionSSLTrustStoreTypeProperty,
-      defaultValue = DefaultCassandraSSLConf.trustStoreType)
-    val sslProtocol = conf.get(CassandraConnectionSSLProtocolProperty,
-      defaultValue = DefaultCassandraSSLConf.protocol)
-    val sslEnabledAlgorithms = conf.getOption(CassandraConnectionSSLEnabledAlgorithmsProperty)
-      .map(_.split(",").map(_.trim).toSet).getOrElse(DefaultCassandraSSLConf.enabledAlgorithms)
+    val sslEnabled = conf.getBoolean(SSLEnabledParam.name, SSLEnabledParam.default)
+    val sslTrustStorePath = conf.getOption(SSLTrustStorePathParam.name).orElse(SSLTrustStorePathParam.default)
+    val sslTrustStorePassword = conf.getOption(SSLTrustStorePasswordParam.name).orElse(SSLTrustStorePasswordParam.default)
+    val sslTrustStoreType = conf.get(SSLTrustStoreTypeParam.name, SSLTrustStoreTypeParam.default)
+    val sslProtocol = conf.get(SSLProtocolParam.name, SSLProtocolParam.default)
+    val sslEnabledAlgorithms = conf.getOption(SSLEnabledAlgorithmsParam.name)
+      .map(_.split(",").map(_.trim).toSet).getOrElse(SSLEnabledAlgorithmsParam.default)
 
     val cassandraSSLConf = CassandraSSLConf(
       enabled = sslEnabled,

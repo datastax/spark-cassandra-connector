@@ -32,7 +32,7 @@
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
   <td><code>connection.compression</code></td>
-  <td>NONE</td>
+  <td></td>
   <td>Compression to use (LZ4, SNAPPY or NONE)</td>
 </tr>
 <tr>
@@ -83,14 +83,14 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </tr>
 <tr>
   <td><code>query.retry.delay</code></td>
-  <td>4*1.5</td>
+  <td>4 * 1.5</td>
   <td>The delay between subsequent retries (can be constant,
  like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)</td>
 </tr>
 <tr>
   <td><code>read.timeout_ms</code></td>
   <td>120000</td>
-  <td> Maximum period of time to wait for a read to return </td>
+  <td>Maximum period of time to wait for a read to return </td>
 </tr>
 </table>
 
@@ -134,12 +134,12 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 <tr>
   <td><code>connection.ssl.enabled</code></td>
   <td>false</td>
-  <td>Enable secure connection to Cassandra cluster	</td>
+  <td>Enable secure connection to Cassandra cluster</td>
 </tr>
 <tr>
   <td><code>connection.ssl.enabledAlgorithms</code></td>
-  <td>TLS_RSA_WITH_AES_128_CBC_SHA<br>TLS_RSA_WITH_AES_256_CBC_SHA</td>
-  <td>Enable secure connection to Cassandra cluster	</td>
+  <td>Set(TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)</td>
+  <td>SSL cipher suites</td>
 </tr>
 <tr>
   <td><code>connection.ssl.protocol</code></td>

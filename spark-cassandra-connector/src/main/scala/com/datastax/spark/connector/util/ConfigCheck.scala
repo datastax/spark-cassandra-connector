@@ -19,7 +19,7 @@ object ConfigCheck {
 
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
-  val validStaticProperties: Set[ConfigParameter] =
+  val validStaticProperties: Set[ConfigParameter[_]] =
     WriteConf.Properties ++
     ReadConf.Properties ++
     CassandraConnectorConf.Properties ++

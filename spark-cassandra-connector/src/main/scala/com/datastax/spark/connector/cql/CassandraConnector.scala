@@ -194,18 +194,18 @@ object CassandraConnector extends Logging {
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */
   def apply(hosts: Set[InetAddress],
-            port: Int = CassandraConnectorConf.DefaultPort,
+            port: Int = CassandraConnectorConf.ConnectionPortParam.default,
             authConf: AuthConf = NoAuthConf,
             localDC: Option[String] = None,
-            keepAliveMillis: Int = CassandraConnectorConf.DefaultKeepAliveMillis,
-            minReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMinReconnectionDelayMillis,
-            maxReconnectionDelayMillis: Int = CassandraConnectorConf.DefaultMaxReconnectionDelayMillis,
-            queryRetryCount: Int = CassandraConnectorConf.DefaultQueryRetryCount,
-            connectTimeoutMillis: Int = CassandraConnectorConf.DefaultConnectTimeoutMillis,
-            readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
+            keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
+            minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
+            maxReconnectionDelayMillis: Int = CassandraConnectorConf.MaxReconnectionDelayParam.default,
+            queryRetryCount: Int = CassandraConnectorConf.QueryRetryParam.default,
+            connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
+            readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
             connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
             cassandraSSLConf: CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
-            queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.DefaultQueryRetryDelay) = {
+            queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default) = {
 
     val config = CassandraConnectorConf(
       hosts = hosts,

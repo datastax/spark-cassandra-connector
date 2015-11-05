@@ -159,7 +159,7 @@ object WriteConf {
   )
 
   // Whitelist for allowed Write environment variables
-  val Properties:Set[ConfigParameter] = Set(
+  val Properties:Set[ConfigParameter[_]] = Set(
     BatchSizeBytesParam,
     ConsistencyLevelParam,
     BatchSizeRowsParam,
