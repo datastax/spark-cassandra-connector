@@ -218,7 +218,7 @@ memory before sending to Cassandra</td>
   <td><code>output.batch.size.bytes</code></td>
   <td>1024</td>
   <td>Maximum total size of the batch in bytes. Overridden by
-null
+spark.cassandra.output.batch.size.rows
     </td>
 </tr>
 <tr>
@@ -242,12 +242,12 @@ in each row</td>
 </tr>
 <tr>
   <td><code>output.metrics</code></td>
-  <td>1000</td>
+  <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
 </tr>
 <tr>
   <td><code>output.throughput_mb_per_sec</code></td>
-  <td>2147483647</td>
+  <td>2.147483647E9</td>
   <td>*(Floating points allowed)* <br> Maximum write throughput allowed
  per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
  as seen on a smaller job for stability</td>
