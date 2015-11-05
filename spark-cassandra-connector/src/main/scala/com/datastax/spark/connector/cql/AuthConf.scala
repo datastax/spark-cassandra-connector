@@ -38,24 +38,21 @@ trait AuthConfFactory {
 object AuthConfFactory {
   val ReferenceSection = "Cassandra Authentication Parameters"
 
-  val AuthConfFactoryProperty = "spark.cassandra.auth.conf.factory"
-  val AuthConfFactoryDescription = "name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"
+  val FactoryParam = ConfigParameter[AuthConfFactory](
+    name = "spark.cassandra.auth.conf.factory",
+    section = ReferenceSection,
+    default = DefaultAuthConfFactory,
+    description = "Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"  )
 
-  val FactoryParam = ConfigParameter(
-    AuthConfFactoryProperty,
-    ReferenceSection,
-    Some("DefaultAuthConfFactory"),
-    AuthConfFactoryDescription
-  )
   val Properties = Set(FactoryParam,
     DefaultAuthConfFactory.UserNameParam,
     DefaultAuthConfFactory.PasswordParam)
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf
-      .getOption(AuthConfFactoryProperty)
+      .getOption(FactoryParam.name)
       .map(ReflectionUtil.findGlobalObject[AuthConfFactory])
-      .getOrElse(DefaultAuthConfFactory)
+      .getOrElse(FactoryParam.default)
   }
 }
 
@@ -64,31 +61,27 @@ object AuthConfFactory {
   * options are present in [[org.apache.spark.SparkConf SparkConf]].*/
 object DefaultAuthConfFactory extends AuthConfFactory {
 
-  val CassandraUserNameProperty = "spark.cassandra.auth.username"
-  val CassandraUserNameDescription = """Login name for password authentication"""
-  val UserNameParam = ConfigParameter(
-    CassandraUserNameProperty,
-    AuthConfFactory.ReferenceSection,
-    None,
-    CassandraUserNameDescription)
+  val UserNameParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.username",
+    section = AuthConfFactory.ReferenceSection,
+    default = None,
+    description = """Login name for password authentication""")
 
-  val CassandraPasswordProperty = "spark.cassandra.auth.password"
-  val CassandraPasswordDescription = """password for password authentication"""
-  val PasswordParam = ConfigParameter(
-    CassandraPasswordProperty,
-    AuthConfFactory.ReferenceSection,
-    None,
-    CassandraPasswordDescription)
+  val PasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.password",
+    section = AuthConfFactory.ReferenceSection,
+    default = None,
+    description = """password for password authentication""")
 
   override val properties = Set(
-    CassandraUserNameProperty,
-    CassandraPasswordProperty
+    UserNameParam.name,
+    PasswordParam.name
   )
 
   def authConf(conf: SparkConf): AuthConf = {
     val credentials =
-      for (username <- conf.getOption(CassandraUserNameProperty);
-           password <- conf.getOption(CassandraPasswordProperty)) yield (username, password)
+      for (username <- conf.getOption(UserNameParam.name);
+           password <- conf.getOption(PasswordParam.name)) yield (username, password)
 
     credentials match {
       case Some((user, password)) => PasswordAuthConf(user, password)

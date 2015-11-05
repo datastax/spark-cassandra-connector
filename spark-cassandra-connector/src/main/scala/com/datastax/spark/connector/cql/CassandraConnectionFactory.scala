@@ -91,22 +91,21 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
-  val ConnectionFactoryProperty = "spark.cassandra.connection.factory"
-  val ConnectionFactoryDescription =
     """Name of a Scala module or class implementing
       |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
 
-  val FactoryParam = ConfigParameter(
-    ConnectionFactoryProperty,
-    ReferenceSection,
-    Some("DefaultConnectionFactory"),
-    ConnectionFactoryDescription)
+  val FactoryParam = ConfigParameter[CassandraConnectionFactory](
+    name = "spark.cassandra.connection.factory",
+    section = ReferenceSection,
+    default = DefaultConnectionFactory,
+    description = """Name of a Scala module or class implementing
+      |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)
 
   val Properties = Set(FactoryParam)
 
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
-    conf.getOption(ConnectionFactoryProperty)
+    conf.getOption(FactoryParam.name)
       .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
-      .getOrElse(DefaultConnectionFactory)
+      .getOrElse(FactoryParam.default)
   }
 }

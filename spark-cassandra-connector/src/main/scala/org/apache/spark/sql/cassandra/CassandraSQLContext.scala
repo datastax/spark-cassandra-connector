@@ -41,7 +41,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Set default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) = {
-    this.setConf(CassandraSqlKSNameProperty, ks)
+    this.setConf(KSNameParam.name, ks)
   }
 
   /** Set current used database name. Database is equivalent to keyspace */
@@ -49,11 +49,11 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Set current used cluster name */
   def setCluster(cluster: String) = {
-    this.setConf(CassandraSqlClusterNameProperty, cluster)
+    this.setConf(SqlClusterParam.name, cluster)
   }
 
   /** Get current used cluster name */
-  def getCluster : String = this.getConf(CassandraSqlClusterNameProperty, CassandraSqlClusterNameDefault)
+  def getCluster : String = this.getConf(SqlClusterParam.name, SqlClusterParam.default)
 
   /**
    * Returns keyspace/database set previously by [[setKeyspace]] or throws IllegalStateException if
@@ -61,7 +61,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
    */
   def getKeyspace: String = {
     try {
-      this.getConf(CassandraSqlKSNameProperty)
+      this.getConf(KSNameParam.name)
     } catch {
       case _: NoSuchElementException =>
         throw new IllegalStateException("Default keyspace not set. Please call CassandraSqlContext#setKeyspace.")
@@ -105,22 +105,17 @@ object CassandraSQLContext {
   // tables from other sources. Keyspace is equivalent to database in SQL world
   val ReferenceSection = "Cassandra SQL Context Options"
 
-  val CassandraSqlKSNameProperty = "spark.cassandra.sql.keyspace"
-  val CassandraSqlKSNameDescription = """Sets the default keyspace"""
-  val KSNameParam = ConfigParameter(
-   CassandraSqlKSNameProperty,
-   ReferenceSection,
-   None,
-   CassandraSqlKSNameDescription)
+  val KSNameParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.sql.keyspace",
+    section = ReferenceSection,
+    default = None,
+    description = """Sets the default keyspace""")
 
-  val CassandraSqlClusterNameProperty = "spark.cassandra.sql.cluster"
-  val CassandraSqlClusterNameDescription = "Sets the default Cluster to inherit configuration from"
-  val CassandraSqlClusterNameDefault = "default"
-  val SqlClusterParam = ConfigParameter(
-    CassandraSqlClusterNameProperty,
-    ReferenceSection,
-    Some(CassandraSqlClusterNameDefault),
-    CassandraSqlClusterNameDescription)
+  val SqlClusterParam = ConfigParameter[String](
+    name = "spark.cassandra.sql.cluster",
+    section = ReferenceSection,
+    default = "default",
+    description = "Sets the default Cluster to inherit configuration from")
 
   val Properties = Seq(
     KSNameParam,

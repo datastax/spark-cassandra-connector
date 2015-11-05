@@ -176,15 +176,15 @@ private[cassandra] class CassandraSourceRelation(
 }
 
 object CassandraSourceRelation {
-  val ReferenceSection = "Cassandra Dataframe Source Paramters"
-  val tableSizeInBytesProperty = "spark.cassandra.table.size.in.bytes"
-  val TableSizeInBytesDescription = "Used by DataFrames Internally, will be updated in a future " +
-    "release to retreive size from C*. Can be set manually now"
-  val TableSizeInBytesParam = ConfigParameter(
-    tableSizeInBytesProperty,
-    ReferenceSection,
-    None,
-    TableSizeInBytesDescription
+  val ReferenceSection = "Cassandra Dataframe Source Parameters"
+
+  val TableSizeInBytesParam = ConfigParameter[Option[Long]](
+    name = "Cassandra Dataframe Source Parameters",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Used by DataFrames Internally, will be updated in a future release to
+        |retreive size from C*. Can be set manually now""".stripMargin
   )
 
   val Properties = Seq(
@@ -203,7 +203,7 @@ object CassandraSourceRelation {
     val sqlConf = sqlContext.getAllConfs
     val conf =
       consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
-    val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
+    val tableSizeInBytesString = conf.getOption(TableSizeInBytesParam.name)
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
     val tableSizeInBytes = tableSizeInBytesString match {

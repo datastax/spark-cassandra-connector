@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory}
+
 case class ConfigParameter[T](
   val name: String,
   val section: String,
@@ -28,6 +30,8 @@ object RefBuilder {
       val parameters = configBySection.get(section).get
       val paramTable = parameters.toList.sortBy(_.name).map { case parameter: ConfigParameter[_] =>
         val default = parameter.default match {
+          case x: CassandraConnectionFactory => x.getClass.getCanonicalName
+          case x: AuthConfFactory => x.getClass.getCanonicalName
           case Some(defaultValue) => defaultValue
           case None => None
           case value => value

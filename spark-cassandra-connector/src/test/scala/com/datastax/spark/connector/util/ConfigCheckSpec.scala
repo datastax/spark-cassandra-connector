@@ -75,7 +75,7 @@ class ConfigCheckSpec extends FlatSpec with Matchers  {
 
   it should "accept custom ConnectionFactory properties" in {
     val sparkConf = new SparkConf()
-      .set(CassandraConnectionFactory.ConnectionFactoryProperty,
+      .set(CassandraConnectionFactory.FactoryParam.name,
         "com.datastax.spark.connector.util.CustomConnectionFactory")
       .set(CustomConnectionFactory.CustomProperty, "foobar")
 
@@ -84,7 +84,7 @@ class ConfigCheckSpec extends FlatSpec with Matchers  {
 
   it should "accept custom AuthConfFactory properties" in {
     val sparkConf = new SparkConf()
-      .set(AuthConfFactory.AuthConfFactoryProperty,
+      .set(AuthConfFactory.FactoryParam.name,
         "com.datastax.spark.connector.util.CustomAuthConfFactory")
       .set(CustomAuthConfFactory.CustomProperty, "foobar")
 

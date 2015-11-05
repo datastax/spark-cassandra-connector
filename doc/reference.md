@@ -9,8 +9,8 @@
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
   <td><code>auth.conf.factory</code></td>
-  <td>DefaultAuthConfFactory</td>
-  <td>name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration</td>
+  <td>com.datastax.spark.connector.cql.DefaultAuthConfFactory$</td>
+  <td>Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration</td>
 </tr>
 <tr>
   <td><code>auth.password</code></td>
@@ -37,7 +37,7 @@
 </tr>
 <tr>
   <td><code>connection.factory</code></td>
-  <td>DefaultConnectionFactory</td>
+  <td>com.datastax.spark.connector.cql.DefaultConnectionFactory$</td>
   <td>Name of a Scala module or class implementing
 CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </tr>
@@ -95,15 +95,16 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </table>
 
 
-## Cassandra Dataframe Source Paramters
+## Cassandra Dataframe Source Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>table.size.in.bytes</code></td>
+  <td><code>Cassandra Dataframe Source Parameters</code></td>
   <td>None</td>
-  <td>Used by DataFrames Internally, will be updated in a future release to retreive size from C*. Can be set manually now</td>
+  <td>Used by DataFrames Internally, will be updated in a future release to
+retreive size from C*. Can be set manually now</td>
 </tr>
 </table>
 
