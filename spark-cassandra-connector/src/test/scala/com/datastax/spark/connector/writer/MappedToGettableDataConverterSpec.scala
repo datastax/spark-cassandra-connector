@@ -139,7 +139,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
   case class UserWithOption(login: String, password: Option[String])
 
   it should "convert nulls to Scala Nones" in {
-    val obj = UserWithOption("foo", None)
+    val obj = UserWithOption("foo", null)
     val userTable = newTable(loginColumn, passwordColumn)
     val converter = MappedToGettableDataConverter[UserWithOption](userTable, userTable.columnRefs)
     val row = converter.convert(obj)
