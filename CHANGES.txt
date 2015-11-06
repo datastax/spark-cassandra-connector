@@ -1,6 +1,7 @@
  * Added ColumRef child class to represent functions calls
 
 1.5.0 M3 (unreleased)
+ * None values are now treated as UNSET. Use null for explicit nulls (SPARKC-283)
  * Added support for tinyint and smallint types (SPARKC-269)
  * Updated Java driver version to 3.0.0-alpha3.
 
