@@ -18,7 +18,7 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
   def cqlTypeName = s"list<${elemType.cqlTypeName}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
-    new TypeConverter.OptionToNullConverter(TypeConverter.listConverter(elemType.converterToCassandra))
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.listConverter(elemType.converterToCassandra))
 }
 
 case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[T]] {
@@ -32,7 +32,7 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
   def cqlTypeName = s"set<${elemType.cqlTypeName}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
-    new TypeConverter.OptionToNullConverter(TypeConverter.setConverter(elemType.converterToCassandra))
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.setConverter(elemType.converterToCassandra))
 }
 
 case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V])
@@ -48,7 +48,7 @@ case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V])
   def cqlTypeName = s"map<${keyType.cqlTypeName}, ${valueType.cqlTypeName}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
-    new TypeConverter.OptionToNullConverter(
+    new TypeConverter.OptionToAnyRefConverter(
       TypeConverter.mapConverter(keyType.converterToCassandra, valueType.converterToCassandra))
 }
 
