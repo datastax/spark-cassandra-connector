@@ -2,7 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{Calendar, GregorianCalendar, UUID, Date}
+import java.util.{Calendar, GregorianCalendar, UUID, Date, TimeZone}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -68,6 +68,8 @@ class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends TypeConvert
   * a desired type. Thanks to implicit method lookup, it is possible to implement a generic
   * method `CassandraRow#get`, which picks up the right converter basing solely on its type argument. */
 object TypeConverter {
+
+  lazy val defaultTimezone = TimeZone.getDefault
 
   private val AnyTypeTag = TypeTag.synchronized {
     implicitly[TypeTag[Any]]
@@ -306,8 +308,14 @@ object TypeConverter {
   }
 
   implicit object SqlDateConverter extends NullableTypeConverter[java.sql.Date] {
+
+    def subtractTimeZoneOffset(millis: Long) = millis - defaultTimezone.getOffset(millis)
+
     def targetTypeTag = SqlDateTypeTag
-    def convertPF = DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
+
+    def convertPF = PartialFunction[Any, java.sql.Date]{ case x: LocalDate =>
+      new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))}
+      .andThen(DateConverter.convertPF.andThen( d => new java.sql.Date(d.getTime)))
   }
 
   private val JodaDateTypeTag = TypeTag.synchronized {
@@ -420,8 +428,11 @@ object TypeConverter {
     def targetTypeTag = LocalDateTypeTag
     val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
 
+    def addTimeZoneOffset(millis: Long) =  millis + defaultTimezone.getOffset(millis)
+
     def convertPF = {
       case x: LocalDate => x
+      case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
       case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: String => x match { case dateRegx(year,month,day) =>

@@ -49,6 +49,13 @@ final class CassandraSQLRow(val columnNames: IndexedSeq[String], val columnValue
 
 object CassandraSQLRow {
 
+  /** SparkSQL assumes all incoming Timestamps will be shifted by the
+    * local TimeZone, if we do not anticipate this our LocalDate objects will
+    * go back in time.
+    */
+  lazy val defaultTimeZone = java.util.TimeZone.getDefault
+  def subtractTimeZoneOffset( millis: Long ) = millis - defaultTimeZone.getOffset(millis)
+
   def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraSQLRow = {
     val data = new Array[Object](columnNames.length)
     for (i <- columnNames.indices) {
@@ -70,7 +77,7 @@ object CassandraSQLRow {
   private def toSparkSqlType(value: Any): AnyRef = {
     value match {
       case date: Date => new Timestamp(date.getTime)
-      case localDate: LocalDate => new java.sql.Date(localDate.getMillisSinceEpoch)
+      case localDate: LocalDate => new java.sql.Date(subtractTimeZoneOffset(localDate.getMillisSinceEpoch))
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
