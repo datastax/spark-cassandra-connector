@@ -13,15 +13,14 @@ import scala.collection.JavaConverters._
 import scala.reflect._
 
 /**
- * A templated class for testing that various CQL Types work with the spark Cassandra Connector
- * When creating an implmentation of this test you must provide two types,
+ * A template class for testing that various CQL Types work with the spark Cassandra Connector
+ * When creating an iimplementationof this test you must provide two types,
  * The TestType is used to extract values from Cassandra ie: sc.cassandraTable[TestType]
  * and saving values in cassandra via sc.parallelize(x:TesType).saveToCassandra()
  * The DriverType is used for inserting values into C* via the javaDriver
  *
- * The convertToDriverInsertable Function should be overidden if there isn't an implict
- * transformation
- * between TestType and DriverType (See BlobTypeTest for an example)
+ * The convertToDriverInsertable Function should be overridden if there isn't an implicit
+ * transformation between TestType and DriverType (See BlobTypeTest for an example)
  */
 abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : ClassTag](
   implicit
