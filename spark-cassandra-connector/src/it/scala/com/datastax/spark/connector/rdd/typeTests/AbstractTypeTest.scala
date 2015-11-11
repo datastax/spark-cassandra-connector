@@ -64,7 +64,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   protected val addMap1: Map[String, TestType]
   protected val addMap2: Map[TestType, String]
 
-  protected val keyspaceName: String = s"${typeName}_ks"
+  protected val keyspaceName: String = s"typetest_ks"
 
   /**
    * Override this function if TestType is different than DriverType
@@ -82,8 +82,10 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    */
   def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): TestType
 
+  val sparkConf = defaultSparkConf.clone()
+
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(sparkConf)
 
   lazy val sqlContext = new SQLContext(sc)
 
