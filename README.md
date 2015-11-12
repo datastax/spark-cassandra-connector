@@ -31,7 +31,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
-| 1.5       | 1.5           | 2.1.5+    | 2.2                   |
+| 1.5       | 1.5           | 2.1.5+    | 3.0                   |
 | 1.4       | 1.4           | 2.1.5+    | 2.1                   |
 | 1.3       | 1.3           | 2.1.5+    | 2.1                   |
 | 1.2       | 1.2           | 2.1, 2.0  | 2.1                   |
