@@ -1,3 +1,5 @@
+ * Added ColumRef child class to represent functions calls
+
 1.5.0 M3 (unreleased)
  * Added support for tinyint and smallint types (SPARKC-269)
  * Updated Java driver version to 3.0.0-alpha3.

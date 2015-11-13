@@ -31,9 +31,23 @@ class ColumnSelectorSpec extends WordSpec with Matchers {
       columns.map(_.columnName) should be equals Seq("c1", "c3", "c5")
     }
 
+    "return selections with function calls" in {
+      val selection = SomeColumns(
+        ColumnName("c1"),
+        FunctionCallRef("f", Left(ColumnName("c2"))::Nil)).selectFrom(tableDef)
+
+      selection.map(_.cql) should be equals Seq(""""c1"""", """f("c2")""")
+    }
+
     "throw a NoSuchElementException when selected column name is invalid" in {
       a[NoSuchElementException] should be thrownBy {
         SomeColumns("c1", "c3", "unknown_column").selectFrom(tableDef)
+      }
+    }
+
+    "throw a NoSuchElementException when a function call has a missing column as an actual parameter" in {
+      a[NoSuchElementException] should be thrownBy {
+        SomeColumns("c1", FunctionCallRef("f", Left(ColumnName("unknown_column"))::Nil)).selectFrom(tableDef)
       }
     }
 
