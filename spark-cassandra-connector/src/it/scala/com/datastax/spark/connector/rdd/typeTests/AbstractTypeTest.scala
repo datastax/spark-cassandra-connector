@@ -25,43 +25,38 @@ import scala.reflect._
 abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : ClassTag](
   implicit
   tConverter: TypeConverter[TestType],
-  rowReaderNormal: RowReaderFactory[(TestType, TestType, TestType)],
-  rowReaderSet: RowReaderFactory[(TestType, Set[TestType])],
-  rowReaderMap1: RowReaderFactory[(TestType, Map[String, TestType])],
-  rowReaderMap2: RowReaderFactory[(TestType, Map[TestType, String])],
+  rowReaderNormal: RowReaderFactory[(TestType, TestType, TestType, TestType)],
+  rowReaderCollection: RowReaderFactory[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])],
   rowReaderNull: RowReaderFactory[(TestType, TestType, Option[TestType], Set[TestType], Map[TestType, TestType], Seq[TestType])],
-  rowWriterNormal: RowWriterFactory[(TestType, TestType, TestType)],
-  rowWriterSet: RowWriterFactory[(TestType, Set[TestType])],
-  rowWriterMap1: RowWriterFactory[(TestType, Map[String, TestType])],
-  rowWriterMap2: RowWriterFactory[(TestType, Map[TestType, String])],
+  rowWriterNormal: RowWriterFactory[(TestType, TestType, TestType, TestType)],
+  rowWriterCollection: RowWriterFactory[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])],
   rowWriterNull: RowWriterFactory[(TestType, TestType, Null, Null, Null, Null)])
   extends SparkCassandraITFlatSpecBase {
 
-  protected val normalTables = Seq("_compound", "_composite", "_compound_cs", "_composite_cs",
-    "_cs")
-  protected val colTables = Seq("_list", "_set")
-  protected val mapTables = Seq("_map_1", "_map_2")
-
-  protected var typeNormalTables: Seq[String] = Nil
-  protected var typeColTables: Seq[String] = Nil
-  protected var typeMapTables: Seq[String] = Nil
+  protected lazy val typeNormalTable: String = s"${typeName}_normal"
+  protected lazy val typeCollectionTable: String = s"${typeName}_collection"
+  protected lazy val typeNullTable: String = s"${typeName}_null"
 
   //Writer Column Names
-  private val normCols = SomeColumns("pkey", "ckey1", "data1")
-  private val collCols = SomeColumns("pkey", "data1")
+  private val normCols = SomeColumns("pkey", "ckey1", "ckey2", "data1")
+  private val collCols = SomeColumns("pkey", "set1", "list1", "map1", "map2")
   private val nullCols = SomeColumns("pkey", "data1", "nulldata", "nullset", "nulllist", "nullmap")
 
   //Implement these values for the class extending AbstractTypeTest
   protected val typeName: String
   protected val typeData: Seq[TestType]
-  protected val typeSet: Set[TestType]
-  protected val typeMap1: Map[String, TestType]
-  protected val typeMap2: Map[TestType, String]
+  protected def typeSet: Set[TestType] = typeData.toSet
+  protected def typeMap: Map[String, TestType] = typeData
+    .zipWithIndex.map( pair => (s"Element ${pair._2}", pair._1)).toMap
+
+  protected def typeReverseMap: Map[TestType, String] = typeMap.map(_.swap)
 
   protected val addData: Seq[TestType]
-  protected val addSet: Set[TestType]
-  protected val addMap1: Map[String, TestType]
-  protected val addMap2: Map[TestType, String]
+  protected def addSet: Set[TestType] = addData.toSet
+  protected def addMap: Map[String, TestType] = addData
+    .zipWithIndex.map( pair => (s"Element ${pair._2}", pair._1)).toMap
+
+  protected def addReverseMap: Map[TestType, String]= addMap.map(_.swap)
 
   protected val keyspaceName: String = s"typetest_ks"
 
@@ -102,7 +97,6 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   it should "be readable via cassandraTable in Collections" in {
     checkSparkReadCollections
-    checkSparkReadMaps
   }
 
   it should "be readable via cassandraTable when nulled " in {
@@ -115,7 +109,6 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   it should "be writable from an RDD with collections via saveToCassandra " in {
     sparkWriteCollections
-    sparkWriteMaps
   }
 
   it should "be able to write NULLS to a C* table via saveToCassandra" in {
@@ -127,22 +120,20 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   }
 
   override def beforeAll() {
-    setKeyspaceTableNames()
     generateKsTable()
     truncateTables()
     insertData()
   }
 
   def checkJDriverInsertsNormal() = conn.withSessionDo { session =>
-    typeNormalTables.foreach { table =>
-      val resultSet = session.execute(s"SELECT * FROM $table")
+      val resultSet = session.execute(s"SELECT * FROM $typeNormalTable")
       val rows = resultSet.all().asScala
       rows.size should equal(typeData.length)
       rows.foreach { row =>
         getDriverColumn(row, "pkey") should equal(getDriverColumn(row, "ckey1"))
+        getDriverColumn(row, "ckey2") should equal(getDriverColumn(row, "ckey1"))
         getDriverColumn(row, "ckey1") should equal(getDriverColumn(row, "data1"))
       }
-    }
   }
 
   def checkJDriverInsertsNull() = conn.withSessionDo { session =>
@@ -159,102 +150,84 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   }
 
   def checkJDriverInsertsCollections() = conn.withSessionDo { session =>
-    var resultSet = session.execute(s"SELECT * FROM ${typeName}_set")
+    var resultSet = session.execute(s"SELECT * FROM $typeCollectionTable")
     var rows = resultSet.all().asScala
+
     rows.size should equal(typeData.length)
+
     val convertedSet = typeSet.map(convertToDriverInsertable(_))
+    val convertedMap1 = typeMap.mapValues(convertToDriverInsertable(_))
+    val convertedMap2 = convertedMap1.map(_.swap)
+
     rows.foreach { row =>
-      val resSet = row.getSet("data1", classTag[DriverType].runtimeClass).asScala
+      val resSet = row.getSet("set1", classTag[DriverType].runtimeClass).asScala
+      val resList = row.getList("list1", classTag[DriverType].runtimeClass).asScala
+      val resSetMap1 = row.getMap("map1", classOf[String], classTag[DriverType].runtimeClass).asScala
+      val resSetMap2 = row.getMap("map2", classTag[DriverType].runtimeClass, classOf[String]).asScala
+
+      resSetMap1 should contain theSameElementsAs convertedMap1
+      resSetMap2 should contain theSameElementsAs convertedMap2
       resSet should contain theSameElementsAs convertedSet
-    }
-
-    resultSet = session.execute(s"SELECT * FROM ${typeName}_list")
-    rows = resultSet.all().asScala
-    rows.size should equal(typeData.length)
-    rows.foreach { row =>
-      val resSet = row.getList("data1", classTag[DriverType].runtimeClass).asScala
-      resSet should contain theSameElementsAs convertedSet
-    }
-
-    resultSet = session.execute(s"SELECT * FROM ${typeName}_map_1")
-    rows = resultSet.all().asScala
-    rows.size should equal(typeData.length)
-    val convertedMap1 = typeMap1.mapValues(convertToDriverInsertable(_))
-    rows.foreach { row =>
-      val resSet = row.getMap("data1", classOf[String], classTag[DriverType].runtimeClass).asScala
-      resSet should contain theSameElementsAs convertedMap1
-    }
-
-    resultSet = session.execute(s"SELECT * FROM ${typeName}_map_2")
-    rows = resultSet.all().asScala
-    rows.size should equal(typeData.length)
-    val convertedMap2 = typeMap2.map{ case (k,v) => (convertToDriverInsertable(k), v)}
-    rows.foreach { row =>
-      val resSet = row.getMap("data1", classTag[DriverType].runtimeClass, classOf[String]).asScala
-      resSet should contain theSameElementsAs convertedMap2
+      resList should contain theSameElementsAs convertedSet
     }
   }
 
   def checkSparkReadNormal() {
-    typeNormalTables.foreach { table: String =>
-      val result = sc.cassandraTable[(TestType, TestType, TestType)](keyspaceName, table).collect
-      result.size should equal(typeData.length)
-      checkNormalRowConsistency(typeData, result)
-    }
+    val result = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName, typeNormalTable).collect
+    result.size should equal(typeData.length)
+    checkNormalRowConsistency(typeData, result)
   }
 
   def checkNormalRowConsistency(
     expectedKeys: Seq[TestType],
-    foundRows: Seq[(TestType, TestType, TestType)]) {
+    foundRows: Seq[(TestType, TestType, TestType, TestType)]) {
 
-    val expectedRows = expectedKeys.map(x => (x, x, x)).toSet
+    val expectedRows = expectedKeys.map(x => (x, x, x, x)).toSet
     val missingRows = expectedRows -- foundRows
     withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
   }
 
   def checkCollectionConsistency(
     expectedKeys: Seq[TestType],
-    expectedSet: Set[TestType],
-    foundRows: Seq[(TestType, Set[TestType])]) {
+    expectedCollections: (Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String]),
+    foundRows: Seq[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])]) {
 
-    val expectedRows = expectedKeys.map(x => (x, expectedSet)).toSet
+    val expectedRows = expectedKeys.map(x => (
+      x,
+      expectedCollections._1,
+      expectedCollections._2,
+      expectedCollections._3,
+      expectedCollections._4)).toSet
+
     val missingRows = expectedRows -- foundRows
-    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
+    withClue(s"We found missing rows in a normal table Found:\n ${foundRows.mkString("\n")}\n Expected:\n ${expectedRows.mkString("\n")}\n") { missingRows should be ('empty) }
   }
 
-  def checkMap1Consistenecy(
+  def checkMapConsistenecy(
     expectedKeys: Seq[TestType],
     expectedMap: Map[String, TestType],
-    foundRows: Seq[(TestType, Map[String, TestType])]) {
+    foundRows: Seq[(TestType, Map[String, TestType], Map[TestType, String])]) {
 
-    val expectedRows = expectedKeys.map(x => (x, expectedMap)).toSet
+    val expectedRows = expectedKeys.map(x => (x, expectedMap, expectedMap.map(_.swap))).toSet
     val missingRows = expectedRows -- foundRows
-    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
-  }
-
-  def checkMap2Consistenecy(
-    expectedKeys: Seq[TestType],
-    expectedMap: Map[TestType, String],
-    foundRows: Seq[(TestType, Map[TestType, String])]) {
-
-    val expectedRows = expectedKeys.map(x => (x, expectedMap)).toSet
-    val missingRows = expectedRows -- foundRows
-    withClue(s"We found missing rows in a normal table Found: $foundRows Missing:") { missingRows should be ('empty) }
+    withClue(s"We found missing rows in a normal table Found: ${foundRows.mkString("\n")}\n Missing:") { missingRows should be ('empty) }
   }
 
   def checkSparkReadCollections() {
-    val table_collections = Seq(s"${typeName}_set", s"${typeName}_list")
-    table_collections.foreach { table =>
-      var result = sc.cassandraTable[(TestType, Set[TestType])](keyspaceName, table).collect
-      result.size should equal(typeData.length)
-      checkCollectionConsistency(typeData, typeSet, result)
-    }
+    var result = sc.cassandraTable[(
+      TestType,
+      Set[TestType],
+      List[TestType],
+      Map[String, TestType],
+      Map[TestType, String])](keyspaceName, typeCollectionTable).select(collCols.columns: _*).collect
+
+    result.size should equal(typeData.length)
+    checkCollectionConsistency(typeData, (typeSet, typeSet.toList, typeMap, typeReverseMap), result)
   }
 
   def checkSparkReadNull() {
-    var table = s"${typeName}_null"
     var result = sc
-      .cassandraTable[(TestType, TestType, Option[TestType], Set[TestType], Map[TestType, TestType], Seq[TestType])](keyspaceName, table)
+      .cassandraTable[(TestType, TestType, Option[TestType], Set[TestType], Map[TestType, TestType], Seq[TestType])](keyspaceName, typeNullTable)
       .collect
 
     result.size should equal(typeData.length)
@@ -275,65 +248,41 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     }
   }
 
-  def checkSparkReadMaps() {
-    var table = s"${typeName}_map_1"
-    val resultMap1 = sc.cassandraTable[(TestType, Map[String,TestType])](keyspaceName, table)
-      .collect
-    resultMap1.size should equal(typeData.length)
-    checkMap1Consistenecy(typeData, typeMap1, resultMap1)
-
-    table = s"${typeName}_map_2"
-    val resultMap2 = sc.cassandraTable[(TestType, Map[TestType, String])](keyspaceName, table)
-      .collect
-    resultMap2.size should equal(typeData.length)
-    checkMap2Consistenecy(typeData, typeMap2, resultMap2)
-  }
-
   def sparkWriteNormal() {
-    typeNormalTables.foreach { table =>
-      val writeArray = addData.map(value => (value, value, value))
-      val writeRdd = sc.parallelize(writeArray)
-      writeRdd.saveToCassandra(keyspaceName, table, normCols)
-      val rdd = sc.cassandraTable[(TestType,TestType,TestType)](keyspaceName, table).collect
-      rdd.size should equal(addData.length + typeData.length)
-      checkNormalRowConsistency(addData, rdd)
-    }
+    val writeArray = addData.map(value => (value, value, value, value))
+    val writeRdd = sc.parallelize(writeArray)
+    writeRdd.saveToCassandra(keyspaceName, typeNormalTable, normCols)
+    val rdd = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName, typeNormalTable).collect
+    rdd.size should equal(addData.length + typeData.length)
+    checkNormalRowConsistency(addData, rdd)
   }
 
   def sparkWriteCollections() {
-    typeColTables.foreach { table =>
-      val writeArray = addData.map(value => (value, addSet))
-      val writeRdd = sc.parallelize(writeArray)
-      writeRdd.saveToCassandra(keyspaceName, table, collCols)
-      val rdd = sc.cassandraTable[(TestType, Set[TestType])](keyspaceName, table).collect
-      rdd.size should equal(addData.length + typeData.length)
-      checkCollectionConsistency(addData, addSet, rdd)
-    }
-  }
-
-  def sparkWriteMaps() {
-    val writeRdd1 = sc.parallelize(addData.map(value => (value, addMap1)))
-    val writeRdd2 = sc.parallelize(addData.map(value => (value, addMap2)))
-    writeRdd1.saveToCassandra(keyspaceName, s"${typeName}_map_1", collCols)
-    writeRdd2.saveToCassandra(keyspaceName, s"${typeName}_map_2", collCols)
-
-    val resultMap1 = sc.cassandraTable[(TestType, Map[String, TestType])](keyspaceName,
-    s"${typeName}_map_1").collect
-    resultMap1.size should equal(addData.length + typeData.length)
-    checkMap1Consistenecy(addData, addMap1, resultMap1)
-
-    val resultMap2 = sc.cassandraTable[(TestType, Map[TestType, String])](keyspaceName,
-    s"${typeName}_map_2").collect
-    resultMap2.size should equal(addData.length + typeData.length)
-    checkMap2Consistenecy(addData, addMap2, resultMap2)
+    val writeArray = addData.map(value => (value, addSet, addSet.toList, addMap, addReverseMap))
+    val writeRdd = sc.parallelize(writeArray)
+    writeRdd.saveToCassandra(keyspaceName, typeCollectionTable, collCols)
+    val rdd = sc.cassandraTable[(
+      TestType,
+      Set[TestType],
+      List[TestType],
+      Map[String, TestType],
+      Map[TestType, String])](keyspaceName, typeCollectionTable).select(collCols.columns: _*).collect
+    rdd.size should equal(addData.length + typeData.length)
+    checkCollectionConsistency(addData, (addSet, addSet.toList, addMap, addReverseMap), rdd)
   }
 
   def sparkWriteNulls() {
-    val table = s"${typeName}_null"
     val writeArray = addData.map(value => (value, value, null, null, null, null))
     val writeRdd = sc.parallelize(writeArray)
-    writeRdd.saveToCassandra(keyspaceName, table, nullCols)
-    val result = sc.cassandraTable[(TestType, TestType, Option[TestType], Set[TestType],Map[TestType, TestType], Seq[TestType])](keyspaceName, table).collect
+    writeRdd.saveToCassandra(keyspaceName, typeNullTable, nullCols)
+    val result = sc.cassandraTable[(
+      TestType,
+      TestType,
+      Option[TestType],
+      Set[TestType],
+      Map[TestType,
+      TestType],
+      Seq[TestType])](keyspaceName, typeNullTable).collect
     result.size should equal(addData.length + typeData.length)
 
     var keys = result.map {
@@ -358,7 +307,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
     val readTableOptions = Map(
       "keyspace" -> keyspaceName,
-      "table" -> s"${typeName}_compound"
+      "table" -> typeNormalTable
     )
 
     val writeTableOptions = Map(
@@ -378,7 +327,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       .options(writeTableOptions)
       .save()
 
-    val dataCopied = sc.cassandraTable[(TestType, TestType, TestType)](keyspaceName,s"${typeName}_dataframe").collect
+    val dataCopied = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName,s"${typeName}_dataframe").collect
     checkNormalRowConsistency(typeData, dataCopied)
   }
 
@@ -388,133 +337,74 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    */
   def insertData() = conn.withSessionDo { session =>
 
-    typeNormalTables.foreach { table =>
-      val statement = session.prepare(
-        s"""INSERT INTO $keyspaceName.$table
-           |(pkey, ckey1, data1)
-           |VALUES (?,?,?)""".stripMargin)
-      typeData.foreach { value: TestType =>
-        val driverValue = convertToDriverInsertable(value)
-        val bs = statement.bind(driverValue, driverValue, driverValue)
-        session.execute(bs)
-      }
-    }
-
-    val setTable = s"${typeName}_set"
-    val setStatement = session.prepare(
-      s"""INSERT INTO $keyspaceName.$setTable
-         |(pkey, data1)
-         |VALUES (?,?)""".stripMargin)
-    val javaSet: java.util.Set[DriverType] = typeSet.map(convertToDriverInsertable(_)).asJava
-    typeData.foreach { value =>
+    val normalStatement = session.prepare(
+      s"""INSERT INTO $keyspaceName.$typeNormalTable
+         |(pkey, ckey1, ckey2, data1)
+         |VALUES (?,?,?,?)""".stripMargin)
+    typeData.foreach { value: TestType =>
       val driverValue = convertToDriverInsertable(value)
-      val bs = setStatement.bind(driverValue, javaSet)
+      val bs = normalStatement.bind(driverValue, driverValue, driverValue, driverValue)
       session.execute(bs)
     }
 
-    var listTable = s"${typeName}_list"
-    val listStatement = session.prepare(
-      s"""INSERT INTO $keyspaceName.$listTable
-         |(pkey, data1)
-         |VALUES (?,?)""".stripMargin)
-    val javaList: java.util.List[DriverType] = typeSet.toSeq.map(convertToDriverInsertable(_))
-      .asJava
+    val collectionStatement = session.prepare(
+      s"""INSERT INTO $keyspaceName.$typeCollectionTable
+         |(pkey, set1, list1, map1, map2)
+         |VALUES (?,?,?,?,?)""".stripMargin)
+    val scalaSet = typeSet.map(convertToDriverInsertable(_))
+    val javaSet: java.util.Set[DriverType] = scalaSet.asJava
+    val javaList: java.util.List[DriverType] = scalaSet.toList.asJava
+
+    val javaMap1: java.util.Map[String, DriverType] = typeMap.mapValues(value =>
+      convertToDriverInsertable(value)).asJava
+    val javaMap2: java.util.Map[DriverType, String] = typeReverseMap.map { case (key, value) =>
+      (convertToDriverInsertable(key), value)
+    }.asJava
+
     typeData.foreach { value =>
       val driverValue = convertToDriverInsertable(value)
-      val bs = listStatement.bind(driverValue, javaList)
+      val bs = collectionStatement.bind(driverValue, javaSet, javaList, javaMap1, javaMap2)
       session.execute(bs)
     }
 
-    val map1stat = session.prepare(
-      s"""INSERT INTO $keyspaceName.${typeName}_map_1
-         |(pkey, data1)
-         |VALUES (?,?)""".stripMargin)
-    val map2stat = session.prepare(
-      s"""INSERT INTO $keyspaceName.${typeName}_map_2
-         |(pkey, data1)
-         |VALUES (?,?)""".stripMargin)
-    typeData.foreach { value =>
-      val driverValue = convertToDriverInsertable(value)
-      val statement = map1stat.bind(
-        driverValue, typeMap1.mapValues(value => convertToDriverInsertable(value)).asJava)
-      session.execute(statement)
-    }
-    typeData.foreach { value =>
-      val driverValue = convertToDriverInsertable(value)
-      val statement = map2stat.bind(
-        driverValue, typeMap2.map(kv => (convertToDriverInsertable(kv._1), kv._2)).asJava)
-      session.execute(statement)
-    }
-
-    val statement = session.prepare(
+    val nullStatement = session.prepare(
       s"""INSERT INTO $keyspaceName.${typeName}_null
          |(pkey, data1, nulldata, nullset, nulllist, nullmap)
          |VALUES (?,?,?,?,?,?)""".stripMargin)
     typeData.foreach { value =>
       val driverValue = convertToDriverInsertable(value)
-      val bs = statement.bind(driverValue, driverValue, null, null, null, null)
+      val bs = nullStatement.bind(driverValue, driverValue, null, null, null, null)
       session.execute(bs)
     }
   }
 
-  def setKeyspaceTableNames() {
-    typeNormalTables = normalTables.map(typeName + _)
-    typeColTables = colTables.map(typeName + _)
-    typeMapTables = mapTables.map(typeName + _)
-  }
-
   def generateKsTable() = conn.withSessionDo { session =>
+    val start = System.currentTimeMillis()
     session.execute(s"""DROP KEYSPACE IF EXISTS $keyspaceName""")
+
     session.execute(
       s"""CREATE KEYSPACE IF NOT EXISTS $keyspaceName
          |with replication = {'class':'SimpleStrategy','replication_factor':'1'}""".stripMargin)
     session.execute(s"""USE $keyspaceName""")
 
     session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_compound
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY (pkey,ckey1))"""
-        .stripMargin)
-
-    session.execute(
       s"""CREATE TABLE IF NOT EXISTS ${typeName}_dataframe
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY (pkey,ckey1))"""
+         |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
         .stripMargin)
 
     session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_composite
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1)))"""
+      s"""CREATE TABLE IF NOT EXISTS ${typeName}_normal
+         |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
         .stripMargin)
 
     session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_compound_cs
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY (pkey,ckey1))
-         |WITH COMPACT STORAGE""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_composite_cs
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1)))
-         |WITH COMPACT STORAGE""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_cs
-         |(pkey $typeName, ckey1 $typeName, data1 $typeName, PRIMARY KEY (pkey))
-         |WITH COMPACT STORAGE""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_list
-         |(pkey $typeName, data1 list<$typeName>, PRIMARY KEY (pkey) )""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_set
-         |(pkey $typeName, data1 set<$typeName>, PRIMARY KEY (pkey) )""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_map_1
-         |(pkey $typeName, data1 map<ascii,$typeName>, PRIMARY KEY (pkey))""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_map_2
-         |(pkey $typeName, data1 map<$typeName,ascii>, PRIMARY KEY (pkey))""".stripMargin)
+      s"""CREATE TABLE IF NOT EXISTS ${typeName}_collection
+         |(pkey $typeName,
+         |set1 set<$typeName>,
+         |list1 list<${typeName}>,
+         |map1 map<ascii,$typeName>,
+         |map2 map<$typeName, ascii>,
+         |PRIMARY KEY (pkey))""".stripMargin)
 
     session.execute(
       s"""CREATE TABLE IF NOT EXISTS ${typeName}_null
@@ -525,20 +415,14 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
          |nulllist list<$typeName>,
          |nullmap map<$typeName,$typeName>,
          |PRIMARY KEY (pkey))""".stripMargin)
+    val end = System.currentTimeMillis()
+    println(s"Took ${end-start} ms to setup tables")
   }
 
   def truncateTables() = conn.withSessionDo { session =>
-    typeNormalTables.foreach(table =>
-      session.execute(s"TRUNCATE $table")
-    )
-    typeColTables.foreach(table =>
-      session.execute(s"TRUNCATE $table")
-    )
-    typeMapTables.foreach(
-      table =>
-        session.execute(s"TRUNCATE $table")
-    )
-    session.execute(s"TRUNCATE ${typeName}_null")
+    session.execute(s"TRUNCATE $typeNormalTable")
+    session.execute(s"TRUNCATE $typeCollectionTable")
+    session.execute(s"TRUNCATE $typeNullTable")
   }
 
 }
