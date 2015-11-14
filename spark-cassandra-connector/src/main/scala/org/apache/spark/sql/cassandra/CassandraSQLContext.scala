@@ -5,6 +5,7 @@ import java.util.NoSuchElementException
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.{SparkPlanner => NewSparkPlanner}
 import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
 
@@ -78,21 +79,21 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 
   /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
   @transient
-  override protected[sql] val planner = new SparkPlanner {
+  override protected[sql] val planner = new NewSparkPlanner(this) {
     val cassandraContext = CassandraSQLContext.this
-    override val strategies: Seq[Strategy] = Seq(
-      DataSourceStrategy,
-      DDLStrategy,
-      TakeOrderedAndProject,
-      InMemoryScans,
-      HashAggregation,
-      Aggregation,
-      LeftSemiJoin,
-      EquiJoinSelection,
-      BasicOperators,
-      CartesianProduct,
-      BroadcastNestedLoopJoin
-    )
+
+    sqlContext.experimental.extraStrategies ++ (
+      DataSourceStrategy ::
+        DDLStrategy ::
+        TakeOrderedAndProject ::
+        Aggregation ::
+        LeftSemiJoin ::
+        EquiJoinSelection ::
+        InMemoryScans ::
+        BasicOperators ::
+        BroadcastNestedLoop ::
+        CartesianProduct ::
+        DefaultJoin :: Nil)
   }
 }
 
