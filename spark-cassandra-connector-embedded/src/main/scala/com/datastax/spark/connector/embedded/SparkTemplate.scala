@@ -32,6 +32,7 @@ object SparkTemplate {
     .set("spark.cassandra.connection.port", getPort(0).toString)
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
+    .set("spark.rpc", "akka")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[*]"))
     .setAppName("Test")
 
