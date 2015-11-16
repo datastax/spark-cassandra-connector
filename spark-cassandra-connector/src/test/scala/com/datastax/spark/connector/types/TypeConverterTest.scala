@@ -201,11 +201,12 @@ class TypeConverterTest {
   def testLocalDate(): Unit = {
     val c = TypeConverter.forType[LocalDate]
     val testDate = LocalDate.fromYearMonthDay(1985, 8, 3)
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-    val date = dateFormat.parse("1985-08-03")
+    val dateFormat = new SimpleDateFormat("yyyy-MM-ddZ")
+    val date = dateFormat.parse("1985-08-03-0000")
     assertEquals(testDate, c.convert("1985-08-03"))
     assertEquals(testDate, c.convert(5693))
     assertEquals(testDate, c.convert(date))
+    assertEquals(testDate, c.convert(java.sql.Date.valueOf("1985-08-03")))
   }
 
   @Test

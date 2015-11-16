@@ -432,11 +432,11 @@ object TypeConverter {
 
     def convertPF = {
       case x: LocalDate => x
-      case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
-      case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
-      case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: String => x match { case dateRegx(year,month,day) =>
         LocalDate.fromYearMonthDay(year.toInt, month.toInt, day.toInt)}
+      case x: Int => LocalDate.fromDaysSinceEpoch(x)
+      case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
+      case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
     }
   }
 
