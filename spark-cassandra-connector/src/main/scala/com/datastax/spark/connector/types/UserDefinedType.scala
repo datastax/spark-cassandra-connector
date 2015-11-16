@@ -2,6 +2,8 @@ package com.datastax.spark.connector.types
 
 import java.io.ObjectOutputStream
 
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
@@ -39,6 +41,16 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
             val columnValue = columnConverter.convert(udtValue.getRaw(columnName))
             columnValue
           }
+        new UDTValue(columnNames, columnValues)
+      case dfGenericRow: GenericRowWithSchema =>
+        val columnValues =
+         for (i <- columns.indices) yield {
+           val columnName = columnNames(i)
+           val columnConverter = columnTypes(i).converterToCassandra
+           val dfSchemaIndex = dfGenericRow.schema.fieldIndex(columnName)
+           val columnValue = columnConverter.convert(dfGenericRow.get(dfSchemaIndex))
+           columnValue
+         }
         new UDTValue(columnNames, columnValues)
     }
   }

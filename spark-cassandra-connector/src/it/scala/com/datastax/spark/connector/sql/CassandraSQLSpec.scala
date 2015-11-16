@@ -14,6 +14,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   var cc: CassandraSQLContext = null
 
   conn.withSessionDo { session =>
+    session.execute("DROP KEYSPACE IF EXISTS sql_test")
     session.execute("CREATE KEYSPACE IF NOT EXISTS sql_test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))")
@@ -78,7 +79,79 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
     session.execute("CREATE TYPE sql_test.address (street text, city text, zip int, date TIMESTAMP)")
     session.execute("CREATE TABLE IF NOT EXISTS sql_test.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
-    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120, date: '2011-02-03'})")
+    session.execute("INSERT INTO sql_test.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+
+    session.execute(
+      s"""
+         |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
+         |  category_id text,
+         |  metric_descriptors list <text>
+         |)
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |CREATE TYPE IF NOT EXISTS sql_test.object_metadata (
+         |  name text,
+         |  category_metadata frozen<category_metadata>,
+         |  bucket_size int
+         |)
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |CREATE TYPE IF NOT EXISTS sql_test.relation (
+         |  type text,
+         |  object_type text,
+         |  related_to text,
+         |  obj_id text
+         |)
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |CREATE TABLE IF NOT EXISTS sql_test.objects (
+         |  obj_id text,
+         |  metadata  frozen<object_metadata>,
+         |  relations list<frozen<relation>>,
+         |  ts timestamp, PRIMARY KEY(obj_id)
+         |)
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |CREATE TABLE IF NOT EXISTS sql_test.objects_copy (
+         |  obj_id text,
+         |  metadata  frozen<object_metadata>,
+         |  relations list<frozen<relation>>,
+         |  ts timestamp, PRIMARY KEY(obj_id)
+         |)
+      """.stripMargin.replaceAll("\n", " "))
+    session.execute(
+      s"""
+         |INSERT INTO sql_test.objects (obj_id, ts, metadata, relations)
+         |values (
+         |  '123', '2015-06-16 15:53:23-0400',
+         |  {
+         |    name: 'foo',
+         |    category_metadata: {
+         |      category_id: 'thermostat',
+         |      metric_descriptors: []
+         |    },
+         |    bucket_size: 0
+         |  },
+         |  [
+         |    {
+         |      type: 'a',
+         |      object_type: 'b',
+         |      related_to: 'c',
+         |      obj_id: 'd'
+         |    },
+         |    {
+         |      type: 'a1',
+         |      object_type: 'b1',
+         |      related_to: 'c1',
+         |      obj_id: 'd1'
+         |    }
+         |  ]
+         |)
+      """.stripMargin.replaceAll("\n", " "))
   }
 
   override def beforeAll() {
@@ -305,73 +378,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   //TODO: SPARK-9269 is opened to address Set matching issue. I change the Set data type to List for now
   it should "allow to select UDT collection column and nested UDT column" in {
-    conn.withSessionDo { session =>
-      session.execute(
-        s"""
-          |CREATE TYPE IF NOT EXISTS sql_test.category_metadata (
-          |  category_id text,
-          |  metric_descriptors list <text>
-          |)
-      """.stripMargin.replaceAll("\n", " "))
-      session.execute(
-        s"""
-          |CREATE TYPE IF NOT EXISTS sql_test.object_metadata (
-          |  name text,
-          |  category_metadata frozen<category_metadata>,
-          |  bucket_size int
-          |)
-      """.stripMargin.replaceAll("\n", " "))
-      session.execute(
-        s"""
-          |CREATE TYPE IF NOT EXISTS sql_test.relation (
-          |  type text,
-          |  object_type text,
-          |  related_to text,
-          |  obj_id text,
-          |  ts timestamp,
-          |)
-      """.stripMargin.replaceAll("\n", " "))
-      session.execute(
-        s"""
-          |CREATE TABLE IF NOT EXISTS sql_test.objects (
-          |  obj_id text,
-          |  metadata  frozen<object_metadata>,
-          |  relations list<frozen<relation>>,
-          |  ts timestamp, PRIMARY KEY(obj_id)
-          |)
-      """.stripMargin.replaceAll("\n", " "))
-      session.execute(
-        s"""
-          |INSERT INTO sql_test.objects (obj_id, ts, metadata, relations)
-          |values (
-          |  '123', '2015-06-16 15:53:23-0400',
-          |  {
-          |    name: 'foo',
-          |    category_metadata: {
-          |      category_id: 'thermostat',
-          |      metric_descriptors: []
-          |    },
-          |    bucket_size: 0
-          |  },
-          |  [
-          |    {
-          |      type: 'a',
-          |      object_type: 'b',
-          |      related_to: 'c',
-          |      obj_id: 'd',
-          |      ts: '2012-03-04'
-          |    },
-          |    {
-          |      type: 'a1',
-          |      object_type: 'b1',
-          |      related_to: 'c1',
-          |      obj_id: 'd1',
-          |      ts: '2013-04-05'
-          |    }
-          |  ]
-          |)
-      """.stripMargin.replaceAll("\n", " "))
-    }
+
     val cc = new CassandraSQLContext(sc)
     cc.setKeyspace("sql_test")
     val result = cc
@@ -386,6 +393,30 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       .load()
       .collect()
     result should have length 1
+  }
+
+  it should "allow writing UDTs to C* tables" in {
+
+    val cc = new CassandraSQLContext(sc)
+    cc.setKeyspace("sql_test")
+    val result = cc
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "objects",
+          "keyspace" -> "sql_test"
+        )
+      )
+      .load()
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "objects_copy",
+          "keyspace" -> "sql_test"
+        )
+      ).save()
   }
 
   // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
