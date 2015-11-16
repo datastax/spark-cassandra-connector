@@ -8,6 +8,7 @@ import scala.reflect.runtime.universe._
 import com.datastax.driver.core.{UDTValue => DriverUDTValue, UserType, DataType}
 import com.datastax.spark.connector.{ColumnName, UDTValue}
 import com.datastax.spark.connector.cql.{StructDef, FieldDef}
+import com.datastax.spark.connector.util.CodecRegistryUtil
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
   * The word `column` instead of `field` is used in member names because we want to treat UDT field
@@ -70,7 +71,7 @@ object UserDefinedType {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
-          toSave.setObject(i, fieldValue)
+          toSave.set(i, fieldValue, CodecRegistryUtil.codecFor(fieldTypes(i), fieldValue))
         }
         toSave
     }

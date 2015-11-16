@@ -12,6 +12,7 @@ import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => Dr
 
 import com.datastax.spark.connector.{TupleValue, ColumnName}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
+import com.datastax.spark.connector.util.CodecRegistryUtil
 
 case class TupleFieldDef(index: Int, columnType: ColumnType[_]) extends FieldDef {
   override def columnName = index.toString
@@ -111,7 +112,7 @@ object TupleType {
         for (i <- 0 until fieldTypes.size) {
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(tupleValue.getRaw(i))
-          toSave.setObject(i, fieldValue)
+          toSave.set(i, fieldValue,  CodecRegistryUtil.codecFor(fieldTypes(i), fieldValue))
         }
         toSave
     }
