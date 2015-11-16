@@ -95,16 +95,16 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </table>
 
 
-## Cassandra Dataframe Source Parameters
+## Cassandra DataFrame Source Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>Cassandra Dataframe Source Parameters</code></td>
+  <td><code>table.size.in.bytes</code></td>
   <td>None</td>
   <td>Used by DataFrames Internally, will be updated in a future release to
-retreive size from C*. Can be set manually now</td>
+retrieve size from C*. Can be set manually now</td>
 </tr>
 </table>
 

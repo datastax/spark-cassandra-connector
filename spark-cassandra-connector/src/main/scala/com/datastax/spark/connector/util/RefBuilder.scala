@@ -2,12 +2,6 @@ package com.datastax.spark.connector.util
 
 import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory}
 
-case class ConfigParameter[T](
-  val name: String,
-  val section: String,
-  val default: T,
-  val description: String)
-
 object RefBuilder {
 
   val Header =
@@ -48,7 +42,7 @@ object RefBuilder {
          |## $section
          |**All parameters should be prefixed with <code> spark.cassandra. </code>**
          |
-           |$HtmlTableHeader
+         |$HtmlTableHeader
          |$paramTable
          |</table>""".stripMargin
     }

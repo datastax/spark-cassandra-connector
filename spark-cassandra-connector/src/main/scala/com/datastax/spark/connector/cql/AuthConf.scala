@@ -38,15 +38,28 @@ trait AuthConfFactory {
 object AuthConfFactory {
   val ReferenceSection = "Cassandra Authentication Parameters"
 
-  val FactoryParam = ConfigParameter[AuthConfFactory](
+  lazy val FactoryParam = ConfigParameter[AuthConfFactory](
     name = "spark.cassandra.auth.conf.factory",
     section = ReferenceSection,
     default = DefaultAuthConfFactory,
     description = "Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"  )
 
-  val Properties = Set(FactoryParam,
-    DefaultAuthConfFactory.UserNameParam,
-    DefaultAuthConfFactory.PasswordParam)
+  val UserNameParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.username",
+    section = AuthConfFactory.ReferenceSection,
+    default = None,
+    description = """Login name for password authentication""")
+
+  val PasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.password",
+    section = AuthConfFactory.ReferenceSection,
+    default = None,
+    description = """password for password authentication""")
+
+  val Properties = Set(
+    FactoryParam,
+    UserNameParam,
+    PasswordParam)
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf
@@ -60,18 +73,8 @@ object AuthConfFactory {
   * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
   * options are present in [[org.apache.spark.SparkConf SparkConf]].*/
 object DefaultAuthConfFactory extends AuthConfFactory {
+  import AuthConfFactory._
 
-  val UserNameParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.auth.username",
-    section = AuthConfFactory.ReferenceSection,
-    default = None,
-    description = """Login name for password authentication""")
-
-  val PasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.auth.password",
-    section = AuthConfFactory.ReferenceSection,
-    default = None,
-    description = """password for password authentication""")
 
   override val properties = Set(
     UserNameParam.name,

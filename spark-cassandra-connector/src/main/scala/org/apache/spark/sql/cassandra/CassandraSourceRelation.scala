@@ -176,15 +176,15 @@ private[cassandra] class CassandraSourceRelation(
 }
 
 object CassandraSourceRelation {
-  val ReferenceSection = "Cassandra Dataframe Source Parameters"
+  val ReferenceSection = "Cassandra DataFrame Source Parameters"
 
   val TableSizeInBytesParam = ConfigParameter[Option[Long]](
-    name = "Cassandra Dataframe Source Parameters",
+    name = "spark.cassandra.table.size.in.bytes",
     section = ReferenceSection,
     default = None,
     description =
       """Used by DataFrames Internally, will be updated in a future release to
-        |retreive size from C*. Can be set manually now""".stripMargin
+        |retrieve size from C*. Can be set manually now""".stripMargin
   )
 
   val Properties = Seq(
