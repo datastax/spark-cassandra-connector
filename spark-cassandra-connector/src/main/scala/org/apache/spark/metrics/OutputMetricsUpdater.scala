@@ -62,7 +62,7 @@ object OutputMetricsUpdater extends Logging {
     * @param writeConf write configuration
     */
   def apply(taskContext: TaskContext, writeConf: WriteConf): OutputMetricsUpdater = {
-    val source = CassandraConnectorSource.instance
+    val source = MetricsUpdater.getSource(taskContext)
 
     if (writeConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()
