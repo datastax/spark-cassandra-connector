@@ -38,7 +38,7 @@ trait AuthConfFactory {
 object AuthConfFactory {
   val ReferenceSection = "Cassandra Authentication Parameters"
 
-  lazy val FactoryParam = ConfigParameter[AuthConfFactory](
+  val FactoryParam = ConfigParameter[AuthConfFactory](
     name = "spark.cassandra.auth.conf.factory",
     section = ReferenceSection,
     default = DefaultAuthConfFactory,
