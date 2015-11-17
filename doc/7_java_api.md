@@ -8,7 +8,7 @@ Connector works.
 With Spark Cassandra Connector 1.1.x, Java API comes with significant changes and enhancements.
 
 ### Prerequisites 
-On order to use Java API, you need to add the Java API module to the list of dependencies:
+In order to use Java API, you need to add the Java API module to the list of dependencies:
 
 ```scala
 libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.1.0" 
