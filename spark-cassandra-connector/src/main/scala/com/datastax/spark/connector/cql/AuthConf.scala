@@ -33,6 +33,7 @@ trait AuthConfFactory {
 
   /** List of extra properties allowed in SparkConf passed to `authConf` method */
   def properties: Set[String] = Set.empty
+
 }
 
 object AuthConfFactory {
@@ -44,22 +45,7 @@ object AuthConfFactory {
     default = DefaultAuthConfFactory,
     description = "Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"  )
 
-  val UserNameParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.auth.username",
-    section = AuthConfFactory.ReferenceSection,
-    default = None,
-    description = """Login name for password authentication""")
-
-  val PasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.auth.password",
-    section = AuthConfFactory.ReferenceSection,
-    default = None,
-    description = """password for password authentication""")
-
-  val Properties = Set(
-    FactoryParam,
-    UserNameParam,
-    PasswordParam)
+  val Properties = Set(FactoryParam)
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf
@@ -73,8 +59,19 @@ object AuthConfFactory {
   * Password authentication is enabled when both `spark.cassandra.auth.username` and `spark.cassandra.auth.password`
   * options are present in [[org.apache.spark.SparkConf SparkConf]].*/
 object DefaultAuthConfFactory extends AuthConfFactory {
-  import AuthConfFactory._
+  val referenceSection = "Default Authentication Parameters"
 
+  val UserNameParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.username",
+    section = referenceSection,
+    default = None,
+    description = """Login name for password authentication""")
+
+  val PasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.auth.password",
+    section = referenceSection,
+    default = None,
+    description = """password for password authentication""")
 
   override val properties = Set(
     UserNameParam.name,

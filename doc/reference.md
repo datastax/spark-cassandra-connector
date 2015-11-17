@@ -12,16 +12,6 @@
   <td>DefaultAuthConfFactory</td>
   <td>Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration</td>
 </tr>
-<tr>
-  <td><code>auth.password</code></td>
-  <td>None</td>
-  <td>password for password authentication</td>
-</tr>
-<tr>
-  <td><code>auth.username</code></td>
-  <td>None</td>
-  <td>Login name for password authentication</td>
-</tr>
 </table>
 
 
