@@ -2,6 +2,7 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.util.CodecRegistryUtil
 import org.apache.spark.Logging
 
 /**
@@ -37,7 +38,7 @@ private[connector] class BoundStatementBuilder[T](
       val converter = converters(i)
       val columnName = columnNames(i)
       val columnValue = converter.convert(buffer(i))
-      boundStatement.setObject(columnName, columnValue)
+      boundStatement.set(columnName, columnValue, CodecRegistryUtil.codecFor(columnTypes(i), columnValue))
       val serializedValue = boundStatement.getBytesUnsafe(i)
 
       if (serializedValue != null)

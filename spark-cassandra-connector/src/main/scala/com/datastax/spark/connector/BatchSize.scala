@@ -11,5 +11,5 @@ object BatchSize {
   @deprecated("Use com.datastax.spark.connector.FixedBatchSize instead of a number", "1.1")
   implicit def intToFixedBatchSize(batchSize: Int): RowsInBatch = RowsInBatch(batchSize)
 
-  val Automatic = BytesInBatch(WriteConf.DefaultBatchSizeInBytes)
+  val Automatic = BytesInBatch(WriteConf.BatchSizeBytesParam.default)
 }

@@ -11,9 +11,9 @@ class WriteConfTest extends FlatSpec with Matchers {
     val conf = new SparkConf(false)
     val writeConf = WriteConf.fromSparkConf(conf)
 
-    writeConf.batchSize should be(BytesInBatch(WriteConf.DefaultBatchSizeInBytes))
-    writeConf.consistencyLevel should be(WriteConf.DefaultConsistencyLevel)
-    writeConf.parallelismLevel should be(WriteConf.DefaultParallelismLevel)
+    writeConf.batchSize should be (BytesInBatch(WriteConf.BatchSizeBytesParam.default))
+    writeConf.consistencyLevel should be (WriteConf.ConsistencyLevelParam.default)
+    writeConf.parallelismLevel should be (WriteConf.ParallelismLevelParam.default)
   }
 
   it should "allow setting the rate limit as a decimal" in {

@@ -7,7 +7,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Eventually{
 
- val TestRates = Seq(1L, 2L, 4L, 6L, 8L, 16L, 32L, WriteConf.DefaultThroughputMiBPS.toLong)
+ val TestRates = Seq(1L, 2L, 4L, 6L, 8L, 16L, 32L, WriteConf.ThroughputMiBPSParam.default.toLong)
 
   "RateLimiter" should "not cause delays if rate is not exceeded" in {
     var now: Long = 0
