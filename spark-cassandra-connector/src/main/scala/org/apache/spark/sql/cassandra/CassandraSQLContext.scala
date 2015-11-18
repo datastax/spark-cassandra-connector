@@ -3,12 +3,10 @@ package org.apache.spark.sql.cassandra
 import java.util.NoSuchElementException
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.{execution => sparkexecution}
-import org.apache.spark.sql.execution.datasources.DataSourceStrategy
-import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
+import org.apache.spark.sql.{DataFrame, SQLContext, execution => sparkexecution}
+
+import com.datastax.spark.connector.util.ConfigParameter
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * `SchemaRDD` collections. Predicate pushdown to Cassandra is supported.
