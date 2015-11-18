@@ -2,12 +2,12 @@ package org.apache.spark.sql.cassandra
 
 import java.util.NoSuchElementException
 
-import com.datastax.spark.connector.util.ConfigParameter
-import org.apache.spark.sql.execution.datasources.DataSourceStrategy
-
-
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.QueryExecution
+import org.apache.spark.sql.{execution => sparkexecution}
+import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
 
 /** Allows to execute SQL queries against Cassandra and access results as
@@ -36,8 +36,8 @@ import org.apache.spark.sql.{DataFrame, SQLContext, Strategy}
 class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   import org.apache.spark.sql.cassandra.CassandraSQLContext._
 
-  override protected[sql] def executePlan(plan: LogicalPlan): this.QueryExecution =
-    new this.QueryExecution(plan)
+  override protected[sql] def executePlan(plan: LogicalPlan) =
+    new sparkexecution.QueryExecution(this, plan)
 
   /** Set default Cassandra keyspace to be used when accessing tables with unqualified names. */
   def setKeyspace(ks: String) = {
@@ -78,24 +78,6 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   @transient
   override protected[sql] lazy val catalog = new CassandraCatalog(this)
 
-  /** Modified Catalyst planner that does Cassandra-specific predicate pushdown */
-  @transient
-  override protected[sql] val planner = new SparkPlanner {
-    val cassandraContext = CassandraSQLContext.this
-    override val strategies: Seq[Strategy] = Seq(
-      DataSourceStrategy,
-      DDLStrategy,
-      TakeOrderedAndProject,
-      InMemoryScans,
-      HashAggregation,
-      Aggregation,
-      LeftSemiJoin,
-      EquiJoinSelection,
-      BasicOperators,
-      CartesianProduct,
-      BroadcastNestedLoopJoin
-    )
-  }
 }
 
 object CassandraSQLContext {
