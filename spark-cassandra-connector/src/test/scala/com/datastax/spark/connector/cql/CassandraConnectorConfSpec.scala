@@ -57,7 +57,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val sparkConf = new SparkConf(loadDefaults = false)
 
     val connConf = CassandraConnectorConf(sparkConf)
-    connConf.queryRetryDelay shouldBe CassandraConnectorConf.DefaultQueryRetryDelay
+    connConf.queryRetryDelay shouldBe CassandraConnectorConf.QueryRetryDelayParam.default
   }
 
   it should "resolve constant retry delay settings" in {

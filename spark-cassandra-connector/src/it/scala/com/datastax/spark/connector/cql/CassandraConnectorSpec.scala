@@ -116,7 +116,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   it should "be configurable from SparkConf" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
     val conf = defaultConf
-    conf.set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
+    conf.set(CassandraConnectorConf.ConnectionHostParam.name, host)
 
     // would throw exception if connection unsuccessful
     val conn2 = CassandraConnector(conf)
@@ -128,7 +128,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = defaultConf
-    conf.set(CassandraConnectorConf.CassandraConnectionHostProperty, invalidHost + "," + goodHost)
+    conf.set(CassandraConnectorConf.ConnectionHostParam.name, invalidHost + "," + goodHost)
 
     // would throw exception if connection unsuccessful
     val conn2 = CassandraConnector(conf)
@@ -138,8 +138,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   it should "use compression when configured" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
     val conf = new SparkConf(loadDefaults = false)
-      .set(CassandraConnectorConf.CassandraConnectionHostProperty, host)
-      .set(CassandraConnectorConf.CassandraConnectionCompressionProperty, "SNAPPY")
+      .set(CassandraConnectorConf.ConnectionHostParam.name, host)
+      .set(CassandraConnectorConf.CompressionParam.name, "SNAPPY")
 
     val conn = CassandraConnector(conf)
     conn.withSessionDo { session ⇒
