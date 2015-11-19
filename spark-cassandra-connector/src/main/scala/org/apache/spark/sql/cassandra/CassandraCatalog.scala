@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import java.io.IOException
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD
 
 import scala.collection.JavaConversions._
 
@@ -19,24 +19,23 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
   val caseSensitive: Boolean = true
 
   /** A cache of Spark SQL data source tables that have been accessed. Cache is thread safe.*/
-  private[cassandra] val cachedDataSourceTables: LoadingCache[Seq[String], LogicalPlan] = {
-    val cacheLoader = new CacheLoader[Seq[String], LogicalPlan]() {
-      override def load(tableIdent: Seq[String]): LogicalPlan = {
-        logDebug(s"Creating new cached data source for ${tableIdent.mkString(".")}")
+  private[cassandra] val cachedDataSourceTables: LoadingCache[TableIdentifier, LogicalPlan] = {
+    val cacheLoader = new CacheLoader[TableIdentifier, LogicalPlan]() {
+      override def load(tableIdent: TableIdentifier): LogicalPlan = {
+        logDebug(s"Creating new cached data source for $tableIdent")
         buildRelation(tableIdent)
       }
     }
     CacheBuilder.newBuilder().maximumSize(1000).build(cacheLoader)
   }
 
-  override def lookupRelation(tableIdentifier: Seq[String], alias: Option[String]): LogicalPlan = {
-    val tableIdent = fullTableIdent(tableIdentifier)
+  override def lookupRelation(tableIdent: TableIdentifier, alias: Option[String]): LogicalPlan = {
     val tableLogicPlan = cachedDataSourceTables.get(tableIdent)
     alias.map(a => Subquery(a, tableLogicPlan)).getOrElse(tableLogicPlan)
   }
 
   /** Build logic plan from a CassandraSourceRelation */
-  private def buildRelation(tableIdentifier: Seq[String]): LogicalPlan = {
+  private def buildRelation(tableIdentifier: TableIdentifier): LogicalPlan = {
     val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
     val tableRef = TableRef(table, database, Option(cluster))
     val sourceRelation = CassandraSourceRelation(tableRef, csc, CassandraSourceOptions())
@@ -44,27 +43,17 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
   }
 
   /** Return cluster, database and table names from a table identifier*/
-  private def getClusterDBTableNames(tableIdentifier: Seq[String]): (String, String, String) = {
-    val id = processTableIdentifier(tableIdentifier).reverse.lift
-    val cluster = id(2).getOrElse(csc.getCluster)
-    val database = id(1).getOrElse(csc.getKeyspace)
-    val table = id(0).getOrElse(throw new IOException(s"Missing table name"))
-    (cluster, database, table)
+  private def getClusterDBTableNames(tableIdent: TableIdentifier): (String, String, String) = {
+    val database = tableIdent.database.getOrElse(csc.getKeyspace)
+    val table = tableIdent.table
+    (csc.getCluster, database, table)
   }
 
-  /** Return a table identifier with table name, keyspace name and cluster name */
-  private def fullTableIdent(tableIdentifier: Seq[String]) : Seq[String] = {
-    val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    Seq(cluster, database, table)
-  }
-
-  override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = {
-    val tableIdent = fullTableIdent(tableIdentifier)
+  override def registerTable(tableIdent: TableIdentifier, plan: LogicalPlan): Unit = {
     cachedDataSourceTables.put(tableIdent, plan)
   }
 
-  override def unregisterTable(tableIdentifier: Seq[String]): Unit = {
-    val tableIdent = fullTableIdent(tableIdentifier)
+  override def unregisterTable(tableIdent: TableIdentifier): Unit = {
     cachedDataSourceTables.invalidate(tableIdent)
   }
 
@@ -72,9 +61,8 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
     cachedDataSourceTables.invalidateAll()
   }
 
-  override def tableExists(tableIdentifier: Seq[String]): Boolean = {
-    val (cluster, database, table) = getClusterDBTableNames(tableIdentifier)
-    val tableIdent = fullTableIdent(tableIdentifier)
+  override def tableExists(tableIdent: TableIdentifier): Boolean = {
+    val (cluster, database, table) = getClusterDBTableNames(tableIdent)
     val cached = cachedDataSourceTables.asMap().containsKey(tableIdent)
     if (cached) {
       true
@@ -131,6 +119,6 @@ private[cassandra] class CassandraCatalog(csc: CassandraSQLContext) extends Cata
   override val conf: CatalystConf = SimpleCatalystConf(caseSensitive)
 
   override def refreshTable(tableIdent: TableIdentifier): Unit = {
-    cachedDataSourceTables.refresh(tableIdent.toSeq)
+    cachedDataSourceTables.refresh(tableIdent)
   }
 }
