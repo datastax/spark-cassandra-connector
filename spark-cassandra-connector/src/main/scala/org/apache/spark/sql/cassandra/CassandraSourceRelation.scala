@@ -88,7 +88,13 @@ private[cassandra] class CassandraSourceRelation(
   private[this] val baseRdd =
     sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
 
-  def buildScan() : RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
+  def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
+
+  override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
+    case true =>
+      (filters.toSet -- new PredicatePushDown(filters.toSet, tableDef).predicatesToPushDown).toArray
+    case fasle => filters
+  }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
