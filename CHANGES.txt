@@ -8,6 +8,7 @@
  * Added ColumRef child class to represent functions calls
  * Added support for tinyint and smallint types (SPARKC-269)
  * Updated Java driver version to 3.0.0-alpha3.
+ * Changed the way CassandraConnectorSource is obtained due to SPARK-7171 (SPARKC-268)
 
 1.5.0 M2
  * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
