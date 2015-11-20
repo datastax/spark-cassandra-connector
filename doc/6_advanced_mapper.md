@@ -114,7 +114,7 @@ Cassandra column type | Object type to convert from / to
  `text`               | `java.lang.String`
  `timestamp`          | `java.util.Date`
  `timeuuid`           | `java.util.UUID`
- `tinyint`            | `Byte`
+ `tinyint`            | `java.lang.Byte`
  `uuid`               | `java.util.UUID`
  `varchar`            | `java.lang.String`
  `varint`             | `java.math.BigInteger`
