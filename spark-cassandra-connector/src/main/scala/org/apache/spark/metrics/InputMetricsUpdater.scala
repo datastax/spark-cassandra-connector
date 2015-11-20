@@ -53,7 +53,7 @@ object InputMetricsUpdater {
     groupSize: Int = DefaultGroupSize
   ): InputMetricsUpdater = {
 
-    val source = CassandraConnectorSource.instance
+    val source = MetricsUpdater.getSource(taskContext)
 
     if (readConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()

@@ -46,9 +46,4 @@ read-byte-meter        | Number of bytes read from Cassandra
 read-row-meter         | Number of rows read from Cassandra
 read-task-timer        | Timer to measure time of reading a single partition
 
-### Compatibility
-Codahale based metrics should work with either Spark 1.1.x or Spark 1.2.x. However task metrics
-work only with Spark 1.2.x. Therefore, if this version of Spark Cassandra Connector is to be used with
-Spark 1.1.x, task based metrics have to be disabled.
-
 [Next - Building And Artifacts](12_building_and_artifacts.md)
