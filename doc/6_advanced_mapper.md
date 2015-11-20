@@ -99,22 +99,22 @@ The following table specifies the relationship between a Cassandra column type a
 the type of needed `TypeConverter`.
 
 Cassandra column type | Object type to convert from / to
------------------------------------------------------------------
- `ascii`              | `java.lang.String`                                         
- `bigint`             | `java.lang.Long`                                       
- `blob`               | `java.nio.ByteBuffer` 
- `boolean`            | `java.lang.Boolean`              
- `counter`            | `java.lang.Long`                       
- `decimal`            | `java.math.BigDecimal` 
- `double`             | `java.lang.Double`    
- `float`              | `java.lang.Float`    
- `inet`               | `java.net.InetAddress` 
- `int`                | `java.lang.Integer`  
- `text`               | `java.lang.String` 
- `timestamp`          | `java.util.Date` 
- `uuid`               | `java.util.UUID` 
- `timeuuid`           | `java.util.UUID` 
- `varchar`            | `java.lang.String` 
+----------------------|------------------------------------------
+ `ascii`              | `java.lang.String`
+ `bigint`             | `java.lang.Long`
+ `blob`               | `java.nio.ByteBuffer`
+ `boolean`            | `java.lang.Boolean`
+ `counter`            | `java.lang.Long`
+ `decimal`            | `java.math.BigDecimal`
+ `double`             | `java.lang.Double`
+ `float`              | `java.lang.Float`
+ `inet`               | `java.net.InetAddress`
+ `int`                | `java.lang.Integer`
+ `text`               | `java.lang.String`
+ `timestamp`          | `java.util.Date`
+ `uuid`               | `java.util.UUID`
+ `timeuuid`           | `java.util.UUID`
+ `varchar`            | `java.lang.String`
  `varint`             | `java.math.BigInteger`
  user defined         | `com.datastax.spark.connector.UDTValue`
 
