@@ -67,7 +67,7 @@ object CassandraConnectorConf extends Logging {
       require(increaseBy.length > 0, "Delay increase must be greater than 0")
 
       override def forRetry(nbRetry: Int) = initialDelay + (increaseBy * (nbRetry - 1).max(0))
-      override def toString() = s"${initialDelay.length} + ${increaseBy}"
+      override def toString() = s"${initialDelay.length}+${increaseBy}"
     }
 
     case class ExponentialDelay(initialDelay: Duration, increaseBy: Double) extends RetryDelayConf {
@@ -76,7 +76,7 @@ object CassandraConnectorConf extends Logging {
 
       override def forRetry(nbRetry: Int) =
         (initialDelay.toMillis * math.pow(increaseBy, (nbRetry - 1).max(0))).toLong milliseconds
-      override def toString() = s"${initialDelay.length} * $increaseBy"
+      override def toString() = s"${initialDelay.length}*$increaseBy"
     }
 
     private val ConstantDelayEx = """(\d+)""".r

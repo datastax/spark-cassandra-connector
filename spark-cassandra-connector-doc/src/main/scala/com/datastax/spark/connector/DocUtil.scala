@@ -10,14 +10,14 @@ object DocUtil {
 
   val DefaultReferenceFile = "doc/reference.md"
   def main(args: Array[String]) {
-    println("Generating Reference Documentation for Spark Cassandra Conenctor")
+    println("Generating Reference Documentation for Spark Cassandra Connector")
     println(s"Found ${ConfigCheck.validStaticProperties.size} Parameters")
 
     val markdown = RefBuilder.getMarkDown()
     println(markdown)
 
     val output = Try(new File(args(0))).getOrElse(new File(DefaultReferenceFile))
-    println(s"Generating Reference Documentation for Spark Cassandra Conenctor to $output")
+    println(s"Generating Reference Documentation for Spark Cassandra Connector to $output")
 
     val fb = new FileWriter(output)
     fb.write(RefBuilder.getMarkDown())
