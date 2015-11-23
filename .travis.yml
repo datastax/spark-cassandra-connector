@@ -1,5 +1,6 @@
 language: scala
 jdk: oraclejdk7
+sudo: false
 scala:
   - 2.10.5
   - 2.11.6
@@ -8,4 +9,4 @@ script:
   - "sbt ++$TRAVIS_SCALA_VERSION test:compile"
   - "sbt ++$TRAVIS_SCALA_VERSION it:compile"
   - "sbt ++$TRAVIS_SCALA_VERSION test"
-
+  - "sbt ++$TRAVIS_SCALA_VERSION it:test"
