@@ -17,7 +17,7 @@ import scala.util.Properties
  */
 object Versions {
 
-  val crossScala = Seq("2.11.6", "2.10.5")
+  val crossScala = Seq("2.11.7", "2.10.5")
 
   /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
   lazy val scalaVersion = sys.props.get("scala-2.11") match {

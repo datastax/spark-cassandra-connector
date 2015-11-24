@@ -15,12 +15,10 @@
  */
 
 import java.io.File
-import java.net.URLDecoder
+import java.nio.file.{Paths, Files}
 
-import sbtassembly._
-import sbtassembly.AssemblyPlugin._
-import sbtassembly.AssemblyKeys._
-import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import scala.language.postfixOps
+
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
@@ -28,10 +26,15 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
+import sbt.Tests._
 import sbt._
+import sbtassembly.AssemblyKeys._
+import sbtassembly.AssemblyPlugin._
+import sbtassembly._
 import sbtrelease.ReleasePlugin._
-
-import scala.language.postfixOps
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import java.lang.management.ManagementFactory;
+import com.sun.management.OperatingSystemMXBean;
 
 object Settings extends Build {
 
@@ -42,6 +45,33 @@ object Settings extends Build {
   val cassandraServerClasspath = taskKey[String]("Cassandra server classpath")
 
   val mavenLocalResolver = BuildUtil.mavenLocalResolver
+
+  // Travis has limited quota, so we cannot use many C* instances simultaneously
+  val isTravis = sys.props.getOrElse("travis", "false").toBoolean
+
+  val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
+  val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
+  val singleRunRequiredMem = 3 * 1024
+  val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
+
+  // Due to lack of entrophy on virtual machines we want to use /dev/urandom instead of /dev/random
+  val useURandom = Files.exists(Paths.get("/dev/urandom"))
+  val uRandomParams = if (useURandom) Seq("-Djava.security.egd=file:/dev/./urandom") else Seq.empty
+
+  lazy val mainDir = {
+    val dir = new File(".")
+    IO.delete(new File(dir, "target/ports"))
+    dir
+  }
+
+  lazy val TEST_JAVA_OPTS = Seq(
+    "-XX:MaxPermSize=256M",
+    "-Xms256m",
+    "-Xmx512m",
+    "-Dsun.io.serialization.extendedDebugInfo=true",
+    s"-DbaseDir=${mainDir.getAbsolutePath}") ++ uRandomParams
+
+  var TEST_ENV: Option[Map[String, String]] = None
 
   def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
@@ -101,6 +131,8 @@ object Settings extends Build {
 
   lazy val projectSettings = graphSettings ++ Seq(
 
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, parallelTasks),
+
     aggregate in update := false,
 
     incOptions := incOptions.value.withNameHashing(true),
@@ -147,8 +179,8 @@ object Settings extends Build {
     updateOptions := updateOptions.value.withCachedResolution(cachedResoluton = true),
 
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-    parallelExecution in ThisBuild := false,
-    parallelExecution in Global := false,
+    parallelExecution in ThisBuild := true,
+    parallelExecution in Global := true,
     apiMappings ++= DocumentationMapping.mapJarToDocURL(
       (managedClasspath in (Compile, doc)).value,
       Dependencies.documentationMappings),
@@ -214,28 +246,71 @@ object Settings extends Build {
     publish in (IntegrationTest,packageBin) := ()
   )
 
+  def makeTestGroups(tests: Seq[TestDefinition]): Seq[Group] = {
+    // if we have many C* instances and we can run multiple tests in parallel, then group by package name
+    // additional groups for auth and ssl is just an optimisation
+    def multiCInstanceGroupingFunction(test: TestDefinition): String = {
+      if (test.name.toLowerCase.contains("auth")) "auth"
+      else if (test.name.toLowerCase.contains("ssl")) "ssl"
+      else test.name.reverse.dropWhile(_ != '.').reverse
+    }
+
+    // if we have a single C* create as little groups as possible to avoid restarting C*
+    // the minimum - we need to run REPL and streaming tests in separate processes
+    // additional groups for auth and ssl is just an optimisation
+    def singleCInstanceGroupingFunction(test: TestDefinition): String = {
+      val pkgName = test.name.reverse.dropWhile(_ != '.').reverse
+      if (test.name.toLowerCase.contains("authenticate")) "auth"
+      else if (test.name.toLowerCase.contains("ssl")) "ssl"
+      else if (pkgName.contains(".repl")) "repl"
+      else if (pkgName.contains(".streaming")) "streaming"
+      else "other"
+    }
+
+    val groupingFunction = if (parallelTasks == 1) singleCInstanceGroupingFunction _ else multiCInstanceGroupingFunction _
+
+    tests.groupBy(groupingFunction).map { case (pkg, testsSeq) =>
+      new Group(
+        name = pkg,
+        tests = testsSeq,
+        runPolicy = SubProcess(ForkOptions(
+          runJVMOptions = TEST_JAVA_OPTS,
+          envVars = TEST_ENV.getOrElse(sys.env),
+          outputStrategy = Some(StdoutOutput))))
+    }.toSeq
+  }
+
   lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
-    parallelExecution in Test := false,
-    parallelExecution in IntegrationTest := false,
-    javaOptions in IntegrationTest ++= Seq(
-      "-XX:MaxPermSize=256M", "-Xmx1g", "-Dsun.io.serialization.extendedDebugInfo=true"
-    ),
+    parallelExecution in Test := true,
+    parallelExecution in IntegrationTest := true,
+    javaOptions in IntegrationTest ++= TEST_JAVA_OPTS,
     testOptions in Test ++= testOptionSettings,
     testOptions in IntegrationTest ++= testOptionSettings,
+    testGrouping in IntegrationTest <<= definedTests in IntegrationTest map makeTestGroups,
     fork in Test := true,
     fork in IntegrationTest := true,
     managedSourceDirectories in Test := Nil,
     (compile in IntegrationTest) <<= (compile in Test, compile in IntegrationTest) map { (_, c) => c },
-    (internalDependencyClasspath in IntegrationTest) <<= Classpaths.concat(internalDependencyClasspath in IntegrationTest, exportedProducts in Test)
+    (internalDependencyClasspath in IntegrationTest) <<= Classpaths.concat(
+      internalDependencyClasspath in IntegrationTest,
+      exportedProducts in Test)
   )
 
   lazy val pureCassandraSettings = Seq(
-    test in IntegrationTest <<= (cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest, test in IntegrationTest) {
-          case (cassandraServerClasspathTask, testTask) => cassandraServerClasspathTask.flatMap(_ => testTask)
+    test in IntegrationTest <<= (
+      cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest,
+      envVars in IntegrationTest,
+      test in IntegrationTest) { case (cassandraServerClasspathTask, envVarsTask, testTask) =>
+        cassandraServerClasspathTask.flatMap(_ => envVarsTask).flatMap(_ => testTask)
     },
-    envVars in IntegrationTest := sys.env +
-      ("CASSANDRA_CLASSPATH" -> (cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest).value) +
-      ("SPARK_LOCAL_IP" -> "127.0.0.1")
+    envVars in IntegrationTest := {
+      val env = sys.env +
+        ("CASSANDRA_CLASSPATH" ->
+          (cassandraServerClasspath in CassandraSparkBuild.cassandraServerProject in IntegrationTest).value) +
+        ("SPARK_LOCAL_IP" -> "127.0.0.1")
+      TEST_ENV = Some(env)
+      env
+    }
   )
 
   lazy val japiSettings = Seq(

@@ -2,8 +2,8 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -33,43 +33,63 @@ object CustomerIdConverter extends TypeConverter[String] {
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
 
-  val ks = "TableWriterSpec"
-  
   conn.withSessionDo { session =>
-    session.execute(s"""DROP KEYSPACE IF EXISTS "$ks"""")
-    session.execute(s"""CREATE KEYSPACE IF NOT EXISTS "$ks" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
+    createKeyspace(session)
 
-    for (x <- 1 to 19) {
-      session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".key_value_$x (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-    }
-
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".blobs (key INT PRIMARY KEY, b blob)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".counters2 (pkey INT PRIMARY KEY, c counter)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".single_column (pk INT PRIMARY KEY)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
-
-    session.execute(s"""CREATE TYPE "$ks".address (street text, city text, zip int)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
-
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-
-    session.execute(s"""CREATE TYPE "$ks".address2 (street text, number frozen<tuple<int, int>>)""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
+    awaitAll(
+      Future {
+        session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.counters2 (pkey INT PRIMARY KEY, c counter)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.single_column (pk INT PRIMARY KEY)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+      },
+      Future {
+        session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
+        session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+      },
+      Future {
+        session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
+        session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
+      })
   }
 
   private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".""" + tableName).all()
+      val result = session.execute(s"""SELECT * FROM $ks.""" + tableName).all()
       result should have size 3
       for (row <- result) {
         Some(row.getInt(0)) should contain oneOf(1, 2, 3)
@@ -80,9 +100,10 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   "A TableWriter" should "write RDD of tuples to an existing table" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_1", SomeColumns("key", "group", "value"))
-    verifyKeyValueTable("key_value_1")
+    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of tuples to a new table" in {
@@ -96,15 +117,17 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of tuples applying proper data type conversions" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(("1", "1", "value1"), ("2", "2", "value2"), ("3", "3", "value3"))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_2")
-    verifyKeyValueTable("key_value_2")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of case class objects" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_3")
-    verifyKeyValueTable("key_value_3")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of case class objects to a new table using auto mapping" in {
@@ -114,40 +137,43 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects applying proper data type conversions" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(
       KeyValueWithConversion("1", 1, "value1"),
       KeyValueWithConversion("2", 2, "value2"),
       KeyValueWithConversion("3", 3, "value3")
     )
-    sc.parallelize(col).saveToCassandra(ks, "key_value_4")
-    verifyKeyValueTable("key_value_4")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of CassandraRow objects" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(
       CassandraRow.fromMap(Map("key" -> 1, "group" -> 1L, "value" -> "value1")),
       CassandraRow.fromMap(Map("key" -> 2, "group" -> 2L, "value" -> "value2")),
       CassandraRow.fromMap(Map("key" -> 3, "group" -> 3L, "value" -> "value3"))
     )
-    sc.parallelize(col).saveToCassandra(ks, "key_value_5")
-    verifyKeyValueTable("key_value_5")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of CassandraRow objects applying proper data type conversions" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(
       CassandraRow.fromMap(Map("key" -> "1", "group" -> BigInt(1), "value" -> "value1")),
       CassandraRow.fromMap(Map("key" -> "2", "group" -> BigInt(2), "value" -> "value2")),
       CassandraRow.fromMap(Map("key" -> "3", "group" -> BigInt(3), "value" -> "value3"))
     )
-    sc.parallelize(col).saveToCassandra(ks, "key_value_6")
-    verifyKeyValueTable("key_value_6")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of tuples to a table with camel case column names" in {
     val col = Seq((1, "value1"), (2, "value2"), (3, "value3"))
     sc.parallelize(col).saveToCassandra(ks, "camelCase", SomeColumns("primaryKey", "textValue"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks"."camelCase"""").all()
+      val result = session.execute(s"""SELECT * FROM $ks."camelCase"""").all()
       result should have size 3
       for (row <- result) {
         Some(row.getInt(0)) should contain oneOf(1, 2, 3)
@@ -157,10 +183,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write empty values" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_7", SomeColumns("key", "group", "value"))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".key_value_7""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
       result should have size 1
       for (row <- result) {
         row.getString(2) should be (null)
@@ -174,7 +201,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
     sc.parallelize(Seq(row)).saveToCassandra(ks, "nulls")
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".nulls""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.nulls""").all()
       result should have size 1
       for (r <- result) {
         r.getInt(0) shouldBe key
@@ -185,10 +212,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write only specific column data if ColumnNames is passed as 'columnNames'" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((1, 1L, None))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_8", SomeColumns("key", "group"))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".key_value_8""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (1)
@@ -198,10 +226,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "distinguish (deprecated) implicit `seqToSomeColumns`" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((2, 1L, None))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_9", SomeColumns("key", "group"))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".key_value_9""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (2)
@@ -217,7 +246,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "collections", SomeColumns("key", "l", "s", "m"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".collections""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.collections""").all()
       result should have size 2
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
@@ -235,7 +264,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq((1, Some(Array[Byte](0, 1, 2, 3))), (2, None))
     sc.parallelize(col).saveToCassandra(ks, "blobs", SomeColumns("key", "b"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".blobs""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.blobs""").all()
       result should have size 2
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
@@ -249,14 +278,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col1 = Seq((0, 0, 1, 1))
     sc.parallelize(col1).saveToCassandra(ks, "counters", SomeColumns("pkey", "ckey", "c1", "c2"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".counters""").one()
+      val result = session.execute(s"""SELECT * FROM $ks.counters""").one()
       result.getLong("c1") shouldEqual 1L
       result.getLong("c2") shouldEqual 1L
     }
     val col2 = Seq((0, 0, 1))
     sc.parallelize(col1).saveToCassandra(ks, "counters", SomeColumns("pkey", "ckey", "c2"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".counters""").one()
+      val result = session.execute(s"""SELECT * FROM $ks.counters""").one()
       result.getLong("c1") shouldEqual 1L
       result.getLong("c2") shouldEqual 2L
     }
@@ -270,13 +299,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write values of user-defined classes" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     TypeConverter.registerConverter(CustomerIdConverter)
 
     val col = Seq((1, 1L, CustomerId("foo")))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_10", SomeColumns("key", "group", "value"))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".key_value_10""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
       result should have size 1
       for (row <- result)
         row.getString(2) shouldEqual "foo"
@@ -289,7 +319,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -306,7 +336,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -323,7 +353,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, value FROM "$ks".tuples""").all()
+      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -341,7 +371,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -359,7 +389,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, addr FROM "$ks".nested_tuples""").all()
+      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
       for (row <- result) {
         row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
         row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
@@ -371,7 +401,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
     sc.parallelize(col).saveToCassandra(ks, "single_column", SomeColumns("pk"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".single_column""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.single_column""").all()
       result should have size 5
       result.map(_.getInt(0)).toSet should be (Set(1, 2, 3, 4, 5))
     }
@@ -385,13 +415,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects with default TTL" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_11", writeConf = WriteConf(ttl = TTLOption.constant(100)))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(ttl = TTLOption.constant(100)))
 
-    verifyKeyValueTable("key_value_11")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT TTL(value) FROM "$ks".key_value_11""").all()
+      val result = session.execute(s"""SELECT TTL(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(_.getInt(0) should be > 50)
       result.foreach(_.getInt(0) should be <= 100)
@@ -399,27 +430,29 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects with default timestamp" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValue(1, 1L, "value1"), KeyValue(2, 2L, "value2"), KeyValue(3, 3L, "value3"))
     val ts = System.currentTimeMillis() - 1000L
-    sc.parallelize(col).saveToCassandra(ks, "key_value_12", writeConf = WriteConf(timestamp = TimestampOption.constant(ts * 1000L)))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(timestamp = TimestampOption.constant(ts * 1000L)))
 
-    verifyKeyValueTable("key_value_12")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT WRITETIME(value) FROM "$ks".key_value_12""").all()
+      val result = session.execute(s"""SELECT WRITETIME(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(_.getLong(0) should be (ts * 1000L))
     }
   }
 
   it should "write RDD of case class objects with per-row TTL" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValueWithTTL(1, 1L, "value1", 100), KeyValueWithTTL(2, 2L, "value2", 200), KeyValueWithTTL(3, 3L, "value3", 300))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_13", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
 
-    verifyKeyValueTable("key_value_13")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, TTL(value) FROM "$ks".key_value_13""").all()
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(row => {
         row.getInt(1) should be > (100 * row.getInt(0) - 50)
@@ -429,14 +462,15 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects with per-row timestamp" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val ts = System.currentTimeMillis() - 1000L
     val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_14", writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
 
-    verifyKeyValueTable("key_value_14")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM "$ks".key_value_14""").all()
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(row => {
         row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
@@ -445,16 +479,17 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects with per-row TTL with custom mapping" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValueWithTTL(1, 1L, "value1", 100), KeyValueWithTTL(2, 2L, "value2", 200), KeyValueWithTTL(3, 3L, "value3", 300))
     implicit val mapping = new DefaultColumnMapper[KeyValueWithTTL](Map("ttl" -> "ttl_placeholder"))
 
-    sc.parallelize(col).saveToCassandra(ks, "key_value_15",
+    sc.parallelize(col).saveToCassandra(ks, "key_value",
       writeConf = WriteConf(ttl = TTLOption.perRow("ttl_placeholder")))
 
-    verifyKeyValueTable("key_value_15")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, TTL(value) FROM "$ks".key_value_15""").all()
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(row => {
         row.getInt(1) should be > (100 * row.getInt(0) - 50)
@@ -464,19 +499,20 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects with per-row timestamp with custom mapping" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val ts = System.currentTimeMillis() - 1000L
     val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
 
     implicit val mapper =
       new DefaultColumnMapper[KeyValueWithTimestamp](Map("timestamp" -> "timestamp_placeholder"))
 
-    sc.parallelize(col).saveToCassandra(ks, "key_value_16",
+    sc.parallelize(col).saveToCassandra(ks, "key_value",
       writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp_placeholder")))
 
-    verifyKeyValueTable("key_value_16")
+    verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM "$ks".key_value_16""").all()
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
       result should have size 3
       result.foreach(row => {
         row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
@@ -485,15 +521,16 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of case class objects applying proper data type conversions and aliases" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(
       ClassWithWeirdProps("1", 1, "value1"),
       ClassWithWeirdProps("2", 2, "value2"),
       ClassWithWeirdProps("3", 3, "value3")
     )
-    sc.parallelize(col).saveToCassandra(ks, "key_value_17", columns = SomeColumns(
+    sc.parallelize(col).saveToCassandra(ks, "key_value", columns = SomeColumns(
       "key" as "devil", "group" as "cat", "value"
     ))
-    verifyKeyValueTable("key_value_17")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write an RDD of tuples mapped to different ordering of fields" in {
@@ -503,7 +540,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         "map_tuple",
         SomeColumns(("a" as "_2"), ("c" as "_1")))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".map_tuple""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all()
       result should have size 1
       val row = result(0)
       row.getString("a") should be ("a")
@@ -518,7 +555,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         "map_tuple",
         SomeColumns(("a" as "_2"),("b" as "_3"), ("c" as "_1")))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM "$ks".map_tuple""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all()
       result should have size 1
       val row = result(0)
       row.getString("a") should be ("a")
@@ -546,19 +583,21 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "write RDD of objects with inherited fields" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(
       new SubKeyValue(1, "value1", 1L),
       new SubKeyValue(2, "value2", 2L),
       new SubKeyValue(3, "value3", 3L)
     )
-    sc.parallelize(col).saveToCassandra(ks, "key_value_18")
-    verifyKeyValueTable("key_value_18")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "write RDD of case class objects with transient fields" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq(KeyValueWithTransient(1, 1L, "value1", "a"), KeyValueWithTransient(2, 2L, "value2", "b"), KeyValueWithTransient(3, 3L, "value3", "c"))
-    sc.parallelize(col).saveToCassandra(ks, "key_value_19")
-    verifyKeyValueTable("key_value_19")
+    sc.parallelize(col).saveToCassandra(ks, "key_value")
+    verifyKeyValueTable("key_value")
   }
 
   it should "be able to append and prepend elements to a C* list" in {
@@ -648,9 +687,10 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "throw an exception if you try to apply a collection behavior to a normal column" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     val e = intercept[IllegalArgumentException] {
-      sc.parallelize(col).saveToCassandra(ks, "key_value_1", SomeColumns("key", "group"
+      sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"
         overwrite, "value"))
     }
     e.getMessage should include("group")

@@ -2,6 +2,8 @@ package com.datastax.spark.connector.sql
 
 import java.io.IOException
 
+import scala.concurrent.Future
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
@@ -9,52 +11,45 @@ import org.apache.spark.sql.SQLContext
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(Set(EmbeddedCassandra.getHost(0)))
-  val keyspace = "DataFramz"
-
+  val conn = CassandraConnector(defaultConf)
 
   val sqlContext: SQLContext = new SQLContext(sc)
 
   def pushDown: Boolean = true
 
-  override def beforeAll(): Unit = {
-    conn.withSessionDo { session =>
-      session.execute( s"""DROP KEYSPACE IF EXISTS "$keyspace"""")
-      session.execute(
-        s"""CREATE KEYSPACE IF NOT EXISTS "$keyspace" WITH REPLICATION =
-                                                      |{ 'class': 'SimpleStrategy',
-                                                      |'replication_factor': 1 }""".stripMargin)
+  conn.withSessionDo { session =>
+    createKeyspace(session)
 
-      session.execute(
-        s"""CREATE TABLE IF NOT EXISTS "$keyspace".kv
-                                                   |(k INT, v TEXT, PRIMARY KEY (k)) """
-          .stripMargin)
+    awaitAll(
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.kv_copy (k INT, v TEXT, PRIMARY KEY (k))
+             |""".stripMargin)
+      },
 
-      session.execute(
-        s"""CREATE TABLE IF NOT EXISTS "$keyspace".kv_copy
-                                                   |(k INT, v TEXT, PRIMARY KEY (k)) """
-          .stripMargin)
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.hardtoremembernamedtable (k INT, v TEXT, PRIMARY KEY (k))
+             |""".stripMargin)
+      },
 
-      session.execute(
-        s"""CREATE TABLE IF NOT EXISTS "$keyspace".hardtoremembernamedtable
-                                                   |(k INT, v TEXT, PRIMARY KEY (k)) """
-          .stripMargin)
+      Future {
+        session.execute(
+          s"""
+              |CREATE TABLE IF NOT EXISTS $ks.kv (k INT, v TEXT, PRIMARY KEY (k))
+              |""".stripMargin)
 
-      val prepared = session.prepare( s"""INSERT INTO "$keyspace".kv (k,v) VALUES (?,?)""")
+        val prepared = session.prepare( s"""INSERT INTO $ks.kv (k, v) VALUES (?, ?)""")
 
-      for (x <- 1 to 1000) {
-        session.execute(prepared.bind(x: java.lang.Integer, x.toString))
+        (for (x <- 1 to 1000) yield {
+          session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString))
+        }).par.foreach(_.getUninterruptibly)
       }
-    }
-  }
-
-  override def afterAll() {
-    super.afterAll()
-    conn.withSessionDo { session =>
-      session.execute( s"""DROP KEYSPACE IF EXISTS "$keyspace"""")
-    }
+    )
   }
 
   "A DataFrame" should "be able to be created programmatically" in {
@@ -64,7 +59,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       .options(
         Map(
           "table" -> "kv",
-          "keyspace" -> keyspace
+          "keyspace" -> ks
         )
       )
       .load()
@@ -79,7 +74,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       .options(
         Map(
           "table" -> "kv",
-          "keyspace" -> keyspace
+          "keyspace" -> ks
         )
       )
       .load()
@@ -89,7 +84,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       .options(
         Map(
           "table" -> "kv_copy",
-          "keyspace" -> keyspace
+          "keyspace" -> ks
         )
       )
       .save()
@@ -100,7 +95,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       .options(
         Map(
           "table" -> "kv_copy",
-          "keyspace" -> keyspace
+          "keyspace" -> ks
         )
       )
       .load()
@@ -116,7 +111,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         .options(
           Map(
             "table" -> "randomtable",
-            "keyspace" -> keyspace
+            "keyspace" -> ks
           )
         )
         .load()
@@ -132,7 +127,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         .options(
           Map(
             "table" -> "hardertoremembertablename",
-            "keyspace" -> keyspace
+            "keyspace" -> ks
           )
         )
         .load

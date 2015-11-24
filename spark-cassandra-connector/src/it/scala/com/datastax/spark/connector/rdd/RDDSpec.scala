@@ -1,5 +1,9 @@
 package com.datastax.spark.connector.rdd
 
+import java.lang.{Long => JLong}
+
+import scala.concurrent.Future
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -23,12 +27,10 @@ case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
 class RDDSpec extends SparkCassandraITFlatSpecBase {
 
-
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
-  private val ks = "RDDSpec"
   val tableName = "key_value"
   val otherTable = "other_table"
   val wideTable = "wide_table"
@@ -37,25 +39,74 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   val total = 0 to 10000
 
   conn.withSessionDo { session =>
-    session.execute(s"""CREATE KEYSPACE IF NOT EXISTS "$ks" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".$tableName (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-    for (value <- total) {
-      session.execute(s"""INSERT INTO "$ks".$tableName (key, group, value) VALUES ($value, ${value * 100}, '${value.toString}')""")
-    }
+    createKeyspace(session)
 
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".$otherTable (key INT, group BIGINT,  PRIMARY KEY (key))""")
-    for (value <- keys) {
-      session.execute(s"""INSERT INTO "$ks".$otherTable (key, group) VALUES ($value, ${value * 100})""")
-    }
+    awaitAll(
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$tableName (
+             |  key INT,
+             |  group BIGINT,
+             |  value TEXT,
+             |  PRIMARY KEY (key, group)
+             |)""".stripMargin)
+        (for (value <- total) yield
+          session.executeAsync(
+            s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""",
+            value: Integer,
+            (value * 100).toLong: JLong,
+            value.toString)
+          ).par.foreach(_.getUninterruptibly)
+      },
 
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".$wideTable (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-    for (value <- keys) {
-      for (cconeValue <- value * 100 until value * 100 + 5) {
-        session.execute(s"""INSERT INTO "$ks".$wideTable (key, group, value) VALUES ($value, ${cconeValue}, '${value.toString}')""")
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$otherTable (key INT, group BIGINT,  PRIMARY KEY (key))
+             |""".stripMargin)
+        (for (value <- keys) yield
+          session.executeAsync(
+            s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""",
+            value: Integer,
+            (value * 100).toLong: JLong)
+          ).par.foreach(_.getUninterruptibly)
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$wideTable (
+             |  key INT,
+             |  group BIGINT,
+             |  value TEXT,
+             |  PRIMARY KEY (key, group)
+             |)""".stripMargin)
+        (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
+          session.executeAsync(
+            s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""",
+            value: Integer,
+            cconeValue.toLong: JLong,
+            value.toString)
+          ).par.foreach(_.getUninterruptibly)
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$manyColsTable (
+             |  pk1 int,
+             |  pk2 int,
+             |  pk3 int,
+             |  cc1 int,
+             |  cc2 int,
+             |  cc3 int,
+             |  cc4 int,
+             |  d1 int,
+             |  PRIMARY KEY ((pk1, pk2, pk3), cc1, cc2, cc3, cc4)
+             |)""".stripMargin)
       }
-    }
-
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".$manyColsTable (pk1 int, pk2 int, pk3 int, cc1 int, cc2 int, cc3 int, cc4 int, d1 int, PRIMARY KEY ((pk1, pk2, pk3), cc1, cc2, cc3, cc4))""")
+    )
   }
 
   def checkLeftSide[T, S](leftSideSource: Array[T], result: Array[(T, S)]) = {
@@ -82,10 +133,10 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     result.length should be(keys.length)
     for (key <- keys) {
       val sorted_result = result.map(_._2).sortBy(_._1)
-    sorted_result(key)._1 should be(key)
-    sorted_result(key)._2 should be(key * 100)
-    sorted_result(key)._3 should be(key.toString)
-  }
+      sorted_result(key)._1 should be(key)
+      sorted_result(key)._2 should be(key * 100)
+      sorted_result(key)._3 should be(key.toString)
+    }
   }
 
   def checkArrayFullRow[T](result: Array[(T, FullRow)]) = {
@@ -183,20 +234,20 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
-  it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in withoutLogging{
+  it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in withoutLogging {
     val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
-    val ex = the [Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
+    val ex = the[Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
     ex.getMessage.toLowerCase should include("invalid null value")
     ex.getMessage.toLowerCase should include("key")
   }
 
-  it should "throw a meaningful exception if partition column is null when repartitioning by replica" in withoutLogging{
+  it should "throw a meaningful exception if partition column is null when repartitioning by replica" in withoutLogging {
     val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long))
     val ex = the[Exception] thrownBy source.repartitionByCassandraReplica(ks, tableName, 10).collect()
     ex.getMessage should include("Invalid null value for key column key")
   }
 
-  it should "throw a meaningful exception if partition column is null when saving" in withoutLogging{
+  it should "throw a meaningful exception if partition column is null when saving" in withoutLogging {
     val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long, ""))
     val ex = the[Exception] thrownBy source.saveToCassandra(ks, tableName)
     ex.getMessage should include("Invalid null value for key column key")
@@ -272,7 +323,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   it should "have be able to be counted" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).cassandraCount()
-    someCass should be (201)
+    someCass should be(201)
 
   }
 
@@ -348,7 +399,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
       val someCass = sc.parallelize(keys).map(x => (x, x * 100L))
         .joinWithCassandraTable(ks, tableName)
         .where("group >= ?", 500L)
-        .on(SomeColumns("key","group"))
+        .on(SomeColumns("key", "group"))
       val results = someCass.collect.map(_._2)
       results should have length keys.count(_ >= 5)
     }
@@ -431,7 +482,6 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   it should " be lazy and not throw an exception if the table is not found at initializaiton time" in {
     val someCass = sc.parallelize(keys).map(x => new DataCol(x, x, x, x)).joinWithCassandraTable("unknown_keyspace", "unknown_table")
   }
-
 
 
 }
