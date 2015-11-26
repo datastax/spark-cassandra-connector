@@ -197,7 +197,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to select rows with in clause pushed down" in {
     val query = cc.sql("SELECT * FROM test2 WHERE a in (1,2)")
-    query.queryExecution.sparkPlan.nodeName should be ("Filter")
+    query.queryExecution.sparkPlan.toString should include regex """PushedFilter: \[In\(a.*\)\]""".r
     val result = query.collect()
     result should have length 6
   }
