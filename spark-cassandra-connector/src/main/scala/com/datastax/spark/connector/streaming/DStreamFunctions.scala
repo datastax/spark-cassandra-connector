@@ -1,17 +1,36 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
 import com.datastax.spark.connector.rdd.{EmptyCassandraRDD, ValidRDDType}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer._
+
+import org.apache.spark._
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
+import org.apache.spark.streaming.Duration
 import org.apache.spark.streaming.dstream.DStream
 
 import scala.reflect.ClassTag
 
-class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] with Serializable {
+class DStreamFunctions[T](dstream: DStream[T])
+  extends WritableToCassandra[T]
+  with Serializable
+  with Logging {
+
+  def warnIfKeepAliveIsShort(): Unit = {
+    val keepAliveDuration: Duration = Duration(conf.getInt(
+      CassandraConnectorConf.KeepAliveMillisParam.name,
+      CassandraConnectorConf.KeepAliveMillisParam.default))
+
+    val streamDuration: Duration = dstream.slideDuration
+
+    if (keepAliveDuration < streamDuration)
+      logWarning( s"""Currently ${CassandraConnectorConf.KeepAliveMillisParam.name}  is set to
+        |${keepAliveDuration}, which is less than ${streamDuration}. This will cause connections to
+        | be closed and recreated between batches. If this is not what you intended, increase the value
+        | of ${CassandraConnectorConf.KeepAliveMillisParam.name} to a larger value.""".stripMargin)
+  }
 
   override def sparkContext: SparkContext = dstream.context.sparkContext
 
@@ -29,6 +48,7 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
   implicit
     connector: CassandraConnector = CassandraConnector(conf),
     rwf: RowWriterFactory[T]): Unit = {
+    warnIfKeepAliveIsShort()
 
     val writer = TableWriter(connector, keyspaceName, tableName, columnNames, writeConf)
     dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.write _))
@@ -68,6 +88,8 @@ class DStreamFunctions[T](dstream: DStream[T]) extends WritableToCassandra[T] wi
     ev: ValidRDDType[R],
     currentType: ClassTag[T],
     @transient rwf: RowWriterFactory[T]): DStream[(T,R)] = {
+
+    warnIfKeepAliveIsShort()
 
     /**
      * To make this function serializable for Checkpointing we will make a rowWriter and the use

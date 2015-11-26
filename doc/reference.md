@@ -38,7 +38,7 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 </tr>
 <tr>
   <td><code>connection.keep_alive_ms</code></td>
-  <td>250</td>
+  <td>5000</td>
   <td>Period of time to keep unused connections open</td>
 </tr>
 <tr>

@@ -13,8 +13,12 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
 class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
+  val tinyKeepAlive = 500
+  val CCSpecConf = defaultConf
+    .set(CassandraConnectorConf.KeepAliveMillisParam.name, tinyKeepAlive.toString)
+
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(defaultConf)
+  val conn = CassandraConnector(CCSpecConf)
 
   val createKeyspaceCql = "CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"
 
@@ -56,7 +60,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   it should "disconnect from the cluster after use" in {
     val cluster = conn.withClusterDo { cluster => cluster }
-    Thread.sleep(CassandraConnector.keepAliveMillis * 2)
+    Thread.sleep(tinyKeepAlive * 2)
     assert(cluster.isClosed === true)
   }
 
@@ -78,7 +82,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "share internal Cluster object between multiple logical sessions created by different connectors to the same cluster" in {
-    val conn2 = CassandraConnector(defaultConf)
+    val conn2 = CassandraConnector(CCSpecConf)
     val session1 = conn.openSession()
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()
@@ -93,15 +97,15 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "cache session objects for reuse" in {
-    CassandraConnector(sc.getConf).withSessionDo(x => {})
-    CassandraConnector(sc.getConf).withSessionDo(x => {})
+    CassandraConnector(CCSpecConf).withSessionDo(x => {})
+    CassandraConnector(CCSpecConf).withSessionDo(x => {})
     val sessionCache = CassandraConnector.sessionCache
-    sessionCache.contains(CassandraConnectorConf(sc.getConf)) should be (true)
+    sessionCache.contains(CassandraConnectorConf(CCSpecConf)) should be (true)
     sessionCache.cache.size should be (1)
   }
 
   it should "not make multiple clusters when writing multiple RDDs" in {
-    CassandraConnector(sc.getConf).withSessionDo{ session =>
+    CassandraConnector(CCSpecConf).withSessionDo{ session =>
       session.execute("""CREATE KEYSPACE IF NOT EXISTS test WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
       session.execute("""CREATE TABLE IF NOT EXISTS test.pair (x int, y int, PRIMARY KEY (x))""")
     }
@@ -115,7 +119,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   it should "be configurable from SparkConf" in {
     val host = EmbeddedCassandra.getHost(0).getHostAddress
-    val conf = defaultConf
+    val conf = CCSpecConf
     conf.set(CassandraConnectorConf.ConnectionHostParam.name, host)
 
     // would throw exception if connection unsuccessful
@@ -127,7 +131,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
     val goodHost = EmbeddedCassandra.getHost(0).getHostAddress
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
-    val conf = defaultConf
+    val conf = CCSpecConf
     conf.set(CassandraConnectorConf.ConnectionHostParam.name, invalidHost + "," + goodHost)
 
     // would throw exception if connection unsuccessful
