@@ -81,7 +81,7 @@ collection.saveToCassandra("test", "words", SomeColumns("word", "count"))
       cow |    60
       
 The driver will execute a CQL `INSERT` statement for every object in the `RDD`, 
-grouped in unlogged batches. The consistency level for writes is `ONE`. 
+grouped in unlogged batches. The consistency level for writes is `LOCAL_QUORUM`. 
 
 It is possible to specify custom column to property mapping with `SomeColumns`. If the property
 names in objects to be saved do not correspond to the column names in the destination table, use

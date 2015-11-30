@@ -15,11 +15,9 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   val conn = CassandraConnector(defaultConf)
 
-  private val ks = "GroupingBatchBuilder"
-
   conn.withSessionDo { session =>
-    session.execute(s"""CREATE KEYSPACE IF NOT EXISTS "$ks" WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""")
-    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tab (id INT PRIMARY KEY, value TEXT)""")
+    createKeyspace(session)
+    session.execute(s"""CREATE TABLE $ks.tab (id INT PRIMARY KEY, value TEXT)""")
   }
 
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
@@ -27,7 +25,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
   val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
   def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
-    val stmt = session.prepare(s"""INSERT INTO "$ks".tab (id, value) VALUES (:id, :value)""")
+    val stmt = session.prepare(s"""INSERT INTO $ks.tab (id, value) VALUES (:id, :value)""")
     val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
     val batchStmtBuilder = new BatchStatementBuilder(Type.UNLOGGED, rkg, ConsistencyLevel.LOCAL_ONE)
     new GroupingBatchBuilder[(Int, String)](boundStmtBuilder, batchStmtBuilder, _: BoundStatement => Any, _: BatchSize, _: Int, _: Iterator[(Int, String)])

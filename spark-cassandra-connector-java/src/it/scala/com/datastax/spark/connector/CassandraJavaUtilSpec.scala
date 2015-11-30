@@ -1,104 +1,109 @@
 package com.datastax.spark.connector
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 import org.apache.spark.rdd.RDD
 import org.scalatest.BeforeAndAfter
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 
 class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndAfter {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    conn.withSessionDo { session =>
-      session.execute("DROP KEYSPACE IF EXISTS cassandra_java_util_spec")
-      session.execute("CREATE KEYSPACE cassandra_java_util_spec WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
+  conn.withSessionDo { session =>
+    createKeyspace(session)
+    awaitAll(
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_table (key INT, value TEXT, PRIMARY KEY (key))")
+      },
 
-      session.execute("CREATE TABLE cassandra_java_util_spec.test_table (key INT, value TEXT, PRIMARY KEY (key))")
-      session.execute("CREATE TABLE cassandra_java_util_spec.test_table_2 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
-      session.execute(
-        """
-          |CREATE TABLE cassandra_java_util_spec.test_table_3 (
-          | c1 INT PRIMARY KEY,
-          | c2 TEXT,
-          | c3 INT,
-          | c4 TEXT,
-          | c5 INT,
-          | c6 TEXT,
-          | c7 INT,
-          | c8 TEXT,
-          | c9 INT,
-          | c10 TEXT,
-          | c11 INT,
-          | c12 TEXT,
-          | c13 INT,
-          | c14 TEXT,
-          | c15 INT,
-          | c16 TEXT,
-          | c17 INT,
-          | c18 TEXT,
-          | c19 INT,
-          | c20 TEXT,
-          | c21 INT,
-          | c22 TEXT
-          |)
-        """.stripMargin)
-      session.execute(
-        """
-          |INSERT INTO cassandra_java_util_spec.test_table_3 (
-          |  c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
-          |  c11, c12, c13, c14, c15, c16, c17, c18, c19, c20,
-          |  c21, c22
-          |) VALUES (
-          |  1, '2', 3, '4', 5, '6', 7, '8', 9, '10',
-          |  11, '12', 13, '14', 15, '16', 17, '18', 19, '20',
-          |  21, '22'
-          |)
-        """.stripMargin)
-      session.execute(
-        """
-          |CREATE TABLE cassandra_java_util_spec.test_table_4 (
-          | c1 INT PRIMARY KEY,
-          | c2 TEXT,
-          | c3 INT,
-          | c4 TEXT,
-          | c5 INT,
-          | c6 TEXT,
-          | c7 INT,
-          | c8 TEXT,
-          | c9 INT,
-          | c10 TEXT,
-          | c11 INT,
-          | c12 TEXT,
-          | c13 INT,
-          | c14 TEXT,
-          | c15 INT,
-          | c16 TEXT,
-          | c17 INT,
-          | c18 TEXT,
-          | c19 INT,
-          | c20 TEXT,
-          | c21 INT,
-          | c22 TEXT
-          |)
-        """.stripMargin)
-    }
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_table_2 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
+      },
 
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.test_table_3 (
+             | c1 INT PRIMARY KEY,
+             | c2 TEXT,
+             | c3 INT,
+             | c4 TEXT,
+             | c5 INT,
+             | c6 TEXT,
+             | c7 INT,
+             | c8 TEXT,
+             | c9 INT,
+             | c10 TEXT,
+             | c11 INT,
+             | c12 TEXT,
+             | c13 INT,
+             | c14 TEXT,
+             | c15 INT,
+             | c16 TEXT,
+             | c17 INT,
+             | c18 TEXT,
+             | c19 INT,
+             | c20 TEXT,
+             | c21 INT,
+             | c22 TEXT
+             |)
+        """.stripMargin)
+        session.execute(
+          s"""
+             |INSERT INTO $ks.test_table_3 (
+             |  c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
+             |  c11, c12, c13, c14, c15, c16, c17, c18, c19, c20,
+             |  c21, c22
+             |) VALUES (
+             |  1, '2', 3, '4', 5, '6', 7, '8', 9, '10',
+             |  11, '12', 13, '14', 15, '16', 17, '18', 19, '20',
+             |  21, '22'
+             |)
+        """.stripMargin)
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.test_table_4 (
+             | c1 INT PRIMARY KEY,
+             | c2 TEXT,
+             | c3 INT,
+             | c4 TEXT,
+             | c5 INT,
+             | c6 TEXT,
+             | c7 INT,
+             | c8 TEXT,
+             | c9 INT,
+             | c10 TEXT,
+             | c11 INT,
+             | c12 TEXT,
+             | c13 INT,
+             | c14 TEXT,
+             | c15 INT,
+             | c16 TEXT,
+             | c17 INT,
+             | c18 TEXT,
+             | c19 INT,
+             | c20 TEXT,
+             | c21 INT,
+             | c22 TEXT
+             |)
+        """.stripMargin)
+      })
   }
 
-
   "CassandraJavaUtil" should "allow to save beans (with multiple constructors) to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table"))
 
     val beansRdd: RDD[SampleJavaBeanWithMultipleCtors] = sc.parallelize(Seq(
       new SampleJavaBeanWithMultipleCtors(1, "one"),
@@ -107,10 +112,10 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("cassandra_java_util_spec", "test_table", mapToRow(classOf[SampleJavaBeanWithMultipleCtors]))
+      .writerBuilder(ks, "test_table", mapToRow(classOf[SampleJavaBeanWithMultipleCtors]))
       .saveToCassandra()
 
-    val results = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table"))
+    val results = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table"))
 
     val rows = results.all()
     assert(rows.size() == 3)
@@ -121,7 +126,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to save beans to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table"))
 
     val beansRdd = sc.parallelize(Seq(
       SampleJavaBean.newInstance(1, "one"),
@@ -130,10 +135,10 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("cassandra_java_util_spec", "test_table", mapToRow(classOf[SampleJavaBean]))
+      .writerBuilder(ks, "test_table", mapToRow(classOf[SampleJavaBean]))
       .saveToCassandra()
 
-    val results = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table"))
+    val results = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table"))
 
     val rows = results.all()
     assert(rows.size() == 3)
@@ -143,7 +148,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   }
 
   it should "allow to save beans with transient fields to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table"))
 
     val beansRdd = sc.parallelize(Seq(
       SampleJavaBeanWithTransientFields.newInstance(1, "one"),
@@ -152,10 +157,10 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("cassandra_java_util_spec", "test_table", mapToRow(classOf[SampleJavaBeanWithTransientFields]))
+      .writerBuilder(ks, "test_table", mapToRow(classOf[SampleJavaBeanWithTransientFields]))
       .saveToCassandra()
 
-    val results = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table"))
+    val results = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table"))
 
     val rows = results.all()
     assert(rows.size() == 3)
@@ -165,7 +170,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   }
 
   it should "allow to save beans with inherited fields to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_2"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_2"))
 
     val beansRdd = sc.parallelize(Seq(
       SampleJavaBeanSubClass.newInstance(1, "one", "a"),
@@ -174,10 +179,10 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("cassandra_java_util_spec", "test_table_2", mapToRow(classOf[SampleJavaBeanSubClass]))
+      .writerBuilder(ks, "test_table_2", mapToRow(classOf[SampleJavaBeanSubClass]))
       .saveToCassandra()
 
-    val results = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_2"))
+    val results = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_2"))
     val rows = results.all()
 
     rows should have size 3
@@ -189,7 +194,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   }
 
   it should "allow to save nested beans to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table"))
 
     val outer = new SampleWithNestedJavaBean
 
@@ -200,10 +205,10 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
     ))
 
     CassandraJavaUtil.javaFunctions(beansRdd)
-      .writerBuilder("cassandra_java_util_spec", "test_table", mapToRow(classOf[outer.InnerClass]))
+      .writerBuilder(ks, "test_table", mapToRow(classOf[outer.InnerClass]))
       .saveToCassandra()
 
-    val results = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table"))
+    val results = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table"))
 
     val rows = results.all()
     assert(rows.size() == 3)
@@ -214,7 +219,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple1" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer]
     )).select(
         "c1"
@@ -228,7 +233,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple2" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String]
     )).select(
@@ -244,7 +249,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple3" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer]
@@ -262,7 +267,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple4" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -282,7 +287,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple5" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -304,7 +309,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple6" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -328,7 +333,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple7" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -354,7 +359,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple8" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -382,7 +387,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple9" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -412,7 +417,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple10" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -444,7 +449,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple11" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -478,7 +483,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple12" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -514,7 +519,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple13" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -552,7 +557,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple14" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -592,7 +597,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple15" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -634,7 +639,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple16" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -678,7 +683,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple17" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -724,7 +729,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple18" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -772,7 +777,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple19" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -822,7 +827,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple20" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -874,7 +879,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple21" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -928,7 +933,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
   it should "allow to read rows as Tuple22" in {
     val tuple = CassandraJavaUtil.javaFunctions(sc)
-      .cassandraTable("cassandra_java_util_spec", "test_table_3", mapRowToTuple(
+      .cassandraTable(ks, "test_table_3", mapRowToTuple(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -983,38 +988,38 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple1 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple1(
       1: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer]
     )).withColumnSelector(someColumns(
       "c1"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
   }
 
 
 
   it should "allow to write Tuple2 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple2(
       1: Integer,
       "2"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String]
     )).withColumnSelector(someColumns(
       "c1", "c2"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
   }
@@ -1022,14 +1027,14 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple3 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple3(
       1: Integer,
       "2",
       3: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer]
@@ -1037,7 +1042,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1046,7 +1051,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple4 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple4(
       1: Integer,
       "2",
@@ -1054,7 +1059,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "4"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1063,7 +1068,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1073,7 +1078,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple5 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple5(
       1: Integer,
       "2",
@@ -1082,7 +1087,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       5: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1092,7 +1097,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1103,7 +1108,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple6 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple6(
       1: Integer,
       "2",
@@ -1113,7 +1118,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "6"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1124,7 +1129,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1136,7 +1141,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple7 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple7(
       1: Integer,
       "2",
@@ -1147,7 +1152,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       7: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1159,7 +1164,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1172,7 +1177,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple8 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple8(
       1: Integer,
       "2",
@@ -1184,7 +1189,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "8"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1197,7 +1202,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1211,7 +1216,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple9 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple9(
       1: Integer,
       "2",
@@ -1224,7 +1229,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       9: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1238,7 +1243,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1253,7 +1258,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple10 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple10(
       1: Integer,
       "2",
@@ -1267,7 +1272,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "10"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1282,7 +1287,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1298,7 +1303,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple11 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple11(
       1: Integer,
       "2",
@@ -1313,7 +1318,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       11: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1329,7 +1334,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1346,7 +1351,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple12 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple12(
       1: Integer,
       "2",
@@ -1362,7 +1367,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "12"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1379,7 +1384,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1397,7 +1402,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple13 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple13(
       1: Integer,
       "2",
@@ -1414,7 +1419,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       13: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1432,7 +1437,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1451,7 +1456,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple14 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple14(
       1: Integer,
       "2",
@@ -1469,7 +1474,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "14"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1488,7 +1493,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1508,7 +1513,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple15 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple15(
       1: Integer,
       "2",
@@ -1527,7 +1532,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       15: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1547,7 +1552,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1568,7 +1573,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple16 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple16(
       1: Integer,
       "2",
@@ -1588,7 +1593,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "16"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1609,7 +1614,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1631,7 +1636,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple17 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple17(
       1: Integer,
       "2",
@@ -1652,7 +1657,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       17: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1674,7 +1679,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1697,7 +1702,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple18 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple18(
       1: Integer,
       "2",
@@ -1719,7 +1724,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "18"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1742,7 +1747,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1766,7 +1771,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple19 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple19(
       1: Integer,
       "2",
@@ -1789,7 +1794,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       19: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1813,7 +1818,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1838,7 +1843,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple20 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple20(
       1: Integer,
       "2",
@@ -1862,7 +1867,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "20"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1887,7 +1892,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1913,7 +1918,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple21 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple21(
       1: Integer,
       "2",
@@ -1938,7 +1943,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       21: Integer
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -1964,7 +1969,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20", "c21"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)
@@ -1991,7 +1996,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
 
 
   it should "allow to write Tuple22 to Cassandra" in {
-    conn.withSessionDo(_.execute("TRUNCATE cassandra_java_util_spec.test_table_4"))
+    conn.withSessionDo(_.execute(s"TRUNCATE $ks.test_table_4"))
     val tuple = Tuple22(
       1: Integer,
       "2",
@@ -2017,7 +2022,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "22"
     )
     CassandraJavaUtil.javaFunctions(sc.makeRDD(Seq(tuple)))
-      .writerBuilder("cassandra_java_util_spec", "test_table_4", mapTupleToRow(
+      .writerBuilder(ks, "test_table_4", mapTupleToRow(
       classOf[Integer],
       classOf[String],
       classOf[Integer],
@@ -2044,7 +2049,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
       "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20", "c21", "c22"
     )).saveToCassandra()
 
-    val row = conn.withSessionDo(_.execute("SELECT * FROM cassandra_java_util_spec.test_table_4").one())
+    val row = conn.withSessionDo(_.execute(s"SELECT * FROM $ks.test_table_4").one())
     row.getInt("c1") shouldBe (1: Integer)
     row.getString("c2") shouldBe "2"
     row.getInt("c3") shouldBe (3: Integer)

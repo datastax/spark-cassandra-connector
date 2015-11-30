@@ -23,7 +23,9 @@ object BuildUtil {
         case _: NullPointerException => None
         // Occurs when File does not exist
         case _: IOException => None
-        case e: SAXParseException => System.err.println(s"WARNING: Problem parsing ${f().getAbsolutePath}, ${e.getMessage}"); None
+        case e: SAXParseException =>
+          System.err.println(s"Problem parsing ${f().getAbsolutePath}, ${e.getMessage}")
+          None
       }
     sys.env.get("M2_REPO") orElse
       loadHomeFromSettings(() => new File(Path.userHome, ".m2/settings.xml")) orElse
