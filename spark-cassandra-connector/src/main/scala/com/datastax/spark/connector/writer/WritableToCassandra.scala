@@ -30,7 +30,7 @@ abstract class WritableToCassandra[T] {
    *   rdd.saveToCassandra("test", "words")
    * }}}
    *
-   * By default, writes are performed at ConsistencyLevel.ONE in order to leverage data-locality and minimize network traffic.
+   * By default, writes are performed at ConsistencyLevel.LOCAL_QUORUM.
    * This write consistency level is controlled by the following property:
    *   - spark.cassandra.output.consistency.level: consistency level for RDD writes, string matching the ConsistencyLevel enum name.
    *
