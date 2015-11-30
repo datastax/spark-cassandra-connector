@@ -1,6 +1,8 @@
+ * Let UDTs be converted from GenericRows (SPARKC-271)
  * Map InetAddress and UUID to string and store it as StringType in Spark SQL (SPARKC-259)
  * VarInt Column is converted to decimal stored in Spark SQL (SPARKC-266)
  * Retrieve TableSize from Cassandra system table for datasource relation (SPARKC-164)
+ * Fix merge strategy for netty.io.properties (SPARKC-249)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
    to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
 
@@ -34,9 +36,9 @@
 
 1.4.0 M1
  * Upgrade Spark to 1.4.0 (SPARKC-192)
+ * Added support timestamp in collection, udt and tuples (SPARKC-254)
 
 ********************************************************************************
- * Added support timestamp in collection, udt and tuples (SPARKC-254)
 
 1.3.1
  * Remove wrapRDD from CassandraTableScanJavaRDD. Fixes exception occuring
