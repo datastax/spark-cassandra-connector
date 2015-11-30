@@ -13,7 +13,8 @@ import org.apache.spark.Logging
 private[connector] class BoundStatementBuilder[T](
     val rowWriter: RowWriter[T],
     val preparedStmt: PreparedStatement,
-    val prefixVals: Seq[Any] = Seq.empty) extends Logging {
+    val prefixVals: Seq[Any] = Seq.empty,
+    val protocolVersion: ProtocolVersion) extends Logging {
 
   private val columnNames = rowWriter.columnNames.toIndexedSeq
   private val columnTypes = columnNames.map(preparedStmt.getVariables.getType)
@@ -38,11 +39,17 @@ private[connector] class BoundStatementBuilder[T](
       val converter = converters(i)
       val columnName = columnNames(i)
       val columnValue = converter.convert(buffer(i))
-      boundStatement.set(columnName, columnValue, CodecRegistryUtil.codecFor(columnTypes(i), columnValue))
-      val serializedValue = boundStatement.getBytesUnsafe(i)
 
-      if (serializedValue != null)
-        bytesCount += serializedValue.remaining()
+      //C* 2.2 and Greater Allows us to leave fields Unset, we'll interpret Scala None as this unset value
+      if (protocolVersion.toInt < ProtocolVersion.V4.toInt || columnValue != None) {
+        if (columnValue == None){
+          boundStatement.setToNull(columnName)
+        } else {
+          boundStatement.set(columnName, columnValue, CodecRegistryUtil.codecFor(columnTypes(i), columnValue))
+        }
+        val serializedValue = boundStatement.getBytesUnsafe(i)
+        if (serializedValue != null) bytesCount += serializedValue.remaining()
+      }
 
     }
     boundStatement.bytesCount = bytesCount

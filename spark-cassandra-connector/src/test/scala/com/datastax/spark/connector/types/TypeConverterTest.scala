@@ -329,13 +329,13 @@ class TypeConverterTest {
   }
 
   @Test
-  def testOptionToNullConverter() {
-    val c = new TypeConverter.OptionToNullConverter(TypeConverter.IntConverter)
+  def testOptionConverter() {
+    val c = new TypeConverter.OptionToAnyRefConverter(TypeConverter.IntConverter)
     assertEquals(1.asInstanceOf[AnyRef], c.convert(Some(1)))
     assertEquals(1.asInstanceOf[AnyRef], c.convert(1))
     assertEquals(1.asInstanceOf[AnyRef], c.convert(Some("1")))
     assertEquals(1.asInstanceOf[AnyRef], c.convert("1"))
-    assertEquals(null, c.convert(None))
+    assertEquals(None, c.convert(None))
     assertEquals(null, c.convert(null))
   }
 

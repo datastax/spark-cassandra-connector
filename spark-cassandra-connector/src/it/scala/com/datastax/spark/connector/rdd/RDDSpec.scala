@@ -9,6 +9,8 @@ case class KVRow(key: Int)
 
 case class KVWithOptionRow(key: Option[Int])
 
+case class KVWithNullableKey(key: java.lang.Integer)
+
 case class FullRow(key: Int, group: Long, value: String)
 
 case class NotWholePartKey(pk1: Int)
@@ -80,12 +82,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   def checkArrayTuple[T](result: Array[(T, (Int, Long, String))]) = {
     markup("Checking RightSide Join Results")
     result.length should be(keys.length)
-    for (key <- keys) {
-      val sorted_result = result.map(_._2).sortBy(_._1)
-    sorted_result(key)._1 should be(key)
-    sorted_result(key)._2 should be(key * 100)
-    sorted_result(key)._3 should be(key.toString)
-  }
+      for (key <- keys) {
+        val sorted_result = result.map(_._2).sortBy(_._1)
+      sorted_result(key)._1 should be(key)
+      sorted_result(key)._2 should be(key * 100)
+      sorted_result(key)._3 should be(key.toString)
+    }
   }
 
   def checkArrayFullRow[T](result: Array[(T, FullRow)]) = {
@@ -183,21 +185,21 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
-  it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in withoutLogging{
+  it should "throw a meaningful exception if partition column is None when joining with Cassandra table" in withoutLogging{
     val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
     val ex = the [Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
-    ex.getMessage.toLowerCase should include("invalid null value")
+    ex.getMessage.toLowerCase should include("invalid unset value")
     ex.getMessage.toLowerCase should include("key")
   }
 
   it should "throw a meaningful exception if partition column is null when repartitioning by replica" in withoutLogging{
-    val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long))
+    val source = sc.parallelize(keys).map(x ⇒ (null, x * 100: Long))
     val ex = the[Exception] thrownBy source.repartitionByCassandraReplica(ks, tableName, 10).collect()
     ex.getMessage should include("Invalid null value for key column key")
   }
 
   it should "throw a meaningful exception if partition column is null when saving" in withoutLogging{
-    val source = sc.parallelize(keys).map(x ⇒ (None: Option[Int], x * 100: Long, ""))
+    val source = sc.parallelize(keys).map(x ⇒ (null, x * 100: Long, ""))
     val ex = the[Exception] thrownBy source.saveToCassandra(ks, tableName)
     ex.getMessage should include("Invalid null value for key column key")
   }

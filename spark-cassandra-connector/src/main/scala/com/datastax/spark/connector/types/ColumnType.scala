@@ -155,10 +155,10 @@ object ColumnType {
         case _ => fromDriverType(dataType).converterToCassandra
       }
 
-    // make sure it is always wrapped in OptionToNullConverter, but don't wrap twice:
+    // make sure it is always wrapped in OptionToAnyRefConverter, but don't wrap twice:
     converter match {
-      case c: TypeConverter.OptionToNullConverter => c
-      case _ => new TypeConverter.OptionToNullConverter(converter)
+      case c: TypeConverter.OptionToAnyRefConverter => c
+      case _ => new TypeConverter.OptionToAnyRefConverter(converter)
     }
   }
 

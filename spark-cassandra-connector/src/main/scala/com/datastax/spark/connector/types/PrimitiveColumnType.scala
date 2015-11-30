@@ -15,124 +15,124 @@ case object TextType extends PrimitiveColumnType[String] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[String]] }
   def cqlTypeName = "text"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[String])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[String])
 }
 
 case object AsciiType extends PrimitiveColumnType[String] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[String]] }
   def cqlTypeName = "ascii"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[String])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[String])
 }
 
 case object VarCharType extends PrimitiveColumnType[String] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[String]] }
   def cqlTypeName = "varchar"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[String])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[String])
 }
 
 case object IntType extends PrimitiveColumnType[Int] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Int]] }
   def cqlTypeName = "int"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Integer])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Integer])
 }
 
 case object BigIntType extends PrimitiveColumnType[Long] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Long]] }
   def cqlTypeName = "bigint"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Long])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Long])
 }
 
 case object SmallIntType extends PrimitiveColumnType[Short] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Short]] }
   def cqlTypeName = "smallint"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Short])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Short])
 }
 
 case object TinyIntType extends PrimitiveColumnType[Byte] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Byte]]}
   def cqlTypeName = "tinyint"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Byte])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Byte])
 }
 
 case object FloatType extends PrimitiveColumnType[Float] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Float]] }
   def cqlTypeName = "float"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Float])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Float])
 }
 
 case object DoubleType extends PrimitiveColumnType[Double] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Double]] }
   def cqlTypeName = "double"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Double])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Double])
 }
 
 case object BooleanType extends PrimitiveColumnType[Boolean] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Boolean]] }
   def cqlTypeName = "boolean"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Boolean])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Boolean])
 }
 
 case object VarIntType extends PrimitiveColumnType[BigInt] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[BigInt]] }
   def cqlTypeName = "varint"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.math.BigInteger])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.math.BigInteger])
 }
 
 case object DecimalType extends PrimitiveColumnType[BigDecimal] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[BigDecimal]] }
   def cqlTypeName = "decimal"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.math.BigDecimal])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.math.BigDecimal])
 }
 
 case object TimestampType extends PrimitiveColumnType[Date] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Date]] }
   def cqlTypeName = "timestamp"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.util.Date])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.util.Date])
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[InetAddress]] }
   def cqlTypeName = "inet"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[InetAddress])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[InetAddress])
 }
 
 case object UUIDType extends PrimitiveColumnType[UUID] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UUID]] }
   def cqlTypeName = "uuid"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[UUID])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[UUID])
 }
 
 case object TimeUUIDType extends PrimitiveColumnType[UUID] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UUID]] }
   def cqlTypeName = "timeuuid"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[UUID])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[UUID])
 }
 
 case object CounterType extends PrimitiveColumnType[Long] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Long]] }
   def cqlTypeName = "counter"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.lang.Long])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.lang.Long])
 }
 
 case object BlobType extends PrimitiveColumnType[ByteBuffer] {
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[ByteBuffer]] }
   def cqlTypeName = "blob"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.nio.ByteBuffer])
+    new TypeConverter.OptionToAnyRefConverter(TypeConverter.forType[java.nio.ByteBuffer])
 }
