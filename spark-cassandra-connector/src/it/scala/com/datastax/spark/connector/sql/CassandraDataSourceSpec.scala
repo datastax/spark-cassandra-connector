@@ -1,10 +1,11 @@
 package com.datastax.spark.connector.sql
 
-import org.apache.spark.Logging
-import org.apache.spark.sql.{DataFrame, SQLContext}
-import org.apache.spark.sql.SaveMode._
+import scala.concurrent.Future
 
-import org.apache.spark.sql.cassandra.{TableRef, CassandraSourceRelation}
+import org.apache.spark.Logging
+import org.apache.spark.sql.SaveMode._
+import org.apache.spark.sql.cassandra.{CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -12,38 +13,74 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
   conn.withSessionDo { session =>
-    session.execute("CREATE KEYSPACE IF NOT EXISTS sql_ds_test WITH REPLICATION = " +
-      "{ 'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    createKeyspace(session)
 
-    session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, " +
-      "h INT, PRIMARY KEY ((a, b, c), d , e, f))")
-    session.execute("USE sql_ds_test")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)")
-    session.execute("INSERT INTO sql_ds_test.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)")
+    awaitAll(
+      Future {
+        session.execute(s"""CREATE TABLE $ks.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)""")
+        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)""")
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_insert (a INT PRIMARY KEY, b INT)")
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_insert1 (a INT PRIMARY KEY, b INT)")
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_insert2 (a INT PRIMARY KEY, b INT)")
+        session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (3,4)")
+        session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (5,6)")
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.df_test(
+             |  customer_id int,
+             |  uri text,
+             |  browser text,
+             |  epoch bigint,
+             |  PRIMARY KEY (customer_id, epoch, uri)
+             |)""".stripMargin.replaceAll("\n", " "))
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.df_test2(
+             |  customer_id int,
+             |  uri text,
+             |  browser text,
+             |  epoch bigint,
+             |  PRIMARY KEY (customer_id, epoch)
+             |)""".stripMargin.replaceAll("\n", " "))
+      }
+    )
   }
 
   val sqlContext: SQLContext = new SQLContext(sc)
   def pushDown: Boolean = true
 
   override def beforeAll() {
-    createTempTable("sql_ds_test", "test1", "tmpTable")
+    createTempTable(ks, "test1", "tmpTable")
   }
 
   override def afterAll() {
     super.afterAll()
-    conn.withSessionDo { session =>
-      session.execute("DROP KEYSPACE sql_ds_test")
-    }
     sqlContext.dropTempTable("tmpTable")
   }
 
@@ -64,13 +101,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to select all rows" in {
-    val result = cassandraTable(TableRef("test1", "sql_ds_test")).select("a").collect()
+    val result = cassandraTable(TableRef("test1", ks)).select("a").collect()
     result should have length 8
     result.head should have length 1
   }
 
   it should "allow to register as a temp table" in {
-    cassandraTable(TableRef("test1", "sql_ds_test")).registerTempTable("test1")
+    cassandraTable(TableRef("test1", ks)).registerTempTable("test1")
     val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
@@ -78,10 +115,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to insert data into a cassandra table" in {
-    conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert (a INT PRIMARY KEY, b INT)")
-    }
-    createTempTable("sql_ds_test", "test_insert", "insertTable")
+    createTempTable(ks, "test_insert", "insertTable")
     sqlContext.sql("SELECT * FROM insertTable").collect() should have length 0
 
     sqlContext.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM tmpTable")
@@ -90,25 +124,21 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to save data to a cassandra table" in {
-    conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert1 (a INT PRIMARY KEY, b INT)")
-    }
-
     sqlContext.sql("SELECT a, b from tmpTable")
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(ErrorIfExists)
-      .options(Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+      .options(Map("table" -> "test_insert1", "keyspace" -> ks))
       .save()
 
-    cassandraTable(TableRef("test_insert1", "sql_ds_test")).collect() should have length 1
+    cassandraTable(TableRef("test_insert1", ks)).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
       sqlContext.sql("SELECT a, b from tmpTable")
         .write
         .format("org.apache.spark.sql.cassandra")
         .mode(ErrorIfExists)
-        .options(Map("table" -> "test_insert1", "keyspace" -> "sql_ds_test"))
+        .options(Map("table" -> "test_insert1", "keyspace" -> ks))
         .save()
     }.getMessage
 
@@ -118,19 +148,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to overwrite a cassandra table" in {
-    conn.withSessionDo { session =>
-      session.execute("CREATE TABLE IF NOT EXISTS sql_ds_test.test_insert2 (a INT PRIMARY KEY, b INT)")
-      session.execute("INSERT INTO sql_ds_test.test_insert2 (a, b) VALUES (3,4)")
-      session.execute("INSERT INTO sql_ds_test.test_insert2 (a, b) VALUES (5,6)")
-    }
-
     sqlContext.sql("SELECT a, b from tmpTable")
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "test_insert2", "keyspace" -> "sql_ds_test"))
+      .options(Map("table" -> "test_insert2", "keyspace" -> ks))
       .save()
-    createTempTable("sql_ds_test", "test_insert2", "insertTable2")
+    createTempTable(ks, "test_insert2", "insertTable2")
     sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
     sqlContext.dropTempTable("insertTable2")
   }
@@ -150,19 +174,6 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "be able to save DF with reversed order columns to a Cassandra table" in {
-    conn.withSessionDo { session =>
-      session.execute(
-        s"""
-        |CREATE TABLE sql_ds_test.df_test(
-        |  customer_id int,
-        |  uri text,
-        |  browser text,
-        |  epoch bigint,
-        |  PRIMARY KEY (customer_id, epoch, uri)
-        |)
-      """.stripMargin.replaceAll("\n", " "))
-    }
-
     val test_df = Test(1400820884, "http://foobar", "Firefox", 123242)
 
     import sqlContext.implicits._
@@ -171,24 +182,12 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     df.write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "df_test", "keyspace" -> "sql_ds_test"))
+      .options(Map("table" -> "df_test", "keyspace" -> ks))
       .save()
-    cassandraTable(TableRef("df_test", "sql_ds_test")).collect() should have length 1
+    cassandraTable(TableRef("df_test", ks)).collect() should have length 1
   }
 
   it should "be able to save DF with partial columns to a Cassandra table" in {
-    conn.withSessionDo { session =>
-      session.execute(
-        s"""
-        |CREATE TABLE sql_ds_test.df_test2(
-        |  customer_id int,
-        |  uri text,
-        |  browser text,
-        |  epoch bigint,
-        |  PRIMARY KEY (customer_id, epoch)
-        |)
-      """.stripMargin.replaceAll("\n", " "))
-    }
     val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
 
     import sqlContext.implicits._
@@ -197,9 +196,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     df.write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "df_test2", "keyspace" -> "sql_ds_test"))
+      .options(Map("table" -> "df_test2", "keyspace" -> ks))
       .save()
-    cassandraTable(TableRef("df_test2", "sql_ds_test")).collect() should have length 1
+    cassandraTable(TableRef("df_test2", ks)).collect() should have length 1
   }
 }
 

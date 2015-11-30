@@ -18,7 +18,6 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
 
   "CassandraConnectorSource" should "be initialized when it was specified in metrics properties" in {
     val className = classOf[CassandraConnectorSource].getName
-    System.err.println(className)
     val metricsPropertiesContent =
       s"""
          |*.source.cassandra-connector.class=$className

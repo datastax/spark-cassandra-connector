@@ -173,6 +173,7 @@ object Artifacts {
 
   /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
   val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
+  val sparkRepl           = "org.apache.spark"        %% "spark-repl"            % Spark guavaExclude           // ApacheV2
   val sparkUnsafe         = "org.apache.spark"        %% "spark-unsafe"          % Spark guavaExclude           // ApacheV2
   val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark guavaExclude           // ApacheV2
   val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark sparkExclusions        // ApacheV2
@@ -234,6 +235,7 @@ object Dependencies {
   val jetty = Seq(Jetty.jettyServer, Jetty.jettyServlet)
 
   val testKit = Seq(
+    sparkRepl,
     Test.akkaTestKit,
     Test.commonsIO,
     Test.junit,
