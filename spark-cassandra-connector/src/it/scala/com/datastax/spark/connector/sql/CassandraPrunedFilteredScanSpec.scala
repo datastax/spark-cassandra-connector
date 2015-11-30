@@ -2,41 +2,42 @@ package com.datastax.spark.connector.sql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import org.apache.spark.Logging
 import org.apache.spark.sql.SQLContext
 
+import scala.concurrent.Future
+
 class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with Logging  {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
   val conn = CassandraConnector(defaultConf)
   val sqlContext: SQLContext = new SQLContext(sc)
 
-  val keyspace = "pss_spec"
   val cassandraFormat = "org.apache.spark.sql.cassandra"
 
   override def beforeAll(): Unit = {
     conn.withSessionDo { session =>
-      session.execute( s"""DROP KEYSPACE IF EXISTS "$keyspace"""")
-      session.execute(
-        s"""CREATE KEYSPACE IF NOT EXISTS "$keyspace" WITH REPLICATION =
-            |{ 'class': 'SimpleStrategy',
-            |'replication_factor': 1 }""".stripMargin)
+      createKeyspace(session)
 
-      session.execute(
-        s"""CREATE TABLE IF NOT EXISTS "$keyspace".colors
-            |(name TEXT, color TEXT, priority INT, PRIMARY KEY (name, priority)) """
-          .stripMargin)
-
-      session.execute(
-        s"""CREATE TABLE IF NOT EXISTS "$keyspace".fields
-            |(k INT, a TEXT, b TEXT, c TEXT, d TEXT, e TEXT, PRIMARY KEY (k)) """
-          .stripMargin)
+      awaitAll(
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.colors
+                |(name TEXT, color TEXT, priority INT, PRIMARY KEY (name, priority)) """
+                .stripMargin)
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.fields
+                |(k INT, a TEXT, b TEXT, c TEXT, d TEXT, e TEXT, PRIMARY KEY (k)) """
+                .stripMargin)
+        }
+      )
     }
   }
 
-  val colorOptions = Map("keyspace" -> keyspace, "table" -> "colors")
-  val fieldsOptions = Map("keyspace" -> keyspace, "table" -> "fields")
+  val colorOptions = Map("keyspace" -> ks, "table" -> "colors")
+  val fieldsOptions = Map("keyspace" -> ks, "table" -> "fields")
   val withPushdown = Map("pushdown" -> "true")
   val withoutPushdown = Map("pushdown" -> "false")
 

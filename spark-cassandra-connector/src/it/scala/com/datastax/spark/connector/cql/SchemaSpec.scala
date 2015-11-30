@@ -14,13 +14,12 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
+    createKeyspace(session)
+
     session.execute(
-      """CREATE KEYSPACE IF NOT EXISTS schema_test
-        |  WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }""".stripMargin)
+      s"""CREATE TYPE $ks.address (street varchar, city varchar, zip int)""")
     session.execute(
-      """CREATE TYPE schema_test.address (street varchar, city varchar, zip int)""")
-    session.execute(
-      """CREATE TABLE schema_test.test(
+      s"""CREATE TABLE $ks.test(
         |  k1 int,
         |  k2 varchar,
         |  k3 timestamp,
@@ -52,29 +51,29 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
 
   "A Schema" should {
     "allow to get a list of keyspaces" in {
-      schema.keyspaces.map(_.keyspaceName) should contain("schema_test")
+      schema.keyspaces.map(_.keyspaceName) should contain(ks)
     }
     "allow to look up a keyspace by name" in {
-      val ks = schema.keyspaceByName("schema_test")
-      ks.keyspaceName shouldBe "schema_test"
+      val keyspace = schema.keyspaceByName(ks)
+      keyspace.keyspaceName shouldBe ks
     }
   }
 
   "A KeyspaceDef" should {
     "allow to get a list of tables in the given keyspace" in {
-      val ks = schema.keyspaceByName("schema_test")
-      ks.tables.map(_.tableName).toSet shouldBe Set("test")
+      val keyspace = schema.keyspaceByName(ks)
+      keyspace.tables.map(_.tableName).toSet shouldBe Set("test")
     }
     "allow to look up a table by name" in {
-      val ks = schema.keyspaceByName("schema_test")
-      val table = ks.tableByName("test")
+      val keyspace = schema.keyspaceByName(ks)
+      val table = keyspace.tableByName("test")
       table.tableName shouldBe "test"
     }
   }
 
   "A TableDef" should {
-    val ks = schema.keyspaceByName("schema_test")
-    val table = ks.tableByName("test")
+    val keyspace = schema.keyspaceByName(ks)
+    val table = keyspace.tableByName("test")
 
     "allow to read column definitions by name" in {
       table.columnByName("k1").columnName shouldBe "k1"
