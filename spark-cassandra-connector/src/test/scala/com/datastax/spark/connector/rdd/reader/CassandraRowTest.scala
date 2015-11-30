@@ -25,6 +25,14 @@ class CassandraRowTest extends FunSuite with ShouldMatchers {
     assertEquals(1, row.size)
   }
 
+  test("NoneAccessTest") {
+    val row = new CassandraRow(Array("value"), Array(None))
+    assertEquals(None, row.getStringOption(0))
+    assertEquals(None, row.getStringOption("value"))
+    assertEquals(1, row.size)
+  }
+
+
   test("nullToStringTest") {
     val row = new CassandraRow(Array("value"), Array(null))
     assertEquals("CassandraRow{value: null}", row.toString())
