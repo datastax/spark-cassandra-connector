@@ -18,6 +18,8 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+
+1.4.1
  * Let UDTs be converted from GenericRows (SPARKC-271)
  * Map InetAddress and UUID to string and store it as StringType in Spark SQL (SPARKC-259)
  * VarInt Column is converted to decimal stored in Spark SQL (SPARKC-266)
