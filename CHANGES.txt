@@ -1,4 +1,4 @@
-1.5.0 M3 (unreleased)
+1.5.0 M3 
  * Added ColumRef child class to represent functions calls (SPARKC-280)
  * Warn if Keep_alive_ms is less than spark batch size in streaming (SPARKC-228)
  * Fixed real tests (SPARKC-247)
@@ -8,6 +8,7 @@
  * Changed the way CassandraConnectorSource is obtained due to SPARK-7171 (SPARKC-268)
  * Change write ConsistencyLevel to LOCAL_QUORUM (SPARKC-262)
  * Parallelize integration tests (SPARKC-293)
+ * Includes all patches up to 1.4.1.
 
 1.5.0 M2
  * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
