@@ -322,14 +322,8 @@ object TypeConverter {
       case x: LocalDate => new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))
     }
 
-    val utilDateToSqlDate: PartialFunction[Any, java.sql.Date] = {
-      DateConverter
-        .convertPF
-        .andThen(d => new java.sql.Date(d.getTime))
-    }
-
     //If there is no Local Date input we will use the normal date converter
-    def convertPF = shiftLocalDate orElse utilDateToSqlDate
+    def convertPF = shiftLocalDate orElse DateConverter.convertPF.andThen(d => new java.sql.Date(d.getTime))
   }
 
   private val JodaDateTypeTag = TypeTag.synchronized {
