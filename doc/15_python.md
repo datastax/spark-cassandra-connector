@@ -16,7 +16,8 @@ http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 ```bash
 ./bin/pyspark \
-  --packages com.datastax.spark:spark-cassandra-connector_2.10:1.4.0
+  --packages com.datastax.spark:spark-cassandra-connector_2.10:1.4.0 \
+  --conf spark.cassandra.connection.host=cassandra,nodes,seperated,by,comma
 ```
 
 ### Loading a DataFrame in Python
