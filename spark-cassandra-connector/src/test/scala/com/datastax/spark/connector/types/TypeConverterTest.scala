@@ -145,6 +145,22 @@ class TypeConverterTest {
   }
 
   @Test
+  def testSqlDate(): Unit = {
+    val c = TypeConverter.forType[java.sql.Date]
+
+    val targetDate = java.sql.Date.valueOf("2014-04-23")
+
+
+    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    val utilDate = dateFormat.parse("2014-04-23")
+
+    assertEquals(targetDate, c.convert(localDate))
+    assertEquals(targetDate, c.convert(utilDate))
+  }
+
+  @Test
   def testJodaTime() {
     val c = TypeConverter.forType[DateTime]
     val dateStr = "2014-04-23 11:21:32+0100"

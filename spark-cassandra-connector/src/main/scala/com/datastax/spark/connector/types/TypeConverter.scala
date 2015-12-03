@@ -2,6 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.util.concurrent.TimeUnit
 import java.util.{Calendar, GregorianCalendar, UUID, Date, TimeZone}
 
 import scala.collection.JavaConversions._
@@ -309,13 +310,26 @@ object TypeConverter {
 
   implicit object SqlDateConverter extends NullableTypeConverter[java.sql.Date] {
 
+    /* java.sql.Date assume that the internal timestamp is offset by the local timezone. This means
+    a direct conversion from LocalDate to java.sql.Date will actually change the Year-Month-Day
+    stored.
+     */
     def subtractTimeZoneOffset(millis: Long) = millis - defaultTimezone.getOffset(millis)
 
     def targetTypeTag = SqlDateTypeTag
 
-    def convertPF = PartialFunction[Any, java.sql.Date]{ case x: LocalDate =>
-      new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))}
-      .andThen(DateConverter.convertPF.andThen( d => new java.sql.Date(d.getTime)))
+    val shiftLocalDate: PartialFunction[Any, java.sql.Date] = {
+      case x: LocalDate => new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))
+    }
+
+    val utilDateToSqlDate: PartialFunction[Any, java.sql.Date] = {
+      DateConverter
+        .convertPF
+        .andThen(d => new java.sql.Date(d.getTime))
+    }
+
+    //If there is no Local Date input we will use the normal date converter
+    def convertPF = shiftLocalDate orElse utilDateToSqlDate
   }
 
   private val JodaDateTypeTag = TypeTag.synchronized {
@@ -428,12 +442,15 @@ object TypeConverter {
     def targetTypeTag = LocalDateTypeTag
     val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
 
+    /* java.sql.Date assume that the internal timestamp is offset by the local timezone. This means
+    a direct conversion from LocalDate to java.sql.Date will actually change the Year-Month-Day
+    stored. (See the SqlDate converter for the opposite adjustment)
+     */
     def addTimeZoneOffset(millis: Long) =  millis + defaultTimezone.getOffset(millis)
 
     def convertPF = {
       case x: LocalDate => x
-      case x: String => x match { case dateRegx(year,month,day) =>
-        LocalDate.fromYearMonthDay(year.toInt, month.toInt, day.toInt)}
+      case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
       case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
@@ -441,10 +458,9 @@ object TypeConverter {
   }
 
   object TimeTypeConverter extends NullableTypeConverter[java.lang.Long] {
-    val NANOS_TO_MILLIS = 1000000L
     def targetTypeTag = JavaLongTypeTag
     def convertPF = {
-      case x: Date => x.getTime * NANOS_TO_MILLIS
+      case x: Date => TimeUnit.MILLISECONDS.toNanos(x.getTime)
       case x: Long => x.toLong
     }
   }
