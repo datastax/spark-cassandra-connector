@@ -76,10 +76,8 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    */
   def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): TestType
 
-  val sparkConf = defaultSparkConf.clone()
-
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(sparkConf)
+  useSparkConf(defaultConf)
 
   lazy val sqlContext = new SQLContext(sc)
 

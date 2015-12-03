@@ -12,7 +12,7 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultSparkConf)
+  useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
 
