@@ -9,6 +9,8 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 
+import scala.concurrent.Future
+
 class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -21,23 +23,23 @@ class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
     counterCreateData()
   }
 
+  val keyspaceName = "counter_ks"
 
   def counterCreateData() = conn.withSessionDo{ session =>
-    val create_ks = "CREATE KEYSPACE IF NOT EXISTS counter_ks WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 }"
-    session.execute(create_ks)
+    createKeyspace(session, keyspaceName)
+
     session.execute("use counter_ks")
+
     val create_table = "CREATE TABLE IF NOT EXISTS counter_norm ( key bigint PRIMARY KEY, expectedkeys counter )"
     val create_table_cs = "CREATE TABLE IF NOT EXISTS counter_cs ( key bigint PRIMARY KEY, expectedkeys counter ) WITH COMPACT STORAGE"
     val create_table_write = "CREATE TABLE IF NOT EXISTS counter_write ( name text, key bigint , expectedkeys counter, PRIMARY KEY(name,key))"
     val create_table_multi_write = "CREATE TABLE IF NOT EXISTS counter_multi_write ( name text, key bigint , data1 counter, data2 counter, data3 counter, PRIMARY KEY(name,key))"
-    session.execute(create_table)
-    session.execute(create_table_cs)
-    session.execute(create_table_write)
-    session.execute(create_table_multi_write)
-    session.execute("TRUNCATE counter_multi_write")
-    session.execute("TRUNCATE counter_write")
-    session.execute("TRUNCATE counter_norm")
-    session.execute("TRUNCATE counter_cs")
+    awaitAll(
+      Future(session.execute(create_table)),
+      Future(session.execute(create_table_cs)),
+      Future(session.execute(create_table_write)),
+      Future(session.execute(create_table_multi_write))
+    )
     (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute("UPDATE counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?", x: java.lang.Long))}
     (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute("UPDATE counter_cs SET expectedkeys = expectedKeys + 1 WHERE key = ?", x: java.lang.Long))}
   }

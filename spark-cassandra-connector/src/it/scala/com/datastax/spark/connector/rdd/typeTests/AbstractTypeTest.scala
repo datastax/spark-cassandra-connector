@@ -1,16 +1,17 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-
-import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.spark.connector.writer.RowWriterFactory
-import org.apache.spark.sql.SQLContext
-
+import scala.concurrent.Future
 import scala.collection.JavaConverters._
 import scala.reflect._
+
+import org.apache.spark.sql.SQLContext
+
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory
+import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.writer.RowWriterFactory
+
 
 /**
  * A template class for testing that various CQL Types work with the spark Cassandra Connector
@@ -378,41 +379,44 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   def generateKsTable() = conn.withSessionDo { session =>
     val start = System.currentTimeMillis()
-    session.execute(s"""DROP KEYSPACE IF EXISTS $keyspaceName""")
+    createKeyspace(session, keyspaceName)
 
-    session.execute(
-      s"""CREATE KEYSPACE IF NOT EXISTS $keyspaceName
-         |with replication = {'class':'SimpleStrategy','replication_factor':'1'}""".stripMargin)
     session.execute(s"""USE $keyspaceName""")
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_dataframe
-         |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
-        .stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_normal
-         |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
-        .stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_collection
-         |(pkey $typeName,
-         |set1 set<$typeName>,
-         |list1 list<${typeName}>,
-         |map1 map<ascii,$typeName>,
-         |map2 map<$typeName, ascii>,
-         |PRIMARY KEY (pkey))""".stripMargin)
-
-    session.execute(
-      s"""CREATE TABLE IF NOT EXISTS ${typeName}_null
-         |(pkey $typeName,
-         |data1 $typeName,
-         |nulldata $typeName,
-         |nullset set<$typeName>,
-         |nulllist list<$typeName>,
-         |nullmap map<$typeName,$typeName>,
-         |PRIMARY KEY (pkey))""".stripMargin)
+    awaitAll(
+      Future{
+        session.execute(
+          s"""CREATE TABLE IF NOT EXISTS ${typeName}_dataframe
+            |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
+            .stripMargin)
+      },
+      Future{
+        session.execute(
+        s"""CREATE TABLE IF NOT EXISTS ${typeName}_normal
+          |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
+          .stripMargin)
+      },
+      Future {
+        session.execute(
+          s"""CREATE TABLE IF NOT EXISTS ${typeName}_collection
+            |(pkey $typeName,
+            |set1 set<$typeName>,
+            |list1 list<${typeName}>,
+            |map1 map<ascii,$typeName>,
+            |map2 map<$typeName, ascii>,
+            |PRIMARY KEY (pkey))""".stripMargin)
+      },
+      Future {
+        session.execute(
+          s"""CREATE TABLE IF NOT EXISTS ${typeName}_null
+            |(pkey $typeName,
+            |data1 $typeName,
+            |nulldata $typeName,
+            |nullset set<$typeName>,
+            |nulllist list<$typeName>,
+            |nullmap map<$typeName,$typeName>,
+            |PRIMARY KEY (pkey))""".stripMargin)
+      }
+    )
     val end = System.currentTimeMillis()
     println(s"Took ${end-start} ms to setup tables")
   }
