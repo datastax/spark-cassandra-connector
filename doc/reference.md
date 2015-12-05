@@ -241,6 +241,13 @@ in each row</td>
   <td>Consistency level for writing</td>
 </tr>
 <tr>
+  <td><code>output.ignoreNulls</code></td>
+  <td>false</td>
+  <td> In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
+this to true will cause all null values to be left as unset rather than bound. For
+finer control see the CassandraOption class</td>
+</tr>
+<tr>
   <td><code>output.metrics</code></td>
   <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
