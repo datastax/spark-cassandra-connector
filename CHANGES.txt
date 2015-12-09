@@ -12,6 +12,7 @@
  * Changed the way CassandraConnectorSource is obtained due to SPARK-7171 (SPARKC-268)
  * Change write ConsistencyLevel to LOCAL_QUORUM (SPARKC-262)
  * Parallelize integration tests (SPARKC-293)
+ * Includes all patches up to 1.4.1.
 
 1.5.0 M2
  * Bump Java Driver to 2.2.0-rc3, Guava to 16.0.1 and test against Cassandra 2.2.1 (SPARKC-229)
@@ -22,6 +23,8 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+
+1.4.1
  * Let UDTs be converted from GenericRows (SPARKC-271)
  * Map InetAddress and UUID to string and store it as StringType in Spark SQL (SPARKC-259)
  * VarInt Column is converted to decimal stored in Spark SQL (SPARKC-266)
@@ -29,6 +32,7 @@
  * Fix merge strategy for netty.io.properties (SPARKC-249)
  * Upgrade integration tests to use Cassandra 2.1.9 and upgrade Java Driver 
    to 2.1.7.1, Spark to 1.4.1 (SPARKC-248)
+ * Make OptionConverter handle Nones as well as nulls (SPARKC-275)
 
 1.4.0
  * Fixed broken integration tests (SPARKC-247):
@@ -117,6 +121,9 @@
  * Added support to use aliases with Tuples (SPARKC-125)
 
 ********************************************************************************
+
+ * Fixed Default ReadConf for JoinWithCassandra Table (SPARKC-294)
+ * Added refresh cassandra schema cache to CassandraSQLContext (SPARKC-234)
 
 1.2.5
  * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)

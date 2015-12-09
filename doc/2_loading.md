@@ -210,6 +210,10 @@ val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
 //or since 1.3.0 val rdd: DataFrame = ...
 ```
 
+### Refresh local Cassandra table schema cache
+`CassandraSQLContext` caches Cassandra table schema locally. The cache expires in 10 minutes by default. It can be manually 
+refreshed by calling `cassandraSQLContext.refreshCassandraSchema()` when a Cassandra table schema changes and user can't
+wait for the cache expires automatically.
 
 ## Performing Efficient Joins With Cassandra Tables (since 1.2)
 ### Repartitioning RDDs based on a Cassandra Table's Replication
