@@ -28,7 +28,7 @@ case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  useSparkConf(defaultConf)
+  useSparkConf(defaultSparkConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
   val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
@@ -293,6 +293,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     }
     val result = someCass.collect
     checkArrayCassandraRow(result)
+  }
+
+  it should "use the ReadConf from the SparkContext by default" in {
+    val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
+    val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
+    someCass.readConf.consistencyLevel should be (com.datastax.driver.core.ConsistencyLevel.ONE)
   }
 
   it should "be joinable on both partitioning key and clustering key" in {
