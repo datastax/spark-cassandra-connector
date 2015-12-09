@@ -96,6 +96,9 @@
 
 ********************************************************************************
 
+ * Fixed Default ReadConf for JoinWithCassandra Table (SPARKC-294)
+ * Added refresh cassandra schema cache to CassandraSQLContext (SPARKC-234)
+
 1.2.5
  * Changed default query timeout from 12 seconds to 2 minutes (SPARKC-220)
  * Add a configurable delay between subsequent query retries (SPARKC-221)
