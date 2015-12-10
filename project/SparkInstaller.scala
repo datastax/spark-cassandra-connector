@@ -164,7 +164,7 @@ object SparkInstaller {
 
   def apply(scalaVersion: String, dir: Path): Unit = {
     val version = Versions.Spark
-    if (isGitVersion(version)) {
+    if (isGitVersion(version) && !Versions.doNotInstallSpark) {
       getAndInstallSpark(version, scalaVersion, force, dir)
     }
   }

@@ -52,7 +52,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
     executionPlan should include ("PushedFilter: [GreaterThan(priority,5)]")
   }
 
-  it should "not pushdown predicates for clustering keys if filterPushdown is disabled" in {
+  ignore should "not pushdown predicates for clustering keys if filterPushdown is disabled" in {
     val colorDF = sqlContext.read.format(cassandraFormat).options(colorOptions ++ withoutPushdown).load()
     val executionPlan = colorDF.filter("priority > 5").queryExecution.executedPlan.toString
     executionPlan should include regex """Filter \(priority#\d+ > 5\)""".r
