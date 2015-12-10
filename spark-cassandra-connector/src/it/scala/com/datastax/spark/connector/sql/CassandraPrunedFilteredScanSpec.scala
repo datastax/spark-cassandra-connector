@@ -49,7 +49,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   "CassandraPrunedFilteredScan" should "pushdown predicates for clustering keys" in {
     val colorDF = sqlContext.read.format(cassandraFormat).options(colorOptions ++ withPushdown).load()
     val executionPlan = colorDF.filter("priority > 5").queryExecution.executedPlan.toString
-    executionPlan should include ("PushedFilter: [GreaterThan(priority,5)]")
+    executionPlan should include ("PushedFilters: [GreaterThan(priority,5)]")
   }
 
   it should "not pushdown predicates for clustering keys if filterPushdown is disabled" in {
@@ -61,13 +61,13 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   it should "prune data columns" in {
     val fieldsDF = sqlContext.read.format(cassandraFormat).options(fieldsOptions ++ withPushdown).load()
     val executionPlan = fieldsDF.select("b","c","d").queryExecution.executedPlan.toString
-    executionPlan should include regex """PushedFilter: \[\] \[b#\d+,c#\d+,d#\d+\]""".r
+    executionPlan should include regex """CassandraSourceRelation.*\[b#\d+,c#\d+,d#\d+\]""".r
   }
 
   it should "prune data columns if filterPushdown is disabled" in {
     val fieldsDF = sqlContext.read.format(cassandraFormat).options(fieldsOptions ++ withoutPushdown).load()
     val executionPlan = fieldsDF.select("b","c","d").queryExecution.executedPlan.toString
-    executionPlan should include regex """PushedFilter: \[\] \[b#\d+,c#\d+,d#\d+\]""".r
+    executionPlan should include regex """CassandraSourceRelation.*\[b#\d+,c#\d+,d#\d+\]""".r
   }
 
 }
