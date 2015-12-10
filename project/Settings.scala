@@ -74,6 +74,7 @@ object Settings extends Build {
   var TEST_ENV: Option[Map[String, String]] = None
 
   val asfSnapshotsResolver = "ASF Snapshots" at "https://repository.apache.org/content/groups/snapshots"
+  val asfStagingResolver = "ASF Staging" at "https://repository.apache.org/content/groups/staging"
 
   def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
 
@@ -87,7 +88,7 @@ object Settings extends Build {
 
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := s"1.5.0-M4$versionSuffix",
+    version in ThisBuild := s"1.6.0-M1$versionSuffix",
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
@@ -190,7 +191,7 @@ object Settings extends Build {
       val dir = new File(".").toPath
       SparkInstaller(scalaBinaryVersion.value, dir)
     },
-    resolvers ++= Seq(mavenLocalResolver, asfSnapshotsResolver),
+    resolvers ++= Seq(mavenLocalResolver, asfStagingResolver, asfSnapshotsResolver),
     update <<= (installSparkTask, update) map {(_, out) => out}
   )
 
