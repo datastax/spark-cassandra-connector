@@ -152,6 +152,9 @@ the `StructType` schema of the DataFrame. This is convenient for persisting a Da
 when the schema of the DataFrame is not known (fully or at all) ahead of time (at compile time of your application).
 Once the new table is created, you can persist the DataFrame to the new table using the save function described above.
 
+The partition key and clustering key of the newly generated table can be set by passing in a list of 
+names of columns which should be used as partition key and clustering key.
+
 Example Transform DataFrame and Save to New Table
 ```scala
 // Add spark connector specific methods to DataFrame
@@ -164,7 +167,11 @@ val df = sqlContext
   .load()
 
 val renamed = df.withColumnRenamed("col1", "newcolumnname")
-renamed.createCassandraTable("test", "renamed")
+renamed.createCassandraTable(
+    "test", 
+    "renamed", 
+    partitionKeyColumns = Some(Seq("user")), 
+    clusteringKeyColumns = Some(Seq("newcolumnname")))
 
 renamed.write
   .format("org.apache.spark.sql.cassandra")

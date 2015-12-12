@@ -4,9 +4,15 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
-import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, FloatType => SparkSqlFloatType,
-    DoubleType => SparkSqlDoubleType, TimestampType => SparkSqlTimestampType, DateType => SparkSqlDateType,
-    MapType => SparkSqlMapType, DecimalType => SparkSqlDecimalType, _}
+import org.apache.spark.sql.types.{
+  BooleanType => SparkSqlBooleanType,
+  FloatType => SparkSqlFloatType,
+  DoubleType => SparkSqlDoubleType,
+  TimestampType => SparkSqlTimestampType,
+  DateType => SparkSqlDateType,
+  MapType => SparkSqlMapType,
+  DecimalType => SparkSqlDecimalType,
+  _}
 
 import scala.reflect.runtime.universe._
 import org.scalatest.{WordSpec, GivenWhenThen, Matchers}
@@ -125,7 +131,7 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
         assert (ColumnType.fromSparkSqlType(SparkSqlDoubleType) === DoubleType)
       }
       "given a DecimalType should return DecimalType" in {
-        assert (ColumnType.fromSparkSqlType(SparkSqlDecimalType(None)) === DecimalType)
+        assert (ColumnType.fromSparkSqlType(SparkSqlDecimalType(10,0)) === DecimalType)
       }
       "given a StringType should return VarcharType" in {
         assert (ColumnType.fromSparkSqlType(StringType) === VarCharType)
