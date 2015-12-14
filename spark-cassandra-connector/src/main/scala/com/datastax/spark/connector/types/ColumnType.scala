@@ -10,9 +10,14 @@ import com.datastax.spark.connector.util.Symbols
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.sql.types.{DataType => SparkSqlDataType, FloatType => SparkSqlFloatType,
-    DoubleType => SparkSqlDoubleType, DecimalType => SparkSqlDecimalType, BooleanType => SparkSqlBooleanType,
-    TimestampType => SparkSqlTimestampType, MapType => SparkSqlMapType, _}
+import org.apache.spark.sql.types.{
+  DataType => SparkSqlDataType,
+  FloatType => SparkSqlFloatType,
+  DoubleType => SparkSqlDoubleType,
+  DecimalType => SparkSqlDecimalType,
+  BooleanType => SparkSqlBooleanType,
+  TimestampType => SparkSqlTimestampType,
+  MapType => SparkSqlMapType, _}
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
