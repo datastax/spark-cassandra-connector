@@ -2,8 +2,6 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf
-
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Try
@@ -11,7 +9,7 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{Logging, SparkConf}
 
-import com.datastax.driver.core.{ProtocolOptions, SSLOptions}
+import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
 
 /** Stores configuration of a connection to Cassandra.
@@ -46,7 +44,7 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    enabledAlgorithms: Set[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES.toSet
+    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
   )
 
   trait RetryDelayConf {

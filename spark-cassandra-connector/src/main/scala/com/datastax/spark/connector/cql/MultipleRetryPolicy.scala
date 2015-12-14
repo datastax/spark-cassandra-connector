@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.driver.core.exceptions.DriverException
 import com.datastax.driver.core.policies.RetryPolicy
 import com.datastax.driver.core.policies.RetryPolicy.RetryDecision
 import com.datastax.driver.core.{ConsistencyLevel, Statement, WriteType}
@@ -33,4 +34,8 @@ class MultipleRetryPolicy(maxRetryCount: Int, retryDelay: CassandraConnectorConf
   override def onWriteTimeout(stmt: Statement, cl: ConsistencyLevel, writeType: WriteType,
                               requiredAcks: Int, receivedAcks: Int, nbRetry: Int) = retryOrThrow(cl, nbRetry)
 
+  override def onRequestError(stmt: Statement,
+      cl: ConsistencyLevel,
+      ex: DriverException,
+      nbRetry: Int): RetryDecision = retryOrThrow(cl, nbRetry)
 }

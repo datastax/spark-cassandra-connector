@@ -30,7 +30,7 @@ object Versions {
 
   val Akka            = "2.3.4"
   val Cassandra       = "2.2.2"
-  val CassandraDriver = "3.0.0-alpha4"
+  val CassandraDriver = "3.0.0-beta1"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
   val Config          = "1.2.1"
@@ -56,7 +56,7 @@ object Versions {
   // and install in a local Maven repository. This is all done automatically, however it will work
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
-  val Spark           = "v1.6.0-rc1"
+  val Spark           = "1.6.0-rc2"
   val SparkJetty      = "8.1.14.v20131031"
   val JSR166e         = "1.1.0"
   val Airlift         = "0.6"
