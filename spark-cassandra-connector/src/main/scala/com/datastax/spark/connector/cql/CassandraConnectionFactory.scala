@@ -8,7 +8,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{Cluster, SSLOptions, SocketOptions}
+import com.datastax.driver.core.{JdkSSLOptions, Cluster, SSLOptions, SocketOptions}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 
@@ -76,7 +76,10 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
         val context = SSLContext.getInstance(conf.protocol)
         context.init(null, tmf.getTrustManagers, new SecureRandom)
-        new SSLOptions(context, conf.enabledAlgorithms.toArray)
+        JdkSSLOptions.builder()
+          .withSSLContext(context)
+          .withCipherSuites(conf.enabledAlgorithms.toArray)
+          .build()
     }
   }
 
