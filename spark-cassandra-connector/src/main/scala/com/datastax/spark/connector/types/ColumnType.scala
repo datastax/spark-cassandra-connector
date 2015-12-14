@@ -53,7 +53,9 @@ object ColumnType {
     DataType.uuid() -> UUIDType,
     DataType.timeuuid() -> TimeUUIDType,
     DataType.blob() -> BlobType,
-    DataType.counter() -> CounterType
+    DataType.counter() -> CounterType,
+    DataType.date() -> DateType,
+    DataType.time() -> TimeType
   )
 
   /** Makes sure the sequence does not contain any lazy transformations.

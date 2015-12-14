@@ -7,6 +7,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
+import com.datastax.driver.core.LocalDate
+
 trait PrimitiveColumnType[T] extends ColumnType[T] {
   def isCollection = false
 }
@@ -135,4 +137,23 @@ case object BlobType extends PrimitiveColumnType[ByteBuffer] {
   def cqlTypeName = "blob"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.nio.ByteBuffer])
+}
+
+case object DateType extends PrimitiveColumnType[Int] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Int]] }
+  def cqlTypeName = "date"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[LocalDate])
+}
+
+/* The implicit conversions we usually do between types will not work as expected here, Since the
+time representation is stored as nanoseconds from midnight (epoch) we need to make sure any
+translations of Types take this into account. In particular we need to be careful of reading this
+time out and converting it to Dates since they will be off by a factor of a million.
+ */
+case object TimeType extends PrimitiveColumnType[Long] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Long]]}
+  def cqlTypeName = "time"
+  def converterToCassandra =
+    new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
 }
