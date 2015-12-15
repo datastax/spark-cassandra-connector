@@ -139,8 +139,8 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
       "given a TimestampType should return TimestampType" in {
         assert (ColumnType.fromSparkSqlType(SparkSqlTimestampType) === TimestampType)
       }
-      "given a DateType should return TimestampType" in {
-        assert (ColumnType.fromSparkSqlType(SparkSqlDateType) === TimestampType)
+      "given a SparkSqlDateType should return DateType" in {
+        assert (ColumnType.fromSparkSqlType(SparkSqlDateType) === DateType)
       }
       "given a BinaryType should return BlobType" in {
         assert (ColumnType.fromSparkSqlType(BinaryType) === BlobType)
@@ -148,9 +148,9 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
       "given a ArrayType(String) should return ListType(VarcharType)" in {
         assert (ColumnType.fromSparkSqlType(ArrayType(StringType)) === ListType(VarCharType))
       }
-      "given a MapType(IntegerType, DateType) should return MapType(IntType, TimestampType)" in {
+      "given a MapType(IntegerType, SparkSqlDateType) should return MapType(IntType, DateTypeType)" in {
         assert (ColumnType.fromSparkSqlType(SparkSqlMapType(IntegerType, SparkSqlDateType))
-            === MapType(IntType, TimestampType))
+            === MapType(IntType, DateType))
       }
     }
   }

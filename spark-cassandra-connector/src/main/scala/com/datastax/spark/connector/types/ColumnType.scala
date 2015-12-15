@@ -12,6 +12,7 @@ import scala.reflect.runtime.universe._
 
 import org.apache.spark.sql.types.{
   DataType => SparkSqlDataType,
+  DateType => SparkSqlDateType,
   FloatType => SparkSqlFloatType,
   DoubleType => SparkSqlDoubleType,
   DecimalType => SparkSqlDecimalType,
@@ -109,7 +110,7 @@ object ColumnType {
       case BinaryType => BlobType
       case SparkSqlBooleanType => BooleanType
       case SparkSqlTimestampType => TimestampType
-      case DateType => TimestampType
+      case SparkSqlDateType => DateType
       case SparkSqlDecimalType() => DecimalType
       case ArrayType(sparkSqlElementType, containsNull) =>
         val argType = fromSparkSqlType(sparkSqlElementType)
