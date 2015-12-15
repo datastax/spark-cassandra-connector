@@ -34,7 +34,9 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 <tr>
   <td><code>connection.host</code></td>
   <td>localhost</td>
-  <td>Contact point to connect to the Cassandra cluster</td>
+  <td>Contact point to connect to the Cassandra cluster. A comma seperated list
+may also be used. ("127.0.0.1,192.168.0.1")
+      </td>
 </tr>
 <tr>
   <td><code>connection.keep_alive_ms</code></td>

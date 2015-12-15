@@ -21,6 +21,9 @@ val conf = new SparkConf(true)
 val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 ```
 
+Multiple hosts can be passed in using a comma separated list ("127.0.0.1,127.0.0.2"). These are the initial
+contact points only, all nodes in the local DC will be used upon connecting. 
+
 See the reference secition for a full list of options
 [Cassandra Connection Parameters](reference.md#cassandra-connection-parameters)
 

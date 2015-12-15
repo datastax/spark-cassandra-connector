@@ -110,7 +110,10 @@ object CassandraConnectorConf extends Logging {
     name = "spark.cassandra.connection.host",
     section = ReferenceSection,
     default = "localhost",
-    description = """Contact point to connect to the Cassandra cluster""")
+    description =
+      """Contact point to connect to the Cassandra cluster. A comma seperated list
+        |may also be used. ("127.0.0.1,192.168.0.1")
+      """.stripMargin)
 
   val ConnectionPortParam = ConfigParameter[Int](
     name = "spark.cassandra.connection.port",

@@ -30,7 +30,7 @@ import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
   * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
   * can be either given explicitly or automatically configured from [[org.apache.spark.SparkConf SparkConf]].
   * The connection options are:
-  *   - `spark.cassandra.connection.host`:               contact point to connect to the Cassandra cluster, defaults to spark master host
+  *   - `spark.cassandra.connection.host`:               contact points to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.port`:               Cassandra native port, defaults to 9042
   *   - `spark.cassandra.connection.factory`:            name of a Scala module or class implementing [[CassandraConnectionFactory]] that allows to plugin custom code for connecting to Cassandra
   *   - `spark.cassandra.connection.keep_alive_ms`:      how long to keep unused connection before closing it (default 250 ms)
