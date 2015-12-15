@@ -162,9 +162,9 @@ cqlsh> Select * from ks.collections_mod where key = 1
 ```
 
 ## Saving objects of Cassandra User Defined Types
-To save structures consisting of many fields, use `com.datastax.spark.connector.UDTValue`
-class. An instance of this class can be easily obtained from a Scala `Map` by calling `fromMap`
-factory method.
+To save structures consisting of many fields, use a Case Class or a 
+`com.datastax.spark.connector.UDTValue` class. An instance of this class can be easily obtained 
+from a Scala `Map` by calling `fromMap` factory method.
 
 Assume the following table definition:
 ```sql
@@ -172,7 +172,15 @@ CREATE TYPE test.address (city text, street text, number int);
 CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
 ```
 
-To create a new row in the `test.companies` table:
+You can use a case class to insert into the UDT like
+```scala
+case class Address(street: String, city: String, zip: Int)
+val address = Address(city = "Oakland", zip = 90210, street = "Broadway")
+val col = Seq((1, "Joe", address))
+sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+```
+
+Or use `UDTValue`'s `fromMap` to create the UDT before inserting:
 ```scala
 import com.datastax.spark.connector.UDTValue
 case class Company(name: String, address: UDTValue)

@@ -19,6 +19,7 @@ case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
 case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp: Long)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class ClassWithWeirdProps(devil: String, cat: Int, value: String)
+case class Address(street: String, city: String, zip: Int)
 
 class SuperKeyValue(val key: Int, val value: String) extends Serializable
 
@@ -310,6 +311,23 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       result should have size 1
       for (row <- result)
         row.getString(2) shouldEqual "foo"
+    }
+  }
+
+  it should "write values of user-defined-types from case classes into Cassandra" in {
+    val address = Address(city = "Oakland", zip = 90210, street = "Broadway")
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2).getString("city") shouldEqual "Oakland"
+        row.getUDTValue(2).getInt("zip") shouldEqual 90210
+      }
     }
   }
 
