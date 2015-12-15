@@ -2,6 +2,7 @@ package com.datastax.spark
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DataFrame
 
 import scala.language.implicitConversions
 
@@ -57,6 +58,9 @@ package object connector {
 
   implicit def toRDDFunctions[T](rdd: RDD[T]): RDDFunctions[T] =
     new RDDFunctions(rdd)
+
+  implicit def toDataFrameFunctions(dataFrame: DataFrame): DataFrameFunctions =
+    new DataFrameFunctions(dataFrame)
 
   implicit def toPairRDDFunctions[K, V](rdd: RDD[(K, V)]): PairRDDFunctions[K, V] =
     new PairRDDFunctions(rdd)
