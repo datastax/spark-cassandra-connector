@@ -3,6 +3,7 @@ package com.datastax.spark.connector.types
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.{GregorianCalendar, Date, UUID}
 import org.apache.commons.lang3.SerializationUtils
@@ -12,6 +13,8 @@ import org.junit.Test
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
+
+import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.testkit._
 
 class TypeConverterTest {
@@ -130,9 +133,31 @@ class TypeConverterTest {
   def testDate() {
     val c = TypeConverter.forType[Date]
     val dateStr = "2014-04-23 11:21:32+0100"
+    val dayOnlyStr = "2014-04-23 0:0:0+0000"
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+
     val date = dateFormat.parse(dateStr)
+    val dateDayOnly = dateFormat.parse(dayOnlyStr)
+
+    assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(date, c.convert(dateStr))
+  }
+
+  @Test
+  def testSqlDate(): Unit = {
+    val c = TypeConverter.forType[java.sql.Date]
+
+    val targetDate = java.sql.Date.valueOf("2014-04-23")
+
+
+    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    val utilDate = dateFormat.parse("2014-04-23")
+
+    assertEquals(targetDate, c.convert(localDate))
+    assertEquals(targetDate, c.convert(utilDate))
   }
 
   @Test
@@ -186,6 +211,27 @@ class TypeConverterTest {
     buf.rewind()
     assertSame(array, c.convert(array))
     assertEquals(array.deep, c.convert(buf).deep)
+  }
+
+  @Test
+  def testLocalDate(): Unit = {
+    val c = TypeConverter.forType[LocalDate]
+    val testDate = LocalDate.fromYearMonthDay(1985, 8, 3)
+    val dateFormat = new SimpleDateFormat("yyyy-MM-ddZ")
+    val date = dateFormat.parse("1985-08-03-0000")
+    assertEquals(testDate, c.convert("1985-08-03"))
+    assertEquals(testDate, c.convert(5693))
+    assertEquals(testDate, c.convert(date))
+    assertEquals(testDate, c.convert(java.sql.Date.valueOf("1985-08-03")))
+  }
+
+  @Test
+  def testTimeType(): Unit = {
+    val c = TypeConverter.TimeTypeConverter
+    val targetTime = 1482000000L
+    val date = new Date(1482)
+    assertEquals(targetTime, c.convert(targetTime))
+    assertEquals(targetTime, c.convert(date))
   }
 
   @Test

@@ -2,11 +2,14 @@ package com.datastax.spark.connector.sql
 
 import java.io.IOException
 
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra
+
 import org.apache.spark.sql.SQLContext
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
@@ -101,6 +104,27 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       .load()
 
     dfCopy.count() should be (1000)
+  }
+
+  it should " be able to create a C* schema from a table" in {
+     val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+
+    df.createCassandraTable(ks, "kv_auto", Some(Seq("v")), Some(Seq("k")))
+
+    val meta = conn.withClusterDo(_.getMetadata)
+    val autoTableMeta = meta.getKeyspace(ks).getTable("kv_auto")
+    autoTableMeta.getPartitionKey.map(_.getName) should contain ("v")
+    autoTableMeta.getClusteringColumns.map(_.getName) should contain ("k")
+
   }
 
   it should " provide error out with a sensible message when a table can't be found" in {

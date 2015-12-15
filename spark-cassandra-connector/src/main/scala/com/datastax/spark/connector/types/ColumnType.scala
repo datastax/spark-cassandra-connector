@@ -10,6 +10,16 @@ import com.datastax.spark.connector.util.Symbols
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
+import org.apache.spark.sql.types.{
+  DataType => SparkSqlDataType,
+  DateType => SparkSqlDateType,
+  FloatType => SparkSqlFloatType,
+  DoubleType => SparkSqlDoubleType,
+  DecimalType => SparkSqlDecimalType,
+  BooleanType => SparkSqlBooleanType,
+  TimestampType => SparkSqlTimestampType,
+  MapType => SparkSqlMapType, _}
+
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
 
@@ -53,7 +63,9 @@ object ColumnType {
     DataType.uuid() -> UUIDType,
     DataType.timeuuid() -> TimeUUIDType,
     DataType.blob() -> BlobType,
-    DataType.counter() -> CounterType
+    DataType.counter() -> CounterType,
+    DataType.date() -> DateType,
+    DataType.time() -> TimeType
   )
 
   /** Makes sure the sequence does not contain any lazy transformations.
@@ -79,6 +91,36 @@ object ColumnType {
       case (userType: DriverUserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
       case (tupleType: DriverTupleType, _) => TupleType(fields(tupleType): _*)
       case _ => primitiveTypeMap(dataType)
+    }
+  }
+
+  /** Returns natural Cassandra type for representing data of the given Spark SQL type */
+  def fromSparkSqlType(dataType: SparkSqlDataType): ColumnType[_] = {
+
+    def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
+
+    dataType match {
+      case ByteType => IntType
+      case ShortType => IntType
+      case IntegerType => IntType
+      case LongType => BigIntType
+      case SparkSqlFloatType => FloatType
+      case SparkSqlDoubleType => DoubleType
+      case StringType => VarCharType
+      case BinaryType => BlobType
+      case SparkSqlBooleanType => BooleanType
+      case SparkSqlTimestampType => TimestampType
+      case SparkSqlDateType => DateType
+      case SparkSqlDecimalType() => DecimalType
+      case ArrayType(sparkSqlElementType, containsNull) =>
+        val argType = fromSparkSqlType(sparkSqlElementType)
+        ListType(argType)
+      case SparkSqlMapType(sparkSqlKeyType, sparkSqlValueType, containsNull) =>
+        val keyType = fromSparkSqlType(sparkSqlKeyType)
+        val valueType = fromSparkSqlType(sparkSqlValueType)
+        MapType(keyType, valueType)
+      case _ =>
+        unsupportedType()
     }
   }
 
