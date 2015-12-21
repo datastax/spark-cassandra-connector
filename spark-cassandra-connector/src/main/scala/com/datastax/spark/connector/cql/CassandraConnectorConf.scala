@@ -46,7 +46,7 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    enabledAlgorithms: Set[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES.toSet
+    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
   )
 
   trait RetryDelayConf {

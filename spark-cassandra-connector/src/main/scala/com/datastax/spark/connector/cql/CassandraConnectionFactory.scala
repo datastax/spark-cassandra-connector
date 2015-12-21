@@ -4,13 +4,12 @@ import java.io.FileInputStream
 import java.security.{KeyStore, SecureRandom}
 import javax.net.ssl.{SSLContext, TrustManagerFactory}
 
-import org.apache.commons.io.IOUtils
-import org.apache.spark.SparkConf
-
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{Cluster, SSLOptions, SocketOptions}
+import com.datastax.driver.core.{Cluster, JdkSSLOptions, SSLOptions, SocketOptions}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
+import org.apache.commons.io.IOUtils
+import org.apache.spark.SparkConf
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -76,7 +75,10 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
         val context = SSLContext.getInstance(conf.protocol)
         context.init(null, tmf.getTrustManagers, new SecureRandom)
-        new SSLOptions(context, conf.enabledAlgorithms.toArray)
+        JdkSSLOptions.builder()
+            .withSSLContext(context)
+            .withCipherSuites(conf.enabledAlgorithms.toArray)
+            .build()
     }
   }
 
