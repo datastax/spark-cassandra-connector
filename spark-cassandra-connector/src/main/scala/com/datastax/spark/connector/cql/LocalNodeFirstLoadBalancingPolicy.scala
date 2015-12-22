@@ -60,9 +60,10 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
 
   private def tokenAwareQueryPlan(keyspace: String, statement: Statement): JIterator[Host] = {
     assert(keyspace != null)
-    assert(statement.getRoutingKey != null)
+    assert(statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) != null)
 
-    val replicas = findReplicas(keyspace, statement.getRoutingKey)
+    val replicas = findReplicas(keyspace,
+      statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE))
     val (localReplica, otherReplicas) = replicas.partition(isLocalHost)
     lazy val maybeShuffled = if (shuffleReplicas) random.shuffle(otherReplicas.toIndexedSeq) else otherReplicas
 
@@ -75,7 +76,8 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
   override def newQueryPlan (loggedKeyspace: String, statement: Statement): JIterator[Host] = {
     val keyspace = if (statement.getKeyspace == null) loggedKeyspace else statement.getKeyspace
 
-    if (statement.getRoutingKey == null || keyspace == null)
+    if (statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) == null
+        || keyspace == null)
       tokenUnawareQueryPlan(keyspace, statement)
     else
       tokenAwareQueryPlan(keyspace, statement)

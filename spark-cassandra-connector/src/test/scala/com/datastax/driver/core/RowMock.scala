@@ -11,7 +11,8 @@ class RowMock(columnSizes: Option[Int]*)
   }.toArray
 
   val defs = new ColumnDefinitions(
-    columnSizes.map(i => new ColumnDefinitions.Definition("ks", "tab", s"c$i", DataType.text())).toArray)
+    columnSizes.map(i => new ColumnDefinitions.Definition("ks", "tab", s"c$i", DataType.text())).toArray,
+    getCodecRegistry)
 
   override def getColumnDefinitions: ColumnDefinitions = defs
 
@@ -37,5 +38,5 @@ class RowMock(columnSizes: Option[Int]*)
 
   override def getName(i: Int): String = ???
 
-  override def getCodecRegistry = ???
+  override def getCodecRegistry = CodecRegistry.DEFAULT_INSTANCE
 }
