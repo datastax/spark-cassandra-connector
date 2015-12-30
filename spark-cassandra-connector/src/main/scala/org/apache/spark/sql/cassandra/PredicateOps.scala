@@ -5,9 +5,9 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.sources.Filter
 
-/** A unified API for predicates, used by [[PredicatePushDown]].
+/** A unified API for predicates, used by [[BasicCassandraPredicatePushDown]].
   *
-  * Keeps all the Spark-specific stuff out of `PredicatePushDown`
+  * Keeps all the Spark-specific stuff out of `BasicCassandraPredicatePushDown`
   * It is also easy to plug-in custom predicate implementations for unit-testing.
   */
 trait PredicateOps[Predicate] {
@@ -32,7 +32,7 @@ trait PredicateOps[Predicate] {
 /** Provides `PredicateOps` adapters for Expression and Filter classes */
 object PredicateOps {
 
-  /** Adapts the API of Catalyst `Expression` to the API expected by `PredicatePushDown` */
+  /** Adapts the API of Catalyst `Expression` to the API expected by `BasicCassandraPredicatePushDown` */
   implicit object ExpressionOps extends PredicateOps[Expression] {
 
     override def columnName(p: Expression): String = {
@@ -59,7 +59,7 @@ object PredicateOps {
 
   }
 
-  /** Adapts the API of Catalyst `Filter` to the API expected by `PredicatePushDown` */
+  /** Adapts the API of Catalyst `Filter` to the API expected by `BasicCassandraPredicatePushDown` */
   implicit object FilterOps extends PredicateOps[Filter] {
 
     override def columnName(p: Filter): String = p match {

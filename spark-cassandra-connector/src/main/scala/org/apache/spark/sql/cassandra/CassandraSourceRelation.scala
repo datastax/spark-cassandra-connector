@@ -92,18 +92,32 @@ private[cassandra] class CassandraSourceRelation(
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
     case true =>
-      (filters.toSet -- new PredicatePushDown(filters.toSet, tableDef).predicatesToPushDown).toArray
+      predicatePushDown(filters).handledBySpark.toArray
     case fasle => filters
+  }
+
+  private def predicatePushDown(filters: Array[Filter]) = {
+    logInfo(s"Input Predicates: ${filters.mkString(", ")}")
+    /** Apply built in rules **/
+    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef)
+    val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
+    logInfo(s"Basic Rules Applied: $basicPushdown")
+
+    /** Apply any user defined rules **/
+    val additionalRules: List[CassandraPredicateRules] = List.empty
+    val finalPushdown =  additionalRules.foldRight(basicPushdown)(
+      (rules, pushdowns) => rules.applyRules(pushdowns, tableDef)
+    )
+    logInfo(s"Final pushdown filters: $finalPushdown")
+
+    finalPushdown
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
-    logInfo(s"filters: ${filters.mkString(", ")}")
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val filterPushdown = new PredicatePushDown(filters.toSet, tableDef)
-        val pushdownFilters = filterPushdown.predicatesToPushDown.toSeq
-        logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
+        val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
         val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
         filteredRdd.asInstanceOf[RDD[Row]]
       } else {
