@@ -1,4 +1,6 @@
  * Fixed assembly build (SPARKC-311)
+ * Upgrade Cassandra version to 3.0.2 by default and allow to specify arbitrary Cassandra version for
+   integration tests through the command line (SPARKC-307)
 
 1.5.0 RC1
  * Fix special case types in SqlRowWriter (SPARKC-306)
@@ -9,7 +11,7 @@
  * Upgrade Cassandra driver to 3.0.0-rc1
 
 
-1.5.0 M3 
+1.5.0 M3
  * Added ColumRef child class to represent functions calls (SPARKC-280)
  * Warn if Keep_alive_ms is less than spark batch size in streaming (SPARKC-228)
  * Fixed real tests (SPARKC-247)
