@@ -325,14 +325,22 @@ object Settings extends Build {
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     parallelExecution in assembly := false,
-    jarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
+    assemblyJarName in assembly <<= (baseDirectory, version) map { (dir, version) => s"${dir.name}-assembly-$version.jar" },
     run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)),
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) {
       (old) => {
-        case PathList("META-INF", "io.netty.versions.properties", xs @ _*) => MergeStrategy.last
+        case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+        case PathList("META-INF", xs @ _*) => MergeStrategy.last
         case PathList("com", "google", xs @ _*) => MergeStrategy.last
-        case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.last
+        case PathList("com", "esotericsoftware", "minlog", xs @ _ *) => MergeStrategy.last
+        case PathList("io", "netty", xs @ _*) => MergeStrategy.last
+        case PathList("org", "jboss", xs @ _*) => MergeStrategy.last
+        case PathList("javax", "xml", xs @ _*) => MergeStrategy.last
+        case PathList("org", "apache", "commons", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "apache", "hadoop", "yarn", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "apache", "spark", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "fusesource", xs @ _ *) => MergeStrategy.last
         case x => old(x)
       }
     }
