@@ -93,6 +93,13 @@ may also be used. ("127.0.0.1,192.168.0.1")
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>sql.pushdown.additionalclasses</code></td>
+  <td></td>
+  <td>A comma seperated list of classes to be used (in order) to apply additional
+ pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+      </td>
+</tr>
+<tr>
   <td><code>table.size.in.bytes</code></td>
   <td>None</td>
   <td>Used by DataFrames Internally, will be updated in a future release to

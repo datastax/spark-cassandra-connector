@@ -55,7 +55,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
     )
   }
 
-  "A DataFrame" should "be able to be created programatically" in {
+  "A DataFrame" should "be able to be created programmatically" in {
     val df = sqlContext
       .read
       .format("org.apache.spark.sql.cassandra")
@@ -70,7 +70,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
     df.count() should be(1000)
   }
 
-  it should "be able to be saved programatically" in {
+  it should "be able to be saved programmatically" in {
     val df = sqlContext
       .read
       .format("org.apache.spark.sql.cassandra")
