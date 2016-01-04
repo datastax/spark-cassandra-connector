@@ -7,6 +7,7 @@ import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
+import scala.util.Properties
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
@@ -145,8 +146,8 @@ case class TableDef(
   override lazy val columnByName: Map[String, ColumnDef] =
     super.columnByName
 
-  def cql = {    
-    val columnList = columns.map(_.cql).mkString(",\n  ")
+  def cql = {
+    val columnList = columns.map(_.cql).mkString(s",${Properties.lineSeparator}  ")
     val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
