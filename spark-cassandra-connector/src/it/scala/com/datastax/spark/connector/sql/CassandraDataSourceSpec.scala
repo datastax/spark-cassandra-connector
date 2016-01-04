@@ -1,17 +1,23 @@
 package com.datastax.spark.connector.sql
 
+import org.scalatest.BeforeAndAfterEach
+
 import scala.concurrent.Future
 
 import org.apache.spark.Logging
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.cassandra.{CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.cassandra.{
+  AnalyzedPredicates,
+  CassandraPredicateRules,
+  CassandraSourceRelation,
+  TableRef
+}
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.cql.{TableDef, CassandraConnector}
 
-class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging {
+class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
@@ -82,6 +88,10 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   override def afterAll() {
     super.afterAll()
     sqlContext.dropTempTable("tmpTable")
+  }
+
+  override def afterEach(): Unit ={
+     sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
   }
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
@@ -200,7 +210,57 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .save()
     cassandraTable(TableRef("df_test2", ks)).collect() should have length 1
   }
+
+  it should "apply user custom predicates which erase basic pushdowns" in {
+    sc.setLocalProperty(
+      CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
+      "com.datastax.spark.connector.sql.PushdownNothing")
+
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1"))
+      .load().filter("a=1 and b=2 and c=1 and e=1")
+
+    val qp = df.queryExecution.executedPlan.toString
+    qp should include ("Filter (") // Should have a Spark Filter Step
+    println(qp)
+  }
+
+  it should "apply user custom predicates in the order they are specified" in {
+    sc.setLocalProperty(
+      CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
+      "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything")
+
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1"))
+      .load().filter("a=1 and b=2 and c=1 and e=1")
+
+    val qp = df.queryExecution.executedPlan.toString
+    qp should not include ("Filter (") // No Spark Filter Step
+    println(qp)
+  }
 }
 
 case class Test(val epoch:Long, val uri:String, val browser:String, val customer_id:Int)
 case class TestPartialColumns(val epoch:Long, val browser:String, val customer_id:Int)
+
+object PushdownEverything extends CassandraPredicateRules {
+  override def applyRules(
+    predicates: AnalyzedPredicates,
+    tableDef: TableDef): AnalyzedPredicates = {
+
+    AnalyzedPredicates(predicates.handledByCassandra ++ predicates.handledBySpark, Set.empty)
+  }
+}
+
+object PushdownNothing extends CassandraPredicateRules {
+  override def applyRules(
+    predicates: AnalyzedPredicates,
+    tableDef: TableDef): AnalyzedPredicates = {
+
+    AnalyzedPredicates(Set.empty, predicates.handledByCassandra ++ predicates.handledBySpark)
+  }
+}
