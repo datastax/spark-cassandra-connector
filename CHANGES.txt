@@ -1,3 +1,4 @@
+ * Upgrade Cassandra in integration tests to 3.0.2 (SPARKC-307)
  * Upgrade Spark to 1.6.0 and add Apache Snapshot repository to resolvers (SPARKC-272, SPARKC-298, SPARKC-305)
 
 ********************************************************************************
