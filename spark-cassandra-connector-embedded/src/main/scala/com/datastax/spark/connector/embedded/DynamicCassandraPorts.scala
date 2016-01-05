@@ -58,7 +58,7 @@ object DynamicCassandraPorts extends Logging {
   def chooseBasePort(): Int = {
     Files.createDirectories(basePath)
     val foundPort = basePorts.find { basePort =>
-      val file = basePath.resolve(portLockFile(basePort))
+      val file = portLockFile(basePort)
       Try(Files.createFile(file)) match {
         case Success(filePath) =>
           require(filePath == file)
