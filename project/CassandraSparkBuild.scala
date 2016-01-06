@@ -239,7 +239,7 @@ object Dependencies {
   val jetty = Seq(Jetty.jettyServer, Jetty.jettyServlet)
 
   val testKit = Seq(
-    sparkRepl,
+    sparkRepl % "test,it",
     Test.akkaTestKit,
     Test.commonsIO,
     Test.junit,
