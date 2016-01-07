@@ -1,5 +1,6 @@
 language: scala
-jdk: oraclejdk7
+jdk:
+  - oraclejdk8
 sudo: false
 scala:
   - 2.10.5
@@ -8,3 +9,4 @@ scala:
 script:
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true test"
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true it:test"
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true assembly"
