@@ -51,7 +51,7 @@ object Settings extends Build {
 
   val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
   val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
-  val singleRunRequiredMem = 3 * 1024
+  val singleRunRequiredMem = 3 * 1024 + 512
   val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
 
   // Due to lack of entrophy on virtual machines we want to use /dev/urandom instead of /dev/random
