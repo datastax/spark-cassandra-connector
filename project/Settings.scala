@@ -51,7 +51,7 @@ object Settings extends Build {
 
   val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
   val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
-  val singleRunRequiredMem = 3 * 1024
+  val singleRunRequiredMem = 3 * 1024 + 512
   val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
 
   // Due to lack of entrophy on virtual machines we want to use /dev/urandom instead of /dev/random
@@ -332,15 +332,6 @@ object Settings extends Build {
       (old) => {
         case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
         case PathList("META-INF", xs @ _*) => MergeStrategy.last
-        case PathList("com", "google", xs @ _*) => MergeStrategy.last
-        case PathList("com", "esotericsoftware", "minlog", xs @ _ *) => MergeStrategy.last
-        case PathList("io", "netty", xs @ _*) => MergeStrategy.last
-        case PathList("org", "jboss", xs @ _*) => MergeStrategy.last
-        case PathList("javax", "xml", xs @ _*) => MergeStrategy.last
-        case PathList("org", "apache", "commons", xs @ _ *) => MergeStrategy.last
-        case PathList("org", "apache", "hadoop", "yarn", xs @ _ *) => MergeStrategy.last
-        case PathList("org", "apache", "spark", xs @ _ *) => MergeStrategy.last
-        case PathList("org", "fusesource", xs @ _ *) => MergeStrategy.last
         case x => old(x)
       }
     }
