@@ -1,3 +1,12 @@
+1.5.0 RC1
+ * Fix special case types in SqlRowWriter (SPARKC-306)
+ * Fix sbt assembly
+ * Create Cassandra Schema from DataFrame (SPARKC-231)
+ * JWCT inherits Spark Conf from Spark Context (SPARKC-294)
+ * Support of new Cassandra Date and Time types (SPARKC-277)
+ * Upgrade Cassandra driver to 3.0.0-rc1
+
+
 1.5.0 M3 
  * Added ColumRef child class to represent functions calls (SPARKC-280)
  * Warn if Keep_alive_ms is less than spark batch size in streaming (SPARKC-228)
