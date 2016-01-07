@@ -1,11 +1,11 @@
 #!/bin/sh
 
 echo "Running tests for Scala 2.10"
-sbt/sbt clean package test it:test
+sbt/sbt clean package test it:test assembly
 s210r="$?"
 
 echo "Running tests for Scala 2.11"
-sbt/sbt -Dscala-2.11=true clean package test it:test
+sbt/sbt -Dscala-2.11=true clean package test it:test assembly
 s211r="$?"
 
 retval=0

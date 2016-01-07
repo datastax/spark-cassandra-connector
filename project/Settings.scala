@@ -332,6 +332,15 @@ object Settings extends Build {
       (old) => {
         case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
         case PathList("META-INF", xs @ _*) => MergeStrategy.last
+        case PathList("com", "google", xs @ _*) => MergeStrategy.last
+        case PathList("com", "esotericsoftware", "minlog", xs @ _ *) => MergeStrategy.last
+        case PathList("io", "netty", xs @ _*) => MergeStrategy.last
+        case PathList("org", "jboss", xs @ _*) => MergeStrategy.last
+        case PathList("javax", "xml", xs @ _*) => MergeStrategy.last
+        case PathList("org", "apache", "commons", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "apache", "hadoop", "yarn", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "apache", "spark", xs @ _ *) => MergeStrategy.last
+        case PathList("org", "fusesource", xs @ _ *) => MergeStrategy.last
         case x => old(x)
       }
     }
