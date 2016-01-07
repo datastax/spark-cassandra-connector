@@ -98,7 +98,7 @@ object CassandraSparkBuild extends Build {
     id = "twitter-streaming",
     base = demosPath / "twitter-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
-    dependencies = Seq(connector)
+    dependencies = Seq(connector, embedded)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val refDoc = Project(
@@ -239,7 +239,7 @@ object Dependencies {
   val jetty = Seq(Jetty.jettyServer, Jetty.jettyServlet)
 
   val testKit = Seq(
-    sparkRepl,
+    sparkRepl % "test,it",
     Test.akkaTestKit,
     Test.commonsIO,
     Test.junit,
