@@ -121,34 +121,14 @@ object DefaultSource {
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
-    val cassandraConfs = buildConfMap(parameters)
 
-    (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
+    (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, parameters))
   }
 
   val confProperties = ReadConf.Properties.map(_.name) ++
     WriteConf.Properties.map(_.name) ++
     CassandraConnectorConf.Properties.map(_.name) ++
     CassandraSourceRelation.Properties.map(_.name)
-
-  // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
-  // Map converted property to origin property name
-  // TODO check SPARK 1.4 it may be fixed
-  private val propertiesMap : Map[String, String] = {
-    confProperties.map(prop => (prop.replace(".", "_"), prop)).toMap
-  }
-
-  /** Construct a map stores Cassandra Conf settings from options */
-  def buildConfMap(parameters: Map[String, String]) : Map[String, String] = {
-    val confMap = mutable.Map.empty[String, String]
-    for (convertedProp <- propertiesMap.keySet) {
-      val setting = parameters.get(convertedProp)
-      if (setting.nonEmpty) {
-        confMap += propertiesMap(convertedProp) -> setting.get
-      }
-    }
-    confMap.toMap
-  }
 
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {

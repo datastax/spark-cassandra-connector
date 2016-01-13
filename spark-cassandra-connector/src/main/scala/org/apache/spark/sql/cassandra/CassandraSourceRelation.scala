@@ -74,8 +74,16 @@ private[cassandra] class CassandraSourceRelation(
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
+    val columns = SomeColumns(data.columns.map(x => columnRef(x, overwrite)): _*)
     data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
+  }
+
+  private[this] def columnRef(columnName: String, overwrite: Boolean): ColumnRef = {
+    if (!overwrite && tableDef.columnByName(columnName).isCollection) {
+      CollectionColumnName(columnName, alias = None, collectionBehavior = CollectionAppend)
+    } else {
+      ColumnName(columnName)
+    }
   }
 
   override def sizeInBytes: Long = {

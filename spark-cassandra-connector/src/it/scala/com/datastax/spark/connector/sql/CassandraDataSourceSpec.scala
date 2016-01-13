@@ -47,6 +47,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       },
 
       Future {
+        session.execute(s"CREATE TABLE $ks.test_list (a INT PRIMARY KEY, b List<INT>)")
+        session.execute(s"INSERT INTO $ks.test_list (a, b) VALUES (3,[1,2])")
+        session.execute(s"CREATE TABLE $ks.test_insert_list (a INT PRIMARY KEY, b List<INT>)")
+        session.execute(s"INSERT INTO $ks.test_insert_list (a, b) VALUES (3,[4,5])")
+      },
+
+      Future {
         session.execute(
           s"""
              |CREATE TABLE $ks.df_test(
@@ -157,6 +164,31 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     createTempTable(ks, "test_insert2", "insertTable2")
     sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
     sqlContext.dropTempTable("insertTable2")
+  }
+
+
+  it should "allow to append to a cassandra table collection column" in {
+    createTempTable(ks, "test_list", "listTable")
+    sqlContext.sql("SELECT a, b from listTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test_insert_list", "keyspace" -> ks))
+      .save()
+    createTempTable(ks, "test_insert_list", "insertListTable")
+    sqlContext.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(3) shouldBe 2
+    sqlContext.dropTempTable("insertListTable")
+
+    /*sqlContext.sql("SELECT a, b from listTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test_insert_list", "keyspace" -> ks, "b.preappend" -> "true"))
+      .save()
+    createTempTable(ks, "test_insert_list", "insertListTable")
+    sqlContext.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(0) shouldBe 1
+    sqlContext.dropTempTable("insertListTable")*/
+    sqlContext.dropTempTable("listTable")
   }
 
   it should "allow to filter a table" in {
