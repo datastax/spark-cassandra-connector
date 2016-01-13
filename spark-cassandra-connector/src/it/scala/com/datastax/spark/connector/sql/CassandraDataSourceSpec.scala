@@ -179,7 +179,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     sqlContext.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(3) shouldBe 2
     sqlContext.dropTempTable("insertListTable")
 
-    /*sqlContext.sql("SELECT a, b from listTable")
+    sqlContext.sql("SELECT a, b from listTable")
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(Append)
@@ -187,7 +187,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .save()
     createTempTable(ks, "test_insert_list", "insertListTable")
     sqlContext.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(0) shouldBe 1
-    sqlContext.dropTempTable("insertListTable")*/
+    sqlContext.dropTempTable("insertListTable")
     sqlContext.dropTempTable("listTable")
   }
 
