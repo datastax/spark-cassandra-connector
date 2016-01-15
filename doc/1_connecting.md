@@ -85,5 +85,41 @@ CassandraConnector(conf).withSessionDo { session =>
 }
 ```
 
+### Connecting to multiple Cassandra Clusters
+
+The Spark Cassandra Connector is able to connect to multiple Cassandra Clusters for all of it's 
+normal operations. The default `CassandraConnector` object used by calls to `sc.cassandraTable` and
+`saveToCassandra` is specified by the `SparkConfiguration`. If you would like to use multiple clusters,
+an implicit `CassandraConnector` can be used in a code block to specify the target cluster for all
+operations in that block.
+
+####Example of reading from one cluster and writing to another
+
+```scala
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql._
+
+import org.apache.spark.SparkContext
+
+
+def twoClusterExample ( sc: SparkContext) = {
+  val connectorToClusterOne = CassandraConnector(sc.getConf.set("spark.cassandra.connection.host", "127.0.0.1"))
+  val connectorToClusterTwo = CassandraConnector(sc.getConf.set("spark.cassandra.connection.host", "127.0.0.2"))
+
+  val rddFromClusterOne = {
+    // Sets connectorToClusterOne as default connection for everything in this code block
+    implicit val c = connectorToClusterOne
+    sc.cassandraTable("ks","tab")
+  }
+
+  {
+    //Sets connectorToClusterTwo as the default connection for everything in this code block
+    implicit val c = connectorToClusterTwo
+    rddFromClusterOne.saveToCassandra("ks","tab")
+  }
+
+}
+```
+
 [Next - Accessing data](2_loading.md)                                        
 
