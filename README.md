@@ -76,6 +76,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [DataFrames](doc/14_data_frames.md)
   - [Python](doc/15_python.md)
   - [Frequently Asked Questions](doc/FAQ.md)
+  - [Configuration Parameter Reference Table](doc/reference.md)
 
 ## Online Training
 ### DataStax Academy
