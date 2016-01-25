@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import org.apache.cassandra.tools.NodeProbe
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{Inspectors, Matchers, FlatSpec}
 
 import com.datastax.spark.connector.cql.{Schema, CassandraConnector}
 import com.datastax.spark.connector.embedded.{CassandraRunner, SparkTemplate, EmbeddedCassandra}
@@ -9,7 +9,7 @@ import com.datastax.spark.connector.rdd.CqlWhereClause
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 
 class CassandraRDDPartitionerSpec
-  extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate {
+  extends FlatSpec with Matchers with SharedEmbeddedCassandra with SparkTemplate with Inspectors {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   val conn = CassandraConnector(hosts = Set(EmbeddedCassandra.getHost(0)))
@@ -69,6 +69,13 @@ class CassandraRDDPartitionerSpec
     // theoretically there should be 64 splits, but it is ok to be "a little" inaccurate
     partitions.length should be >= 16
     partitions.length should be <= 256
+  }
+
+  it should "align index fields of partitions with their place in the array" in {
+    val table = Schema.fromCassandra(conn, Some(keyspaceName), Some("data")).tables.head
+    val partitioner = CassandraRDDPartitioner(conn, table, splitCount = Some(1000), splitSize = 100)
+    val partToIndex = partitioner.partitions(CqlWhereClause.empty).zipWithIndex
+    forAll (partToIndex) { case (part, index) => part.index should be (index) }
   }
 
 }
