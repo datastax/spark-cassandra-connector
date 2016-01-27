@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.bulk.BulkConf
 import com.datastax.spark.connector.cql.{CassandraConnectionFactory, AuthConfFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
@@ -20,6 +21,7 @@ object ConfigCheck {
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
   val validStaticProperties: Set[ConfigParameter[_]] =
+    BulkConf.Properties ++
     WriteConf.Properties ++
     ReadConf.Properties ++
     CassandraConnectorConf.Properties ++
