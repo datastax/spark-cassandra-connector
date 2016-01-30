@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
 import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, DataType}
-import com.datastax.spark.connector.util.Symbols
+import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -68,6 +68,14 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
+  private lazy val customFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
+    Option(System.getenv("SCC_TYPE_CONVERTER"))
+      .orElse(Option(System.getProperty("SCC_TYPE_CONVERTER")))
+      .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
+      .flatMap(clazz => Some(clazz.fromDriverRowExtension))
+      .getOrElse(PartialFunction.empty)
+  }
+
   /** Makes sure the sequence does not contain any lazy transformations.
     * This guarantees that if T is Serializable, the collection is Serializable. */
   private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
@@ -84,7 +92,8 @@ object ColumnType {
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
     val typeArgs = dataType.getTypeArguments.map(fromDriverType)
-    (dataType, dataType.getName) match {
+
+    val standardFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
       case (_, DataType.Name.LIST) => ListType(typeArgs(0))
       case (_, DataType.Name.SET)  => SetType(typeArgs(0))
       case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
@@ -92,6 +101,11 @@ object ColumnType {
       case (tupleType: DriverTupleType, _) => TupleType(fields(tupleType): _*)
       case _ => primitiveTypeMap(dataType)
     }
+
+    val getColumnType: PartialFunction[(DataType, DataType.Name), ColumnType[_]] =
+      customFromDriverRow orElse standardFromDriverRow
+
+    getColumnType((dataType, dataType.getName))
   }
 
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */
