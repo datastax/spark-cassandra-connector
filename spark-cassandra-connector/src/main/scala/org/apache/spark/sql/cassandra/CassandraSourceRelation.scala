@@ -93,7 +93,7 @@ private[cassandra] class CassandraSourceRelation(
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
     case true =>
       (filters.toSet -- new PredicatePushDown(filters.toSet, tableDef).predicatesToPushDown).toArray
-    case fasle => filters
+    case false => filters
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
