@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import java.net.InetAddress
+
 import scala.collection.JavaConversions._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
@@ -131,16 +133,22 @@ class CassandraRDDPartitioner[V, T <: Token[V]](
       val replicas = tokenRanges.flatMap(_.replicas)
       Array(CassandraPartition(0, replicas, List(CqlTokenRange("")), 0))
     }
-    else
-      (for ((group, index) <- groups.zipWithIndex) yield {
+    else {
+      val partMetadata = for (group <- groups) yield {
         val cqlPredicates = group.flatMap(splitToCqlClause)
         val replicas = group.map(_.replicas).reduce(_ intersect _)
         val rowCount = group.map(_.dataSize).sum
-        CassandraPartition(index, replicas, cqlPredicates, rowCount)
-      })
-      // sort groups to give scheduler more flexibility at the end of calculations
-      // tasks with more endpoints will be executed latter
-      .sortBy(p=>(p.endpoints.size, -p.rowCount)).toArray
+        (replicas, cqlPredicates, rowCount)
+      }
+      // Sort metadata so that partitions with more possible replicas are computed last
+      // This gives us a greater chance that we'll be able to locally schedule a late task
+      partMetadata
+        .sortBy{ case (replicas, cqlPredicates, rowCount) => (replicas.size, -rowCount)}
+        .zipWithIndex
+        .map { case ((replicas, cqlPredicates, rowCount), index) =>
+          CassandraPartition(index, replicas, cqlPredicates, rowCount)
+        }.toArray
+    }
   }
 
 }
