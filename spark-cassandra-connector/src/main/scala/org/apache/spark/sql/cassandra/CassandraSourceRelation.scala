@@ -106,7 +106,12 @@ private[cassandra] class CassandraSourceRelation(
         .orElse(Option(sc.getLocalProperty(AdditionalCassandraPushDownRulesParam.name)))
 
     userClasses match {
-      case Some(classes) => classes.split(",").map(ReflectionUtil.findGlobalObject[CassandraPredicateRules]).reverse
+      case Some(classes) =>
+        classes
+          .trim
+          .split("""\s*,\s*""")
+          .map(ReflectionUtil.findGlobalObject[CassandraPredicateRules])
+          .reverse
       case None => AdditionalCassandraPushDownRulesParam.default
     }
   }
@@ -117,18 +122,18 @@ private[cassandra] class CassandraSourceRelation(
     /** Apply built in rules **/
     val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef)
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
-    logInfo(s"Basic Rules Applied:\n$basicPushdown")
+    logDebug(s"Basic Rules Applied:\n$basicPushdown")
 
     /** Apply any user defined rules **/
     val finalPushdown =  additionalRules.foldRight(basicPushdown)(
       (rules, pushdowns) => {
-        val pd = rules.applyRules(pushdowns, tableDef)
-        logInfo(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
+        val pd = rules(pushdowns, tableDef)
+        logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
         pd
       }
     )
 
-    logInfo(s"Final Pushdown filters:\n$finalPushdown")
+    logDebug(s"Final Pushdown filters:\n$finalPushdown")
     finalPushdown
   }
 
@@ -227,7 +232,7 @@ object CassandraSourceRelation {
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
-    name = "spark.cassandra.sql.pushdown.additionalclasses",
+    name = "spark.cassandra.sql.pushdown.additionalClasses",
     section = ReferenceSection,
     default = List.empty,
     description =

@@ -1,4 +1,4 @@
- * Adds the ability to add additional Predicate Pushdown Ruels at Runtime (SPARKC-308) 
+ * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308) 
  * Upgrade Spark to 1.6.0 and add Apache Snapshot repository to resolvers (SPARKC-272, SPARKC-298, SPARKC-305)
 
 ********************************************************************************

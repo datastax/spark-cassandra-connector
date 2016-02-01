@@ -13,5 +13,5 @@ case class AnalyzedPredicates(
 }
 
 trait CassandraPredicateRules{
-  def applyRules(predicates: AnalyzedPredicates, tableDef: TableDef): AnalyzedPredicates
+  def apply(predicates: AnalyzedPredicates, tableDef: TableDef): AnalyzedPredicates
 }

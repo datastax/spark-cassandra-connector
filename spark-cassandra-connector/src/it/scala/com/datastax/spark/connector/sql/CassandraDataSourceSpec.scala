@@ -248,7 +248,7 @@ case class Test(val epoch:Long, val uri:String, val browser:String, val customer
 case class TestPartialColumns(val epoch:Long, val browser:String, val customer_id:Int)
 
 object PushdownEverything extends CassandraPredicateRules {
-  override def applyRules(
+  override def apply(
     predicates: AnalyzedPredicates,
     tableDef: TableDef): AnalyzedPredicates = {
 
@@ -257,7 +257,7 @@ object PushdownEverything extends CassandraPredicateRules {
 }
 
 object PushdownNothing extends CassandraPredicateRules {
-  override def applyRules(
+  override def apply(
     predicates: AnalyzedPredicates,
     tableDef: TableDef): AnalyzedPredicates = {
 
