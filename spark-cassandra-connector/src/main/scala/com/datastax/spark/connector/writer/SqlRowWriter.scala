@@ -31,7 +31,7 @@ class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRe
         }
         case UUIDType => UUID.fromString(row(i).asInstanceOf[String])
         case InetType => InetAddress.getByName(row(i).asInstanceOf[String])
-        case other: ColumnType[_] => other.converterToCassandra.convert(row(i))
+        case other: ColumnType[_] => converters(i).convert(row(i))
       }
     }
 
