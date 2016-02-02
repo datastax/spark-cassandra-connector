@@ -22,9 +22,8 @@ class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRe
   override def readColumnValues(row: Row, buffer: Array[Any]) = {
     require(row.size == columnNames.size, s"Invalid row size: ${row.size} instead of ${columnNames.size}.")
     for (i <- 0 until row.size) {
-      val colType = columnTypes(i)
       val colValue = row(i)
-      buffer(i) = colType.converterToCassandra.convert(colValue)
+      buffer(i) = converters(i).convert(colValue)
       }
     }
 }
