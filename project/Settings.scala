@@ -64,6 +64,8 @@ object Settings extends Build {
     dir
   }
 
+  val cassandraTestVersion = sys.props.get("test.cassandra.version").getOrElse(Versions.Cassandra)
+
   lazy val TEST_JAVA_OPTS = Seq(
     "-XX:MaxPermSize=256M",
     "-Xms256m",

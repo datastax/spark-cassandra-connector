@@ -4,6 +4,8 @@
 ********************************************************************************
 
  * Fixed assembly build (SPARKC-311)
+ * Upgrade Cassandra version to 3.0.2 by default and allow to specify arbitrary Cassandra version for
+   integration tests through the command line (SPARKC-307)
 
 1.5.0 RC1
  * Fix special case types in SqlRowWriter (SPARKC-306)
