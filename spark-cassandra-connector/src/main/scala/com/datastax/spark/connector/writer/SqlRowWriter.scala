@@ -24,7 +24,7 @@ class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRe
     for (i <- 0 until row.size) {
       val colType = columnTypes(i)
       val colValue = row(i)
-      buffer(i) = colType.converterToCassandra.convert(colValue)
+      buffer(i) = converters(i).convert(colValue)
       }
     }
 }
