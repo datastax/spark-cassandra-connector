@@ -76,6 +76,38 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
   @transient
   override protected[sql] lazy val catalog = new CassandraCatalog(this)
 
+  /** Set the Spark Cassandra Connector configuration parameters */
+  def setConf(options: Map[String, String]): CassandraSQLContext = {
+    setConf(SqlClusterParam.default, options)
+  }
+
+  /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+    * a given cluster */
+  def setConf(
+      cluster: String,
+      options: Map[String, String]): CassandraSQLContext = {
+    checkOptions(options)
+    for ((k, v) <- options) setConf(s"$cluster/$k", v)
+    this
+  }
+
+  /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+    * a given keyspace in a given cluster */
+  def setConf(
+      cluster: String,
+      keyspace: String,
+      options: Map[String, String]): CassandraSQLContext = {
+    checkOptions(options)
+    for ((k, v) <- options) setConf(s"$cluster:$keyspace/$k", v)
+    this
+  }
+
+  private def checkOptions(options: Map[String, String]): Unit = {
+    options.keySet.foreach { name =>
+      require(DefaultSource.confProperties.contains(name),
+        s"Unrelated parameter. You can only set the following parameters: ${DefaultSource.confProperties.mkString(", ")}")
+    }
+  }
 }
 
 object CassandraSQLContext {

@@ -4,28 +4,25 @@ import java.io.IOException
 import java.net.InetAddress
 import java.util.UUID
 
-import com.datastax.driver.core.Metadata
-import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
-import com.datastax.spark.connector.types.{UUIDType, InetType, VarIntType}
-import com.datastax.spark.connector.util.{ReflectionUtil, ConfigParameter, NameTools}
-import org.apache.spark.{SparkConf, Logging}
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
+import org.apache.spark.sql.cassandra.DataTypeConverter._
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{sources, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.{Logging, SparkConf}
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
-import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
-import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
-import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.SomeColumns
-
-import DataTypeConverter._
+import com.datastax.driver.core.Metadata
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
+import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
+import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
+import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
+import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.util.{ConfigParameter, NameTools, ReflectionUtil}
+import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
+import com.datastax.spark.connector.{SomeColumns, _}
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -303,19 +300,16 @@ object CassandraSourceRelation {
     tableConf: Map[String, String]) : SparkConf = {
     //Default settings
     val conf = sparkConf.clone()
+    val cluster = tableRef.cluster.getOrElse(defaultClusterName)
+    val ks = tableRef.keyspace
     //Keyspace/Cluster level settings
     for (prop <- DefaultSource.confProperties) {
-      val cluster = tableRef.cluster.getOrElse(defaultClusterName)
-      val clusterLevelValue = sqlConf.get(s"$cluster/$prop")
-      if (clusterLevelValue.nonEmpty)
-        conf.set(prop, clusterLevelValue.get)
-      val keyspaceLevelValue =
-        sqlConf.get(s"$cluster:${tableRef.keyspace}/$prop")
-      if (keyspaceLevelValue.nonEmpty)
-        conf.set(prop, keyspaceLevelValue.get)
-      val tableLevelValue = tableConf.get(prop)
-      if (tableLevelValue.nonEmpty)
-        conf.set(prop, tableLevelValue.get)
+      val value = Seq(
+        tableConf.get(prop),
+        sqlConf.get(s"$cluster:$ks/$prop"),
+        sqlConf.get(s"$cluster/$prop"),
+        sqlConf.get(s"default/$prop")).flatten.headOption
+      value.foreach(conf.set(prop, _))
     }
     conf
   }

@@ -3,17 +3,15 @@ package org.apache.spark.sql.cassandra
 import scala.collection.mutable
 
 import org.apache.spark.Logging
-
-import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.sources.{CreatableRelationProvider, SchemaRelationProvider, BaseRelation, RelationProvider}
+import org.apache.spark.sql.cassandra.DefaultSource._
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
-import com.datastax.spark.connector.cql.CassandraConnectorConf
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
-
-import DefaultSource._
 
 /**
  * Cassandra data source extends [[RelationProvider]], [[SchemaRelationProvider]] and [[CreatableRelationProvider]].
@@ -39,9 +37,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
    * The parameters map stores table level data. User can specify vale for following keys
    *
    *    table        -- table name, required
-   *    keyspace       -- keyspace name, required
-   *    cluster        -- cluster name, optional, default name is "default"
-   *    pushdown      -- true/false, optional, default is true
+   *    keyspace     -- keyspace name, required
+   *    cluster      -- cluster name, optional, default name is "default"
+   *    pushdown     -- true/false, optional, default is true
    *    Cassandra connection settings  -- optional, e.g. spark_cassandra_connection_timeout_ms
    *    Cassandra Read Settings        -- optional, e.g. spark_cassandra_input_page_row_size
    *    Cassandra Write settings       -- optional, e.g. spark_cassandra_output_consistency_level
@@ -129,7 +127,8 @@ object DefaultSource {
   val confProperties = ReadConf.Properties.map(_.name) ++
     WriteConf.Properties.map(_.name) ++
     CassandraConnectorConf.Properties.map(_.name) ++
-    CassandraSourceRelation.Properties.map(_.name)
+    CassandraSourceRelation.Properties.map(_.name) ++
+    AuthConfFactory.Properties.map(_.name)
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
   // Map converted property to origin property name
