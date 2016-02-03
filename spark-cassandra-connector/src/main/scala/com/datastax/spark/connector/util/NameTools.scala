@@ -54,7 +54,7 @@ object NameTools {
       .map(ks =>
       (ks, StringUtils.getJaroWinklerDistance(ks.getName, keyspace)))
 
-    val ktScores = for ((ks, ksScore) <- keyspaceScores; t <- ks.getTables) yield {
+    val ktScores = for ((ks, ksScore) <- keyspaceScores; t <- (ks.getTables ++ ks.getMaterializedViews)) yield {
       val tScore = StringUtils.getJaroWinklerDistance(t.getName, table)
       (ks.getName, t.getName, ksScore, tScore)
     }

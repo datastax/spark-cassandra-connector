@@ -826,6 +826,12 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result should have length 0
   }
 
+  it should "suggest similar tables or views if the table doesn't exist" in {
+    val ioe = the [IOException] thrownBy sc.cassandraTable(ks,"user_by_county").collect()
+    val message = ioe.getMessage
+    message should include (s"$ks.user_by_country")
+  }
+
   it should "suggest similar tables if table doesn't exist but keyspace does" in {
     val ioe = the [IOException] thrownBy sc.cassandraTable("MixedSpace","mixedcase").collect()
     val message = ioe.getMessage
