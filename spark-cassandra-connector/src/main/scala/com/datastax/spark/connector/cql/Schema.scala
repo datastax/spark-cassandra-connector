@@ -127,7 +127,8 @@ case class TableDef(
     tableName: String,
     partitionKey: Seq[ColumnDef],
     clusteringColumns: Seq[ColumnDef],
-    regularColumns: Seq[ColumnDef]) extends StructDef {
+    regularColumns: Seq[ColumnDef],
+    isView: Boolean = false) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
@@ -194,23 +195,26 @@ case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
 }
 
 object Schema extends Logging {
-  def getIndexMap(table: TableMetadata): Map[String, IndexMetadata] = {
-    for ( index <- table.getIndexes ) yield (index.getTarget, index)
-  }.toMap
+  def getIndexMap(tableOrView: AbstractTableMetadata): Map[String, IndexMetadata] = tableOrView match {
+    case table: TableMetadata =>
+      (for (index <- table.getIndexes) yield (index.getTarget, index)).toMap
+    case view: MaterializedViewMetadata => Map.empty
+  }
 
-  private def fetchPartitionKey(table: TableMetadata): Seq[ColumnDef] = {
+
+  private def fetchPartitionKey(table: AbstractTableMetadata): Seq[ColumnDef] = {
     val indexMap = getIndexMap(table)
     for (column <- table.getPartitionKey) yield
       ColumnDef(column, PartitionKeyColumn, indexMap.contains(column.getName))
   }
 
-  private def fetchClusteringColumns(table: TableMetadata): Seq[ColumnDef] = {
+  private def fetchClusteringColumns(table: AbstractTableMetadata): Seq[ColumnDef] = {
     val indexMap = getIndexMap(table)
     for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
       ColumnDef(column, ClusteringColumn(index), indexMap.contains(column.getName))
   }
 
-  private def fetchRegularColumns(table: TableMetadata) = {
+  private def fetchRegularColumns(table: AbstractTableMetadata) = {
     val indexMap = getIndexMap(table)
     val primaryKey = table.getPrimaryKey.toSet
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
@@ -233,19 +237,27 @@ object Schema extends Logging {
         case Some(name) => keyspace.getName == name
       }
 
-    def isTableSelected(table: TableMetadata): Boolean =
+    def isTableSelected(table: AbstractTableMetadata): Boolean =
       tableName match {
         case None => true
         case Some(name) => table.getName == name
       }
 
     def fetchTables(keyspace: KeyspaceMetadata): Set[TableDef] =
-      for (table <- keyspace.getTables.toSet if isTableSelected(table)) yield {
-        val partitionKey = fetchPartitionKey(table)
-        val clusteringColumns = fetchClusteringColumns(table)
-        val regularColumns = fetchRegularColumns(table)
-        TableDef(keyspace.getName, table.getName, partitionKey, clusteringColumns, regularColumns)
-      }
+      for (table <- (keyspace.getTables.toSet ++ keyspace.getMaterializedViews.toSet)
+        if isTableSelected(table)) yield {
+          val partitionKey = fetchPartitionKey(table)
+          val clusteringColumns = fetchClusteringColumns(table)
+          val regularColumns = fetchRegularColumns(table)
+          val isView = table.isInstanceOf[MaterializedViewMetadata]
+          TableDef(
+            keyspace.getName,
+            table.getName,
+            partitionKey,
+            clusteringColumns,
+            regularColumns,
+            isView)
+        }
 
     def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
       for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield

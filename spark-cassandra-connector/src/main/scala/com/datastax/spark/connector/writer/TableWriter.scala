@@ -26,6 +26,9 @@ class TableWriter[T] private (
     rowWriter: RowWriter[T],
     writeConf: WriteConf) extends Serializable with Logging {
 
+  require(tableDef.isView == false,
+    s"${tableDef.name} is a Materialized View and Views are not writable")
+
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
