@@ -243,6 +243,15 @@ class TypeConverterTest {
   }
 
   @Test
+  def testCassandraOption() {
+    val c = TypeConverter.forType[CassandraOption[String]]
+    val unset = CassandraOption.Unset
+    val set = CassandraOption.Value("not-null")
+    assertEquals(unset, c.convert(null))
+    assertEquals(set, c.convert("not-null"))
+  }
+
+  @Test
   def testList() {
     val c = TypeConverter.forType[Vector[Option[Int]]]
     val arrayList = new java.util.ArrayList[String]()
@@ -384,6 +393,14 @@ class TypeConverterTest {
     assertEquals(1.asInstanceOf[AnyRef], c.convert("1"))
     assertEquals(null, c.convert(None))
     assertEquals(null, c.convert(null))
+  }
+
+  @Test
+  def testCassandraOptionToNull() {
+    val c = new TypeConverter.OptionToNullConverter(TypeConverter.IntConverter)
+    assertEquals(Unset, c.convert(CassandraOption.Unset))
+    assertEquals(null, c.convert(CassandraOption.Null))
+    assertEquals(1.asInstanceOf[AnyRef], c.convert(CassandraOption.Value(1)))
   }
 
   @Test(expected = classOf[IllegalArgumentException])

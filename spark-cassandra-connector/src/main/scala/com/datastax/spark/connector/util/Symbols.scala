@@ -5,7 +5,10 @@ import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.tuple
 
+import com.datastax.spark.connector.types.CassandraOption
+
 object Symbols {
+  val CassandraOptionSymbol = typeOf[CassandraOption[Any]].asInstanceOf[TypeRef].sym
   val OptionSymbol = typeOf[Option[Any]].asInstanceOf[TypeRef].sym
   val ListSymbol = typeOf[List[Any]].asInstanceOf[TypeRef].sym
   val VectorSymbol = typeOf[Vector[Any]].asInstanceOf[TypeRef].sym

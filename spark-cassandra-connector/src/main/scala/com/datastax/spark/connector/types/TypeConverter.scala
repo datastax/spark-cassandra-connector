@@ -550,6 +550,21 @@ object TypeConverter {
     }
   }
 
+  class CassandraOptionConverter[T](implicit c: TypeConverter[T]) extends
+    TypeConverter[CassandraOption[T]] {
+
+    @transient
+    lazy val targetTypeTag = TypeTag.synchronized {
+      implicit val itemTypeTag = c.targetTypeTag
+      implicitly[TypeTag[CassandraOption[T]]]
+    }
+
+    def convertPF = {
+      case null => CassandraOption.Unset
+      case other => CassandraOption.Value(c.convert(other))
+    }
+  }
+
   abstract class CollectionConverter[CC, T](implicit c: TypeConverter[T], bf: CanBuildFrom[T, CC])
     extends TypeConverter[CC] {
 
@@ -684,6 +699,9 @@ object TypeConverter {
     }
   }
 
+  implicit def cassandraOptionConverter[T: TypeConverter]: CassandraOptionConverter[T] =
+    new CassandraOptionConverter[T]
+
   implicit def optionConverter[T : TypeConverter]: OptionConverter[T] =
     new OptionConverter[T]
 
@@ -750,9 +768,19 @@ object TypeConverter {
 
     def targetTypeTag = implicitly[TypeTag[AnyRef]]
 
+    def cassandraOptionToAnyRef(cassandraOption: CassandraOption[_]) = {
+      cassandraOption match {
+        case CassandraOption.Value(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
+        case CassandraOption.Unset => Unset
+        case CassandraOption.Null => null
+      }
+    }
+
     def convertPF = {
+      case x: CassandraOption[_] => cassandraOptionToAnyRef(x)
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
       case None => null
+      case Unset => Unset
       case x => nestedConverter.convert(x).asInstanceOf[AnyRef]
     }
   }
@@ -820,6 +848,7 @@ object TypeConverter {
         implicit val itemConverter = untypedItemConverter.asInstanceOf[TypeConverter[T]]
         implicit val ordering = orderingFor(arg).map(_.asInstanceOf[Ordering[T]]).orNull
         symbol match {
+          case CassandraOptionSymbol => cassandraOptionConverter[T]
           case OptionSymbol => optionConverter[T]
           case ListSymbol => listConverter[T]
           case VectorSymbol => vectorConverter[T]

@@ -11,9 +11,8 @@ import org.joda.time.DateTime
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
-import com.datastax.spark.connector.types.TypeConverter
+import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -330,6 +329,16 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     rowById(1).getBytes("b").limit() shouldEqual 12
     rowById(1).get[Array[Byte]]("b") shouldEqual Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
     rowById(2).getBytesOption("b") shouldEqual None
+  }
+
+  it should "allow for reading Cassandra Options from nulls" in {
+    val result = sc.cassandraTable[(Int, CassandraOption[Array[Byte]])](ks, "blobs").collect
+    result.filter(_._1 == 2)(0)._2 should be(CassandraOption.Unset)
+  }
+
+  it should "allow for reading Cassandra Options from values" in {
+    val result = sc.cassandraTable[(Int, CassandraOption[Array[Byte]])](ks, "blobs").collect
+    result.filter(_._1 == 1)(0)._2.get shouldEqual Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
   }
 
   it should "allow for converting fields to custom types by user-defined TypeConverter" in {
