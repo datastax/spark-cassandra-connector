@@ -31,7 +31,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
   def cqlTypeName = name
 
-  def converterToCassandra = new TypeConverter[UDTValue] {
+  def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
     override def convertPF = {
       case udtValue: UDTValue =>
