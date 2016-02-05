@@ -86,7 +86,8 @@ object ColumnType {
   )
 
   private lazy val customFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
-    SparkEnv.get.conf.getOption(CustomDriverTypeParam.name)
+    Option(SparkEnv.get)
+      .flatMap(env => env.conf.getOption(CustomDriverTypeParam.name))
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
       .flatMap(clazz => Some(clazz.fromDriverRowExtension))
       .getOrElse(PartialFunction.empty)
