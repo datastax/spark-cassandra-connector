@@ -249,7 +249,10 @@ object Schema extends Logging {
           val partitionKey = fetchPartitionKey(table)
           val clusteringColumns = fetchClusteringColumns(table)
           val regularColumns = fetchRegularColumns(table)
-          val isView = table.isInstanceOf[MaterializedViewMetadata]
+          val isView = table match {
+            case x: MaterializedViewMetadata => true
+            case _ => false
+          }
           TableDef(
             keyspace.getName,
             table.getName,

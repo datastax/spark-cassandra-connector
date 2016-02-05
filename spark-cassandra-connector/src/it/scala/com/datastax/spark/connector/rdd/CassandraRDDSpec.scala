@@ -827,7 +827,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "suggest similar tables or views if the table doesn't exist" in {
-    val ioe = the [IOException] thrownBy sc.cassandraTable(ks,"user_by_county").collect()
+    val ioe = the [IOException] thrownBy sc.cassandraTable(ks, "user_by_county").collect()
     val message = ioe.getMessage
     message should include (s"$ks.user_by_country")
   }
@@ -922,7 +922,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "throw an exception when trying to write to a Materialized View" in {
     intercept[IllegalArgumentException] {
-      sc.parallelize(Seq(("US",1,"John","DOE","jdoe"))).saveToCassandra(ks, "user_by_country")
+      sc.parallelize(Seq(("US", 1, "John", "DOE", "jdoe"))).saveToCassandra(ks, "user_by_country")
     }
   }
 
