@@ -1,16 +1,16 @@
 package com.datastax.spark.connector.cql
 
 
-import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
-import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.types._
 import org.scalatest.Inspectors._
+
+import com.datastax.spark.connector.SparkCassandraITWordSpecBase
+import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.types._
 
 
 class SchemaSpec extends SparkCassandraITWordSpecBase {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>

@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -128,7 +127,6 @@ public class CassandraRowTest {
     @Test
     public void testGetObjectAndApply() {
         class TestClass {
-            @NotNull
             final int v;
 
             public TestClass(int v) {

@@ -9,10 +9,10 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging {
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

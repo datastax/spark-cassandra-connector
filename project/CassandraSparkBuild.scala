@@ -17,14 +17,13 @@
 
 import java.io.File
 
-import sbt._
 import sbt.Keys._
+import sbt._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
 
 object CassandraSparkBuild extends Build {
   import Settings._
   import sbtassembly.AssemblyPlugin
-  import Versions.scalaBinary
   import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
@@ -38,31 +37,34 @@ object CassandraSparkBuild extends Build {
     contains = Seq(embedded, connector, demos, jconnector)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
-  lazy val cassandraServerProject = Project(
-    id = "cassandra-server",
-    base = file("cassandra-server"),
-    settings = defaultSettings ++ Seq(
-      libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
-      cassandraServerClasspath := {
-        (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
-      }
+  lazy val cassandraServerProject = {
+    val p = Project(
+      id = "cassandra-server",
+      base = file("cassandra-server"),
+      settings = defaultSettings ++ Seq(
+        libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift)
+      )
     )
-  ) configs IntegrationTest
+    p.copy(settings = defaultSettings ++ Seq(
+      libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift)
+    ) ++ Seq(cassandraServerClasspath := {
+      (fullClasspath in IntegrationTest in p).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
+    }))
+  } configs IntegrationTest
 
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(
-      libraryDependencies
-      ++= Dependencies.embedded ++ Seq(
+      libraryDependencies ++= Dependencies.embedded ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value))
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value)) ++ pureCassandraSettings
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
     conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it")) ++ pureCassandraSettings
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
@@ -202,6 +204,7 @@ object Artifacts {
     val kafka             = "org.apache.kafka"        %% "kafka"                  % Kafka                 kafkaExclusions   // ApacheV2
     val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark % "provided"    replExclusions    // ApacheV2
     val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7"
+    val snakeYaml         = "org.yaml"                % "snakeyaml"               % "1.16"
   }
 
   object Demos {
@@ -229,8 +232,8 @@ object Artifacts {
 
 object Dependencies {
 
-  import BuildUtil._
   import Artifacts._
+  import BuildUtil._
 
   val logging = Seq(slf4jApi)
 

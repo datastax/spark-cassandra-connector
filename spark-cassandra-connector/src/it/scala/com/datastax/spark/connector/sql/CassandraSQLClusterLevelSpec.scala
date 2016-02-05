@@ -2,13 +2,15 @@ package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
 
+import org.apache.spark.sql.cassandra.CassandraSQLContext
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
-import org.apache.spark.sql.cassandra.CassandraSQLContext
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default, YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

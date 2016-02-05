@@ -3,14 +3,13 @@ package com.datastax.spark.connector.sql
 import scala.concurrent.Future
 
 import org.apache.spark.sql.cassandra.CassandraSQLContext
-import org.scalatest.ParallelTestExecution
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

@@ -1,18 +1,17 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import org.apache.cassandra.tools.NodeProbe
-import org.scalatest.{Inspectors, Matchers, FlatSpec}
+import org.scalatest.Inspectors
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{Schema, CassandraConnector}
-import com.datastax.spark.connector.embedded.{CassandraRunner, SparkTemplate, EmbeddedCassandra}
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.rdd.CqlWhereClause
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 
 class CassandraRDDPartitionerSpec
   extends SparkCassandraITFlatSpecBase with Inspectors  {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -54,9 +53,7 @@ class CassandraRDDPartitionerSpec
     }
 
     for (host <- conn.hosts) {
-      val nodeProbe = new NodeProbe(host.getHostAddress,
-        EmbeddedCassandra.cassandraRunners(0).map(_.jmxPort).getOrElse(CassandraRunner.DefaultJmxPort))
-      nodeProbe.forceKeyspaceFlush(ks, tableName)
+      EmbeddedCassandra.cassandraRunners(0).foreach(_.nodeToolCmd("flush", ks, tableName))
     }
 
     val timeout = CassandraRunner.SizeEstimatesUpdateIntervalInSeconds * 1000 * 5

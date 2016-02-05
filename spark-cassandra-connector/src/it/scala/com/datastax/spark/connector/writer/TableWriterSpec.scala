@@ -5,13 +5,11 @@ import java.io.IOException
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
-import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
-import com.datastax.spark.connector.embedded.SparkTemplate._
-
-import com.datastax.spark.connector._
+import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
+import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.mapper.DefaultColumnMapper
+import com.datastax.spark.connector.types.{BigIntType, IntType, TextType, TypeConverter}
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
@@ -33,7 +31,7 @@ object CustomerIdConverter extends TypeConverter[String] {
 
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

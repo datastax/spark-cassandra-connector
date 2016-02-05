@@ -5,15 +5,14 @@ import java.io.IOException
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
-
 import org.apache.spark.sql.SQLContext
 
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
+
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

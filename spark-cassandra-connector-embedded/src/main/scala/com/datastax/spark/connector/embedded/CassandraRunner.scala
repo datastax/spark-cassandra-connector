@@ -8,10 +8,14 @@ import scala.util.Try
 import org.apache.commons.io.FileUtils
 import org.apache.spark.Logging
 
-private[connector] class CassandraRunner(val configTemplate: String, props: Map[String, String])
+import com.datastax.spark.connector.embedded.YamlTransformations.CassandraConfiguration
+
+private[connector] class CassandraRunner(
+    val configTemplate: YamlTransformations,
+    val baseConfiguration: CassandraConfiguration)
   extends Embedded with Logging {
 
-  import java.io.{File, FileOutputStream, IOException}
+  import java.io.{File, IOException}
 
   import com.google.common.io.Files
 
@@ -25,12 +29,8 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val confDir = mkdir(new File(tempDir, "conf"))
   val confFile = new File(confDir, "cassandra.yaml")
 
-  private val properties = Map("cassandra_dir" -> workDir.toString) ++ props
-  closeAfterUse(ClassLoader.getSystemResourceAsStream(configTemplate)) { input =>
-    closeAfterUse(new FileOutputStream(confFile)) { output =>
-      copyTextFileWithVariableSubstitution(input, output, properties)
-    }
-  }
+  YamlTransformations.makeYaml(confFile.toPath,
+    baseConfiguration.copy(cassandraDir = workDir.getAbsolutePath), configTemplate)
 
   private val classPath = sys.env.get("IT_CASSANDRA_PATH").map { customCassandraDir =>
     val entries = (for (f <- Files.fileTreeTraverser().breadthFirstTraversal(new File(customCassandraDir, "lib")).toIterator
@@ -38,14 +38,17 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
       f.getAbsolutePath
     }).toList ::: new File(customCassandraDir, "conf") :: Nil
     entries.mkString(File.pathSeparator)
-  } orElse sys.env.get("CASSANDRA_CLASSPATH") getOrElse System.getProperty("java.class.path")
+  } orElse {
+    println("CASSANDRA_CLASSPATH")
+    sys.env.get("CASSANDRA_CLASSPATH")
+  } getOrElse {
+    System.getProperty("java.class.path")
+  }
 
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
-  val jmxPort = props.getOrElse("jmx_port", DefaultJmxPort.toString).toInt
-  private val jmxPortProperty = s"-Dcassandra.jmx.local.port=$jmxPort"
-  private val host = props.getOrElse("listen_address", "127.0.0.1")
+  private val jmxPortProperty = s"-Dcassandra.jmx.local.port=${baseConfiguration.jmxPort}"
   private val sizeEstimatesUpdateIntervalProperty =
     s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
   private val jammAgent = classPath.split(File.pathSeparator).find(_.matches(".*jamm.*\\.jar"))
@@ -57,7 +60,8 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val location = Thread.currentThread().getStackTrace
     .filter(_.getClassName.startsWith("com.datastax")).lastOption
     .map(ste => s"   at ${ste.getFileName}:${ste.getLineNumber} (${ste.getClassName}.${ste.getMethodName}").getOrElse("")
-  println(s"--------======== Starting Embedded Cassandra on port ${props.get("native_transport_port").get} ========--------\n$location")
+  println(s"--------======== Starting Embedded Cassandra on port ${baseConfiguration.nativeTransportPort} ========--------\n$location")
+  println(s"Root dir is: ${tempDir.getAbsolutePath}")
 
   private[embedded] val process = new ProcessBuilder()
     .command(javaBin,
@@ -67,14 +71,23 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
       logConfigFileProperty, "-cp", classPath, cassandraMainClass, "-f")
     .inheritIO()
     .start()
+
   val startupTime = System.currentTimeMillis()
 
-  val nativePort = props.get("native_transport_port").get.toInt
-  if (!waitForPortOpen(InetAddress.getByName(props.get("rpc_address").get), nativePort, 100000))
-    throw new IOException("Failed to start Cassandra.")
+  println("ClassPath: \n" + classPath.split(":").mkString("\n"))
+
+  if (!waitForPortOpen(InetAddress.getByName(baseConfiguration.rpcAddress), baseConfiguration.nativeTransportPort, 10000, () => !process.isAlive)) {
+    if (!process.isAlive) {
+      System.err.println(s"!!! Cassandra at ${baseConfiguration.nativeTransportPort} is already stopped with exit code: ${process.exitValue()}")
+    }
+    throw new IOException(s"Failed to start Cassandra at ${baseConfiguration.rpcAddress}:${baseConfiguration.nativeTransportPort}")
+  }
 
   def destroy() {
-    System.err.println(s"========-------- Stopping Embedded Cassandra at ${props.get("native_transport_port").get} --------========")
+    System.err.println(s"========-------- Stopping Embedded Cassandra at ${baseConfiguration.nativeTransportPort} --------========")
+    if (!process.isAlive) {
+      System.err.println(s"!!! Cassandra at ${baseConfiguration.nativeTransportPort} is already stopped with exit code: ${process.exitValue()}")
+    }
     process.destroy()
     process.waitFor()
     FileUtils.forceDelete(tempDir)
@@ -84,7 +97,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   def nodeToolCmd(params: String*): Unit = {
     Try {
       val cmd = List(javaBin, "-Xms128M", "-Xmx512M", cassandraConfProperty, "-cp", classPath,
-        nodeToolMainClass, "-h", host, "-p", jmxPort.toString) ++ params
+        nodeToolMainClass, "-h", baseConfiguration.listenAddress, "-p", baseConfiguration.jmxPort.toString) ++ params
       val nodeToolCmdProcess = new ProcessBuilder()
         .command(cmd: _*)
         .inheritIO()
