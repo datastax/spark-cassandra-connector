@@ -5,7 +5,8 @@ import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
 import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, DataType}
-import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
+import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil, Symbols}
+import org.apache.spark.SparkEnv
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -45,7 +46,7 @@ trait ColumnType[T] extends Serializable {
 
 object ColumnType {
 
-  private val primitiveTypeMap = Map[DataType, ColumnType[_]](
+  private[connector] val primitiveTypeMap = Map[DataType, ColumnType[_]](
     DataType.text() -> TextType,
     DataType.ascii() -> AsciiType,
     DataType.varchar() -> VarCharType,
@@ -68,9 +69,24 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
+  val ColumnTypeParameters = Seq(CustomDriverTypeParam)
+
+  val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
+
+  val CustomDriverTypeParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.dev.customFromDriver",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Provides an additional class implementing CustomDriverConverter for those
+        |clients that need to read non-standard primitive Cassandra types. If your C* implementation
+        |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
+        |OSS Cassandra this should never be used.
+      """.stripMargin
+  )
+
   private lazy val customFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
-    Option(System.getenv("SCC_TYPE_CONVERTER"))
-      .orElse(Option(System.getProperty("SCC_TYPE_CONVERTER")))
+    SparkEnv.get.conf.getOption(CustomDriverTypeParam.name)
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
       .flatMap(clazz => Some(clazz.fromDriverRowExtension))
       .getOrElse(PartialFunction.empty)

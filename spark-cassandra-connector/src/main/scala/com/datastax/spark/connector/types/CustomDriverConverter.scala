@@ -4,6 +4,6 @@ import com.datastax.driver.core.DataType
 
 trait CustomDriverConverter {
 
-  val fromDriverRowExtension:PartialFunction[(DataType, DataType.Name), ColumnType[_]]
+  val fromDriverRowExtension: PartialFunction[(DataType, DataType.Name), ColumnType[_]]
 
 }
