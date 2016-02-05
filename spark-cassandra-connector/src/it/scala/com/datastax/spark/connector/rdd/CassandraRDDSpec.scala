@@ -124,7 +124,26 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MixedCASE"(key INT PRIMARY KEY, value INT)""")
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
+      Future {
+        session.execute(s""" CREATE TABLE $ks.user(
+          id int PRIMARY KEY,
+          login text,
+          firstname text,
+          lastname text,
+          country text
+        )""")
 
+        session.execute(s"""CREATE MATERIALIZED VIEW $ks.user_by_country
+          AS SELECT *  //denormalize ALL columns
+          FROM user
+          WHERE country IS NOT NULL AND id IS NOT NULL
+          PRIMARY KEY(country, id);""")
+
+        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
+        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
+        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
+        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+      },
       Future {
         session.execute( s"""CREATE TABLE $ks.big_table (key INT PRIMARY KEY, value INT)""")
         val insert = session.prepare( s"""INSERT INTO $ks.big_table(key, value) VALUES (?, ?)""")
@@ -816,6 +835,12 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result should have length 0
   }
 
+  it should "suggest similar tables or views if the table doesn't exist" in {
+    val ioe = the [IOException] thrownBy sc.cassandraTable(ks, "user_by_county").collect()
+    val message = ioe.getMessage
+    message should include (s"$ks.user_by_country")
+  }
+
   it should "suggest similar tables if table doesn't exist but keyspace does" in {
     val ioe = the [IOException] thrownBy sc.cassandraTable("MixedSpace","mixedcase").collect()
     val message = ioe.getMessage
@@ -892,6 +917,22 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result should contain ((1, 100))
     result should contain ((2, 200))
     result should contain ((3, 300))
-
   }
+
+  it should "be able to read a Materialized View" in  {
+    val result = sc.cassandraTable[(String, Int, String, String, String)](ks, "user_by_country")
+      .where("country='US'")
+      .collect
+    result should contain theSameElementsAs Seq(
+      ("US", 1, "John", "DOE", "jdoe"),
+      ("US", 2, "Helen", "SUE", "hsue")
+    )
+  }
+
+  it should "throw an exception when trying to write to a Materialized View" in {
+    intercept[IllegalArgumentException] {
+      sc.parallelize(Seq(("US", 1, "John", "DOE", "jdoe"))).saveToCassandra(ks, "user_by_country")
+    }
+  }
+
 }
