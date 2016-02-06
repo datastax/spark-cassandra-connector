@@ -44,6 +44,23 @@ trait ColumnType[T] extends Serializable {
   def isCollection: Boolean
 }
 
+object ColumnTypeConf {
+
+  val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
+
+  val CustomDriverTypeParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.dev.customFromDriver",
+    section = ReferenceSection,
+    default = None,
+    description = """Provides an additional class implementing CustomDriverConverter for those
+        |clients that need to read non-standard primitive Cassandra types. If your C* implementation
+        |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
+        |OSS Cassandra this should never be used.""".stripMargin('|')
+  )
+
+  val Properties = Set(CustomDriverTypeParam)
+}
+
 object ColumnType {
 
   private[connector] val primitiveTypeMap = Map[DataType, ColumnType[_]](
@@ -69,25 +86,9 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
-  val ColumnTypeParameters = Seq(CustomDriverTypeParam)
-
-  val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
-
-  val CustomDriverTypeParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.dev.customFromDriver",
-    section = ReferenceSection,
-    default = None,
-    description =
-      """Provides an additional class implementing CustomDriverConverter for those
-        |clients that need to read non-standard primitive Cassandra types. If your C* implementation
-        |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
-        |OSS Cassandra this should never be used.
-      """.stripMargin
-  )
-
   private lazy val customFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
     Option(SparkEnv.get)
-      .flatMap(env => env.conf.getOption(CustomDriverTypeParam.name))
+      .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
       .flatMap(clazz => Some(clazz.fromDriverRowExtension))
       .getOrElse(PartialFunction.empty)

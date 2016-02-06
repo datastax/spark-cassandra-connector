@@ -164,6 +164,22 @@ retrieve size from C*. Can be set manually now</td>
 </table>
 
 
+## Custom Cassandra Type Parameters (Expert Use Only)
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>dev.customFromDriver</code></td>
+  <td>None</td>
+  <td>Provides an additional class implementing CustomDriverConverter for those
+clients that need to read non-standard primitive Cassandra types. If your C* implementation
+uses a Java Driver which can read DataType.custom() you may need it this. If you are using
+OSS Cassandra this should never be used.</td>
+</tr>
+</table>
+
+
 ## Read Tuning Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
