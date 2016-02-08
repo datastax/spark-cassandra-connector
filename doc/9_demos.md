@@ -3,8 +3,8 @@ This documentation covers requirements to run the demos, as well as instructions
 
 ## About The Demos
 The Spark Cassandra Connector includes demos containing basic demos, as samples, in both 
-[Scala](https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-demos/src/main/scala/com/datastax/spark/connector/demo) 
-and [Java](https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-demos/src/main/java/com/datastax/spark/connector/demo).
+[Scala](https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-demos/simple-demos/src/main/scala/com/datastax/spark/connector/demo) 
+and [Java](https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-demos/simple-demos/src/main/java/com/datastax/spark/connector/demo).
  
     - Read and write to/from Spark and Cassandra
     - WordCount with Spark and Cassandra
