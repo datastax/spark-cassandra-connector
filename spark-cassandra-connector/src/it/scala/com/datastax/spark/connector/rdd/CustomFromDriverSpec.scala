@@ -25,8 +25,8 @@ class CustomFromDriverSpec extends SparkCassandraITFlatSpecBase {
 
 object DumbConverter extends CustomDriverConverter {
   val asciiType = DataType.ascii()
-  override val fromDriverRowExtension: PartialFunction[(DataType, Name), ColumnType[_]] = {
-    case (x: DataType.CustomType, _) => {
+  override val fromDriverRowExtension: PartialFunction[DataType, ColumnType[_]] = {
+    case (x: DataType.CustomType) => {
       IntType
     }
   }

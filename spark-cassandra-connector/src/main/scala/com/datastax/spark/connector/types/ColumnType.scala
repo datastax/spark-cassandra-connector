@@ -86,7 +86,7 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
-  private lazy val customFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
+  private lazy val customFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
     Option(SparkEnv.get)
       .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
@@ -108,22 +108,20 @@ object ColumnType {
       TupleFieldDef(index, fromDriverType(field))
   }
 
+  private def typeArg(dataType: DataType, idx: Int) = fromDriverType(dataType.getTypeArguments.get(idx))
+
+  private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
+    case listType if listType.getName == DataType.Name.LIST => ListType(typeArg(listType, 0))
+    case setType if setType.getName == DataType.Name.SET => SetType(typeArg(setType, 0))
+    case mapType if mapType.getName == DataType.Name.MAP => MapType(typeArg(mapType, 0), typeArg(mapType, 1))
+    case userType: DriverUserType => UserDefinedType(userType.getTypeName, fields(userType))
+    case tupleType: DriverTupleType => TupleType(fields(tupleType): _*)
+    case dataType => primitiveTypeMap(dataType)
+  }
+
   def fromDriverType(dataType: DataType): ColumnType[_] = {
-    val typeArgs = dataType.getTypeArguments.map(fromDriverType)
-
-    val standardFromDriverRow: PartialFunction[(DataType, DataType.Name), ColumnType[_]] = {
-      case (_, DataType.Name.LIST) => ListType(typeArgs(0))
-      case (_, DataType.Name.SET)  => SetType(typeArgs(0))
-      case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
-      case (userType: DriverUserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
-      case (tupleType: DriverTupleType, _) => TupleType(fields(tupleType): _*)
-      case _ => primitiveTypeMap(dataType)
-    }
-
-    val getColumnType: PartialFunction[(DataType, DataType.Name), ColumnType[_]] =
-      customFromDriverRow orElse standardFromDriverRow
-
-    getColumnType((dataType, dataType.getName))
+    val getColumnType: PartialFunction[DataType, ColumnType[_]] = customFromDriverRow orElse standardFromDriverRow
+    getColumnType(dataType)
   }
 
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */
