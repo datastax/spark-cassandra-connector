@@ -263,11 +263,14 @@ object Settings extends Build {
     // if we have a single C* create as little groups as possible to avoid restarting C*
     // the minimum - we need to run REPL and streaming tests in separate processes
     // additional groups for auth and ssl is just an optimisation
+    // A new group is made for CustomFromDriverSpec because the ColumnType needs to be
+    // Initilized afresh
     def singleCInstanceGroupingFunction(test: TestDefinition): String = {
       val pkgName = test.name.reverse.dropWhile(_ != '.').reverse
       if (test.name.toLowerCase.contains("authenticate")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
       else if (pkgName.contains(".repl")) "repl"
+      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else if (pkgName.contains(".streaming")) "streaming"
       else "other"
     }
