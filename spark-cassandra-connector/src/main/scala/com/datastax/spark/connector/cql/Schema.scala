@@ -87,12 +87,15 @@ case class ClusteringColumn(index: Int) extends ColumnRole
 case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
-/** A Cassandra column metadata that can be serialized. */
+/** A Cassandra column metadata that can be serialized.  */
 case class ColumnDef(
-    columnName: String,
-    columnRole: ColumnRole,
-    columnType: ColumnType[_],
-    indexed : Boolean = false) extends FieldDef {
+  columnName: String,
+  columnRole: ColumnRole,
+  columnType: ColumnType[_],
+  indexClassName: Option[String] = None,
+  indexOptions: Map[String, String] = Map.empty) extends FieldDef {
+
+  def indexed: Boolean = indexClassName.nonEmpty
 
   def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
@@ -115,9 +118,14 @@ case class ColumnDef(
 
 object ColumnDef {
 
-  def apply(column: ColumnMetadata, columnRole: ColumnRole, isIndexed: Boolean): ColumnDef = {
+  def apply(
+    column: ColumnMetadata,
+    columnRole: ColumnRole,
+    indexType: Option[String],
+    indexOptions: Map[String, String]): ColumnDef = {
+
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(column.getName, columnRole, columnType, isIndexed)
+    ColumnDef(column.getName, columnRole, columnType, indexType, indexOptions)
   }
 }
 
@@ -201,28 +209,43 @@ object Schema extends Logging {
     case view: MaterializedViewMetadata => Map.empty
   }
 
+  def getIndexClassNameAndOptions( indexMetadata: Option[IndexMetadata]) = indexMetadata match {
+    //TODO Currently no way to get all indexOptions, Empty map for now so we can change this without
+    // breaking binary compatibility later
+    case Some(index: IndexMetadata) => (Some(index.getIndexClassName), Map.empty[String, String])
+    case _ => (None, Map.empty[String, String])
+  }
 
-  private def fetchPartitionKey(table: AbstractTableMetadata): Seq[ColumnDef] = {
+   private def fetchPartitionKey(table: AbstractTableMetadata): Seq[ColumnDef] = {
     val indexMap = getIndexMap(table)
-    for (column <- table.getPartitionKey) yield
-      ColumnDef(column, PartitionKeyColumn, indexMap.contains(column.getName))
+    for (column <- table.getPartitionKey) yield {
+      val (indexClassName, indexOptions) =
+        getIndexClassNameAndOptions(indexMap.get(column.getName))
+      ColumnDef(column, PartitionKeyColumn, indexClassName, indexOptions)
+    }
   }
 
   private def fetchClusteringColumns(table: AbstractTableMetadata): Seq[ColumnDef] = {
     val indexMap = getIndexMap(table)
-    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
-      ColumnDef(column, ClusteringColumn(index), indexMap.contains(column.getName))
+    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield {
+      val (indexClassName, indexOptions) =
+        getIndexClassNameAndOptions(indexMap.get(column.getName))
+      ColumnDef(column, ClusteringColumn(index), indexClassName, indexOptions)
+    }
   }
 
   private def fetchRegularColumns(table: AbstractTableMetadata) = {
     val indexMap = getIndexMap(table)
     val primaryKey = table.getPrimaryKey.toSet
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield
+    for (column <- regularColumns) yield {
+      val (indexType: Option[String], indexOptions: Map[String, String]) =
+        getIndexClassNameAndOptions(indexMap.get(column.getName))
       if (column.isStatic)
-        ColumnDef(column, StaticColumn, indexMap.contains(column.getName))
+        ColumnDef(column, StaticColumn, indexType, indexOptions)
       else
-        ColumnDef(column, RegularColumn, indexMap.contains(column.getName))
+        ColumnDef(column, RegularColumn, indexType, indexOptions)
+    }
   }
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.

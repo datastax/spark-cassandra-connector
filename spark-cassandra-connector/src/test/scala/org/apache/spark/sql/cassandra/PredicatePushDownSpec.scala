@@ -35,8 +35,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   val c1 = ColumnDef("c1", ClusteringColumn(0), IntType)
   val c2 = ColumnDef("c2", ClusteringColumn(1), IntType)
   val c3 = ColumnDef("c3", ClusteringColumn(2), IntType)
-  val i1 = ColumnDef("i1", RegularColumn, IntType, indexed = true)
-  val i2 = ColumnDef("i2", RegularColumn, IntType, indexed = true)
+  val i1 = ColumnDef("i1", RegularColumn, IntType, indexClassName = Some("index"))
+  val i2 = ColumnDef("i2", RegularColumn, IntType, indexClassName = Some("index"))
   val r1 = ColumnDef("r1", RegularColumn, IntType)
   val r2 = ColumnDef("r2", RegularColumn, IntType)
 
