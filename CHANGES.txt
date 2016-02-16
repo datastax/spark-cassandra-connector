@@ -7,6 +7,8 @@
  * Fixed assembly build (SPARKC-311)
  * Upgrade Cassandra version to 3.0.2 by default and allow to specify arbitrary Cassandra version for
    integration tests through the command line (SPARKC-307)
+ * Upgrade Cassandra driver to 3.0.0 GA
+ * Includes all patches up to 1.4.2.
 
 1.5.0 RC1
  * Fix special case types in SqlRowWriter (SPARKC-306)
@@ -15,7 +17,6 @@
  * JWCT inherits Spark Conf from Spark Context (SPARKC-294)
  * Support of new Cassandra Date and Time types (SPARKC-277)
  * Upgrade Cassandra driver to 3.0.0-rc1
-
 
 1.5.0 M3
  * Added ColumRef child class to represent functions calls (SPARKC-280)
@@ -38,6 +39,10 @@
  * Spark 1.5 initial integration (SPARKC-241)
 
 ********************************************************************************
+
+1.4.2
+ * SqlRowWriter not using Cached Converters (SPARKC-329)
+ * Fix Violation of Partition Contract (SPARKC-323)
 
 1.4.1
  * Let UDTs be converted from GenericRows (SPARKC-271)
