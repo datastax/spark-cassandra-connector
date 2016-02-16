@@ -26,8 +26,8 @@ trait TypeConverter[T] extends Serializable {
   def targetTypeTag: TypeTag[T]
 
   /** String representation of the converter target type.*/
-  def targetTypeName: String =
-    targetTypeTag.tpe.toString
+  def targetTypeName: String = TypeTag.synchronized(
+    targetTypeTag.tpe.toString)
 
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
