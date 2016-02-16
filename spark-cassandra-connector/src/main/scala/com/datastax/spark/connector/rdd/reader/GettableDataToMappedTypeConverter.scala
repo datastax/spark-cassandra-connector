@@ -5,6 +5,8 @@ import java.lang.reflect.Method
 import scala.language.existentials
 import scala.reflect.runtime.universe._
 
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, TupleColumnMapper, ColumnMapper, DefaultColumnMapper}
 import com.datastax.spark.connector.types.{TupleType, MapType, SetType, ListType, TypeConversionException, BigIntType, ColumnType, TypeConverter, UserDefinedType}
@@ -38,7 +40,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
   // we can't serialize the type tag, but we can at least serialize the type name,
   // therefore overriding targetTypeName and making it strict (non-lazy).
   override val targetTypeName: String =
-    TypeTag.synchronized(targetTypeTag.tpe.toString)
+    SparkReflectionLock.synchronized(targetTypeTag.tpe.toString)
 
   // must be serialized directly, for we can't recreate it on the deserialization side, as we don't have
   // the TypeTag anymore
@@ -61,7 +63,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
     * and for everything else uses
     * [[com.datastax.spark.connector.mapper.DefaultColumnMapper DefaultColumnMapper]] */
   private def columnMapper[U : TypeTag]: ColumnMapper[U] = {
-    val tpe = TypeTag.synchronized(typeTag[U].tpe)
+    val tpe = SparkReflectionLock.synchronized(typeTag[U].tpe)
     if (tpe.typeSymbol.fullName startsWith "scala.Tuple")
       new TupleColumnMapper[U]
     else if (isJavaBean) 
@@ -171,7 +173,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
 
   /** Converters for converting values passed to setters */
   private val setterParamConverters: Map[String, TypeConverter[_]] = {
-    val targetType = TypeTag.synchronized(typeTag[T].tpe)
+    val targetType = SparkReflectionLock.synchronized(typeTag[T].tpe)
     val setterParamTypes: Map[String, Type] =
       for ((s, _) <- columnMap.setters)
         yield (s, ReflectionUtil.methodParamTypes(targetType, s).head)
