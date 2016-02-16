@@ -33,6 +33,10 @@
 
 ********************************************************************************
 
+1.4.2
+ * SqlRowWriter not using Cached Converters (SPARKC-329)
+ * Fix Violation of Partition Contract (SPARKC-323)
+
 1.4.1
  * Let UDTs be converted from GenericRows (SPARKC-271)
  * Map InetAddress and UUID to string and store it as StringType in Spark SQL (SPARKC-259)
