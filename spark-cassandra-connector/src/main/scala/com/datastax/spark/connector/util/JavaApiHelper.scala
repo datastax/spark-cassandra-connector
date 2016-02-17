@@ -43,7 +43,8 @@ object JavaApiHelper {
   def getClassTag[T](clazz: Class[T]): ClassTag[T] = ClassTag(clazz)
 
   /** Returns a runtime class of a given `TypeTag`. */
-  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
+  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = TypeTag.synchronized(
+    mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]])
 
   /** Returns a runtime class of a given `ClassTag`. */
   def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]

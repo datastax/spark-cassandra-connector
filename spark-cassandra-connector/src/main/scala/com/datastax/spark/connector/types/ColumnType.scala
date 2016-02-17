@@ -22,7 +22,7 @@ trait ColumnType[T] extends Serializable {
 
   /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String
-    = scalaTypeTag.tpe.toString
+    = TypeTag.synchronized(scalaTypeTag.tpe.toString)
 
   def isCollection: Boolean
 }

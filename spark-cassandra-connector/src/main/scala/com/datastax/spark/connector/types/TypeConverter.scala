@@ -26,8 +26,8 @@ trait TypeConverter[T] extends Serializable {
   def targetTypeTag: TypeTag[T]
 
   /** String representation of the converter target type.*/
-  def targetTypeName: String =
-    targetTypeTag.tpe.toString
+  def targetTypeName: String = TypeTag.synchronized(
+    targetTypeTag.tpe.toString)
 
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
@@ -405,7 +405,7 @@ object TypeConverter {
     }
   }
 
-  val UDTValueTypeTag = implicitly[TypeTag[UDTValue]]
+  val UDTValueTypeTag = TypeTag.synchronized(implicitly[TypeTag[UDTValue]])
 
   // TODO: This is a stub. Currently doesn't do any conversion at all.
   implicit object UDTValueConverter extends NullableTypeConverter[UDTValue] {
@@ -633,7 +633,7 @@ object TypeConverter {
   /** Converts Scala Options to Java nullable references. Used when saving data to Cassandra. */
   class OptionToNullConverter(nestedConverter: TypeConverter[_]) extends NullableTypeConverter[AnyRef] {
 
-    def targetTypeTag = implicitly[TypeTag[AnyRef]]
+    def targetTypeTag = TypeTag.synchronized(implicitly[TypeTag[AnyRef]])
 
     def convertPF = {
       case Some(x) => nestedConverter.convert(x).asInstanceOf[AnyRef]
