@@ -2,10 +2,11 @@ package com.datastax.spark.connector.types
 
 import java.io.ObjectOutputStream
 
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
+
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import com.datastax.driver.core.{UDTValue => DriverUDTValue, ProtocolVersion, UserType, DataType}
 import com.datastax.spark.connector.{ColumnName, UDTValue}
@@ -27,7 +28,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   override type Column = FieldDef
 
   def isCollection = false
-  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[UDTValue]] }
+  def scalaTypeTag = SparkReflectionLock.synchronized { implicitly[TypeTag[UDTValue]] }
   def cqlTypeName = name
 
   def converterToCassandra = new TypeConverter[UDTValue] {
@@ -73,7 +74,7 @@ object UserDefinedType {
     val fieldTypes = fieldNames.map(dataType.getFieldType)
     val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
 
-    override def targetTypeTag = TypeTag.synchronized { implicitly[TypeTag[DriverUDTValue]] }
+    override def targetTypeTag = SparkReflectionLock.synchronized { implicitly[TypeTag[DriverUDTValue]] }
 
     override def convertPF = {
       case udtValue: UDTValue =>
