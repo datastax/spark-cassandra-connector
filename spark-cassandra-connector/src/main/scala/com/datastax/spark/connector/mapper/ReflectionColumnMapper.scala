@@ -5,6 +5,8 @@ import java.lang.reflect.{Constructor, Method}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
@@ -33,7 +35,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
   private def columnRefByAliasName(selectedColumns: IndexedSeq[ColumnRef]): Map[String, ColumnRef] =
     (for (c <- selectedColumns) yield (c.selectedAs, c)).toMap
 
-  private val cls = TypeTag.synchronized { implicitly[ClassTag[T]].runtimeClass }
+  private val cls = SparkReflectionLock.synchronized { implicitly[ClassTag[T]].runtimeClass }
 
   override def columnMapForReading(
       struct: StructDef,
