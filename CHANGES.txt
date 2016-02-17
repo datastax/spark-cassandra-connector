@@ -37,6 +37,8 @@
 1.4.2
  * SqlRowWriter not using Cached Converters (SPARKC-329)
  * Fix Violation of Partition Contract (SPARKC-323)
+ * Use ScalaReflectionLock from Spark instead of TypeTag 
+   to workaround Scala 2.10 reflection concurrency issues (SPARKC-333)
 
 1.4.1
  * Let UDTs be converted from GenericRows (SPARKC-271)

@@ -75,19 +75,11 @@ object Settings extends Build {
 
   var TEST_ENV: Option[Map[String, String]] = None
 
-  def currentCommitSha = ("git rev-parse --short HEAD" !!).split('\n').head.trim
-
-  def versionSuffix = {
-    sys.props.get("publish.version.type").map(_.toLowerCase) match {
-      case Some("release") => ""
-      case Some("commit-release") => s"-$currentCommitSha"
-      case _ => "-SNAPSHOT"
-    }
-  }
+  def currentVersion = ("git describe --tags --match v*" !!).trim.substring(1)
 
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := s"1.5.0-RC1$versionSuffix",
+    version in ThisBuild := currentVersion,
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
