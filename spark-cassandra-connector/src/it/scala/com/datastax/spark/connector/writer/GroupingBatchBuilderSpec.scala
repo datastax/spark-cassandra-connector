@@ -25,10 +25,20 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
   val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
   def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
-    val stmt = session.prepare(s"""INSERT INTO $ks.tab (id, value) VALUES (:id, :value)""")
-    val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
+    val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+    val stmt = session.prepare( s"""INSERT INTO $ks.tab (id, value) VALUES (:id, :value)""")
+    val boundStmtBuilder = new BoundStatementBuilder(
+      rowWriter,
+      stmt,
+      protocolVersion = protocolVersion)
     val batchStmtBuilder = new BatchStatementBuilder(Type.UNLOGGED, rkg, ConsistencyLevel.LOCAL_ONE)
-    new GroupingBatchBuilder[(Int, String)](boundStmtBuilder, batchStmtBuilder, _: BoundStatement => Any, _: BatchSize, _: Int, _: Iterator[(Int, String)])
+    new GroupingBatchBuilder[(Int, String)](
+      boundStmtBuilder,
+      batchStmtBuilder,
+      _: BoundStatement => Any,
+      _: BatchSize,
+      _: Int,
+      _: Iterator[(Int, String)])
   }
 
   def staticBatchKeyGen(bs: BoundStatement): Int = 0

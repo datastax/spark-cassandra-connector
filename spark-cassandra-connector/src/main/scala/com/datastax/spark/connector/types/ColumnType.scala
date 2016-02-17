@@ -4,8 +4,11 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{UUID, Date}
 
+import org.apache.spark.SparkEnv
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+
 import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, DataType}
-import com.datastax.spark.connector.util.Symbols
+import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil, Symbols}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -35,7 +38,7 @@ trait ColumnType[T] extends Serializable {
 
   /** Name of the Scala type. Useful for source generation.*/
   def scalaTypeName: String
-    = TypeTag.synchronized(scalaTypeTag.tpe.toString)
+    = SparkReflectionLock.synchronized(scalaTypeTag.tpe.toString)
 
   /** Name of the CQL type. Useful for CQL generation.*/
   def cqlTypeName: String
@@ -43,9 +46,26 @@ trait ColumnType[T] extends Serializable {
   def isCollection: Boolean
 }
 
+object ColumnTypeConf {
+
+  val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
+
+  val CustomDriverTypeParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.dev.customFromDriver",
+    section = ReferenceSection,
+    default = None,
+    description = """Provides an additional class implementing CustomDriverConverter for those
+        |clients that need to read non-standard primitive Cassandra types. If your C* implementation
+        |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
+        |OSS Cassandra this should never be used.""".stripMargin('|')
+  )
+
+  val Properties = Set(CustomDriverTypeParam)
+}
+
 object ColumnType {
 
-  private val primitiveTypeMap = Map[DataType, ColumnType[_]](
+  private[connector] val primitiveTypeMap = Map[DataType, ColumnType[_]](
     DataType.text() -> TextType,
     DataType.ascii() -> AsciiType,
     DataType.varchar() -> VarCharType,
@@ -68,6 +88,14 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
+  private lazy val customFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
+    Option(SparkEnv.get)
+      .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
+      .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
+      .flatMap(clazz => Some(clazz.fromDriverRowExtension))
+      .getOrElse(PartialFunction.empty)
+  }
+
   /** Makes sure the sequence does not contain any lazy transformations.
     * This guarantees that if T is Serializable, the collection is Serializable. */
   private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
@@ -82,16 +110,20 @@ object ColumnType {
       TupleFieldDef(index, fromDriverType(field))
   }
 
+  private def typeArg(dataType: DataType, idx: Int) = fromDriverType(dataType.getTypeArguments.get(idx))
+
+  private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
+    case listType if listType.getName == DataType.Name.LIST => ListType(typeArg(listType, 0))
+    case setType if setType.getName == DataType.Name.SET => SetType(typeArg(setType, 0))
+    case mapType if mapType.getName == DataType.Name.MAP => MapType(typeArg(mapType, 0), typeArg(mapType, 1))
+    case userType: DriverUserType => UserDefinedType(userType.getTypeName, fields(userType))
+    case tupleType: DriverTupleType => TupleType(fields(tupleType): _*)
+    case dataType => primitiveTypeMap(dataType)
+  }
+
   def fromDriverType(dataType: DataType): ColumnType[_] = {
-    val typeArgs = dataType.getTypeArguments.map(fromDriverType)
-    (dataType, dataType.getName) match {
-      case (_, DataType.Name.LIST) => ListType(typeArgs(0))
-      case (_, DataType.Name.SET)  => SetType(typeArgs(0))
-      case (_, DataType.Name.MAP)  => MapType(typeArgs(0), typeArgs(1))
-      case (userType: DriverUserType, _) => UserDefinedType(userType.getTypeName, fields(userType))
-      case (tupleType: DriverTupleType, _) => TupleType(fields(tupleType): _*)
-      case _ => primitiveTypeMap(dataType)
-    }
+    val getColumnType: PartialFunction[DataType, ColumnType[_]] = customFromDriverRow orElse standardFromDriverRow
+    getColumnType(dataType)
   }
 
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */

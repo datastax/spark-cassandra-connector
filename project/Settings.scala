@@ -64,6 +64,8 @@ object Settings extends Build {
     dir
   }
 
+  val cassandraTestVersion = sys.props.get("test.cassandra.version").getOrElse(Versions.Cassandra)
+
   lazy val TEST_JAVA_OPTS = Seq(
     "-XX:MaxPermSize=256M",
     "-Xms256m",
@@ -86,9 +88,11 @@ object Settings extends Build {
     }
   }
 
+  def currentVersion = ("git describe --tags --match v*" !!).trim.substring(1)
+
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := s"1.6.0-M1$versionSuffix",
+    version in ThisBuild := currentVersion,
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
@@ -261,11 +265,14 @@ object Settings extends Build {
     // if we have a single C* create as little groups as possible to avoid restarting C*
     // the minimum - we need to run REPL and streaming tests in separate processes
     // additional groups for auth and ssl is just an optimisation
+    // A new group is made for CustomFromDriverSpec because the ColumnType needs to be
+    // Initilized afresh
     def singleCInstanceGroupingFunction(test: TestDefinition): String = {
       val pkgName = test.name.reverse.dropWhile(_ != '.').reverse
       if (test.name.toLowerCase.contains("authenticate")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
       else if (pkgName.contains(".repl")) "repl"
+      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else if (pkgName.contains(".streaming")) "streaming"
       else "other"
     }

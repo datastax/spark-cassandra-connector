@@ -184,7 +184,7 @@ object Artifacts {
   val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions        // ApacheV2
   val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark sparkExclusions        // ApacheV2
 
-  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Cassandra      logbackExclude    // ApacheV2
+  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion      logbackExclude    // ApacheV2
 
   object Metrics {
     val metricsCore       = "com.codahale.metrics"    % "metrics-core"           % CodaHaleMetrics % "provided"

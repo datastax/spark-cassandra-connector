@@ -2,6 +2,8 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.driver.core.ProtocolVersion
+
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
@@ -11,7 +13,7 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
+import com.datastax.spark.connector.types._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
@@ -32,6 +34,7 @@ object CustomerIdConverter extends TypeConverter[String] {
 }
 
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
+
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
@@ -73,6 +76,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
       },
       Future {
+        session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+      },
+      Future {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
       },
@@ -87,6 +93,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
       })
   }
+
+  def protocolVersion = conn.withClusterDo(cluster =>
+    cluster.getConfiguration.getProtocolOptions.getProtocolVersion)
 
   private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
@@ -168,6 +177,51 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     )
     sc.parallelize(col).saveToCassandra(ks, "key_value")
     verifyKeyValueTable("key_value")
+  }
+
+  it should "ignore unset inserts" in {
+    conn.withSessionDo {
+      _.execute(
+        s"""INSERT into $ks.unset_test (A, B, C) VALUES ('Original', 'Original', 'Original')""")
+    }
+
+    sc.parallelize(Seq(("Original", Unset, "New"))).saveToCassandra(ks, "unset_test")
+    val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
+      .collect
+    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+      result(0) should be(("Original", Some("Original"), Some("New")))
+    } else {
+      result(0) should be(("Original", None, Some("New")))
+    }
+  }
+
+  it should "ignore CassandraOptions set to UNSET" in {
+    conn.withSessionDo {
+      _.execute(
+        s"""INSERT into $ks.unset_test (A, B, C) VALUES ('Original', 'Original','Original')"""
+      )
+    }
+    sc.parallelize(Seq(("Original", CassandraOption.Unset, "New")))
+      .saveToCassandra(ks, "unset_test")
+    val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
+      .collect
+    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+      result(0) should be(("Original", Some("Original"), Some("New")))
+    } else {
+      result(0) should be(("Original", None, Some("New")))
+    }
+  }
+
+  it should "delete with Cassandra Options set to Null" in {
+    conn.withSessionDo {
+      _.execute(
+        s"""INSERT into $ks.unset_test (A, B, C) VALUES ('Original', 'Original', 'Original')"""
+      )
+    }
+    sc.parallelize(Seq(("Original", CassandraOption.Null, "New"))).saveToCassandra(ks, "unset_test")
+    val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
+      .collect
+    result(0) should be(("Original", None, Some("New")))
   }
 
   it should "write RDD of tuples to a table with camel case column names" in {
@@ -347,6 +401,41 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       }
     }
   }
+
+  it should "write null values of user-defined-types in Cassandra" in {
+    val address = null
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2) should be (null)
+      }
+    }
+  }
+
+  it should "write values of user-defined-types with null fields in Cassandra" in {
+    val address = UDTValue.fromMap(Map("city" -> "Warsaw", "zip" -> 10000, "street" -> null))
+    val col = Seq((1, "Joe", address))
+    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+
+    conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      result should have size 1
+      for (row <- result) {
+        row.getInt(0) shouldEqual 1
+        row.getString(1) shouldEqual "Joe"
+        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUDTValue(2).getString("street") should be (null)
+        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+      }
+    }
+  }
+
 
   it should "write values of TupleValue type" in {
     val tuple = TupleValue(1, 2, "three")

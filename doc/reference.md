@@ -171,6 +171,13 @@ may also be used. ("127.0.0.1,192.168.0.1")
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>sql.pushdown.additionalClasses</code></td>
+  <td></td>
+  <td>A comma seperated list of classes to be used (in order) to apply additional
+ pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+      </td>
+</tr>
+<tr>
   <td><code>table.size.in.bytes</code></td>
   <td>None</td>
   <td>Used by DataFrames Internally, will be updated in a future release to
@@ -231,6 +238,22 @@ retrieve size from C*. Can be set manually now</td>
   <td><code>connection.ssl.trustStore.type</code></td>
   <td>JKS</td>
   <td>Trust store type</td>
+</tr>
+</table>
+
+
+## Custom Cassandra Type Parameters (Expert Use Only)
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>dev.customFromDriver</code></td>
+  <td>None</td>
+  <td>Provides an additional class implementing CustomDriverConverter for those
+clients that need to read non-standard primitive Cassandra types. If your C* implementation
+uses a Java Driver which can read DataType.custom() you may need it this. If you are using
+OSS Cassandra this should never be used.</td>
 </tr>
 </table>
 
@@ -310,6 +333,13 @@ in each row</td>
   <td><code>output.consistency.level</code></td>
   <td>LOCAL_QUORUM</td>
   <td>Consistency level for writing</td>
+</tr>
+<tr>
+  <td><code>output.ignoreNulls</code></td>
+  <td>false</td>
+  <td> In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
+this to true will cause all null values to be left as unset rather than bound. For
+finer control see the CassandraOption class</td>
 </tr>
 <tr>
   <td><code>output.metrics</code></td>

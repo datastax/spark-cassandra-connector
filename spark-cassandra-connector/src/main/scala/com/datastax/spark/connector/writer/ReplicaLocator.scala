@@ -56,9 +56,10 @@ class ReplicaLocator[T] private(
    */
   def keyByReplicas(data: Iterator[T]): Iterator[(scala.collection.immutable.Set[InetAddress], T)] = {
       connector.withSessionDo { session =>
+        val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
         val stmt = prepareDummyStatement(session)
         val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
-        val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
+        val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion = protocolVersion)
         val clusterMetadata = session.getCluster.getMetadata
         data.map { row =>
           val hosts = clusterMetadata

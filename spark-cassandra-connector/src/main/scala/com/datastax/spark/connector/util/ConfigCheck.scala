@@ -3,6 +3,7 @@ package com.datastax.spark.connector.util
 import com.datastax.spark.connector.bulk.BulkConf
 import com.datastax.spark.connector.cql.{CassandraConnectionFactory, AuthConfFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
@@ -28,7 +29,8 @@ object ConfigCheck {
     AuthConfFactory.Properties ++
     CassandraConnectionFactory.Properties ++
     CassandraSQLContext.Properties ++
-    CassandraSourceRelation.Properties
+    CassandraSourceRelation.Properties ++
+    ColumnTypeConf.Properties
 
   val validStaticPropertyNames = validStaticProperties.map(_.name)
 

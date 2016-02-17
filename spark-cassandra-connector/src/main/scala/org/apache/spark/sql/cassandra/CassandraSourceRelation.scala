@@ -7,7 +7,7 @@ import java.util.UUID
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.types.{UUIDType, InetType, VarIntType}
-import com.datastax.spark.connector.util.{ConfigParameter, NameTools}
+import com.datastax.spark.connector.util.{ReflectionUtil, ConfigParameter, NameTools}
 import org.apache.spark.{SparkConf, Logging}
 
 import org.apache.spark.rdd.RDD
@@ -91,19 +91,57 @@ private[cassandra] class CassandraSourceRelation(
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
-    case true =>
-      (filters.toSet -- new PredicatePushDown(filters.toSet, tableDef).predicatesToPushDown).toArray
-    case fasle => filters
+    case true => predicatePushDown(filters).handledBySpark.toArray
+    case false => filters
+  }
+
+  lazy val additionalRules: Seq[CassandraPredicateRules] = {
+    import CassandraSourceRelation.AdditionalCassandraPushDownRulesParam
+    val sc = sqlContext.sparkContext
+
+    /* So we can set this in testing to different values without
+     making a new context check local property as well */
+    val userClasses: Option[String] =
+      sc.getConf.getOption(AdditionalCassandraPushDownRulesParam.name)
+        .orElse(Option(sc.getLocalProperty(AdditionalCassandraPushDownRulesParam.name)))
+
+    userClasses match {
+      case Some(classes) =>
+        classes
+          .trim
+          .split("""\s*,\s*""")
+          .map(ReflectionUtil.findGlobalObject[CassandraPredicateRules])
+          .reverse
+      case None => AdditionalCassandraPushDownRulesParam.default
+    }
+  }
+
+  private def predicatePushDown(filters: Array[Filter]) = {
+    logInfo(s"Input Predicates: [${filters.mkString(", ")}]")
+
+    /** Apply built in rules **/
+    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef)
+    val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
+    logDebug(s"Basic Rules Applied:\n$basicPushdown")
+
+    /** Apply any user defined rules **/
+    val finalPushdown =  additionalRules.foldRight(basicPushdown)(
+      (rules, pushdowns) => {
+        val pd = rules(pushdowns, tableDef)
+        logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
+        pd
+      }
+    )
+
+    logDebug(s"Final Pushdown filters:\n$finalPushdown")
+    finalPushdown
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
-    logInfo(s"filters: ${filters.mkString(", ")}")
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val filterPushdown = new PredicatePushDown(filters.toSet, tableDef)
-        val pushdownFilters = filterPushdown.predicatesToPushDown.toSeq
-        logInfo(s"pushdown filters: ${pushdownFilters.toString()}")
+        val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
         val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
         filteredRdd.asInstanceOf[RDD[Row]]
       } else {
@@ -193,7 +231,18 @@ object CassandraSourceRelation {
         |retrieve size from C*. Can be set manually now""".stripMargin
   )
 
+  val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
+    name = "spark.cassandra.sql.pushdown.additionalClasses",
+    section = ReferenceSection,
+    default = List.empty,
+    description =
+      """A comma seperated list of classes to be used (in order) to apply additional
+        | pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+      """.stripMargin
+  )
+
   val Properties = Seq(
+    AdditionalCassandraPushDownRulesParam,
     TableSizeInBytesParam
   )
 

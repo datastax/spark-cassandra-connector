@@ -26,6 +26,9 @@ class TableWriter[T] private (
     rowWriter: RowWriter[T],
     writeConf: WriteConf) extends Serializable with Logging {
 
+  require(tableDef.isView == false,
+    s"${tableDef.name} is a Materialized View and Views are not writable")
+
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
@@ -137,13 +140,20 @@ class TableWriter[T] private (
   def write(taskContext: TaskContext, data: Iterator[T]) {
     val updater = OutputMetricsUpdater(taskContext, writeConf)
     connector.withSessionDo { session =>
+      val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
       val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
         Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
-      val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt)
+
+      val boundStmtBuilder = new BoundStatementBuilder(
+        rowWriter,
+        stmt,
+        protocolVersion = protocolVersion,
+        ignoreNulls = writeConf.ignoreNulls)
+
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
@@ -165,6 +175,7 @@ class TableWriter[T] private (
 
       val duration = updater.finish() / 1000000000d
       logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
+      if (boundStmtBuilder.logUnsetToNullWarning){ logWarning(boundStmtBuilder.UnsetToNullWarning) }
     }
   }
 }

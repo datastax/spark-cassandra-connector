@@ -2,14 +2,16 @@ package com.datastax.spark.connector.rdd.reader
 
 import java.lang.reflect.Constructor
 
+import scala.reflect.runtime.universe._
+import scala.util.{Failure, Success, Try}
+
+import org.apache.commons.lang3.reflect.ConstructorUtils
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import org.apache.spark.Logging
 import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
-import org.apache.commons.lang3.reflect.ConstructorUtils
-import com.datastax.spark.connector.util.Reflect
 
-import scala.reflect.runtime.universe._
-import scala.util.{Failure, Success, Try}
+import com.datastax.spark.connector.util.Reflect
 
 /** Factory for creating objects of any type by invoking their primary constructor.
   * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
@@ -19,7 +21,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   import AnyObjectFactory._
 
   @transient
-  private val tpe = TypeTag.synchronized(implicitly[TypeTag[T]].tpe)
+  private val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
 
   @transient
   lazy val rm: RuntimeMirror =
@@ -44,7 +46,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   val argOffset: Int = oneIfMemberClass(javaClass)
 
   @transient
-  lazy val constructorParamTypes: Array[Type] = TypeTag.synchronized{
+  lazy val constructorParamTypes: Array[Type] = SparkReflectionLock.synchronized{
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 

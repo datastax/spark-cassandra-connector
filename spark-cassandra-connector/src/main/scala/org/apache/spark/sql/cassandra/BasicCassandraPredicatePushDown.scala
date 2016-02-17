@@ -25,7 +25,7 @@ import com.datastax.spark.connector.cql.TableDef
  * @param predicates list of filter predicates available in the user query
  * @param table Cassandra table definition
  */
-class PredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], table: TableDef) {
+class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], table: TableDef) {
 
   private val Predicates = implicitly[PredicateOps[Predicate]]
 

@@ -3,8 +3,9 @@ package com.datastax.spark.connector.rdd.reader
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-import com.datastax.driver.core.Row
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 
+import com.datastax.driver.core.Row
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper._
@@ -22,7 +23,7 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
     new GettableDataToMappedTypeConverter[R](table, selectedColumns)
 
   private val isReadingTuples =
-    TypeTag.synchronized(typeTag[R].tpe.typeSymbol.fullName startsWith "scala.Tuple")
+    SparkReflectionLock.synchronized(typeTag[R].tpe.typeSymbol.fullName startsWith "scala.Tuple")
 
   override val neededColumns = {
     val ctorRefs = converter.columnMap.constructor

@@ -61,7 +61,7 @@ object SparkTemplate {
     }
 
     System.err.println("Starting SparkContext with the following configuration:\n" +
-      defaultConf.toDebugString.lines.map(line => "\t" + line).mkString("\n"))
+      conf.toDebugString.lines.map(line => "\t" + line).mkString("\n"))
     _conf = conf.clone()
     for (cp <- sys.env.get("SPARK_SUBMIT_CLASSPATH"))
       conf.setJars(
