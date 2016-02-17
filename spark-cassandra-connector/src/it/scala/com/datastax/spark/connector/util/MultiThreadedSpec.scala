@@ -3,7 +3,7 @@ package com.datastax.spark.connector.util
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{SparkTemplate, EmbeddedCassandra}
+import com.datastax.spark.connector.embedded.SparkTemplate
 import org.scalatest.{Matchers, FlatSpec}
 import org.scalatest.concurrent.AsyncAssertions
 
@@ -13,10 +13,9 @@ class MultiThreadedSpec
   with Matchers
   with SharedEmbeddedCassandra
   with SparkTemplate
-  with AsyncAssertions{
+  with AsyncAssertions {
 
   useCassandraConfig("cassandra-default.yaml.template")
-  //useSparkConf(defaultSparkConf)
 
   val conn = CassandraConnector(Set(cassandraHost))
   val count = 10000
@@ -44,15 +43,17 @@ class MultiThreadedSpec
       def run() {
         val rdd = sc.cassandraTable[(Int, String)](ks, tab)
         val result = rdd.collect
-        w { result should have size (count) }
-        w.dismiss()
+        w {
+          result should have size (count)
         }
+        w.dismiss()
+      }
     })
     for (thread <- threads) thread.start()
     import org.scalatest.time.SpanSugar._
 
     w.await(timeout(10 seconds), dismissals(10))
     for (thread <- threads) thread.join()
-    }
+  }
 
 }
