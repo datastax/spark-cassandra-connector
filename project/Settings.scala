@@ -88,9 +88,11 @@ object Settings extends Build {
     }
   }
 
+  def currentVersion = ("git describe --tags --match v*" !!).trim.substring(1)
+
   lazy val buildSettings = Seq(
     organization         := "com.datastax.spark",
-    version in ThisBuild := s"1.6.0-M1$versionSuffix",
+    version in ThisBuild := currentVersion,
     scalaVersion         := Versions.scalaVersion,
     crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
