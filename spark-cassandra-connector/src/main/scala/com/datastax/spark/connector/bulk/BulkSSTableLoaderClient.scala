@@ -4,7 +4,7 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector.bulk.BulkConf.BulkServerConf
 import org.apache.cassandra.config.{ColumnDefinition, CFMetaData}
 import org.apache.cassandra.cql3.ColumnIdentifier
-import org.apache.cassandra.db.marshal.{ReversedType, TypeParser}
+import org.apache.cassandra.db.marshal.ReversedType
 import org.apache.cassandra.dht.{IPartitioner, Token, Range}
 import org.apache.cassandra.io.sstable.SSTableLoader.Client
 import org.apache.cassandra.schema.{CQLTypeParser, Types, SchemaKeyspace}
@@ -124,7 +124,7 @@ class BulkSSTableLoaderClient(session: Session, bulkServerConf: BulkServerConf) 
 
     val colRowIterator = session.execute(columnsQueryString, keyspace).iterator.asScala
     for (colRow <- colRowIterator) {
-      columnDefinitions = columnDefinitions + createDefinitionFromRow(colRow, keyspace, tableName, types)
+      columnDefinitions = columnDefinitions :+ createDefinitionFromRow(colRow, keyspace, tableName, types)
     }
 
     CFMetaData.create(
