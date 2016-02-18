@@ -42,7 +42,7 @@ object CassandraSparkBuild extends Build {
     id = "cassandra-server",
     base = file("cassandra-server"),
     settings = defaultSettings ++ Seq(
-      libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
+      libraryDependencies ++= Seq(Artifacts.cassandraServerTest % "it", Artifacts.airlift),
       cassandraServerClasspath := {
         (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
       }
@@ -160,13 +160,14 @@ object Artifacts {
       .exclude("net.sf.jopt-simple", "jopt-simple")
   }
 
-  val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
-  val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
-  val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
-  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude // ApacheV2
-  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
-  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
-  val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
+  val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"    // ApacheV2
+  val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"    // ApacheV2
+  val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"    // ApacheV2
+  val cassandraAll        = "org.apache.cassandra"    % "cassandra-all"          % Cassandra       logbackExclude // ApacheV2
+  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude   // ApacheV2
+  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude   // ApacheV2
+  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                   // ApacheV2
+  val config              = "com.typesafe"            % "config"                 % Config         % "provided"    // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
   val jodaC               = "org.joda"                % "joda-convert"           % JodaC
   val jodaT               = "joda-time"               % "joda-time"              % JodaT
@@ -184,7 +185,7 @@ object Artifacts {
   val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions        // ApacheV2
   val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark sparkExclusions        // ApacheV2
 
-  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion      logbackExclude    // ApacheV2
+  val cassandraServerTest = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion logbackExclude    // ApacheV2
 
   object Metrics {
     val metricsCore       = "com.codahale.metrics"    % "metrics-core"           % CodaHaleMetrics % "provided"
@@ -256,15 +257,15 @@ object Dependencies {
 
   val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
-  val cassandra = Seq(cassandraClient, cassandraDriver)
+  val cassandra = Seq(cassandraAll, cassandraClient, cassandraDriver)
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e, cassandraServer)
+    commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
+    cassandraServerTest % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
