@@ -35,8 +35,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   val c1 = ColumnDef("c1", ClusteringColumn(0), IntType)
   val c2 = ColumnDef("c2", ClusteringColumn(1), IntType)
   val c3 = ColumnDef("c3", ClusteringColumn(2), IntType)
-  val i1 = ColumnDef("i1", RegularColumn, IntType, indexClassName = Some("index"))
-  val i2 = ColumnDef("i2", RegularColumn, IntType, indexClassName = Some("index"))
+  val i1 = ColumnDef("i1", RegularColumn, IntType)
+  val i2 = ColumnDef("i2", RegularColumn, IntType)
   val r1 = ColumnDef("r1", RegularColumn, IntType)
   val r2 = ColumnDef("r2", RegularColumn, IntType)
 
@@ -45,7 +45,10 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     tableName = "test",
     partitionKey = Seq(pk1, pk2),
     clusteringColumns = Seq(c1, c2, c3),
-    regularColumns = Seq(i1, i2, r1, r2)
+    regularColumns = Seq(i1, i2, r1, r2),
+    indexes = Seq(
+      IndexDef("DummyIndex", "i1", "IndexOne", Map.empty),
+      IndexDef("DummyIndex", "i2", "IndexTwo", Map.empty))
   )
 
   "BasicCassandraPredicatePushDown" should "push down all equality predicates restricting partition key columns" in {
