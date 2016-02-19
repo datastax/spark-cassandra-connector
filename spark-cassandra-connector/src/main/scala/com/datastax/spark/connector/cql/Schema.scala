@@ -87,12 +87,11 @@ case class ClusteringColumn(index: Int) extends ColumnRole
 case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
-/** A Cassandra column metadata that can be serialized. */
+/** A Cassandra column metadata that can be serialized.  */
 case class ColumnDef(
-    columnName: String,
-    columnRole: ColumnRole,
-    columnType: ColumnType[_],
-    indexed : Boolean = false) extends FieldDef {
+  columnName: String,
+  columnRole: ColumnRole,
+  columnType: ColumnType[_]) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
@@ -101,7 +100,6 @@ case class ColumnDef(
   def isClusteringColumn = columnRole.isInstanceOf[ClusteringColumn]
   def isPrimaryKeyColumn = isClusteringColumn || isPartitionKeyColumn
   def isCounterColumn = columnType == CounterType
-  def isIndexedColumn = indexed
 
   def componentIndex = columnRole match {
     case ClusteringColumn(i) => Some(i)
@@ -113,11 +111,21 @@ case class ColumnDef(
   }
 }
 
+/** Cassandra Index Metadata that can be serialized **/
+case class IndexDef (
+  className: String,
+  target: String,
+  indexName: String,
+  options: Map[String, String]) extends Serializable
+
 object ColumnDef {
 
-  def apply(column: ColumnMetadata, columnRole: ColumnRole, isIndexed: Boolean): ColumnDef = {
+  def apply(
+    column: ColumnMetadata,
+    columnRole: ColumnRole): ColumnDef = {
+
     val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(column.getName, columnRole, columnType, isIndexed)
+    ColumnDef(column.getName, columnRole, columnType)
   }
 }
 
@@ -128,12 +136,33 @@ case class TableDef(
     partitionKey: Seq[ColumnDef],
     clusteringColumns: Seq[ColumnDef],
     regularColumns: Seq[ColumnDef],
+    indexes: Seq[IndexDef] = Seq.empty,
     isView: Boolean = false) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
-  
+
+  val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
+
+  val indexesForColumnName: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
+
+  val indexesForColumnDef: Map[ColumnDef, Seq[IndexDef]] = {
+
+    for ((target: String, indexes: Seq[IndexDef]) <- indexesForColumnName) yield {
+      (columnByName(target) -> indexes)
+    }
+  }
+
+
+  def isIndexed(column: ColumnDef): Boolean = {
+    indexesForColumnDef.contains(column)
+  }
+
+  val indexedColumns: Seq[ColumnDef] = {
+    indexesForColumnDef.keys.toSeq
+  }
+
   override type Column = ColumnDef
 
   override def name: String = s"$keyspaceName.$tableName"
@@ -195,41 +224,36 @@ case class Schema(clusterName: String, keyspaces: Set[KeyspaceDef]) {
 }
 
 object Schema extends Logging {
-  def getIndexMap(tableOrView: AbstractTableMetadata): Map[String, IndexMetadata] = tableOrView match {
-    case table: TableMetadata =>
-      (for (index <- table.getIndexes) yield (index.getTarget, index)).toMap
-    case view: MaterializedViewMetadata => Map.empty
-  }
 
-
-  private def fetchPartitionKey(table: AbstractTableMetadata): Seq[ColumnDef] = {
-    val indexMap = getIndexMap(table)
-    for (column <- table.getPartitionKey) yield
-      ColumnDef(column, PartitionKeyColumn, indexMap.contains(column.getName))
+   private def fetchPartitionKey(table: AbstractTableMetadata): Seq[ColumnDef] = {
+    for (column <- table.getPartitionKey) yield { ColumnDef(column, PartitionKeyColumn) }
   }
 
   private def fetchClusteringColumns(table: AbstractTableMetadata): Seq[ColumnDef] = {
-    val indexMap = getIndexMap(table)
-    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield
-      ColumnDef(column, ClusteringColumn(index), indexMap.contains(column.getName))
+    for ((column, index) <- table.getClusteringColumns.zipWithIndex) yield {
+      ColumnDef(column, ClusteringColumn(index))
+    }
   }
 
-  private def fetchRegularColumns(table: AbstractTableMetadata) = {
-    val indexMap = getIndexMap(table)
+  private def fetchRegularColumns(table: AbstractTableMetadata): Seq[ColumnDef] = {
     val primaryKey = table.getPrimaryKey.toSet
     val regularColumns = table.getColumns.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield
+    for (column <- regularColumns) yield {
       if (column.isStatic)
-        ColumnDef(column, StaticColumn, indexMap.contains(column.getName))
+        ColumnDef(column, StaticColumn)
       else
-        ColumnDef(column, RegularColumn, indexMap.contains(column.getName))
+        ColumnDef(column, RegularColumn)
+    }
   }
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
     * @param keyspaceName if defined, fetches only metadata of the given keyspace
     * @param tableName if defined, fetches only metadata of the given table
     */
-  def fromCassandra(connector: CassandraConnector, keyspaceName: Option[String] = None, tableName: Option[String] = None): Schema = {
+  def fromCassandra(
+    connector: CassandraConnector,
+    keyspaceName: Option[String] = None,
+    tableName: Option[String] = None): Schema = {
 
     def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
       keyspaceName match {
@@ -249,22 +273,33 @@ object Schema extends Logging {
           val partitionKey = fetchPartitionKey(table)
           val clusteringColumns = fetchClusteringColumns(table)
           val regularColumns = fetchRegularColumns(table)
+          val indexDefs = getIndexDefs(table)
+
           val isView = table match {
             case x: MaterializedViewMetadata => true
             case _ => false
           }
+
           TableDef(
             keyspace.getName,
             table.getName,
             partitionKey,
             clusteringColumns,
             regularColumns,
+            indexDefs,
             isView)
         }
 
     def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
       for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield
         KeyspaceDef(keyspace.getName, fetchTables(keyspace))
+
+    def getIndexDefs(tableOrView: AbstractTableMetadata): Seq[IndexDef] = tableOrView match {
+      case table: TableMetadata =>
+        table.getIndexes.map(index =>
+          IndexDef(index.getIndexClassName, index.getTarget, index.getName, Map.empty)).toSeq
+      case view: MaterializedViewMetadata => Seq.empty
+    }
 
     connector.withClusterDo { cluster =>
       val clusterName = cluster.getMetadata.getClusterName
