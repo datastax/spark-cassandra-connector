@@ -2,6 +2,84 @@
 
 
     
+## Bulk Loading Parameters
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>bulk.partitioner</code></td>
+  <td>org.apache.cassandra.dht.Murmur3Partitioner</td>
+  <td>The 'partitioner' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.algorithm</code></td>
+  <td>SunX509</td>
+  <td>The 'server_encryption_options:algorithm' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.cipherSuites</code></td>
+  <td>Set(TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)</td>
+  <td>The 'server_encryption_options:cipher_suites' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.internode.encryption</code></td>
+  <td>none</td>
+  <td>The 'server_encryption_options:internode_encryption' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.keyStore.password</code></td>
+  <td>cassandra</td>
+  <td>The 'server_encryption_options:keystore_password' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.keyStore.path</code></td>
+  <td>conf/.keystore</td>
+  <td>The 'server_encryption_options:keystore' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.protocol</code></td>
+  <td>TLS</td>
+  <td>The 'server_encryption_options:protocol' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.requireClientAuth</code></td>
+  <td>false</td>
+  <td>The 'server_encryption_options:require_client_auth' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.sslStorage.port</code></td>
+  <td>7001</td>
+  <td>The 'ssl_storage_port' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.storage.port</code></td>
+  <td>7000</td>
+  <td>The 'storage_port' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.store.type</code></td>
+  <td>JKS</td>
+  <td>The 'server_encryption_options:store_type' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.trustStore.password</code></td>
+  <td>cassandra</td>
+  <td>The 'server_encryption_options:truststore_password' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.server.trustStore.path</code></td>
+  <td>conf/.truststore</td>
+  <td>The 'server_encryption_options:truststore' defined in cassandra.yaml.</td>
+</tr>
+<tr>
+  <td><code>bulk.throughput_mb_per_sec</code></td>
+  <td>2147483647</td>
+  <td>Maximum write throughput allowed per single core in MB/s.</td>
+</tr>
+</table>
+
+
 ## Cassandra Authentication Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 

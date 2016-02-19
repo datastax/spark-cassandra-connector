@@ -3,6 +3,7 @@ package com.datastax.spark.connector
 
 import java.net.InetAddress
 
+import com.datastax.spark.connector.bulk.{BulkSSTableWriter, BulkConf}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
@@ -94,6 +95,32 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
 
     val table = TableDef.fromType[T](keyspaceName, tableName)
     saveAsCassandraTableEx(table, columns, writeConf)
+  }
+
+  /**
+   * Loads the data from [[org.apache.spark.rdd.RDD RDD]] to a Cassandra table. Uses the specified column names.
+   *
+   * Writes SSTables to a temporary directory then loads the SSTables directly to Cassandra.
+   *
+   * @param keyspaceName the name of the Keyspace to use
+   * @param tableName the name of the Table to use
+   * @param columns The list of column names to save data to.
+   *                Uses only the unique column names, and you must select at least all primary key columns.
+   *                All other fields are discarded. Non-selected property/column names are left unchanged.
+   * @param bulkConf additional configurations if server encryption is utilized.
+   *                 Will only honour TTL, TIMESTAMP, and throughput configurations.
+   */
+  def bulkLoadCassandraTable(
+    keyspaceName: String,
+    tableName: String,
+    columns: ColumnSelector = AllColumns,
+    bulkConf: BulkConf = BulkConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T]): Unit = {
+
+    val writer = BulkSSTableWriter(connector, keyspaceName, tableName, columns, bulkConf)
+    rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
   /** Applies a function to each item, and groups consecutive items having the same value together.

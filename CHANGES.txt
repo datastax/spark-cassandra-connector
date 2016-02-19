@@ -1,4 +1,5 @@
- * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308) 
+ * Add new RDD function 'bulkLoadToCassandra()'; writes SSTables and streams them to Cassandra cluster (SPARKC-322)
+ * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308)
  * Added CassandraOption for Skipping Columns when Writing to C* (SPARKC-283)
  * Upgrade Spark to 1.6.0 and add Apache Snapshot repository to resolvers (SPARKC-272, SPARKC-298, SPARKC-305)
 
