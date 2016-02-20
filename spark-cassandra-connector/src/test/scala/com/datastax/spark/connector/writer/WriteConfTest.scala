@@ -20,7 +20,7 @@ class WriteConfTest extends FlatSpec with Matchers {
     val conf = new SparkConf(false)
       .set("spark.cassandra.output.throughput_mb_per_sec", "0.5")
     val writeConf = WriteConf.fromSparkConf(conf)
-      writeConf.throughputMiBPS should equal ( 0.5 +- 0.02 )
+      writeConf.throughputMBPS should equal ( 0.5 +- 0.02 )
   }
 
   it should "allow to set consistency level" in {

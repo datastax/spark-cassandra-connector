@@ -28,7 +28,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      consistencyLevel: ConsistencyLevel = WriteConf.ConsistencyLevelParam.default,
                      ignoreNulls: Boolean = WriteConf.IgnoreNullsParam.default,
                      parallelismLevel: Int = WriteConf.ParallelismLevelParam.default,
-                     throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
+                     throughputMBPS: Double = WriteConf.ThroughputMBPSParam.default,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue,
                      taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default) {
@@ -47,7 +47,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
     Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
   }
 
-  val throttlingEnabled = throughputMiBPS < WriteConf.ThroughputMiBPSParam.default
+  val throttlingEnabled = throughputMBPS < WriteConf.ThroughputMBPSParam.default
 }
 
 
@@ -114,7 +114,7 @@ object WriteConf {
     description = """Maximum number of batches executed in parallel by a
       | single Spark task""".stripMargin)
   
-  val ThroughputMiBPSParam = ConfigParameter[Double] (
+  val ThroughputMBPSParam = ConfigParameter[Double] (
     name = "spark.cassandra.output.throughput_mb_per_sec",
     section = ReferenceSection,
     default = Int.MaxValue,
@@ -139,7 +139,7 @@ object WriteConf {
     BatchLevelParam,
     IgnoreNullsParam,
     ParallelismLevelParam,
-    ThroughputMiBPSParam,
+    ThroughputMBPSParam,
     TaskMetricsParam
   )
 
@@ -175,7 +175,7 @@ object WriteConf {
 
     val parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
 
-    val throughputMiBPS = conf.getDouble(ThroughputMiBPSParam.name, ThroughputMiBPSParam.default)
+    val throughputMBPS = conf.getDouble(ThroughputMBPSParam.name, ThroughputMBPSParam.default)
 
     val metricsEnabled = conf.getBoolean(TaskMetricsParam.name, TaskMetricsParam.default)
 
@@ -185,7 +185,7 @@ object WriteConf {
       batchGroupingKey = batchGroupingKey,
       consistencyLevel = consistencyLevel,
       parallelismLevel = parallelismLevel,
-      throughputMiBPS = throughputMiBPS,
+      throughputMBPS = throughputMBPS,
       taskMetricsEnabled = metricsEnabled,
       ignoreNulls = ignoreNulls)
   }
