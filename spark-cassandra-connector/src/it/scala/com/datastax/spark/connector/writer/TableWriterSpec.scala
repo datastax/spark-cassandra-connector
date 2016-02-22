@@ -2,17 +2,13 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.driver.core.ProtocolVersion
-
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
-import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper}
-import com.datastax.spark.connector.embedded.SparkTemplate._
-
-import com.datastax.spark.connector._
+import com.datastax.driver.core.ProtocolVersion
+import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.SomeColumns
+import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 
 case class KeyValue(key: Int, group: Long, value: String)
@@ -356,15 +352,18 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   it should "write values of user-defined classes" in {
     conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     TypeConverter.registerConverter(CustomerIdConverter)
+    try {
+      val col = Seq((1, 1L, CustomerId("foo")))
+      sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
 
-    val col = Seq((1, 1L, CustomerId("foo")))
-    sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
-
-    conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
-      result should have size 1
-      for (row <- result)
-        row.getString(2) shouldEqual "foo"
+      conn.withSessionDo { session =>
+        val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
+        result should have size 1
+        for (row <- result)
+          row.getString(2) shouldEqual "foo"
+      }
+    } finally {
+      TypeConverter.unregisterConverter(CustomerIdConverter)
     }
   }
 

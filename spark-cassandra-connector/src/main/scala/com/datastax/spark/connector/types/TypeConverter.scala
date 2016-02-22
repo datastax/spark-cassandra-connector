@@ -841,6 +841,8 @@ object TypeConverter {
     TimeTypeConverter
   )
 
+  private val originalConverters = converters.toSet
+
   private def forCollectionType(tpe: Type, moreConverters: Seq[TypeConverter[_]]): TypeConverter[_] = SparkReflectionLock.synchronized {
     tpe match {
       case TypeRef(_, symbol, List(arg)) =>
@@ -938,6 +940,14 @@ object TypeConverter {
   def registerConverter(c: TypeConverter[_]) {
     synchronized {
       converters = c +: converters
+    }
+  }
+
+  /** Remove a custom converter */
+  def unregisterConverter(c: TypeConverter[_]) {
+    synchronized {
+      require(!originalConverters.contains(c), "Cannot unregister built-in converter")
+      converters = converters.filterNot(_ == c)
     }
   }
 }

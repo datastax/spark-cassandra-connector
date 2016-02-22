@@ -35,7 +35,7 @@ object CassandraSparkBuild extends Build {
     name = "root",
     dir = file("."),
     settings = rootSettings ++ Seq(cassandraServerClasspath := { "" }),
-    contains = Seq(embedded, connector, demos, jconnector)
+    contains = Seq(embedded, connector, demos)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val cassandraServerProject = Project(
@@ -66,13 +66,6 @@ object CassandraSparkBuild extends Build {
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
-  lazy val jconnector = Project(
-    id = s"$namespace-java",
-    base = file(s"$namespace-java"),
-    settings = japiSettings ++ connector.settings :+ (spName := s"datastax/$namespace-java"),
-    dependencies = Seq(connector % "compile;runtime->runtime;test->test;it->it,test;provided->provided")
-  ) configs IntegrationTest
-
   lazy val demos = RootProject(
     name = "demos",
     dir = demosPath,
@@ -82,8 +75,8 @@ object CassandraSparkBuild extends Build {
   lazy val simpleDemos = Project(
     id = "simple-demos",
     base = demosPath / "simple-demos",
-    settings = japiSettings ++ demoSettings,
-    dependencies = Seq(connector, jconnector, embedded)
+    settings = demoSettings,
+    dependencies = Seq(connector, embedded)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 /*
   lazy val kafkaStreaming = CrossScalaVersionsProject(

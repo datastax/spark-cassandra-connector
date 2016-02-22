@@ -361,16 +361,22 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow for converting fields to custom types by user-defined TypeConverter" in {
-    TypeConverter.registerConverter(new TypeConverter[CustomerId] {
+    val customConverter = new TypeConverter[CustomerId] {
       def targetTypeTag = typeTag[CustomerId]
-      def convertPF = { case x: String => CustomerId(x) }
-    })
 
-    val result = sc.cassandraTable[(Int, Long, CustomerId)](ks, "key_value").collect()
-    result should have length 3
-    result(0)._3 shouldNot be(null)
-    result(1)._3 shouldNot be(null)
-    result(2)._3 shouldNot be(null)
+      def convertPF = { case x: String => CustomerId(x) }
+    }
+    TypeConverter.registerConverter(customConverter)
+
+    try {
+      val result = sc.cassandraTable[(Int, Long, CustomerId)](ks, "key_value").collect()
+      result should have length 3
+      result(0)._3 shouldNot be(null)
+      result(1)._3 shouldNot be(null)
+      result(2)._3 shouldNot be(null)
+    } finally {
+      TypeConverter.unregisterConverter(customConverter)
+    }
   }
 
   it should "allow for reading tables with composite partitioning key" in {
