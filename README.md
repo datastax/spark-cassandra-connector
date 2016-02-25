@@ -8,7 +8,7 @@
 * [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
 * [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
 
-[All Versions Scala Docs](#Hosted)
+[All Versions Scala Docs](#hosted-scala-docs)
 
 ## Lightning-fast cluster computing with Spark and Cassandra
 
