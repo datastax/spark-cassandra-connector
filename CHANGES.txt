@@ -1,5 +1,8 @@
+ * Removed the ability to specify cluster alias directly and added some helper methods which make it easier to configure
+   Cassandra related data frames (SPARKC-289)
+
 1.6.0 M1
- * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308) 
+ * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308)
  * Added CassandraOption for Skipping Columns when Writing to C* (SPARKC-283)
  * Upgrade Spark to 1.6.0 and add Apache Snapshot repository to resolvers (SPARKC-272, SPARKC-298, SPARKC-305)
  * Includes all patches up to 1.5.0.
@@ -46,7 +49,7 @@
 1.4.2
  * SqlRowWriter not using Cached Converters (SPARKC-329)
  * Fix Violation of Partition Contract (SPARKC-323)
- * Use ScalaReflectionLock from Spark instead of TypeTag 
+ * Use ScalaReflectionLock from Spark instead of TypeTag
    to workaround Scala 2.10 reflection concurrency issues (SPARKC-333)
 
 1.4.1
