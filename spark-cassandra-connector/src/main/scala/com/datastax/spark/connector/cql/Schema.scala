@@ -296,8 +296,10 @@ object Schema extends Logging {
 
     def getIndexDefs(tableOrView: AbstractTableMetadata): Seq[IndexDef] = tableOrView match {
       case table: TableMetadata =>
-        table.getIndexes.map(index =>
-          IndexDef(index.getIndexClassName, index.getTarget, index.getName, Map.empty)).toSeq
+        table.getIndexes.map(index => {
+          val targetName = table.getColumn(index.getTarget).getName
+          IndexDef(index.getIndexClassName, targetName, index.getName, Map.empty)
+        }).toSeq
       case view: MaterializedViewMetadata => Seq.empty
     }
 
