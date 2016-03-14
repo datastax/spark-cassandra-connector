@@ -259,6 +259,7 @@ object Settings extends Build {
     def multiCInstanceGroupingFunction(test: TestDefinition): String = {
       if (test.name.toLowerCase.contains("auth")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
+      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else test.name.reverse.dropWhile(_ != '.').reverse
     }
 
@@ -272,8 +273,8 @@ object Settings extends Build {
       if (test.name.toLowerCase.contains("authenticate")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
       else if (pkgName.contains(".repl")) "repl"
-      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else if (pkgName.contains(".streaming")) "streaming"
+      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else "other"
     }
 
