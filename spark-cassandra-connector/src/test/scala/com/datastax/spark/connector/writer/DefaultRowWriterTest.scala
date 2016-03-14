@@ -4,13 +4,12 @@ import scala.collection.immutable.Map
 import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.SerializationUtils
-
-import org.junit.Test
 import org.junit.Assert._
+import org.junit.Test
 
+import com.datastax.spark.connector.UDTValue
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types._
-import com.datastax.spark.connector.UDTValue
 
 case class StringWrapper(str: String)
 
@@ -84,16 +83,20 @@ class DefaultRowWriterTest {
   @Test
   def testCustomTypeConvertersAreUsed(): Unit = {
     TypeConverter.registerConverter(StringWrapperConverter)
-    val column = ColumnDef("c1", PartitionKeyColumn, TextType)
-    val table = TableDef("test", "table", Seq(column), Nil, Nil)
-    val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, table.columnRefs)
+    try {
+      val column = ColumnDef("c1", PartitionKeyColumn, TextType)
+      val table = TableDef("test", "table", Seq(column), Nil, Nil)
+      val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, table.columnRefs)
 
-    val obj = RowWithStringWrapper(StringWrapper("some text"))
-    val buf = Array.ofDim[Any](1)
-    rowWriter.readColumnValues(obj, buf)
+      val obj = RowWithStringWrapper(StringWrapper("some text"))
+      val buf = Array.ofDim[Any](1)
+      rowWriter.readColumnValues(obj, buf)
 
-    // if our custom type converter wasn't used,
-    // we'd get "StringWrapper(some text)" here instead of "some text":
-    assertEquals("some text", buf(0))
+      // if our custom type converter wasn't used,
+      // we'd get "StringWrapper(some text)" here instead of "some text":
+      assertEquals("some text", buf(0))
+    } finally {
+      TypeConverter.unregisterConverter(StringWrapperConverter)
+    }
   }
 }

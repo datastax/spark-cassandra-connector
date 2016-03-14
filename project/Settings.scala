@@ -324,10 +324,6 @@ object Settings extends Build {
     }
   )
 
-  lazy val japiSettings = Seq(
-    publishArtifact := true
-  )
-
   lazy val kafkaDemoSettings = Seq(
     excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"

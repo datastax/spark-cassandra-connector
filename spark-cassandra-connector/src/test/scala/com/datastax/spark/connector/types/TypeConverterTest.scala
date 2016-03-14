@@ -3,16 +3,16 @@ package com.datastax.spark.connector.types
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.util.{GregorianCalendar, Date, UUID}
+import java.util.{Date, GregorianCalendar, UUID}
+
+import scala.collection.immutable.{TreeMap, TreeSet}
+import scala.reflect.runtime.universe._
+
 import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
 import org.junit.Test
-
-import scala.collection.immutable.{TreeMap, TreeSet}
-import scala.reflect.runtime.universe._
 
 import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.testkit._
@@ -477,29 +477,38 @@ class TypeConverterTest {
   def testRegisterCustomConverter() {
     val converter = new TypeConverter[EMail] {
       def targetTypeTag = typeTag[EMail]
+
       def convertPF = { case x: String => EMail(x) }
     }
     TypeConverter.registerConverter(converter)
-    assertSame(converter, TypeConverter.forType[EMail])
+    try {
+      assertSame(converter, TypeConverter.forType[EMail])
+    } finally {
+      TypeConverter.unregisterConverter(converter)
+    }
   }
 
   @Test
   def testRegisterCustomConverterExtension() {
     val converter = new TypeConverter[Int] {
       def targetTypeTag = typeTag[Int]
+
       def convertPF = {
         case Some(x: Int) => x
         case None => 0
       }
     }
     TypeConverter.registerConverter(converter)
-
-    val chainedConverter = TypeConverter.forType[Int]
-    assertTrue(chainedConverter.isInstanceOf[ChainedTypeConverter[_]])
-    assertEquals(1, chainedConverter.convert(1))
-    assertEquals(2, chainedConverter.convert("2"))
-    assertEquals(3, chainedConverter.convert(Some(3)))
-    assertEquals(0, chainedConverter.convert(None))
+    try {
+      val chainedConverter = TypeConverter.forType[Int]
+      assertTrue(chainedConverter.isInstanceOf[ChainedTypeConverter[_]])
+      assertEquals(1, chainedConverter.convert(1))
+      assertEquals(2, chainedConverter.convert("2"))
+      assertEquals(3, chainedConverter.convert(Some(3)))
+      assertEquals(0, chainedConverter.convert(None))
+    } finally {
+      TypeConverter.unregisterConverter(converter)
+    }
   }
 
   @Test

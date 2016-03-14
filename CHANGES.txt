@@ -1,3 +1,4 @@
+ * Merged Java API into main module (SPARKC-335)
  * Upgraded to Spark 1.6.1 (SPARKC-344)
  * Removed the ability to specify cluster alias directly and added some helper methods which make it easier to configure
    Cassandra related data frames (SPARKC-289)
