@@ -9,7 +9,7 @@ import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.util.{Symbols, ReflectionUtil}
 import com.datastax.spark.connector.{GettableByIndexData, TupleValue, UDTValue, ColumnRef}
 import com.datastax.spark.connector.cql.StructDef
-import com.datastax.spark.connector.mapper.{DefaultColumnMapper, TupleColumnMapper, JavaBeanColumnMapper, ColumnMapper}
+import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{TupleType, MapType, SetType, ListType, ColumnType, TypeConverter}
 
 private[connector] object MappedToGettableDataConverter {
@@ -97,6 +97,13 @@ private[connector] object MappedToGettableDataConverter {
             case (t: StructDef, _) if scalaType <:< typeOf[GettableByIndexData] =>
               columnType.converterToCassandra
 
+            //Options
+            case (t: StructDef, TypeRef(_, _, List(argScalaType))) if scalaType <:< typeOf[Option[Any]] =>
+              type U2 = u2 forSome {type u2}
+              implicit val tt = ReflectionUtil.typeToTypeTag[U2](argScalaType)
+              implicit val cm: ColumnMapper[U2] = columnMapper[U2]
+              apply[U2](t, t.columnRefs)
+
             // UDTs mapped to case classes and tuples mapped to Scala tuples.
             // ColumnMappers support mapping Scala tuples, so we don't need a special case for them.
             case (t: StructDef, _) =>
@@ -171,6 +178,13 @@ private[connector] object MappedToGettableDataConverter {
           for (i <- columnValues.indices)
             columnValues(i) = converters(i).convert(columnValues(i))
           struct.newInstance(columnValues: _*)
+        case Some(obj) if cls.isInstance(obj) =>
+          val columnValues = extractor.extract(obj.asInstanceOf[T])
+          for (i <- columnValues.indices)
+            columnValues(i) = converters(i).convert(columnValues(i))
+          struct.newInstance(columnValues: _*)
+        case None =>
+          null.asInstanceOf[struct.ValueRepr]
       }
     }
 }
