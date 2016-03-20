@@ -450,6 +450,7 @@ object TypeConverter {
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
       case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
+      case x: DateTime => LocalDate.fromMillisSinceEpoch(x.getMillis)
     }
   }
 
