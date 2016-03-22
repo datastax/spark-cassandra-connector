@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.japi.rdd;
 
+import com.datastax.spark.connector.writer.RowWriterFactory;
 import scala.Tuple2;
 import scala.collection.Seq;
 import scala.reflect.ClassTag;
@@ -82,17 +83,22 @@ public class CassandraTableScanJavaRDD<R> extends CassandraJavaRDD<R> {
      * If no selected columns are given, all available columns are selected.
      *
      * @param rrf row reader factory to convert the key to desired type K
+     * @param rwf row writer factory for creating a partitioner for key type K
      * @param keyClassTag class tag of K, required to construct the result JavaPairRDD
      * @param columns list of columns passed to the rrf to create the row reader,
      *                useful when the key is mapped to a tuple or a single value
      */
     public <K> CassandraJavaPairRDD<K, R> keyBy(
-        RowReaderFactory<K> rrf, ClassTag<K> keyClassTag, ColumnRef... columns) {
+        ClassTag<K> keyClassTag,
+        RowReaderFactory<K> rrf,
+        RowWriterFactory<K> rwf,
+        ColumnRef... columns) {
+
         Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(columns);
         CassandraRDD<Tuple2<K, R>> resultRDD =
                 columns.length == 0
-                        ? rdd().keyBy(rrf)
-                        : rdd().keyBy(columnRefs, rrf);
+                        ? rdd().keyBy(keyClassTag, rrf, rwf)
+                        : rdd().keyBy(columnRefs, keyClassTag, rrf, rwf);
         return new CassandraJavaPairRDD<>(resultRDD, keyClassTag, classTag());
     }
 
@@ -100,25 +106,57 @@ public class CassandraTableScanJavaRDD<R> extends CassandraJavaRDD<R> {
      * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
      */
     public <K> CassandraJavaPairRDD<K, R> keyBy(
-            RowReaderFactory<K> rrf, Class<K> keyClass, ColumnRef... columns) {
-        return keyBy(rrf, JavaApiHelper.getClassTag(keyClass), columns);
+            RowReaderFactory<K> rrf,
+            RowWriterFactory<K> rwf,
+            Class<K> keyClass,
+            ColumnRef... columns) {
+        return keyBy(JavaApiHelper.getClassTag(keyClass), rrf, rwf, columns);
     }
 
     /**
      * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
      */
     public <K> CassandraJavaPairRDD<K, R> keyBy(
-            RowReaderFactory<K> rrf, Class<K> keyClass, String... columnNames) {
+            RowReaderFactory<K> rrf,
+            RowWriterFactory<K> rwf,
+            Class<K> keyClass,
+            String... columnNames) {
         ColumnRef[] columnRefs = toSelectableColumnRefs(columnNames);
-        return keyBy(rrf, JavaApiHelper.getClassTag(keyClass), columnRefs);
+        return keyBy(JavaApiHelper.getClassTag(keyClass), rrf, rwf, columnRefs);
     }
 
 
     /**
      * @see {@link #keyBy(RowReaderFactory, ClassTag, ColumnRef...)}
      */
-    public <K> CassandraJavaPairRDD<K, R> keyBy(RowReaderFactory<K> rrf, Class<K> keyClass) {
-        return keyBy(rrf, JavaApiHelper.getClassTag(keyClass));
+    public <K> CassandraJavaPairRDD<K, R> keyBy(
+            RowReaderFactory<K> rrf,
+            RowWriterFactory<K> rwf,
+            Class<K> keyClass) {
+        return keyBy(JavaApiHelper.getClassTag(keyClass), rrf, rwf);
+    }
+
+
+    /**
+     * Builds a K/V Pair RDD using the partitioner from an existing
+     * CassandraTableScanPairRDD. Since we cannot determine ahead of time
+     * the type of the PairRDD or the type of it's partitioner this method will
+     * throw exceptions if the Partitioner is not a CassandraPartitioner at
+     * runtime.
+     */
+    public <K> CassandraJavaPairRDD<K, R> keyAndApplyPartitionerFrom(
+            RowReaderFactory<K> rrf,
+            RowWriterFactory<K> rwf,
+            Class<K> keyClass,
+            CassandraJavaPairRDD<K, ?> otherRDD) {
+
+        ClassTag<K> keyClassTag = JavaApiHelper.getClassTag(keyClass);
+
+        CassandraRDD<Tuple2<K, R>> newRDD =  this.rdd()
+            .keyBy(keyClassTag, rrf, rwf)
+            .withPartitioner(otherRDD.rdd().partitioner());
+
+        return new CassandraJavaPairRDD<>(newRDD, keyClassTag, classTag());
     }
 
 }

@@ -15,7 +15,7 @@ import org.apache.spark.{Logging, SparkConf}
 
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
+import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}

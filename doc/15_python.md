@@ -57,3 +57,5 @@ A DataFrame can be saved to an *existing* Cassandra table by using the the `org.
 
 The options and parameters are identical to the Scala Data Frames Api so
 please see [Data Frames](14_data_frames.md) for more information.
+
+[Next - Spark Partitioners](16_partitioning.md)

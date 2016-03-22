@@ -28,9 +28,9 @@ abstract class CassandraRDD[R : ClassTag](
   
   ConfigCheck.checkConfig(sc.getConf)
 
-  protected def keyspaceName: String
+  protected[connector] def keyspaceName: String
 
-  protected def tableName: String
+  protected[connector] def tableName: String
 
   protected def columnNames: ColumnSelector
 

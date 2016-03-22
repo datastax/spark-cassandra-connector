@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.doc
 
+import java.util.Random
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.CassandraOption
@@ -8,10 +10,17 @@ import com.datastax.spark.connector.writer.WriteConf
 
 import scala.concurrent.Future
 
+case class RandomListSelector[T](list: Seq[T]) {
+  val r = { new Random() }
+  def next(): T = list(r.nextInt(list.length))
+}
+
 class DocExamples extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
+
+  val numrows: Long = 1000
 
   val conn = CassandraConnector(defaultConf)
   override val ks = "doc_example"
@@ -37,7 +46,42 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
           s"""INSERT INTO doc_example.tab2 (key, col_1, col_2) VALUES (1, 5, null)
              |
            """.stripMargin)
-      })
+      },
+      Future {session.execute(
+        s"""CREATE TABLE $ks.purchases (
+           |userid int,
+           |purchaseid int,
+           |objectid text,
+           |amount int,
+           |PRIMARY KEY (userid, purchaseid, objectid))""".stripMargin)
+      },
+      Future {session.execute(
+        s"""CREATE TABLE doc_example.users (
+          |userid int PRIMARY KEY,
+          |name text,
+          |zipcode int)""".stripMargin)
+       })
+  }
+
+  override def beforeAll(): Unit = {
+    val numrows = 1000// We can't be linked to the scope of flatspec which isn't serializable
+    val ks = "doc_example"
+    val r = new Random(100)
+    val zipcodes = (1 to 100).map(_ => r.nextInt(99999)).distinct
+    val objects = Seq("pepper", "lemon", "pear", "squid", "beet", "iron", "grass", "axe", "grape")
+
+
+
+    val randomObject = RandomListSelector(objects)
+    val randomZipCode = RandomListSelector(zipcodes)
+
+    sc.parallelize(1 to numrows).map(x =>
+      (x, s"User $x", randomZipCode.next)
+    ).saveToCassandra(ks, "users")
+
+    sc.parallelize(1 to numrows).flatMap(x =>
+      (1 to 10).map( p => (x, p, randomObject.next, p))
+    ).saveToCassandra(ks, "purchases")
   }
 
   "Docs" should "demonstrate copying a table without deletes" in {
@@ -112,4 +156,122 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
     )
 
   }
+
+  "Doc Page 16" should "Keying a Table with the Partition Key Produces an RDD ..." in {
+    val ks = "doc_example"
+    val rdd = {
+      sc.cassandraTable[(String, Int)](ks, "users")
+        .select("name" as "_1", "zipcode" as "_2", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }
+
+    rdd.partitioner shouldBe defined
+  }
+
+  it should "Reading a table into a (K,V) type or ..." in {
+    val ks = "doc_example"
+    val rdd1 = sc.cassandraTable[(Int, Int)](ks, "users")
+    rdd1.partitioner shouldBe empty
+
+
+    val rdd2 = {
+      sc.cassandraTable[(Int, String)](ks, "users")
+        .select("name" as "_2", "zipcode" as "_1", "userid")
+        .keyBy[Tuple1[Int]]("zipcode")
+    }
+    rdd2.partitioner shouldBe empty
+  }
+
+  it should "Grouping/Reducing on out of order Clustering keys" in {
+    val ks = "doc_example"
+    val rdd = {
+      sc.cassandraTable[(Int, Int)](ks, "purchases")
+        .select("purchaseid" as "_1", "amount" as "_2", "userid", "objectid")
+        .keyBy[(Int, String)]("userid", "objectid")
+    }
+
+    rdd.groupByKey.toDebugString should not include ("+-")
+    rdd.groupByKey.count should be >= numrows
+  }
+
+  it should "doing the same thing without a partitioner requires a shuffle" in {
+    val ks = "doc_example"
+
+    //Empty map will remove the partitioner
+    val rdd = {
+      sc.cassandraTable[(Int, Int)](ks, "purchases")
+        .select("purchaseid" as "_1", "amount" as "_2", "userid", "objectid")
+        .keyBy[(Int, String)]("userid", "objectid")
+    }.map(x => x)
+
+    rdd.partitioner shouldBe empty
+
+    rdd.groupByKey.toDebugString should include("+-")
+    rdd.groupByKey.count should be >= numrows
+  }
+
+  it should "Joining to Cassandra RDDs from non Cassandra RDDs" in {
+    import com.datastax.spark.connector._
+
+    val ks = "doc_example"
+    val rdd = {
+      sc.cassandraTable[(String, Int)](ks, "users")
+        .select("name" as "_1", "zipcode" as "_2", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }
+
+    val joinrdd = sc.parallelize(1 to 10000).map(x => (Tuple1(x), x)).join(rdd)
+    joinrdd.toDebugString should include("+-")
+    joinrdd.count should be(numrows)
+
+    //Use an empty map to drop the partitioner
+    val rddnopart = {
+      sc.cassandraTable[(String, Int)](ks, "users")
+        .select("name" as "_1", "zipcode" as "_2", "userid")
+        .keyBy[Tuple1[Int]]("userid").map(x => x)
+    }
+
+    val joinnopart = sc.parallelize(1 to 10000).map(x => (Tuple1(x), x)).join(rddnopart)
+    joinnopart.toDebugString should include("+-")
+
+    joinnopart.count should be(numrows)
+  }
+
+  it should "Joining to Cassandra RDDs on Common Partition Keys" in {
+    val ks = "doc_example"
+    val rdd1 = {
+      sc.cassandraTable[(Int, Int, String)](ks, "purchases")
+        .select("purchaseid" as "_1", "amount" as "_2", "objectid" as "_3", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }
+
+    val rdd2 = {
+      sc.cassandraTable[(String, Int)](ks, "users")
+        .select("name" as "_1", "zipcode" as "_2", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }.applyPartitionerFrom(rdd1) // Assigns the partitioner from the first rdd to this one
+
+    val joinRDD = rdd1.join(rdd2)
+    joinRDD.toDebugString should not include ("+-")
+
+    joinRDD.count should be(numrows * 10)
+
+    val rdd1nopart = {
+      sc.cassandraTable[(Int, Int, String)](ks, "purchases")
+        .select("purchaseid" as "_1", "amount" as "_2", "objectid" as "_3", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }.map(x => x)
+
+    val rdd2nopart = {
+      sc.cassandraTable[(String, Int)](ks, "users")
+        .select("name" as "_1", "zipcode" as "_2", "userid")
+        .keyBy[Tuple1[Int]]("userid")
+    }.map(x => x)
+
+    val joinnopart = rdd1nopart.join(rdd2nopart)
+    joinnopart.toDebugString should include("+-")
+
+    joinnopart.count should be(numrows * 10)
+  }
+
 }
