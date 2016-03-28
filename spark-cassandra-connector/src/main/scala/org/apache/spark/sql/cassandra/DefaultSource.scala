@@ -9,7 +9,7 @@ import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, Re
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf, DefaultAuthConfFactory}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf
 
@@ -132,7 +132,8 @@ object DefaultSource {
     WriteConf.Properties.map(_.name) ++
     CassandraConnectorConf.Properties.map(_.name) ++
     CassandraSourceRelation.Properties.map(_.name) ++
-    AuthConfFactory.Properties.map(_.name)
+    AuthConfFactory.Properties.map(_.name) ++
+    DefaultAuthConfFactory.properties
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
   // Map converted property to origin property name
