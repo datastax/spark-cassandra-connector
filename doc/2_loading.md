@@ -248,7 +248,7 @@ as the full partition key is specified.
 
 `joinWithCassandraTable` utilizes the java drive to execute a single query for every partition
 required by the source RDD so no un-needed data will be requested or serialized. This means a join between any RDD
-and a Cassandra Table can be preformed without doing a full table scan. . When preformed
+and a Cassandra Table can be performed without doing a full table scan. When performed
 between two Cassandra Tables which share the same partition key this will *not* require movement of data between machines.
 In all cases this method will use the source RDD's partitioning and placement for data locality.
 
