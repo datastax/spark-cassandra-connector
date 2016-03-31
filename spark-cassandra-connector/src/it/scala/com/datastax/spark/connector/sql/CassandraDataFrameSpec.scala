@@ -8,8 +8,6 @@ import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
-
 import org.apache.spark.sql.SQLContext
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
@@ -51,6 +49,12 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         (for (x <- 1 to 1000) yield {
           session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString))
         }).par.foreach(_.getUninterruptibly)
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.tuple_test1 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
+        session.execute(s"CREATE TABLE $ks.tuple_test2 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
+        session.execute(s"INSERT INTO $ks.tuple_test1 (id, t) VALUES (1, ('xyz', 3))")
       }
     )
   }
@@ -159,4 +163,27 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
     exception.getMessage should include("Couldn't find")
     exception.getMessage should include("hardtoremembernamedtable")
   }
+
+  it should "read and write C* Tuple columns" in {
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "tuple_test1", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .load
+
+    df.count should be (1)
+    df.first.getStruct(1).getString(0) should be ("xyz")
+    df.first.getStruct(1).getInt(1) should be (3)
+
+    df.write
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "tuple_test2", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .save
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.tuple_test2").one().getLong(0) should be (1)
+    }
+  }
+
+
 }
