@@ -147,6 +147,29 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     row.isNullAt(1) shouldEqual true
   }
 
+  case class UserWithNestedOption(login: String, address: Option[Address])
+
+  it should "convert None case class to null" in {
+    val obj = UserWithNestedOption("foo", None)
+    val userTable = newTable(loginColumn, addressColumn)
+    val converter = MappedToGettableDataConverter[UserWithNestedOption](userTable, userTable.columnRefs)
+    val row = converter.convert(obj)
+    row.getString(0) shouldEqual "foo"
+    row.isNullAt(1) shouldEqual true
+  }
+
+  it should "convert Some case class to UDT" in {
+    val address = Address("foo", 5)
+    val obj = UserWithNestedOption("bar", Some(address))
+    val userTable = newTable(loginColumn, addressColumn)
+    val converter = MappedToGettableDataConverter[UserWithNestedOption](userTable, userTable.columnRefs)
+    val row = converter.convert(obj)
+    row.getString(0) shouldEqual "bar"
+    row.isNullAt(1) shouldEqual false
+    row.getUDTValue("address").getString("street") shouldEqual "foo"
+    row.getUDTValue("address").getInt("number") shouldEqual 5
+  }
+
   case class DifferentlyNamedUser(name: String, pass: String)
 
   it should "convert using custom column aliases" in {
