@@ -90,7 +90,11 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
         if (table.buildScan().isEmpty()) {
           table.insert(data, overwrite = false)
         } else {
-          throw new UnsupportedOperationException("'Writing to a non-empty Cassandra Table is not allowed.'")
+          throw new UnsupportedOperationException(
+            s"""'SaveMode is set to ErrorIfExists and Table
+               |${tableRef.keyspace + "." + tableRef.table} already exists and contains data.
+               |Perhaps you meant to set the DataFrame write mode to Append?
+               |Example: df.write.format.options.mode(SaveMode.Append).save()" '""".stripMargin)
         }
       case Ignore =>
         if (table.buildScan().isEmpty()) {
