@@ -223,6 +223,7 @@ class TypeConverterTest {
     assertEquals(testDate, c.convert(5693))
     assertEquals(testDate, c.convert(date))
     assertEquals(testDate, c.convert(java.sql.Date.valueOf("1985-08-03")))
+    assertEquals(testDate, c.convert(new DateTime(date)))
   }
 
   @Test
