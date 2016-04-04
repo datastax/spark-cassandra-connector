@@ -45,6 +45,10 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
         |  PRIMARY KEY ((k1, k2, k3), c1, c2, c3)
         |)
       """.stripMargin)
+    session.execute(
+      s"""CREATE INDEX test_d9_map_idx ON $ks.test (keys(d9_map))""")
+    session.execute(
+      s"""CREATE INDEX test_d7_int_idx ON $ks.test (d7_int)""")
   }
 
   val schema = Schema.fromCassandra(conn)
@@ -128,6 +132,15 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
       val udt = table.columnByName("d16_address").columnType.asInstanceOf[UserDefinedType]
       udt.columnNames shouldBe Seq("street", "city", "zip")
       udt.columnTypes shouldBe Seq(VarCharType, VarCharType, IntType)
+    }
+
+    "should not recognize column with collection index as indexed" in {
+      table.indexedColumns.size shouldBe 1
+      table.indexedColumns.head.columnName shouldBe "d7_int"
+    }
+
+    "should hold all indices retrieved from cassandra" in {
+      table.indexes.size shouldBe 2
     }
   }
 

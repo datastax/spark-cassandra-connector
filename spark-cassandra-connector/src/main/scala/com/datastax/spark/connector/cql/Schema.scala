@@ -7,7 +7,8 @@ import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
-import scala.util.Properties
+import scala.util.{Properties, Try}
+
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
@@ -145,15 +146,17 @@ case class TableDef(
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
-  val indexesForColumnName: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
+  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
 
-  val indexesForColumnDef: Map[ColumnDef, Seq[IndexDef]] = {
-
-    for ((target: String, indexes: Seq[IndexDef]) <- indexesForColumnName) yield {
-      (columnByName(target) -> indexes)
+  /**
+    * Contains indices that can be directly mapped to single column, namely indices with a handled column
+    * name as a target. Indices that can not be mapped to a single column are dropped.
+    */
+  private val indexesForColumnDef: Map[ColumnDef, Seq[IndexDef]] = {
+    indexesForTarget.flatMap {
+      case (target, indexes) => Try(columnByName(target) -> indexes).toOption
     }
   }
-
 
   def isIndexed(column: ColumnDef): Boolean = {
     indexesForColumnDef.contains(column)
@@ -294,11 +297,17 @@ object Schema extends Logging {
       for (keyspace <- metadata.getKeyspaces.toSet if isKeyspaceSelected(keyspace)) yield
         KeyspaceDef(keyspace.getName, fetchTables(keyspace))
 
+    /**
+      * See [[com.datastax.driver.core.Metadata#handleId]]
+      */
+    def handleId(table: TableMetadata, columnName: String): String =
+      Option(table.getColumn(columnName)).map(_.getName).getOrElse(columnName)
+
     def getIndexDefs(tableOrView: AbstractTableMetadata): Seq[IndexDef] = tableOrView match {
       case table: TableMetadata =>
         table.getIndexes.map(index => {
-          val targetName = table.getColumn(index.getTarget).getName
-          IndexDef(index.getIndexClassName, targetName, index.getName, Map.empty)
+          val target = handleId(table, index.getTarget)
+          IndexDef(index.getIndexClassName, target, index.getName, Map.empty)
         }).toSeq
       case view: MaterializedViewMetadata => Seq.empty
     }
