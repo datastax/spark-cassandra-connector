@@ -28,12 +28,13 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     keyspaceName: String,
     tableName: String,
     columns: ColumnSelector = AllColumns,
-    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf),
+    wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]] = None)(
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     rwf: RowWriterFactory[T]): Unit = {
 
-    val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
+    val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf, wrapupBuilderFactory)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
 
@@ -57,13 +58,14 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   def saveAsCassandraTableEx(
     table: TableDef,
     columns: ColumnSelector = AllColumns,
-    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf),
+    wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]] = None)(
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     rwf: RowWriterFactory[T]): Unit = {
 
     connector.withSessionDo(session => session.execute(table.cql))
-    saveToCassandra(table.keyspaceName, table.tableName, columns, writeConf)
+    saveToCassandra(table.keyspaceName, table.tableName, columns, writeConf, wrapupBuilderFactory)
   }
 
   /**
@@ -86,14 +88,15 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     keyspaceName: String,
     tableName: String,
     columns: ColumnSelector = AllColumns,
-    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf),
+    wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]] = None)(
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     rwf: RowWriterFactory[T],
     columnMapper: ColumnMapper[T]): Unit = {
 
     val table = TableDef.fromType[T](keyspaceName, tableName)
-    saveAsCassandraTableEx(table, columns, writeConf)
+    saveAsCassandraTableEx(table, columns, writeConf, wrapupBuilderFactory)
   }
 
   /** Applies a function to each item, and groups consecutive items having the same value together.

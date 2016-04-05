@@ -1,7 +1,11 @@
 package com.datastax.spark.connector.japi;
 
 import com.datastax.spark.connector.rdd.reader.RowReader;
+import com.datastax.spark.connector.writer.BatchWrapupBuilder;
 import com.datastax.spark.connector.writer.RowWriter;
+import com.datastax.spark.connector.writer.JavaBatchWrapupBuilderFactory;
+import scala.Function0;
+import scala.None$;
 import scala.Option;
 import scala.Tuple2;
 import scala.reflect.ClassTag;
@@ -58,7 +62,20 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
             WriteConf conf,
             CassandraConnector connector
     ) {
-        rddFunctions.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
+        rddFunctions.saveToCassandra(keyspace, table, columnNames, conf, None$.<Function0<BatchWrapupBuilder<T>>>empty(), connector, rowWriterFactory);
+    }
+
+    public void saveToCassandra(
+            String keyspace,
+            String table,
+            RowWriterFactory<T> rowWriterFactory,
+            ColumnSelector columnNames,
+            WriteConf conf,
+            JavaBatchWrapupBuilderFactory<T> wrapupBuilder,
+            CassandraConnector connector
+    ) {
+        rddFunctions.saveToCassandra(keyspace, table, columnNames, conf,
+                Option.apply((Function0<BatchWrapupBuilder<T>>)wrapupBuilder), connector, rowWriterFactory);
     }
 
     /**

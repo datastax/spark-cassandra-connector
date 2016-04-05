@@ -1,9 +1,9 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.{ConsistencyLevel, DataType}
+import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
@@ -31,7 +31,8 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue,
-                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default) {
+                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
+                     batchType: BatchStatement.Type = WriteConf.BatchTypeParam.default) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
@@ -60,6 +61,12 @@ object WriteConf {
     section = ReferenceSection,
     default = ConsistencyLevel.LOCAL_QUORUM,
     description = """Consistency level for writing""")
+
+  val BatchTypeParam = ConfigParameter[BatchStatement.Type](
+    name = "spark.cassandra.output.batch.type",
+    section = ReferenceSection,
+    default = BatchStatement.Type.UNLOGGED,
+    description = """Batch type for non-counter updates""")
 
   val BatchSizeRowsParam = ConfigParameter[Option[Int]](
     name = "spark.cassandra.output.batch.size.rows",
@@ -149,6 +156,9 @@ object WriteConf {
 
     val batchSizeInBytes = conf.getInt(BatchSizeBytesParam.name, BatchSizeBytesParam.default)
 
+    val batchType = BatchStatement.Type.valueOf(
+      conf.get(BatchTypeParam.name, BatchTypeParam.default.name()))
+
     val consistencyLevel = ConsistencyLevel.valueOf(
       conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name()))
 
@@ -187,7 +197,8 @@ object WriteConf {
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS,
       taskMetricsEnabled = metricsEnabled,
-      ignoreNulls = ignoreNulls)
+      ignoreNulls = ignoreNulls,
+      batchType = batchType)
   }
 
 }

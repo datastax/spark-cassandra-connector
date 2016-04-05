@@ -44,7 +44,8 @@ abstract class WritableToCassandra[T] {
   def saveToCassandra(keyspaceName: String,
                       tableName: String,
                       columnNames: ColumnSelector,
-                      writeConf: WriteConf)
+                      writeConf: WriteConf,
+                      wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]] = None)
                      (implicit connector: CassandraConnector, rwf: RowWriterFactory[T])
 
 }
