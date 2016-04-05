@@ -24,7 +24,8 @@ class TableWriter[T] private (
     tableDef: TableDef,
     columnSelector: IndexedSeq[ColumnRef],
     rowWriter: RowWriter[T],
-    writeConf: WriteConf) extends Serializable with Logging {
+    writeConf: WriteConf,
+    wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]]) extends Serializable with Logging {
 
   require(tableDef.isView == false,
     s"${tableDef.name} is a Materialized View and Views are not writable")
@@ -146,7 +147,7 @@ class TableWriter[T] private (
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
         Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
-      val batchType = if (isCounterUpdate) Type.COUNTER else Type.UNLOGGED
+      val batchType = if (isCounterUpdate) Type.COUNTER else writeConf.batchType
 
       val boundStmtBuilder = new BoundStatementBuilder(
         rowWriter,
@@ -157,7 +158,7 @@ class TableWriter[T] private (
       val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
-        writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
+        writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator, wrapupBuilderFactory)
       val rateLimiter = new RateLimiter((writeConf.throughputMiBPS * 1024 * 1024).toLong, 1024 * 1024)
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
@@ -270,7 +271,8 @@ object TableWriter {
       keyspaceName: String,
       tableName: String,
       columnNames: ColumnSelector,
-      writeConf: WriteConf): TableWriter[T] = {
+      writeConf: WriteConf,
+      wrapupBuilderFactory: Option[() => BatchWrapupBuilder[T]] = None): TableWriter[T] = {
 
     val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
     val tableDef = schema.tables.headOption
@@ -282,6 +284,6 @@ object TableWriter {
       selectedColumns ++ optionColumns.map(_.ref))
 
     checkColumns(tableDef, selectedColumns)
-    new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
+    new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf, wrapupBuilderFactory)
   }
 }
