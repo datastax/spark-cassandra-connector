@@ -43,5 +43,17 @@ source and by specifying keyword arguements for `keyspace` and `table`.
 +-+-+
 ```
 
+### Saving a DataFrame in Python to Cassandra
+
+A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguements for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-programming-guide.html#save-modes)).
+
+```python
+ sqlContext.write\
+    .format("org.apache.spark.sql.cassandra")\
+    .mode('append')\
+    .options(table="kv", keyspace="test")\
+    .save()
+```
+
 The options and parameters are identical to the Scala Data Frames Api so
 please see [Data Frames](14_data_frames.md) for more information.
