@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.io.FileInputStream
 import java.security.{KeyStore, SecureRandom}
-import javax.net.ssl.{SSLContext, TrustManagerFactory}
+import javax.net.ssl.{SSLContext, TrustManagerFactory, KeyManagerFactory}
 
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
@@ -73,9 +73,33 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         } finally {
           IOUtils.closeQuietly(trustStoreFile)
         }
-
+        val kmf = if(conf.clientAuthEnabled){
+            conf.keyStorePath map {
+              case path ⇒
+                val keyStoreFile = new FileInputStream(path)
+                val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+                val keyStore = KeyStore.getInstance(conf.keyStoreType)
+                conf.keyStorePassword match {
+                  case None ⇒ {
+                    keyStore.load(keyStoreFile, null)
+                    kmf.init(keyStore, null)
+                  }
+                  case Some(password) ⇒ {
+                    keyStore.load(keyStoreFile, password.toCharArray)
+                    kmf.init(keyStore, password.toCharArray)
+                  }
+                }
+                kmf
+            }
+          }else{
+            None
+          }
         val context = SSLContext.getInstance(conf.protocol)
-        context.init(null, tmf.getTrustManagers, new SecureRandom)
+        kmf match {
+          case None ⇒ context.init(null, tmf.getTrustManagers, new SecureRandom)
+          case Some(kmf) ⇒ context.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+        }
+        
         JdkSSLOptions.builder()
           .withSSLContext(context)
           .withCipherSuites(conf.enabledAlgorithms.toArray)
