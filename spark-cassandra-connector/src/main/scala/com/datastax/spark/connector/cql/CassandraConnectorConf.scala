@@ -28,6 +28,7 @@ case class CassandraConnectorConf(
   readTimeoutMillis: Int = CassandraConnectorConf.DefaultReadTimeoutMillis,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.DefaultQueryRetryDelay
 )
 
@@ -47,10 +48,12 @@ object CassandraConnectorConf extends Logging {
     enabledAlgorithms: Set[String] = SSLOptions.DEFAULT_SSL_CIPHER_SUITES.toSet
   )
 
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   trait RetryDelayConf {
     def forRetry(retryNumber: Int): Duration
   }
 
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   object RetryDelayConf extends Serializable {
 
     case class ConstantDelay(delay: Duration) extends RetryDelayConf {
@@ -106,6 +109,7 @@ object CassandraConnectorConf extends Logging {
   val DefaultMinReconnectionDelayMillis = 1000
   val DefaultMaxReconnectionDelayMillis = 60000
   val DefaultQueryRetryCount = 10
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   val DefaultQueryRetryDelay = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d)
   val DefaultConnectTimeoutMillis = 5000
   val DefaultReadTimeoutMillis = 120000
@@ -179,8 +183,6 @@ object CassandraConnectorConf extends Logging {
     val minReconnectionDelay = conf.getInt(CassandraMinReconnectionDelayProperty, DefaultMinReconnectionDelayMillis)
     val maxReconnectionDelay = conf.getInt(CassandraMaxReconnectionDelayProperty, DefaultMaxReconnectionDelayMillis)
     val queryRetryCount = conf.getInt(CassandraQueryRetryCountProperty, DefaultQueryRetryCount)
-    val queryRetryDelay = RetryDelayConf.fromString(conf.get(CassandraQueryRetryDelayProperty, ""))
-      .getOrElse(DefaultQueryRetryDelay)
     val connectTimeout = conf.getInt(CassandraConnectionTimeoutProperty, DefaultConnectTimeoutMillis)
     val readTimeout = conf.getInt(CassandraReadTimeoutProperty, DefaultReadTimeoutMillis)
 
@@ -222,8 +224,7 @@ object CassandraConnectorConf extends Logging {
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf,
-      queryRetryDelay = queryRetryDelay
+      cassandraSSLConf = cassandraSSLConf
     )
   }
 }
