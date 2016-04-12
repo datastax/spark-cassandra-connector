@@ -4,11 +4,11 @@
 ### Most Recent Release Scala Docs
 
 ### 1.6.0-M1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
 
-[All Versions Scala Docs](#hosted-scala-docs)
+[All Versions API Docs](#hosted-api-docs)
 
 ## Lightning-fast cluster computing with Spark and Cassandra
 
@@ -41,7 +41,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
-| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0 | 3.0           |
+| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.4       | 1.4           | 2.1.5*    | 2.1                   |
 | 1.3       | 1.3           | 2.1.5*    | 2.1                   |
@@ -51,36 +51,36 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 **Compatible with 2.1.X where X >= 5*
 
-## Hosted Scala Docs
+## Hosted API Docs
+API documentation for the Scala and Java interfaces are available online:
 
 ### 1.6.0-M1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
 
 ### 1.5.0
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-embedded/)
 
 ### 1.4.2
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-embedded/)
 
 ### 1.3.1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-embedded/)
 
 ### 1.2.0 
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-embedded/)
 
 ## Download
-This project is available on Spark Packages, this is the easiest way to start using the connector
-
+This project is available on Spark Packages; this is the easiest way to start using the connector:
 http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 This project has also been published to the Maven Central Repository.
@@ -172,7 +172,7 @@ outputLocation defaults to doc/reference.md
 
 ## License
 
-Copyright 2014-2015, DataStax, Inc.
+Copyright 2014-2016, DataStax, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
