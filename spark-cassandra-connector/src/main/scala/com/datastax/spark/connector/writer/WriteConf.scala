@@ -16,6 +16,7 @@ import org.apache.spark.SparkConf
   *                        they are written to Cassandra
   * @param batchGroupingKey which rows can be grouped into a single batch
   * @param consistencyLevel consistency level for writes, default LOCAL_QUORUM
+  * @param ifNotExists inserting a row should happen only if it does not already exist
   * @param parallelismLevel number of batches to be written in parallel
   * @param ttl       the default TTL value which is used when it is defined (in seconds)
   * @param timestamp the default timestamp value which is used when it is defined (in microseconds)
@@ -26,6 +27,7 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      batchGroupingBufferSize: Int = WriteConf.BatchBufferSizeParam.default,
                      batchGroupingKey: BatchGroupingKey = WriteConf.BatchLevelParam.default,
                      consistencyLevel: ConsistencyLevel = WriteConf.ConsistencyLevelParam.default,
+                     ifNotExists: Boolean = WriteConf.IfNotExistsParam.default,
                      ignoreNulls: Boolean = WriteConf.IgnoreNullsParam.default,
                      parallelismLevel: Int = WriteConf.ParallelismLevelParam.default,
                      throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
@@ -98,6 +100,14 @@ object WriteConf {
     |</ul>
     |""".stripMargin)
 
+  val IfNotExistsParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.output.ifNotExists",
+    section = ReferenceSection,
+    default = false,
+    description =
+      """Determines that the INSERT operation is not performed if a row with the same primary
+				|key already exists. Using the feature incurs a performance hit.""".stripMargin)
+
   val IgnoreNullsParam = ConfigParameter[Boolean](
     name = "spark.cassandra.output.ignoreNulls",
     section = ReferenceSection,
@@ -137,6 +147,7 @@ object WriteConf {
     BatchSizeRowsParam,
     BatchBufferSizeParam,
     BatchLevelParam,
+    IfNotExistsParam,
     IgnoreNullsParam,
     ParallelismLevelParam,
     ThroughputMiBPSParam,
@@ -153,6 +164,8 @@ object WriteConf {
       conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name()))
 
     val batchSizeInRowsStr = conf.get(BatchSizeRowsParam.name, "auto")
+
+    val ifNotExists = conf.getBoolean(IfNotExistsParam.name, IfNotExistsParam.default)
 
     val ignoreNulls = conf.getBoolean(IgnoreNullsParam.name, IgnoreNullsParam.default)
 
@@ -187,7 +200,8 @@ object WriteConf {
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS,
       taskMetricsEnabled = metricsEnabled,
-      ignoreNulls = ignoreNulls)
+      ignoreNulls = ignoreNulls,
+      ifNotExists = ifNotExists)
   }
 
 }

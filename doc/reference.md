@@ -257,6 +257,12 @@ in each row</td>
   <td>Consistency level for writing</td>
 </tr>
 <tr>
+  <td><code>output.ifNotExists</code></td>
+  <td>false</td>
+  <td>Determines that the INSERT operation is not performed if a row with the same primary
+key already exists. Using the feature incurs a performance hit.</td>
+</tr>
+<tr>
   <td><code>output.ignoreNulls</code></td>
   <td>false</td>
   <td> In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
