@@ -264,7 +264,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table", mapColumnTo(classOf[java.lang.String]))
       .select("value", "key")
-      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
+      .keyBy(
+        mapColumnTo(classOf[java.lang.Integer]),
+        mapToRow(classOf[java.lang.Integer]),
+        classOf[Integer], "key")
       .collect()
 
     rows should have size 3
@@ -276,7 +279,11 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "allow to transform rows into KV pairs of a single-column type and a multi-column type" in {
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table", mapRowTo(classOf[SampleJavaBean]))
-      .keyBy(mapColumnTo(classOf[java.lang.Integer]), classOf[Integer], "key")
+      .keyBy(
+        mapColumnTo(classOf[java.lang.Integer]),
+        mapToRow(classOf[java.lang.Integer]),
+        classOf[Integer],
+        "key")
       .collect().map { case (i, x) ⇒ (i, (x.getKey, x.getValue))}
 
     rows should have size 3
@@ -289,7 +296,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table", mapColumnTo(classOf[java.lang.Integer]))
       .select("key", "value")
-      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
+      .keyBy(
+        mapRowTo(classOf[SampleJavaBean]),
+        mapToRow(classOf[SampleJavaBean]),
+        classOf[SampleJavaBean])
       .collect().map { case (x, i) ⇒ ((x.getKey, x.getValue), i)}
 
     rows should have size 3
@@ -301,7 +311,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "allow to transform rows into KV pairs of multi-column types" in {
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table", mapRowTo(classOf[SampleJavaBean]))
-      .keyBy(mapRowTo(classOf[SampleJavaBean]), classOf[SampleJavaBean])
+      .keyBy(
+        mapRowTo(classOf[SampleJavaBean]),
+        mapToRow(classOf[SampleJavaBean]),
+        classOf[SampleJavaBean])
       .collect().map { case (x, y) ⇒ ((x.getKey, x.getValue), (y.getKey, y.getValue))}
 
     rows should have size 3

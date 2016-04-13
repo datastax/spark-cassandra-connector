@@ -2,7 +2,9 @@ package com.datastax.spark.connector.rdd.partitioner.dht
 
 import scala.language.existentials
 
-trait TokenFactory[V, T <: Token[V]] {
+import com.datastax.spark.connector.rdd.partitioner.MonotonicBucketing
+
+trait TokenFactory[V, T <: Token[V]] extends Serializable {
   def minToken: T
   def maxToken: T
 
@@ -24,6 +26,12 @@ trait TokenFactory[V, T <: Token[V]] {
 
   /** Converts a token to its string representation */
   def tokenToString(token: T): String
+
+  /** Defines how to compare tokens */
+  implicit def tokenOrdering: Ordering[T]
+
+  /** Defines how to group tokens into buckets, useful for partitioning  */
+  implicit def tokenBucketing: MonotonicBucketing[T]
 }
 
 object TokenFactory {
@@ -44,6 +52,12 @@ object TokenFactory {
       if (right > left) BigInt(right) - BigInt(left)
       else BigInt(right) - BigInt(left) + totalTokenCount
     }
+
+    override def tokenBucketing: MonotonicBucketing[LongToken] =
+      implicitly[MonotonicBucketing[LongToken]]
+
+    override def tokenOrdering: Ordering[LongToken] =
+      Ordering.by(_.value)
   }
 
   implicit object RandomPartitionerTokenFactory extends TokenFactory[BigInt, BigIntToken] {
@@ -59,7 +73,14 @@ object TokenFactory {
       if (right > left) right - left
       else right - left + totalTokenCount
     }
+
+    override def tokenBucketing: MonotonicBucketing[BigIntToken] =
+      implicitly[MonotonicBucketing[BigIntToken]]
+
+    override def tokenOrdering: Ordering[BigIntToken] =
+      Ordering.by(_.value)
   }
+
 
   def forCassandraPartitioner(partitionerClassName: String): TokenFactory[V, T] = {
     val partitioner =

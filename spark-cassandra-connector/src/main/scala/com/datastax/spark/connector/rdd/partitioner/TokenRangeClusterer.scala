@@ -8,16 +8,16 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenRange}
 
 import scala.annotation.tailrec
 
-/** Divides a set of token ranges into groups containing not more than `maxRowCountPerGroup` rows
-  * and not more than `maxGroupSize` token ranges. Each group will form a single `CassandraRDDPartition`.
+/** Divides a set of token rangesContaining into groups containing not more than `maxRowCountPerGroup` rows
+  * and not more than `maxGroupSize` token rangesContaining. Each group will form a single `CassandraPartition`.
   *
   * The algorithm is as follows:
-  * 1. Sort token ranges by endpoints lexicographically.
-  * 2. Take the highest possible number of token ranges from the beginning of the list,
+  * 1. Sort token rangesContaining by endpoints lexicographically.
+  * 2. Take the highest possible number of token rangesContaining from the beginning of the list,
   *    such that their sum of rowCounts does not exceed `maxRowCountPerGroup` and they all contain at
   *    least one common endpoint. If it is not possible, take at least one item.
-  *    Those token ranges will make a group.
-  * 3. Repeat the previous step until no more token ranges left.*/
+  *    Those token rangesContaining will make a group.
+  * 3. Repeat the previous step until no more token rangesContaining left.*/
 class TokenRangeClusterer[V, T <: Token[V]](maxRowCountPerGroup: Long, maxGroupSize: Int = Int.MaxValue) {
 
   private implicit object InetAddressOrdering extends Ordering[InetAddress] {

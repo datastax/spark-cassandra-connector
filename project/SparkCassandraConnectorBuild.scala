@@ -98,7 +98,7 @@ object CassandraSparkBuild extends Build {
     id = s"$namespace-doc",
     base = file(s"$namespace-doc"),
     settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
-  ) dependsOn(connector)
+  ) dependsOn connector
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -206,6 +206,7 @@ object Artifacts {
   object Test {
     val akkaTestKit       = "com.typesafe.akka"       %% "akka-testkit"                 % Akka      % "test,it"       // ApacheV2
     val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
+    val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
     val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
     val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
@@ -237,6 +238,7 @@ object Dependencies {
     Test.commonsIO,
     Test.junit,
     Test.junitInterface,
+    Test.scalaCheck,
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,

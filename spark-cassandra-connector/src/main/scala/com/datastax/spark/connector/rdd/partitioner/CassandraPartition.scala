@@ -4,8 +4,21 @@ import java.net.InetAddress
 
 import org.apache.spark.Partition
 
+import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
+
 /** Stores a CQL `WHERE` predicate matching a range of tokens. */
-case class CqlTokenRange(cql: String, values: Any*)
+case class CqlTokenRange[V, T <: Token[V]](range: TokenRange[V, T])(implicit tf: TokenFactory[V, T]) {
+
+  require(!range.isWrappedAround)
+
+  def cql(pk: String): (String, Seq[Any]) =
+    if (range.start == tf.minToken)
+      (s"token($pk) <= ?", Seq(range.end.value))
+    else if (range.end == tf.minToken)
+      (s"token($pk) > ?", Seq(range.start.value))
+    else
+      (s"token($pk) > ? AND token($pk) <= ?", Seq(range.start.value, range.end.value))
+}
 
 trait EndpointPartition extends Partition {
   def endpoints: Iterable[InetAddress]
@@ -20,10 +33,11 @@ trait EndpointPartition extends Partition {
   * @param index identifier of the partition, used internally by Spark
   * @param endpoints which nodes the data partition is located on
   * @param tokenRanges token ranges determining the row set to be fetched
-  * @param rowCount estimated total row count in a partition
+  * @param dataSize estimated amount of data in the partition
   */
-case class CassandraPartition(index: Int,
-                              endpoints: Iterable[InetAddress],
-                              tokenRanges: Iterable[CqlTokenRange],
-                              rowCount: Long) extends EndpointPartition
+case class CassandraPartition[V, T <: Token[V]](
+  index: Int,
+  endpoints: Iterable[InetAddress],
+  tokenRanges: Iterable[CqlTokenRange[V, T]],
+  dataSize: Long) extends EndpointPartition
 
