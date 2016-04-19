@@ -166,7 +166,6 @@ object Artifacts {
   val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
   val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Settings.cassandraTestVersion       guavaExclude // ApacheV2
   val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
-  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
   val jodaC               = "org.joda"                % "joda-convert"           % JodaC
@@ -264,7 +263,7 @@ object Dependencies {
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
+    config, guava, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
     cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
