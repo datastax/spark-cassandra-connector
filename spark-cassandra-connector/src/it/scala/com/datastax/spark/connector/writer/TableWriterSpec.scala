@@ -87,7 +87,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       Future {
         session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
         session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
-      })
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.write_if_not_exists_test (id INT PRIMARY KEY, value TEXT)""")
+      }
+    )
   }
 
   def protocolVersion = conn.withClusterDo(cluster =>
@@ -822,6 +826,33 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
     e.getMessage should include("mcol")
     e.getMessage should include("scol")
+  }
+
+  it should "insert and not overwrite existing keys when ifNotExists is true" in {
+    conn.withSessionDo { session =>
+      session.execute(s"""TRUNCATE $ks.write_if_not_exists_test""")
+      session.execute(s"""INSERT INTO $ks.write_if_not_exists_test (id, value) VALUES (1, 'old')""")
+    }
+
+    sc.parallelize(Seq((1, "new"), (2, "new"))).saveToCassandra(ks, "write_if_not_exists_test",
+      writeConf = WriteConf(ifNotExists = true))
+
+    val results = sc.cassandraTable[(Int, String)](ks, "write_if_not_exists_test")
+      .select("id", "value").collect()
+    results should  contain theSameElementsAs  Seq((1, "old"), (2, "new"))
+  }
+
+  it should "insert and overwrite existing keys when ifNotExists is false or with default values" in {
+    conn.withSessionDo { session =>
+      session.execute(s"""TRUNCATE $ks.write_if_not_exists_test""")
+      session.execute(s"""INSERT INTO $ks.write_if_not_exists_test (id, value) VALUES (1, 'old')""")
+    }
+
+    sc.parallelize(Seq((1, "new"), (2, "new"))).saveToCassandra(ks, "write_if_not_exists_test")
+
+    val results = sc.cassandraTable[(Int, String)](ks, "write_if_not_exists_test")
+      .select("id", "value").collect()
+    results should contain theSameElementsAs Seq((1, "new"), (2, "new"))
   }
 
 }

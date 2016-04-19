@@ -34,20 +34,12 @@ class TableWriter[T] private (
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
   val columns = columnNames.map(tableDef.columnByName)
 
-  val defaultTTL = writeConf.ttl match {
-    case TTLOption(StaticWriteOptionValue(value)) => Some(value)
-    case _ => None
-  }
-
-  val defaultTimestamp = writeConf.timestamp match {
-    case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
-    case _ => None
-  }
-
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
     val columnSpec = quotedColumnNames.mkString(", ")
     val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
+
+    val ifNotExistsSpec = if (writeConf.ifNotExists) "IF NOT EXISTS " else ""
 
     val ttlSpec = writeConf.ttl match {
       case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
@@ -64,7 +56,7 @@ class TableWriter[T] private (
     val options = List(ttlSpec, timestampSpec).flatten
     val optionsSpec = if (options.nonEmpty) s"USING ${options.mkString(" AND ")}" else ""
 
-    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $optionsSpec".trim
+    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $ifNotExistsSpec$optionsSpec".trim
   }
 
   private lazy val queryTemplateUsingUpdate: String = {

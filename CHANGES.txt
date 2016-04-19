@@ -1,8 +1,21 @@
+1.6.0 M2
+ * Performance improvement: keyBy creates an RDD with CassandraPartitioner 
+   so shuffling can be avoided in many cases, e.g. when keyBy is followed
+   by groupByKey or join (SPARKC-330)
+ * Improved exception message when data frame is to be saved in 
+   non-empty Cassandra table (SPARKC-338)
+ * Support for Joda time for Cassandra date type (SPARKC-342)
+ * Don't double resolve the paths for port locks in embedded C* 
+   (contribution by crakjie)
+ * Drop indices that cannot be used in predicate pushdown (SPARKC-347)
+ * Added support for IF NOT EXISTS (SPARKC-362)
  * Nested Optional Case Class can be save as UDT (SPARKC-346)
  * Merged Java API into main module (SPARKC-335)
  * Upgraded to Spark 1.6.1 (SPARKC-344)
- * Removed the ability to specify cluster alias directly and added some helper methods which make it easier to configure
-   Cassandra related data frames (SPARKC-289)
+ * Fix NoSuchElementException when fetching database schema from Cassandra
+   (SPARKC-341)
+ * Removed the ability to specify cluster alias directly and added some helper methods 
+   which make it easier to configure Cassandra related data frames (SPARKC-289)
 
 1.6.0 M1
  * Adds the ability to add additional Predicate Pushdown Rules at Runtime (SPARKC-308)
