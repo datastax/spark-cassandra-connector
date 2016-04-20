@@ -89,7 +89,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.nativePort)
       .withRetryPolicy(
-        new MultipleRetryPolicy(conf.queryRetryCount, conf.queryRetryDelay))
+        new MultipleRetryPolicy(conf.queryRetryCount))
       .withReconnectionPolicy(
         new ExponentialReconnectionPolicy(conf.minReconnectionDelayMillis, conf.maxReconnectionDelayMillis))
       .withLoadBalancingPolicy(
