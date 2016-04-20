@@ -6,15 +6,11 @@ import com.datastax.driver.core.policies.RetryPolicy.RetryDecision
 import com.datastax.driver.core.{ConsistencyLevel, Statement, WriteType}
 
 /** Always retries with the same CL, constant number of times, regardless of circumstances */
-class MultipleRetryPolicy(maxRetryCount: Int, retryDelay: CassandraConnectorConf.RetryDelayConf)
+class MultipleRetryPolicy(maxRetryCount: Int)
   extends RetryPolicy {
 
-  private def retryOrThrow(cl: ConsistencyLevel, nbRetry: Int): RetryDecision = {
+  private def retryManyTimesOrThrow(cl: ConsistencyLevel, nbRetry: Int): RetryDecision = {
     if (nbRetry < maxRetryCount) {
-      if (nbRetry > 0) {
-        val delay = retryDelay.forRetry(nbRetry).toMillis
-        if (delay > 0) Thread.sleep(delay)
-      }
       RetryDecision.retry(cl)
     } else {
       RetryDecision.rethrow()
@@ -24,18 +20,54 @@ class MultipleRetryPolicy(maxRetryCount: Int, retryDelay: CassandraConnectorConf
   override def init(cluster: com.datastax.driver.core.Cluster): Unit = {}
   override def close(): Unit = { }
 
-  override def onReadTimeout(stmt: Statement, cl: ConsistencyLevel,
-                             requiredResponses: Int, receivedResponses: Int,
-                             dataRetrieved: Boolean, nbRetry: Int) = retryOrThrow(cl, nbRetry)
+  private def retryOnceOrThrow(cl: ConsistencyLevel, nbRetry: Int): RetryDecision = {
+    if (nbRetry == 0) {
+      RetryDecision.retry(cl)
+    } else {
+      RetryDecision.rethrow()
+    }
+  }
 
-  override def onUnavailable(stmt: Statement, cl: ConsistencyLevel,
-                             requiredReplica: Int, aliveReplica: Int, nbRetry: Int) = retryOrThrow(cl, nbRetry)
+  override def onReadTimeout(
+      stmt: Statement,
+      cl: ConsistencyLevel,
+      requiredResponses: Int,
+      receivedResponses: Int,
+      dataRetrieved: Boolean,
+      nbRetry: Int): RetryDecision = {
 
-  override def onWriteTimeout(stmt: Statement, cl: ConsistencyLevel, writeType: WriteType,
-                              requiredAcks: Int, receivedAcks: Int, nbRetry: Int) = retryOrThrow(cl, nbRetry)
+    retryManyTimesOrThrow(cl, nbRetry)
+  }
 
   override def onRequestError(stmt: Statement,
       cl: ConsistencyLevel,
       ex: DriverException,
-      nbRetry: Int): RetryDecision = retryOrThrow(cl, nbRetry)
+      nbRetry: Int): RetryDecision = {
+
+    RetryDecision.rethrow()
+  }
+
+  override def onWriteTimeout(
+      stmt: Statement,
+      cl: ConsistencyLevel,
+      writeType: WriteType,
+      requiredAcks: Int,
+      receivedAcks: Int,
+      nbRetry: Int): RetryDecision = {
+
+    retryManyTimesOrThrow(cl, nbRetry)
+  }
+
+  override def onUnavailable(
+      stmt: Statement,
+      cl: ConsistencyLevel,
+      requiredReplica: Int,
+      aliveReplica: Int,
+      nbRetry: Int): RetryDecision = {
+
+    // We retry once in hope we connect to another
+    // coordinator that can see more nodes (e.g. on another side of the network partition):
+    retryOnceOrThrow(cl, nbRetry)
+  }
+
 }
