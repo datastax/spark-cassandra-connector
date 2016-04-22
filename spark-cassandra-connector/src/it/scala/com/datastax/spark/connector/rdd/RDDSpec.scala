@@ -382,6 +382,14 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
+  it should "support single partition where clauses" in {
+    val someCass = sc
+      .cassandraTable[FullRow](ks, tableName)
+      .where("key = 1 and group = 100")
+    val result = someCass.collect
+    result should contain theSameElementsAs Seq(FullRow(1,100,"1"))
+  }
+
   "A Joined CassandraRDD " should " support select clauses " in {
     val someCass = sc.cassandraTable(ks, otherTable).joinWithCassandraTable(ks, tableName).select("value")
     val results = someCass.collect.map(_._2).map(_.getInt("value")).sorted
