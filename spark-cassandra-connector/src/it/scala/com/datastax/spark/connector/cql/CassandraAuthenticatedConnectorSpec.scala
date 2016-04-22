@@ -6,7 +6,6 @@ import com.datastax.spark.connector.embedded.EmbeddedCassandra
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.toDataFrameFunctions
 
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
@@ -40,10 +39,10 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
       conn2.withSessionDo { session => }
    }
    
-   "A DataFrame" should "allow to write data with valid authentication" in {
+   "A DataFrame" should "read and write data with valid auth" in {
 
-      val sqlContext = new SQLContext(sc)
-      import sqlContext.implicits._
+      val csc = new CassandraSQLContext(sc)
+      import csc.implicits._
 
       val conf = defaultConf
          .set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
@@ -51,32 +50,23 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
 
       val conn = CassandraConnector(conf)
 
-      val personDF = sc.parallelize(Seq(
+      val personDF1 = sc.parallelize(Seq(
          ("Andy", 28, "America"),
          ("Kaushal", 25, "India"),
          ("Desanth", 27, "India"),
          ("Mahendra", 26, "Rajasthan")))
          .toDF("name", "age", "address")
-
-      val options = Map("spark_cassandra_auth_username" -> "cassandra",
-         "spark_cassandra_auth_password" -> "cassandra",
-         "keyspace" -> ks, "table" -> "authtest")
+         
       createKeyspace(conn.openSession())
-      personDF.createCassandraTable(ks, "authtest", Some(Array("address")), Some(Array("age")))(conn)
-      personDF.write.format("org.apache.spark.sql.cassandra").options(options).save();
-   }
-
-   it should "allow to read data with valid authentication" in {
-
-      val csc = new CassandraSQLContext(sc)
-
+      personDF1.createCassandraTable(ks, "authtest", Some(Array("address")), Some(Array("age")))(conn)
+      
       val options = Map("spark_cassandra_auth_username" -> "cassandra",
          "spark_cassandra_auth_password" -> "cassandra",
          "keyspace" -> ks, "table" -> "authtest")
-
-      val personDF = csc.read.format("org.apache.spark.sql.cassandra").options(options).load();
-
-      personDF.count should be(4)
-
+         
+      personDF1.write.format("org.apache.spark.sql.cassandra").options(options).save();
+      val personDF2 = csc.read.format("org.apache.spark.sql.cassandra").options(options).load();
+      
+      personDF2.count should be(4)
    }
 }
