@@ -12,7 +12,9 @@ case class CqlTokenRange[V, T <: Token[V]](range: TokenRange[V, T])(implicit tf:
   require(!range.isWrappedAround)
 
   def cql(pk: String): (String, Seq[Any]) =
-    if (range.start == tf.minToken)
+    if (range.start == tf.minToken && range.end == tf.minToken)
+      (s"token($pk) >= ?", Seq(range.start.value))
+    else if (range.start == tf.minToken)
       (s"token($pk) <= ?", Seq(range.end.value))
     else if (range.end == tf.minToken)
       (s"token($pk) > ?", Seq(range.start.value))
