@@ -18,7 +18,7 @@ Find additional versions at [Spark Packages](http://spark-packages.org/package/d
 ```bash
 cd spark/install/dir
 #Include the --master if you want to run against a spark cluster and not local mode
-./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --package datastax:spark-cassandra-connector:1.6.0-M2-s_2.10 --conf spark.cassandra.connection.host=yourCassandraClusterIp
+./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --packages datastax:spark-cassandra-connector:1.6.0-M2-s_2.10 --conf spark.cassandra.connection.host=yourCassandraClusterIp
 ```
 
 By default spark will log everything to the console and this may be a bit of an overload. To change this copy and modify the `log4j.properties` template file
