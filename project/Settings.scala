@@ -69,6 +69,7 @@ object Settings extends Build {
   lazy val TEST_JAVA_OPTS = Seq(
     "-Xms256m",
     "-Xmx512m",
+    s"-Dtest.cassandra.version=$cassandraTestVersion",
     "-Dsun.io.serialization.extendedDebugInfo=true",
     s"-DbaseDir=${mainDir.getAbsolutePath}") ++ uRandomParams
 

@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
+import java.nio.file.Paths
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -11,9 +12,12 @@ trait EmbeddedCassandra {
   /** Implementation hook. */
   def clearCache(): Unit
 
+  val DEFAULT_CASSANDRA_VERSION = "3.0.2"
+
   /** Switches the Cassandra server to use the new configuration if the requested configuration
     * is different than the currently used configuration. When the configuration is switched, all
     * the state (including data) of the previously running cassandra cluster is lost.
+    *
     * @param configTemplates name of the cassandra.yaml template resources
     * @param forceReload if set to true, the server will be reloaded fresh
     *                    even if the configuration didn't change */
@@ -23,10 +27,32 @@ trait EmbeddedCassandra {
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
       "Configuration templates can't be more than the number of specified hosts")
 
+    val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
+    val (major, minor) = {
+      val parts = cassandraVersion.split("\\.")
+      require (parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
+      (parts(0).toInt, parts(1).toInt)
+    }
+
+    val templateDir = {
+      if (major >= 3) {
+        major.toString
+      } else {
+        s"$major.$minor"
+      }
+    }
+    println(s"Using template Dir: $templateDir")
+
+    val versionedConfigTemplates = configTemplates.map( templateFile =>
+      Paths.get(templateDir, templateFile).toString)
+
+
     if (getProperty(HostProperty).isEmpty) {
       clearCache()
 
-      val templatePairs = configTemplates.zipAll(currentConfigTemplates, "missing value", null)
+      val templatePairs = versionedConfigTemplates
+        .zipAll(currentConfigTemplates, "missing value", null)
+
       for (i <- cassandraRunners.indices.toSet -- configTemplates.indices.toSet) {
         cassandraRunners.lift(i).flatten.foreach(_.destroy())
         cassandraRunners = cassandraRunners.patch(i, Seq(None), 1)
@@ -39,8 +65,8 @@ trait EmbeddedCassandra {
         if (templatePairs(i)._2 != templatePairs(i)._1 || forceReload) {
           cassandraRunners.lift(i).flatten.foreach(_.destroy())
           cassandraRunners = cassandraRunners.patch(i,
-            Seq(Some(new CassandraRunner(configTemplates(i), getProps(i)))), 1)
-          currentConfigTemplates = currentConfigTemplates.patch(i, Seq(configTemplates(i)), 1)
+            Seq(Some(new CassandraRunner(versionedConfigTemplates(i), getProps(i)))), 1)
+          currentConfigTemplates = currentConfigTemplates.patch(i, Seq(versionedConfigTemplates(i)), 1)
         }
       }
     }
