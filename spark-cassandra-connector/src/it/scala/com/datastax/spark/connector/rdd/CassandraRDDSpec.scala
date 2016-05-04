@@ -330,6 +330,24 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     rdd.partitions should have length conn.hosts.size
   }
 
+  it should "support single partition where clauses" in {
+    val someCass = sc
+      .cassandraTable[KeyValue](ks, "key_value")
+      .where("key = 1")
+      .where("group = 100")
+    val result = someCass.collect
+    result should contain theSameElementsAs Seq(KeyValue(1, 100, "0001"))
+  }
+
+  it should "support in clauses" in {
+     val someCass = sc
+      .cassandraTable[KeyValue](ks, "key_value")
+      .where("key in (1,2,3)")
+      .where("group = 100")
+    val result = someCass.collect
+    result should contain theSameElementsAs Seq(KeyValue(1, 100, "0001"), KeyValue(2, 100, "0002"))
+  }
+
   it should "allow for reading collections" in {
     val result = sc.cassandraTable(ks, "collections").collect()
     val rowById = result.groupBy(_.getInt("key")).mapValues(_.head)
