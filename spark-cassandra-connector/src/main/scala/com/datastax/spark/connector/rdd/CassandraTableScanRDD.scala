@@ -255,7 +255,11 @@ class CassandraTableScanRDD[R] private[connector](
 
   private def tokenRangeToCqlQuery(range: CqlTokenRange[_, _]): (String, Seq[Any]) = {
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")
-    val (cql, values) = range.cql(partitionKeyStr)
+    val (cql, values) = if (containsPartitionKey(where)) {
+      ("", Seq.empty)
+    } else {
+      range.cql(partitionKeyStr)
+    }
     val filter = (cql +: where.predicates).filter(_.nonEmpty).mkString(" AND ")
     val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
