@@ -59,10 +59,13 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
     awaitAll(
       Future {
-        session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)""")
+        if (versionGreaterThanOrEquals(2,2)) {
+          println(s"Found version $cassandraMajorVersion  $cassandraMinorVersion")
+          session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)""")
+        }
       },
 
       Future {
@@ -125,7 +128,9 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
       Future {
-        session.execute(s""" CREATE TABLE $ks.user(
+        if (versionGreaterThanOrEquals(2,2)) {
+          session.execute(
+            s""" CREATE TABLE $ks.user(
           id int PRIMARY KEY,
           login text,
           firstname text,
@@ -133,16 +138,19 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
           country text
         )""")
 
-        session.execute(s"""CREATE MATERIALIZED VIEW $ks.user_by_country
+          session.execute(
+            s"""CREATE MATERIALIZED VIEW $ks.user_by_country
           AS SELECT *  //denormalize ALL columns
           FROM user
           WHERE country IS NOT NULL AND id IS NOT NULL
           PRIMARY KEY(country, id);""")
 
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
+
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+        }
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.big_table (key INT PRIMARY KEY, value INT)""")

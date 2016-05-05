@@ -13,6 +13,18 @@ trait EmbeddedCassandra {
   def clearCache(): Unit
 
   val DEFAULT_CASSANDRA_VERSION = "3.0.2"
+  val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
+  val (cassandraMajorVersion, cassandraMinorVersion) = {
+    val parts = cassandraVersion.split("\\.")
+    require (parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
+    (parts(0).toInt, parts(1).toInt)
+  }
+
+  def versionGreaterThanOrEquals(major:Int, minor:Int = 0): Boolean = {
+    (major < cassandraMajorVersion) ||
+      (major == cassandraMajorVersion && minor <= cassandraMinorVersion)
+  }
+
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration
     * is different than the currently used configuration. When the configuration is switched, all
@@ -27,21 +39,14 @@ trait EmbeddedCassandra {
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
       "Configuration templates can't be more than the number of specified hosts")
 
-    val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
-    val (major, minor) = {
-      val parts = cassandraVersion.split("\\.")
-      require (parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
-      (parts(0).toInt, parts(1).toInt)
-    }
 
     val templateDir = {
-      if (major >= 3) {
-        major.toString
+      if (cassandraMajorVersion >= 3) {
+        cassandraMajorVersion.toString
       } else {
-        s"$major.$minor"
+        s"$cassandraMajorVersion.$cassandraMinorVersion"
       }
     }
-    println(s"Using template Dir: $templateDir")
 
     val versionedConfigTemplates = configTemplates.map( templateFile =>
       Paths.get(templateDir, templateFile).toString)
