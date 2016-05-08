@@ -53,7 +53,7 @@ method in `CassandraJavaUtil`.
 Example:
 
 ```java
-JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("ks", "tab")
+JavaRDD<String> cassandraRowsRDD = javaFunctions(sc).cassandraTable("ks", "people")
         .map(new Function<CassandraRow, String>() {
             @Override
             public String call(CassandraRow cassandraRow) throws Exception {
@@ -81,7 +81,7 @@ useful when one wants to select a single column from a table and map it directly
 Example:
 
 ```java
-JavaRDD<Double> pricesRDD = javaFunctions(sc).cassandraTable("ks", "tab", mapColumnTo(Double.class)).select("price");
+JavaRDD<Double> pricesRDD = javaFunctions(sc).cassandraTable("ks", "people", mapColumnTo(Double.class)).select("price");
 ```
 
 In the above example we explicitly select a single column (see the next subsection for details) and map it directly to
