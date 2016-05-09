@@ -270,6 +270,11 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
                  |INSERT INTO $ks1.varint_test(id, series, rollup_minutes, event)
                  |VALUES(1234567891234, 1234567891235, 1234567891236, 'event')
                  |""".stripMargin.replaceAll("\n", " "))
+          },
+
+          Future {
+            session.execute(s"CREATE TABLE $ks1.tuple_test1 (id int PRIMARY KEY, t Tuple<text, int>)")
+            session.execute(s"INSERT INTO $ks1.tuple_test1 (id, t) VALUES (1, ('xyz', 2))")
           }
         )
       },
@@ -603,5 +608,13 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
          | AND rollup_minutes = 1234567891236
       """.stripMargin.replaceAll("\n", " ")
     ).collect() should have length 1
+  }
+
+  it should "read C* Tuple using sql" in {
+    val df = cc.sql(s"SELECT * FROM $ks1.tuple_test1")
+
+    df.count should be (1)
+    df.first.getStruct(1).getString(0) should be ("xyz")
+    df.first.getStruct(1).getInt(1) should be (2)
   }
 }

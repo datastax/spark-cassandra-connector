@@ -24,6 +24,7 @@ case class WriteTimeClass(id: Int, value: String, writeTimeOfValue: Long)
 case class TTLClass(id: Int, value: String, ttlOfValue: Int)
 case class ClassWithWeirdProps(devil: Int, cat: Long, value: String)
 
+
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
 }
@@ -45,6 +46,11 @@ case class Address(street: String, city: String, zip: Int)
 case class ClassWithUDT(key: Int, name: String, addr: Address)
 case class ClassWithTuple(key: Int, value: (Int, String))
 case class ClassWithSmallInt(key: Int, value: Short)
+
+case class TypeWithNestedTuple(id: Int, t: (Int, (String, Double)))
+case class TypeWithTupleSetter(id: Int) {
+  var t: (Int, (String, Double)) = null
+}
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
@@ -157,6 +163,18 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
       Future {
         session.execute( s"""CREATE TABLE $ks.write_time_ttl_test (id INT PRIMARY KEY, value TEXT, value2 TEXT)""")
+      },
+
+      Future {
+        def nestedTupleTable(name: String) = s"""CREATE TABLE $ks.$name(
+          |  id int PRIMARY KEY,
+          |  t frozen <tuple <int, tuple<text, double>>>
+          |)""".stripMargin
+
+        session.execute(nestedTupleTable("tuple_test3"))
+        session.execute(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))")
+        session.execute(nestedTupleTable("tuple_test4"))
+        session.execute(nestedTupleTable("tuple_test5"))
       }
     )
   }
@@ -959,4 +977,50 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "read rows with nested C* Tuples as case classes" in {
+    val result = sc.cassandraTable[TypeWithNestedTuple](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head.t should be ((1, ("foo", 2.3)))
+  }
+
+  it should "read rows with nested C* Tuples as case classes with setters" in {
+    val result = sc.cassandraTable[TypeWithTupleSetter](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head.t should be ((1, ("foo", 2.3)))
+  }
+
+  it should "read rows with nested C* Tuples as Scala Tuple" in {
+    val result = sc.cassandraTable[(Int, (Int, (String, Double)))](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head should be ((0, (1, ("foo", 2.3))))
+  }
+
+  it should "write Scala Tuple as C* Tuple" in {
+    val rdd = sc.parallelize(List(
+      (0, (1, ("foo", 2.3))),
+      (4, (5, ("bar", 6.7)))
+    ))
+
+    rdd.saveToCassandra(ks, "tuple_test4", SomeColumns("id", "t"))
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.tuple_test4").one().getLong(0) should be (2)
+    }
+  }
+
+  it should "write case class with Scala Tuple as C* Tuple" in {
+    val rdd = sc.parallelize(List(
+      TypeWithNestedTuple(0, (1, ("foo", 2.3))),
+      TypeWithNestedTuple(4, (5, ("bar", 6.7)))
+    ))
+
+    rdd.saveToCassandra(ks, "tuple_test5")
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.tuple_test5").one().getLong(0) should be (2)
+    }
+  }
 }

@@ -8,6 +8,7 @@ import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.tuple.{Triple, Pair}
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => DriverTupleType, DataType}
 import com.datastax.spark.connector.{TupleValue, ColumnName}
@@ -69,6 +70,8 @@ case class TupleType(componentTypes: TupleFieldDef*)
       override def targetTypeTag = TupleValue.TypeTag
 
       override def convertPF = {
+        case x: GenericRowWithSchema =>
+          newInstance(componentConverters)(x.toSeq: _*)
         case x: TupleValue =>
           newInstance(componentConverters)(x.columnValues: _*)
         case x: Product => // converts from Scala tuples

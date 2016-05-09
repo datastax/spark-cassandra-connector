@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.types.UDTFieldDef
+import com.datastax.spark.connector.types.{TupleFieldDef, UDTFieldDef}
 import org.apache.spark.Logging
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
@@ -44,11 +44,15 @@ object DataTypeConverter extends Logging {
     def catalystStructField(field: UDTFieldDef): StructField =
       StructField(field.columnName, catalystDataType(field.columnType, nullable = true), nullable = true)
 
+    def catalystStructFieldFromTuple(field: TupleFieldDef): StructField =
+      StructField(field.index.toString, catalystDataType(field.columnType, nullable = true), nullable = true)
+
     cassandraType match {
       case connector.types.SetType(et)                => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
       case connector.types.ListType(et)               => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
       case connector.types.MapType(kt, vt)            => catalystTypes.MapType(catalystDataType(kt, nullable), catalystDataType(vt, nullable), nullable)
       case connector.types.UserDefinedType(_, fields) => catalystTypes.StructType(fields.map(catalystStructField))
+      case connector.types.TupleType(fields @ _* )    => catalystTypes.StructType(fields.map(catalystStructFieldFromTuple))
       case connector.types.VarIntType                 =>
         logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
         primitiveTypeMap(cassandraType)
