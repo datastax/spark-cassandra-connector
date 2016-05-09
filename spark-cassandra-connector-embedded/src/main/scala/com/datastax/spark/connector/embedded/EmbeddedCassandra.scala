@@ -137,13 +137,20 @@ object EmbeddedCassandra {
     }
   }
 
-  Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
+  private val shutdownThread: Thread = new Thread("Shutdown embedded C* hook thread") {
     override def run() = {
-      cassandraRunners.flatten.foreach(_.destroy())
-      release()
+      shutdown()
     }
-  }))
+  }
 
+  Runtime.getRuntime.addShutdownHook(shutdownThread)
 
+  private[connector] def shutdown(): Unit = {
+    cassandraRunners.flatten.foreach(_.destroy())
+    release()
+  }
 
+  private[connector] def removeShutdownHook(): Boolean = {
+    Runtime.getRuntime.removeShutdownHook(shutdownThread)
+  }
 }
