@@ -20,6 +20,7 @@ import java.io.File
 import sbt._
 import sbt.Keys._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import pl.project13.scala.sbt.JmhPlugin
 
 object CassandraSparkBuild extends Build {
   import Settings._
@@ -99,6 +100,13 @@ object CassandraSparkBuild extends Build {
     base = file(s"$namespace-doc"),
     settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
   ) dependsOn connector
+
+  lazy val perf = Project(
+    id = s"$namespace-perf",
+    base = file(s"$namespace-perf"),
+    settings = projectSettings,
+    dependencies = Seq(connector, embedded)
+  ) enablePlugins(JmhPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -260,6 +268,8 @@ object Dependencies {
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
     cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
+
+  val perf = logging ++ spark ++ cassandra
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 

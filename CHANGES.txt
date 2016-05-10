@@ -1,3 +1,4 @@
+ * Use executeAsync while joining with C* table (SPARKC-233)
  * Fix support for C* Tuples in Dataframes (SPARKC-357)
 
 1.6.0 M2
