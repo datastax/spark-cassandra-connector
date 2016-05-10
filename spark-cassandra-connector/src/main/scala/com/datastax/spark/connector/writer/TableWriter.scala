@@ -264,9 +264,7 @@ object TableWriter {
       columnNames: ColumnSelector,
       writeConf: WriteConf): TableWriter[T] = {
 
-    val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
-    val tableDef = schema.tables.headOption
-      .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
+    val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val selectedColumns = columnNames.selectFrom(tableDef)
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(

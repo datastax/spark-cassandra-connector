@@ -1,16 +1,18 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
+
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.{DataFrameColumnMapper, ColumnMapper}
+import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
 import org.apache.spark.Logging
 import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.util.{Properties, Try}
-
 import com.datastax.driver.core._
-import com.datastax.spark.connector.types.{CounterType, ColumnType}
+import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.util.NameTools
 import com.datastax.spark.connector.util.Quote._
 
 /** Abstract column / field definition.
@@ -250,6 +252,7 @@ object Schema extends Logging {
   }
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
+    *
     * @param keyspaceName if defined, fetches only metadata of the given keyspace
     * @param tableName if defined, fetches only metadata of the given table
     */
@@ -321,4 +324,24 @@ object Schema extends Logging {
       Schema(clusterName, keyspaces)
     }
   }
+
+
+  /**
+    * Fetches a TableDef for a particular Cassandra Table throws an
+    * exception with name options if the table is not found.
+    */
+  def tableFromCassandra(
+    connector: CassandraConnector,
+    keyspaceName: String,
+    tableName: String): TableDef = {
+
+    fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+      case Some(t) => t
+      case None =>
+        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
+        val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
+        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
+        throw new IOException(errorMessage)
+      }
+    }
 }

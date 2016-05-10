@@ -44,18 +44,10 @@ private[cassandra] class CassandraSourceRelation(
   with PrunedFilteredScan
   with Logging {
 
-  private[this] val tableDef = {
-    val tableName = tableRef.table
-    val keyspaceName = tableRef.keyspace
-    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
-      case Some(t) => t
-      case None =>
-        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
-        val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
-        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
-        throw new IOException(errorMessage)
-    }
-  }
+  private[this] val tableDef = Schema.tableFromCassandra(
+    connector,
+    tableRef.keyspace,
+    tableRef.table)
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))

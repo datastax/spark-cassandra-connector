@@ -60,9 +60,7 @@ object ReplicaLocator {
       tableName: String,
       partitionKeyMapper: ColumnSelector): ReplicaLocator[T] = {
 
-    val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
-    val tableDef = schema.tables.headOption
-      .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
+    val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef,
       partitionKeyMapper.selectFrom(tableDef)
