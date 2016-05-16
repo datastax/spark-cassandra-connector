@@ -171,6 +171,11 @@ retrieve size from C*. Can be set manually now</td>
   <td>Number of CQL rows fetched per driver request</td>
 </tr>
 <tr>
+  <td><code>input.join.throughput_query_per_sec</code></td>
+  <td>9223372036854775807</td>
+  <td>Maximum read throughput allowed per single core in query/s while joining RDD with C* table</td>
+</tr>
+<tr>
   <td><code>input.metrics</code></td>
   <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
