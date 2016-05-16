@@ -18,6 +18,8 @@
 import sbt._
 import sbt.Keys._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import pl.project13.scala.sbt.JmhPlugin
+
 
 object CassandraSparkBuild extends Build {
   import Settings._
@@ -68,6 +70,7 @@ object CassandraSparkBuild extends Build {
     settings = japiSettings ++ demoSettings,
     dependencies = Seq(connector, jconnector, embedded)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+
 /*
   lazy val kafkaStreaming = CrossScalaVersionsProject(
     name = "kafka-streaming",
@@ -83,6 +86,13 @@ object CassandraSparkBuild extends Build {
     settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
     dependencies = Seq(connector)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+
+  lazy val perf = Project(
+    id = s"$namespace-perf",
+    base = file(s"$namespace-perf"),
+    settings = projectSettings,
+    dependencies = Seq(connector, embedded)
+  ) enablePlugins (JmhPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
