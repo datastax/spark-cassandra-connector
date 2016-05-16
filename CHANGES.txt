@@ -65,6 +65,10 @@
 
 ********************************************************************************
 
+1.4.3
+ * Disable delayed retrying (SPARKC-360)
+ * Improve DataFrames ErrorIfExists Message (SPARKC-338)
+
 1.4.2
  * SqlRowWriter not using Cached Converters (SPARKC-329)
  * Fix Violation of Partition Contract (SPARKC-323)
