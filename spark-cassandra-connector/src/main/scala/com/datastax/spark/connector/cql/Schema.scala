@@ -227,7 +227,7 @@ case class TableDef(
     clusteringColumns.map { col =>
       if (col.clusteringOrder == ClusteringOrder.Descending)
         s"${quote(col.columnName)} DESC" else s"${quote(col.columnName)} ASC"
-    }.toList.mkString(", ")
+    }.toList.mkString(", ") 
 
   private[this] def appendOptions(stmt: String, opts: String) =
     if (stmt.contains("WITH") && opts.startsWith("WITH")) s"$stmt${Properties.lineSeparator}AND ${opts.substring(4)}"
