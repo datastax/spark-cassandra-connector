@@ -50,9 +50,19 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   }
 
   private def describeRing: Seq[TokenRange] = {
-    connector.withClusterDo { cluster =>
+    val ranges = connector.withClusterDo { cluster =>
       val metadata = cluster.getMetadata
       for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
+    }
+
+    /**
+      * When we have a single Spark Partition use a single global range. This
+      * will let us more easily deal with Partition Key equals and In clauses
+      */
+    if (splitCount == Some(1)) {
+      Seq(ranges(0).copy[V, T](tokenFactory.minToken, tokenFactory.maxToken))
+    } else {
+      ranges
     }
   }
 
