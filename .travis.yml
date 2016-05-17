@@ -7,6 +7,16 @@ scala:
   - 2.10.5
   - 2.11.7
 
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
+before_cache:
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete
+
 script:
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true test"
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true it:test"
