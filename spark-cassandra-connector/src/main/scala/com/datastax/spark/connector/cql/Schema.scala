@@ -88,11 +88,30 @@ case class ClusteringColumn(index: Int) extends ColumnRole
 case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
+/**
+  * Cluster Column Order Implementation */
+object ClusteringOrder {
+  abstract sealed class Order(val ordinal: Int) extends Ordered[Order]
+       with Serializable {
+     def compare(that: Order) = that.ordinal compare this.ordinal
+
+     def toInt: Int = this.ordinal
+  }
+
+  case object Ascending extends Order(0)
+  case object Descending extends Order(1)
+
+  def fromInt(i: Int): Order = values.find(_.ordinal == i).get
+
+  val values = Set(Ascending, Descending)
+}
+
 /** A Cassandra column metadata that can be serialized.  */
 case class ColumnDef(
   columnName: String,
   columnRole: ColumnRole,
-  columnType: ColumnType[_]) extends FieldDef {
+  columnType: ColumnType[_],
+  clusteringOrder: ClusteringOrder.Order = ClusteringOrder.Ascending) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
@@ -128,6 +147,15 @@ object ColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(column.getName, columnRole, columnType)
   }
+  
+  def apply(
+    column: ColumnMetadata,
+    columnRole: ColumnRole,
+    clusteringOrder: ClusteringOrder.Order): ColumnDef = {
+
+    val columnType = ColumnType.fromDriverType(column.getType)
+    ColumnDef(column.getName, columnRole, columnType, clusteringOrder)
+  }
 }
 
 /** A Cassandra table metadata that can be serialized. */
@@ -138,7 +166,8 @@ case class TableDef(
     clusteringColumns: Seq[ColumnDef],
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
-    isView: Boolean = false) extends StructDef {
+    isView: Boolean = false, 
+    options: String = "") extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
@@ -185,11 +214,26 @@ case class TableDef(
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
 
-    s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
+    val stmt = s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
+    val ordered = if (clusteringColumns.size > 0)
+      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns)})"
+    else stmt
+    appendOptions(ordered, options)
   }
+  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef]): String =
+    clusteringColumns.map { col =>
+      if (col.clusteringOrder == ClusteringOrder.Descending)
+        s"${quote(col.columnName)} DESC" else s"${quote(col.columnName)} ASC"
+    }.toList.mkString(", ")
+
+  private[this] def appendOptions(stmt: String, opts: String) =
+    if (stmt.contains("WITH") && opts.startsWith("WITH")) s"$stmt${Properties.lineSeparator}AND ${opts.substring(4)}"
+    else if (!stmt.contains("WITH") && opts.startsWith("AND")) s"WITH ${opts.substring(3)}"
+    else if (opts == "") s"$stmt"
+    else s"$stmt${Properties.lineSeparator}$opts"
 
   type ValueRepr = CassandraRow
   
