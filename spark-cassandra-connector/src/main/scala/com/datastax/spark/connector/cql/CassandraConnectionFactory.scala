@@ -6,9 +6,8 @@ import javax.net.ssl.{SSLContext, TrustManagerFactory}
 
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
-
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.driver.core.{JdkSSLOptions, Cluster, SSLOptions, SocketOptions}
+import com.datastax.driver.core._
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 
@@ -45,6 +44,11 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withAuthProvider(conf.authConf.authProvider)
       .withSocketOptions(options)
       .withCompression(conf.compression)
+      .withQueryOptions(
+        new QueryOptions()
+          .setRefreshNodeIntervalMillis(0)
+          .setRefreshNodeListIntervalMillis(0)
+          .setRefreshSchemaIntervalMillis(0))
 
     if (conf.cassandraSSLConf.enabled) {
       maybeCreateSSLOptions(conf.cassandraSSLConf) match {
