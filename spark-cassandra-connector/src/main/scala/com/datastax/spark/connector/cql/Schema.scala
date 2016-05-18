@@ -160,6 +160,10 @@ case class TableDef(
     }
   }
 
+  def isIndexed(column: String): Boolean = {
+    indexesForTarget.contains(column)
+  }
+
   def isIndexed(column: ColumnDef): Boolean = {
     indexesForColumnDef.contains(column)
   }

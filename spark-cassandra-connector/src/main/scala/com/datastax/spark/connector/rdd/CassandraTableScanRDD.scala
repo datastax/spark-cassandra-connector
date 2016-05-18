@@ -376,7 +376,7 @@ class CassandraTableScanRDD[R] private[connector](
   }
 
 
-  private def containsPartitionKey(clause: CqlWhereClause) = {
+  private def containsPartitionKey(clause: CqlWhereClause): Boolean = {
     val pk = tableDef.partitionKey.map(_.columnName).toSet
     val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
 
@@ -390,13 +390,17 @@ class CassandraTableScanRDD[R] private[connector](
             s"not supported in where. Use filter instead.")
     }.toSet
 
-    if (whereColumns.nonEmpty && whereColumns.size < pk.size) {
+    val primaryKeyComplete = whereColumns.nonEmpty && whereColumns.size == pk.size
+    val whereColumnsAllIndexed = whereColumns.forall(tableDef.isIndexed)
+
+    if (!primaryKeyComplete && !whereColumnsAllIndexed) {
       val missing = pk -- whereColumns
       throw new UnsupportedOperationException(
-        s"Partition key predicate must include all partition key columns. Missing columns: ${missing.mkString(",")}"
+        s"Partition key predicate must include all partition key columns or partition key columns need" +
+          s" to be indexed. Missing columns: ${missing.mkString(",")}"
       )
     }
-    whereColumns.nonEmpty
+    primaryKeyComplete
   }
 }
 
