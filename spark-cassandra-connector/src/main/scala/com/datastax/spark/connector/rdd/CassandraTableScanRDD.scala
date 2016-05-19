@@ -304,13 +304,15 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
 
     try {
       val rs = session.execute(stmt)
+      val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
+      val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames,rs)
+
       val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
-      val result = iteratorWithMetrics.map(rowReader.read(_, columnNamesArray))
+      val result = iteratorWithMetrics.map(rowReader.read(_, columnMetaData))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
       result
     } catch {

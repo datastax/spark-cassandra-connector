@@ -1,12 +1,10 @@
 package com.datastax.spark.connector.writer
 
-import scala.concurrent.Future
-
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, SparkCassandraITFlatSpecBase}
 import org.apache.cassandra.dht.IPartitioner
 
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.{CassandraRow, SparkCassandraITFlatSpecBase}
+import scala.concurrent.Future
 
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
 
@@ -40,7 +38,7 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
       session.execute(bStmt)
       val row = session.execute(s"""SELECT TOKEN(id) FROM $ks.one_key WHERE id = 1""").one()
 
-      val readTokenStr = CassandraRow.fromJavaDriverRow(row, Array("token(id)")).getString(0)
+      val readTokenStr = CassandraRow.fromJavaDriverRow(row, CassandraRowMetadata.fromColumnNames(IndexedSeq("token(id)"))).getString(0)
 
       val rk = rkg.apply(bStmt)
       val rkToken = cp.getToken(rk)
@@ -61,7 +59,7 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
       session.execute(bStmt)
       val row = session.execute(s"""SELECT TOKEN(id, id2) FROM $ks.two_keys WHERE id = 1 AND id2 = 'one'""").one()
 
-      val readTokenStr = CassandraRow.fromJavaDriverRow(row, Array("token(id,id2)")).getString(0)
+      val readTokenStr = CassandraRow.fromJavaDriverRow(row, CassandraRowMetadata.fromColumnNames(IndexedSeq(("token(id,id2)")))).getString(0)
 
       val rk = rkg.apply(bStmt)
       val rkToken = cp.getToken(rk)

@@ -2,23 +2,22 @@ package org.apache.spark.sql.cassandra
 
 import java.net.InetAddress
 import java.sql.Timestamp
-import java.util.{UUID, Date}
+import java.util.{Date, UUID}
 import java.math.BigInteger
 
 import com.datastax.driver.core.Row
 import com.datastax.driver.core.LocalDate
-import com.datastax.spark.connector.{TupleValue, UDTValue, GettableData}
-import com.datastax.spark.connector.rdd.reader.{ThisRowReaderAsFactory, RowReader}
+import com.datastax.spark.connector.{CassandraRowMetadata, GettableData, TupleValue, UDTValue}
+import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
 import com.datastax.spark.connector.types.TypeConverter
-
 import org.apache.spark.sql.{Row => SparkRow}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.types.Decimal
 
-final class CassandraSQLRow(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
+final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends GettableData with SparkRow with Serializable {
 
-  protected def fieldNames = columnNames
+  protected def fieldNames = metaData
 
   private[spark] def this() = this(null, null) // required by Kryo for deserialization :(
 
@@ -56,19 +55,19 @@ object CassandraSQLRow {
   lazy val defaultTimeZone = java.util.TimeZone.getDefault
   def subtractTimeZoneOffset( millis: Long ) = millis - defaultTimeZone.getOffset(millis)
 
-  def fromJavaDriverRow(row: Row, columnNames: Array[String]): CassandraSQLRow = {
-    val data = new Array[Object](columnNames.length)
-    for (i <- columnNames.indices) {
+  def fromJavaDriverRow(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow = {
+    val data = new Array[Object](metaData.columnNames.length)
+    for (i <- metaData.columnNames.indices) {
       data(i) = GettableData.get(row, i)
       data.update(i, toSparkSqlType(data(i)))
     }
-    new CassandraSQLRow(columnNames, data)
+    new CassandraSQLRow(metaData, data)
   }
 
   implicit object CassandraSQLRowReader extends RowReader[CassandraSQLRow] with ThisRowReaderAsFactory[CassandraSQLRow] {
 
-    override def read(row: Row, columnNames: Array[String]): CassandraSQLRow =
-      fromJavaDriverRow(row, columnNames)
+    override def read(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow =
+      fromJavaDriverRow(row, metaData)
 
     override def neededColumns = None
     override def targetClass = classOf[CassandraSQLRow]
