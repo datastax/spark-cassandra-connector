@@ -1,3 +1,4 @@
+ * CassandraRDD.coalesce() is pushed down to connector partition generator (SPARKC-161)
  * Add RDD.deleteFromCassandra() method (SPARKC-349)
  * Fixed use of connection.local_dc parameter (SPARKC-448)
  * Removed demos and benchmarks (SPARKC-398)

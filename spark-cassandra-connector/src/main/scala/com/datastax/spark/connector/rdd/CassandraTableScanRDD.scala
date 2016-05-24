@@ -2,18 +2,19 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraPartitionGenerator, CqlTokenRange, DataSizeEstimates, NodeAddresses, _}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token => ConnectorToken}
+import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraPartitionGenerator, CqlTokenRange, NodeAddresses, _}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, Predicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, Logging}
+import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer.RowWriterFactory
-import com.datastax.driver.core._
 import org.apache.spark.metrics.InputMetricsUpdater
+import org.apache.spark.rdd.{PartitionCoalescer, RDD}
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 
 import scala.collection.JavaConversions._
@@ -225,6 +226,34 @@ class CassandraTableScanRDD[R] private[connector](
       CassandraPartitionGenerator(connector, tableDef, reevaluatedSplitCount)
     }
   }
+
+  /**
+    * This method overrides the default spark behavior and will not create a CoalesceRDD. Instead it will reduce
+    * the number of partitions by adjusting the partitioning of C* data on read. Using this method will override
+    * spark.cassandra.input.split.size.
+    * The method is useful with where() method call, when actual size of data is smaller then the table size.
+    * It has no effect if a partition key is used in where clause.
+    *
+    * @param numPartitions      number of partitions
+    * @param shuffle            whether to call shuffle after
+    * @param partitionCoalescer is ignored if no shuffle, or just passed to shuffled CoalesceRDD
+    * @param ord
+    * @return new CassandraTableScanRDD with predefined number of partitions
+    */
+
+  override def coalesce(numPartitions: Int, shuffle: Boolean = false, partitionCoalescer: Option[PartitionCoalescer])(implicit ord: Ordering[R] = null): RDD[R]
+  = {
+    val rdd = copy(readConf = readConf.copy(splitCount = Some(numPartitions)))
+    if (shuffle) {
+      rdd.superCoalesce(numPartitions, shuffle, partitionCoalescer)
+    } else {
+      rdd
+    }
+  }
+
+  private def superCoalesce(numPartitions: Int, shuffle: Boolean = false, partitionCoalescer: Option[PartitionCoalescer])(implicit ord: Ordering[R] = null) =
+    super.coalesce(numPartitions, shuffle, partitionCoalescer);
+
 
   @transient override val partitioner = overridePartitioner
 

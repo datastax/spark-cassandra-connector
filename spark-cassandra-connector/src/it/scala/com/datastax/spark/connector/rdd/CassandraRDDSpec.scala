@@ -1075,6 +1075,36 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     localDate should be(expected)
   }
 
+  "RDD.coalesce"  should "not loose data" in {
+    val rdd = sc.cassandraTable(ks, "big_table").coalesce(4)
+    rdd.count should be (bigTableRowCount)
+  }
+
+  it should "set exact number of partitions" in {
+    val rdd = sc.cassandraTable(ks, "big_table").coalesce(8)
+    rdd.partitions.size should be (8 +-1 )
+  }
+
+  it should "set exact number of partitions (1)" in {
+    val rdd = sc.cassandraTable(ks, "big_table").coalesce(1)
+    rdd.partitions.size should be (1)
+  }
+
+  it should "work with 0" in {
+    val rdd = sc.cassandraTable(ks, "big_table").coalesce(0)
+    rdd.partitions.size should be (1)
+  }
+
+  "RDD.repartition"  should "not loose data" in {
+    val rdd = sc.cassandraTable(ks, "big_table").repartition(4)
+    rdd.count should be (bigTableRowCount)
+  }
+
+  it should "set exact number of partitions" in {
+    val rdd = sc.cassandraTable(ks, "big_table").repartition(4)
+    rdd.partitions.size should be (4)
+  }
+
   it should "delete rows just selected from the C*" in {
 
     conn.withSessionDo { session =>
