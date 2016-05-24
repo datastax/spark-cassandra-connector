@@ -134,22 +134,23 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
       Future {
-        if (versionGreaterThanOrEquals(2,2)) {
+        if (versionGreaterThanOrEquals(2, 2)) {
           session.execute(
-            s""" CREATE TABLE $ks.user(
-          id int PRIMARY KEY,
-          login text,
-          firstname text,
-          lastname text,
-          country text
-        )""")
+            s"""
+               |CREATE TABLE $ks.user(
+               |  id int PRIMARY KEY,
+               |  login text,
+               |  firstname text,
+               |  lastname text,
+               |  country text)""".stripMargin)
 
           session.execute(
-            s"""CREATE MATERIALIZED VIEW $ks.user_by_country
-          AS SELECT *  //denormalize ALL columns
-          FROM user
-          WHERE country IS NOT NULL AND id IS NOT NULL
-          PRIMARY KEY(country, id);""")
+            s"""
+               |CREATE MATERIALIZED VIEW $ks.user_by_country
+               |  AS SELECT *  //denormalize ALL columns
+               |  FROM user
+               |  WHERE country IS NOT NULL AND id IS NOT NULL
+               |  PRIMARY KEY(country, id);""".stripMargin)
 
           session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
 
