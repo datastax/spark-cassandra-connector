@@ -7,7 +7,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalDate}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -184,6 +184,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))")
         session.execute(nestedTupleTable("tuple_test4"))
         session.execute(nestedTupleTable("tuple_test5"))
+      },
+
+      Future {
+        session.execute(s"create table $ks.date_test (key int primary key, dd date)")
+        session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
       }
     )
   }
@@ -1031,5 +1036,37 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     conn.withSessionDo { session =>
       session.execute(s"select count(1) from $ks.tuple_test5").one().getLong(0) should be (2)
     }
+  }
+
+  it should "write Java dates as C* date type" in {
+    val dateRow = (7, new Date())
+    val dateTimeRow = (8, DateTime.now())
+
+    sc.parallelize(List(dateRow, dateTimeRow))
+      .saveToCassandra(ks, "date_test")
+
+    val resultSet = conn.withSessionDo { session =>
+      session.execute(
+        s"select count(1) from $ks.date_test where key in (${dateRow._1}, ${dateTimeRow._1})")
+    }
+    resultSet.one().getLong(0) should be(2)
+  }
+
+  it should "read C* row with dates as Java dates" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
+
+    row.getInt("key") should be(1)
+    row.getDate("dd") should be(expected.toDate)
+    row.getDateTime("dd").toLocalDate should be(expected)
+  }
+
+  it should "read LocalDate as tuple value with given type" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
+    val dateTime = sc.cassandraTable[(Int, DateTime)](ks, "date_test").where("key = 1").first._2
+
+    date should be(expected.toDate)
+    dateTime.toLocalDate should be(expected)
   }
 }

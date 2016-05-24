@@ -302,6 +302,7 @@ object TypeConverter {
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: LocalDate => new Date(x.getMillisSinceEpoch)
       case x: String => TimestampParser.parse(x)
+      case x: org.joda.time.LocalDate => x.toDate
     }
   }
 

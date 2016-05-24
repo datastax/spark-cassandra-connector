@@ -78,6 +78,7 @@ object CassandraSQLRow {
     value match {
       case date: Date => new Timestamp(date.getTime)
       case localDate: LocalDate => new java.sql.Date(subtractTimeZoneOffset(localDate.getMillisSinceEpoch))
+      case localDate: org.joda.time.LocalDate => new java.sql.Date(localDate.toDate.getTime)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)

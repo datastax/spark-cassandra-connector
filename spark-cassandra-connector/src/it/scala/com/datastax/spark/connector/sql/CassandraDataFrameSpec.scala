@@ -9,6 +9,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.SQLContext
+import org.joda.time.LocalDate
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -55,6 +56,12 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"CREATE TABLE $ks.tuple_test1 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
         session.execute(s"CREATE TABLE $ks.tuple_test2 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
         session.execute(s"INSERT INTO $ks.tuple_test1 (id, t) VALUES (1, ('xyz', 3))")
+      },
+
+      Future {
+        session.execute(s"create table $ks.date_test (key int primary key, dd date)")
+        session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
+        session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
       }
     )
   }
@@ -182,6 +189,26 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
 
     conn.withSessionDo { session =>
       session.execute(s"select count(1) from $ks.tuple_test2").one().getLong(0) should be (1)
+    }
+  }
+
+  it should "read and write C* LocalDate columns" in {
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "date_test", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .load
+
+    df.count should be (1)
+    df.first.getDate(1) should be (new LocalDate(1930, 5, 31).toDate)
+
+    df.write
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "date_test2", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .save
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.date_test2").one().getLong(0) should be (1)
     }
   }
 
