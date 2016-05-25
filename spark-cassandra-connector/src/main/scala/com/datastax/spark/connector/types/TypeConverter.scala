@@ -3,7 +3,7 @@ package com.datastax.spark.connector.types
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
-import java.util.{Calendar, GregorianCalendar, UUID, Date, TimeZone}
+import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -11,10 +11,9 @@ import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.tuple
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 
 import com.datastax.driver.core.LocalDate
-
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
@@ -302,7 +301,7 @@ object TypeConverter {
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
       case x: LocalDate => new Date(x.getMillisSinceEpoch)
       case x: String => TimestampParser.parse(x)
-      case x: org.joda.time.LocalDate => x.toDate
+      case x: org.joda.time.LocalDate => x.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate
     }
   }
 
@@ -322,6 +321,7 @@ object TypeConverter {
 
     val shiftLocalDate: PartialFunction[Any, java.sql.Date] = {
       case x: LocalDate => new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))
+      case x: org.joda.time.LocalDate => shiftLocalDate(LocalDateConverter.convertPF(x))
     }
 
     //If there is no Local Date input we will use the normal date converter
@@ -453,6 +453,7 @@ object TypeConverter {
       case x: java.sql.Date => LocalDate.fromMillisSinceEpoch(addTimeZoneOffset(x.getTime))
       case x: Date => LocalDate.fromMillisSinceEpoch(x.getTime)
       case x: DateTime => LocalDate.fromMillisSinceEpoch(x.getMillis)
+      case x: org.joda.time.LocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
     }
   }
 
