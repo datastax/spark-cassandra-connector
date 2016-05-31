@@ -35,6 +35,9 @@
 
 ********************************************************************************
 
+1.4.4
+ * Use executeAsync when joining with C* table (SPARKC-233)OA
+
 1.4.3
  * Disable delayed retrying (SPARKC-360)
  * Improve DataFrames ErrorIfExists Message (SPARKC-338)
