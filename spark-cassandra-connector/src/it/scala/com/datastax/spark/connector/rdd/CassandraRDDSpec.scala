@@ -7,7 +7,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -134,22 +134,23 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
       Future {
-        if (versionGreaterThanOrEquals(2,2)) {
+        if (versionGreaterThanOrEquals(2, 2)) {
           session.execute(
-            s""" CREATE TABLE $ks.user(
-          id int PRIMARY KEY,
-          login text,
-          firstname text,
-          lastname text,
-          country text
-        )""")
+            s"""
+               |CREATE TABLE $ks.user(
+               |  id int PRIMARY KEY,
+               |  login text,
+               |  firstname text,
+               |  lastname text,
+               |  country text)""".stripMargin)
 
           session.execute(
-            s"""CREATE MATERIALIZED VIEW $ks.user_by_country
-          AS SELECT *  //denormalize ALL columns
-          FROM user
-          WHERE country IS NOT NULL AND id IS NOT NULL
-          PRIMARY KEY(country, id);""")
+            s"""
+               |CREATE MATERIALIZED VIEW $ks.user_by_country
+               |  AS SELECT *  //denormalize ALL columns
+               |  FROM user
+               |  WHERE country IS NOT NULL AND id IS NOT NULL
+               |  PRIMARY KEY(country, id);""".stripMargin)
 
           session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
 
@@ -183,6 +184,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))")
         session.execute(nestedTupleTable("tuple_test4"))
         session.execute(nestedTupleTable("tuple_test5"))
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
+        session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")
       }
     )
   }
@@ -1030,5 +1036,39 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     conn.withSessionDo { session =>
       session.execute(s"select count(1) from $ks.tuple_test5").one().getLong(0) should be (2)
     }
+  }
+
+  it should "write Java dates as C* date type" in {
+    val rows = List(
+      (6, new java.sql.Date(new Date().getTime)),
+      (7, new Date()),
+      (8, DateTime.now()),
+      (9, LocalDate.now()))
+
+    sc.parallelize(rows).saveToCassandra(ks, "date_test")
+
+    val resultSet = conn.withSessionDo { session =>
+      session.execute(
+        s"select count(1) from $ks.date_test where key in (${rows.map(_._1.toString).mkString(",")})")
+    }
+    resultSet.one().getLong(0) should be(rows.size)
+  }
+
+  it should "read C* row with dates as Java dates" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
+
+    row.getInt("key") should be(1)
+    row.getDate("dd") should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
+    row.getDateTime("dd").toLocalDate should be(expected)
+  }
+
+  it should "read LocalDate as tuple value with given type" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
+    val dateTime = sc.cassandraTable[(Int, DateTime)](ks, "date_test").where("key = 1").first._2
+
+    date should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
+    dateTime.toLocalDate should be(expected)
   }
 }

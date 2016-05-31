@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
-import com.datastax.driver.core.{Row, UDTValue => DriverUDTValue, TupleValue => DriverTupleValue}
+import com.datastax.driver.core.{LocalDate, Row, TupleValue => DriverTupleValue, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
 
@@ -80,6 +80,7 @@ object GettableData {
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
+      case localDate: LocalDate => new org.joda.time.LocalDate(localDate.getMillisSinceEpoch)
       case other => other.asInstanceOf[AnyRef]
 
     }
