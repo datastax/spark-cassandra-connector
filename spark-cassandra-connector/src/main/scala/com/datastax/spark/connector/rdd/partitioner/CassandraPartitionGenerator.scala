@@ -19,8 +19,7 @@ import com.datastax.spark.connector.writer.RowWriterFactory
 private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     connector: CassandraConnector,
     tableDef: TableDef,
-    splitCount: Option[Int],
-    splitSize: Long)(
+    splitCount: Int)(
   implicit
     tokenFactory: TokenFactory[V, T]) extends Logging{
 
@@ -30,23 +29,11 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
-  private val totalDataSize: Long = {
-    // If we know both the splitCount and splitSize, we should pretend the total size of the data is
-    // their multiplication. TokenRangeSplitter will try to produce splits of desired size, and this way
-    // their number will be close to desired splitCount. Otherwise, if splitCount is not set,
-    // we just go to C* and read the estimated data size from an appropriate system table
-    splitCount match {
-      case Some(c) => c * splitSize
-      case None => new DataSizeEstimates(connector, keyspaceName, tableName).dataSizeInBytes
-    }
-  }
-
   private def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
     val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
     val endToken = tokenFactory.tokenFromString(range.getEnd.getValue.toString)
     val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
-    val dataSize = (tokenFactory.ringFraction(startToken, endToken) * totalDataSize).toLong
-    new TokenRange(startToken, endToken, replicas, dataSize)
+    new TokenRange(startToken, endToken, replicas, tokenFactory)
   }
 
   private def describeRing: Seq[TokenRange] = {
@@ -59,29 +46,19 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
       * When we have a single Spark Partition use a single global range. This
       * will let us more easily deal with Partition Key equals and In clauses
       */
-    if (splitCount == Some(1)) {
-      Seq(ranges(0).copy[V, T](tokenFactory.minToken, tokenFactory.maxToken))
+    if (splitCount == 1) {
+      Seq(ranges.head.copy[V, T](tokenFactory.minToken, tokenFactory.minToken))
     } else {
       ranges
     }
   }
 
-  private def splitsOf(
-      tokenRanges: Iterable[TokenRange],
-      splitter: TokenRangeSplitter[V, T]): Iterable[TokenRange] = {
-
-    val parTokenRanges = tokenRanges.par
-    parTokenRanges.tasksupport = new ForkJoinTaskSupport(CassandraPartitionGenerator.pool)
-    (for (tokenRange <- parTokenRanges;
-          split <- splitter.split(tokenRange, splitSize)) yield split).seq
-  }
-
   private def createTokenRangeSplitter: TokenRangeSplitter[V, T] = {
     tokenFactory.asInstanceOf[TokenFactory[_, _]] match {
       case TokenFactory.RandomPartitionerTokenFactory =>
-        new RandomPartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
+        new RandomPartitionerTokenRangeSplitter().asInstanceOf[TokenRangeSplitter[V, T]]
       case TokenFactory.Murmur3TokenFactory =>
-        new Murmur3PartitionerTokenRangeSplitter(totalDataSize).asInstanceOf[TokenRangeSplitter[V, T]]
+        new Murmur3PartitionerTokenRangeSplitter().asInstanceOf[TokenRangeSplitter[V, T]]
       case _ =>
         throw new UnsupportedOperationException(s"Unsupported TokenFactory $tokenFactory")
     }
@@ -93,18 +70,20 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   def partitions: Seq[CassandraPartition[V, T]] = {
     val tokenRanges = describeRing
     val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
-    val splitter = createTokenRangeSplitter
-    val splits = splitsOf(tokenRanges, splitter).toSeq
     val maxGroupSize = tokenRanges.size / endpointCount
-    val clusterer = new TokenRangeClusterer[V, T](splitSize, maxGroupSize)
+
+    val splitter = createTokenRangeSplitter
+    val splits = splitter.split(tokenRanges, splitCount).toSeq
+
+    val clusterer = new TokenRangeClusterer[V, T](splitCount, maxGroupSize)
     val tokenRangeGroups = clusterer.group(splits).toArray
 
     val partitions = for (group <- tokenRangeGroups) yield {
       val replicas = group.map(_.replicas).reduce(_ intersect _)
-      val rowCount = group.map(_.dataSize).sum
+      val rowCount = group.map(_.rangeSize).sum
       val cqlRanges = group.flatMap(rangeToCql)
       // partition index will be set later
-      CassandraPartition(0, replicas, cqlRanges, rowCount)
+      CassandraPartition(0, replicas, cqlRanges, rowCount.toLong)
     }
 
     // sort partitions and assign sequential numbers so that
@@ -139,14 +118,6 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
 }
 
 object CassandraPartitionGenerator {
-  /** Affects how many concurrent threads are used to fetch split information from cassandra nodes, in `getPartitions`.
-    * Does not affect how many Spark threads fetch data from Cassandra. */
-  val MaxParallelism = 16
-
-  /** How many token rangesContaining to sample in order to estimate average number of rows per token */
-  val TokenRangeSampleSize = 16
-
-  private val pool: ForkJoinPool = new ForkJoinPool(MaxParallelism)
 
   type V = t forSome { type t }
   type T = t forSome { type t <: Token[V] }
@@ -158,17 +129,9 @@ object CassandraPartitionGenerator {
   def apply(
     conn: CassandraConnector,
     tableDef: TableDef,
-    splitCount: Option[Int],
-    splitSize: Int): CassandraPartitionGenerator[V, T] = {
+    splitCount: Int)(
+    implicit tokenFactory: TokenFactory[V, T]): CassandraPartitionGenerator[V, T] = {
 
-    val tokenFactory = getTokenFactory(conn)
-    new CassandraPartitionGenerator(conn, tableDef, splitCount, splitSize)(tokenFactory)
-  }
-
-  def getTokenFactory(conn: CassandraConnector) : TokenFactory[V, T] = {
-    val partitionerName = conn.withSessionDo { session =>
-      session.execute("SELECT partitioner FROM system.local").one().getString(0)
-    }
-    TokenFactory.forCassandraPartitioner(partitionerName)
+    new CassandraPartitionGenerator(conn, tableDef, splitCount)(tokenFactory)
   }
 }

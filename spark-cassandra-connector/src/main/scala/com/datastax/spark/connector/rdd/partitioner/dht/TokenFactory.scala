@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd.partitioner.dht
 
+import com.datastax.spark.connector.cql.CassandraConnector
+
 import scala.language.existentials
 
 import com.datastax.spark.connector.rdd.partitioner.MonotonicBucketing
@@ -90,6 +92,13 @@ object TokenFactory {
         case _ => throw new IllegalArgumentException(s"Unsupported partitioner: $partitionerClassName")
       }
     partitioner.asInstanceOf[TokenFactory[V, T]]
+  }
+
+  def forSystemLocalPartitioner(connector: CassandraConnector): TokenFactory[V, T] = {
+    val partitionerClassName = connector.withSessionDo { session =>
+      session.execute("SELECT partitioner FROM system.local").one().getString(0)
+    }
+    forCassandraPartitioner(partitionerClassName)
   }
 }
 

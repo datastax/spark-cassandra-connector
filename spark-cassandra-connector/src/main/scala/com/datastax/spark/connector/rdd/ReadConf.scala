@@ -32,7 +32,10 @@ object ReadConf {
     name = "spark.cassandra.input.split.size_in_mb",
     section = ReferenceSection,
     default = 64,
-    description = """Approx amount of data to be fetched into a Spark partition""")
+    description =
+      """Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark
+        | partitions is <code>1 + 2 * SparkContext.defaultParallelism</code>
+        |""".stripMargin.filter(_ >= ' '))
 
   val FetchSizeInRowsParam = ConfigParameter[Int](
     name = "spark.cassandra.input.fetch.size_in_rows",

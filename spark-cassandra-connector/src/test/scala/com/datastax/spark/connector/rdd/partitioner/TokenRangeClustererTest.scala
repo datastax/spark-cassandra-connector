@@ -2,14 +2,13 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.Murmur3TokenFactory
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.Murmur3TokenFactory.{maxToken, minToken}
+import com.datastax.spark.connector.rdd.partitioner.dht.{LongToken, TokenRange}
 import org.junit.Assert._
 import org.junit.Test
 
-import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
-
 class TokenRangeClustererTest {
-
-  type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[Long, LongToken]
 
   val node1 = InetAddress.getByName("192.168.123.1")
   val node2 = InetAddress.getByName("192.168.123.2")
@@ -17,7 +16,10 @@ class TokenRangeClustererTest {
   val node4 = InetAddress.getByName("192.168.123.4")
   val node5 = InetAddress.getByName("192.168.123.5")
 
-  private def token(x: Long) = new com.datastax.spark.connector.rdd.partitioner.dht.LongToken(x)
+  private def tokenRange(start: Long, end: Long, nodes: Set[InetAddress]): TokenRange[Long, LongToken] =
+    new TokenRange[Long, LongToken](new LongToken(start), new LongToken(end), nodes, Murmur3TokenFactory)
+
+  private implicit def tokenToLong(token: LongToken): Long = token.value
 
   @Test
   def testEmpty() {
@@ -28,9 +30,9 @@ class TokenRangeClustererTest {
 
   @Test
   def testTrivialClustering() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node1), 5)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1), 5)
-    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val tr1 = tokenRange(start = 0, end = 10, nodes = Set(node1))
+    val tr2 = tokenRange(start = 10, end = 20, nodes = Set(node1))
+    val trc = new TokenRangeClusterer[Long, LongToken](1)
     val groups = trc.group(Seq(tr1, tr2))
     assertEquals(1, groups.size)
     assertEquals(Set(tr1, tr2), groups.head.toSet)
@@ -38,12 +40,12 @@ class TokenRangeClustererTest {
 
   @Test
   def testSplitByHost() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node1), 2)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1), 2)
-    val tr3 = new TokenRange(token(20), token(30), Set(node2), 2)
-    val tr4 = new TokenRange(token(30), token(40), Set(node2), 2)
+    val tr1 = tokenRange(start = 0, end = 10, nodes = Set(node1))
+    val tr2 = tokenRange(start = 10, end = 20, nodes = Set(node1))
+    val tr3 = tokenRange(start = 20, end = 30, nodes = Set(node2))
+    val tr4 = tokenRange(start = 30, end = 40, nodes = Set(node2))
 
-    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val trc = new TokenRangeClusterer[Long, LongToken](1)
     val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.toSet).toSet
     assertEquals(2, groups.size)
     assertTrue(groups.contains(Set(tr1, tr2)))
@@ -52,12 +54,12 @@ class TokenRangeClustererTest {
 
   @Test
   def testSplitByCount() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node1), 5)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1), 5)
-    val tr3 = new TokenRange(token(20), token(30), Set(node1), 5)
-    val tr4 = new TokenRange(token(30), token(40), Set(node1), 5)
+    val tr1 = tokenRange(start = minToken, end = minToken / 2, Set(node1))
+    val tr2 = tokenRange(start = minToken / 2, end = 0, Set(node1))
+    val tr3 = tokenRange(start = 0, end = maxToken / 2, Set(node1))
+    val tr4 = tokenRange(start = maxToken / 2, end = maxToken, Set(node1))
 
-    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val trc = new TokenRangeClusterer[Long, LongToken](2)
     val groups = trc.group(Seq(tr1, tr2, tr3, tr4)).map(_.toSet).toSet
     assertEquals(2, groups.size)
     assertTrue(groups.contains(Set(tr1, tr2)))
@@ -65,23 +67,12 @@ class TokenRangeClustererTest {
   }
 
   @Test
-  def testTooLargeRanges() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node1), 100000)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1), 100000)
-    val trc = new TokenRangeClusterer[Long, LongToken](10)
-    val groups = trc.group(Seq(tr1, tr2)).map(_.toSet).toSet
-    assertEquals(2, groups.size)
-    assertTrue(groups.contains(Set(tr1)))
-    assertTrue(groups.contains(Set(tr2)))
-  }
-
-  @Test
   def testMultipleEndpoints() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node2, node1, node3), 1)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1, node3, node4), 1)
-    val tr3 = new TokenRange(token(20), token(30), Set(node3, node1, node5), 1)
-    val tr4 = new TokenRange(token(30), token(40), Set(node3, node1, node4), 1)
-    val trc = new TokenRangeClusterer[Long, LongToken](10)
+    val tr1 = tokenRange(start = 0, end = 10, nodes = Set(node2, node1, node3))
+    val tr2 = tokenRange(start = 10, end = 20, nodes = Set(node1, node3, node4))
+    val tr3 = tokenRange(start = 20, end = 30, nodes = Set(node3, node1, node5))
+    val tr4 = tokenRange(start = 30, end = 40, nodes = Set(node3, node1, node4))
+    val trc = new TokenRangeClusterer[Long, LongToken](1)
     val groups = trc.group(Seq(tr1, tr2, tr3, tr4))
     assertEquals(1, groups.size)
     assertEquals(4, groups.head.size)
@@ -89,13 +80,12 @@ class TokenRangeClustererTest {
   }
 
   @Test
-  def testMaxClusterSize() {
-    val tr1 = new TokenRange(token(0), token(10), Set(node1, node2, node3), 1)
-    val tr2 = new TokenRange(token(10), token(20), Set(node1, node2, node3), 1)
-    val tr3 = new TokenRange(token(20), token(30), Set(node1, node2, node3), 1)
-    val trc = new TokenRangeClusterer[Long, LongToken](maxRowCountPerGroup = 10, maxGroupSize = 1)
+  def testMaxGroupSize() {
+    val tr1 = tokenRange(start = 0, end = 10, nodes = Set(node1, node2, node3))
+    val tr2 = tokenRange(start = 10, end = 20, nodes = Set(node1, node2, node3))
+    val tr3 = tokenRange(start = 20, end = 30, nodes = Set(node1, node2, node3))
+    val trc = new TokenRangeClusterer[Long, LongToken](groupCount = 1, maxGroupSize = 1)
     val groups = trc.group(Seq(tr1, tr2, tr3))
     assertEquals(3, groups.size)
   }
-
 }
