@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.japi
 
 import com.datastax.driver.core.Row
-import com.datastax.spark.connector.{CassandraRowMetadata, GettableData}
+import com.datastax.spark.connector.CassandraRowMetadata
 
 final class CassandraRow(val metaData:CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends JavaGettableData with Serializable {
@@ -35,28 +35,7 @@ object CassandraRow {
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
   def fromJavaDriverRow(row: Row, metaData: CassandraRowMetadata): CassandraRow = {
-    val length = metaData.columnNames.length
-    var i = 0
-    val data = new Array[Object](length)
-
-    // Here we use a mutable while loop for performance reasons, scala for loops are
-    // converted into range.foreach() and the JVM is unable to inline the foreach closure.
-    // 'match' is replaced with 'if' for the same reason.
-    // It is also out of the loop for performance.
-    if (metaData.codecs == null) {
-      //that should not happen in production, but just in case
-      while (i < length) {
-        data(i) = GettableData.get(row, i)
-        i += 1
-      }
-    }
-    else {
-      while (i < length) {
-        data(i) = GettableData.get(row, i, metaData.codecs(i))
-        i += 1
-      }
-    }
-    new CassandraRow(metaData, data)
+    new CassandraRow(metaData, com.datastax.spark.connector.CassandraRow.dataFromJavaDriverRow(row, metaData))
   }
   /** Creates a CassandraRow object from a map with keys denoting column names and
     * values denoting column values. */

@@ -154,6 +154,10 @@ object CassandraRow {
     * the input `Row` in order to improve performance. Fetching column values by name is much
     * slower than fetching by index. */
   def fromJavaDriverRow(row: Row, metaData: CassandraRowMetadata): CassandraRow = {
+    new CassandraRow(metaData, CassandraRow.dataFromJavaDriverRow(row, metaData))
+  }
+
+  def dataFromJavaDriverRow(row: Row, metaData: CassandraRowMetadata): Array[Object] = {
     val length = metaData.columnNames.length
     var i = 0
     val data = new Array[Object](length)
@@ -175,9 +179,8 @@ object CassandraRow {
         i += 1
       }
     }
-    new CassandraRow(metaData, data)
+    data
   }
-
 
   /** Creates a CassandraRow object from a map with keys denoting column names and
     * values denoting column values. */

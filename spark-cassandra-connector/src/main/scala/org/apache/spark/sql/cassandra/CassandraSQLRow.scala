@@ -7,7 +7,7 @@ import java.math.BigInteger
 
 import com.datastax.driver.core.Row
 import com.datastax.driver.core.LocalDate
-import com.datastax.spark.connector.{CassandraRowMetadata, GettableData, TupleValue, UDTValue}
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
 import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.spark.sql.{Row => SparkRow}
@@ -56,12 +56,8 @@ object CassandraSQLRow {
   def subtractTimeZoneOffset( millis: Long ) = millis - defaultTimeZone.getOffset(millis)
 
   def fromJavaDriverRow(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow = {
-    val data = new Array[Object](metaData.columnNames.length)
-    for (i <- metaData.columnNames.indices) {
-      data(i) = GettableData.get(row, i)
-      data.update(i, toSparkSqlType(data(i)))
-    }
-    new CassandraSQLRow(metaData, data)
+    val data = CassandraRow.dataFromJavaDriverRow(row, metaData)
+    new CassandraSQLRow(metaData, data.map(toSparkSqlType))
   }
 
   implicit object CassandraSQLRowReader extends RowReader[CassandraSQLRow] with ThisRowReaderAsFactory[CassandraSQLRow] {
