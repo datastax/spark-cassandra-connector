@@ -2,8 +2,13 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.ColumnSelector
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.{Partition, Partitioner}
+
+import scala.reflect.ClassTag
+import scala.collection.JavaConversions._
 
 
 case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends EndpointPartition
@@ -13,21 +18,40 @@ case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends End
  * Hosts . It will group keys which share a common IP address into partitionsPerReplicaSet Partitions.
  * @param partitionsPerReplicaSet The number of Spark Partitions to make Per Unique Endpoint
  */
-class ReplicaPartitioner(partitionsPerReplicaSet: Int, val connector: CassandraConnector) extends Partitioner {
-  /* TODO We Need JAVA-312 to get sets of replicas instead of single endpoints. Once we have that we'll be able to
-  build a map of Set[ip,ip,...] => Index before looking at our data and give the all options for the preferred location
-   for a partition*/
+class ReplicaPartitioner[T](
+  table: String,
+  keyspace: String,
+  partitionsPerReplicaSet: Int,
+  partitionKeyMapper: ColumnSelector,
+  val connector: CassandraConnector)(
+implicit
+  currentType: ClassTag[T],
+  @transient rwf: RowWriterFactory[T]) extends Partitioner {
+
+  val tableDef = Schema.tableFromCassandra(connector, keyspace, table)
+  val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
+    tableDef,
+    partitionKeyMapper.selectFrom(tableDef)
+  )
+
+  @transient lazy private val tokenGenerator = new TokenGenerator[T](connector, tableDef, rowWriter)
+  @transient lazy private val metadata = connector.withClusterDo(_.getMetadata)
+  @transient lazy private val protocolVersion = connector
+    .withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+
   private val hosts = connector.hosts.toVector
+  private val hostSet = connector.hosts
   private val numHosts = hosts.size
-  private val partitionIndexes = (0 until partitionsPerReplicaSet * numHosts).grouped(partitionsPerReplicaSet).toList
+  private val partitionIndexes = (0 until partitionsPerReplicaSet * numHosts)
+    .grouped(partitionsPerReplicaSet)
+    .toList
+
   private val hostMap = (hosts zip partitionIndexes).toMap
   // Ip1 -> (0,1,2,..), Ip2 -> (11,12,13...)
   private val indexMap = for ((ip, partitions) <- hostMap; partition <- partitions) yield (partition, ip)
   // 0->IP1, 1-> IP1, ...
-  private val rand = new java.util.Random()
 
-  private def randomHost: InetAddress =
-    hosts(rand.nextInt(numHosts))
+  private def randomHost(index: Int): InetAddress = hosts(index % hosts.length)
 
   /**
    * Given a set of endpoints, pick a random endpoint, and then a random partition owned by that
@@ -38,14 +62,20 @@ class ReplicaPartitioner(partitionsPerReplicaSet: Int, val connector: CassandraC
    */
   override def getPartition(key: Any): Int = {
     key match {
-      case key: Set[_] if key.size > 0 && key.forall(_.isInstanceOf[InetAddress]) =>
+      case key: T =>
         //Only use ReplicaEndpoints in the connected DC
-        val replicaSetInDC = (hosts.toSet & key.asInstanceOf[Set[InetAddress]]).toVector
+        val token = tokenGenerator.getTokenFor(key)
+        val tokenHash = Math.abs(token.hashCode())
+        val replicas = metadata
+          .getReplicas(keyspace, token.serialize(protocolVersion))
+          .map(_.getBroadcastAddress)
+
+        val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {
-          val endpoint = replicaSetInDC(rand.nextInt(replicaSetInDC.size))
-          hostMap(endpoint)(rand.nextInt(partitionsPerReplicaSet))
+          val endpoint = replicaSetInDC(tokenHash % replicaSetInDC.size)
+          hostMap(endpoint)(tokenHash % partitionsPerReplicaSet)
         } else {
-          hostMap(randomHost)(rand.nextInt(partitionsPerReplicaSet))
+          hostMap(randomHost(tokenHash))(tokenHash % partitionsPerReplicaSet)
         }
       case _ => throw new IllegalArgumentException(
         "ReplicaPartitioner can only determine the partition of a tuple whose key is a non-empty Set[InetAddress]. " +
