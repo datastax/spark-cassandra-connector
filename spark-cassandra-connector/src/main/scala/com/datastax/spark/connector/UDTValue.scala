@@ -12,6 +12,8 @@ final case class UDTValue(columnNames: IndexedSeq[String], columnValues: Indexed
   extends ScalaGettableData {
   override def productArity: Int = columnValues.size
   override def productElement(i: Int) = columnValues(i)
+
+  override def metaData = CassandraRowMetadata.fromColumnNames(columnNames)
 }
 
 object UDTValue {

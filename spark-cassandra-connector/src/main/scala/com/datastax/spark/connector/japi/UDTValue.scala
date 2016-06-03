@@ -1,11 +1,10 @@
 package com.datastax.spark.connector.japi
 
 import scala.reflect.runtime.universe._
+import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
+import com.datastax.spark.connector.{CassandraRowMetadata, UDTValue => ConnectorUDTValue}
 
-import com.datastax.spark.connector.types.{TypeConverter, NullableTypeConverter}
-import com.datastax.spark.connector.{UDTValue => ConnectorUDTValue}
-
-final class UDTValue(val columnNames: IndexedSeq[String], val columnValues: IndexedSeq[AnyRef])
+final class UDTValue(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends JavaGettableData with Serializable
 
 object UDTValue {
@@ -18,7 +17,7 @@ object UDTValue {
     def convertPF = {
       case x: UDTValue => x
       case x: ConnectorUDTValue =>
-        new UDTValue(x.columnNames, x.columnValues)
+        new UDTValue(x.metaData, x.columnValues)
     }
   }
 

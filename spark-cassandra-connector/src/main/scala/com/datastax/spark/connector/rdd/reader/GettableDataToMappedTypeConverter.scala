@@ -2,16 +2,15 @@ package com.datastax.spark.connector.rdd.reader
 
 import java.lang.reflect.Method
 
-import scala.language.existentials
-import scala.reflect.runtime.universe._
-
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.StructDef
+import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper, JavaBeanColumnMapper, TupleColumnMapper}
+import com.datastax.spark.connector.types._
+import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 
-import com.datastax.spark.connector.cql.StructDef
-import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, TupleColumnMapper, ColumnMapper, DefaultColumnMapper}
-import com.datastax.spark.connector.types.{TupleType, MapType, SetType, ListType, TypeConversionException, BigIntType, ColumnType, TypeConverter, UserDefinedType}
-import com.datastax.spark.connector.util.{Symbols, ReflectionUtil}
-import com.datastax.spark.connector._
+import scala.language.existentials
+import scala.reflect.runtime.universe._
 
 /** Converts a `GettableData` object representing a table row or a UDT value
   * to a tuple or a case class object using the given `ColumnMapper`.
@@ -159,7 +158,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
       data: GettableData,
       converter: TypeConverter[_]): AnyRef = {
     val name = columnRef.columnName
-    val value = data.getRaw(columnRef.cqlValueName)
+    val value = data.getRawCql(columnRef.cqlValueName)
     checkNotNull(tryConvert(value, converter, name), name)
   }
 

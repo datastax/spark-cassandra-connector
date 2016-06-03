@@ -12,12 +12,12 @@ trait ScalaGettableData extends ScalaGettableByIndexData with GettableData {
 
   /** Converts this row to a Map */
   def toMap: Map[String, Any] =
-    columnNames.zip(columnValues).toMap
+    metaData.columnNames.zip(columnValues).toMap
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
   def get[T](name: String)(implicit c: TypeConverter[T]): T =
-    get[T](_indexOfOrThrow(name))
+    get[T](metaData.indexOfOrThrow(name))
 
   /** Returns a `bool` column value. Besides working with `bool` Cassandra type, it can also read
     * numbers and strings. Non-zero numbers are converted to `true`, zero is converted to `false`.

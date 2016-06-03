@@ -3,7 +3,7 @@ package com.datastax.spark.connector.rdd.reader
 import java.io.Serializable
 
 import com.datastax.driver.core.Row
-import com.datastax.spark.connector.{ColumnRef, CassandraRow}
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
@@ -57,10 +57,10 @@ object RowReaderFactory extends LowPriorityRowReaderFactoryImplicits {
 
     override def targetClass: Class[CassandraRow] = classOf[CassandraRow]
 
-    override def read(row: Row, columnNames: Array[String]) = {
-      assert(row.getColumnDefinitions.size() == columnNames.size,
+    override def read(row: Row,  rowMetaData: CassandraRowMetadata) = {
+      assert(row.getColumnDefinitions.size() == rowMetaData.columnNames.size,
         "Number of columns in a row must match the number of columns in the table metadata")
-      CassandraRow.fromJavaDriverRow(row, columnNames)
+      CassandraRow.fromJavaDriverRow(row, rowMetaData)
     }
 
     override def neededColumns: Option[Seq[ColumnRef]] = None

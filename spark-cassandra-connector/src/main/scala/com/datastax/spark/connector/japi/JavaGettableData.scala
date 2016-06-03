@@ -17,7 +17,7 @@ trait JavaGettableData extends JavaGettableByIndexData with GettableData {
   /** Converts this row to a Map */
   def toMap: JMap[String, AnyRef] = {
     val map = new JHashMap[String, AnyRef]()
-    for (i <- 0 until length) map.put(columnNames(i), columnValues(i))
+    for (i <- 0 until length) map.put(metaData.columnNames(i), columnValues(i))
     map
   }
 
@@ -29,7 +29,7 @@ trait JavaGettableData extends JavaGettableByIndexData with GettableData {
   /** Generic getter for getting columns of any type.
     * Looks the column up by column name. Column names are case-sensitive.*/
   private def _get[T  <: AnyRef](name: String)(implicit tc: TypeConverter[T]): T =
-    tc.convert(columnValues(_indexOfOrThrow(name)))
+    tc.convert(columnValues(metaData.indexOfOrThrow(name)))
 
   /** Equivalent to `getAny` */
   def apply(name: String): AnyRef = getObject(name)

@@ -200,7 +200,7 @@ case class TableDef(
   type ValueRepr = CassandraRow
   
   def newInstance(columnValues: Any*): CassandraRow = {
-    new CassandraRow(columnNames, columnValues.toIndexedSeq.map(_.asInstanceOf[AnyRef]))
+    new CassandraRow(CassandraRowMetadata.fromColumnNames(columnNames), columnValues.toIndexedSeq.map(_.asInstanceOf[AnyRef]))
   }
 }
 
