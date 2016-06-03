@@ -10,7 +10,7 @@ only operations.
 
 To enable Cassandra access the Spark Cassandra Connector assembly jar must be included on both the
 driver and executor classpath for the PySpark Java Gateway. This can be done by starting the PySpark
-shell similarlly to how the spark shell is started. The preferred method is now to use the Spark Packages
+shell similarly to how the spark shell is started. The preferred method is now to use the Spark Packages
 website. 
 http://spark-packages.org/package/datastax/spark-cassandra-connector
 
@@ -21,8 +21,8 @@ http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 ### Loading a DataFrame in Python
 
-A DataFrame can be created which links to cassandra by using the the `org.apache.spark.sql.cassandra` 
-source and by specifying keyword arguements for `keyspace` and `table`.
+A DataFrame can be created which links to Cassandra by using the the `org.apache.spark.sql.cassandra` 
+source and by specifying keyword arguments for `keyspace` and `table`.
 
 ```python
  sqlContext.read\
@@ -45,7 +45,7 @@ source and by specifying keyword arguements for `keyspace` and `table`.
 
 ### Saving a DataFrame in Python to Cassandra
 
-A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguements for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-programming-guide.html#save-modes)).
+A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguments for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-programming-guide.html#save-modes)).
 
 ```python
  df.write\
