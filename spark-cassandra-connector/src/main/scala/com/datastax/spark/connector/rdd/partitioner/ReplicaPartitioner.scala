@@ -38,6 +38,7 @@ implicit
   @transient lazy private val metadata = connector.withClusterDo(_.getMetadata)
   @transient lazy private val protocolVersion = connector
     .withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+  @transient lazy private val clazz = implicitly[ClassTag[T]].runtimeClass
 
   private val hosts = connector.hosts.toVector
   private val hostSet = connector.hosts
@@ -62,7 +63,7 @@ implicit
    */
   override def getPartition(key: Any): Int = {
     key match {
-      case key: T =>
+      case key: T if clazz.isInstance(key) =>
         //Only use ReplicaEndpoints in the connected DC
         val token = tokenGenerator.getTokenFor(key)
         val tokenHash = Math.abs(token.hashCode())
