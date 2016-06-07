@@ -1,11 +1,11 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
+import com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner
 import com.datastax.spark.connector.rdd.{EmptyCassandraRDD, ValidRDDType}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer._
-
 import org.apache.spark._
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.Duration
@@ -68,9 +68,14 @@ class DStreamFunctions[T](dstream: DStream[T])
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): DStream[T] = {
 
-    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
-    dstream.transform(rdd =>
-      rdd.repartitionByCassandraReplica(replicaLocator, keyspaceName, tableName, partitionsPerHost, partitionKeyMapper))
+    val partitioner = new ReplicaPartitioner[T](
+      tableName,
+      keyspaceName,
+      partitionsPerHost,
+      partitionKeyMapper,
+      connector)
+
+    dstream.transform(rdd => rdd.map((_, None)).partitionBy(partitioner).map(_._1))
   }
 
   /**

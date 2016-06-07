@@ -192,6 +192,16 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
+  it should "be deterministically repartitionable" in {
+    val source = sc.parallelize(keys).map(Tuple1(_))
+    val repartRDDs = (1 to 10).map(_ =>
+      source
+        .repartitionByCassandraReplica(ks, tableName, 10)
+        .mapPartitionsWithIndex((index, it) => it.map((_, index))))
+    val first = repartRDDs(1).collect
+    repartRDDs.foreach( rdd => rdd.collect should be(first))
+  }
+
   "A case-class RDD specifying partition keys" should "be retrievable from Cassandra" in {
     val source = sc.parallelize(keys).map(x => new KVRow(x))
     val someCass = source.joinWithCassandraTable(ks, tableName)

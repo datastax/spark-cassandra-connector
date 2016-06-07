@@ -188,12 +188,22 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     partitionKeyMapper: ColumnSelector)(
   implicit
     connector: CassandraConnector,
-    currentType: ClassTag[T]): CassandraPartitionedRDD[T] = {
+    currentType: ClassTag[T],
+    rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
 
-    val part = new ReplicaPartitioner(partitionsPerHost, connector)
-    val repart = rdd.keyByCassandraReplica(replicaLocator).partitionBy(part)
-    val output = repart.mapPartitions(_.map(_._2), preservesPartitioning = true)
-    new CassandraPartitionedRDD[T](output, keyspaceName, tableName)
+    val partitioner = new ReplicaPartitioner[T](
+      tableName,
+      keyspaceName,
+      partitionsPerHost,
+      partitionKeyMapper,
+      connector)
+
+    val repart = rdd
+      .map((_,None))
+      .partitionBy(partitioner)
+      .mapPartitions(_.map(_._1), preservesPartitioning = true)
+
+    new CassandraPartitionedRDD[T](repart, keyspaceName, tableName)
   }
 
 
