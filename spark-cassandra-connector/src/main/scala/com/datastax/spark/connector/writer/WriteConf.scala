@@ -132,6 +132,12 @@ object WriteConf {
       | per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
       | as seen on a smaller job for stability""".stripMargin)
 
+  val TTLParam = ConfigParameter[Int] (
+    name = "spark.cassandra.output.ttl",
+    section = ReferenceSection,
+    default = 0,
+    description = """Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL""".stripMargin)
+
   /** Task Metrics **/
   val TaskMetricsParam = ConfigParameter[Boolean](
     name = "spark.cassandra.output.metrics",
@@ -151,6 +157,7 @@ object WriteConf {
     IgnoreNullsParam,
     ParallelismLevelParam,
     ThroughputMiBPSParam,
+    TTLParam,
     TaskMetricsParam
   )
 
@@ -192,6 +199,10 @@ object WriteConf {
 
     val metricsEnabled = conf.getBoolean(TaskMetricsParam.name, TaskMetricsParam.default)
 
+    val ttlSeconds = conf.getInt(TTLParam.name, TTLParam.default)
+
+    val ttlOption = if(ttlSeconds == TTLParam.default) TTLOption.defaultValue else TTLOption.constant(ttlSeconds)
+
     WriteConf(
       batchSize = batchSize,
       batchGroupingBufferSize = batchBufferSize,
@@ -200,6 +211,7 @@ object WriteConf {
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS,
       taskMetricsEnabled = metricsEnabled,
+      ttl = ttlOption,      
       ignoreNulls = ignoreNulls,
       ifNotExists = ifNotExists)
   }

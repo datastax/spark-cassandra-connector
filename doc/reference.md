@@ -286,4 +286,9 @@ finer control see the CassandraOption class</td>
  per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
  as seen on a smaller job for stability</td>
 </tr>
+<tr>
+  <td><code>output.ttl</code></td>
+  <td>0</td>
+  <td>Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL</td>
+</tr>
 </table>
