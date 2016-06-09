@@ -1,3 +1,13 @@
+1.6.0
+ * SparkSql write supports TTL per row (SPARKC-345)
+ * Make Repartition by Cassandra Replica Deterministic (SPARKC-278)
+ * Improved performance by caching converters and Java driver codecs 
+   (SPARKC-383)
+ * Added support for driver.LocalDate (SPARKC-385)
+ * Accept predicates with indexed partition columns (SPARKC-348)
+ * Retry schema checks to avoid Java Driver debouncing (SPARKC-379)
+ * Fix compatibility with Cassandra 2.1.X with Single Partitions/In queries 
+   (SPARKC-376)
  * Use executeAsync while joining with C* table (SPARKC-233)
  * Fix support for C* Tuples in Dataframes (SPARKC-357)
 
