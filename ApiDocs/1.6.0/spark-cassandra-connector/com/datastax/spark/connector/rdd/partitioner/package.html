@@ -1,0 +1,401 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>partitioner - com.datastax.spark.connector.rdd.partitioner</title>
+          <meta name="description" content="partitioner - com.datastax.spark.connector.rdd.partitioner" />
+          <meta name="keywords" content="partitioner com.datastax.spark.connector.rdd.partitioner" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.rdd.partitioner.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="com">com</a>.<a href="../../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../../package.html" class="extype" name="com.datastax.spark.connector">connector</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector.rdd">rdd</a></p>
+        <h1>partitioner</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">partitioner</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Provides components for partitioning a Cassandra table into smaller parts of appropriate size.
+Each partition can be processed locally on at least one cluster node.</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.rdd.partitioner"><span>partitioner</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.rdd.partitioner.BucketingRangeIndex" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BucketingRangeIndex[R,T]extendsAnyRef"></a>
+      <a id="BucketingRangeIndex[R,T]:BucketingRangeIndex[R,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BucketingRangeIndex.html"><span class="name">BucketingRangeIndex</span></a><span class="tparams">[<span name="R">R</span>, <span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A special structure for fast lookup of rangesContaining containing given point.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.CassandraPartition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraPartition[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsEndpointPartitionwithProductwithSerializable"></a>
+      <a id="CassandraPartition[V,T&lt;:Token[V]]:CassandraPartition[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraPartition.html"><span class="name">CassandraPartition</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartition.V">V</span>]</span>]</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>, <span name="endpoints">endpoints: <span class="extype" name="scala.Iterable">Iterable</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>, <span name="tokenRanges">tokenRanges: <span class="extype" name="scala.Iterable">Iterable</span>[<a href="CqlTokenRange.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange">CqlTokenRange</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartition.V">V</span>, <span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartition.T">T</span>]]</span>, <span name="dataSize">dataSize: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result"> extends <a href="EndpointPartition.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.EndpointPartition">EndpointPartition</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Metadata describing Cassandra table partition processed by a single Spark task.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraPartitionedRDD[T]extendsRDD[T]"></a>
+      <a id="CassandraPartitionedRDD[T]:CassandraPartitionedRDD[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraPartitionedRDD.html"><span class="name">CassandraPartitionedRDD</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD.T">T</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">RDD created by repartitionByCassandraReplica with preferred locations mapping to the CassandraReplicas
+each partition was created for.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CqlTokenRange[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsProductwithSerializable"></a>
+      <a id="CqlTokenRange[V,T&lt;:Token[V]]:CqlTokenRange[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CqlTokenRange.html"><span class="name">CqlTokenRange</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange.V">V</span>]</span>]</span><span class="params">(<span name="range">range: <a href="dht/TokenRange.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.TokenRange">TokenRange</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange.V">V</span>, <span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange.T">T</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="tf">tf: <a href="dht/TokenFactory.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory">TokenFactory</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange.V">V</span>, <span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange.T">T</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Stores a CQL <code>WHERE</code> predicate matching a range of tokens.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DataSizeEstimates[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsLogging"></a>
+      <a id="DataSizeEstimates[V,T&lt;:Token[V]]:DataSizeEstimates[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DataSizeEstimates.html"><span class="name">DataSizeEstimates</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates.V">V</span>]</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.Logging" class="extype" target="_top">Logging</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Estimates amount of data in the Cassandra table.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.EndpointPartition" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="EndpointPartitionextendsPartition"></a>
+      <a id="EndpointPartition:EndpointPartition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="EndpointPartition.html"><span class="name">EndpointPartition</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.Partition" class="extype" target="_top">Partition</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.MonotonicBucketing" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="MonotonicBucketing[-T]extendsAnyRef"></a>
+      <a id="MonotonicBucketing[-T]:MonotonicBucketing[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="MonotonicBucketing.html"><span class="name">MonotonicBucketing</span></a><span class="tparams">[<span name="T">-T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A mapping from T values to an integer range [0, n),
+such that for any (t1: T) &gt; (t2: T), bucket(t1) &gt;= bucket(t2).</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.Murmur3PartitionerTokenRangeSplitter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Murmur3PartitionerTokenRangeSplitterextendsTokenRangeSplitter[Long,com.datastax.spark.connector.rdd.partitioner.dht.LongToken]"></a>
+      <a id="Murmur3PartitionerTokenRangeSplitter:Murmur3PartitionerTokenRangeSplitter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Murmur3PartitionerTokenRangeSplitter.html"><span class="name">Murmur3PartitionerTokenRangeSplitter</span></a><span class="result"> extends <a href="TokenRangeSplitter.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeSplitter">TokenRangeSplitter</a>[<span class="extype" name="scala.Long">Long</span>, <a href="dht/LongToken.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.LongToken">LongToken</a>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Fast token range splitter assuming that data are spread out evenly in the whole range.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.NodeAddresses" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeAddressesextendsSerializable"></a>
+      <a id="NodeAddresses:NodeAddresses"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeAddresses.html"><span class="name">NodeAddresses</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Looks up listen address of a cluster node given its RPC address.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.RandomPartitionerTokenRangeSplitter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RandomPartitionerTokenRangeSplitterextendsTokenRangeSplitter[BigInt,com.datastax.spark.connector.rdd.partitioner.dht.BigIntToken]"></a>
+      <a id="RandomPartitionerTokenRangeSplitter:RandomPartitionerTokenRangeSplitter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RandomPartitionerTokenRangeSplitter.html"><span class="name">RandomPartitionerTokenRangeSplitter</span></a><span class="result"> extends <a href="TokenRangeSplitter.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeSplitter">TokenRangeSplitter</a>[<span class="extype" name="scala.BigInt">BigInt</span>, <a href="dht/BigIntToken.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.BigIntToken">BigIntToken</a>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Fast token range splitter assuming that data are spread out evenly in the whole range.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.RangeBounds" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RangeBounds[-R,T]extendsAnyRef"></a>
+      <a id="RangeBounds[-R,T]:RangeBounds[R,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="RangeBounds.html"><span class="name">RangeBounds</span></a><span class="tparams">[<span name="R">-R</span>, <span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Extracts rangeBounds of a range R.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReplicaPartitionextendsEndpointPartitionwithProductwithSerializable"></a>
+      <a id="ReplicaPartition:ReplicaPartition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReplicaPartition.html"><span class="name">ReplicaPartition</span></a><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>, <span name="endpoints">endpoints: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>)</span><span class="result"> extends <a href="EndpointPartition.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.EndpointPartition">EndpointPartition</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReplicaPartitioner[T]extendsPartitioner"></a>
+      <a id="ReplicaPartitioner[T]:ReplicaPartitioner[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReplicaPartitioner.html"><span class="name">ReplicaPartitioner</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.Partitioner" class="extype" target="_top">Partitioner</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">The replica partitioner will work on an RDD which is keyed on sets of InetAddresses representing Cassandra
+Hosts .</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.TokenRangeClusterer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TokenRangeClusterer[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsAnyRef"></a>
+      <a id="TokenRangeClusterer[V,T&lt;:Token[V]]:TokenRangeClusterer[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TokenRangeClusterer.html"><span class="name">TokenRangeClusterer</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeClusterer.V">V</span>]</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Divides a set of token rangesContaining into groups containing not more than <code>maxRowCountPerGroup</code> rows
+and not more than <code>maxGroupSize</code> token rangesContaining.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.TokenRangeSplitter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TokenRangeSplitter[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsAnyRef"></a>
+      <a id="TokenRangeSplitter[V,T&lt;:Token[V]]:TokenRangeSplitter[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="TokenRangeSplitter.html"><span class="name">TokenRangeSplitter</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeSplitter.V">V</span>]</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Splits a token range into smaller sub-ranges,
+each with the desired approximate number of rows.</p>
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.TokenRangeWithPartitionIndex" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TokenRangeWithPartitionIndex[V,T&lt;:com.datastax.spark.connector.rdd.partitioner.dht.Token[V]]extendsProductwithSerializable"></a>
+      <a id="TokenRangeWithPartitionIndex[V,T&lt;:Token[V]]:TokenRangeWithPartitionIndex[V,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TokenRangeWithPartitionIndex.html"><span class="name">TokenRangeWithPartitionIndex</span></a><span class="tparams">[<span name="V">V</span>, <span name="T">T &lt;: <a href="dht/Token.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.Token">Token</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeWithPartitionIndex.V">V</span>]</span>]</span><span class="params">(<span name="range">range: <a href="dht/TokenRange.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.dht.TokenRange">TokenRange</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeWithPartitionIndex.V">V</span>, <span class="extype" name="com.datastax.spark.connector.rdd.partitioner.TokenRangeWithPartitionIndex.T">T</span>]</span>, <span name="partitionIndex">partitionIndex: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Holds a token range together with the index of a partition this token range belongs to</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraPartitionGenerator"></a>
+      <a id="CassandraPartitionGenerator:CassandraPartitionGenerator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraPartitionGenerator$.html"><span class="name">CassandraPartitionGenerator</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DataSizeEstimates"></a>
+      <a id="DataSizeEstimates:DataSizeEstimates"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DataSizeEstimates$.html"><span class="name">DataSizeEstimates</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.MonotonicBucketing" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MonotonicBucketing"></a>
+      <a id="MonotonicBucketing:MonotonicBucketing"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MonotonicBucketing$.html"><span class="name">MonotonicBucketing</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.TokenRangeWithPartitionIndex" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TokenRangeWithPartitionIndex"></a>
+      <a id="TokenRangeWithPartitionIndex:TokenRangeWithPartitionIndex"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TokenRangeWithPartitionIndex$.html"><span class="name">TokenRangeWithPartitionIndex</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner.dht" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="dht"></a>
+      <a id="dht:dht"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="dht/package.html"><span class="name">dht</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../../../lib/template.js"></script>
+    </body>
+      </html>
