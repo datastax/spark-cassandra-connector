@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._

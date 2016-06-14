@@ -2,8 +2,6 @@ package com.datastax.spark.connector.util
 
 import scala.collection.mutable
 
-import org.apache.spark.Logging
-
 private[connector] object SerialShutdownHooks extends Logging {
 
   private val hooks = mutable.Map[String, () => Unit]()

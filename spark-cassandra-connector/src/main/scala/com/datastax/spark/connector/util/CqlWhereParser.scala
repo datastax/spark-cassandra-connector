@@ -3,8 +3,6 @@ package com.datastax.spark.connector.util
 import java.util.UUID
 import scala.util.parsing.combinator.RegexParsers
 
-import org.apache.spark.Logging
-
 object CqlWhereParser extends RegexParsers with Logging {
 
   sealed trait RelationalOperator

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.sql
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.SaveMode._
 

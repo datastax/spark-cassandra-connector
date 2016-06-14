@@ -3,7 +3,7 @@ package org.apache.spark.sql
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.{CqlWhereClause, CassandraTableScanRDD}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{Filter, SparkPlan, PhysicalRDD}

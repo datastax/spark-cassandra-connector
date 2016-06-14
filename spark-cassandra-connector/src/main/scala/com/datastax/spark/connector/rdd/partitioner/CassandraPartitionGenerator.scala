@@ -7,7 +7,7 @@ import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
 import com.datastax.spark.connector.ColumnSelector
