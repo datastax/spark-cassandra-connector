@@ -8,6 +8,8 @@ import com.datastax.driver.core.{LocalDate, Row, TypeCodec, TupleValue => Driver
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
 
+import org.joda.time.DateTimeZone.UTC
+
 trait GettableData extends GettableByIndexData {
 
   def metaData: CassandraRowMetadata
@@ -77,7 +79,8 @@ object GettableData {
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
-      case localDate: LocalDate => new org.joda.time.LocalDate(localDate.getMillisSinceEpoch)
+      case localDate: LocalDate =>
+        new org.joda.time.LocalDate(localDate.getYear, localDate.getMonth, localDate.getDay)
       case other => other.asInstanceOf[AnyRef]
 
     }
