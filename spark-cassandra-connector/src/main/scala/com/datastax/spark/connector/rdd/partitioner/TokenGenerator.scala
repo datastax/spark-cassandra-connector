@@ -4,7 +4,7 @@ import com.datastax.driver.core.{Token, MetadataHook}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.PatitionKeyTools._
 import com.datastax.spark.connector.writer.{BoundStatementBuilder, RoutingKeyGenerator, RowWriter}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine

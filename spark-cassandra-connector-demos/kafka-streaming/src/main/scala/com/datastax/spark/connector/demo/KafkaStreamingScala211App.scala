@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.demo
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 object KafkaStreamingScala211App extends App with Logging {
 

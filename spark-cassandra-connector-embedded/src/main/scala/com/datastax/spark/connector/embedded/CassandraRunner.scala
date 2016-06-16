@@ -6,10 +6,9 @@ import scala.collection.JavaConversions._
 import scala.util.Try
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.Logging
 
 private[connector] class CassandraRunner(val configTemplate: String, props: Map[String, String])
-  extends Embedded with Logging {
+  extends Embedded {
 
   import java.io.{File, FileOutputStream, IOException}
 

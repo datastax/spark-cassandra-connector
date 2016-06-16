@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import scala.collection.JavaConversions._
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 import com.datastax.driver.core.exceptions.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
