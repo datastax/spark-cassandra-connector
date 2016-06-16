@@ -14,7 +14,7 @@ import org.slf4j.{Logger, LoggerFactory}
 trait Logging {
   // Make the log field transient so that objects with Logging can
   // be serialized and used on another machine
-  @transient private var log_ : Logger = null
+  @transient private var _log : Logger = null
 
   // Method to get the logger name for this object
   protected def logName = {
@@ -24,10 +24,10 @@ trait Logging {
 
   // Method to get or create the logger for this object
   protected def log: Logger = {
-    if (log_ == null) {
-      log_ = LoggerFactory.getLogger(logName)
+    if (_log == null) {
+      _log = LoggerFactory.getLogger(logName)
     }
-    log_
+    _log
   }
 
   // Log methods that take only a String

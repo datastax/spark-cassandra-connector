@@ -11,7 +11,6 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 
 import com.datastax.spark.connector.util.Logging
-import com.datastax.spark.connector.util.Logging
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.
   * For writes, if a statement has a routing key set, this LBP is token aware - it prefers the nodes which
