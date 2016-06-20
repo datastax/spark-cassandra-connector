@@ -71,6 +71,8 @@ class RDDStreamingSpec
     }
     finally {
       ssc.stop(stopSparkContext = false, stopGracefully = true)
+      // this will rethrow any exceptions thrown during execution (from foreachRDD etc)
+      ssc.awaitTerminationOrTimeout(60 * 1000)
     }
   }
 
@@ -105,7 +107,7 @@ class RDDStreamingSpec
       .saveToCassandra(ks, "streaming_wordcount")
 
     stream
-      .map(new Tuple1(_))
+      .map(Tuple1(_))
       .transform(rdd => rdd.joinWithCassandraTable(ks, "streaming_join"))
       .map(_._2)
       .saveToCassandra(ks, "streaming_join_output")
@@ -135,17 +137,20 @@ class RDDStreamingSpec
       .saveToCassandra(ks, "streaming_wordcount")
 
     val jcRepart = stream
-      .map(new Tuple1(_))
+      .map(Tuple1(_))
       .repartitionByCassandraReplica(ks, "streaming_join")
 
     val conn = CassandraConnector(defaultConf)
 
-    jcRepart.foreachRDD(rdd => rdd.partitions.foreach {
-      case e: EndpointPartition =>
-        conn.hosts should contain(e.endpoints.head)
-      case _ =>
-        fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
-    })
+    jcRepart.foreachRDD(rdd => rdd
+      .partitions
+      .map(rdd.preferredLocations)
+      .foreach { preferredLocations =>
+        withClue("Failed to verify preferred locations of repartitionByCassandraReplica RDD") {
+          conn.hosts.map(_.getHostAddress) should contain(preferredLocations.head)
+        }
+      }
+    )
 
     jcRepart.joinWithCassandraTable(ks, "streaming_join")
       .map(_._2)
