@@ -34,7 +34,7 @@ object Versions {
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
   val Config          = "1.2.1"
-  val Guava           = "16.0.1"
+  val Guava           = "18.0"
   val JDK             = "1.7"
   val JodaC           = "1.2"
   val JodaT           = "2.3"

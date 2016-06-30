@@ -1,6 +1,6 @@
 // pulls in: sbt-pgp, sbt-release, sbt-mima-plugin, sbt-dependency-graph, sbt-buildinfo, sbt-sonatype
 // TODO use sbt-release plugin
-addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.3.1")
+addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.3.2")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.4")
 
