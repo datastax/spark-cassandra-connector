@@ -1,7 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.types.{TupleFieldDef, UDTFieldDef}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
 

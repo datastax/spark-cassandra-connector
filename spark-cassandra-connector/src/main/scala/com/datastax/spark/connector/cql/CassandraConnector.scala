@@ -6,11 +6,12 @@ import java.net.InetAddress
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
 
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.{Cluster, Host, Session}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.SerialShutdownHooks
+import com.datastax.spark.connector.util.Logging
 
 /** Provides and manages connections to Cassandra.
   *

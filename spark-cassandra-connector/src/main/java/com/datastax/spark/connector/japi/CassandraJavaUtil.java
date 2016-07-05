@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import akka.japi.JAPI;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.SparkContext;
@@ -174,7 +173,7 @@ public class CassandraJavaUtil {
             TypeTags.TypeTag<?> typeParam1,
             TypeTags.TypeTag<?>... typeParams
     ) {
-        return JavaApiHelper.getTypeTag(main, JAPI.seq(ArrayUtils.add(typeParams, 0, typeParam1)));
+        return JavaApiHelper.getTypeTag(main, ArrayUtils.add(typeParams, 0, typeParam1));
     }
 
     /**
@@ -196,7 +195,7 @@ public class CassandraJavaUtil {
         for (int i = 0; i < typeParams.length; i++) {
             typeParamsTags[i + 1] = typeTag(typeParams[i]);
         }
-        return JavaApiHelper.getTypeTag(main, JAPI.seq(typeParamsTags));
+        return JavaApiHelper.getTypeTag(main, typeParamsTags);
     }
 
     // -------------------------------------------------------------------------
@@ -1702,7 +1701,7 @@ public class CassandraJavaUtil {
             columnsSelection[i] = ColumnName$.MODULE$.apply(columnNames[i], Option.<String>empty());
         }
 
-        return SomeColumns$.MODULE$.apply(JAPI.<ColumnRef>seq(columnsSelection));
+        return SomeColumns$.MODULE$.apply(JavaApiHelper.<ColumnRef>toScalaImmutableSeq(columnsSelection));
     }
 
     public static ColumnName column(String columnName) {

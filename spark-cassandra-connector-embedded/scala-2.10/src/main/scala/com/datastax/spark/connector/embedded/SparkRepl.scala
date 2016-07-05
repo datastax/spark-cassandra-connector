@@ -1,16 +1,24 @@
 package com.datastax.spark.connector.embedded
 
-import java.io.{PrintWriter, StringWriter, StringReader, BufferedReader}
+import java.io._
 import java.net.URLClassLoader
 
 import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.SparkConf
 import org.apache.spark.repl.SparkILoop
+import org.scalatest.{BeforeAndAfter, Suite}
 
-trait SparkRepl {
+trait SparkRepl extends Suite with BeforeAndAfter {
 
-  def runInterpreter(input: String): String = {
-    SparkTemplate.defaultConf.getAll.filter(_._1.startsWith("spark.cassandra."))
-      .foreach(p => System.setProperty(p._1, p._2))
+  val originalProps = sys.props.clone()
+
+  after {
+    sys.props ++= originalProps
+    sys.props --= (sys.props.keySet -- originalProps.keySet)
+  }
+
+  def runInterpreter(input: String, conf: SparkConf): String = {
     val in = new BufferedReader(new StringReader(input + "\n"))
     val out = new StringWriter()
     val cl = getClass.getClassLoader
@@ -25,6 +33,7 @@ trait SparkRepl {
       case _ =>
     }
 
+    sys.props ++= conf.getAll
     val interp = new SparkILoop(in, new PrintWriter(out))
     org.apache.spark.repl.Main.interp = interp
     val separator = System.getProperty("path.separator")

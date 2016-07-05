@@ -10,7 +10,6 @@ Pulling this dependency in allows you to:
   - If your sbt project is configured to run IT configs
 - Easily write and run a Spark Streaming app using 
   - Apache Kafka streams (including an embedded Zookeeper), all with no Ops work involved
-  - Twitter streams (needs the 4 auth credentials required by Twitter)
   - And of course Cassandra but you currently need to spin up a local instance: [Download Cassandra latest](http://cassandra.apache.org/download/), open the tar, and run `sudo ./apache-cassandra-*/bin/cassandra`
 
 ## The Code

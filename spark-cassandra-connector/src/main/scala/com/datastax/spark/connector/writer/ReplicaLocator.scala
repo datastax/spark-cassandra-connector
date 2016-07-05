@@ -1,14 +1,13 @@
 package com.datastax.spark.connector.writer
 
 
-import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.driver.core._
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
-import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.collection._

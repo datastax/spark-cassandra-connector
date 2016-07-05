@@ -26,37 +26,37 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with SparkRepl {
         |import com.datastax.spark.connector._
         |
         |case class SampleScalaCaseClass(key: Int, value: String)
-        |val cnt1 = sc.cassandraTable[SampleScalaCaseClass]("$ks", "simple_kv").toArray.length
+        |val cnt1 = sc.cassandraTable[SampleScalaCaseClass]("$ks", "simple_kv").collect.length
         |
         |class SampleScalaClass(val key: Int, val value: String) extends Serializable
-        |val cnt2 = sc.cassandraTable[SampleScalaClass]("$ks", "simple_kv").toArray.length
+        |val cnt2 = sc.cassandraTable[SampleScalaClass]("$ks", "simple_kv").collect.length
         |
         |class SampleScalaClassWithNoFields(key: Int, value: String) extends Serializable
-        |val cnt3 = sc.cassandraTable[SampleScalaClassWithNoFields]("$ks", "simple_kv").toArray.length
+        |val cnt3 = sc.cassandraTable[SampleScalaClassWithNoFields]("$ks", "simple_kv").collect.length
         |
         |class SampleScalaClassWithMultipleCtors(var key: Int, var value: String) extends Serializable {
         |  def this(key: Int) = this(key, null)
         |  def this() = this(0, null)
         |}
-        |val cnt4 = sc.cassandraTable[SampleScalaClassWithMultipleCtors]("$ks", "simple_kv").toArray.length
+        |val cnt4 = sc.cassandraTable[SampleScalaClassWithMultipleCtors]("$ks", "simple_kv").collect.length
         |
         |class SampleWithNestedScalaCaseClass extends Serializable {
         |  case class InnerClass(key: Int, value: String)
         |}
-        |val cnt5 = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass]("$ks", "simple_kv").toArray.length
+        |val cnt5 = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass]("$ks", "simple_kv").collect.length
         |
         |class SampleWithDeeplyNestedScalaCaseClass extends Serializable {
         |  class IntermediateClass extends Serializable {
         |    case class InnerClass(key: Int, value: String)
         |  }
         |}
-        |val cnt6 = sc.cassandraTable[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]("$ks", "simple_kv").toArray.length
+        |val cnt6 = sc.cassandraTable[SampleWithDeeplyNestedScalaCaseClass#IntermediateClass#InnerClass]("$ks", "simple_kv").collect.length
         |
         |object SampleObject extends Serializable {
         |  case class ClassInObject(key: Int, value: String)
         |}
-        |val cnt7 = sc.cassandraTable[SampleObject.ClassInObject]("$ks", "simple_kv").toArray.length
-      """.stripMargin)
+        |val cnt7 = sc.cassandraTable[SampleObject.ClassInObject]("$ks", "simple_kv").collect.length
+      """.stripMargin, SparkTemplate.defaultConf)
     output should not include "error:"
     output should not include "Exception"
     output should include("cnt1: Int = 3")

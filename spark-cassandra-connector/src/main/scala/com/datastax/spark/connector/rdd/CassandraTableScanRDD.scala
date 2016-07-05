@@ -10,9 +10,8 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, Predicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
+import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, Logging}
 import com.datastax.spark.connector.writer.RowWriterFactory
-
 import com.datastax.driver.core._
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}

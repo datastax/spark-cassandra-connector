@@ -252,7 +252,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
   it should "write null values" in {
     val key = 1.asInstanceOf[AnyRef]
-    val row = new CassandraRow(IndexedSeq("key", "text_value", "int_value"), IndexedSeq(key, null, null))
+    val row = new CassandraRow(
+      CassandraRowMetadata(IndexedSeq("key", "text_value", "int_value")),
+      IndexedSeq(key, null, null))
 
     sc.parallelize(Seq(row)).saveToCassandra(ks, "nulls")
     conn.withSessionDo { session =>

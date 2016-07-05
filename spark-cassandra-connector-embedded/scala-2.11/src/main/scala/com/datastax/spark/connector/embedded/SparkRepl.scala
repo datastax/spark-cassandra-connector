@@ -1,17 +1,17 @@
 package com.datastax.spark.connector.embedded
 
-import java.io.{BufferedReader, PrintWriter, StringReader, StringWriter}
+import java.io._
 import java.net.URLClassLoader
 
-import scala.collection.mutable.ArrayBuffer
-
+import org.apache.spark.SparkConf
 import org.apache.spark.repl.{Main, SparkILoop}
+
+import scala.collection.mutable.ArrayBuffer
+import scala.tools.nsc.GenericRunnerSettings
 
 trait SparkRepl {
 
-  def runInterpreter(input: String): String = {
-    SparkTemplate.defaultConf.getAll.filter(_._1.startsWith("spark.cassandra."))
-      .foreach(p => System.setProperty(p._1, p._2))
+  def runInterpreter(input: String, conf: SparkConf): String = {
     val in = new BufferedReader(new StringReader(input + "\n"))
     val out = new StringWriter()
     val cl = getClass.getClassLoader
@@ -26,23 +26,15 @@ trait SparkRepl {
       case _ =>
     }
 
+    Main.conf.setAll(conf.getAll)
     val interp = new SparkILoop(Some(in), new PrintWriter(out))
     Main.interp = interp
-    // due to some mysterious compilation error classServer needs to be accessed via reflection
-    //      Main.classServer.start()
-    Main.asInstanceOf[AnyRef] match {
-      case x: {def classServer: {def start(): Unit}} => x.classServer.start()
-    }
     val separator = System.getProperty("path.separator")
-    org.apache.spark.repl.Main.s.processArguments(List("-classpath", paths.mkString(separator)), true)
-    interp.process(Main.s)
-    Main.asInstanceOf[AnyRef] match {
-      case x: {def classServer: {def stop(): Unit}} => x.classServer.stop()
-    }
-    //      Main.classServer.stop()
+    val settings = new GenericRunnerSettings(s => throw new RuntimeException(s"Scala options error: $s"))
+    settings.processArguments(List("-classpath", paths.mkString(separator)), true)
+    interp.process(settings) // Repl starts and goes in loop of R.E.P.L
     Main.interp = null
     Option(Main.sparkContext).foreach(_.stop())
-    // To avoid Akka rebinding to the same port, since it doesn't unbind immediately on shutdown
     System.clearProperty("spark.driver.port")
     out.toString
   }

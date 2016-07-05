@@ -9,12 +9,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemplate {
 
-  def prepareConf = {
-    val conf = new SparkConf(loadDefaults = false)
-    conf.setMaster("local[*]")
-    conf.setAppName("test")
-    conf
-  }
+  private def prepareConf = SparkTemplate.defaultConf.setMaster("local[*]")
 
   "CassandraConnectorSource" should "be initialized when it was specified in metrics properties" in {
     val className = classOf[CassandraConnectorSource].getName

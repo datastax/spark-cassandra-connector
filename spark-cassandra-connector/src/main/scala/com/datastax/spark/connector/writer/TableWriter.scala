@@ -11,7 +11,8 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector.util.Quote._
-import org.apache.spark.{Logging, TaskContext}
+import com.datastax.spark.connector.util.Logging
+import org.apache.spark.TaskContext
 
 import scala.collection._
 

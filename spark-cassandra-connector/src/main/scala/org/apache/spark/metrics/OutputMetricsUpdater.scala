@@ -5,9 +5,10 @@ import java.util.concurrent.TimeUnit
 import com.codahale.metrics.Timer.Context
 import com.twitter.jsr166e.LongAdder
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
-import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.TaskContext
 
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
+import com.datastax.spark.connector.util.Logging
 
 /** A trait that provides a method to update write metrics which are collected for connector related tasks.
   * The appropriate instance is created by the companion object.
@@ -66,13 +67,11 @@ object OutputMetricsUpdater extends Logging {
 
     if (writeConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()
-      if (tm.outputMetrics.isEmpty || tm.outputMetrics.get.writeMethod != DataWriteMethod.Hadoop)
-        tm.outputMetrics = Some(new OutputMetrics(DataWriteMethod.Hadoop))
 
       if (source.isDefined)
-        new CodahaleAndTaskMetricsUpdater(source.get, tm.outputMetrics.get)
+        new CodahaleAndTaskMetricsUpdater(source.get, tm.outputMetrics)
       else
-        new TaskMetricsUpdater(tm.outputMetrics.get)
+        new TaskMetricsUpdater(tm.outputMetrics)
 
     } else {
       if (source.isDefined)

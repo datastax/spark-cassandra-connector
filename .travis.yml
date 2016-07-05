@@ -4,13 +4,14 @@ jdk:
 sudo: required
 dist: trusty
 scala:
-  - 2.10.5
-  - 2.11.7
+  - 2.10.6
+  - 2.11.8
 
 cache:
   directories:
     - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
+    - $HOME/.sbt/boot
+    - $HOME/.coursier-cache
 
 before_cache:
   # Tricks to avoid unnecessary cache updates

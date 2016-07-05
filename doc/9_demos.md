@@ -11,7 +11,6 @@ and [Java](https://github.com/datastax/spark-cassandra-connector/tree/master/spa
     - Copy a table to Cassandra
     - Integrate Spark SQL with Cassandra
     - Integrate Spark Streaming, Kafka and Cassandra 
-    - Integrate Spark Streaming, Twitter and Cassandra
     - Integrate Spark Streaming in Akka, Actor DStreams with Cassandra
 
 Most of the above functionality is covered in the Java API demo samples.
@@ -42,18 +41,6 @@ The basic demos (WordCountDemo, BasicReadWriteDemo, SQLDemo, AkkaStreamingDemo, 
 #### Kafka Streaming Demo
 The Kafka streaming demo sets `spark.master` as 127.0.0.1 or `local[n]`, and `spark.cassandra.connection.host` as 127.0.0.1. Change this locally if desired.
 
-#### Twitter Streaming Demo
-The Twitter streaming demo accepts Java system properties passed in on the command line when invoking `sbt run`.
-Default configurations are set in the /resources/application.conf file as fallbacks. 
-One could run like this, for instance:
-
-    sbt -Dspark.master="mySparkUri" twitter-streaming/run
-    
-    -Dspark.master, default is local[*]
-    -Dspark.master, default is localhost
-    -Dspark.cassandra.connection.host, default is 127.0.0.1
-    -Dspark.cores.max, default is 2 
- 
 ### Run Via SBT or an IDE and Spark `local[n]`
 To run any demo from an IDE, simply right click on a particular demo and 'run'.
 To run from SBT read on.
@@ -84,36 +71,6 @@ artifact in their Scala 2.11 build yet. Until then this is only available agains
 On the command line at the root of `spark-cassandra-connector`:
 
     sbt kafka-streaming/run
-
-#### Running The Twitter Streaming Demo
-First you need to set your Twitter auth credentials. This is required by Twitter.
-The Twitter streaming sample expects these values to either already exist in the 
-deploy environment, and if not found, falls back to acquire from Java system properties.
-
-##### Twitter Authentication
-To set Twitter credentials in your deploy environment:
-
-    export TWITTER_CONSUMER_KEY="value"
-    export TWITTER_CONSUMER_SECRET="value"
-    export TWITTER_ACCESS_TOKEN="value"
-    export TWITTER_ACCESS_TOKEN_SECRET="value"
- 
-To set Twitter credentials in your runtime environment:
-
-    -Dtwitter4j.oauth.consumerKey="value"
-    -Dtwitter4j.oauth.consumerSecret="value"
-    -Dtwitter4j.oauth.accessToken="value"
-    -Dtwitter4j.oauth.accessTokenSecret="value"
-
-##### To Run
-On the command line at the root of `spark-cassandra-connector`:
-
-    sbt twitter-streaming/run
-        
-Or to run with any config overrides:
-
-    sbt -Dspark.master="value" twitter-streaming/run
-  
 
 ### With Local Spark Standalone  
 Start a standalone master server by executing:
