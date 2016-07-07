@@ -17,6 +17,14 @@ Configure a new Scala project with the following dependencies:
  - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
  - DataStax Cassandra driver for your Cassandra version 
  
+For example, if you're using `sbt` and run Cassandra 2.2.5 and Spark 1.6.1, your build.sbt should include something like this:
+
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0"
+    libraryDependencies += "org.apache.spark" %% "spark-core" % "1.6.1"
+    libraryDependencies += "com.datastax.cassandra" % "cassandra-driver-core" % "3.0.0"
+    libraryDependencies += "org.apache.cassandra" % "cassandra-thrift" % "2.2.5"
+    libraryDependencies += "org.apache.cassandra" % "cassandra-clientutil" % "3.0.2"
+ 
 This driver does not depend on the Cassandra server code.
 
  - For a detailed dependency list, see [project/CassandraSparkBuild.scala](../project/CassandraSparkBuild.scala)
@@ -51,6 +59,12 @@ INSERT INTO test.kv(key, value) VALUES ('key2', 2);
 Now you're ready to write your first Spark program using Cassandra.
 
 ### Setting up `SparkContext`   
+As usual, start by importing Spark:
+
+```scala
+import org.apache.spark._
+```
+
 Before creating the `SparkContext`, set the `spark.cassandra.connection.host` property to the address of one 
 of the Cassandra nodes:
 
