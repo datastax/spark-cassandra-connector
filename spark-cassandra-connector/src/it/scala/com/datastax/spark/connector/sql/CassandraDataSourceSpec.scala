@@ -238,8 +238,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 }
 
-case class Test(val epoch:Long, val uri:String, val browser:String, val customer_id:Int)
-case class TestPartialColumns(val epoch:Long, val browser:String, val customer_id:Int)
+case class Test(epoch: Long, uri: String, browser: String, customer_id: Int)
+
+case class TestPartialColumns(epoch: Long, browser: String, customer_id: Int)
 
 object PushdownEverything extends CassandraPredicateRules {
   override def apply(
