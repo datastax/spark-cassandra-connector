@@ -3,12 +3,13 @@ package com.datastax.spark.connector.rdd.partitioner
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import org.apache.spark.{Logging, Partitioner}
+import org.apache.spark.Partitioner
 
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import com.datastax.spark.connector.{ColumnSelector, PartitionKeyColumns}
+import com.datastax.spark.connector.util.Logging
 
 /** Holds a token range together with the index of a partition this token range belongs to */
 case class TokenRangeWithPartitionIndex[V, T <: Token[V]](range: TokenRange[V, T], partitionIndex: Int)

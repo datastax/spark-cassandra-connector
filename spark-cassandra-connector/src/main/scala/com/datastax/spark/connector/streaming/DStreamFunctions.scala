@@ -5,11 +5,12 @@ import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorC
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.ValidRDDType
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer._
-import org.apache.spark._
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.Duration
 import org.apache.spark.streaming.dstream.DStream
+
 import scala.reflect.ClassTag
 
 class DStreamFunctions[T](dstream: DStream[T])

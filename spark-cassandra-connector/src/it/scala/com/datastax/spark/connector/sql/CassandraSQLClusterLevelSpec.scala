@@ -70,16 +70,16 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to join tables from different clusters" in {
-    cc.read.cassandraFormat("test1", ks, cluster1).load().registerTempTable("c1_test1")
-    cc.read.cassandraFormat("test2", ks, cluster2).load().registerTempTable("c2_test2")
+    cc.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
+    cc.read.cassandraFormat("test2", ks, cluster2).load().createOrReplaceTempView("c2_test2")
 
     val result = cc.sql(s"SELECT * FROM c1_test1 AS test1 JOIN c2_test2 AS test2 WHERE test1.a = test2.a").collect()
     result should have length 2
   }
 
   it should "allow to write data to another cluster" in {
-    cc.read.cassandraFormat("test1", ks, cluster1).load().registerTempTable("c1_test1")
-    cc.read.cassandraFormat("test3", ks, cluster2).load().registerTempTable("c2_test3")
+    cc.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
+    cc.read.cassandraFormat("test3", ks, cluster2).load().createOrReplaceTempView("c2_test3")
 
     val insert = cc.sql(s"INSERT INTO TABLE c2_test3 SELECT * FROM c1_test1 AS t1").collect()
     val result = cc.sql(s"SELECT * FROM c2_test3 AS test3").collect()

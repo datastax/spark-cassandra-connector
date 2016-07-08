@@ -21,36 +21,22 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfter
     tc
   }
 
-  "InputMetricsUpdater" should "initialize task metrics properly when they are empty" in {
-    val tc = newTaskContext()()
-    tc.taskMetrics().setInputMetrics(None)
-    val conf = new SparkConf(loadDefaults = false)
-      .set("spark.cassandra.input.metrics", "true")
-    InputMetricsUpdater(tc, ReadConf.fromSparkConf(conf), 3)
-
-    tc.taskMetrics().inputMetrics.isDefined shouldBe true
-    tc.taskMetrics().inputMetrics.get.readMethod shouldBe DataReadMethod.Hadoop
-    tc.taskMetrics().inputMetrics.get.bytesRead shouldBe 0L
-    tc.taskMetrics().inputMetrics.get.recordsRead shouldBe 0L
-  }
-
   it should "create updater which uses task metrics" in {
     val tc = newTaskContext()()
-    tc.taskMetrics().setInputMetrics(None)
     val conf = new SparkConf(loadDefaults = false)
       .set("spark.cassandra.input.metrics", "true")
     val updater = InputMetricsUpdater(tc, ReadConf.fromSparkConf(conf), 3)
     val row = new RowMock(Some(1), Some(2), Some(3), None, Some(4))
 
     updater.updateMetrics(row)
-    tc.taskMetrics().inputMetrics.get.bytesRead shouldBe 10L
-    tc.taskMetrics().inputMetrics.get.recordsRead shouldBe 1L
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 10L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 1L
 
     updater.updateMetrics(row)
     updater.updateMetrics(row)
     updater.updateMetrics(row)
-    tc.taskMetrics().inputMetrics.get.bytesRead shouldBe 40L
-    tc.taskMetrics().inputMetrics.get.recordsRead shouldBe 4L
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 40L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 4L
   }
 
   it should "create updater which does not use task metrics" in {

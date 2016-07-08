@@ -1,21 +1,16 @@
 package com.datastax.spark.connector.sql
 
-import org.scalatest.BeforeAndAfterEach
-
 import scala.concurrent.Future
 
-import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.cassandra.{
-  AnalyzedPredicates,
-  CassandraPredicateRules,
-  CassandraSourceRelation,
-  TableRef
-}
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.scalatest.BeforeAndAfterEach
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{TableDef, CassandraConnector}
+import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.util.Logging
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -117,7 +112,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to register as a temp table" in {
-    cassandraTable(TableRef("test1", ks)).registerTempTable("test1")
+    cassandraTable(TableRef("test1", ks)).createOrReplaceTempView("test1")
     val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
@@ -230,7 +225,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   it should "apply user custom predicates in the order they are specified" in {
     sc.setLocalProperty(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
-      "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything")
+      "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly")
 
     val df = sqlContext
       .read
@@ -238,9 +233,8 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1"))
       .load().filter("a=1 and b=2 and c=1 and e=1")
 
-    val qp = df.queryExecution.executedPlan.toString
-    qp should not include ("Filter (") // No Spark Filter Step
-    println(qp)
+    val qp = df.queryExecution.executedPlan
+    println(qp.constraints)
   }
 }
 
@@ -262,5 +256,16 @@ object PushdownNothing extends CassandraPredicateRules {
     tableDef: TableDef): AnalyzedPredicates = {
 
     AnalyzedPredicates(Set.empty, predicates.handledByCassandra ++ predicates.handledBySpark)
+  }
+}
+
+object PushdownEqualsOnly extends CassandraPredicateRules {
+  override def apply(predicates: AnalyzedPredicates, tableDef: TableDef): AnalyzedPredicates = {
+    val eqFilters = (predicates.handledByCassandra ++ predicates.handledBySpark).collect {
+      case x: EqualTo => x: Filter
+    }
+    AnalyzedPredicates(
+      eqFilters,
+      (predicates.handledBySpark ++ predicates.handledByCassandra) -- eqFilters)
   }
 }

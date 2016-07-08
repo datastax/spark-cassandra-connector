@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.demo
 
-import org.apache.spark.{Logging, SparkContext, SparkConf}
+import org.apache.spark.{SparkContext, SparkConf}
+import com.datastax.spark.connector.util.Logging
 
 trait DemoApp extends App with Logging {
 
