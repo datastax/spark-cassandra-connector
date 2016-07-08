@@ -121,6 +121,13 @@ object Publish extends Build {
           <organization>DataStax</organization>
           <organizationUrl>http://www.datastax.com/</organizationUrl>
         </developer>
+        <developer>
+          <id>jtgrabowski</id>
+          <name>Jaroslaw Grabowski</name>
+          <url>http://github.com/jtgrabowski</url>
+          <organization>DataStax</organization>
+          <organizationUrl>http://www.datastax.com/</organizationUrl>
+        </developer>
       </developers>
       <contributors>
         <contributor>
