@@ -12,7 +12,7 @@ import org.apache.spark.sql.Row
 class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRef])
   extends RowWriter[Row] {
 
-  override val columnNames = selectedColumns.map(_.columnName)
+  override val columnRefs = selectedColumns
   private val columns = columnNames.map(table.columnByName)
   private val columnTypes = columns.map(_.columnType)
   private val converters = columns.map(_.columnType.converterToCassandra)
