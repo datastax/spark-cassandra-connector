@@ -133,6 +133,10 @@ Questions and requests for help may be submitted to the [user mailing list](http
 ### IRC
 \#spark-cassandra-connector on irc.freenode.net. If you are new to IRC, you can use a [web-based client](http://webchat.freenode.net/?channels=#spark-cassandra-connector).
 
+### Gitter
+[![Join the chat at https://gitter.im/datastax/spark-cassandra-connector](https://badges.gitter.im/datastax/spark-cassandra-connector.svg)](https://gitter.im/datastax/spark-cassandra-connector?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+
 ### Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
 Make sure you have installed and enabled the Scala Plugin.
