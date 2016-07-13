@@ -68,22 +68,41 @@ case class CollectionColumnName(
   def remove = copy(collectionBehavior = CollectionRemove)
 }
 
+/**
+  * TTL and WriteTime Cannot be null so we need them to implement a value to replace
+  * null with
+  */
+trait ValueOnNull {
+  def valueOnNull: AnyRef
+}
+
 /** References TTL of a column. */
-case class TTL(columnName: String, alias: Option[String] = None) extends ColumnRef {
+case class TTL(
+  columnName: String,
+  alias: Option[String] = None,
+  writeDefault: Option[Int] = None) extends ColumnRef with ValueOnNull {
+
   override val cql = s"""TTL("$columnName")"""
   override val cqlValueName = s"ttl($columnName)"
   override def selectedAs = alias.getOrElse(cqlValueName)
   override def toString: String = cqlValueName
+  override def valueOnNull: AnyRef = writeDefault.getOrElse[Int](0): java.lang.Integer
 
   def as(alias: String) = copy(alias = Some(alias))
 }
 
 /** References write time of a column. */
-case class WriteTime(columnName: String, alias: Option[String] = None) extends ColumnRef {
+case class WriteTime(
+  columnName: String,
+  alias: Option[String] = None,
+  writeDefault: Option[Long] = None) extends ColumnRef with ValueOnNull {
+
   override val cql = s"""WRITETIME("$columnName")"""
   override val cqlValueName = s"writetime($columnName)"
   override def selectedAs = alias.getOrElse(cqlValueName)
   override def toString: String = cqlValueName
+
+  override def valueOnNull: AnyRef = writeDefault.getOrElse[Long]((System.currentTimeMillis() * 1000L)): java.lang.Long
 
   def as(alias: String) = copy(alias = Some(alias))
 }

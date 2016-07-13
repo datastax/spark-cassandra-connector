@@ -10,7 +10,7 @@ sealed trait WriteOptionValue[+T]
 
 case class StaticWriteOptionValue[T](value: T) extends WriteOptionValue[T]
 
-case class PerRowWriteOptionValue[T](placeholder: String) extends WriteOptionValue[T]
+case class PerRowWriteOptionValue[T](placeholder: String, valueIfNull: Option[T]) extends WriteOptionValue[T]
 
 sealed trait WriteOption[+T]
 
@@ -44,7 +44,8 @@ object TTLOption {
 
   def constant(ttl: ScalaDuration): TTLOption = if (ttl.isFinite()) constant(ttl.toSeconds.toInt) else forever
 
-  def perRow(placeholder: String): TTLOption = TTLOption(PerRowWriteOptionValue[Int](placeholder))
+  def perRow(placeholder: String, valueIfNull: Option[Int] = None): TTLOption =
+    TTLOption(PerRowWriteOptionValue[Int](placeholder, valueIfNull))
 
 }
 
@@ -61,6 +62,6 @@ object TimestampOption {
 
   def constant(timestamp: DateTime): TimestampOption = constant(timestamp.getMillis * 1000L)
 
-  def perRow(placeholder: String): TimestampOption =
-    TimestampOption(PerRowWriteOptionValue(placeholder))
+  def perRow(placeholder: String, valueIfNull: Option[Long] = None): TimestampOption =
+    TimestampOption(PerRowWriteOptionValue(placeholder, valueIfNull))
 }

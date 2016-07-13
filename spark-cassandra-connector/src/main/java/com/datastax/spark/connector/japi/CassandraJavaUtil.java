@@ -1710,11 +1710,11 @@ public class CassandraJavaUtil {
     }
 
     public static TTL ttl(String columnName) {
-        return new TTL(columnName, Option.<String>empty());
+        return new TTL(columnName, Option.<String>empty(), Option.<Object>empty());
     }
 
     public static WriteTime writeTime(String columnName) {
-        return new WriteTime(columnName, Option.<String>empty());
+        return new WriteTime(columnName, Option.<String>empty(), Option.<Object>empty());
     }
 
     public static ColumnRef[] toSelectableColumnRefs(String... columnNames) {

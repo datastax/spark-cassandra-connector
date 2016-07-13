@@ -1,7 +1,8 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core._
-import com.datastax.spark.connector.types.{Unset, ColumnType}
+import com.datastax.spark.connector.{ColumnRef, ValueOnNull}
+import com.datastax.spark.connector.types.{ColumnType, Unset}
 import com.datastax.spark.connector.util.CodecRegistryUtil
 import org.apache.spark.Logging
 
@@ -17,7 +18,8 @@ private[connector] class BoundStatementBuilder[T](
     val ignoreNulls: Boolean = false,
     val protocolVersion: ProtocolVersion) extends Logging {
 
-  private val columnNames = rowWriter.columnNames.toIndexedSeq
+  private val columnRefs = rowWriter.columnRefs
+  private val columnNames = rowWriter.columnRefs.map(_.columnName)
   private val columnTypes = columnNames.map(preparedStmt.getVariables.getType)
   private val converters = columnTypes.map(ColumnType.converterToCassandra(_))
   private val buffer = Array.ofDim[Any](columnNames.size)
@@ -35,43 +37,44 @@ private[connector] class BoundStatementBuilder[T](
         |${ProtocolVersion.V4} or greater required"
     """.stripMargin
 
-
-  private def maybeLeaveUnset(
-    boundStatement: BoundStatement,
-    columnName: String): Unit = protocolVersion match {
-      case pv if pv.toInt <= ProtocolVersion.V3.toInt => {
-        boundStatement.setToNull(columnName)
-        logUnsetToNullWarning = true
-      }
-      case _ =>
-  }
-
   private def bindColumnNull(
     boundStatement: BoundStatement,
-    columnName: String,
+    columnRef: ColumnRef,
     columnType: DataType,
     columnValue: AnyRef): Unit = {
 
-    if (columnValue == Unset || (ignoreNulls && columnValue == null)) {
-      boundStatement.setToNull(columnName)
-      logUnsetToNullWarning = true
-    } else {
-      val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
-      boundStatement.set(columnName, columnValue, codec)
+    columnRef match {
+      case nullRef: ValueOnNull if columnValue == null =>
+        val nullAlternate = nullRef.valueOnNull
+        val codec = CodecRegistryUtil.codecFor(columnType, nullAlternate)
+        boundStatement.set(columnRef.columnName, nullAlternate, codec)
+
+      case colRef: ColumnRef if columnValue == Unset || (ignoreNulls && columnValue == null) =>
+        boundStatement.setToNull(columnRef.columnName)
+        logUnsetToNullWarning = true
+
+      case colRef: ColumnRef =>
+        val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
+        boundStatement.set(columnRef.columnName, columnValue, codec)
     }
   }
 
   private def bindColumnUnset(
     boundStatement: BoundStatement,
-    columnName: String,
+    columnRef: ColumnRef,
     columnType: DataType,
     columnValue: AnyRef): Unit = {
 
-    if (columnValue == Unset || (ignoreNulls && columnValue == null)) {
-      //Do not bind
-    } else {
-      val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
-      boundStatement.set(columnName, columnValue, codec)
+    columnRef match {
+      case nullRef: ValueOnNull if columnValue == null =>
+        val nullAlternate = nullRef.valueOnNull
+        val codec = CodecRegistryUtil.codecFor(columnType, nullAlternate)
+        boundStatement.set(columnRef.columnName, nullAlternate, codec)
+      case colRef: ColumnRef if (columnValue == Unset || (ignoreNulls && columnValue == null)) => {}
+        //Do not bind
+      case colRef: ColumnRef =>
+          val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
+          boundStatement.set(columnRef.columnName, columnValue, codec)
     }
   }
 
@@ -80,7 +83,7 @@ private[connector] class BoundStatementBuilder[T](
   * we can leave values in the prepared statement unset. If the version is
   * less than V3 then we need to place a `null` in the bound statement.
   */
-  val bindColumn: (BoundStatement, String, DataType, AnyRef) => Unit = protocolVersion match {
+  val bindColumn: (BoundStatement, ColumnRef, DataType, AnyRef) => Unit = protocolVersion match {
     case pv if pv.toInt <= ProtocolVersion.V3.toInt => bindColumnNull
     case _ => bindColumnUnset
   }
@@ -99,12 +102,12 @@ private[connector] class BoundStatementBuilder[T](
 
     rowWriter.readColumnValues(row, buffer)
     var bytesCount = 0
-    for (i <- 0 until columnNames.size) {
+    for (i <- 0 until columnRefs.size) {
+      val columnRef = columnRefs(i)
       val converter = converters(i)
-      val columnName = columnNames(i)
       val columnType = columnTypes(i)
       val columnValue = converter.convert(buffer(i))
-      bindColumn(boundStatement, columnName, columnType, columnValue)
+      bindColumn(boundStatement, columnRef, columnType, columnValue)
       val serializedValue = boundStatement.getBytesUnsafe(i)
       if (serializedValue != null) bytesCount += serializedValue.remaining()
     }
