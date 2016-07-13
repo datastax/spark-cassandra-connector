@@ -395,6 +395,20 @@ rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.perRow(
 
 the TTL for the 1st row will be 100, TTL for the 2nd row will be 200 and TTL for the 3rd row will be 300.
 
+### Preventing nulls in TTL and Writetime
+
+When using the `perRow` function it is important to know that `null` is not allowed as a bound
+parameter for TTL or WRITETIME columns.
+
+On Cassandra 2.2 and greater, the way to avoid `null`s is to use `CassandraOption`s in the `placeholder`
+parameter. This will leave the WRITETIME and TTL clauses unbound and they will behave as if those
+clauses were not included.
+
+For Cassandra versions before 2.2 the connector can automatically change null
+TTLs to the table's default ttl and change null WRITETIMEs to the current time on the executor at
+the time of binding. These behaviors can be overridden by passing a second parameter to perRow,
+specifying the desired default.
+
 ## Saving rows only if they does not already exist
 
 Spark Cassandra Connector always writes or updates data without checking if they already exist.
