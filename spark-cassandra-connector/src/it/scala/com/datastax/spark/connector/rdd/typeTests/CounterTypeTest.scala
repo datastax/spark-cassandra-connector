@@ -16,7 +16,7 @@ class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   override def beforeAll() {
     //Create Cql3 Keypsace and Data

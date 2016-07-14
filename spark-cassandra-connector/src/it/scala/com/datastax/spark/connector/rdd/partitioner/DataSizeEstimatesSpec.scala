@@ -13,7 +13,7 @@ import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

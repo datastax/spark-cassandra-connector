@@ -12,7 +12,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   val createKeyspaceCql = keyspaceCql(ks)
 

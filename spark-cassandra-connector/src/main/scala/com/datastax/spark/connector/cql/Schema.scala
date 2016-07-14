@@ -208,11 +208,19 @@ object TableDef {
 
   /** Constructs a table definition based on the mapping provided by
     * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
-  def fromType[T : ColumnMapper](keyspaceName: String, tableName: String): TableDef =
-    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName)
+  def fromType[T : ColumnMapper](
+    keyspaceName: String,
+    tableName: String,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef =
+    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
-  def fromDataFrame(dataFrame: DataFrame, keyspaceName: String, tableName: String): TableDef =
-    new DataFrameColumnMapper(dataFrame.schema).newTable(keyspaceName, tableName)
+  def fromDataFrame(
+    dataFrame: DataFrame,
+    keyspaceName: String,
+    tableName: String,
+    protocolVersion: ProtocolVersion): TableDef =
+
+    new DataFrameColumnMapper(dataFrame.schema).newTable(keyspaceName, tableName, protocolVersion)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */

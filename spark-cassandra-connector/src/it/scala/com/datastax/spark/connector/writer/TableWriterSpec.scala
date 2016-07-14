@@ -6,6 +6,8 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 import com.datastax.driver.core.ProtocolVersion
+import com.datastax.driver.core.ProtocolVersion._
+
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
@@ -35,7 +37,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
@@ -124,6 +126,15 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val rows = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     sc.parallelize(rows).saveAsCassandraTableEx(table, SomeColumns("key", "group", "value"))
     verifyKeyValueTable("new_kv_table")
+  }
+
+  it should "write an RDD of PV4 Tuples to PV3 without breaking" in skipIfProtocolVersionGTE(V4){
+    val rows = Seq((Byte.MinValue, Short.MinValue, java.sql.Date.valueOf("2016-08-03")))
+    sc.parallelize(rows).saveAsCassandraTable(ks, "pv3")
+
+    sc.cassandraTable[(Int, Int, String)](ks, "pv3").collect should contain
+      theSameElementsAs(Seq(Byte.MinValue.toInt, Short.MinValue.toInt, "2016-08-03 00:00:00.0"))
+
   }
 
   it should "write RDD of tuples applying proper data type conversions" in {
@@ -252,7 +263,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
   it should "write null values" in {
     val key = 1.asInstanceOf[AnyRef]
-    val row = new CassandraRow(IndexedSeq("key", "text_value", "int_value"), IndexedSeq(key, null, null))
+    val metaData = new CassandraRowMetadata(IndexedSeq("key", "text_value", "int_value"))
+    val row = new CassandraRow(metaData, IndexedSeq(key, null, null))
 
     sc.parallelize(Seq(row)).saveToCassandra(ks, "nulls")
     conn.withSessionDo { session =>

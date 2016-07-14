@@ -5,10 +5,8 @@ import java.text.SimpleDateFormat
 import java.util.{TimeZone, Date => UtilDate}
 
 import scala.reflect.ClassTag
-
 import org.joda.time.{DateTime, DateTimeZone, LocalDate => JodaLocalDate}
-
-import com.datastax.driver.core.{Row, LocalDate => DriverLocalDate}
+import com.datastax.driver.core.{ProtocolVersion, Row, LocalDate => DriverLocalDate}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -27,6 +25,8 @@ abstract class AbstractDateTypeTest[TestType: ClassTag](
     rowWriterCollection: RowWriterFactory[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])],
     rowWriterNull: RowWriterFactory[(TestType, TestType, Null, Null, Null, Null)])
   extends AbstractTypeTest[TestType, DriverLocalDate] {
+
+  override def minPV: ProtocolVersion = ProtocolVersion.V4
 
   TimeZone.setDefault(testTimeZone)
   DateTimeZone.setDefault(DateTimeZone.forTimeZone(testTimeZone))
