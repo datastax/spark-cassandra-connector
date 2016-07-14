@@ -7,7 +7,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.rdd.{ReadConf, CassandraJoinRDD, SpannedRDD, ValidRDDType}
+import com.datastax.spark.connector.rdd.{ReadConf, CassandraJoinRDD, CassandraLeftJoinRDD, SpannedRDD, ValidRDDType}
 import com.datastax.spark.connector.writer.{ReplicaLocator, _}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -161,6 +161,52 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     rwf: RowWriterFactory[T]): CassandraJoinRDD[T, R] = {
 
     new CassandraJoinRDD[T, R](
+      rdd,
+      keyspaceName,
+      tableName,
+      connector,
+      columnNames = selectedColumns,
+      joinColumns = joinColumns,
+      readConf = ReadConf.fromSparkConf(rdd.sparkContext.getConf)
+    )
+  }
+
+
+  /**
+    * Uses the data from [[org.apache.spark.rdd.RDD RDD]] to left join with a Cassandra table without
+    * retrieving the entire table.
+    * Any RDD which can be used to saveToCassandra can be used to joinWithCassandra as well as any
+    * RDD which only specifies the partition Key of a Cassandra Table. This method executes single
+    * partition requests against the Cassandra Table and accepts the functional modifiers that a
+    * normal [[com.datastax.spark.connector.rdd.CassandraTableScanRDD]] takes.
+    *
+    * By default this method only uses the Partition Key for joining but any combination of columns
+    * which are acceptable to C* can be used in the join. Specify columns using joinColumns as a parameter
+    * or the on() method.
+    *
+    * Example With Prior Repartitioning: {{{
+    * val source = sc.parallelize(keys).map(x => new KVRow(x))
+    * val repart = source.repartitionByCassandraReplica(keyspace, tableName, 10)
+    * val someCass = repart.leftJoinWithCassandraTable(keyspace, tableName)
+    * }}}
+    *
+    * Example Joining on Clustering Columns: {{{
+    * val source = sc.parallelize(keys).map(x => (x, x * 100))
+    * val someCass = source.leftJoinWithCassandraTable(keyspace, wideTable).on(SomeColumns("key", "group"))
+    * }}}
+    **/
+  def leftJoinWithCassandraTable[R](
+    keyspaceName: String, tableName: String,
+    selectedColumns: ColumnSelector = AllColumns,
+    joinColumns: ColumnSelector = PartitionKeyColumns)(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    newType: ClassTag[R], rrf: RowReaderFactory[R],
+    ev: ValidRDDType[R],
+    currentType: ClassTag[T],
+    rwf: RowWriterFactory[T]): CassandraLeftJoinRDD[T, R] = {
+
+    new CassandraLeftJoinRDD[T, R](
       rdd,
       keyspaceName,
       tableName,
