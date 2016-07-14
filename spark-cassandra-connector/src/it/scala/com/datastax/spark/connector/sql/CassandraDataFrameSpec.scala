@@ -99,7 +99,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         Map(
           "table" -> "kv_copy",
           "keyspace" -> ks,
-          "spark_cassandra_output_ttl" -> "300"
+          "spark.cassandra.output.ttl" -> "300"
         )
       )
       .save()

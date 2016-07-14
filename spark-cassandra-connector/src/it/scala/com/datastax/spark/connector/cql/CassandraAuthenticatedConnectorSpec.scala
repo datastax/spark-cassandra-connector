@@ -53,8 +53,8 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
     createKeyspace(conn.openSession())
     personDF1.createCassandraTable(ks, "authtest", Some(Array("address")), Some(Array("age")))(conn)
 
-    val options = Map("spark_cassandra_auth_username" -> "cassandra",
-      "spark_cassandra_auth_password" -> "cassandra",
+    val options = Map("spark.cassandra.auth.username" -> "cassandra",
+      "spark.cassandra.auth.password" -> "cassandra",
       "keyspace" -> ks, "table" -> "authtest")
 
     personDF1.write.format("org.apache.spark.sql.cassandra").options(options).save()
