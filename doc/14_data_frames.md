@@ -129,10 +129,6 @@ Accessing data Frames using Spark SQL involves creating temporary tables and spe
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
-`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes
-`spark_cassandra_input_split_size_in_mb`.
-
 Example Creating a Source Using Spark SQL:
 
 Create Relation with the Cassandra table test.words
@@ -214,7 +210,7 @@ the option which it represents to a `DataFrameReader` or `DataFrameWriter`.
 Suppose we want to set `spark.cassandra.read.timeout_ms` to 7 seconds on some `DataFrameReader`, we can do this both 
 ways:
 ```scala
-option("spark_cassandra_read_timeout_ms", "7000")
+option("spark.cassandra.read.timeout_ms", "7000")
 ```
 Since this setting is represented by `CassandraConnectorConf.ReadTimeoutParam` we can simply do:
 ```scala

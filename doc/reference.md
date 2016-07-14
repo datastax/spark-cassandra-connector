@@ -118,11 +118,6 @@ retrieve size from C*. Can be set manually now</td>
   <td>default</td>
   <td>Sets the default Cluster to inherit configuration from</td>
 </tr>
-<tr>
-  <td><code>sql.keyspace</code></td>
-  <td>None</td>
-  <td>Sets the default keyspace</td>
-</tr>
 </table>
 
 
