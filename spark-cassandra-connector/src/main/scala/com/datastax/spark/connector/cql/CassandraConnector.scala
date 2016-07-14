@@ -5,10 +5,8 @@ import java.net.InetAddress
 
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
-
 import org.apache.spark.{Logging, SparkConf}
-
-import com.datastax.driver.core.{Cluster, Host, Session}
+import com.datastax.driver.core.{Cluster, Host, ProtocolVersion, Session}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.SerialShutdownHooks
 
