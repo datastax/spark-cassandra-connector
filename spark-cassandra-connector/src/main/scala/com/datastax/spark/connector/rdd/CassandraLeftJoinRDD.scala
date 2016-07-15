@@ -56,12 +56,12 @@ class CassandraLeftJoinRDD[L, R] private[connector](
   }
 
   override protected def copy(
-                               columnNames: ColumnSelector = columnNames,
-                               where: CqlWhereClause = where,
-                               limit: Option[Long] = limit,
-                               clusteringOrder: Option[ClusteringOrder] = None,
-                               readConf: ReadConf = readConf,
-                               connector: CassandraConnector = connector): Self = {
+    columnNames: ColumnSelector = columnNames,
+    where: CqlWhereClause = where,
+    limit: Option[Long] = limit,
+    clusteringOrder: Option[ClusteringOrder] = None,
+    readConf: ReadConf = readConf,
+    connector: CassandraConnector = connector): Self = {
 
     new CassandraLeftJoinRDD[L, R](
       left = left,
@@ -108,7 +108,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
         where = where,
         limit = limit,
         clusteringOrder = clusteringOrder,
-        readConf= readConf)
+        readConf = readConf)
 
     counts.map(_._2.getOrElse(0L)).reduce( _ + _ )
   }
@@ -291,10 +291,10 @@ class CassandraLeftJoinRDD[L, R] private[connector](
       readConf = readConf)
 
   /**
-    * Turns this CassandraJoinRDD into a factory for converting other RDD's after being serialized
+    * Turns this CassandraLeftJoinRDD into a factory for converting other RDD's after being serialized
     * This method is for streaming operations as it allows us to Serialize a template JoinRDD
     * and the use that serializable template in the DStream closure. This gives us a fully serializable
-    * joinWithCassandra operation
+    * leftJoinWithCassandra operation
     */
   private[connector] def applyToRDD( left:RDD[L]): CassandraLeftJoinRDD[L,R] =  {
     new CassandraLeftJoinRDD[L,R](
