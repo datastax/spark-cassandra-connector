@@ -1,4 +1,5 @@
 2.0.0 M1
+ * Added support for left outer joins with C* table (SPARKC-181)
  * Removed CassandraSqlContext and underscore based options (SPARKC-399)
  * Upgrade to Spark 2.0.0-preview (SPARKC-396)
     - Removed Twitter demo because there is no spark-streaming-twitter package available anymore
