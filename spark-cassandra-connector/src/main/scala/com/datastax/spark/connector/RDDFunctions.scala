@@ -152,7 +152,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   /**
     * Uses the data from [[org.apache.spark.rdd.RDD RDD]] to left join with a Cassandra table without
     * retrieving the entire table.
-    * Any RDD which can be used to saveToCassandra can be used to joinWithCassandra as well as any
+    * Any RDD which can be used to saveToCassandra can be used to leftJoinWithCassandra as well as any
     * RDD which only specifies the partition Key of a Cassandra Table. This method executes single
     * partition requests against the Cassandra Table and accepts the functional modifiers that a
     * normal [[com.datastax.spark.connector.rdd.CassandraTableScanRDD]] takes.
