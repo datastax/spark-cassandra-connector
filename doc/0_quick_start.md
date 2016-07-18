@@ -11,11 +11,15 @@ and [Spark documentation](https://spark.apache.org/docs/0.9.1/).
 
 Install and launch a Cassandra cluster and a Spark cluster.   
 
-Configure a new Scala project with the following dependencies:
+Configure a new Scala project with the Apache Spark and dependency.
 
- - Apache Spark and its dependencies
- - Apache Cassandra thrift and clientutil libraries matching the version of Cassandra  
- - DataStax Cassandra driver for your Cassandra version 
+The dependencies are easily retrieved via the spark-packages.org website. For example, if you're using `sbt`, your build.sbt should include something like this:
+
+    resolvers += "Spark Packages Repo" at "https://dl.bintray.com/spark-packages/maven"
+    libraryDependencies += "datastax" % "spark-cassandra-connector" % "1.6.0-s_2.11"
+
+For the list of available versions, see:
+- https://spark-packages.org/package/datastax/spark-cassandra-connector
  
 This driver does not depend on the Cassandra server code.
 
@@ -51,6 +55,12 @@ INSERT INTO test.kv(key, value) VALUES ('key2', 2);
 Now you're ready to write your first Spark program using Cassandra.
 
 ### Setting up `SparkContext`   
+As usual, start by importing Spark:
+
+```scala
+import org.apache.spark._
+```
+
 Before creating the `SparkContext`, set the `spark.cassandra.connection.host` property to the address of one 
 of the Cassandra nodes:
 
