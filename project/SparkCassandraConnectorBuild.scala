@@ -17,14 +17,13 @@
 
 import java.io.File
 
-import sbt._
+import pl.project13.scala.sbt.JmhPlugin
 import sbt.Keys._
-import sbtsparkpackage.SparkPackagePlugin.autoImport._
+import sbt._
 
 object CassandraSparkBuild extends Build {
   import Settings._
   import sbtassembly.AssemblyPlugin
-  import Versions.scalaBinary
   import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
@@ -69,7 +68,7 @@ object CassandraSparkBuild extends Build {
   lazy val demos = RootProject(
     name = "demos",
     dir = demosPath,
-    contains = Seq(simpleDemos/*, kafkaStreaming*/, twitterStreaming)
+    contains = Seq(simpleDemos, kafkaStreaming)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val simpleDemos = Project(
@@ -78,27 +77,26 @@ object CassandraSparkBuild extends Build {
     settings = demoSettings,
     dependencies = Seq(connector, embedded)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
-/*
-  lazy val kafkaStreaming = CrossScalaVersionsProject(
-    name = "kafka-streaming",
-    conf = demoSettings ++ kafkaDemoSettings ++ Seq(
-      libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, minor)) if minor < 11 => Dependencies.kafka
-        case _ => Seq.empty
-   }))).copy(base = demosPath / "kafka-streaming", dependencies = Seq(connector, embedded))
-*/
-  lazy val twitterStreaming = Project(
-    id = "twitter-streaming",
-    base = demosPath / "twitter-streaming",
-    settings = demoSettings ++ Seq(libraryDependencies ++= Dependencies.twitter),
-    dependencies = Seq(connector, embedded)
-  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
+
+  lazy val kafkaStreaming = Project(
+    id = "kafka-streaming",
+    base = demosPath / "kafka-streaming",
+    settings = demoSettings ++ Seq(libraryDependencies ++= Seq(Artifacts.Demos.kafka, Artifacts.Demos.kafkaStreaming)),
+    dependencies = Seq(connector, embedded))
+      .disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val refDoc = Project(
     id = s"$namespace-doc",
     base = file(s"$namespace-doc"),
     settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
-  ) dependsOn(connector)
+  ) dependsOn connector
+
+  lazy val perf = Project(
+    id = s"$namespace-perf",
+    base = file(s"$namespace-perf"),
+    settings = projectSettings,
+    dependencies = Seq(connector, embedded)
+  ) enablePlugins(JmhPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -131,17 +129,35 @@ object Artifacts {
   import Versions._
 
   implicit class Exclude(module: ModuleID) {
-    def guavaExclude: ModuleID =
+    def guavaExclude(): ModuleID =
       module exclude("com.google.guava", "guava")
 
-    def sparkExclusions: ModuleID = module.guavaExclude
+    def nettyExclude(): ModuleID =
+      module exclude("io.netty", "netty-all")
+
+    def glassfishExclude(): ModuleID = {
+      module
+          .exclude("org.glassfish.jersey.containers", "jersey-container-servlet-core")
+          .exclude("org.glassfish.jersey.containers", "jersey-container-servlet")
+          .exclude("org.glassfish.jersey.core", "jersey-client")
+          .exclude("org.glassfish.jersey.core", "jersey-common")
+          .exclude("org.glassfish.jersey.core", "jersey-server")
+    }
+
+    def sparkCoreExclusions(): ModuleID = module.guavaExclude().nettyExclude().glassfishExclude()
+        .exclude("commons-collections", "commons-collections")
+        .exclude("commons-beanutils", "commons-beanutils-core")
+        .exclude("commons-logging", "commons-logging")
+        .exclude("org.apache.curator", "curator-recipes")
+
+    def sparkExclusions(): ModuleID = module.sparkCoreExclusions()
       .exclude("org.apache.spark", s"spark-core_$scalaBinary")
 
-    def logbackExclude: ModuleID = module
+    def logbackExclude(): ModuleID = module
       .exclude("ch.qos.logback", "logback-classic")
       .exclude("ch.qos.logback", "logback-core")
 
-    def replExclusions: ModuleID = module.guavaExclude
+    def replExclusions: ModuleID = module.guavaExclude()
       .exclude("org.apache.spark", s"spark-bagel_$scalaBinary")
       .exclude("org.apache.spark", s"spark-mllib_$scalaBinary")
       .exclude("org.scala-lang", "scala-compiler")
@@ -156,9 +172,10 @@ object Artifacts {
   val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
   val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
   val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
-  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Cassandra       guavaExclude // ApacheV2
-  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
-  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                 // ApacheV2
+  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Settings.cassandraTestVersion    guavaExclude() // ApacheV2
+  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver                  guavaExclude() // ApacheV2
+  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                                    // ApacheV2
+  val commonsBeanUtils    = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
   val jodaC               = "org.joda"                % "joda-convert"           % JodaC
@@ -169,15 +186,15 @@ object Artifacts {
   val airlift             = "io.airlift"              % "airline"                % Airlift
 
   /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
-  val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark guavaExclude           // ApacheV2
-  val sparkRepl           = "org.apache.spark"        %% "spark-repl"            % Spark guavaExclude           // ApacheV2
-  val sparkUnsafe         = "org.apache.spark"        %% "spark-unsafe"          % Spark guavaExclude           // ApacheV2
-  val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark guavaExclude           // ApacheV2
-  val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark sparkExclusions        // ApacheV2
-  val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions        // ApacheV2
-  val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark sparkExclusions        // ApacheV2
+  val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark sparkCoreExclusions() // ApacheV2
+  val sparkRepl           = "org.apache.spark"        %% "spark-repl"            % Spark sparkExclusions()     // ApacheV2
+  val sparkUnsafe         = "org.apache.spark"        %% "spark-unsafe"          % Spark sparkExclusions()     // ApacheV2
+  val sparkStreaming      = "org.apache.spark"        %% "spark-streaming"       % Spark sparkExclusions()     // ApacheV2
+  val sparkSql            = "org.apache.spark"        %% "spark-sql"             % Spark sparkExclusions()        // ApacheV2
+  val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions()        // ApacheV2
+  val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark sparkExclusions()        // ApacheV2
 
-  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion      logbackExclude    // ApacheV2
+  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion      logbackExclude()  exclude(org = "org.slf4j", name = "log4j-over-slf4j")  // ApacheV2
 
   object Metrics {
     val metricsCore       = "com.codahale.metrics"    % "metrics-core"           % CodaHaleMetrics % "provided"
@@ -198,14 +215,14 @@ object Artifacts {
   }
 
   object Demos {
-    val kafka             = "org.apache.kafka"        % "kafka_2.10"                  % Kafka                 kafkaExclusions   // ApacheV2
-    val kafkaStreaming    = "org.apache.spark"        % "spark-streaming-kafka_2.10"  % Spark   % "provided"  sparkExclusions   // ApacheV2
-    val twitterStreaming  = "org.apache.spark"        %% "spark-streaming-twitter"    % Spark   % "provided"  sparkExclusions   // ApacheV2
+    val kafka             = "org.apache.kafka"        %% "kafka"                      % Kafka                 kafkaExclusions   // ApacheV2
+    val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka-0-8"  % Spark   % "provided"  sparkExclusions   // ApacheV2
   }
 
   object Test {
     val akkaTestKit       = "com.typesafe.akka"       %% "akka-testkit"                 % Akka      % "test,it"       // ApacheV2
     val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
+    val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
     val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
     val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
@@ -222,8 +239,8 @@ object Artifacts {
 
 object Dependencies {
 
-  import BuildUtil._
   import Artifacts._
+  import BuildUtil._
 
   val logging = Seq(slf4jApi)
 
@@ -237,6 +254,7 @@ object Dependencies {
     Test.commonsIO,
     Test.junit,
     Test.junitInterface,
+    Test.scalaCheck,
     Test.scalaMock,
     Test.scalaTest,
     Test.scalactic,
@@ -253,15 +271,15 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
-  val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    commonsLang3, config, guava, jodaC, jodaT, lzf, jsr166e)
+  val connector = (testKit ++ metrics ++ jetty ++ logging ++ cassandra ++ spark.map(_ % "provided") ++ Seq(commonsLang3, commonsBeanUtils, guava, jodaC, jodaT, lzf, jsr166e))
+      .map (_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
 
-  val embedded = logging ++ spark ++ cassandra ++ Seq(
-    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
+  val embedded = (logging ++ spark ++ cassandra ++ akka ++ Seq(
+    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava, config)) map (_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
+
+  val perf = logging ++ spark ++ cassandra
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
-
-  val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),

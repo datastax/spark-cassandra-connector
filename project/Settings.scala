@@ -24,7 +24,6 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
-import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
 import sbt.Tests._
 import sbt._
@@ -67,9 +66,8 @@ object Settings extends Build {
   val cassandraTestVersion = sys.props.get("test.cassandra.version").getOrElse(Versions.Cassandra)
 
   lazy val TEST_JAVA_OPTS = Seq(
-    "-XX:MaxPermSize=256M",
-    "-Xms256m",
     "-Xmx512m",
+    s"-Dtest.cassandra.version=$cassandraTestVersion",
     "-Dsun.io.serialization.extendedDebugInfo=true",
     s"-DbaseDir=${mainDir.getAbsolutePath}") ++ uRandomParams
 
@@ -136,7 +134,7 @@ object Settings extends Build {
 
   val installSparkTask = taskKey[Unit]("Optionally install Spark from Git to local Maven repository")
 
-  lazy val projectSettings = graphSettings ++ Seq(
+  lazy val projectSettings = Seq(
 
     concurrentRestrictions in Global += Tags.limit(Tags.Test, parallelTasks),
 
@@ -291,7 +289,7 @@ object Settings extends Build {
     }.toSeq
   }
 
-  lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
+  lazy val testSettings = testConfigs ++ testArtifacts ++ Seq(
     parallelExecution in Test := true,
     parallelExecution in IntegrationTest := true,
     javaOptions in IntegrationTest ++= TEST_JAVA_OPTS,
@@ -323,12 +321,6 @@ object Settings extends Build {
       env
     }
   )
-
-  lazy val kafkaDemoSettings = Seq(
-    excludeFilter in unmanagedSources := (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor < 11 => HiddenFileFilter || "*Scala211App*"
-      case _ => HiddenFileFilter || "*WordCountApp*"
-    }))
 
   lazy val sbtAssemblySettings = assemblySettings ++ Seq(
     parallelExecution in assembly := false,

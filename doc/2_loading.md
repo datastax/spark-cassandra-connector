@@ -283,7 +283,7 @@ Cassandra Tables which have partitioned with different partition keys.
 ####Join with a generic RDD after repartitioning
 ```scala
 val oddIds = sc.parallelize(0 to 5).filter(_%2==1).map(CustomerID(_))
-val localQueryRDD = oddIds.repartitionByCassandraReplica("test","customer_info").joinWithCassandra("test","customer_info")
+val localQueryRDD = oddIds.repartitionByCassandraReplica("test","customer_info").joinWithCassandraTable("test","customer_info")
 repartitionRDD.collect.foreach(println)
 //(CustomerID(1),CassandraRow{cust_id: 1, address: East Coast, name: Helena})
 //(CustomerID(3),CassandraRow{cust_id: 3, address: Poland, name: Jacek})
@@ -319,7 +319,7 @@ See [Reference Section](reference.md#read-tuning-parameters)
 
 In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
 allows a user to define a set of parameters in a separate object and import them into a block of 
-code rather than repeatedly passing the same [`ReadConf` object] (https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
+code rather than repeatedly passing the same [`ReadConf` object](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
 
 ```scala
 object ReadConfigurationOne {

@@ -2,7 +2,6 @@ package com.datastax.spark.connector.embedded
 
 import java.io.File
 
-import akka.actor.ActorSystem
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}

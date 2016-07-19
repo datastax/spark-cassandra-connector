@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import org.apache.spark.metrics.InputMetricsUpdater
 
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{ResultSet, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.reader._
@@ -12,8 +12,9 @@ import com.datastax.spark.connector.writer._
 import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
-
 import scala.reflect.ClassTag
+
+import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
 
 /**
  * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
@@ -205,6 +206,12 @@ class CassandraJoinRDD[L, R] private[connector](
     query
   }
 
+  private[rdd] def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
+    val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+    val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
+    new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
+  }
+
   /**
    * When computing a CassandraPartitionKeyRDD the data is selected via single CQL statements
    * from the specified C* Keyspace and Table. This will be preformed on whatever data is
@@ -212,9 +219,7 @@ class CassandraJoinRDD[L, R] private[connector](
    */
   override def compute(split: Partition, context: TaskContext): Iterator[(L, R)] = {
     val session = connector.openSession()
-    val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
-    val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
-    val bsb = new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
+    val bsb = boundStatementBuilder(session)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, limit)
@@ -230,18 +235,37 @@ class CassandraJoinRDD[L, R] private[connector](
     countingIterator
   }
 
-  private def fetchIterator(
+  private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
-    lastIt: Iterator[L]): Iterator[(L, R)] = {
+    leftIterator: Iterator[L]): Iterator[(L, R)] = {
+    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
+    val rateLimiter = new RateLimiter(
+      readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec)
 
-    val columnNamesArray = selectedColumnRefs.map(_.selectedAs).toArray
-    for (leftSide <- lastIt;
-         rightSide <- {
-           val rs = session.execute(bsb.bind(leftSide))
-           val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
-           iterator.map(rowReader.read(_, columnNamesArray))
-         }) yield (leftSide, rightSide)
+    def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
+      val resultFuture = SettableFuture.create[Iterator[(L, R)]]
+      val leftSide = Iterator.continually(left)
+
+      val queryFuture = session.executeAsync(bsb.bind(left))
+      Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
+        def onSuccess(rs: ResultSet) {
+          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
+          val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames,rs);
+          val rightSide = resultSet.map(rowReader.read(_, columnMetaData))
+          resultFuture.set(leftSide.zip(rightSide))
+        }
+        def onFailure(throwable: Throwable) {
+          resultFuture.setException(throwable)
+        }
+      })
+      resultFuture
+    }
+    val queryFutures = leftIterator.map(left => {
+      rateLimiter.maybeSleep(1)
+      pairWithRight(left)
+    }).toList
+    queryFutures.iterator.flatMap(_.get)
   }
 
   override protected def getPartitions: Array[Partition] = {

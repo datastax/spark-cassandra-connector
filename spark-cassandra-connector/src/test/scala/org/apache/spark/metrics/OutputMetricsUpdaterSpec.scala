@@ -31,47 +31,20 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     }
   }
 
-  "OutputMetricsUpdater" should "initialize task metrics properly when they are empty" in {
-    val tc = newTaskContext()()
-    tc.taskMetrics().outputMetrics = None
-    val conf = new SparkConf(loadDefaults = false)
-      .set("spark.cassandra.output.metrics", "true")
-    OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
-
-    tc.taskMetrics().outputMetrics.isDefined shouldBe true
-    tc.taskMetrics().outputMetrics.get.writeMethod shouldBe DataWriteMethod.Hadoop
-    tc.taskMetrics().outputMetrics.get.bytesWritten shouldBe 0L
-    tc.taskMetrics().outputMetrics.get.recordsWritten shouldBe 0L
-  }
-
-  it should "initialize task metrics properly when they are defined" in {
-    val tc = newTaskContext()()
-    tc.taskMetrics().outputMetrics = Some(new OutputMetrics(DataWriteMethod.Hadoop))
-    val conf = new SparkConf(loadDefaults = false)
-      .set("spark.cassandra.output.metrics", "true")
-    OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
-
-    tc.taskMetrics().outputMetrics.isDefined shouldBe true
-    tc.taskMetrics().outputMetrics.get.writeMethod shouldBe DataWriteMethod.Hadoop
-    tc.taskMetrics().outputMetrics.get.bytesWritten shouldBe 0L
-    tc.taskMetrics().outputMetrics.get.recordsWritten shouldBe 0L
-  }
-
   it should "create updater which uses task metrics" in {
     val tc = newTaskContext()()
-    tc.taskMetrics().outputMetrics = None
     val conf = new SparkConf(loadDefaults = false)
       .set("spark.cassandra.output.metrics", "true")
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
     val rc = newRichStatement()
 
     updater.batchFinished(success = true, rc, ts, ts)
-    tc.taskMetrics().outputMetrics.get.bytesWritten shouldBe 100L // change registered when success
-    tc.taskMetrics().outputMetrics.get.recordsWritten shouldBe 10L
+    tc.taskMetrics().outputMetrics.bytesWritten shouldBe 100L // change registered when success
+    tc.taskMetrics().outputMetrics.recordsWritten shouldBe 10L
 
     updater.batchFinished(success = false, rc, ts, ts)
-    tc.taskMetrics().outputMetrics.get.bytesWritten shouldBe 100L // change not regsitered when failure
-    tc.taskMetrics().outputMetrics.get.recordsWritten shouldBe 10L
+    tc.taskMetrics().outputMetrics.bytesWritten shouldBe 100L // change not regsitered when failure
+    tc.taskMetrics().outputMetrics.recordsWritten shouldBe 10L
   }
 
   it should "create updater which does not use task metrics" in {
@@ -124,7 +97,6 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
 
   it should "work correctly with multiple threads" in {
     val tc = newTaskContext()()
-    tc.taskMetrics().outputMetrics = None
     val conf = new SparkConf(loadDefaults = false)
       .set("spark.cassandra.output.metrics", "true")
     val updater = OutputMetricsUpdater(tc, WriteConf.fromSparkConf(conf))
@@ -144,8 +116,8 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     threads.foreach(_.start())
     threads.foreach(_.join())
 
-    tc.taskMetrics().outputMetrics.get.bytesWritten shouldBe 320000000L
-    tc.taskMetrics().outputMetrics.get.recordsWritten shouldBe 32000000L
+    tc.taskMetrics().outputMetrics.bytesWritten shouldBe 320000000L
+    tc.taskMetrics().outputMetrics.recordsWritten shouldBe 32000000L
   }
 
 }

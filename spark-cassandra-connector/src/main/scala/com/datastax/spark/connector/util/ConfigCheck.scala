@@ -1,13 +1,14 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.cql.{CassandraConnectionFactory, AuthConfFactory, CassandraConnectorConf}
-import com.datastax.spark.connector.rdd.ReadConf
-import com.datastax.spark.connector.types.ColumnTypeConf
-import com.datastax.spark.connector.writer.WriteConf
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.cassandra.{CassandraSourceRelation, CassandraSQLContext}
+import org.apache.spark.sql.cassandra.{CassandraSQLContextParams, CassandraSourceRelation}
+
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.types.ColumnTypeConf
+import com.datastax.spark.connector.writer.WriteConf
 
 /**
  * Helper class to throw exceptions if there are environment variables in the spark.cassandra
@@ -26,7 +27,7 @@ object ConfigCheck {
     CassandraConnectorConf.Properties ++
     AuthConfFactory.Properties ++
     CassandraConnectionFactory.Properties ++
-    CassandraSQLContext.Properties ++
+    CassandraSQLContextParams.Properties ++
     CassandraSourceRelation.Properties ++
     ColumnTypeConf.Properties
 
@@ -36,6 +37,7 @@ object ConfigCheck {
   /**
    * Checks the SparkConf Object for any unknown spark.cassandra.* properties and throws an exception
    * with suggestions if an unknown property is found.
+   *
    * @param conf SparkConf object to check
    */
   def checkConfig(conf: SparkConf): Unit = {
@@ -84,6 +86,7 @@ object ConfigCheck {
 
   /**
    * Exception to be thrown when unknown properties are found in the SparkConf
+ *
    * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
    * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
    */

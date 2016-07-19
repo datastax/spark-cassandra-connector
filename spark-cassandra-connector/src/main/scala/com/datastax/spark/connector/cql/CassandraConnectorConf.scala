@@ -7,10 +7,11 @@ import scala.language.postfixOps
 import scala.util.Try
 import scala.util.control.NonFatal
 
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.Logging
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -28,6 +29,7 @@ case class CassandraConnectorConf(
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default
 )
 
@@ -51,10 +53,12 @@ object CassandraConnectorConf extends Logging {
     keyStoreType: String = "JKS"
   )
 
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   trait RetryDelayConf {
     def forRetry(retryNumber: Int): Duration
   }
 
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   object RetryDelayConf extends Serializable {
 
     case class ConstantDelay(delay: Duration) extends RetryDelayConf {
@@ -106,7 +110,6 @@ object CassandraConnectorConf extends Logging {
           s"Invalid format of exponentially increasing delay: $s; it should be <integer number>*<real number>"))
     }
   }
-
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
@@ -167,6 +170,7 @@ object CassandraConnectorConf extends Logging {
     default = 10,
     description = """Number of times to retry a timed-out query""")
 
+  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   val QueryRetryDelayParam = ConfigParameter[RetryDelayConf](
     name = "spark.cassandra.query.retry.delay",
     section = ReferenceSection,
@@ -297,8 +301,6 @@ object CassandraConnectorConf extends Logging {
     val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
     val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
     val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
-    val queryRetryDelay = RetryDelayConf.fromString(conf.get(QueryRetryDelayParam.name, ""))
-      .getOrElse(QueryRetryDelayParam.default)
     val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
     val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
 
@@ -345,8 +347,7 @@ object CassandraConnectorConf extends Logging {
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf,
-      queryRetryDelay = queryRetryDelay
+      cassandraSSLConf = cassandraSSLConf
     )
   }
 }

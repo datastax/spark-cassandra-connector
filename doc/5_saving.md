@@ -395,6 +395,20 @@ rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.perRow(
 
 the TTL for the 1st row will be 100, TTL for the 2nd row will be 200 and TTL for the 3rd row will be 300.
 
+## Saving rows only if they does not already exist
+
+Spark Cassandra Connector always writes or updates data without checking if they already exist.
+It is possible to change this behaviour in exchange for performance penalty by the API.
+
+IF NOT EXISTS can be added as a boolean property of `WriteConf` object, which can be optionally passed to
+`saveToCassandra` method:
+
+```scala
+import com.datastax.spark.connector.writer._
+...
+rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ifNotExists = true))
+```
+
 ## Saving RDDs as new tables
 Use `saveAsCassandraTable` method to automatically create a new table with given name
 and save the `RDD` into it. The keyspace you're saving to must exist.

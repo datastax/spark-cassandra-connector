@@ -6,11 +6,12 @@ import java.net.InetAddress
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
 
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.{Cluster, Host, Session}
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
-
+import com.datastax.spark.connector.util.SerialShutdownHooks
+import com.datastax.spark.connector.util.Logging
 
 /** Provides and manages connections to Cassandra.
   *
@@ -179,11 +180,9 @@ object CassandraConnector extends Logging {
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
 
-  Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-    def run() {
-      sessionCache.shutdown()
-    }
-  }))
+  SerialShutdownHooks.add("Clearing session cache for C* connector")(() => {
+    sessionCache.shutdown()
+  })
 
   /** Returns a CassandraConnector created from properties found in the [[org.apache.spark.SparkConf SparkConf]] object */
   def apply(conf: SparkConf): CassandraConnector = {

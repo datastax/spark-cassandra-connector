@@ -9,8 +9,9 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest._
 
 import com.datastax.driver.core.Session
-import com.datastax.spark.connector.embedded.SparkTemplate
+import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
 import com.datastax.spark.connector.testkit.{AbstractSpec, SharedEmbeddedCassandra}
+import com.datastax.spark.connector.util.SerialShutdownHooks
 
 
 trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase
@@ -57,4 +58,11 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
 object SparkCassandraITSpecBase {
   val executor = Executors.newFixedThreadPool(100)
   val ec = ExecutionContext.fromExecutor(executor)
+
+  EmbeddedCassandra.removeShutdownHook
+  // now embedded C* won't shutdown itself, let's do it in serial fashion
+  SerialShutdownHooks.add("Shutting down all Cassandra runners")(() => {
+    EmbeddedCassandra.shutdown
+  })
+
 }

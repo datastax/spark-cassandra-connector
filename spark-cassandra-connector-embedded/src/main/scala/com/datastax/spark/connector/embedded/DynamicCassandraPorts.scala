@@ -6,8 +6,6 @@ import java.nio.file.{FileAlreadyExistsException, Files, Paths}
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
-import org.apache.spark.Logging
-
 case class DynamicCassandraPorts(basePort: Int) extends CassandraPorts {
 
   import DynamicCassandraPorts._
@@ -24,7 +22,7 @@ case class DynamicCassandraPorts(basePort: Int) extends CassandraPorts {
 }
 
 
-object DynamicCassandraPorts extends Logging {
+object DynamicCassandraPorts {
   val MaxInstances = 5
 
   val RPC_OFFSET = 0

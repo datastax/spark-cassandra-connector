@@ -65,14 +65,15 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.keyStoreType shouldBe "JCEKS"
   }
 
-  it should "resolve default retry delay settings correctly" in {
+  // retry delay temporary disabled due to SPARKC-360
+  ignore should "resolve default retry delay settings correctly" in {
     val sparkConf = new SparkConf(loadDefaults = false)
 
     val connConf = CassandraConnectorConf(sparkConf)
     connConf.queryRetryDelay shouldBe CassandraConnectorConf.QueryRetryDelayParam.default
   }
 
-  it should "resolve constant retry delay settings" in {
+  ignore should "resolve constant retry delay settings" in {
     val sparkConf = new SparkConf(loadDefaults = false)
     sparkConf.set("spark.cassandra.query.retry.delay", "1234")
 
@@ -80,7 +81,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.queryRetryDelay shouldBe RetryDelayConf.ConstantDelay(1234 milliseconds)
   }
 
-  it should "resolve linear retry delay settings" in {
+  ignore should "resolve linear retry delay settings" in {
     val sparkConf = new SparkConf(loadDefaults = false)
     sparkConf.set("spark.cassandra.query.retry.delay", "1234+2000")
 
@@ -88,7 +89,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.queryRetryDelay shouldBe RetryDelayConf.LinearDelay(1234 milliseconds, 2000 milliseconds)
   }
 
-  it should "resolve exponential retry delay settings" in {
+  ignore should "resolve exponential retry delay settings" in {
     val sparkConf = new SparkConf(loadDefaults = false)
     sparkConf.set("spark.cassandra.query.retry.delay", "1234*2.3")
 

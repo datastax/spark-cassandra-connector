@@ -11,7 +11,8 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector.util.Quote._
-import org.apache.spark.{Logging, TaskContext}
+import com.datastax.spark.connector.util.Logging
+import org.apache.spark.TaskContext
 
 import scala.collection._
 
@@ -34,20 +35,12 @@ class TableWriter[T] private (
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
   val columns = columnNames.map(tableDef.columnByName)
 
-  val defaultTTL = writeConf.ttl match {
-    case TTLOption(StaticWriteOptionValue(value)) => Some(value)
-    case _ => None
-  }
-
-  val defaultTimestamp = writeConf.timestamp match {
-    case TimestampOption(StaticWriteOptionValue(value)) => Some(value)
-    case _ => None
-  }
-
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
     val columnSpec = quotedColumnNames.mkString(", ")
     val valueSpec = quotedColumnNames.map(":" + _).mkString(", ")
+
+    val ifNotExistsSpec = if (writeConf.ifNotExists) "IF NOT EXISTS " else ""
 
     val ttlSpec = writeConf.ttl match {
       case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
@@ -64,7 +57,7 @@ class TableWriter[T] private (
     val options = List(ttlSpec, timestampSpec).flatten
     val optionsSpec = if (options.nonEmpty) s"USING ${options.mkString(" AND ")}" else ""
 
-    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $optionsSpec".trim
+    s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $ifNotExistsSpec$optionsSpec".trim
   }
 
   private lazy val queryTemplateUsingUpdate: String = {
@@ -272,9 +265,7 @@ object TableWriter {
       columnNames: ColumnSelector,
       writeConf: WriteConf): TableWriter[T] = {
 
-    val schema = Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName))
-    val tableDef = schema.tables.headOption
-      .getOrElse(throw new IOException(s"Table not found: $keyspaceName.$tableName"))
+    val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val selectedColumns = columnNames.selectFrom(tableDef)
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(

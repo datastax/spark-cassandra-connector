@@ -2,15 +2,15 @@ package org.apache.spark.sql.cassandra
 
 import scala.collection.mutable
 
-import org.apache.spark.Logging
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.DefaultSource._
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf, DefaultAuthConfFactory}
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer.WriteConf
 
 /**
@@ -25,9 +25,9 @@ import com.datastax.spark.connector.writer.WriteConf
  *       keyspace "keyspace",
  *       cluster "test_cluster",
  *       pushdown "true",
- *       spark_cassandra_input_page_row_size "10",
- *       spark_cassandra_output_consistency_level "ONE",
- *       spark_cassandra_connection_timeout_ms "1000"
+ *       spark.cassandra.input.fetch.size_in_rows "10",
+ *       spark.cassandra.output.consistency.level "ONE",
+ *       spark.cassandra.connection.timeout_ms "1000"
  *      )
  */
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider with Logging {
@@ -40,9 +40,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
    *    keyspace     -- keyspace name, required
    *    cluster      -- cluster name, optional, default name is "default"
    *    pushdown     -- true/false, optional, default is true
-   *    Cassandra connection settings  -- optional, e.g. spark_cassandra_connection_timeout_ms
-   *    Cassandra Read Settings        -- optional, e.g. spark_cassandra_input_page_row_size
-   *    Cassandra Write settings       -- optional, e.g. spark_cassandra_output_consistency_level
+   *    Cassandra connection settings  -- optional, e.g. spark.cassandra.connection.timeout_ms
+   *    Cassandra Read Settings        -- optional, e.g. spark.cassandra.input.fetch.size_in_rows
+   *    Cassandra Write settings       -- optional, e.g. spark.cassandra.output.consistency.level
    *
    * When push_down is true, some filters are pushed down to CQL.
    *
@@ -132,26 +132,12 @@ object DefaultSource {
     WriteConf.Properties.map(_.name) ++
     CassandraConnectorConf.Properties.map(_.name) ++
     CassandraSourceRelation.Properties.map(_.name) ++
-    AuthConfFactory.Properties.map(_.name)
-
-  // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
-  // Map converted property to origin property name
-  // TODO check SPARK 1.4 it may be fixed
-  private val propertiesMap : Map[String, String] = {
-    confProperties.map(prop => (prop.replace(".", "_"), prop)).toMap
-  }
+    AuthConfFactory.Properties.map(_.name) ++
+    DefaultAuthConfFactory.properties
 
   /** Construct a map stores Cassandra Conf settings from options */
-  def buildConfMap(parameters: Map[String, String]) : Map[String, String] = {
-    val confMap = mutable.Map.empty[String, String]
-    for (convertedProp <- propertiesMap.keySet) {
-      val setting = parameters.get(convertedProp)
-      if (setting.nonEmpty) {
-        confMap += propertiesMap(convertedProp) -> setting.get
-      }
-    }
-    confMap.toMap
-  }
+  def buildConfMap(parameters: Map[String, String]): Map[String, String] =
+    parameters.filterKeys(confProperties.contains)
 
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {

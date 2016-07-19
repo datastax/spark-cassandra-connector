@@ -57,7 +57,7 @@ object InputMetricsUpdater {
 
     if (readConf.taskMetricsEnabled) {
       val tm = taskContext.taskMetrics()
-      val inputMetrics = tm.getInputMetricsForReadMethod(DataReadMethod.Hadoop)
+      val inputMetrics = tm.inputMetrics
 
       if (source.isDefined)
         new CodahaleAndTaskMetricsUpdater(groupSize, source.get, inputMetrics)

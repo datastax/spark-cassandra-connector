@@ -2,8 +2,8 @@
 
 ## DataFrames
 
-DataFrames provide a new api for manipulating data within Spark. These provide a more user
-friendly experience than pure scala for common queries. The Spark Cassandra Connector provides
+DataFrames provide a new API for manipulating data within Spark. These provide a more user
+friendly experience than pure Scala for common queries. The Spark Cassandra Connector provides
 an integrated DataSource to make creating Cassandra DataFrames easy.
 
 Spark Docs:
@@ -18,8 +18,8 @@ Those followed with a default of N/A are required, all others are optional.
 
 | Option Key  | Controls                                              | Values        | Default  |
 |-------------|-------------------------------------------------------|---------------|----------|
-| table       | The Cassandra Table to connect to                     | String        | N/A      |
-| keyspace    | The Keyspace where table is looked for                | String        | N/A      |
+| table       | The Cassandra table to connect to                     | String        | N/A      |
+| keyspace    | The keyspace where table is looked for                | String        | N/A      |
 | cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
 | pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
 
@@ -129,13 +129,9 @@ Accessing data Frames using Spark SQL involves creating temporary tables and spe
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Because of a limitation in SparkSQL, SparkSQL `OPTIONS` must have their
-`.` characters replaced with `_`. This means `spark.cassandra.input.split.size_in_mb` becomes
-`spark_cassandra_input_split_size_in_mb`.
-
 Example Creating a Source Using Spark SQL:
 
-Create Relation with the cassandra table test.words
+Create Relation with the Cassandra table test.words
 ```scala
 scala> sqlContext.sql(
    """CREATE TEMPORARY TABLE words
@@ -207,14 +203,14 @@ df.write
 
 ###Setting Connector specific options on data frames
 Connector specific options can be set by invoking `options` method on either `DataFrameReader` or `DataFrameWriter`. 
-There a lof of settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and
+There are several settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and
 others. Those settings are identified by instances of `ConfigParameter` case class which offers an easy way to apply 
 the option which it represents to a `DataFrameReader` or `DataFrameWriter`. 
 
 Suppose we want to set `spark.cassandra.read.timeout_ms` to 7 seconds on some `DataFrameReader`, we can do this both 
 ways:
 ```scala
-option("spark_cassandra_read_timeout_ms", "7000")
+option("spark.cassandra.read.timeout_ms", "7000")
 ```
 Since this setting is represented by `CassandraConnectorConf.ReadTimeoutParam` we can simply do:
 ```scala
@@ -262,7 +258,7 @@ renamed.write
 ```
 
 ###Pushing down clauses to Cassandra
-The dataframe api will automatically pushdown valid where clauses to Cassandra as long as the
+The DataFrame API will automatically pushdown valid where clauses to Cassandra as long as the
 pushdown option is enabled (defaults to enabled.)
 
 Example Table

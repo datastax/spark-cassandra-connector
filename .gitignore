@@ -13,6 +13,7 @@ project/boot/
 project/plugins/project/
 sbt/sbt-launch*.jar
 cassandra-server/*
+metastore_db
 
 # Scala-IDE specific
 .scala_dependencies

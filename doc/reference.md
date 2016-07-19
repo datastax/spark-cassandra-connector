@@ -118,11 +118,6 @@ retrieve size from C*. Can be set manually now</td>
   <td>default</td>
   <td>Sets the default Cluster to inherit configuration from</td>
 </tr>
-<tr>
-  <td><code>sql.keyspace</code></td>
-  <td>None</td>
-  <td>Sets the default keyspace</td>
-</tr>
 </table>
 
 
@@ -216,6 +211,11 @@ OSS Cassandra this should never be used.</td>
   <td>Number of CQL rows fetched per driver request</td>
 </tr>
 <tr>
+  <td><code>input.join.throughput_query_per_sec</code></td>
+  <td>9223372036854775807</td>
+  <td>Maximum read throughput allowed per single core in query/s while joining RDD with C* table</td>
+</tr>
+<tr>
   <td><code>input.metrics</code></td>
   <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
@@ -277,6 +277,12 @@ in each row</td>
   <td>Consistency level for writing</td>
 </tr>
 <tr>
+  <td><code>output.ifNotExists</code></td>
+  <td>false</td>
+  <td>Determines that the INSERT operation is not performed if a row with the same primary
+key already exists. Using the feature incurs a performance hit.</td>
+</tr>
+<tr>
   <td><code>output.ignoreNulls</code></td>
   <td>false</td>
   <td> In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
@@ -294,5 +300,10 @@ finer control see the CassandraOption class</td>
   <td>*(Floating points allowed)* <br> Maximum write throughput allowed
  per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
  as seen on a smaller job for stability</td>
+</tr>
+<tr>
+  <td><code>output.ttl</code></td>
+  <td>0</td>
+  <td>Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL</td>
 </tr>
 </table>

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core._
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 private[connector] class BatchStatementBuilder(
     val batchType: BatchStatement.Type,

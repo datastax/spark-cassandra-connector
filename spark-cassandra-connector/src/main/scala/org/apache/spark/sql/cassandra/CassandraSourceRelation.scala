@@ -1,6 +1,5 @@
 package org.apache.spark.sql.cassandra
 
-import java.io.IOException
 import java.net.InetAddress
 import java.util.UUID
 
@@ -11,16 +10,15 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 
-import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
+import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{ConfigParameter, NameTools, ReflectionUtil}
+import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 
@@ -44,18 +42,10 @@ private[cassandra] class CassandraSourceRelation(
   with PrunedFilteredScan
   with Logging {
 
-  private[this] val tableDef = {
-    val tableName = tableRef.table
-    val keyspaceName = tableRef.keyspace
-    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
-      case Some(t) => t
-      case None =>
-        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
-        val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
-        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
-        throw new IOException(errorMessage)
-    }
-  }
+  private[this] val tableDef = Schema.tableFromCassandra(
+    connector,
+    tableRef.keyspace,
+    tableRef.table)
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))

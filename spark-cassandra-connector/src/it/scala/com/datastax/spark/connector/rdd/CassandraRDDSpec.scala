@@ -7,7 +7,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -23,6 +23,7 @@ case class Value(value: String)
 case class WriteTimeClass(id: Int, value: String, writeTimeOfValue: Long)
 case class TTLClass(id: Int, value: String, ttlOfValue: Int)
 case class ClassWithWeirdProps(devil: Int, cat: Long, value: String)
+
 
 class MutableKeyValue(var key: Int, var group: Long) extends Serializable {
   var value: String = null
@@ -46,6 +47,11 @@ case class ClassWithUDT(key: Int, name: String, addr: Address)
 case class ClassWithTuple(key: Int, value: (Int, String))
 case class ClassWithSmallInt(key: Int, value: Short)
 
+case class TypeWithNestedTuple(id: Int, t: (Int, (String, Double)))
+case class TypeWithTupleSetter(id: Int) {
+  var t: (Int, (String, Double)) = null
+}
+
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
@@ -59,10 +65,13 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
     awaitAll(
       Future {
-        session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
-        session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)""")
+        if (versionGreaterThanOrEquals(2,2)) {
+          println(s"Found version $cassandraMajorVersion  $cassandraMinorVersion")
+          session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
+          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)""")
+        }
       },
 
       Future {
@@ -125,24 +134,30 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
       Future {
-        session.execute(s""" CREATE TABLE $ks.user(
-          id int PRIMARY KEY,
-          login text,
-          firstname text,
-          lastname text,
-          country text
-        )""")
+        if (versionGreaterThanOrEquals(2, 2)) {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.user(
+               |  id int PRIMARY KEY,
+               |  login text,
+               |  firstname text,
+               |  lastname text,
+               |  country text)""".stripMargin)
 
-        session.execute(s"""CREATE MATERIALIZED VIEW $ks.user_by_country
-          AS SELECT *  //denormalize ALL columns
-          FROM user
-          WHERE country IS NOT NULL AND id IS NOT NULL
-          PRIMARY KEY(country, id);""")
+          session.execute(
+            s"""
+               |CREATE MATERIALIZED VIEW $ks.user_by_country
+               |  AS SELECT *  //denormalize ALL columns
+               |  FROM user
+               |  WHERE country IS NOT NULL AND id IS NOT NULL
+               |  PRIMARY KEY(country, id);""".stripMargin)
 
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
-        session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
+
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
+          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+        }
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.big_table (key INT PRIMARY KEY, value INT)""")
@@ -157,6 +172,23 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
       Future {
         session.execute( s"""CREATE TABLE $ks.write_time_ttl_test (id INT PRIMARY KEY, value TEXT, value2 TEXT)""")
+      },
+
+      Future {
+        def nestedTupleTable(name: String) = s"""CREATE TABLE $ks.$name(
+          |  id int PRIMARY KEY,
+          |  t frozen <tuple <int, tuple<text, double>>>
+          |)""".stripMargin
+
+        session.execute(nestedTupleTable("tuple_test3"))
+        session.execute(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))")
+        session.execute(nestedTupleTable("tuple_test4"))
+        session.execute(nestedTupleTable("tuple_test5"))
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
+        session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")
       }
     )
   }
@@ -328,6 +360,24 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "use a single partition per node for a tiny table" in {
     val rdd = sc.cassandraTable(ks, "key_value")
     rdd.partitions should have length conn.hosts.size
+  }
+
+  it should "support single partition where clauses" in {
+    val someCass = sc
+      .cassandraTable[KeyValue](ks, "key_value")
+      .where("key = 1")
+      .where("group = 100")
+    val result = someCass.collect
+    result should contain theSameElementsAs Seq(KeyValue(1, 100, "0001"))
+  }
+
+  it should "support in clauses" in {
+     val someCass = sc
+      .cassandraTable[KeyValue](ks, "key_value")
+      .where("key in (1,2,3)")
+      .where("group = 100")
+    val result = someCass.collect
+    result should contain theSameElementsAs Seq(KeyValue(1, 100, "0001"), KeyValue(2, 100, "0002"))
   }
 
   it should "allow for reading collections" in {
@@ -941,4 +991,84 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "read rows with nested C* Tuples as case classes" in {
+    val result = sc.cassandraTable[TypeWithNestedTuple](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head.t should be ((1, ("foo", 2.3)))
+  }
+
+  it should "read rows with nested C* Tuples as case classes with setters" in {
+    val result = sc.cassandraTable[TypeWithTupleSetter](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head.t should be ((1, ("foo", 2.3)))
+  }
+
+  it should "read rows with nested C* Tuples as Scala Tuple" in {
+    val result = sc.cassandraTable[(Int, (Int, (String, Double)))](ks, "tuple_test3").collect()
+
+    result.length should be (1)
+    result.head should be ((0, (1, ("foo", 2.3))))
+  }
+
+  it should "write Scala Tuple as C* Tuple" in {
+    val rdd = sc.parallelize(List(
+      (0, (1, ("foo", 2.3))),
+      (4, (5, ("bar", 6.7)))
+    ))
+
+    rdd.saveToCassandra(ks, "tuple_test4", SomeColumns("id", "t"))
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.tuple_test4").one().getLong(0) should be (2)
+    }
+  }
+
+  it should "write case class with Scala Tuple as C* Tuple" in {
+    val rdd = sc.parallelize(List(
+      TypeWithNestedTuple(0, (1, ("foo", 2.3))),
+      TypeWithNestedTuple(4, (5, ("bar", 6.7)))
+    ))
+
+    rdd.saveToCassandra(ks, "tuple_test5")
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.tuple_test5").one().getLong(0) should be (2)
+    }
+  }
+
+  it should "write Java dates as C* date type" in {
+    val rows = List(
+      (6, new java.sql.Date(new Date().getTime)),
+      (7, new Date()),
+      (8, DateTime.now()),
+      (9, LocalDate.now()))
+
+    sc.parallelize(rows).saveToCassandra(ks, "date_test")
+
+    val resultSet = conn.withSessionDo { session =>
+      session.execute(
+        s"select count(1) from $ks.date_test where key in (${rows.map(_._1.toString).mkString(",")})")
+    }
+    resultSet.one().getLong(0) should be(rows.size)
+  }
+
+  it should "read C* row with dates as Java dates" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
+
+    row.getInt("key") should be(1)
+    row.getDate("dd") should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
+    row.getDateTime("dd").toLocalDate should be(expected)
+  }
+
+  it should "read LocalDate as tuple value with given type" in {
+    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
+    val dateTime = sc.cassandraTable[(Int, DateTime)](ks, "date_test").where("key = 1").first._2
+
+    date should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
+    dateTime.toLocalDate should be(expected)
+  }
 }

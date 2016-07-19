@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.driver.core.Row
-import com.datastax.spark.connector.{ColumnSelector, ColumnRef}
+import com.datastax.spark.connector.{CassandraRowMetadata, ColumnRef, ColumnSelector}
 import com.datastax.spark.connector.cql.TableDef
 
 private[connector] class KeyValueRowReaderFactory[K, V](
@@ -26,7 +26,7 @@ private[connector] class KeyValueRowReader[K, V](keyReader: RowReader[K], valueR
     (for (keyNames <- keyReader.neededColumns; valueNames <- valueReader.neededColumns) yield keyNames ++ valueNames)
       .orElse(keyReader.neededColumns).orElse(valueReader.neededColumns)
 
-  override def read(row: Row, columnNames: Array[String]): (K, V) = {
-    (keyReader.read(row, columnNames), valueReader.read(row, columnNames))
+  override def read(row: Row, rowMetaData: CassandraRowMetadata): (K, V) = {
+    (keyReader.read(row, rowMetaData), valueReader.read(row, rowMetaData))
   }
 }

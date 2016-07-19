@@ -44,6 +44,9 @@ object JavaApiHelper {
     })
   }
 
+  def getTypeTag[T](clazz: Class[_], typeParams: Array[TypeTag[_]]): TypeTag[T] =
+    getTypeTag(clazz, typeParams.toSeq: _*)
+
   /** Returns a `ClassTag` of a given runtime class. */
   def getClassTag[T](clazz: Class[T]): ClassTag[T] = ClassTag(clazz)
 

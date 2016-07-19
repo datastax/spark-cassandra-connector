@@ -24,11 +24,13 @@ class CassandraPartitionedRDD[T](
   @transient
   override val partitioner: Option[Partitioner] = prev.partitioner
 
-  private val replicaPartitioner: ReplicaPartitioner =
+  private val replicaPartitioner: ReplicaPartitioner[_] =
     partitioner match {
-      case Some(rp: ReplicaPartitioner) => rp
-      case _ => throw new IllegalArgumentException("CassandraPartitionedRDD hasn't been " +
-        "partitioned by ReplicaPartitioner. Unable to do any work with data locality.")
+      case Some(rp: ReplicaPartitioner[_]) => rp
+      case other => throw new IllegalArgumentException(
+        s"""CassandraPartitionedRDD hasn't been
+           |partitioned by ReplicaPartitioner. Unable to do any work with data locality.
+           |Found: $other""".stripMargin)
     }
 
   private lazy val nodeAddresses = new NodeAddresses(replicaPartitioner.connector)

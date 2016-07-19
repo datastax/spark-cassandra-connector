@@ -4,53 +4,50 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
 
-import com.datastax.driver.core.{Row, UDTValue => DriverUDTValue, TupleValue => DriverTupleValue}
+import com.datastax.driver.core.{LocalDate, Row, TypeCodec, TupleValue => DriverTupleValue, UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
 
 trait GettableData extends GettableByIndexData {
 
-  def columnNames: IndexedSeq[String]
+  def metaData: CassandraRowMetadata
 
-  @transient
-  private[connector] lazy val _indexOf =
-    columnNames.zipWithIndex.toMap.withDefaultValue(-1)
-
-  @transient
-  private[connector] lazy val _indexOfOrThrow = _indexOf.withDefault { name =>
-    throw new ColumnNotFoundException(
-      s"Column not found: $name. " +
-        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-  }
-
-  /** Returns a column value by index without applying any conversion.
+  /** Returns a column value by aliased name without applying any conversion.
     * The underlying type is the same as the type returned by the low-level Cassandra driver,
     * is implementation defined and may change in the future.
     * Cassandra nulls are returned as Scala nulls. */
-  def getRaw(name: String): AnyRef = columnValues(_indexOfOrThrow(name))
+  def getRaw(name: String): AnyRef = columnValues(metaData.indexOfOrThrow(name))
+
+  /**
+    * Returns a column value by cql Name
+    * @param name
+    * @return
+    */
+  def getRawCql(name: String): AnyRef = columnValues(metaData.indexOfCqlColumnOrThrow(name))
+
 
   /** Returns true if column value is Cassandra null */
   def isNullAt(name: String): Boolean = {
-    columnValues(_indexOfOrThrow(name)) == null
+    columnValues(metaData.indexOfOrThrow(name)) == null
   }
 
   /** Returns index of column with given name or -1 if column not found */
   def indexOf(name: String): Int =
-    _indexOf(name)
+    metaData.namesToIndex(name)
 
   /** Returns the name of the i-th column. */
   def nameOf(index: Int): String =
-    columnNames(index)
+    metaData.columnNames(index)
 
   /** Returns true if column with given name is defined and has an
     * entry in the underlying value array, i.e. was requested in the result set.
     * For columns having null value, returns true. */
   def contains(name: String): Boolean =
-    _indexOf(name) != -1
+    metaData.namesToIndex(name) != -1
 
   /** Displays the content in human readable form, including the names and values of the columns */
   override def dataAsString =
-    columnNames
+    metaData.columnNames
       .zip(columnValues)
       .map(kv => kv._1 + ": " + StringConverter.convert(kv._2))
       .mkString("{", ", ", "}")
@@ -59,13 +56,13 @@ trait GettableData extends GettableByIndexData {
 
   override def equals(o: Any) = o match {
     case o: GettableData if
-        this.columnNames == o.columnNames &&
+        this.metaData == o.metaData &&
         this.columnValues == o.columnValues => true
     case _ => false
   }
 
   override def hashCode =
-    columnNames.hashCode * 31 + columnValues.hashCode
+    metaData.hashCode * 31 + columnValues.hashCode
 }
 
 object GettableData {
@@ -80,6 +77,7 @@ object GettableData {
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
+      case localDate: LocalDate => new org.joda.time.LocalDate(localDate.getMillisSinceEpoch)
       case other => other.asInstanceOf[AnyRef]
 
     }
@@ -95,10 +93,27 @@ object GettableData {
       null
   }
 
+
+  /** Deserializes given field from the DataStax Java Driver `Row` into appropriate Java type by using predefined codec
+    * If the field is null, returns null (not Scala Option). */
+  def get(row: Row, index: Int, codec: TypeCodec[AnyRef]): AnyRef = {
+    val data = row.get(index, codec)
+    if (data != null)
+      convert(data)
+    else
+      null
+  }
+
   def get(row: Row, name: String): AnyRef = {
     val index = row.getColumnDefinitions.getIndexOf(name)
     require(index >= 0, s"Column not found in Java driver Row: $name")
     get(row, index)
+  }
+
+  def get(row: Row, name: String, codec: TypeCodec[AnyRef]): AnyRef = {
+    val index = row.getColumnDefinitions.getIndexOf(name)
+    require(index >= 0, s"Column not found in Java driver Row: $name")
+    get(row, index, codec)
   }
 
   def get(value: DriverUDTValue, name: String): AnyRef = {

@@ -1,14 +1,15 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 ### [Spark Cassandra Connector Spark Packages Website](http://spark-packages.org/package/datastax/spark-cassandra-connector)
 
+[![Join the chat at https://gitter.im/datastax/spark-cassandra-connector](https://badges.gitter.im/datastax/spark-cassandra-connector.svg)](https://gitter.im/datastax/spark-cassandra-connector?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### Most Recent Release Scala Docs
 
-### 1.6.0-M1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
+### 1.6.0
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector-embedded/)
 
-[All Versions Scala Docs](#hosted-scala-docs)
+[All Versions API Docs](#hosted-api-docs)
 
 ## Lightning-fast cluster computing with Spark and Cassandra
 
@@ -41,7 +42,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
-| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0 | 3.0           |
+| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.4       | 1.4           | 2.1.5*    | 2.1                   |
 | 1.3       | 1.3           | 2.1.5*    | 2.1                   |
@@ -51,47 +52,46 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 **Compatible with 2.1.X where X >= 5*
 
-## Hosted Scala Docs
+## Hosted API Docs
+API documentation for the Scala and Java interfaces are available online:
 
-### 1.6.0-M1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0-M1/spark-cassandra-connector-embedded/)
+### 1.6.0
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector-embedded/)
 
 ### 1.5.0
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-embedded/)
 
 ### 1.4.2
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-embedded/)
 
 ### 1.3.1
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.3.1/spark-cassandra-connector-embedded/)
 
 ### 1.2.0 
-* [Spark-Cassandra-Connector] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-java/)
-* [Embedded-Cassandra] (http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-java/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.2.0/spark-cassandra-connector-embedded/)
 
 ## Download
-This project is available on Spark Packages, this is the easiest way to start using the connector
-
+This project is available on Spark Packages; this is the easiest way to start using the connector:
 http://spark-packages.org/package/datastax/spark-cassandra-connector
 
 This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0"
 
 If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.6.0-M1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.6.0"
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)
@@ -133,6 +133,10 @@ Questions and requests for help may be submitted to the [user mailing list](http
 ### IRC
 \#spark-cassandra-connector on irc.freenode.net. If you are new to IRC, you can use a [web-based client](http://webchat.freenode.net/?channels=#spark-cassandra-connector).
 
+### Gitter
+[![Join the chat at https://gitter.im/datastax/spark-cassandra-connector](https://badges.gitter.im/datastax/spark-cassandra-connector.svg)](https://gitter.im/datastax/spark-cassandra-connector?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+
 ### Contributing
 To develop this project, we recommend using IntelliJ IDEA. 
 Make sure you have installed and enabled the Scala Plugin.
@@ -172,7 +176,7 @@ outputLocation defaults to doc/reference.md
 
 ## License
 
-Copyright 2014-2015, DataStax, Inc.
+Copyright 2014-2016, DataStax, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 

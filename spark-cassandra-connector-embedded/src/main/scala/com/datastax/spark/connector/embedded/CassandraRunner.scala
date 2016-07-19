@@ -6,10 +6,9 @@ import scala.collection.JavaConversions._
 import scala.util.Try
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.Logging
 
 private[connector] class CassandraRunner(val configTemplate: String, props: Map[String, String])
-  extends Embedded with Logging {
+  extends Embedded {
 
   import java.io.{File, FileOutputStream, IOException}
 
@@ -26,6 +25,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val confFile = new File(confDir, "cassandra.yaml")
 
   private val properties = Map("cassandra_dir" -> workDir.toString) ++ props
+
   closeAfterUse(ClassLoader.getSystemResourceAsStream(configTemplate)) { input =>
     closeAfterUse(new FileOutputStream(confFile)) { output =>
       copyTextFileWithVariableSubstitution(input, output, properties)
