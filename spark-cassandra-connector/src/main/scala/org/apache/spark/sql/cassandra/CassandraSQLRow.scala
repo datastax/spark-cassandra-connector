@@ -6,13 +6,14 @@ import java.util.{Date, UUID}
 import java.math.BigInteger
 
 import com.datastax.driver.core.Row
-import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
 import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
 import com.datastax.spark.connector.types.TypeConverter
+
 import org.apache.spark.sql.{Row => SparkRow}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.types.Decimal
+import org.joda.time.DateTimeZone.UTC
 
 final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends GettableData with SparkRow with Serializable {
@@ -48,13 +49,6 @@ final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues
 
 object CassandraSQLRow {
 
-  /** SparkSQL assumes all incoming Timestamps will be shifted by the
-    * local TimeZone, if we do not anticipate this our LocalDate objects will
-    * go back in time.
-    */
-  lazy val defaultTimeZone = java.util.TimeZone.getDefault
-  def subtractTimeZoneOffset( millis: Long ) = millis - defaultTimeZone.getOffset(millis)
-
   def fromJavaDriverRow(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow = {
     val data = CassandraRow.dataFromJavaDriverRow(row, metaData)
     new CassandraSQLRow(metaData, data.map(toSparkSqlType))
@@ -72,8 +66,8 @@ object CassandraSQLRow {
   private def toSparkSqlType(value: Any): AnyRef = {
     value match {
       case date: Date => new Timestamp(date.getTime)
-      case localDate: LocalDate => new java.sql.Date(subtractTimeZoneOffset(localDate.getMillisSinceEpoch))
-      case localDate: org.joda.time.LocalDate => new java.sql.Date(localDate.toDate.getTime)
+      case localDate: org.joda.time.LocalDate =>
+        new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)

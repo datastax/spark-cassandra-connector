@@ -1059,16 +1059,16 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
 
     row.getInt("key") should be(1)
-    row.getDate("dd") should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
-    row.getDateTime("dd").toLocalDate should be(expected)
+    row.getDate("dd") should be(expected.toDateTimeAtStartOfDay.toDate)
+    row.get[LocalDate]("dd") should be(expected)
   }
 
   it should "read LocalDate as tuple value with given type" in {
     val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
     val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
-    val dateTime = sc.cassandraTable[(Int, DateTime)](ks, "date_test").where("key = 1").first._2
+    val localDate = sc.cassandraTable[(Int, LocalDate)](ks, "date_test").where("key = 1").first._2
 
-    date should be(expected.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate)
-    dateTime.toLocalDate should be(expected)
+    date should be(expected.toDateTimeAtStartOfDay.toDate)
+    localDate should be(expected)
   }
 }
