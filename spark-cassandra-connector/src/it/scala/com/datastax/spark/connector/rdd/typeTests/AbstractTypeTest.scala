@@ -15,7 +15,7 @@ import com.datastax.spark.connector.writer.RowWriterFactory
 
 /**
  * A template class for testing that various CQL Types work with the spark Cassandra Connector
- * When creating an iimplementationof this test you must provide two types,
+ * When creating an implementation of this test you must provide two types,
  * The TestType is used to extract values from Cassandra ie: sc.cassandraTable[TestType]
  * and saving values in cassandra via sc.parallelize(x:TesType).saveToCassandra()
  * The DriverType is used for inserting values into C* via the javaDriver
