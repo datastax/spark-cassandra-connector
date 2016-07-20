@@ -133,13 +133,12 @@ class TypeConverterTest {
   def testDate() {
     val c = TypeConverter.forType[Date]
     val dateStr = "2014-04-23 11:21:32+0100"
-    val dayOnlyStr = "2014-04-23 0:0:0+0000"
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
-    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+    val dayOnlyStr = "2014-04-23"
+    val localDate = LocalDate.fromYearMonthDay(2014, 4, 23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
 
-    val date = dateFormat.parse(dateStr)
-    val dateDayOnly = dateFormat.parse(dayOnlyStr)
+    val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").parse(dateStr)
+    val dateDayOnly = new SimpleDateFormat("yyyy-MM-dd").parse(dayOnlyStr)
 
     assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(dateDayOnly, c.convert(jodaLocalDate))
@@ -220,8 +219,8 @@ class TypeConverterTest {
   def testLocalDate(): Unit = {
     val c = TypeConverter.forType[LocalDate]
     val testDate = LocalDate.fromYearMonthDay(1985, 8, 3)
-    val dateFormat = new SimpleDateFormat("yyyy-MM-ddZ")
-    val date = dateFormat.parse("1985-08-03-0000")
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    val date = dateFormat.parse("1985-08-03")
     assertEquals(testDate, c.convert("1985-08-03"))
     assertEquals(testDate, c.convert(5693))
     assertEquals(testDate, c.convert(date))

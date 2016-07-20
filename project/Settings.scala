@@ -258,6 +258,8 @@ object Settings extends Build {
       if (test.name.toLowerCase.contains("auth")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
       else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
+      else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
+      else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
       else test.name.reverse.dropWhile(_ != '.').reverse
     }
 
@@ -273,6 +275,8 @@ object Settings extends Build {
       else if (pkgName.contains(".repl")) "repl"
       else if (pkgName.contains(".streaming")) "streaming"
       else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
+      else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
+      else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
       else "other"
     }
 
