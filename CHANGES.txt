@@ -1,3 +1,4 @@
+1.2.6
  * Fixed Default ReadConf for JoinWithCassandra Table (SPARKC-294)
  * Added refresh cassandra schema cache to CassandraSQLContext (SPARKC-234)
 
