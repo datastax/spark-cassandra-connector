@@ -1,6 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.types.TimeUUIDType
 
 /**
  *  Determines which filter predicates can be pushed down to Cassandra.
@@ -60,6 +61,31 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], ta
   /** Returns a first non-empty set. If not found, returns an empty set. */
   private def firstNonEmptySet[T](sets: Set[T]*): Set[T] =
     sets.find(_.nonEmpty).getOrElse(Set.empty[T])
+
+
+  /** All non-equal predicates on a TimeUUID column are going to fail and fail
+    * in silent way. The basic issue here is that when you use a comparison on
+    * a time UUID column in C* it compares based on the Time portion of the UUID. When
+    * Spark repeats this filter (default behavior) it will compare lexically, this
+    * will lead to results being incorrectly filtered out of the set. Because
+    * there is no way to correctly do this computation in Spark < 1.6 we will simply
+    * throw an error to let the user know they cannot use the DataFrames API
+    * for this call.
+    */
+  val timeUUIDNonEqual = {
+    val timeUUIDCols = table.columns.filter( x => x.columnType == TimeUUIDType)
+    timeUUIDCols.flatMap( col => rangePredicatesByName.get(col.columnName))
+  }
+  require(timeUUIDNonEqual.isEmpty,
+    s"""
+      | You are attempting to do a non-equality comparison on a TimeUUID column in Cassandra.
+      | Spark can only compare TimeUUIDs Lexically which means that the comparison will be
+      | different than the comparison done in C* which is done based on the Time Portion of
+      | TimeUUID. This will in almost all cases lead to incorrect results. If you are able to
+      | to pushdown your entire predicate to C* use the RDD interface with ".where()" to
+      | accomplish this. For more info see
+      | https://datastax-oss.atlassian.net/browse/SPARKC-405.
+    """.stripMargin)
 
   /**
    * Selects partition key predicates for pushdown:

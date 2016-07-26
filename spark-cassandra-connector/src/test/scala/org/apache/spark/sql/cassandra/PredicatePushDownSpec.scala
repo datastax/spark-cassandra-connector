@@ -1,9 +1,8 @@
 package org.apache.spark.sql.cassandra
 
-import org.scalatest.{Matchers, FlatSpec}
-
+import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.types.IntType
+import com.datastax.spark.connector.types.{IntType, TimeUUIDType}
 
 class PredicatePushDownSpec extends FlatSpec with Matchers {
 
@@ -40,6 +39,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   val r1 = ColumnDef("r1", RegularColumn, IntType)
   val r2 = ColumnDef("r2", RegularColumn, IntType)
 
+  val timeUUIDc1 = ColumnDef("c1", ClusteringColumn(0), TimeUUIDType)
+
   val table = TableDef(
     keyspaceName = "test",
     tableName = "test",
@@ -48,11 +49,33 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     regularColumns = Seq(i1, i2, r1, r2)
   )
 
+  val timeUUIDTable = TableDef(
+    keyspaceName = "test",
+    tableName = "uuidtab",
+    partitionKey = Seq(pk1, pk2),
+    clusteringColumns = Seq(timeUUIDc1),
+    regularColumns = Seq(i1, i2, r1, r2)
+  )
+
   "PredicatePushDown" should "push down all equality predicates restricting partition key columns" in {
     val f1 = EqFilter("pk1")
     val f2 = EqFilter("pk2")
     val ppd = new PredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain allOf(f1, f2)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should " break if the user tries to use a TimeUUID column in a non-eq predicate" in {
+    val f1 = GtFilter("c1")
+    val ex = intercept[IllegalArgumentException] {
+      val ppd = new PredicatePushDown(Set[Filter](f1), timeUUIDTable)
+    }
+  }
+
+  it should " work if the user tries to use a TimeUUID column in a eq predicate" in {
+    val f1 = EqFilter("c1")
+    val ppd = new PredicatePushDown(Set[Filter](f1), timeUUIDTable)
+    ppd.predicatesToPushDown should contain (f1)
     ppd.predicatesToPreserve shouldBe empty
   }
 
