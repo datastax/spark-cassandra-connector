@@ -73,8 +73,8 @@ class PredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], ta
     * for this call.
     */
   val timeUUIDNonEqual = {
-    val timeUUIDCols = table.columns.filter( x => x.columnType == TimeUUIDType)
-    timeUUIDCols.flatMap( col => rangePredicatesByName.get(col.columnName))
+    val timeUUIDCols = table.columns.filter(x => x.columnType == TimeUUIDType)
+    timeUUIDCols.flatMap(col => rangePredicatesByName.get(col.columnName))
   }
   require(timeUUIDNonEqual.isEmpty,
     s"""
