@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{DataFrameColumnMapper, ColumnMapper}
 import org.apache.spark.Logging
@@ -8,7 +10,6 @@ import org.apache.spark.sql.DataFrame
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.util.{Properties, Try}
-
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
@@ -88,30 +89,12 @@ case class ClusteringColumn(index: Int) extends ColumnRole
 case object StaticColumn extends ColumnRole
 case object RegularColumn extends ColumnRole
 
-/**
-  * Cluster Column Order Implementation */
-object ClusteringOrder {
-  abstract sealed class Order(val ordinal: Int) extends Ordered[Order]
-       with Serializable {
-     def compare(that: Order) = that.ordinal compare this.ordinal
-
-     def toInt: Int = this.ordinal
-  }
-
-  case object Ascending extends Order(0)
-  case object Descending extends Order(1)
-
-  def fromInt(i: Int): Order = values.find(_.ordinal == i).get
-
-  val values = Set(Ascending, Descending)
-}
-
 /** A Cassandra column metadata that can be serialized.  */
 case class ColumnDef(
   columnName: String,
   columnRole: ColumnRole,
   columnType: ColumnType[_],
-  clusteringOrder: ClusteringOrder.Order = ClusteringOrder.Ascending) extends FieldDef {
+  clusteringOrder: ClusteringOrder = ClusteringOrder.ASC) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
@@ -151,7 +134,7 @@ object ColumnDef {
   def apply(
     column: ColumnMetadata,
     columnRole: ColumnRole,
-    clusteringOrder: ClusteringOrder.Order): ColumnDef = {
+    clusteringOrder: ClusteringOrder): ColumnDef = {
 
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(column.getName, columnRole, columnType, clusteringOrder)
@@ -166,7 +149,8 @@ case class TableDef(
     clusteringColumns: Seq[ColumnDef],
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
-    isView: Boolean = false, 
+    isView: Boolean = false,
+    clusteringOrder: Option[Seq[ClusteringOrder]] = None,
     options: String = "") extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
@@ -218,16 +202,25 @@ case class TableDef(
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
-    val ordered = if (clusteringColumns.size > 0)
-      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns)})"
+    val ordered = if (clusteringColumns.nonEmpty)
+      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns,clusteringOrder)})"
     else stmt
     appendOptions(ordered, options)
   }
-  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef]): String =
-    clusteringColumns.map { col =>
-      if (col.clusteringOrder == ClusteringOrder.Descending)
+  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef], clusteringOrder: Option[Seq[ClusteringOrder]]): String = {
+
+    val clusteringCols = clusteringOrder match {
+      case Some(orders) if orders.size == clusteringColumns.size =>
+        for ( (col, order) <- clusteringColumns zip orders) yield col.copy(clusteringOrder = order)
+      case Some(e) => throw new IOException("clusteringOrder size is not matching with Clustering Columns")
+      case None => clusteringColumns
+    }
+
+    clusteringCols.map { col =>
+      if (col.clusteringOrder == ClusteringOrder.DESC)
         s"${quote(col.columnName)} DESC" else s"${quote(col.columnName)} ASC"
-    }.toList.mkString(", ") 
+    }.toList.mkString(", ")
+  }
 
   private[this] def appendOptions(stmt: String, opts: String) =
     if (stmt.contains("WITH") && opts.startsWith("WITH")) s"$stmt${Properties.lineSeparator}AND ${opts.substring(4)}"
