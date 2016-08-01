@@ -10,6 +10,7 @@ import org.apache.spark.sql.DataFrame
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.util.{Properties, Try}
+
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{CounterType, ColumnType}
 import com.datastax.spark.connector.util.Quote._
@@ -130,7 +131,7 @@ object ColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(column.getName, columnRole, columnType)
   }
-  
+
   def apply(
     column: ColumnMetadata,
     columnRole: ColumnRole,
@@ -150,7 +151,6 @@ case class TableDef(
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
     isView: Boolean = false,
-    clusteringOrder: Option[Seq[ClusteringOrder]] = None,
     options: String = "") extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
@@ -202,25 +202,15 @@ case class TableDef(
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
-    val ordered = if (clusteringColumns.nonEmpty)
-      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns,clusteringOrder)})"
+    val ordered = if (clusteringColumns.size > 0)
+      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns)})"
     else stmt
     appendOptions(ordered, options)
   }
-  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef], clusteringOrder: Option[Seq[ClusteringOrder]]): String = {
+  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef]): String =
+    clusteringColumns.map { col => s"${quote(col.columnName)} ${col.clusteringOrder}"}.mkString(", ")
 
-    val clusteringCols = clusteringOrder match {
-      case Some(orders) if orders.size == clusteringColumns.size =>
-        for ( (col, order) <- clusteringColumns zip orders) yield col.copy(clusteringOrder = order)
-      case Some(e) => throw new IOException("clusteringOrder size is not matching with Clustering Columns")
-      case None => clusteringColumns
-    }
-
-    clusteringCols.map { col =>
-      if (col.clusteringOrder == ClusteringOrder.DESC)
-        s"${quote(col.columnName)} DESC" else s"${quote(col.columnName)} ASC"
-    }.toList.mkString(", ")
-  }
+  def clusterOrder: Seq[ClusteringOrder] = clusteringColumns.map(_.clusteringOrder)
 
   private[this] def appendOptions(stmt: String, opts: String) =
     if (stmt.contains("WITH") && opts.startsWith("WITH")) s"$stmt${Properties.lineSeparator}AND ${opts.substring(4)}"

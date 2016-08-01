@@ -58,27 +58,6 @@ class TableDefSpec extends WordSpec with Matchers {
         )
       }
 
-      "it contains clustering columns with order and override order using TableDef" in {
-        val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
-        val column2 = ColumnDef("c2", PartitionKeyColumn, VarCharType)
-        val column3 = ColumnDef("c3", ClusteringColumn(0), VarCharType, ClusteringOrder.DESC)
-        val column4 = ColumnDef("c4", ClusteringColumn(1), VarCharType)
-        val column5 = ColumnDef("c5", RegularColumn, VarCharType)
-        val tableDef = TableDef("keyspace", "table", Seq(column1, column2), Seq(column3, column4), Seq(column5)
-          ,clusteringOrder=Option(List(ClusteringOrder.ASC,ClusteringOrder.DESC)))
-        tableDef.cql should be(
-          """CREATE TABLE "keyspace"."table" (
-            |  "c1" int,
-            |  "c2" varchar,
-            |  "c3" varchar,
-            |  "c4" varchar,
-            |  "c5" varchar,
-            |  PRIMARY KEY (("c1", "c2"), "c3", "c4")
-            |)
-            |WITH CLUSTERING ORDER BY ("c3" ASC, "c4" DESC)""".stripMargin
-        )
-      }
-
       "it contains compound partition key and multiple clustering columns" in {
         val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
         val column2 = ColumnDef("c2", PartitionKeyColumn, VarCharType)
