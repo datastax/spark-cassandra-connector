@@ -282,6 +282,12 @@ finer control see the CassandraOption class</td>
  as seen on a smaller job for stability</td>
 </tr>
 <tr>
+  <td><code>output.timestamp</code></td>
+  <td>0</td>
+  <td>Timestamp (microseconds since epoch) of the write. If not specified, the time that the
+ write occurred is used. A value of 0 means time of write.</td>
+</tr>
+<tr>
   <td><code>output.ttl</code></td>
   <td>0</td>
   <td>Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL</td>

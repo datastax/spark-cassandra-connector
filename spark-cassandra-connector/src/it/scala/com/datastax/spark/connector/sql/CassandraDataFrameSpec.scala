@@ -91,7 +91,8 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         Map(
           "table" -> "kv_copy",
           "keyspace" -> ks,
-          "spark.cassandra.output.ttl" -> "300"
+          "spark.cassandra.output.ttl" -> "300",
+          "spark.cassandra.output.timestamp" -> "1470009600000000"
         )
       )
       .save()
@@ -116,6 +117,13 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
 
     ttl should be > 0
     ttl should be <= 300
+
+    val writeTime = conn.withSessionDo { session =>
+      val rs = session.execute(s"""SELECT WRITETIME(v) from $ks.kv_copy""")
+      rs.one().getLong(0)
+    }
+
+    writeTime should be === 1470009600000000L
   }
 
   it should " be able to create a C* schema from a table" in {
