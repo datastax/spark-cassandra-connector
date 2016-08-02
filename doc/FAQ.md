@@ -104,6 +104,12 @@ the rpc_address is set to.
 When troubleshooting Cassandra connections it is sometimes useful to set the rpc_address in the
 C* yaml file to `0.0.0.0` so any incoming connection will work.
 
+### How does the connector evaluate number of Spark partitions?
+
+The Connector evaluates the number of Spark partitions by dividing table size estimate by 
+`input.split.size_in_mb` value. The resulting number of partitions in never smaller than 
+`1 + 2 * SparkContext.defaultParallelism`.
+
 ### What does input.split.size_in_mb use to determine size?
 
 Input.split.size_in_mb uses a internal system table in C* ( >= 2.1.5) to determine the size

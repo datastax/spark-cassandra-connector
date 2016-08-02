@@ -123,7 +123,7 @@ class BucketingRangeIndexSpec extends FlatSpec with PropertyChecks with ShouldMa
       longTokenFactory.minToken,
       longTokenFactory.minToken,
       Set.empty,
-      0)
+      Murmur3TokenFactory)
 
 
   "Murmur3Bucketing" should "  map all tokens to a single wrapping range" in {
@@ -146,7 +146,7 @@ class BucketingRangeIndexSpec extends FlatSpec with PropertyChecks with ShouldMa
       bigTokenFactory.minToken,
       bigTokenFactory.minToken,
       Set.empty,
-      0)
+      RandomPartitionerTokenFactory)
 
 
   "RandomBucketing" should " map all tokens to a single wrapping range" in {

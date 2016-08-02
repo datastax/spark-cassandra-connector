@@ -3,7 +3,11 @@ package com.datastax.spark.connector.rdd.partitioner.dht
 import java.net.InetAddress
 
 case class TokenRange[V, T <: Token[V]] (
-    start: T, end: T, replicas: Set[InetAddress], dataSize: Long) {
+    start: T, end: T, replicas: Set[InetAddress], tokenFactory: TokenFactory[V, T]) {
+
+  private[partitioner] lazy val rangeSize = tokenFactory.distance(start, end)
+
+  private[partitioner] lazy val ringFraction = tokenFactory.ringFraction(start, end)
 
   def isWrappedAround(implicit tf: TokenFactory[V, T]): Boolean =
     start >= end && end != tf.minToken
@@ -18,8 +22,8 @@ case class TokenRange[V, T <: Token[V]] (
     val minToken = tf.minToken
     if (isWrappedAround)
       Seq(
-        TokenRange(start, minToken, replicas, dataSize / 2),
-        TokenRange(minToken, end, replicas, dataSize / 2))
+        TokenRange(start, minToken, replicas, tokenFactory),
+        TokenRange(minToken, end, replicas, tokenFactory))
     else
       Seq(this)
   }

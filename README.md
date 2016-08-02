@@ -114,6 +114,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
   - [DataFrames](doc/14_data_frames.md)
   - [Python](doc/15_python.md)
+  - [Partitioner](doc/16_partitioning.md)
   - [Frequently Asked Questions](doc/FAQ.md)
   - [Configuration Parameter Reference Table](doc/reference.md)
 

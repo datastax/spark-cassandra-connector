@@ -203,7 +203,7 @@ OSS Cassandra this should never be used.</td>
 <tr>
   <td><code>input.split.size_in_mb</code></td>
   <td>64</td>
-  <td>Approx amount of data to be fetched into a Spark partition</td>
+  <td>Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark partitions is <code>1 + 2 * SparkContext.defaultParallelism</code></td>
 </tr>
 </table>
 
