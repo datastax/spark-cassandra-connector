@@ -2,19 +2,19 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.spark.connector.types.{MapType, ListType, ColumnType}
+import scala.collection._
+
+import com.google.common.util.concurrent.{FutureCallback, Futures}
+import org.apache.spark.TaskContext
 import org.apache.spark.metrics.OutputMetricsUpdater
 
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.types.{ListType, MapType}
+import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.Logging
-import org.apache.spark.TaskContext
-
-import scala.collection._
 
 /** Writes RDD data into given Cassandra table.
   * Individual column values are extracted from RDD objects using given [[RowWriter]]
@@ -156,7 +156,11 @@ class TableWriter[T] private (
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
 
       for (stmtToWrite <- batchBuilder) {
-        queryExecutor.executeAsync(stmtToWrite)
+        val future = queryExecutor.executeAsync(stmtToWrite)
+        Futures.addCallback(future, new FutureCallback[ResultSet] {
+          override def onFailure(t: Throwable): Unit = logError(s"Failed to execute $stmtToWrite", t)
+          override def onSuccess(result: ResultSet): Unit = {}
+        })
         assert(stmtToWrite.bytesCount > 0)
         rateLimiter.maybeSleep(stmtToWrite.bytesCount)
       }
