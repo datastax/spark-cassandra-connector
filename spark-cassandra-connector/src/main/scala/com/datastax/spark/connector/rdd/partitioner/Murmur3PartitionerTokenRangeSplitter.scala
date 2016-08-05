@@ -1,34 +1,21 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.spark.connector.rdd.partitioner.dht.{LongToken, TokenFactory, TokenRange}
+import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
 
-/** Fast token range splitter assuming that data are spread out evenly in the whole range.
-  * @param dataSize estimate of the size of the data in the whole ring */
-class Murmur3PartitionerTokenRangeSplitter(dataSize: Long)
+/** Fast token range splitter assuming that data are spread out evenly in the whole range. */
+private[partitioner] class Murmur3PartitionerTokenRangeSplitter
   extends TokenRangeSplitter[Long, LongToken] {
 
-  private val tokenFactory =
-    TokenFactory.Murmur3TokenFactory
+  private type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[Long, LongToken]
 
-  private type TR = TokenRange[Long, LongToken]
+  override def split(tokenRange: TokenRange, splitSize: Int): Seq[TokenRange] = {
+    val rangeSize = tokenRange.rangeSize
+    val splitPointsCount = if (rangeSize < splitSize) rangeSize.toInt else splitSize
+    val splitPoints = (0 until splitPointsCount).map({ i =>
+      new LongToken(tokenRange.start.value + (rangeSize * i / splitPointsCount).toLong)
+    }) :+ tokenRange.end
 
-  /** Splits the token range uniformly into sub-ranges.
-    * @param splitSize requested sub-split size, given in the same units as `dataSize` */
-  def split(range: TR, splitSize: Long): Seq[TR] = {
-    val rangeSize = range.dataSize
-    val rangeTokenCount = tokenFactory.distance(range.start, range.end)
-    val n = math.max(1, math.round(rangeSize.toDouble / splitSize).toInt)
-
-    val left = range.start.value
-    val right = range.end.value
-    val splitPoints =
-      (for (i <- 0 until n) yield left + (rangeTokenCount * i / n).toLong) :+ right
-
-    for (Seq(l, r) <- splitPoints.sliding(2).toSeq) yield
-      new TokenRange[Long, LongToken](
-        new LongToken(l),
-        new LongToken(r),
-        range.replicas,
-        rangeSize / n)
+    for (Seq(left, right) <- splitPoints.sliding(2).toSeq) yield
+      new TokenRange(left, right, tokenRange.replicas, tokenRange.tokenFactory)
   }
 }

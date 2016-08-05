@@ -19,7 +19,7 @@ execute arbitrary CQL queries in your Spark applications.
 ## Features
 
  - Compatible with Apache Cassandra version 2.0 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 1.5 (see table below)
+ - Compatible with Apache Spark 1.0 through 1.6 (see table below)
  - Compatible with Scala 2.10 and 2.11
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
@@ -114,6 +114,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [The Spark Shell](doc/13_spark_shell.md)
   - [DataFrames](doc/14_data_frames.md)
   - [Python](doc/15_python.md)
+  - [Partitioner](doc/16_partitioning.md)
   - [Frequently Asked Questions](doc/FAQ.md)
   - [Configuration Parameter Reference Table](doc/reference.md)
 

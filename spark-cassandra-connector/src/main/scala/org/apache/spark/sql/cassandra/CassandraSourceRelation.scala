@@ -15,6 +15,7 @@ import org.apache.spark.SparkConf
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
@@ -251,7 +252,7 @@ object CassandraSourceRelation {
     val tableSizeInBytes = tableSizeInBytesString match {
       case Some(size) => Option(size.toLong)
       case None =>
-        val tokenFactory = getTokenFactory(cassandraConnector)
+        val tokenFactory = forSystemLocalPartitioner(cassandraConnector)
         val dataSizeInBytes =
           new DataSizeEstimates(
             cassandraConnector,

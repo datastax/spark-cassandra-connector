@@ -2,19 +2,16 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.types.TypeConverter
 import org.apache.commons.lang3.tuple
 import org.apache.spark.api.java.function.{Function => JFunction}
-
 import scala.collection.JavaConversions._
 
 class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
@@ -80,6 +77,13 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')")
         session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')")
         session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.limit_test_table (key INT, value TEXT, PRIMARY KEY (key))")
+        for(i <- 0 to 30) {
+          session.execute(s"INSERT INTO $ks.limit_test_table (key, value) VALUES ($i, '$i')")
+        }
       }
     )
   }
@@ -413,9 +417,10 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to set limit" in {
-    val rdd = javaFunctions(sc).cassandraTable(ks, "test_table").limit(1L)
+    val limit = 1
+    val rdd = javaFunctions(sc).cassandraTable(ks, "limit_test_table").limit(limit.toLong)
     val result = rdd.collect()
-    result should have size 1
+    result.size shouldBe <= (rdd.getNumPartitions * limit)
   }
 
   it should "allow to set ascending ordering" in {

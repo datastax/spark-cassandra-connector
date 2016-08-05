@@ -33,9 +33,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
   val otherTable = "other_table"
+  val smallerTable = "smaller_table"
+  val emptyTable = "empty_table"
   val wideTable = "wide_table"
   val manyColsTable = "many_cols_table"
   val keys = 0 to 200
+  val smallerTotal = 0 to 10000 by 100
   val total = 0 to 10000
 
   conn.withSessionDo { session =>
@@ -58,6 +61,35 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
             (value * 100).toLong: JLong,
             value.toString)
           ).par.foreach(_.getUninterruptibly)
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$smallerTable (
+             |  key INT,
+             |  group BIGINT,
+             |  value TEXT,
+             |  PRIMARY KEY (key, group)
+             |)""".stripMargin)
+        (for (value <- smallerTotal) yield
+          session.executeAsync(
+            s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""",
+            value: Integer,
+            (value * 100).toLong: JLong,
+            value.toString)
+          ).par.foreach(_.getUninterruptibly)
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.$emptyTable (
+             |  key INT,
+             |  group BIGINT,
+             |  value TEXT,
+             |  PRIMARY KEY (key, group)
+             |)""".stripMargin)
       },
 
       Future {
@@ -128,6 +160,42 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  def checkArrayOptionCassandraRow[T](result: Array[(T, Option[CassandraRow])]) = {
+    markup("Checking RightSide LeftJoin Results")
+    result.length should be(keys.length)
+    val sorted_result = result
+      .map(_._2)
+      .filter(_.isDefined)
+      .sortBy(_.get.getInt(0))
+    for (key <- keys) {
+      sorted_result(key).get.getInt("key") should be(key)
+      sorted_result(key).get.getLong("group") should be(key * 100)
+      sorted_result(key).get.getString("value") should be(key.toString)
+    }
+  }
+
+  def checkArrayOptionSmallerCassandraRow[T](result: Array[(T, Option[CassandraRow])]) = {
+    markup("Checking RightSide LeftJoin Results")
+    result.length should be(keys.length)
+    val sorted_result = result
+      .map(_._2)
+      .filter(_.isDefined)
+      .sortBy(_.get.getInt(0))
+    for ((key, idx) <- keys.intersect(smallerTotal).zipWithIndex) {
+      sorted_result(idx).get.getInt("key") should be(key)
+      sorted_result(idx).get.getLong("group") should be(key * 100)
+      sorted_result(idx).get.getString("value") should be(key.toString)
+    }
+  }
+
+  def checkArrayOptionEmptyCassandraRow[T](result: Array[(T, Option[CassandraRow])]) = {
+    markup("Checking Empty RightSide LeftJoin Results")
+    result.length should be(keys.length)
+    for (key <- keys) {
+      result(key)._2 should be(None)
+    }
+  }
+
   def checkArrayTuple[T](result: Array[(T, (Int, Long, String))]) = {
     markup("Checking RightSide Join Results")
     result.length should be(keys.length)
@@ -159,7 +227,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a tuple from Cassandra" in {
+  it should "be retrievable as a tuple from Cassandra" in {
     val source = sc.parallelize(keys).map(Tuple1(_))
     val someCass = source.joinWithCassandraTable[(Int, Long, String)](ks, tableName)
     val result = someCass.collect
@@ -168,7 +236,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a case class from cassandra" in {
+  it should "be retrievable as a case class from cassandra" in {
     val source = sc.parallelize(keys).map(Tuple1(_))
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
     val result = someCass.collect
@@ -211,7 +279,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a tuple from Cassandra" in {
+  it should "be retrievable as a tuple from Cassandra" in {
     val source = sc.parallelize(keys).map(x => new KVRow(x))
     val someCass = source.joinWithCassandraTable[(Int, Long, String)](ks, tableName)
     val result = someCass.collect
@@ -220,7 +288,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a case class from cassandra" in {
+  it should "be retrievable as a case class from cassandra" in {
     val source = sc.parallelize(keys).map(x => new KVRow(x))
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
     val result = someCass.collect
@@ -272,7 +340,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a tuple from Cassandra" in {
+  it should "be retrievable as a tuple from Cassandra" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
     val someCass = source.joinWithCassandraTable[(Int, Long, String)](ks, tableName)
     val result = someCass.collect
@@ -281,7 +349,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a case class from cassandra" in {
+  it should "be retrievable as a case class from cassandra" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
     val result = someCass.collect
@@ -352,7 +420,34 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a tuple from Cassandra" in {
+  it should "be left joinable with Cassandra" in {
+    val source = sc.cassandraTable(ks, otherTable)
+    val someCass = source.leftJoinWithCassandraTable(ks, tableName)
+    val result = someCass.collect
+    val leftSide = source.collect
+    checkArrayOptionCassandraRow(result)
+    checkLeftSide(leftSide, result)
+  }
+
+  it should "be left joinable with a table of a smaller size" in {
+    val source = sc.cassandraTable(ks, otherTable)
+    val someCass = source.leftJoinWithCassandraTable(ks, smallerTable)
+    val result = someCass.collect
+    val leftSide = source.collect
+    checkArrayOptionSmallerCassandraRow(result)
+    checkLeftSide(leftSide, result)
+  }
+
+  it should "be left joinable with an empty table" in {
+    val source = sc.cassandraTable(ks, otherTable)
+    val someCass = source.leftJoinWithCassandraTable(ks, emptyTable)
+    val result = someCass.collect
+    val leftSide = source.collect
+    checkArrayOptionEmptyCassandraRow(result)
+    checkLeftSide(leftSide, result)
+  }
+
+  it should "be retrievable as a tuple from Cassandra" in {
     val source = sc.cassandraTable(ks, otherTable)
     val someCass = source.joinWithCassandraTable[(Int, Long, String)](ks, tableName)
     val result = someCass.collect
@@ -361,7 +456,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be retreivable as a case class from cassandra" in {
+  it should "be retrievable as a case class from cassandra" in {
     val source = sc.cassandraTable(ks, otherTable)
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
     val result = someCass.collect
@@ -370,7 +465,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should " be retreivable without repartitioning" in {
+  it should " be retrievable without repartitioning" in {
     val someCass = sc.cassandraTable(ks, otherTable).joinWithCassandraTable(ks, tableName)
     someCass.toDebugString should not contain "ShuffledRDD"
     val result = someCass.collect

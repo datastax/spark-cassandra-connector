@@ -357,11 +357,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result.head.getString("value") should startWith("000")
   }
 
-  it should "use a single partition per node for a tiny table" in {
-    val rdd = sc.cassandraTable(ks, "key_value")
-    rdd.partitions should have length conn.hosts.size
-  }
-
   it should "support single partition where clauses" in {
     val someCass = sc
       .cassandraTable[KeyValue](ks, "key_value")
