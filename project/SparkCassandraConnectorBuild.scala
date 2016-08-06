@@ -174,7 +174,6 @@ object Artifacts {
   val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
   val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Settings.cassandraTestVersion    guavaExclude() // ApacheV2
   val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver                  guavaExclude() // ApacheV2
-  val commonsLang3        = "org.apache.commons"      % "commons-lang3"          % CommonsLang3                                    // ApacheV2
   val commonsBeanUtils    = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
@@ -271,7 +270,7 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
-  val connector = (testKit ++ metrics ++ jetty ++ logging ++ cassandra ++ spark.map(_ % "provided") ++ Seq(commonsLang3, commonsBeanUtils, guava, jodaC, jodaT, lzf, jsr166e))
+  val connector = (testKit ++ metrics ++ jetty ++ logging ++ cassandra ++ spark.map(_ % "provided") ++ Seq(commonsBeanUtils, guava, jodaC, jodaT, lzf, jsr166e))
       .map (_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
 
   val embedded = (logging ++ spark ++ cassandra ++ akka ++ Seq(
