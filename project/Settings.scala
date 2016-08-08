@@ -15,13 +15,13 @@
  */
 
 import java.io.File
-import java.nio.file.{Paths, Files}
+import java.lang.management.ManagementFactory
+import java.nio.file.{Files, Paths}
 
 import scala.language.postfixOps
 
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
-import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform._
+import com.sun.management.OperatingSystemMXBean
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
 import sbt.Keys._
@@ -32,8 +32,6 @@ import sbtassembly.AssemblyPlugin._
 import sbtassembly._
 import sbtrelease.ReleasePlugin._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
-import java.lang.management.ManagementFactory;
-import com.sun.management.OperatingSystemMXBean;
 
 object Settings extends Build {
 
@@ -346,18 +344,5 @@ object Settings extends Build {
       )
     }
   )
-
-  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
-    ScalariformKeys.preferences in Compile  := formattingPreferences,
-    ScalariformKeys.preferences in Test     := formattingPreferences
-  )
-
-  def formattingPreferences = {
-    import scalariform.formatter.preferences._
-    FormattingPreferences()
-      .setPreference(RewriteArrowSymbols, false)
-      .setPreference(AlignParameters, true)
-      .setPreference(AlignSingleLineCaseStatements, true)
-  }
 
 }
