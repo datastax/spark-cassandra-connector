@@ -39,9 +39,9 @@ package object cassandra {
     }
   }
 
-  implicit class DataFrameWriterWrapper(val dfWriter: DataFrameWriter) extends AnyVal {
+  implicit class DataFrameWriterWrapper[T](val dfWriter: DataFrameWriter[T]) extends AnyVal {
     /** Sets the format used to access Cassandra through Connector */
-    def cassandraFormat: DataFrameWriter = {
+    def cassandraFormat: DataFrameWriter[T] = {
       dfWriter.format("org.apache.spark.sql.cassandra")
     }
 
@@ -50,7 +50,7 @@ package object cassandra {
         table: String,
         keyspace: String,
         cluster: String = CassandraSourceRelation.defaultClusterName,
-        pushdownEnable: Boolean = true): DataFrameWriter = {
+        pushdownEnable: Boolean = true): DataFrameWriter[T] = {
 
       cassandraFormat.options(cassandraOptions(table, keyspace, cluster, pushdownEnable))
     }
