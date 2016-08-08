@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>metrics - org.apache.spark.metrics</title>
+          <meta name="description" content="metrics - org.apache.spark.metrics" />
+          <meta name="keywords" content="metrics org.apache.spark.metrics" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'org.apache.spark.metrics.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="org">org</a>.<a href="../../package.html" class="extype" name="org.apache">apache</a>.<a href="../package.html" class="extype" name="org.apache.spark">spark</a></p>
+        <h1>metrics</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">metrics</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="org.apache.spark.metrics.CCSTimer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="CCSTimerextendsTimer"></a>
+      <a id="CCSTimer:CCSTimer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CCSTimer.html"><span class="name">CCSTimer</span></a><span class="result"> extends <a href="Timer.html" class="extype" name="org.apache.spark.metrics.Timer">Timer</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="org.apache.spark.metrics.CassandraConnectorSource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraConnectorSourceextendsSource"></a>
+      <a id="CassandraConnectorSource:CassandraConnectorSource"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraConnectorSource.html"><span class="name">CassandraConnectorSource</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.metrics.source.Source" class="extype" target="_top">Source</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">This class is a Source implementation for Cassandra Connector related Codahale metrics.</p>
+    </li><li name="org.apache.spark.metrics.InputMetricsUpdater" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="InputMetricsUpdaterextendsMetricsUpdater"></a>
+      <a id="InputMetricsUpdater:InputMetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="InputMetricsUpdater.html"><span class="name">InputMetricsUpdater</span></a><span class="result"> extends <a href="MetricsUpdater.html" class="extype" name="org.apache.spark.metrics.MetricsUpdater">MetricsUpdater</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A trait that provides a method to update read metrics which are collected for connector related tasks.</p>
+    </li><li name="org.apache.spark.metrics.MetricsUpdater" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="MetricsUpdaterextendsAnyRef"></a>
+      <a id="MetricsUpdater:MetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="MetricsUpdater.html"><span class="name">MetricsUpdater</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">The base trait for metrics updaters implementations.</p>
+    </li><li name="org.apache.spark.metrics.OutputMetricsUpdater" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="OutputMetricsUpdaterextendsMetricsUpdater"></a>
+      <a id="OutputMetricsUpdater:OutputMetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="OutputMetricsUpdater.html"><span class="name">OutputMetricsUpdater</span></a><span class="result"> extends <a href="MetricsUpdater.html" class="extype" name="org.apache.spark.metrics.MetricsUpdater">MetricsUpdater</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A trait that provides a method to update write metrics which are collected for connector related tasks.</p>
+    </li><li name="org.apache.spark.metrics.SimpleTimer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="SimpleTimerextendsTimer"></a>
+      <a id="SimpleTimer:SimpleTimer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="SimpleTimer.html"><span class="name">SimpleTimer</span></a><span class="result"> extends <a href="Timer.html" class="extype" name="org.apache.spark.metrics.Timer">Timer</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="org.apache.spark.metrics.Timer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TimerextendsAnyRef"></a>
+      <a id="Timer:Timer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Timer.html"><span class="name">Timer</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Timer mixin allows to measure the time of a task - or, in other words - the time from creating an
+instance to calling <code>com.codahale.metrics.Timer.Context.stop</code> method.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="org.apache.spark.metrics.InputMetricsUpdater" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InputMetricsUpdater"></a>
+      <a id="InputMetricsUpdater:InputMetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="InputMetricsUpdater$.html"><span class="name">InputMetricsUpdater</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="org.apache.spark.metrics.MetricsUpdater" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MetricsUpdater"></a>
+      <a id="MetricsUpdater:MetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MetricsUpdater$.html"><span class="name">MetricsUpdater</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="org.apache.spark.metrics.OutputMetricsUpdater" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OutputMetricsUpdater"></a>
+      <a id="OutputMetricsUpdater:OutputMetricsUpdater"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OutputMetricsUpdater$.html"><span class="name">OutputMetricsUpdater</span></a><span class="result"> extends <a href="../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
+    </body>
+      </html>
