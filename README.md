@@ -5,9 +5,9 @@
 
 ### Most Recent Release Scala Docs
 
-### 1.6.0
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector-embedded/)
+### 2.0.0
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector-embedded/)
 
 [All Versions API Docs](#hosted-api-docs)
 
@@ -19,7 +19,7 @@ execute arbitrary CQL queries in your Spark applications.
 ## Features
 
  - Compatible with Apache Cassandra version 2.0 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 1.6 (see table below)
+ - Compatible with Apache Spark 1.0 through 2.0 (see table below)
  - Compatible with Scala 2.10 and 2.11
  - Exposes Cassandra tables as Spark RDDs
  - Maps table rows to CassandraRow objects or tuples
@@ -42,6 +42,7 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver |
 | --------- | ------------- | --------- | --------------------- |
+| 2.0       | 2.0           | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           |
 | 1.4       | 1.4           | 2.1.5*    | 2.1                   |
@@ -54,6 +55,10 @@ version range supported between the connector, Spark, Cassandra, and the Cassand
 
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
+
+### 2.0.0
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector-embedded/)
 
 ### 1.6.0
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector/)
@@ -87,11 +92,7 @@ This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project 
 SBT config:
                                                                                                                            
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0"
-
-If you want to access the functionality of Connector from Java, you may want to add also a Java API module:
-
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector-java" % "1.6.0"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.0-M1"
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)
