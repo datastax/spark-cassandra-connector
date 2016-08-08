@@ -142,14 +142,24 @@ object Artifacts {
     def guavaExclude: ModuleID =
       module exclude("com.google.guava", "guava")
 
-    def sparkExclusions: ModuleID = module.guavaExclude
+    /**We will just include netty-all as a dependency **/
+    def nettyExclude: ModuleID = module.guavaExclude
+      .exclude("io.netty", "netty")
+      .exclude("io.netty", "netty-buffer")
+      .exclude("io.netty", "netty-codec")
+      .exclude("io.netty", "netty-common")
+      .exclude("io.netty", "netty-handler")
+      .exclude("io.netty", "netty-transport")
+
+
+    def sparkExclusions: ModuleID = module.nettyExclude
       .exclude("org.apache.spark", s"spark-core_$scalaBinary")
 
     def logbackExclude: ModuleID = module
       .exclude("ch.qos.logback", "logback-classic")
       .exclude("ch.qos.logback", "logback-core")
 
-    def replExclusions: ModuleID = module.guavaExclude
+    def replExclusions: ModuleID = module.nettyExclude
       .exclude("org.apache.spark", s"spark-bagel_$scalaBinary")
       .exclude("org.apache.spark", s"spark-mllib_$scalaBinary")
       .exclude("org.scala-lang", "scala-compiler")
@@ -164,13 +174,14 @@ object Artifacts {
   val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
   val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
   val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
-  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Settings.cassandraTestVersion       guavaExclude // ApacheV2
-  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver guavaExclude // ApacheV2
+  val cassandraClient     = "org.apache.cassandra"    % "cassandra-clientutil"   % Settings.cassandraTestVersion  nettyExclude // ApacheV2
+  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver nettyExclude // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
   val jodaC               = "org.joda"                % "joda-convert"           % JodaC
   val jodaT               = "joda-time"               % "joda-time"              % JodaT
   val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
+  val netty               = "io.netty"                % "netty-all"              % Netty
   val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
   val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
   val airlift             = "io.airlift"              % "airline"                % Airlift
@@ -263,16 +274,18 @@ object Dependencies {
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    config, guava, jodaC, jodaT, lzf, jsr166e)
+    config, guava, netty, jodaC, jodaT, lzf, jsr166e)
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava)
+    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava, netty)
 
   val perf = logging ++ spark ++ cassandra
 
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
   val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
+
+  val shaded = Seq(guava, netty)
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
