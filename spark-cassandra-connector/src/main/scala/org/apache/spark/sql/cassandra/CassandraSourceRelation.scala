@@ -4,9 +4,12 @@ import java.net.InetAddress
 import java.util.UUID
 
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.mapper.ColumnMapperConvention
+import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
+import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
@@ -59,9 +62,13 @@ private[cassandra] class CassandraSourceRelation(
         session => session.execute(s"TRUNCATE $keyspace.$table")
       }
     }
-
     implicit val rwf = SqlRowWriter.Factory
-    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
+
+    val columnsByName = (for (c <- tableDef.columns) yield (c.columnName, c.ref)).toMap
+    val mappedColumns = data.columns.map(x =>
+      ColumnMapperConvention.columnForProperty(x, columnsByName).getOrElse(x: ColumnRef))
+
+    val columns = SomeColumns(mappedColumns: _*)
     data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
   }
 

@@ -71,6 +71,16 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
              |  epoch bigint,
              |  PRIMARY KEY (customer_id, epoch)
              |)""".stripMargin.replaceAll("\n", " "))
+      },
+
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.df_underscore_test(
+             |  underscore_field int,
+             |  key int,
+             |  PRIMARY KEY (key)
+             |)""".stripMargin.replaceAll("\n", " "))
       }
     )
   }
@@ -265,6 +275,52 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
     val qp2 = df2.queryExecution.executedPlan
     qp2.constraints shouldBe empty
+  }
+
+  case class CamelCaseClass(key: Int, underscoreField: Int)
+
+  it should "allow to save camel cased df fields to underscored columns" in {
+    sqlContext.sparkSession.createDataFrame(Seq(
+      CamelCaseClass(1, underscoreField = 10)
+    )).write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Overwrite)
+      .options(Map("table" -> "df_underscore_test", "keyspace" -> ks))
+      .save()
+
+    val content = cassandraTable(TableRef("df_underscore_test", ks)).collect()
+    content should have length 1
+    content.head.getAs[Int]("underscore_field") should be(10)
+  }
+
+  case class UnderscoreClass(key: Int, underscore_field: Int)
+
+  it should "allow to save underscored df fields to underscored columns" in {
+    sqlContext.sparkSession.createDataFrame(Seq(
+      UnderscoreClass(1, underscore_field = 20)
+    )).write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Overwrite)
+      .options(Map("table" -> "df_underscore_test", "keyspace" -> ks))
+      .save()
+
+    val content = cassandraTable(TableRef("df_underscore_test", ks)).collect()
+    content should have length 1
+    content.head.getAs[Int]("underscore_field") should be(20)
+  }
+
+  case class InvalidClass(key: Int, non_existing_field: Int)
+
+  it should "complain with meaningful exception when saving non-existing df fields" in {
+    intercept[NoSuchElementException] {
+      sqlContext.sparkSession.createDataFrame(Seq(
+        InvalidClass(1, non_existing_field = 30)
+      )).write
+        .format("org.apache.spark.sql.cassandra")
+        .mode(Append)
+        .options(Map("table" -> "df_underscore_test", "keyspace" -> ks))
+        .save()
+    }
   }
 }
 

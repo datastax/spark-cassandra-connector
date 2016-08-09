@@ -206,6 +206,9 @@ df.write
 
 ```
 
+Refer to [Working with user-defined case classes and tuples](4_mapper.md) to see what naming convention 
+rules apply when persisting DataFrames.
+
 ### Setting Connector specific options on DataFrames
 Connector specific options can be set by invoking `options` method on either `DataFrameReader` or `DataFrameWriter`. 
 There are several settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and

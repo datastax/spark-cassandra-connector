@@ -1,8 +1,5 @@
 package com.datastax.spark.connector.writer
 
-import java.net.InetAddress
-import java.util.UUID
-
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.Row
