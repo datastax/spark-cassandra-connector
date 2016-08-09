@@ -104,6 +104,7 @@ object Settings extends Build {
     spAppendScalaVersion := true,
     spIncludeMaven := true,
     spIgnoreProvided := true,
+    spShade := true,
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 
@@ -206,7 +207,8 @@ object Settings extends Build {
   lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ testSettings
 
   lazy val rootSettings = Seq(
-    cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _)
+    cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _),
+    updateOptions := updateOptions.value.withCachedResolution(true)
   )
 
   lazy val demoSettings = projectSettings ++ noPublish ++ Seq(
@@ -231,7 +233,7 @@ object Settings extends Build {
       cp
     }
   )
-  lazy val assembledSettings = defaultSettings ++ customTasks ++ sparkPackageSettings ++ sbtAssemblySettings
+  lazy val assembledSettings = defaultSettings ++ customTasks ++ sbtAssemblySettings ++ sparkPackageSettings
 
   val testOptionSettings = Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),

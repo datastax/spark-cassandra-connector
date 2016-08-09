@@ -19,6 +19,8 @@ import java.io.File
 
 import sbt._
 import sbt.Keys._
+import sbtassembly._
+import sbtassembly.AssemblyKeys._
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
 import pl.project13.scala.sbt.JmhPlugin
 
@@ -63,7 +65,23 @@ object CassandraSparkBuild extends Build {
     name = namespace,
     conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it")) ++ pureCassandraSettings
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
+      ++ pureCassandraSettings
+      ++ Seq(assembly in spPackage := (assembly in shadedConnector).value)
+    ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
+  ) configs IntegrationTest
+
+  lazy val shadedConnector = CrossScalaVersionsProject(
+    name = s"$namespace-shaded",
+    conf = assembledSettings ++ Seq(
+      libraryDependencies ++= Dependencies.connectorNonShaded
+        ++ Dependencies.shaded
+        ++ Seq(
+        "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
+      ++ pureCassandraSettings
+      ++ Seq( target := target.value / "shaded"),
+    base = Some(namespace)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
@@ -113,8 +131,9 @@ object CassandraSparkBuild extends Build {
   /* templates */
   def CrossScalaVersionsProject(name: String,
                                 conf: Seq[Def.Setting[_]],
-                                reliesOn: Seq[ClasspathDep[ProjectReference]] = Seq.empty) =
-    Project(id = name, base = file(name), dependencies = reliesOn, settings = conf ++ Seq(
+                                reliesOn: Seq[ClasspathDep[ProjectReference]] = Seq.empty,
+                                base: Option[String] = None) =
+    Project(id = name, base = file(base.getOrElse(name)), dependencies = reliesOn, settings = conf ++ Seq(
       unmanagedSourceDirectories in (Compile, packageBin) +=
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value),
       unmanagedSourceDirectories in (Compile, doc) +=
@@ -286,6 +305,13 @@ object Dependencies {
   val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
 
   val shaded = Seq(guava, netty)
+
+  val connectorNonShaded = (connector.toSet -- shaded.toSet).toSeq.map { dep =>
+    dep.configurations match {
+      case Some(conf) => dep
+      case _ => dep % "provided"
+    }
+  }
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
