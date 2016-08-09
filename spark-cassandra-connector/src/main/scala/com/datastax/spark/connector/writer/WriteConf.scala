@@ -138,6 +138,14 @@ object WriteConf {
     default = 0,
     description = """Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL""".stripMargin)
 
+  val TimestampParam = ConfigParameter[Long](
+    name = "spark.cassandra.output.timestamp",
+    section = ReferenceSection,
+    default = 0,
+    description =
+      """Timestamp (microseconds since epoch) of the write. If not specified, the time that the
+        | write occurred is used. A value of 0 means time of write.""".stripMargin)
+
   /** Task Metrics **/
   val TaskMetricsParam = ConfigParameter[Boolean](
     name = "spark.cassandra.output.metrics",
@@ -158,6 +166,7 @@ object WriteConf {
     ParallelismLevelParam,
     ThroughputMiBPSParam,
     TTLParam,
+    TimestampParam,
     TaskMetricsParam
   )
 
@@ -201,7 +210,19 @@ object WriteConf {
 
     val ttlSeconds = conf.getInt(TTLParam.name, TTLParam.default)
 
-    val ttlOption = if(ttlSeconds == TTLParam.default) TTLOption.defaultValue else TTLOption.constant(ttlSeconds)
+    val ttlOption =
+      if (ttlSeconds == TTLParam.default)
+        TTLOption.defaultValue
+      else
+        TTLOption.constant(ttlSeconds)
+    
+    val timestampMicros = conf.getLong(TimestampParam.name, TimestampParam.default)
+
+    val timestampOption =
+      if (timestampMicros == TimestampParam.default)
+        TimestampOption.defaultValue
+      else
+        TimestampOption.constant(timestampMicros)
 
     WriteConf(
       batchSize = batchSize,
@@ -211,7 +232,8 @@ object WriteConf {
       parallelismLevel = parallelismLevel,
       throughputMiBPS = throughputMiBPS,
       taskMetricsEnabled = metricsEnabled,
-      ttl = ttlOption,      
+      ttl = ttlOption,
+      timestamp = timestampOption,
       ignoreNulls = ignoreNulls,
       ifNotExists = ifNotExists)
   }
