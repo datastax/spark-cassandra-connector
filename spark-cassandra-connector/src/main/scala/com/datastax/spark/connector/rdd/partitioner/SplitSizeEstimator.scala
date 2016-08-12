@@ -16,7 +16,7 @@ private[rdd] trait SplitSizeEstimator[R] {
     1 + coreCount * 2
   }
 
-  def estimateSplitCount(splitSize: Int): Int = {
+  def estimateSplitCount(splitSize: Long): Int = {
     require(splitSize > 0, "Split size must be greater than zero.")
     val splitCountEstimate = estimateDataSize / splitSize
     Math.max(splitCountEstimate.toInt, minimalSplitCount)
