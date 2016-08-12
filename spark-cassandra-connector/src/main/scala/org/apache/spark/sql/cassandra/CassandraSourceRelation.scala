@@ -77,7 +77,15 @@ private[cassandra] class CassandraSourceRelation(
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
-    case true => predicatePushDown(filters).handledBySpark.toArray
+    case true => 
+      val optimizedFilters = new FiltersOptimizer(filters).build()
+      val optimizationCanBeApplied = isOptimizationAvailable(optimizedFilters)
+      if(optimizationCanBeApplied) {
+        // all such filters are the same, take first one
+        predicatePushDown(optimizedFilters.head).handledBySpark.toArray
+      } else {
+        predicatePushDown(filters).handledBySpark.toArray
+      }
     case false => filters
   }
 
@@ -123,17 +131,20 @@ private[cassandra] class CassandraSourceRelation(
     finalPushdown
   }
 
+  private def isOptimizationAvailable(optimizedFilters: List[Array[Filter]]): Boolean ={
+    optimizedFilters.size > 1 &&
+      optimizedFilters.sliding(2).forall{ set =>
+        // check whether all non-pushed down filters are equals for each separate rdd
+        predicatePushDown(set.head).handledBySpark == predicatePushDown(set.last).handledBySpark
+      }
+  }
+
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     val prunedFilteredRdd = {
       if(filterPushdown) {
         val optimizedFilters = new FiltersOptimizer(filters).build()
-        val optimizationCanBeApplied =
-          optimizedFilters.size > 1 &&
-            optimizedFilters.sliding(2).forall{ set =>
-              // check whether all non-pushed down filters are equals for each separate rdd
-              predicatePushDown(set.head).handledBySpark == predicatePushDown(set.last).handledBySpark
-            }
+        val optimizationCanBeApplied = isOptimizationAvailable(optimizedFilters)
         val filteredRdd = if(optimizationCanBeApplied) {
           optimizedFilters.map { predicate =>
             val pushdownFilters = predicatePushDown(predicate).handledByCassandra.toArray
