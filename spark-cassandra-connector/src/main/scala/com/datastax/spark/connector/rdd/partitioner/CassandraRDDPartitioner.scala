@@ -174,7 +174,7 @@ object CassandraRDDPartitioner {
       conn: CassandraConnector,
       tableDef: TableDef,
       splitCount: Option[Int],
-      splitSize: Int): CassandraRDDPartitioner[V, T] = {
+      splitSize: Long): CassandraRDDPartitioner[V, T] = {
 
     val tokenFactory = getTokenFactory(conn)
     new CassandraRDDPartitioner(conn, tableDef, splitCount, splitSize)(tokenFactory)
