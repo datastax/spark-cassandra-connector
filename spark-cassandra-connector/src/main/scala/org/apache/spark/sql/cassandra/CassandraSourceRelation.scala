@@ -3,16 +3,7 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.UUID
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
-import org.apache.spark.sql.cassandra.DataTypeConverter._
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
-import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.SparkConf
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
@@ -21,6 +12,14 @@ import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
+import org.apache.spark.sql.cassandra.DataTypeConverter._
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
+import org.apache.spark.unsafe.types.UTF8String
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -131,9 +130,9 @@ private[cassandra] class CassandraSourceRelation(
         val optimizedFilters = new FiltersOptimizer(filters).build()
         val optimizationCanBeApplied =
           optimizedFilters.size > 1 &&
-            optimizedFilters.sliding(2).foldLeft(true){ (acc, sets) =>
+            optimizedFilters.sliding(2).forall{ set =>
               // check whether all non-pushed down filters are equals for each separate rdd
-              predicatePushDown(sets.head).handledBySpark == predicatePushDown(sets.last).handledBySpark
+              predicatePushDown(set.head).handledBySpark == predicatePushDown(set.last).handledBySpark
             }
         val filteredRdd = if(optimizationCanBeApplied) {
           optimizedFilters.map { predicate =>
