@@ -61,15 +61,22 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-compiler" % scalaVersion.value))
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
+  /**
+    * To prevent users from building unshaded Jars the default artifacts for
+    * spark-cassandra-connector and spark-cassandra-connector-shaded are disabled.
+    */
+
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
     conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
       ++ pureCassandraSettings
-      ++ Seq(assembly in spPackage := (assembly in shadedConnector).value)
+      ++ Seq(
+      assembly in spPackage := (assembly in shadedConnector).value,
+      publishArtifact in (Compile, packageBin) := false)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
-  ) configs IntegrationTest
+  ).configs(IntegrationTest).settings(addArtifact(Artifact(namespace), assembly in shadedConnector) :_*)
 
   lazy val shadedConnector = CrossScalaVersionsProject(
     name = s"$namespace-shaded",
@@ -80,8 +87,10 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
       ++ pureCassandraSettings
-      ++ Seq( target := target.value / "shaded"),
-    base = Some(namespace)
+      ++ Seq(
+        target := target.value / "shaded",
+        publishArtifact in (Compile, packageBin) := false),
+      base = Some(namespace)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
