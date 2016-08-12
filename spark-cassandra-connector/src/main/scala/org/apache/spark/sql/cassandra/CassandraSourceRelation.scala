@@ -43,9 +43,10 @@ private[cassandra] class CassandraSourceRelation(
   extends BaseRelation
   with InsertableRelation
   with PrunedFilteredScan
+  with TableScan
   with Logging {
 
-  private[this] val tableDef = Schema.tableFromCassandra(
+  private[cassandra] val tableDef = Schema.tableFromCassandra(
     connector,
     tableRef.keyspace,
     tableRef.table)
@@ -82,7 +83,7 @@ private[cassandra] class CassandraSourceRelation(
   private[this] val baseRdd =
     sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
 
-  def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
+  override def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
     case true => predicatePushDown(filters).handledBySpark.toArray
