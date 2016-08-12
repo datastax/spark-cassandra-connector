@@ -159,7 +159,7 @@ object CassandraPartitionGenerator {
       conn: CassandraConnector,
       tableDef: TableDef,
       splitCount: Option[Int],
-      splitSize: Long): CassandraRDDPartitioner[V, T] = {
+      splitSize: Long): CassandraPartitionGenerator[V, T] = {
 
     val tokenFactory = getTokenFactory(conn)
     new CassandraPartitionGenerator(conn, tableDef, splitCount, splitSize)(tokenFactory)
