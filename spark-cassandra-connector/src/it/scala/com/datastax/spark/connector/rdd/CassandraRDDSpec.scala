@@ -203,6 +203,12 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result should have length 3
   }
 
+  it should "not overflow on reasonable but large split_size_in_mb" in {
+    sc.cassandraTable(ks, "simple_kv")
+      .withReadConf(ReadConf(splitSizeInMB = 10000))
+      .splitSize should be (10485760000L)
+  }
+
   it should "allow to read a Cassandra table as Array of user-defined case class (nested) objects" in {
     val result = sc.cassandraTable[SampleWithNestedScalaCaseClass#InnerClass](ks, "simple_kv").collect()
     result should have length 3
