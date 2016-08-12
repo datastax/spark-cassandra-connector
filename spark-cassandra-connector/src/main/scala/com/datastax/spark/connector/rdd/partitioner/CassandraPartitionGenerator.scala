@@ -156,10 +156,10 @@ object CassandraPartitionGenerator {
     * and therefore you don't need to specify the ones proper for the partitioner used in the
     * Cassandra cluster. */
   def apply(
-    conn: CassandraConnector,
-    tableDef: TableDef,
-    splitCount: Option[Int],
-    splitSize: Int): CassandraPartitionGenerator[V, T] = {
+      conn: CassandraConnector,
+      tableDef: TableDef,
+      splitCount: Option[Int],
+      splitSize: Long): CassandraRDDPartitioner[V, T] = {
 
     val tokenFactory = getTokenFactory(conn)
     new CassandraPartitionGenerator(conn, tableDef, splitCount, splitSize)(tokenFactory)
