@@ -32,6 +32,12 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
             s"""CREATE TABLE IF NOT EXISTS $ks.fields
                 |(k INT, a TEXT, b TEXT, c TEXT, d TEXT, e TEXT, PRIMARY KEY (k)) """
                 .stripMargin)
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.metrics
+                |(k TEXT, a INT, b INT, c INT, PRIMARY KEY (k, a, b)) """
+              .stripMargin)
         }
       )
     }
@@ -39,6 +45,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
 
   val colorOptions = Map("keyspace" -> ks, "table" -> "colors")
   val fieldsOptions = Map("keyspace" -> ks, "table" -> "fields")
+  val metricsOptions = Map("keyspace" -> ks, "table" -> "metrics")
   val withPushdown = Map("pushdown" -> "true")
   val withoutPushdown = Map("pushdown" -> "false")
 
@@ -74,6 +81,16 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
     cts.get.selectedColumnNames should contain theSameElementsAs Seq("b", "c", "d")
   }
 
+  it should "optimize table scan if all filters can be pushed down" in {
+    val fieldsDF = sqlContext.read.format(cassandraFormat).options(metricsOptions ++ withPushdown).load()
+    val df = fieldsDF.filter("a = 5 and (b > 5 or b < 3)")
+    val executionPlan = df.queryExecution.executedPlan
+    val cts = findAllCassandraTableScanRDD(executionPlan)
+    cts.nonEmpty shouldBe true
+    cts.head.where shouldBe CqlWhereClause(Seq(""""a" = ? AND "b" > ?"""), List(5, 5))
+    cts.last.where shouldBe CqlWhereClause(Seq(""""a" = ? AND "b" < ?"""), List(5, 3))
+  }
+
   def findCassandraTableScanRDD(sparkPlan: SparkPlan): Option[CassandraTableScanRDD[_]] = {
     def _findCassandraTableScanRDD(rdd: RDD[_]): Option[CassandraTableScanRDD[_]] = {
       rdd match {
@@ -89,6 +106,24 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
       case filter: FilterExec => findCassandraTableScanRDD(filter.child)
       case wsc: WholeStageCodegenExec => findCassandraTableScanRDD(wsc.child)
       case _ => None
+    }
+  }
+
+  def findAllCassandraTableScanRDD(sparkPlan: SparkPlan): List[CassandraTableScanRDD[_]] = {
+    def _findAllCassandraTableScanRDD(rdd: RDD[_]): List[CassandraTableScanRDD[_]] = {
+      rdd match {
+        case ctsrdd: CassandraTableScanRDD[_] => List(ctsrdd)
+        case other: RDD[_] => other.dependencies.iterator
+          .flatMap(dep => _findAllCassandraTableScanRDD(dep.rdd)).toList
+      }
+    }
+
+    sparkPlan match {
+      case prdd: RDDScanExec => _findAllCassandraTableScanRDD(prdd.rdd)
+      case prdd: RowDataSourceScanExec => _findAllCassandraTableScanRDD(prdd.rdd)
+      case filter: FilterExec => findAllCassandraTableScanRDD(filter.child)
+      case wsc: WholeStageCodegenExec => findAllCassandraTableScanRDD(wsc.child)
+      case _ => List.empty
     }
   }
 

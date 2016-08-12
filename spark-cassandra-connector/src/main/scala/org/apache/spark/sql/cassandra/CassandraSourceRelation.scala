@@ -11,7 +11,6 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.SparkConf
-
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
@@ -129,8 +128,22 @@ private[cassandra] class CassandraSourceRelation(
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
-        val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
+        val optimizedFilters = new FiltersOptimizer(filters).build()
+        val optimizationCanBeApplied =
+          optimizedFilters.size > 1 &&
+            optimizedFilters.sliding(2).foldLeft(true){ (acc, sets) =>
+              // check whether all non-pushed down filters are equals for each separate rdd
+              predicatePushDown(sets.head).handledBySpark == predicatePushDown(sets.last).handledBySpark
+            }
+        val filteredRdd = if(optimizationCanBeApplied) {
+          optimizedFilters.map { predicate =>
+            val pushdownFilters = predicatePushDown(predicate).handledByCassandra.toArray
+            maybePushdownFilters(prunedRdd, pushdownFilters).asInstanceOf[RDD[Row]]
+          }.reduce(_ union _)
+        } else {
+          val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
+          maybePushdownFilters(prunedRdd, pushdownFilters)
+        }
         filteredRdd.asInstanceOf[RDD[Row]]
       } else {
         prunedRdd
