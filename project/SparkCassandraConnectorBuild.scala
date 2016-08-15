@@ -62,21 +62,31 @@ object CassandraSparkBuild extends Build {
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
   /**
-    * To prevent users from building unshaded Jars the default artifacts for
-    * spark-cassandra-connector and spark-cassandra-connector-shaded are disabled.
+    * Do not included shaded dependencies so they will not be listed in the Pom created for this
+    * project.
+    *
+    * Run the compile from the shaded project since we are no longer including shaded libs
     */
-
   lazy val connector = CrossScalaVersionsProject(
     name = namespace,
-    conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
+    conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector
+      ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"))
       ++ pureCassandraSettings
       ++ Seq(
       assembly in spPackage := (assembly in shadedConnector).value,
-      publishArtifact in (Compile, packageBin) := false)
+      compile := (compile in Compile in shadedConnector).value,
+      packageBin := {
+        val shaded = (assembly in shadedConnector).value
+        val targetName = target.value
+        val expected = target.value / s"$namespace-${version.value}.jar"
+        IO.move(shaded, expected)
+        expected
+      },
+      sbt.Keys.`package` := packageBin.value)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
-  ).configs(IntegrationTest).settings(addArtifact(Artifact(namespace), assembly in shadedConnector) :_*)
+  ) configs IntegrationTest
 
   lazy val shadedConnector = CrossScalaVersionsProject(
     name = s"$namespace-shaded",
@@ -89,6 +99,7 @@ object CassandraSparkBuild extends Build {
       ++ pureCassandraSettings
       ++ Seq(
         target := target.value / "shaded",
+        test in assembly := {},
         publishArtifact in (Compile, packageBin) := false),
       base = Some(namespace)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
@@ -301,8 +312,17 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
+  val shaded = Seq(guava, netty)
+
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    config, guava, netty, jodaC, jodaT, lzf, jsr166e)
+    config, jodaC, jodaT, lzf, jsr166e) ++ shaded.map(_ % "it,test")
+
+  val connectorNonShaded = (connector.toSet -- shaded.toSet).toSeq.map { dep =>
+    dep.configurations match {
+      case Some(conf) => dep
+      case _ => dep % "provided"
+    }
+  }
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
     cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava, netty)
@@ -312,15 +332,6 @@ object Dependencies {
   val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
   val twitter = Seq(sparkStreaming, Demos.twitterStreaming)
-
-  val shaded = Seq(guava, netty)
-
-  val connectorNonShaded = (connector.toSet -- shaded.toSet).toSeq.map { dep =>
-    dep.configurations match {
-      case Some(conf) => dep
-      case _ => dep % "provided"
-    }
-  }
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
