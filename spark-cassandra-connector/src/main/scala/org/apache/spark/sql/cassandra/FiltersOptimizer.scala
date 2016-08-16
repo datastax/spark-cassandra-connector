@@ -10,13 +10,31 @@ import org.apache.spark.sql.sources._
   * will become equivalent
   * 'field1 < 3 AND field2 = "val1" OR field1 < 3 AND field2 = "val2" OR
   * field1 > 7 AND field2 = "val1" OR field1 > 7 AND field2 = "val2"'
+  *
+  * @param filters Array of logical statements [[org.apache.spark.sql.sources.Filter]]
+  * that forms `where`-clause with `AND` operator, for example:
+  * val Array(f1, f2, ... fn) = ... // such that `where f1 AND f2 AND ... AND fn`
+  *
   */
 class FiltersOptimizer(filters: Array[Filter]) {
 
   private val fullFilterAst =
     if (filters.nonEmpty) Some(filters.reduce((left, right) => And(left, right))) else None
 
-  private def dist(predL: Filter, predR: Filter): Filter = (predL, predR) match {
+  import FiltersOptimizer._
+
+  def build(): List[Array[Filter]] = fullFilterAst match {
+    case Some(ast) => (toNNF andThen toDNF andThen traverse andThen groupByAnd).apply(ast)
+    case None => List.empty
+  }
+
+}
+
+object FiltersOptimizer{
+
+  def apply(filters: Array[Filter]): FiltersOptimizer = new FiltersOptimizer(filters)
+
+  private[cassandra] def dist(predL: Filter, predR: Filter): Filter = (predL, predR) match {
     case (Or(l, r), p) => Or(dist(l, p), dist(r, p))
     case (p, Or(l, r)) => Or(dist(p, l), dist(p, r))
     case (l, r) => And(l, r)
@@ -32,7 +50,7 @@ class FiltersOptimizer(filters: Array[Filter]) {
     * negation of their conjuncts: ¬(φ ∧ ψ) is converted to (¬φ ∨ ¬ψ)
     * while ¬(φ ∨ ψ) becomes (¬φ ∧ ¬ψ).
     */
-  private val toNNF: Filter => Filter = {
+  private[cassandra] val toNNF: Filter => Filter = {
     case a@(EqualTo(_, _) | EqualNullSafe(_, _) | GreaterThan(_, _) |
             GreaterThanOrEqual(_, _) | LessThan(_, _) | LessThanOrEqual(_, _) |
             In(_, _) | IsNull(_) | IsNotNull(_) |
@@ -50,6 +68,7 @@ class FiltersOptimizer(filters: Array[Filter]) {
     case Not(And(l, r)) => toNNF(Or(Not(l), Not(r)))
     case Or(l, r) => Or(toNNF(l), toNNF(r))
     case Not(Or(l, r)) => toNNF(And(Not(l), Not(r)))
+    case p => p
   }
 
   /** The 'toDNF' function converts expressions to disjunctive normal form: a
@@ -59,30 +78,29 @@ class FiltersOptimizer(filters: Array[Filter]) {
     * The conversion is carried out by first converting the expression into
     * negation normal form, and then applying the distributive law.
     */
-  private val toDNF: Filter => Filter = {
+  private[cassandra] val toDNF: Filter => Filter = {
     case And(l, r) => dist(toDNF(l), toDNF(r))
     case Or(l, r) => Or(toDNF(l), toDNF(r))
     case p => p
   }
 
   /**
-    * Traverse over disjunctive parts of AST
+    * Traverse over disjunctive clauses of AST
     */
-  private val traverse: Filter => List[Filter] = {
+  private[cassandra] val traverse: Filter => List[Filter] = {
     case Or(l, r) => traverse(l) ++ traverse(r)
     case a => a :: Nil
   }
 
-  private val andToArray: Filter => Array[Filter] = {
+  /**
+   * Group all conjunctive clauses into Array[Filter]
+   * f1 && f2 && ... && fn => Array(f1, f2, ... fn)
+   */
+  private[cassandra] val andToArray: Filter => Array[Filter] = {
     case And(l, r) => andToArray(l) ++ andToArray(r)
     case a => Array(a)
   }
 
-  private val groupAnd: List[Filter] => List[Array[Filter]] = _.map(andToArray)
-
-  def build(): List[Array[Filter]] = fullFilterAst match {
-    case Some(ast) => (toNNF andThen toDNF andThen traverse andThen groupAnd).apply(ast)
-    case None => List.empty
-  }
+  private[cassandra] val groupByAnd: List[Filter] => List[Array[Filter]] = _.map(andToArray)
 
 }

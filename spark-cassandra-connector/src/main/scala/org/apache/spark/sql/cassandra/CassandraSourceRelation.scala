@@ -32,6 +32,7 @@ private[cassandra] class CassandraSourceRelation(
     userSpecifiedSchema: Option[StructType],
     filterPushdown: Boolean,
     tableSizeInBytes: Option[Long],
+    enableWhereClauseOptimization: Boolean,
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
@@ -78,7 +79,7 @@ private[cassandra] class CassandraSourceRelation(
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
     case true => 
-      val optimizedFilters = new FiltersOptimizer(filters).build()
+      val optimizedFilters = FiltersOptimizer(filters).build()
       val optimizationCanBeApplied = isOptimizationAvailable(optimizedFilters)
       if(optimizationCanBeApplied) {
         // all such filters are the same, take first one
@@ -131,13 +132,13 @@ private[cassandra] class CassandraSourceRelation(
     finalPushdown
   }
 
-  private def isOptimizationAvailable(optimizedFilters: List[Array[Filter]]): Boolean ={
-    optimizedFilters.size > 1 &&
+  private def isOptimizationAvailable(optimizedFilters: List[Array[Filter]]): Boolean =
+    enableWhereClauseOptimization && optimizedFilters.size > 1 &&
       optimizedFilters.sliding(2).forall{ set =>
         // check whether all non-pushed down filters are equals for each separate rdd
         predicatePushDown(set.head).handledBySpark == predicatePushDown(set.last).handledBySpark
       }
-  }
+  
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
@@ -252,9 +253,19 @@ object CassandraSourceRelation {
       """.stripMargin
   )
 
+  val EnableWhereClauseOptimizationParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.sql.enable.where.clause.optimization",
+    section = ReferenceSection,
+    default = false,
+    description =
+      """Connector will try to optimize sql query `where`-clause, to increase
+        | number of filters that can be pushed down. Experimental.""".stripMargin
+  )
+
   val Properties = Seq(
     AdditionalCassandraPushDownRulesParam,
-    TableSizeInBytesParam
+    TableSizeInBytesParam,
+    EnableWhereClauseOptimizationParam
   )
 
   val defaultClusterName = "default"
@@ -270,6 +281,9 @@ object CassandraSourceRelation {
     val conf =
       consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(TableSizeInBytesParam.name)
+    val enableWhereClauseOptimization = 
+      conf.getOption(EnableWhereClauseOptimizationParam.name)
+            .map( _.equalsIgnoreCase("true") ).getOrElse(false)
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
     val tableSizeInBytes = tableSizeInBytesString match {
@@ -295,6 +309,7 @@ object CassandraSourceRelation {
       userSpecifiedSchema = schema,
       filterPushdown = options.pushdown,
       tableSizeInBytes = tableSizeInBytes,
+      enableWhereClauseOptimization = enableWhereClauseOptimization,
       connector = cassandraConnector,
       readConf = readConf,
       writeConf = writeConf,

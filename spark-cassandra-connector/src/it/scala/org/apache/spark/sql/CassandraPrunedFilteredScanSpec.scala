@@ -47,6 +47,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   val fieldsOptions = Map("keyspace" -> ks, "table" -> "fields")
   val metricsOptions = Map("keyspace" -> ks, "table" -> "metrics")
   val withPushdown = Map("pushdown" -> "true")
+  val withWhereClauseOptimizationEnabled = Map("spark.cassandra.sql.enable.where.clause.optimization" -> "true")
   val withoutPushdown = Map("pushdown" -> "false")
 
   "CassandraPrunedFilteredScan" should "pushdown predicates for clustering keys" in {
@@ -82,7 +83,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   }
 
   it should "optimize table scan if all filters can be pushed down" in {
-    val fieldsDF = sqlContext.read.format(cassandraFormat).options(metricsOptions ++ withPushdown).load()
+    val fieldsDF = sqlContext.read.format(cassandraFormat).options(metricsOptions ++ withPushdown ++ withWhereClauseOptimizationEnabled ).load()
     val df = fieldsDF.filter("a = 5 and (b > 5 or b < 3)")
     val executionPlan = df.queryExecution.executedPlan
     val cts = findAllCassandraTableScanRDD(executionPlan)
