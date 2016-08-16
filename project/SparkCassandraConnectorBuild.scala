@@ -76,7 +76,6 @@ object CassandraSparkBuild extends Build {
       ++ pureCassandraSettings
       ++ Seq(
       assembly in spPackage := (assembly in shadedConnector).value,
-      compile := (compile in Compile in shadedConnector).value,
       packageBin := {
         val shaded = (assembly in shadedConnector).value
         val targetName = target.value
@@ -84,6 +83,8 @@ object CassandraSparkBuild extends Build {
         IO.move(shaded, expected)
         expected
       },
+      packagedArtifacts in publishLocal := {Map(artifact.value -> packageBin.value)},
+      packagedArtifacts in publish := {Map(artifact.value -> packageBin.value)},
       sbt.Keys.`package` := packageBin.value)
     ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
@@ -312,10 +313,16 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
+  /**
+    * We will mark these dependencies as provided for normal compilation so that they will be on the
+    * classpath but they will not be downloaded as depenendencies when grabbed from maven.
+    *
+    * In the shaded build we will place theses in the assembly jar and remove all other libs
+    */
   val shaded = Seq(guava, netty)
 
   val connector = testKit ++ metrics ++ jetty ++ logging ++ akka ++ cassandra ++ spark.map(_ % "provided") ++ Seq(
-    config, jodaC, jodaT, lzf, jsr166e) ++ shaded.map(_ % "it,test")
+    config, jodaC, jodaT, lzf, jsr166e) ++ shaded.map(_ % "provided")
 
   val connectorNonShaded = (connector.toSet -- shaded.toSet).toSeq.map { dep =>
     dep.configurations match {
