@@ -22,11 +22,7 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.0.4")
 
-addSbtPlugin("org.spark-packages" %% "sbt-spark-package" % "0.2.4")
-
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.2.6")
-
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
+addSbtPlugin("org.spark-packages" %% "sbt-spark-package" % "0.2.5")
 
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-M12")
 
