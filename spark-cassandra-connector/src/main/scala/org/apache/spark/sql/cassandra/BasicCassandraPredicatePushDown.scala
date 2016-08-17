@@ -1,6 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.types.TimeUUIDType
 
 /**
  *  Determines which filter predicates can be pushed down to Cassandra.
@@ -60,6 +61,22 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[
   /** Returns a first non-empty set. If not found, returns an empty set. */
   private def firstNonEmptySet[T](sets: Set[T]*): Set[T] =
     sets.find(_.nonEmpty).getOrElse(Set.empty[T])
+
+
+  /** All non-equal predicates on a TimeUUID column are going to fail and fail
+    * in silent way. The basic issue here is that when you use a comparison on
+    * a time UUID column in C* it compares based on the Time portion of the UUID. When
+    * Spark executes this filter (unhandled behavior) it will compare lexically, this
+    * will lead to results being incorrectly filtered out of the set. As long as the
+    * range predicate is handled completely by the connector the correct result
+    * will be obtained.
+    */
+  val timeUUIDNonEqual = {
+    val timeUUIDCols = table.columns.filter(x => x.columnType == TimeUUIDType)
+    timeUUIDCols.flatMap(col => rangePredicatesByName.get(col.columnName)).flatten
+  }
+
+
 
   /**
    * Selects partition key predicates for pushdown:
@@ -137,4 +154,21 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[
     * so they must be applied by Spark  */
   val predicatesToPreserve: Set[Predicate] =
     predicates -- predicatesToPushDown
+
+
+  val unhandledTimeUUIDNonEqual = {
+    timeUUIDNonEqual.toSet -- predicatesToPushDown
+  }
+
+  require(unhandledTimeUUIDNonEqual.isEmpty,
+    s"""
+      | You are attempting to do a non-equality comparison on a TimeUUID column in Spark.
+      | Spark can only compare TimeUUIDs Lexically which means that the comparison will be
+      | different than the comparison done in C* which is done based on the Time Portion of
+      | TimeUUID. This will in almost all cases lead to incorrect results. If possible restrict
+      | doing a TimeUUID comparison only to columns which can be pushed down to Cassandra.
+      | https://datastax-oss.atlassian.net/browse/SPARKC-405.
+      |
+      | $unhandledTimeUUIDNonEqual
+    """.stripMargin)
 }
