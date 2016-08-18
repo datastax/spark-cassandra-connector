@@ -2,7 +2,6 @@ package com.datastax.spark.connector.types
 
 import java.util.Date
 
-import org.apache.cassandra.serializers.TimestampSerializer
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
