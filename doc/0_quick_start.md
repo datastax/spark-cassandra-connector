@@ -4,8 +4,8 @@
 
 In this tutorial, you'll learn how to setup a very simple Spark application for reading and writing data from/to Cassandra.
 Before you start, you need to have basic knowledge of Apache Cassandra and Apache Spark.
-Refer to [Cassandra documentation](http://www.datastax.com/documentation/cassandra/2.0/cassandra/gettingStartedCassandraIntro.html) 
-and [Spark documentation](https://spark.apache.org/docs/0.9.1/). 
+Refer to [Datastax](http://docs.datastax.com/en/cassandra/latest/) and [Cassandra documentation](http://cassandra.apache.org/doc/latest/getting_started/index.html)
+and [Spark documentation](https://spark.apache.org/docs/latest/). 
 
 ### Prerequisites
 
@@ -17,7 +17,14 @@ The dependencies are easily retrieved via the spark-packages.org website. For ex
 
     resolvers += "Spark Packages Repo" at "https://dl.bintray.com/spark-packages/maven"
     libraryDependencies += "datastax" % "spark-cassandra-connector" % "1.6.0-s_2.11"
-
+ 
+The spark-packages libraries can also be used with spark-submit and spark shell, these
+commands will place the connector and all of its dependencies on the path of the
+Spark Driver and all Spark Executors.
+   
+    $SPARK_HOME/bin/spark-shell --packages datastax:spark-cassandra-connector:1.6.0-s_2.11
+    $SPARK_HOME/bin/spark-submit --packages datastax:spark-cassandra-connector:1.6.0-s_2.11
+   
 For the list of available versions, see:
 - https://spark-packages.org/package/datastax/spark-cassandra-connector
  
@@ -25,14 +32,6 @@ This driver does not depend on the Cassandra server code.
 
  - For a detailed dependency list, see [project/CassandraSparkBuild.scala](../project/CassandraSparkBuild.scala)
  - For dependency versions, see [project/Versions.scala](../project/Versions.scala)
-
-Add the `spark-cassandra-connector` jar and its dependency jars to the following classpaths.
-**Make sure the Connector version you use coincides with your Spark version (i.e. Spark 1.2.x with Connector 1.2.x)**:
-
-    "com.datastax.spark" %% "spark-cassandra-connector" % Version
-
- - the classpath of your project
- - the classpath of every Spark cluster node
 
 ### Building
 See [Building And Artifacts](12_building_and_artifacts.md)
@@ -54,28 +53,18 @@ INSERT INTO test.kv(key, value) VALUES ('key2', 2);
  
 Now you're ready to write your first Spark program using Cassandra.
 
-### Setting up `SparkContext`   
-As usual, start by importing Spark:
+### Loading up the Spark-Shell
 
-```scala
-import org.apache.spark._
-```
+Run the `spark-shell` with the packages line for your version. To configure
+the default Spark Configuration pass key value pairs with `--conf`
 
-Before creating the `SparkContext`, set the `spark.cassandra.connection.host` property to the address of one 
-of the Cassandra nodes:
+    $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
+                                --packages datastax:spark-cassandra-connector:1.6.0-s_2.11
 
-```scala
-val conf = new SparkConf(true)
-   .set("spark.cassandra.connection.host", "127.0.0.1")
-```
-       
-Create a `SparkContext`. Substitute `127.0.0.1` with the actual address of your Spark Master
-(or use `"local"` to run in local mode): 
-
-```scala
-val sc = new SparkContext("spark://127.0.0.1:7077", "test", conf)
-```
-
+This command would set the Spark Cassandra Connector parameter 
+`spark.cassandra.connection.host` to `127.0.0.1`. Change this
+to the address of one of the nodes in your Cassandra cluster.
+ 
 Enable Cassandra-specific functions on the `SparkContext`, `RDD`, and `DataFrame`:
 
 ```scala

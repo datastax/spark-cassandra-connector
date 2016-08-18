@@ -23,12 +23,12 @@ Those followed with a default of N/A are required, all others are optional.
 | cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
 | pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
 
-####Read, Writing and CassandraConnector Options
+#### Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
 can be passed through as DataFrame options as well. When using the `read` command below these
 options should appear exactly the same as when set in the SparkConf.
 
-####Setting Cluster and Keyspace Level Options
+#### Setting Cluster and Keyspace Level Options
 The connector also provides a way to describe the options which should be applied to all
 DataFrames within a cluster or within a keyspace. When a property has been specified at the
 table level it will override the default keyspace or cluster property.
@@ -37,7 +37,7 @@ To add these properties add keys to your `SparkConf` in the format
 
     clusterName:keyspaceName/propertyName.
 
-Example Changing Cluster/Keyspace Level Properties
+#### Example Changing Cluster/Keyspace Level Properties
 ```scala
 sqlContext.setConf("ClusterOne/spark.cassandra.input.split.size_in_mb", "32")
 sqlContext.setConf("default:test/spark.cassandra.input.split.size_in_mb", "128")
@@ -66,6 +66,8 @@ val lastdf = sqlContext
   ).load() // This DataFrame will use a spark.cassandra.input.split.size of 48
 ```
 
+
+#### Example Using TypeSafe Parameter Configuration Options
 There are also some helper method which simplifies setting Spark Cassandra Connector related parameters. They are a part
 of `CassandraSqlContext`:
 ```scala
@@ -89,7 +91,7 @@ The most programmatic way to create a data frame is to invoke a `read` command o
  You can then use `options` to give a map of `Map[String,String]` of options as described above.
  Then finish by calling `load` to actually get a `DataFrame`.
 
-Example Creating a DataFrame using a Read Command
+#### Example Creating a DataFrame using a Read Command
 ```scala
 val df = sqlContext
   .read
@@ -108,6 +110,7 @@ There are also some helper methods which can make creating data frames easier. T
 `org.apache.spark.sql.cassandra` package. In the following example, all the commands used to create a data frame are 
 equivalent:
 
+#### Example Using Format Helper Functions
 ```scala
 import org.apache.spark.sql.cassandra._
 
@@ -123,13 +126,13 @@ val df2 = sqlContext
   .load()
 ```
 
-###Creating DataFrames using Spark SQL
+### Creating DataFrames using Spark SQL
 
 Accessing data Frames using Spark SQL involves creating temporary tables and specifying the
 source as `org.apache.spark.sql.cassandra`. The `OPTIONS` passed to this table are used to
 establish a relation between the CassandraTable and the internally used DataSource.
 
-Example Creating a Source Using Spark SQL:
+#### Example Creating a Source Using Spark SQL:
 
 Create Relation with the Cassandra table test.words
 ```scala
@@ -171,7 +174,7 @@ DataFrames provide a save function which allows them to persist their data to an
 DataSource. The connector supports using this feature to persist a DataFrame a Cassandra
 Table.
 
-Example Copying Between Two Tables Using DataFrames
+#### Example Copying Between Two Tables Using DataFrames
 ```scala
 val df = sqlContext
   .read
@@ -187,6 +190,8 @@ df.write
 
 Similarly to reading Cassandra tables into data frames, we have some helper methods for the write path which are 
 provided by `org.apache.spark.sql.cassandra` package. In the following example, all the commands are equivalent:
+
+#### Example Using Helper Commands to Write DataFrames
 ```scala
 import org.apache.spark.sql.cassandra._
 
@@ -201,7 +206,7 @@ df.write
 
 ```
 
-###Setting Connector specific options on data frames
+### Setting Connector specific options on data frames
 Connector specific options can be set by invoking `options` method on either `DataFrameReader` or `DataFrameWriter`. 
 There are several settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and
 others. Those settings are identified by instances of `ConfigParameter` case class which offers an easy way to apply 
@@ -233,7 +238,7 @@ Once the new table is created, you can persist the DataFrame to the new table us
 The partition key and clustering key of the newly generated table can be set by passing in a list of 
 names of columns which should be used as partition key and clustering key.
 
-Example Transform DataFrame and Save to New Table
+#### Example Creating a Cassandra Table from a DataFrame
 ```scala
 // Add spark connector specific methods to DataFrame
 import com.datastax.spark.connector._
@@ -257,7 +262,7 @@ renamed.write
   .save()
 ```
 
-###Pushing down clauses to Cassandra
+### Pushing down clauses to Cassandra
 The DataFrame API will automatically pushdown valid where clauses to Cassandra as long as the
 pushdown option is enabled (defaults to enabled.)
 
@@ -281,6 +286,7 @@ First we can create a DataFrame and see that it has no `pushdown filters` set in
 means all requests will go directly to C* and we will require reading all of the data to `show`
 this DataFrame.
 
+#### Example Catalyst Optimization with Cassandra Server Side Pushdowns
 ```scala
 val df = sqlContext
   .read
@@ -343,7 +349,7 @@ dfWithPushdown.show
 +-----+----+-----+
 ```
 
-####Pushdown Filter Examples
+#### Example Pushdown Filters
 Example table
 ```sql
 CREATE KEYSPACE IF NOT EXISTS pushdowns WITH replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };

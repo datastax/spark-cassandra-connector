@@ -6,14 +6,19 @@ This section describes how to access data from Cassandra table with Spark.
 ### Obtaining a Cassandra table as an `RDD`
 
 To get a Spark RDD that represents a Cassandra table, 
-call the `cassandraTable` method on the `SparkContext` object. 
+call the `cassandraTable` method on the `SparkContext` object.
 
 ```scala
+import com.datastax.spark.connector._ //Loads implicit functions
 sc.cassandraTable("keyspace name", "table name")
 ```    
 
-If no explicit type is given to `cassandraTable`, the result of this expression is `CassandraRDD[CassandraRow]`. 
+If no explicit type is given to `cassandraTable`, the result of this 
+expression is `CassandraRDD[CassandraRow]`. This can be thought of as
+a container of `CassandraRow` objects. For information on mapping to
+other objects please see the documentation's [Mapping section](4_mapper.md)  
 
+#### Example of loading an RDD from Cassandra
 Create this keyspace and table in Cassandra using cqlsh:
 
 ```sql
@@ -41,12 +46,14 @@ rdd.toArray.foreach(println)
 
 ### Using emptyCassandraRDD implementation
 
-To create an instance of `CassandraRDD` for a table which does **not** exist use the emptyCassandraRDD method. 
-`emptyCassandraRDD`s do not perform validation or create partitions so they can be used to represent absent
-tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
-method on it or call `emptyCassandraTable` method on Spark context.
+To create an instance of `CassandraRDD` for a table which does **not** 
+exist use the emptyCassandraRDD method. `emptyCassandraRDD`s do not 
+perform validation or create partitions so they can be used to represent 
+absent tables. To create one, either initialize a `CassandraRDD` as 
+usual and then call `toEmptyCassandraRDD` method on it or call 
+`emptyCassandraTable` method on Spark context.
 
-Example:
+#### Example of using an EmptyCassandraRDD
 
 ```scala
 // validation is deferred, so it is not triggered during rdd creation
@@ -58,11 +65,17 @@ val emptyRDD2 = sc.emptyCassandraTable[SomeType]("ks", "not_existing_table"))
 
 ### Reading primitive column values
 
-You can read columns in a Cassandra table using the get methods of the `CassandraRow` object. 
-The get methods access individual column values by column name or column index.
-Type conversions are applied on the fly. Use `getOption` variants when you expect to receive Cassandra null values.
+You can read columns in a Cassandra table using the get methods 
+of the `CassandraRow` object. The get methods access individual column 
+values by column name or column index. Type conversions are applied on 
+the fly. Use `getOption` variants when you expect to receive Cassandra 
+null values.
 
-Continuing with the previous example, follow these steps to access individual column values.
+Continuing with the previous example, follow these steps to access 
+individual column values.
+
+#### Example Accessing the values within a CassandraRow
+
 Store the first item of the rdd in the firstRow value.
 
 ```scala
@@ -94,8 +107,10 @@ firstRow.get[java.math.BigInteger]("count")  // BigInteger(20)
 
 ### Working with nullable data
 
-When reading potentially `null` data, use the `Option` type on the Scala side to prevent getting a `NullPointerException`.
+When reading potentially `null` data, use the `Option` type on the 
+Scala side to prevent getting a `NullPointerException`.
 
+#### Example accessing values in a CassandraRow that may be null
 ```scala
 firstRow.getIntOption("count")        // Some(20)
 firstRow.get[Option[Int]]("count")    // Some(20)    
@@ -103,12 +118,15 @@ firstRow.get[Option[Int]]("count")    // Some(20)
 
 ### Reading collections
 
-You can read collection columns in a Cassandra table using the `getList`, `getSet`, `getMap` or generic `get` 
+You can read collection columns in a Cassandra table using the 
+`getList`, `getSet`, `getMap` or generic `get` 
 methods of the `CassandraRow` object. The `get` methods access 
 the collection column and return a corresponding Scala collection. 
-The generic `get` method lets you specify the precise type of the returned collection.
+The generic `get` method lets you specify the precise type of the 
+returned collection.
 
-Assuming you set up the test keyspace earlier, follow these steps to access a Cassandra collection.
+Assuming you set up the test keyspace earlier, follow these steps 
+to access a Cassandra collection.
 
 In the test keyspace, set up a collection set using cqlsh:
 
@@ -141,12 +159,14 @@ It is also possible to convert a collection to CQL `String` representation:
 row.get[String]("emails")               // "[someone@email.com, s@email.com]"
 ```
 
-A `null` collection is equivalent to an empty collection, therefore you don't need to use `get[Option[...]]` 
+A `null` collection is equivalent to an empty collection, 
+therefore you don't need to use `get[Option[...]]` 
 with collections.
 
-### Reading columns of Cassandra User Defined Types
+### Reading columns of Cassandra User Defined Types from a CassandraRow
 UDT column values are represented by `com.datastax.spark.connector.UDTValue` type.
-The same set of getters is available on `UDTValue` as on `CassandraRow`.
+The same set of getters is available on `UDTValue` as on `CassandraRow`. UDT's can
+also be mapped to Scala classes see [Mapping section](4_mapper.md)  
 
 Assume the following table definition:
 ```sql
@@ -202,29 +222,13 @@ All types are convertible to strings. Converting strings to numbers, dates,
 addresses or UUIDs is possible as long as the string has proper 
 contents, defined by the CQL3 standard. Maps can be implicitly converted to/from sequences of key-value tuples.
 
-## Accessing Cassandra with SparkSQL (since 1.1)
-It is possible to query Cassandra using SparkSQL. Configure your `SparkContext` object
-to use Cassandra as usual and then wrap it in a `org.apache.spark.sql.cassandra.CassandraSQLContext` object.
-To execute an SQL query, call `CassandraSQLContext#sql` method.
-
-```scala
-import org.apache.spark.sql.cassandra.CassandraSQLContext
-val sc: SparkContext = ...
-val cc = new CassandraSQLContext(sc)
-val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
-//or since 1.3.0 val rdd: DataFrame = ...
-```
-
-### Refresh local Cassandra table schema cache
-`CassandraSQLContext` caches Cassandra table schema locally. The cache expires in 10 minutes by default. It can be manually 
-refreshed by calling `cassandraSQLContext.refreshCassandraSchema()` when a Cassandra table schema changes and user can't
-wait for the cache expires automatically.
-
 ## Performing Efficient Joins With Cassandra Tables (since 1.2)
 ### Repartitioning RDDs based on a Cassandra Table's Replication
-The method `repartitionByCassandraReplica` can be used to relocate data in an RDD to match the replication strategy of
-a given table and keyspace. The method will look for partition key information in the given RDD and then use those values
-to determine which nodes in the Cluster would be responsible for that data. You can control the resultant number of partitions
+The method `repartitionByCassandraReplica` can be used to relocate data 
+in an RDD to match the replication strategy of a given table and keyspace.
+The method will look for partition key information in the given RDD and 
+then use those values to determine which nodes in the Cluster would be 
+responsible for that data. You can control the resultant number of partitions
 with the parameter `partitionsPerHost`.
 
 ```scala
@@ -242,20 +246,26 @@ scala> repartitioned
 
 
 ### Using joinWithCassandraTable
-The connector supports using any RDD as a source of a direct join with a Cassandra Table through `joinWithCassandraTable`.
-Any RDD which is writable to a Cassandra table via the `saveToCassandra` method can be used with this procedure as long
-as the full partition key is specified.
+The connector supports using any RDD as a source of a direct join with a
+Cassandra Table through `joinWithCassandraTable`. Any RDD which is 
+writable to a Cassandra table via the `saveToCassandra` method can be 
+used with this procedure as long as the full partition key is specified.
 
-`joinWithCassandraTable` utilizes the java drive to execute a single query for every partition
-required by the source RDD so no un-needed data will be requested or serialized. This means a join between any RDD
-and a Cassandra Table can be performed without doing a full table scan. When performed
-between two Cassandra Tables which share the same partition key this will *not* require movement of data between machines.
-In all cases this method will use the source RDD's partitioning and placement for data locality.
+`joinWithCassandraTable` utilizes the java drive to execute a single 
+query for every partition required by the source RDD so no un-needed 
+data will be requested or serialized. This means a join between any RDD
+and a Cassandra Table can be performed without doing a full table scan. 
+When performed between two Cassandra Tables which share the same 
+partition key this will *not* require movement of data between machines.
+In all cases this method will use the source RDD's partitioning and 
+placement for data locality.
 
-`joinWithCassandraTable` is not affected by `cassandra.input.split.size_in_mb` since partitions are automatically inherited from
-the source RDD. The other input properties have their normal effects.
+`joinWithCassandraTable` is not affected by 
+`cassandra.input.split.size_in_mb` since partitions are automatically 
+inherited from the source RDD. The other input properties have their 
+normal effects.
 
-####Join between two Cassandra Tables Sharing a Partition Key
+#### Example Join between two Cassandra Tables Sharing a Partition Key
 ```scala
 //CREATE TABLE test.customer_info ( cust_id INT, name TEXT, address TEXT, PRIMARY KEY (cust_id));
 val internalJoin = sc.cassandraTable("test","customer_info").joinWithCassandraTable("test","shopping_history")
@@ -268,7 +278,7 @@ internalJoin.collect.foreach(println)
 //(CassandraRow{cust_id: 0, address: West Coast, name: Russ},CassandraRow{cust_id: 0, date: 2015-03-09 13:59:04-0700, product: Candy, quantity: 3})
 ```
 
-####Join with Generic RDD
+#### Example Join with Generic RDD
 ```scala
 val joinWithRDD = sc.parallelize(0 to 5).filter(_%2==0).map(CustomerID(_)).joinWithCassandraTable("test","customer_info")
 joinWithRDD.collect.foreach(println)
@@ -276,11 +286,13 @@ joinWithRDD.collect.foreach(println)
 //(CustomerID(2),CassandraRow{cust_id: 2, address: Poland, name: Piotr})
 ```
 
-The `repartitionByCassandraReplica` method can be used prior to calling joinWithCassandraTable to obtain data locality,
-such that each spark partition will only require queries to their local node. This method can also be used with two
-Cassandra Tables which have partitioned with different partition keys.
+The `repartitionByCassandraReplica` method can be used prior to calling 
+joinWithCassandraTable to obtain data locality, such that each spark 
+partition will only require queries to their local node. This method can
+also be used with two Cassandra Tables which have partitioned with 
+different partition keys.
 
-####Join with a generic RDD after repartitioning
+#### Example Join with a generic RDD after repartitioning
 ```scala
 val oddIds = sc.parallelize(0 to 5).filter(_%2==1).map(CustomerID(_))
 val localQueryRDD = oddIds.repartitionByCassandraReplica("test","customer_info").joinWithCassandraTable("test","customer_info")
@@ -290,15 +302,18 @@ repartitionRDD.collect.foreach(println)
 ```
 
 ###Compatibility of joinWithCassandraTable and other CassandraRDD APIs
-The result of a joinWithCassandraRDD is compatible with all of the standard CassandraRDD api options with one additional
-function, `.on`. Use `.on(ColumnSelector)` for specifying which columns to join on. Since `.on` only applies to CassandraJoinRDDs
-it must immediately follow the `joinWithCassandraTable` call.
+The result of a joinWithCassandraRDD is compatible with all of the 
+standard CassandraRDD api options with one additional function, `.on`. 
+Use `.on(ColumnSelector)` for specifying which columns to join on. 
+Since `.on` only applies to CassandraJoinRDDs it must immediately follow 
+the `joinWithCassandraTable` call.
 
-Joining on any column or columns in
-the primary key is supported as long as it can be made into a valid CQL query. This means the entire partition key must
-be specified and if any clustering key is specified all previous clustering keys must be supplied as well.
+Joining on any column or columns in the primary key is supported as long 
+as it can be made into a valid CQL query. This means the entire partition 
+key must be specified and if any clustering key is specified all 
+previous clustering keys must be supplied as well.
 
-####Cassandra Operations on a CassandraJoinRDD
+#### Cassandra Operations on a CassandraJoinRDD
 ```scala
 val recentOrders = internalJoin.where("date > '2015-03-09'") // Where applied to every partition
 val someOrders = internalJoin.limit(1) // Returns at most 1 CQL Row per Spark Partition
@@ -310,17 +325,20 @@ val emptyJoin = internalJoin.toEmptyCassandraRDD // Makes an EmptyRDD
 
 ## Configuration Options for Adjusting Reads
 
-The following options can be specified in the SparkConf object or as a jvm
--Doption to adjust the read parameters of a Cassandra table.
+The following options can be specified in the SparkConf object or as 
+ `--conf` flag to spark-submit to adjust the read parameters of a Cassandra table.
 
 See [Reference Section](reference.md#read-tuning-parameters)
 
 ### Using Implicits for Configuration
 
-In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
-allows a user to define a set of parameters in a separate object and import them into a block of 
-code rather than repeatedly passing the same [`ReadConf` object](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
+In addition you are able to set these parameters on a per table basis 
+by using `implicit vals`. This allows a user to define a set of 
+parameters in a separate object and import them into a block of 
+code rather than repeatedly passing the same 
+[`ReadConf` object](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
 
+#### Example Using Implicits for Read Configuration
 ```scala
 object ReadConfigurationOne {
   implicit val readConf = ReadConf(100,100)
