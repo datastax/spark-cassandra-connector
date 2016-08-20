@@ -206,7 +206,7 @@ df.write
 
 ```
 
-### Setting Connector specific options on data frames
+### Setting Connector specific options on DataFrames
 Connector specific options can be set by invoking `options` method on either `DataFrameReader` or `DataFrameWriter`. 
 There are several settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and
 others. Those settings are identified by instances of `ConfigParameter` case class which offers an easy way to apply 
