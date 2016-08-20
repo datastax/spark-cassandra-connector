@@ -11,7 +11,7 @@ the `binary.version` thereof:
 
     sbt -Dscala-2.11=true
 
-For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/1.2.0/building-spark.html)
+For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/latest/building-spark.html)
 
 For Scala 2.11 tasks:
 
@@ -74,14 +74,11 @@ The easiest way to do this is to make the assembled connector jar using
 Remember that if you need to build the assembly jar against Scala 2.11:
 
      sbt -Dscala-2.11=true assembly
+     
+This jar can be used with spark submit with `--jars`
 
-This will generate a jar file with all of the required dependencies in
+    spark-submit --jars spark-cassandra-connector-assembly.jar
 
-     spark-cassandra-connector/spark-cassandra-connector/target/scala-{binary.version}/spark-cassandra-connector-assembly-*.jar
-
-Then add this jar to your Spark executor classpath by adding the following line to your spark-default.conf
-
-     spark.executor.extraClassPath  spark-cassandra-connector/spark-cassandra-connector/target/scala-{binary.version}/spark-cassandra-connector-assembly-$CurrentVersion-SNAPSHOT.jar
 
 This driver is also compatible with Spark distribution provided in
 [DataStax Enterprise](http://datastax.com/docs/latest-dse/).
