@@ -151,11 +151,12 @@ case class TableDef(
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
     isView: Boolean = false,
-    options: String = "") extends StructDef {
+    options: Seq[String] = Seq.empty) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
+  require(options.forall( option => !(option.toLowerCase.contains("and") && !(option.toLowerCase.contains("with")))), "Table options must not contain WITH OR AND")
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
@@ -202,21 +203,12 @@ case class TableDef(
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
-    val ordered = if (clusteringColumns.size > 0)
-      s"$stmt${Properties.lineSeparator}WITH CLUSTERING ORDER BY (${clusteringColumnOrder(clusteringColumns)})"
-    else stmt
-    appendOptions(ordered, options)
+    val ordered = clusteringColumns.map( col => s"${quote(col.columnName)} ${col.clusteringOrder}")
+      .mkString("CLUSTERING ORDER BY (", ", ",")")
+
+    val orderWithOptions:Seq[String] = if (clusteringColumns.size > 0) options.+:(ordered) else options
+    if (orderWithOptions.size > 0) s"""$stmt${Properties.lineSeparator}WITH ${orderWithOptions.mkString(s"${Properties.lineSeparator}  AND ")}""" else stmt
   }
-  private[this] def clusteringColumnOrder(clusteringColumns: Seq[ColumnDef]): String =
-    clusteringColumns.map { col => s"${quote(col.columnName)} ${col.clusteringOrder}"}.mkString(", ")
-
-  def clusterOrder: Seq[ClusteringOrder] = clusteringColumns.map(_.clusteringOrder)
-
-  private[this] def appendOptions(stmt: String, opts: String) =
-    if (stmt.contains("WITH") && opts.startsWith("WITH")) s"$stmt${Properties.lineSeparator}AND ${opts.substring(4)}"
-    else if (!stmt.contains("WITH") && opts.startsWith("AND")) s"WITH ${opts.substring(3)}"
-    else if (opts == "") s"$stmt"
-    else s"$stmt${Properties.lineSeparator}$opts"
 
   type ValueRepr = CassandraRow
   
