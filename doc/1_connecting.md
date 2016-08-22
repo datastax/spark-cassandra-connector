@@ -21,18 +21,12 @@ val conf = new SparkConf(true)
 val sc = new SparkContext("spark://192.168.123.10:7077", "test", conf)
 ```
 
-Multiple hosts can be passed in using a comma separated list ("127.0.0.1,127.0.0.2"). These are the initial
-contact points only, all nodes in the local DC will be used upon connecting. 
+Multiple hosts can be passed in using a comma separated list 
+("127.0.0.1,127.0.0.2"). These are the *initial contact points only*, all 
+nodes in the local DC will be used upon connecting. 
 
 See the reference section for a full list of options
 [Cassandra Connection Parameters](reference.md#cassandra-connection-parameters)
-
-
-To import Cassandra-specific functions on `SparkContext` and `RDD` objects, call:
-
-```scala
-import com.datastax.spark.connector._                                    
-```
 
 Query retry delay can be configured in few different ways:
 * `<delay in ms>` - for a constant delay before each retry
@@ -46,35 +40,62 @@ Query retry delay can be configured in few different ways:
 
 Whenever you call a method requiring access to Cassandra, the options in the `SparkConf` object will be used
 to create a new connection or to borrow one already open from the global connection cache. 
-The initial contact node given in
-`spark.cassandra.connection.host` can be any node of the cluster. The driver will fetch the cluster topology from 
-the contact node and will always try to connect to the closest node in the same data center. If possible, 
-connections are established to the same node the task is running on. Consequently, good locality of data can be achieved and the amount 
-of data sent across the network is minimized. 
 
-Connections are never made to data centers other than the data center of `spark.cassandra.connection.host`.
-If some nodes in the local data center are down and a read or write operation fails, the operation won't be retried on nodes in
-a different data center. This technique guarantees proper workload isolation so that a huge analytics job won't disturb
+#### Initial Contact
+
+The initial contact node given in`spark.cassandra.connection.host` can 
+be any node of the cluster. The driver will fetch the cluster topology 
+from the contact node and will always try to connect to the closest node
+in the same data center. If possible, connections are established to the 
+same node the task is running on. Consequently, good locality of data 
+can be achieved and the amount of data sent across the network is minimized. 
+
+#### Inter-DataCenter Communication is forbidden by default
+
+Connections are never made to data centers other than the data center 
+of `spark.cassandra.connection.host`. If some nodes in the local data 
+center are down and a read or write operation fails, the operation won't
+be retried on nodes in a different data center. This technique guarantees 
+proper workload isolation so that a huge analytics job won't disturb
 the realtime part of the system.
 
-Connections are cached internally. If you call two methods needing access to the same Cassandra cluster 
-quickly, one after another, or in parallel from different threads, they will share the same logical connection 
+
+#### Connection Pooling
+Connections are cached internally. If you call two methods needing 
+access to the same Cassandra cluster quickly, one after another, or in 
+parallel from different threads, they will share the same logical connection 
 represented by the underlying Java Driver `Cluster` object.  
 
-Eventually, when all the tasks needing Cassandra connectivity terminate,
-the connection to the Cassandra cluster will be closed shortly thereafter. The period of time for keeping unused connections
-open is controlled by the global `spark.cassandra.connection.keep_alive_ms` system property, which defaults to 250 ms. 
+This means code like
+```scala
+  val connector = CassandraConnector(sc.getConf)
+  connector.withSessionDo(session => ...)
+  connector.withSessionDo(session => ...)
+```
+or 
+```scala
+val connector = CassandraConnector(sc.getConf)
+sc.parallelize(1 to 100).mapPartitions( it => connector.withSessionDo( session => ...))
+```
+Will not use more than one `Cluster` object or `Session` object per JVM
 
+Eventually, when all the tasks needing Cassandra connectivity terminate,
+the connection to the Cassandra cluster will be closed shortly thereafter. 
+The period of time for keeping unused connections open is controlled by 
+the global `spark.cassandra.connection.keep_alive_ms` system property, 
+see [Cassandra Connection Parameters](reference.md#cassandra-connection-parameters)
 
 ### Connecting manually to Cassandra
 
 If you ever need to manually connect to Cassandra in order to issue some CQL statements, 
-this driver offers a handy `CassandraConnector` class which can be initialized from the `SparkConf` object
-and provides access to the `Cluster` and `Session` objects. `CassandraConnector` instances are serializable
-and therefore can be safely used in lambdas passed to Spark transformations.
+this driver offers a handy `CassandraConnector` class which can be initialized 
+from the `SparkConf` object and provides access to the `Cluster` and 
+`Session` objects. `CassandraConnector` instances are serializable
+and therefore can be safely used in lambdas passed to Spark transformations
+as seen in the examples above.
 
-Assuming an appropriately configured `SparkConf` object is stored in the `conf` variable, the following
-code creates a keyspace and a table:
+Assuming an appropriately configured `SparkConf` object is stored 
+in the `conf` variable, the following code creates a keyspace and a table:
 
 ```scala
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -87,11 +108,12 @@ CassandraConnector(conf).withSessionDo { session =>
 
 ### Connecting to multiple Cassandra Clusters
 
-The Spark Cassandra Connector is able to connect to multiple Cassandra Clusters for all of it's 
-normal operations. The default `CassandraConnector` object used by calls to `sc.cassandraTable` and
-`saveToCassandra` is specified by the `SparkConfiguration`. If you would like to use multiple clusters,
-an implicit `CassandraConnector` can be used in a code block to specify the target cluster for all
-operations in that block.
+The Spark Cassandra Connector is able to connect to multiple Cassandra 
+Clusters for all of it's normal operations. The default `CassandraConnector` 
+object used by calls to `sc.cassandraTable` and `saveToCassandra` is 
+specified by the `SparkConfiguration`. If you would like to use multiple clusters,
+an implicit `CassandraConnector` can be used in a code block to specify 
+the target cluster for all operations in that block.
 
 ####Example of reading from one cluster and writing to another
 
@@ -121,5 +143,6 @@ def twoClusterExample ( sc: SparkContext) = {
 }
 ```
 
-[Next - Accessing data](2_loading.md)                                        
+[Next - Accessing data with RDDs](2_loading.md)
+[Jump to - Accessing data with DataFrames](14_data_frames.md)
 
