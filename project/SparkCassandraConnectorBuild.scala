@@ -18,12 +18,14 @@
 import java.io.File
 
 import pl.project13.scala.sbt.JmhPlugin
+import sbtsparkpackage.SparkPackagePlugin.autoImport._
 import sbt.Keys._
 import sbt._
 
 object CassandraSparkBuild extends Build {
   import Settings._
   import sbtassembly.AssemblyPlugin
+  import sbtassembly.AssemblyKeys._
   import sbtsparkpackage.SparkPackagePlugin
 
   val namespace = "spark-cassandra-connector"
@@ -34,7 +36,7 @@ object CassandraSparkBuild extends Build {
     name = "root",
     dir = file("."),
     settings = rootSettings ++ Seq(cassandraServerClasspath := { "" }),
-    contains = Seq(embedded, connector, demos)
+    contains = Seq(embedded, connectorDistribution, demos)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val cassandraServerProject = Project(
@@ -57,13 +59,83 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-compiler" % scalaVersion.value))
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest
 
-  lazy val connector = CrossScalaVersionsProject(
+  /**
+    * Do not included shaded dependencies so they will not be listed in the Pom created for this
+    * project.
+    *
+    * Run the compile from the shaded project since we are no longer including shaded libs
+    */
+  lazy val connectorDistribution = CrossScalaVersionsProject(
     name = namespace,
-    conf = assembledSettings ++ Seq(libraryDependencies ++= Dependencies.connector ++ Seq(
+    conf = assembledSettings ++ Seq(
+      libraryDependencies ++= Dependencies.connectorDistribution ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it")) ++ pureCassandraSettings
-    ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"),
+      //Use the assembly which contains all of the libs not just the shaded ones
+      assembly in spPackage := (assembly in shadedConnector).value,
+      //Use the Pom file for this project in spark packages not the assembly pom
+      spMakePom := makePom.value,
+      assembly := (assembly in fullConnector).value,
+      //Use the shaded jar as our packageTarget
+      packageBin := {
+        val shaded = (assembly in shadedConnector).value
+        val targetName = target.value
+        val expected = target.value / s"$namespace-${version.value}.jar"
+        IO.move(shaded, expected)
+        val log = streams.value.log
+        log.info(s"""Shaded jar moved to $expected""".stripMargin)
+        expected
+      },
+      sbt.Keys.`package` := packageBin.value)
+      ++ pureCassandraSettings
+      //Update the distribution tasks to use the shaded jar
+      ++ {for (taskKey <- Seq(publishLocal in Compile, publish in Compile, publishM2 in Compile)) yield {
+      packagedArtifacts in taskKey := {
+        val previous = (packagedArtifacts in Compile).value
+        val shadedJar = (artifact.value.copy(configurations = Seq(Compile)) -> packageBin.value)
+        //Clobber the old build artifact with the shaded jar
+        previous + shadedJar
+      }
+    }}
+  ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
+
+  /** Because the distribution project has to mark the shaded jars as provided to remove them from
+    * the distribution dependencies we provide this additional project to build a fat jar which
+    * includes everything. The artifact produced by this project is unshaded while the assembly
+    * remains shaded.
+    */
+  lazy val fullConnector = CrossScalaVersionsProject(
+    name = s"$namespace-full",
+    conf = assembledSettings ++ Seq(
+      libraryDependencies ++= Dependencies.connectorAll
+        ++ Dependencies.shaded
+        ++ Seq(
+        "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"),
+      target := target.value / "full"
+    )
+      ++ pureCassandraSettings,
+    base = Some(namespace)
+  ).copy(dependencies = Seq(embedded % "test->test;it->it,test")) configs IntegrationTest
+
+
+  lazy val shadedConnector = CrossScalaVersionsProject(
+    name = s"$namespace-shaded",
+    conf = assembledSettings ++ Seq(
+      libraryDependencies ++= Dependencies.connectorNonShaded
+        ++ Dependencies.shaded
+        ++ Seq(
+        "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"),
+      target := target.value / "shaded",
+      test in assembly := {},
+      publishArtifact in (Compile, packageBin) := false)
+      ++ pureCassandraSettings,
+    base = Some(namespace)
+  ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
+  ) configs IntegrationTest
+
 
   lazy val demos = RootProject(
     name = "demos",
@@ -75,27 +147,27 @@ object CassandraSparkBuild extends Build {
     id = "simple-demos",
     base = demosPath / "simple-demos",
     settings = demoSettings,
-    dependencies = Seq(connector, embedded)
+    dependencies = Seq(connectorDistribution, embedded)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val kafkaStreaming = Project(
     id = "kafka-streaming",
     base = demosPath / "kafka-streaming",
     settings = demoSettings ++ Seq(libraryDependencies ++= Seq(Artifacts.Demos.kafka, Artifacts.Demos.kafkaStreaming)),
-    dependencies = Seq(connector, embedded))
+    dependencies = Seq(connectorDistribution, embedded))
       .disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val refDoc = Project(
     id = s"$namespace-doc",
     base = file(s"$namespace-doc"),
     settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
-  ) dependsOn connector
+  ) dependsOn connectorDistribution
 
   lazy val perf = Project(
     id = s"$namespace-perf",
     base = file(s"$namespace-perf"),
     settings = projectSettings,
-    dependencies = Seq(connector, embedded)
+    dependencies = Seq(connectorDistribution, embedded)
   ) enablePlugins(JmhPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
@@ -103,8 +175,9 @@ object CassandraSparkBuild extends Build {
   /* templates */
   def CrossScalaVersionsProject(name: String,
                                 conf: Seq[Def.Setting[_]],
-                                reliesOn: Seq[ClasspathDep[ProjectReference]] = Seq.empty) =
-    Project(id = name, base = file(name), dependencies = reliesOn, settings = conf ++ Seq(
+                                reliesOn: Seq[ClasspathDep[ProjectReference]] = Seq.empty,
+                                base: Option[String] = None) =
+    Project(id = name, base = file(base.getOrElse(name)), dependencies = reliesOn, settings = conf ++ Seq(
       unmanagedSourceDirectories in (Compile, packageBin) +=
         crossBuildPath(baseDirectory.value, scalaBinaryVersion.value),
       unmanagedSourceDirectories in (Compile, doc) +=
@@ -132,8 +205,14 @@ object Artifacts {
     def guavaExclude(): ModuleID =
       module exclude("com.google.guava", "guava")
 
-    def nettyExclude(): ModuleID =
-      module exclude("io.netty", "netty-all")
+    /**We will just include netty-all as a dependency **/
+    def nettyExclude(): ModuleID = module
+      .exclude("io.netty", "netty")
+      .exclude("io.netty", "netty-buffer")
+      .exclude("io.netty", "netty-codec")
+      .exclude("io.netty", "netty-common")
+      .exclude("io.netty", "netty-handler")
+      .exclude("io.netty", "netty-transport")
 
     def glassfishExclude(): ModuleID = {
       module
@@ -150,6 +229,11 @@ object Artifacts {
         .exclude("commons-logging", "commons-logging")
         .exclude("org.apache.curator", "curator-recipes")
 
+    def driverExclusions(): ModuleID = module.guavaExclude().nettyExclude()
+        .exclude("io.dropwizard.metrics", "metrics-core")
+        .exclude("org.slf4j", "slf4j-api")
+
+
     def sparkExclusions(): ModuleID = module.sparkCoreExclusions()
       .exclude("org.apache.spark", s"spark-core_$scalaBinary")
 
@@ -162,7 +246,7 @@ object Artifacts {
       .exclude("org.apache.spark", s"spark-mllib_$scalaBinary")
       .exclude("org.scala-lang", "scala-compiler")
 
-    def kafkaExclusions: ModuleID = module
+    def kafkaExclusions(): ModuleID = module
       .exclude("org.slf4j", "slf4j-simple")
       .exclude("com.sun.jmx", "jmxri")
       .exclude("com.sun.jdmk", "jmxtools")
@@ -172,13 +256,14 @@ object Artifacts {
   val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
   val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
   val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
-  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver                  guavaExclude() // ApacheV2
+  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver driverExclusions() // ApacheV2
   val commonsBeanUtils    = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
   val guava               = "com.google.guava"        % "guava"                  % Guava
   val jodaC               = "org.joda"                % "joda-convert"           % JodaC
   val jodaT               = "joda-time"               % "joda-time"              % JodaT
   val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
+  val netty               = "io.netty"                % "netty-all"              % Netty
   val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
   val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
   val airlift             = "io.airlift"              % "airline"                % Airlift
@@ -269,11 +354,51 @@ object Dependencies {
 
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
-  val connector = (testKit ++ metrics ++ jetty ++ logging ++ cassandra ++ spark.map(_ % "provided") ++ Seq(commonsBeanUtils, guava, jodaC, jodaT, lzf, jsr166e))
-      .map (_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
+  /**
+    * Dependencies which will be shaded in our distribution artifact and not listed on the
+    * distribution artifact's dependency list.
+    */
+  val shaded = Seq(guava, cassandraDriver)
 
-  val embedded = (logging ++ spark ++ cassandra ++ akka ++ Seq(
-    cassandraServer % "it,test", Embedded.jopt, Embedded.sparkRepl, Embedded.kafka, Embedded.snappy, guava, config)) map (_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
+  /**
+    * This is the full dependency list required to build an assembly with all dependencies
+    * required to run the connector not listed as provided except for those which will
+    * be on the classpath because of Spark.
+    */
+  val connectorAll = shaded ++ (testKit ++
+    metrics ++
+    jetty ++
+    logging ++
+    spark.map(_ % "provided") ++
+    Seq(commonsBeanUtils, jodaC, jodaT, lzf, netty, jsr166e)
+    ).map(_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
+
+  /**
+    * Mark the shaded dependencies as Provided, this removes them from the artifacts to be downloaded
+    * by build systems. This will avoid downloading a Cassandra Driver which does not have it's guava
+    * references shaded.
+    */
+  val connectorDistribution = (connectorAll.toSet -- shaded.toSet).toSeq ++ shaded.map(_ % "provided")
+
+  /**
+    * When building the shaded jar we want the assembly task to ONLY include the shaded libs, to
+    * accomplish this we set all other dependencies as provided.
+    */
+  val connectorNonShaded = (connectorAll.toSet -- shaded.toSet).toSeq.map { dep =>
+    dep.configurations match {
+      case Some(conf) => dep
+      case _ => dep % "provided"
+    }
+  }
+
+  val embedded = logging ++ spark ++ cassandra ++ akka ++ Seq(
+    cassandraServer % "it,test",
+    Embedded.jopt,
+    Embedded.sparkRepl,
+    Embedded.kafka,
+    Embedded.snappy,
+    guava,
+    config).map(_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
 
   val perf = logging ++ spark ++ cassandra
 

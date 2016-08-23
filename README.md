@@ -118,6 +118,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Partitioner](doc/16_partitioning.md)
   - [Frequently Asked Questions](doc/FAQ.md)
   - [Configuration Parameter Reference Table](doc/reference.md)
+  - [Tips for Developing the Spark Cassandra Connector](doc/developers.md)
 
 ## Online Training
 ### DataStax Academy
@@ -145,8 +146,11 @@ Make sure you have installed and enabled the Scala Plugin.
 Open the project with IntelliJ IDEA and it will automatically create the project structure
 from the provided SBT configuration.
 
+[Tips for Developing the Spark Cassandra Connector](doc/developers.md)
+
 Before contributing your changes to the project, please make sure that all unit tests and integration tests pass.
 Don't forget to add an appropriate entry at the top of CHANGES.txt.
+Create a Jira at the [Spark Cassandra Connector Jira](https://datastax-oss.atlassian.net/projects/SPARKC/issues)
 Finally open a pull-request on GitHub and await review. 
 
 Please prefix pull request description with the JIRA number, for example: "SPARKC-123: Fix the ...".
