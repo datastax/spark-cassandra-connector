@@ -1,3 +1,6 @@
+2.0.0 M2
+ * Includes all patches up to 1.6.1
+
 2.0.0 M1
  * Added support for left outer joins with C* table (SPARKC-181)
  * Removed CassandraSqlContext and underscore based options (SPARKC-399)
