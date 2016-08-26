@@ -73,8 +73,6 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"),
       //Use the assembly which contains all of the libs not just the shaded ones
       assembly in spPackage := (assembly in shadedConnector).value,
-      //Use the Pom file for this project in spark packages not the assembly pom
-      spMakePom := makePom.value,
       assembly := (assembly in fullConnector).value,
       //Use the shaded jar as our packageTarget
       packageBin := {
