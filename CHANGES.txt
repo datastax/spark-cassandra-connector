@@ -1,3 +1,6 @@
+2.0.0 M3
+ * Includes all patches up to 1.6.2
+
 2.0.0 M2
  * Includes all patches up to 1.6.1
 
