@@ -1,3 +1,6 @@
+1.6.2
+ * Fixed shading in artifacts published to Maven
+
 1.6.1
  * Disallow TimeUUID Predicate Pushdown (SPARKC-405)
  * Avoid overflow on SplitSizeInMB param (SPARKC-413)
