@@ -86,17 +86,11 @@ object CassandraSparkBuild extends Build {
         log.info(s"""Shaded jar moved to $expected""".stripMargin)
         expected
       },
+      packagedArtifact in packageBin in Compile := {
+        (artifact.value, (assembly in shadedConnector).value)
+      },
       sbt.Keys.`package` := packageBin.value)
       ++ pureCassandraSettings
-      //Update the distribution tasks to use the shaded jar
-      ++ {for (taskKey <- Seq(publishLocal in Compile, publish in Compile, publishM2 in Compile)) yield {
-      packagedArtifacts in taskKey := {
-        val previous = (packagedArtifacts in Compile).value
-        val shadedJar = (artifact.value.copy(configurations = Seq(Compile)) -> packageBin.value)
-        //Clobber the old build artifact with the shaded jar
-        previous + shadedJar
-      }
-    }}
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
