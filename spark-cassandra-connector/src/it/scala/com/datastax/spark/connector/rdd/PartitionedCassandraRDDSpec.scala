@@ -25,7 +25,7 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val rowCount = 100
 
   conn.withSessionDo { session =>

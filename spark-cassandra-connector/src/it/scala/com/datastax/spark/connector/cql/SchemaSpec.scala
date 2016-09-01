@@ -11,7 +11,7 @@ import org.scalatest.Inspectors._
 class SchemaSpec extends SparkCassandraITWordSpecBase {
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

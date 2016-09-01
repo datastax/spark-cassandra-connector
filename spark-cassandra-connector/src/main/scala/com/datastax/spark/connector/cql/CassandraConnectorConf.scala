@@ -6,11 +6,9 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Try
 import scala.util.control.NonFatal
-
 import org.apache.spark.{Logging, SparkConf}
-
 import com.datastax.driver.core.ProtocolOptions
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -261,6 +259,7 @@ object CassandraConnectorConf extends Logging {
     } yield hostAddress
     
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
+
     val authConf = AuthConf.fromSparkConf(conf)
     val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
 

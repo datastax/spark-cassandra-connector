@@ -4,17 +4,18 @@ import java.util.concurrent.Executors
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-
 import org.apache.commons.lang3.StringUtils
 import org.scalatest._
-
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{ProtocolVersion, Session}
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
 import com.datastax.spark.connector.testkit.{AbstractSpec, SharedEmbeddedCassandra}
 import com.datastax.spark.connector.util.SerialShutdownHooks
 
 
-trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase
+trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase {
+  override def report(message: String): Unit = info
+}
 
 trait SparkCassandraITWordSpecBase extends WordSpec with SparkCassandraITSpecBase
 
@@ -28,7 +29,22 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
     s"test_$suffix".toLowerCase()
   }
 
+  def conn: CassandraConnector = ???
+  def pv = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+
+  def report(message:String): Unit = {}
+
   val ks = getKsName
+
+  def skipIfProtocolVersionGTE(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
+    if (!(pv.toInt >= protocolVersion.toInt)) f
+      else report (s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
+  }
+
+  def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
+    if (!(pv.toInt < protocolVersion.toInt)) f
+      else report (s"Skipped Because ProtocolVersion $pv < $protocolVersion")
+  }
 
   implicit val ec = SparkCassandraITSpecBase.ec
 

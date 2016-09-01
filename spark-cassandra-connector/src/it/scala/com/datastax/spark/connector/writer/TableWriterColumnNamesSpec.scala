@@ -10,7 +10,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   case class KeyValue(key: Int, group: Long)
 
