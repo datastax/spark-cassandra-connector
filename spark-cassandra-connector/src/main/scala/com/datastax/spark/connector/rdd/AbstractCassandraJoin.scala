@@ -127,7 +127,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $limitClause $orderBy"
+        s"WHERE $filter $orderBy $limitClause"
     logDebug(s"Query : $query")
     query
   }
