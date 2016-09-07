@@ -1,3 +1,6 @@
+1.6.3
+ * Added support for left outer joins with C* table (SPARKC-181)
+
 1.6.2
  * Fixed shading in artifacts published to Maven
 
