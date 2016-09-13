@@ -47,7 +47,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     sparkConf.set("spark.cassandra.connection.ssl.trustStore.type", "JCEKS")
     sparkConf.set("spark.cassandra.connection.ssl.protocol", "SSLv3")
     sparkConf.set("spark.cassandra.connection.ssl.enabledAlgorithms", "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
-    sparkConf.set("spark.cassandra.connection.ssl.client.auth.enabled", "true")
+    sparkConf.set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
     sparkConf.set("spark.cassandra.connection.ssl.keyStore.path", "/etc/keys/.keystore")
     sparkConf.set("spark.cassandra.connection.ssl.keyStore.password", "secret")
     sparkConf.set("spark.cassandra.connection.ssl.keyStore.type", "JCEKS")

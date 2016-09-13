@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.cql
 
 import java.io.FileInputStream
+import java.nio.file.{Files, Path, Paths}
 import java.security.{KeyStore, SecureRandom}
-import javax.net.ssl.{SSLContext, TrustManagerFactory, KeyManagerFactory}
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
@@ -60,54 +61,61 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
-  private def maybeCreateSSLOptions(conf: CassandraSSLConf): Option[SSLOptions] = {
-    conf.trustStorePath map {
-      case path ⇒
+  private def getKeyStore(
+     ksType: String,
+     ksPassword: Option[String],
+     ksPath: Option[Path]): Option[KeyStore] = {
 
-        val trustStoreFile = new FileInputStream(path)
-        val tmf = try {
-          val keyStore = KeyStore.getInstance(conf.trustStoreType)
-          conf.trustStorePassword match {
-            case None ⇒ keyStore.load(trustStoreFile, null)
-            case Some(password) ⇒ keyStore.load(trustStoreFile, password.toCharArray)
-          }
-          val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-          tmf.init(keyStore)
-          tmf
+    ksPath match {
+      case Some(path) =>
+        val ksIn = Files.newInputStream(path)
+        try {
+          val keyStore = KeyStore.getInstance(ksType)
+          keyStore.load(ksIn, ksPassword.map(_.toCharArray).orNull)
+          Some(keyStore)
         } finally {
-          IOUtils.closeQuietly(trustStoreFile)
+          IOUtils.closeQuietly(ksIn)
         }
-        val kmf = if(conf.clientAuthEnabled){
-            conf.keyStorePath map {
-              case path ⇒
-                val keyStoreFile = new FileInputStream(path)
-                val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-                val keyStore = KeyStore.getInstance(conf.keyStoreType)
-                conf.keyStorePassword match {
-                  case None ⇒ {
-                    keyStore.load(keyStoreFile, null)
-                    kmf.init(keyStore, null)
-                  }
-                  case Some(password) ⇒ {
-                    keyStore.load(keyStoreFile, password.toCharArray)
-                    kmf.init(keyStore, password.toCharArray)
-                  }
-                }
-                kmf
-            }
-          }else{
-            None
-          }
-        val context = SSLContext.getInstance(conf.protocol)
-        kmf match {
-          case None ⇒ context.init(null, tmf.getTrustManagers, new SecureRandom)
-          case Some(kmf) ⇒ context.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+      case None => None
+    }
+  }
+
+  private def maybeCreateSSLOptions(conf: CassandraSSLConf): Option[SSLOptions] = {
+    lazy val trustStore =
+      getKeyStore(conf.trustStoreType, conf.trustStorePassword, conf.trustStorePath.map(Paths.get(_)))
+    lazy val keyStore =
+      getKeyStore(conf.keyStoreType, conf.keyStorePassword, conf.keyStorePath.map(Paths.get(_)))
+
+    if (conf.enabled) {
+      val trustManagerFactory = for (ts <- trustStore) yield {
+        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+        tmf.init(ts)
+        tmf
+      }
+
+      val keyManagerFactory = if (conf.clientAuthEnabled) {
+        for (ks <- keyStore) yield {
+          val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+          kmf.init(ks, conf.keyStorePassword.map(_.toCharArray).orNull)
+          kmf
         }
-        
+      } else {
+        None
+      }
+
+      val context = SSLContext.getInstance(conf.protocol)
+      context.init(
+        keyManagerFactory.map(_.getKeyManagers).orNull,
+        trustManagerFactory.map(_.getTrustManagers).orNull,
+        new SecureRandom)
+
+      Some(
         JdkSSLOptions.builder()
           .withSSLContext(context)
           .withCipherSuites(conf.enabledAlgorithms.toArray)
-          .build()
+          .build())
+    } else {
+      None
     }
   }
 
@@ -122,15 +130,16 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
-    """Name of a Scala module or class implementing
-      |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
+  """Name of a Scala module or class implementing
+    |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
 
   val FactoryParam = ConfigParameter[CassandraConnectionFactory](
     name = "spark.cassandra.connection.factory",
     section = ReferenceSection,
     default = DefaultConnectionFactory,
-    description = """Name of a Scala module or class implementing
-      |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)
+    description =
+      """Name of a Scala module or class implementing
+        |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)
 
   val Properties = Set(FactoryParam)
 
