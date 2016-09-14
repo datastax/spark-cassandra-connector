@@ -2,15 +2,18 @@ package org.apache.spark.sql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, CqlWhereClause}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.{FilterExec, RDDScanExec, RowDataSourceScanExec, SparkPlan, WholeStageCodegenExec}
+import org.apache.spark.sql.execution._
+
 import scala.concurrent.Future
 
 class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with Logging  {
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
+
   val conn = CassandraConnector(defaultConf)
   val sqlContext: SQLContext = new SQLContext(sc)
 

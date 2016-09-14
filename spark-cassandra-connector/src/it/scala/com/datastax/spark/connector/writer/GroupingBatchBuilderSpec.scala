@@ -4,15 +4,14 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 
 import scala.collection.JavaConversions._
 import scala.util.Random
-
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core.{BatchStatement, BoundStatement, ConsistencyLevel, Session}
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, SparkCassandraITFlatSpecBase}
 
 class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>

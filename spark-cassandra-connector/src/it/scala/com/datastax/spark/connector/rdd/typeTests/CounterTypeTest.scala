@@ -7,13 +7,12 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 import scala.concurrent.Future
 
 class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

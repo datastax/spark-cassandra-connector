@@ -15,8 +15,7 @@ import org.apache.spark.api.java.function.{Function => JFunction}
 import scala.collection.JavaConversions._
 
 class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

@@ -1,14 +1,14 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, SparkCassandraITFlatSpecBase}
 import org.apache.cassandra.dht.IPartitioner
 
 import scala.concurrent.Future
 
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>

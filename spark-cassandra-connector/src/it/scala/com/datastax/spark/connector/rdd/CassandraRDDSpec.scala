@@ -6,11 +6,10 @@ import java.util.Date
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
-
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
 
@@ -53,8 +52,7 @@ case class TypeWithTupleSetter(id: Int) {
 }
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
@@ -65,6 +63,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
     awaitAll(
       Future {
+        import com.datastax.spark.connector.embedded.EmbeddedCassandra._
         if (versionGreaterThanOrEquals(2,2)) {
           println(s"Found version $cassandraMajorVersion  $cassandraMinorVersion")
           session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")

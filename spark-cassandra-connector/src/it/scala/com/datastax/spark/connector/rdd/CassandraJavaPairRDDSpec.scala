@@ -4,18 +4,16 @@ import java.util
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
-
-import org.apache.spark.api.java.function.{Function => JFunction, Function2}
-
+import org.apache.spark.api.java.function.{Function2, Function => JFunction}
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 
 case class SimpleClass(value: Integer)
 
 class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

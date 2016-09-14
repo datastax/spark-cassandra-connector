@@ -1,16 +1,13 @@
 package com.datastax.spark.connector.util
 
 import scala.language.postfixOps
-
 import org.scalatest.concurrent.AsyncAssertions
-
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-
 class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with AsyncAssertions {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)
