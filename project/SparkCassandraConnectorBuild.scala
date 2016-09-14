@@ -98,7 +98,7 @@ object CassandraSparkBuild extends Build {
     * remains shaded.
     */
   lazy val fullConnector = CrossScalaVersionsProject(
-    name = s"$namespace-full",
+    name = s"$namespace-unshaded",
     conf = assembledSettings ++ Seq(
       libraryDependencies ++= Dependencies.connectorAll
         ++ Dependencies.shaded

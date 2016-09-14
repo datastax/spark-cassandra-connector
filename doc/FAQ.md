@@ -2,6 +2,53 @@
 
 ## Frequently Asked Questions
 
+### How do I Fix Guava Classpath Errors
+
+Guava errors come from a conflict between Guava brought in by some 
+dependency (like Hadoop 2.7) and the Cassandra java Driver. 
+The Cassandra Java Driver is unable to function correctly if an 
+earlier version of Guava is preempting the required version. The 
+Java Driver will throw errors if it determines 
+this is the case.
+
+To simplest fix is to move to an artifact which contains the 
+Driver and Guava shaded together.
+ 
+[SPARKC-355](https://datastax-oss.atlassian.net/browse/SPARKC-355) 
+fixes this in the Spark Cassandra Connector 1.6.2 and 2.0.0-M3 and 
+greater releases. 
+
+The artifacts at 
+[Spark Packages](https://spark-packages.org/package/datastax/spark-cassandra-connector) 
+and on 
+[Maven Central](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.10)
+will now automatically have Guava shaded and the driver included.
+
+If you are using these artifacts you must remove any other dependencies 
+on the Cassandra Java Driver from build files.
+
+### Why is the Cassandra Java Driver embedded in Spark Cassandra Connector artifacts?
+
+To avoid Guava errors we must make sure that the Cassandra Java Driver can
+only possibly reference our chosen Guava. We force this by shading 
+(essentially renaming) the Guava referenced by the Cassandra Java Driver
+so there is no possible ambiguity. Since these references are within
+the Java Driver, the Java Driver must be included for these changes to
+take effective.
+
+### How do I use libraries which depend on the Cassandra Java Driver?
+
+Since the default artifacts have the Java Driver included with shaded 
+references, it will be very difficult to use other libraries which utilize
+the Cassandra Java Driver. To enable this an additional artifact has
+been published `spark-cassandra-connector-unshaded` which can be used in
+manually shaded projects. Using these unshaded artifacts will require you to 
+ manually shade the Guava references inside your code and to launch
+with an "uber-jar." Using `--packages` will no longer work.
+
+For some hints on shading see how the Cassandra Connector does this in
+the [settings file.](https://github.com/datastax/spark-cassandra-connector/blob/v2.0.0-M3/project/Settings.scala#L329-L347)
+
 ### Why is my job running on a single executor? Why am I not seeing any parallelism?
 
 The first thing to check when you see that a Spark job is not being parallelized is to
@@ -114,7 +161,7 @@ The Connector evaluates the number of Spark partitions by dividing table size es
 
 Input.split.size_in_mb uses a internal system table in C* ( >= 2.1.5) to determine the size
 of the data in C*. The table is called system.size_estimates is not meant to be absolutely accurate 
-so there will be some inaccuracy with smaller tables and split sizes. 
+so there will be some inaccuracy with smaller tables and split sizes.
 
 ### Can I contribute to the Spark Cassandra Connector?
 
