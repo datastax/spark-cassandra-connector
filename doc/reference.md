@@ -127,6 +127,11 @@ retrieve size from C*. Can be set manually now</td>
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>connection.ssl.clientAuth.enabled</code></td>
+  <td>false</td>
+  <td>Enable 2-way secure connection to Cassandra cluster</td>
+</tr>
+<tr>
   <td><code>connection.ssl.enabled</code></td>
   <td>false</td>
   <td>Enable secure connection to Cassandra cluster</td>
@@ -135,6 +140,21 @@ retrieve size from C*. Can be set manually now</td>
   <td><code>connection.ssl.enabledAlgorithms</code></td>
   <td>Set(TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)</td>
   <td>SSL cipher suites</td>
+</tr>
+<tr>
+  <td><code>connection.ssl.keyStore.password</code></td>
+  <td>None</td>
+  <td>Key store password</td>
+</tr>
+<tr>
+  <td><code>connection.ssl.keyStore.path</code></td>
+  <td>None</td>
+  <td>Path for the key store being used</td>
+</tr>
+<tr>
+  <td><code>connection.ssl.keyStore.type</code></td>
+  <td>JKS</td>
+  <td>Key store type</td>
 </tr>
 <tr>
   <td><code>connection.ssl.protocol</code></td>

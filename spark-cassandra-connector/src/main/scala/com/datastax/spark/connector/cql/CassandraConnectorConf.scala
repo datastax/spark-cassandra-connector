@@ -46,7 +46,11 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
+    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"),
+    clientAuthEnabled: Boolean = false,
+    keyStorePath: Option[String] = None,
+    keyStorePassword: Option[String] = None,
+    keyStoreType: String = "JKS"
   )
 
   @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
@@ -223,6 +227,30 @@ object CassandraConnectorConf extends Logging {
     default = DefaultCassandraSSLConf.enabledAlgorithms,
     description = """SSL cipher suites""")
 
+  val SSLClientAuthEnabledParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.connection.ssl.clientAuth.enabled",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.clientAuthEnabled,
+    description = """Enable 2-way secure connection to Cassandra cluster""")
+
+  val SSLKeyStorePathParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.keyStore.path",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStorePath,
+    description = """Path for the key store being used""")
+
+  val SSLKeyStorePasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.keyStore.password",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStorePassword,
+    description = """Key store password""")
+
+  val SSLKeyStoreTypeParam = ConfigParameter[String](
+    name = "spark.cassandra.connection.ssl.keyStore.type",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStoreType,
+    description = """Key store type""")
+
   //Whitelist for allowed CassandraConnector environment variables
   val Properties: Set[ConfigParameter[_]] = Set(
     ConnectionHostParam,
@@ -241,7 +269,11 @@ object CassandraConnectorConf extends Logging {
     SSLTrustStorePathParam,
     SSLTrustStorePasswordParam,
     SSLProtocolParam,
-    SSLEnabledAlgorithmsParam
+    SSLEnabledAlgorithmsParam,
+    SSLClientAuthEnabledParam,
+    SSLKeyStorePathParam,
+    SSLKeyStorePasswordParam,
+    SSLKeyStoreTypeParam
   )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {
@@ -284,12 +316,20 @@ object CassandraConnectorConf extends Logging {
     val sslProtocol = conf.get(SSLProtocolParam.name, SSLProtocolParam.default)
     val sslEnabledAlgorithms = conf.getOption(SSLEnabledAlgorithmsParam.name)
       .map(_.split(",").map(_.trim).toSet).getOrElse(SSLEnabledAlgorithmsParam.default)
+    val sslClientAuthEnabled = conf.getBoolean(SSLClientAuthEnabledParam.name, SSLClientAuthEnabledParam.default)
+    val sslKeyStorePath = conf.getOption(SSLKeyStorePathParam.name).orElse(SSLKeyStorePathParam.default)
+    val sslKeyStorePassword = conf.getOption(SSLKeyStorePasswordParam.name).orElse(SSLKeyStorePasswordParam.default)
+    val sslKeyStoreType = conf.get(SSLKeyStoreTypeParam.name, SSLKeyStoreTypeParam.default)
 
     val cassandraSSLConf = CassandraSSLConf(
       enabled = sslEnabled,
       trustStorePath = sslTrustStorePath,
       trustStorePassword = sslTrustStorePassword,
       trustStoreType = sslTrustStoreType,
+      clientAuthEnabled = sslClientAuthEnabled,
+      keyStorePath = sslKeyStorePath,
+      keyStorePassword = sslKeyStorePassword,
+      keyStoreType = sslKeyStoreType,
       protocol = sslProtocol,
       enabledAlgorithms = sslEnabledAlgorithms
     )
