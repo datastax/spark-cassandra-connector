@@ -1,3 +1,6 @@
+1.6.3
+ * Added SSL client authentication (SPARKC-359)
+
 1.6.2
  * Fixed shading in artifacts published to Maven
 
