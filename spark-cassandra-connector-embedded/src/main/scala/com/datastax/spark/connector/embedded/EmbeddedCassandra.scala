@@ -1,7 +1,10 @@
 package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
-import java.nio.file.Paths
+
+import com.datastax.spark.connector.embedded.YamlTransformations.CassandraConfiguration
+
+import scala.collection.mutable
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -9,22 +12,15 @@ import java.nio.file.Paths
   * because they will "steal" the server. */
 trait EmbeddedCassandra {
 
+  import EmbeddedCassandra._
+
   /** Implementation hook. */
   def clearCache(): Unit
 
-  val DEFAULT_CASSANDRA_VERSION = "3.0.2"
-  val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
-  val (cassandraMajorVersion, cassandraMinorVersion) = {
-    val parts = cassandraVersion.split("\\.")
-    require (parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
-    (parts(0).toInt, parts(1).toInt)
-  }
-
-  def versionGreaterThanOrEquals(major:Int, minor:Int = 0): Boolean = {
+  def versionGreaterThanOrEquals(major: Int, minor: Int = 0): Boolean = {
     (major < cassandraMajorVersion) ||
       (major == cassandraMajorVersion && minor <= cassandraMinorVersion)
   }
-
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration
     * is different than the currently used configuration. When the configuration is switched, all
@@ -33,55 +29,60 @@ trait EmbeddedCassandra {
     * @param configTemplates name of the cassandra.yaml template resources
     * @param forceReload if set to true, the server will be reloaded fresh
     *                    even if the configuration didn't change */
-  def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
-    import com.datastax.spark.connector.embedded.EmbeddedCassandra._
+  def useCassandraConfig(configTemplates: Seq[YamlTransformations], forceReload: Boolean = false) {
     import com.datastax.spark.connector.embedded.UserDefinedProperty._
+
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
       "Configuration templates can't be more than the number of specified hosts")
-
-
-    val templateDir = {
-      if (cassandraMajorVersion >= 3) {
-        cassandraMajorVersion.toString
-      } else {
-        s"$cassandraMajorVersion.$cassandraMinorVersion"
-      }
-    }
-
-    val versionedConfigTemplates = configTemplates.map( templateFile =>
-      Paths.get(templateDir, templateFile).toString)
-
+    require(!configTemplates.contains(null), "Configuration template cannot be null")
 
     if (getProperty(HostProperty).isEmpty) {
       clearCache()
 
-      val templatePairs = versionedConfigTemplates
-        .zipAll(currentConfigTemplates, "missing value", null)
+      val providedConfTmplts = configTemplates.zipWithIndex.map(_.swap).toMap
 
-      for (i <- cassandraRunners.indices.toSet -- configTemplates.indices.toSet) {
-        cassandraRunners.lift(i).flatten.foreach(_.destroy())
-        cassandraRunners = cassandraRunners.patch(i, Seq(None), 1)
-      }
-      currentConfigTemplates = currentConfigTemplates.take(configTemplates.length)
-      for (i <- configTemplates.indices) {
-        require(configTemplates(i) != null && configTemplates(i).trim.nonEmpty,
-          "Configuration template can't be null or empty")
-
-        if (templatePairs(i)._2 != templatePairs(i)._1 || forceReload) {
-          cassandraRunners.lift(i).flatten.foreach(_.destroy())
-          cassandraRunners = cassandraRunners.patch(i,
-            Seq(Some(new CassandraRunner(versionedConfigTemplates(i), getProps(i)))), 1)
-          currentConfigTemplates = currentConfigTemplates.patch(i, Seq(versionedConfigTemplates(i)), 1)
+      // destroy the currently running nodes if: forceReload, template was not provided
+      // or template does not match the currently used one
+      for (id <- cassandraRunners.keySet.toList) {
+        val tmpltProvided = providedConfTmplts.contains(id)
+        val providedTmpltMatchesCur = providedConfTmplts.get(id) == currentConfigTemplates.get(id)
+        if (forceReload || !tmpltProvided || !providedTmpltMatchesCur) {
+          destroyAndRemoveRunner(id)
         }
+      }
+
+      // start nodes for provided template which are not already runnning
+      for ((id, tmplt) <- (providedConfTmplts -- cassandraRunners.keySet).toList) {
+        createAndAddRunner(id, tmplt)
       }
     }
   }
+
+  private def destroyAndRemoveRunner(id: Int): Unit = {
+    cassandraRunners.get(id).foreach(_.destroy())
+    cassandraRunners -= id
+    currentConfigTemplates -= id
+  }
+
+  private def createAndAddRunner(id: Int, configTemplate: YamlTransformations): Unit = {
+    cassandraRunners += id -> new CassandraRunner(configTemplate, getBaseYamlTransformer(id))
+    currentConfigTemplates += id -> configTemplate
+  }
+
 }
 
 
 object EmbeddedCassandra {
 
   import com.datastax.spark.connector.embedded.UserDefinedProperty._
+
+  val DEFAULT_CASSANDRA_VERSION = "3.0.8"
+  val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
+  val (cassandraMajorVersion, cassandraMinorVersion) = {
+    val parts = cassandraVersion.split("\\.")
+    require(parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
+    (parts(0).toInt, parts(1).toInt)
+  }
 
   getProperty(HostProperty) match {
     case None =>
@@ -102,26 +103,25 @@ object EmbeddedCassandra {
     }
   }
 
-  private[connector] var cassandraRunners: IndexedSeq[Option[CassandraRunner]] = IndexedSeq(None)
+  private[connector] var cassandraRunners = mutable.HashMap[Int, CassandraRunner]()
 
-  private[connector] var currentConfigTemplates: IndexedSeq[String] = IndexedSeq()
+  private[connector] var currentConfigTemplates = mutable.HashMap[Int, YamlTransformations]()
 
   private def countCommaSeparatedItemsIn(s: String): Int = s.count(_ == ',')
 
-  def getProps(index: Integer): Map[String, String] = {
+  def getBaseYamlTransformer(index: Integer): CassandraConfiguration = {
     require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
-    Map(
-      "seeds" -> "",
-      "storage_port" -> cassandraPorts.getStoragePort(index).toString,
-      "ssl_storage_port" -> cassandraPorts.getSslStoragePort(index).toString,
-      "native_transport_port" -> getPort(index).toString,
-      "jmx_port" -> cassandraPorts.getJmxPort(index).toString,
-      "rpc_address" -> host,
-      "listen_address" -> host,
-      "cluster_name" -> getClusterName(index),
-      "keystore_path" -> ClassLoader.getSystemResource("keystore").getPath,
-      "truststore_path" -> ClassLoader.getSystemResource("truststore").getPath)
+    YamlTransformations.CassandraConfiguration(
+      seeds = List.empty,
+      clusterName = getClusterName(index),
+      storagePort = cassandraPorts.getStoragePort(index),
+      sslStoragePort = cassandraPorts.getSslStoragePort(index),
+      nativeTransportPort = getPort(index),
+      rpcAddress = host,
+      listenAddress = host,
+      jmxPort = cassandraPorts.getJmxPort(index)
+    )
   }
 
   def getClusterName(index: Integer) = s"Test Cluster $index"
@@ -147,7 +147,7 @@ object EmbeddedCassandra {
   Runtime.getRuntime.addShutdownHook(shutdownThread)
 
   private[connector] def shutdown(): Unit = {
-    cassandraRunners.flatten.foreach(_.destroy())
+    cassandraRunners.values.foreach(_.destroy())
     release()
   }
 
