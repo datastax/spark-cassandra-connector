@@ -4,10 +4,7 @@ import scala.language.postfixOps
 
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
-import scala.concurrent.duration._
 import org.scalatest.{Matchers, FlatSpec}
-
-import com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf
 
 class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
@@ -63,38 +60,6 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.keyStorePath shouldBe Some("/etc/keys/.keystore")
     connConf.cassandraSSLConf.keyStorePassword shouldBe Some("secret")
     connConf.cassandraSSLConf.keyStoreType shouldBe "JCEKS"
-  }
-
-  // retry delay temporary disabled due to SPARKC-360
-  ignore should "resolve default retry delay settings correctly" in {
-    val sparkConf = new SparkConf(loadDefaults = false)
-
-    val connConf = CassandraConnectorConf(sparkConf)
-    connConf.queryRetryDelay shouldBe CassandraConnectorConf.QueryRetryDelayParam.default
-  }
-
-  ignore should "resolve constant retry delay settings" in {
-    val sparkConf = new SparkConf(loadDefaults = false)
-    sparkConf.set("spark.cassandra.query.retry.delay", "1234")
-
-    val connConf = CassandraConnectorConf(sparkConf)
-    connConf.queryRetryDelay shouldBe RetryDelayConf.ConstantDelay(1234 milliseconds)
-  }
-
-  ignore should "resolve linear retry delay settings" in {
-    val sparkConf = new SparkConf(loadDefaults = false)
-    sparkConf.set("spark.cassandra.query.retry.delay", "1234+2000")
-
-    val connConf = CassandraConnectorConf(sparkConf)
-    connConf.queryRetryDelay shouldBe RetryDelayConf.LinearDelay(1234 milliseconds, 2000 milliseconds)
-  }
-
-  ignore should "resolve exponential retry delay settings" in {
-    val sparkConf = new SparkConf(loadDefaults = false)
-    sparkConf.set("spark.cassandra.query.retry.delay", "1234*2.3")
-
-    val connConf = CassandraConnectorConf(sparkConf)
-    connConf.queryRetryDelay shouldBe RetryDelayConf.ExponentialDelay(1234 milliseconds, 2.3d)
   }
 
 }

@@ -1,3 +1,5 @@
+ * Removed deprecated QueryRetryDelay configuration parameter (SPARKC-423)
+
 2.0.0 M3
  * Includes all patches up to 1.6.2
 

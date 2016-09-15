@@ -28,14 +28,6 @@ nodes in the local DC will be used upon connecting.
 See the reference section for a full list of options
 [Cassandra Connection Parameters](reference.md#cassandra-connection-parameters)
 
-Query retry delay can be configured in few different ways:
-* `<delay in ms>` - for a constant delay before each retry
-* `<initial delay in ms>+<increase in ms>` - for a linearly increasing delay - delay before each retry
-  will be longer than the delay before the previous retry by increase factor
-* `<initial delay in ms>*<increase multiplier, float>` - for an exponentially increasing delay - delay 
-  before each retry will be as many times longer than the previous retry delay as specified 
-  by the multiplier
-
 ### Connection management
 
 Whenever you call a method requiring access to Cassandra, the options in the `SparkConf` object will be used

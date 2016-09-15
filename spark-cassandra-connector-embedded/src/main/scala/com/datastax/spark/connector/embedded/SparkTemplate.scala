@@ -27,7 +27,6 @@ object SparkTemplate {
     .set("spark.cassandra.connection.port", getPort(0).toString)
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
     .set("spark.cassandra.connection.timeout_ms", "30000")
-    .set("spark.cassandra.query.retry.delay", "1")
     .set("spark.ui.showConsoleProgress", "false")
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
