@@ -52,7 +52,9 @@ implicit
   private val indexMap = for ((ip, partitions) <- hostMap; partition <- partitions) yield (partition, ip)
   // 0->IP1, 1-> IP1, ...
 
-  private def randomHost(index: Int): InetAddress = hosts(index % hosts.length)
+  private def absModulo(dividend: Int, divisor: Int) : Int = Math.abs(dividend % divisor)
+
+  private def randomHost(index: Int): InetAddress = hosts(absModulo(index, hosts.length))
 
   /**
    * Given a set of endpoints, pick a random endpoint, and then a random partition owned by that
@@ -73,10 +75,10 @@ implicit
 
         val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {
-          val endpoint = replicaSetInDC(tokenHash % replicaSetInDC.size)
-          hostMap(endpoint)(tokenHash % partitionsPerReplicaSet)
+          val endpoint = replicaSetInDC(absModulo(tokenHash, replicaSetInDC.size))
+          hostMap(endpoint)(absModulo(tokenHash, partitionsPerReplicaSet))
         } else {
-          hostMap(randomHost(tokenHash))(tokenHash % partitionsPerReplicaSet)
+          hostMap(randomHost(tokenHash))(absModulo(tokenHash, partitionsPerReplicaSet))
         }
       case _ => throw new IllegalArgumentException(
         "ReplicaPartitioner can only determine the partition of a tuple whose key is a non-empty Set[InetAddress]. " +
