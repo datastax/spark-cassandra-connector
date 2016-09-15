@@ -71,6 +71,10 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase {
           session.executeAsync(ps.bind(value: JInt, value: JInt, (rowCount - value): JInt))
         }
         results.map(_.get)
+      },
+      Future {
+        session.execute(
+          s"""CREATE TABLE $ks.table3 (key INT, value INT, PRIMARY KEY (key))""".stripMargin)
       }
     )
   }
@@ -100,6 +104,18 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     val rdd = testRDD
     val partitioner = rdd.partitionGenerator.partitioner[PKey](PartitionKeyColumns)
     partitioner.get.numPartitions should be(rdd.partitions.length)
+  }
+
+  "A ReplicaPartitioner" should "be able to handle tokens that hash to Integer.MIN_VALUE" in {
+    val keyForMinValueHash = -1478051534 // corresponding token hashes to Integer.MIN_VALUE
+    val testRDDWithMagicRow = sc.parallelize(Seq((keyForMinValueHash, 0)))
+    testRDDWithMagicRow.repartitionByCassandraReplica(ks, "table3").saveToCassandra(ks, "table3")
+
+    // verify token actually hashes to Integer.MIN_VALUE
+    conn.withSessionDo { session =>
+      val row = session.execute(s"SELECT token(key) FROM $ks.table3 where key=$keyForMinValueHash").one
+      row.getPartitionKeyToken.hashCode() shouldBe Integer.MIN_VALUE
+    }
   }
 
   "keyBy" should "create a partitioned RDD without any parameters" in {
