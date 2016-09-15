@@ -1,18 +1,13 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import scala.language.postfixOps
-
-import org.scalatest.{Matchers, FlatSpec}
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra}
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 
 class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -31,7 +26,7 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
     }
 
     import scala.concurrent.duration._
-    for (runner <- EmbeddedCassandra.cassandraRunners(0)) {
+    for (runner <- EmbeddedCassandra.cassandraRunners.get(0)) {
       runner.nodeToolCmd("flush")
       val initialDelay =
         Math.max(runner.startupTime + (45 seconds).toMillis - System.currentTimeMillis(), 0L)

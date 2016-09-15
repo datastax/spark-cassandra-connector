@@ -2,11 +2,10 @@ package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
-import com.datastax.spark.connector.embedded.EmbeddedCassandra
+import com.datastax.spark.connector.embedded.{EmbeddedCassandra, YamlTransformations}
 
 class CassandraSSLClientAuthConnectorSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-ssl-client-auth.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.ClientEncryption and YamlTransformations.ClientAuth))
 
   val conn = CassandraConnector(
     hosts = Set(EmbeddedCassandra.getHost(0)),

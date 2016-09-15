@@ -7,15 +7,15 @@ import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
 import org.apache.spark.sql.{Row, SQLContext}
 import org.joda.time.DateTimeZone
 import org.scalatest.FlatSpec
-
 import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   this: FlatSpec =>
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

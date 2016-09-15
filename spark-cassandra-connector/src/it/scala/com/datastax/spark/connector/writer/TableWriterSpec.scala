@@ -4,10 +4,10 @@ import java.io.IOException
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
-
 import com.datastax.driver.core.ProtocolVersion
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 
@@ -30,9 +30,7 @@ object CustomerIdConverter extends TypeConverter[String] {
 }
 
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
-
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

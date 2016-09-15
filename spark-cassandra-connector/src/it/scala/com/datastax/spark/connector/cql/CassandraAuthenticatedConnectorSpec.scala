@@ -1,12 +1,11 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.spark.connector.embedded.YamlTransformations
 import org.apache.spark.sql.SQLContext
-
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-password-auth.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.PasswordAuth))
   useSparkConf(defaultConf)
 
   // Wait for the default user to be created in Cassandra.
