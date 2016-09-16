@@ -17,7 +17,6 @@
 
 import java.io.File
 
-import pl.project13.scala.sbt.JmhPlugin
 import sbtsparkpackage.SparkPackagePlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -39,12 +38,15 @@ object CassandraSparkBuild extends Build {
 
   lazy val cassandraServerProject = Project(
     id = "cassandra-server",
-    base = file("cassandra-server"),
+    base = file(namespace),
     settings = defaultSettings ++ Seq(
       libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
       cassandraServerClasspath := {
         (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
-      }
+      },
+      target := target.value / "cassandra-server",
+      sourceDirectory := baseDirectory.value / "cassandra-server",
+      resourceDirectory := baseDirectory.value / "cassandra-server"
     )
   ) configs IntegrationTest
 
@@ -125,13 +127,6 @@ object CassandraSparkBuild extends Build {
     base = Some(namespace)
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
-
-  lazy val perf = Project(
-    id = s"$namespace-perf",
-    base = file(s"$namespace-perf"),
-    settings = projectSettings,
-    dependencies = Seq(connectorDistribution, embedded)
-  ) enablePlugins(JmhPlugin)
 
   def crossBuildPath(base: sbt.File, v: String): sbt.File = base / s"scala-$v" / "src"
 
@@ -350,8 +345,6 @@ object Dependencies {
     Embedded.snakeYaml,
     guava,
     config).map(_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
-
-  val perf = logging ++ spark ++ cassandra
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
