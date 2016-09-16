@@ -1,3 +1,4 @@
+ * Refactor usages of SQLContext so that SparkSession is used instead (SPARKC-400)
  * Removed deprecated QueryRetryDelay configuration parameter (SPARKC-423)
 
 2.0.0 M3

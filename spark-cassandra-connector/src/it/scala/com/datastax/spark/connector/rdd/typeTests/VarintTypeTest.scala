@@ -22,7 +22,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] {
   "A LongType DataFrame" should "write to VarInt C* tables" in {
     val LongValue = 11111111
     val longRDD = sc.parallelize(Seq(LongRow(LongValue, LongValue, LongValue, LongValue)))
-    val longDf = sqlContext.createDataFrame(longRDD)
+    val longDf = sparkSession.createDataFrame(longRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     longDf.write
@@ -41,7 +41,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] {
     val BigDecimalValue = new BigDecimal(22222)
 
     val bigDecimalRDD = sc.parallelize(Seq(BigDecimalRow(BigDecimalValue, BigDecimalValue, BigDecimalValue, BigDecimalValue)))
-    val bigDecimalDf = sqlContext.createDataFrame(bigDecimalRDD)
+    val bigDecimalDf = sparkSession.createDataFrame(bigDecimalRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     bigDecimalDf

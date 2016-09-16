@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -14,7 +14,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
-  var sqlContext: SQLContext = null
 
   val ks1 = ks + "_1"
   val ks2 = ks + "_2"
@@ -297,246 +296,243 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
       )
     }
 
-  sqlContext = new SQLContext(sc)
-  Seq("index_test", "varint_test", "timestamp_conversion_bug", "uuid_inet_type", "export_table",
-    "objects_copy", "udts", "test_collection",  "tuple_test1",
-    "test3", "test2", "test1")
-      .foreach(t => sqlContext.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
-  Seq("test3", "test2")
-      .foreach(t => sqlContext.read.cassandraFormat(t, ks2).load().createOrReplaceTempView(s"ks2_$t"))
-  skipIfProtocolVersionLT(V4) {
-    Seq("test_data_type1", "test_data_type")
-     .foreach(t => sqlContext.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
+    Seq("index_test", "varint_test", "timestamp_conversion_bug", "uuid_inet_type", "export_table",
+      "objects_copy", "udts", "test_collection",  "tuple_test1",
+      "test3", "test2", "test1")
+        .foreach(t => sparkSession.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
+    Seq("test3", "test2")
+        .foreach(t => sparkSession.read.cassandraFormat(t, ks2).load().createOrReplaceTempView(s"ks2_$t"))
+    skipIfProtocolVersionLT(V4) {
+      Seq("test_data_type1", "test_data_type")
+       .foreach(t => sparkSession.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
+    }
   }
-
-  }
-
 
   "SqlContext" should "allow to select all rows" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1").collect()
     result should have length 8
   }
 
   it should "allow to select rows with index columns" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE g = 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE g = 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with indexed columns that do not belong to partition key" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_index_test WHERE id1 = 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_index_test WHERE id1 = 2").collect()
     result should have length 1
   }
 
   it should "allow to select rows with indexed columns that belong to partition key" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_index_test WHERE ipk1 = 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_index_test WHERE ipk1 = 2").collect()
     result should have length 1
   }
 
   it should "allow to select rows with indexed partition and regular columns" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_index_test WHERE ipk1 = 2 and id1 = 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_index_test WHERE ipk1 = 2 and id1 = 2").collect()
     result should have length 1
   }
 
   it should "allow to select rows with >= clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b >= 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b >= 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with > clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b > 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b > 2").collect()
     result should have length 0
   }
 
   it should "allow to select rows with < clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b < 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b < 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with <= clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b <= 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b <= 2").collect()
     result should have length 8
   }
 
   it should "allow to select rows with in clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b in (1,2)").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b in (1,2)").collect()
     result should have length 8
   }
 
   it should "allow to select rows with in clause pushed down" in {
-    val query = sqlContext.sql(s"SELECT * FROM ks1_test2 WHERE a in (1,2)")
+    val query = sparkSession.sql(s"SELECT * FROM ks1_test2 WHERE a in (1,2)")
     query.queryExecution.sparkPlan.toString should not include ("Filter (") // No Spark Filter Step
     val result = query.collect()
     result should have length 6
   }
 
   it should "allow to select rows with or clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b = 2 or b = 1").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b = 2 or b = 1").collect()
     result should have length 8
   }
 
   it should "allow to select rows with != clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b != 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b != 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with <> clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b <> 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b <> 2").collect()
     result should have length 4
   }
 
   it should "allow to select rows with not in clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b not in (1,2)").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b not in (1,2)").collect()
     result should have length 0
   }
 
   it should "allow to select rows with is not null clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE b is not null").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE b is not null").collect()
     result should have length 8
   }
 
   it should "allow to select rows with like clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test2 WHERE name LIKE '%om' ").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test2 WHERE name LIKE '%om' ").collect()
     result should have length 1
   }
 
   it should "allow to select rows with between clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test2 WHERE a BETWEEN 1 AND 2 ").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test2 WHERE a BETWEEN 1 AND 2 ").collect()
     result should have length 6
   }
 
   it should "allow to select rows with alias" in {
-    val result = sqlContext.sql(s"SELECT a AS a_column, b AS b_column FROM ks1_test2").collect()
+    val result = sparkSession.sql(s"SELECT a AS a_column, b AS b_column FROM ks1_test2").collect()
     result should have length 9
   }
 
   it should "allow to select rows with distinct column" in {
-    val result = sqlContext.sql(s"SELECT DISTINCT a FROM ks1_test2").collect()
+    val result = sparkSession.sql(s"SELECT DISTINCT a FROM ks1_test2").collect()
     result should have length 3
   }
 
   it should "allow to select rows with limit clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 limit 2").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 limit 2").collect()
     result should have length 2
   }
 
   it should "allow to select rows with order by clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 order by d").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 order by d").collect()
     result should have length 8
   }
 
   it should "allow to select rows with group by clause" in {
-    val result = sqlContext.sql(s"SELECT count(*) FROM ks1_test1 GROUP BY b").collect()
+    val result = sparkSession.sql(s"SELECT count(*) FROM ks1_test1 GROUP BY b").collect()
     result should have length 2
   }
 
   it should "allow to select rows with union clause" in {
-    val result = sqlContext.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION DISTINCT SELECT test2.a FROM ks1_test2 AS test2").collect()
+    val result = sparkSession.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION DISTINCT SELECT test2.a FROM ks1_test2 AS test2").collect()
     result should have length 3
   }
 
   it should "allow to select rows with union distinct clause" in {
-    val result = sqlContext.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION DISTINCT SELECT test2.a FROM ks1_test2 AS test2").collect()
+    val result = sparkSession.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION DISTINCT SELECT test2.a FROM ks1_test2 AS test2").collect()
     result should have length 3
   }
 
   it should "allow to select rows with union all clause" in {
-    val result = sqlContext.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION ALL SELECT test2.a FROM ks1_test2 AS test2").collect()
+    val result = sparkSession.sql(s"SELECT test1.a FROM ks1_test1 AS test1 UNION ALL SELECT test2.a FROM ks1_test2 AS test2").collect()
     result should have length 17
   }
 
   it should "allow to select rows with having clause" in {
-    val result = sqlContext.sql(s"SELECT count(*) FROM ks1_test1 GROUP BY b HAVING count(b) > 4").collect()
+    val result = sparkSession.sql(s"SELECT count(*) FROM ks1_test1 GROUP BY b HAVING count(b) > 4").collect()
     result should have length 0
   }
 
   it should "allow to select rows with partition column clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE a = 1 and b = 1 and c = 1").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE a = 1 and b = 1 and c = 1").collect()
     result should have length 4
   }
 
   it should "allow to select rows with partition column and cluster column clause" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test1 WHERE a = 1 and b = 1 and c = 1 and d = 1 and e = 1").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test1 WHERE a = 1 and b = 1 and c = 1 and d = 1 and e = 1").collect()
     result should have length 1
   }
 
   it should "allow to insert into another table" in {
-    val result = sqlContext.sql(s"INSERT INTO TABLE ks1_test3 SELECT a, b, c FROM ks1_test2").collect()
-    val result2 = sqlContext.sql(s"SELECT a, b, c FROM ks1_test3").collect()
+    val result = sparkSession.sql(s"INSERT INTO TABLE ks1_test3 SELECT a, b, c FROM ks1_test2").collect()
+    val result2 = sparkSession.sql(s"SELECT a, b, c FROM ks1_test3").collect()
     result2 should have length 9
   }
 
   it should "allow to insert into another table in different keyspace" in {
-    val result = sqlContext.sql(s"INSERT INTO TABLE ks2_test3 SELECT test2.a, test2.b, test2.c FROM ks1_test2 as test2").collect()
-    val result2 = sqlContext.sql(s"SELECT test3.a, test3.b, test3.c FROM ks2_test3 as test3").collect()
+    val result = sparkSession.sql(s"INSERT INTO TABLE ks2_test3 SELECT test2.a, test2.b, test2.c FROM ks1_test2 as test2").collect()
+    val result2 = sparkSession.sql(s"SELECT test3.a, test3.b, test3.c FROM ks2_test3 as test3").collect()
     result2 should have length 9
   }
 
   it should "allow to join two tables" in {
-    val result = sqlContext.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
       s"JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to join two tables from different keyspaces" in {
-    val result = sqlContext.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
       s"JOIN ks2_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to inner join two tables" in {
-    val result = sqlContext.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test1.a, test1.b, test1.c, test2.a FROM ks1_test1 AS test1 " +
       s"INNER JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 4
   }
 
   it should "allow to left join two tables" in {
-    val result = sqlContext.sql(s"SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ks1_test1 AS test1 " +
       s"LEFT JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 8
   }
 
   it should "allow to left outer join two tables" in {
-    val result = sqlContext.sql(s"SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test1.a, test1.b, test1.c, test1.d, test1.e, test1.f FROM ks1_test1 AS test1 " +
       s"LEFT OUTER JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 8
   }
 
   it should "allow to right join two tables" in {
-    val result = sqlContext.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
       s"RIGHT JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
   }
 
   it should "allow to right outer join two tables" in {
-    val result = sqlContext.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
       s"RIGHT OUTER JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 12
   }
 
   it should "allow to full join two tables" in {
-    val result = sqlContext.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
+    val result = sparkSession.sql(s"SELECT test2.a, test2.b, test2.c FROM ks1_test1 AS test1 " +
       s"FULL JOIN ks1_test2 AS test2 ON test1.a = test2.a AND test1.b = test2.b AND test1.c = test2.c").collect()
     result should have length 16
   }
 
   it should "allow to select rows for collection columns" in {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test_collection").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test_collection").collect()
     result should have length 1
   }
 
   it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(V4) {
-    val result = sqlContext.sql(s"SELECT * FROM ks1_test_data_type").collect()
+    val result = sparkSession.sql(s"SELECT * FROM ks1_test_data_type").collect()
     result should have length 1
   }
 
   it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(V4) {
-    val result = sqlContext.sql(s"INSERT INTO TABLE ks1_test_data_type1 SELECT * FROM ks1_test_data_type").collect()
-    val result1 = sqlContext.sql(s"SELECT * FROM ks1_test_data_type1").collect()
+    val result = sparkSession.sql(s"INSERT INTO TABLE ks1_test_data_type1 SELECT * FROM ks1_test_data_type").collect()
+    val result1 = sparkSession.sql(s"SELECT * FROM ks1_test_data_type1").collect()
     result1 should have length 1
   }
 
   it should "allow to select specified non-UDT columns from a table containing some UDT columns" in {
-    val result = sqlContext.sql(s"SELECT key, name FROM ks1_udts").collect()
+    val result = sparkSession.sql(s"SELECT key, name FROM ks1_udts").collect()
     result should have length 1
     val row = result.head
     row.getInt(0) should be(1)
@@ -545,7 +541,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   //TODO: SPARK-9269 is opened to address Set matching issue. I change the Set data type to List for now
   it should "allow to select UDT collection column and nested UDT column" in {
-    val result = sqlContext
+    val result = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -560,7 +556,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow writing UDTs to C* tables" in {
-    val result = sqlContext
+    val result = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -582,25 +578,25 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
 
   // Regression test for #454: java.util.NoSuchElementException thrown when accessing timestamp field using CassandraSQLContext
   it should "allow to restrict a clustering timestamp column value" in {
-    sqlContext.sql("select objectid, meterid, utcstamp  from ks1_export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
+    sparkSession.sql("select objectid, meterid, utcstamp  from ks1_export_table where meterid = 4317 and utcstamp > '2013-07-26 20:30:00-0700'").collect()
   }
 
   it should "allow to min/max timestamp column" in {
-    sqlContext.sql("select k, min(d), max(d) from ks1_timestamp_conversion_bug group by k").collect()
+    sparkSession.sql("select k, min(d), max(d) from ks1_timestamp_conversion_bug group by k").collect()
   }
 
   it should "be able to push down filter on UUID and Inet columns" in {
-    val result = sqlContext.sql(
+    val result = sparkSession.sql(
       "select * " +
         "from ks1_uuid_inet_type " +
         "where b > '74.125.239.135'").collect()
     result should have length 1
-    val result1 = sqlContext.sql(
+    val result1 = sparkSession.sql(
       "select * " +
         "from ks1_uuid_inet_type " +
         "where a < '123e4567-e89b-12d3-a456-426655440000'").collect()
     result1 should have length 1
-    val result2 = sqlContext.sql(
+    val result2 = sparkSession.sql(
       "select * " +
         "from ks1_uuid_inet_type " +
         "where a = '123e4567-e89b-12d3-a456-426655440000' and b = '74.125.239.135'").collect()
@@ -608,7 +604,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "be able to push down filter on varint columns" in {
-    sqlContext.sql(
+    sparkSession.sql(
       s"""
          |SELECT * FROM ks1_varint_test
          |WHERE id = 1234567891234
@@ -619,7 +615,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "read C* Tuple using sql" in {
-    val df = sqlContext.sql(s"SELECT * FROM ks1_tuple_test1")
+    val df = sparkSession.sql(s"SELECT * FROM ks1_tuple_test1")
 
     df.count should be (1)
     df.first.getStruct(1).getString(0) should be ("xyz")

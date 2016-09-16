@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.embedded.YamlTransformations
-import org.apache.spark.sql.SQLContext
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import org.apache.spark.sql.SparkSession
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.PasswordAuth))
@@ -35,7 +35,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
   }
 
   "A DataFrame" should "read and write data with valid auth" in {
-    val sqlContext = new SQLContext(sc)
+    val sparkSession = SparkSession.builder().getOrCreate()
 
     val conf = defaultConf
         .set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
@@ -43,7 +43,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
 
     val conn = CassandraConnector(conf)
 
-    val personDF1 = sqlContext.sparkSession.createDataFrame(Seq(
+    val personDF1 = sparkSession.createDataFrame(Seq(
       ("Andy", 28, "America"),
       ("Kaushal", 25, "India"),
       ("Desanth", 27, "India"),
@@ -57,7 +57,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
       "keyspace" -> ks, "table" -> "authtest")
 
     personDF1.write.format("org.apache.spark.sql.cassandra").options(options).save()
-    val personDF2 = sqlContext.read.format("org.apache.spark.sql.cassandra").options(options).load()
+    val personDF2 = sparkSession.read.format("org.apache.spark.sql.cassandra").options(options).load()
 
     personDF2.count should be(4)
   }

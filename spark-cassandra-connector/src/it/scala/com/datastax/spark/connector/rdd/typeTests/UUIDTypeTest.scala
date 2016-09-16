@@ -19,7 +19,7 @@ class UUIDTypeTest extends AbstractTypeTest[UUID, UUID] {
   "A String DataFrame" should "write to C* UUIDs" in {
     val UUIDString = "11111111-1111-1111-1111-111111111111"
     val stringRDD = sc.parallelize(Seq(UUIDStringRow(UUIDString, UUIDString, UUIDString, UUIDString)))
-    val stringDf = sqlContext.createDataFrame(stringRDD)
+    val stringDf = sparkSession.createDataFrame(stringRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     stringDf.write

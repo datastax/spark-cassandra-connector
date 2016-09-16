@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.demo
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.cassandra._
-
 import com.datastax.spark.connector.cql.CassandraConnector
 
 /** This demo creates a table in Cassandra, populates it with sample data,
@@ -10,7 +9,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
   * You need to start Cassandra on local node prior to executing this demo. */
 object SQLDemo extends DemoApp {
 
-  val sqlContext = new SQLContext(sc)
+  val sqlContext = SparkSession.builder().getOrCreate()
 
   CassandraConnector(conf).withSessionDo { session =>
     session.execute("CREATE KEYSPACE IF NOT EXISTS test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")

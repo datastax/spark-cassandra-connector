@@ -19,7 +19,7 @@ class InetTypeTest extends AbstractTypeTest[InetAddress, InetAddress] {
   "A String DataFrame" should "write to C* Inets" in {
     val InetString = "111.111.111.111"
     val stringRDD = sc.parallelize(Seq(InetStringRow(InetString, InetString, InetString, InetString)))
-    val stringDf = sqlContext.createDataFrame(stringRDD)
+    val stringDf = sparkSession.createDataFrame(stringRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     stringDf.write
