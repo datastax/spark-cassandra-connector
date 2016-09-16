@@ -17,7 +17,6 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
   "The Reference Doc File" should "contain all of the current properties" in withClue(reRunMessage){
     val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
 
-
     val missingProperties =
       for (propertyName <- ConfigCheck.validStaticPropertyNames
         if !refFile.contains(propertyName.stripPrefix("spark.cassandra."))) yield propertyName

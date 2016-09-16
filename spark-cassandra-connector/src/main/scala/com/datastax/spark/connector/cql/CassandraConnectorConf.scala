@@ -28,9 +28,7 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
 )
 
 /** A factory for [[CassandraConnectorConf]] objects.
@@ -52,64 +50,6 @@ object CassandraConnectorConf extends Logging {
     keyStorePassword: Option[String] = None,
     keyStoreType: String = "JKS"
   )
-
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  trait RetryDelayConf {
-    def forRetry(retryNumber: Int): Duration
-  }
-
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  object RetryDelayConf extends Serializable {
-
-    case class ConstantDelay(delay: Duration) extends RetryDelayConf {
-      require(delay.length >= 0, "Delay must not be negative")
-
-      override def forRetry(nbRetry: Int) = delay
-      override def toString() = s"${delay.length}"
-    }
-
-    case class LinearDelay(initialDelay: Duration, increaseBy: Duration) extends RetryDelayConf {
-      require(initialDelay.length >= 0, "Initial delay must not be negative")
-      require(increaseBy.length > 0, "Delay increase must be greater than 0")
-
-      override def forRetry(nbRetry: Int) = initialDelay + (increaseBy * (nbRetry - 1).max(0))
-      override def toString() = s"${initialDelay.length} + ${increaseBy}"
-    }
-
-    case class ExponentialDelay(initialDelay: Duration, increaseBy: Double) extends RetryDelayConf {
-      require(initialDelay.length >= 0, "Initial delay must not be negative")
-      require(increaseBy > 0, "Delay increase must be greater than 0")
-
-      override def forRetry(nbRetry: Int) =
-        (initialDelay.toMillis * math.pow(increaseBy, (nbRetry - 1).max(0))).toLong milliseconds
-      override def toString() = s"${initialDelay.length} * $increaseBy"
-    }
-
-    private val ConstantDelayEx = """(\d+)""".r
-    private val LinearDelayEx = """(\d+)\+(.+)""".r
-    private val ExponentialDelayEx = """(\d+)\*(.+)""".r
-
-    def fromString(s: String): Option[RetryDelayConf] = s.trim match {
-      case "" => None
-
-      case ConstantDelayEx(delayStr) =>
-        val d = for (delay <- Try(delayStr.toInt)) yield ConstantDelay(delay milliseconds)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of constant delay: $s; it should be <integer number>."))
-
-      case LinearDelayEx(delayStr, increaseStr) =>
-        val d = for (delay <- Try(delayStr.toInt); increaseBy <- Try(increaseStr.toInt))
-          yield LinearDelay(delay milliseconds, increaseBy milliseconds)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of linearly increasing delay: $s; it should be <integer number>+<integer number>"))
-
-      case ExponentialDelayEx(delayStr, increaseStr) =>
-        val d = for (delay <- Try(delayStr.toInt); increaseBy <- Try(increaseStr.toDouble))
-          yield ExponentialDelay(delay milliseconds, increaseBy)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of exponentially increasing delay: $s; it should be <integer number>*<real number>"))
-    }
-  }
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
@@ -170,20 +110,11 @@ object CassandraConnectorConf extends Logging {
     default = 10,
     description = """Number of times to retry a timed-out query""")
 
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  val QueryRetryDelayParam = ConfigParameter[RetryDelayConf](
-    name = "spark.cassandra.query.retry.delay",
-    section = ReferenceSection,
-    default = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d),
-    description = """The delay between subsequent retries (can be constant,
-      | like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)""".stripMargin)
-
   val ReadTimeoutParam = ConfigParameter[Int](
     name = "spark.cassandra.read.timeout_ms",
     section = ReferenceSection,
     default = 120000,
     description = """Maximum period of time to wait for a read to return """)
-
 
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
   val DefaultCassandraSSLConf = CassandraSSLConf()
@@ -262,7 +193,6 @@ object CassandraConnectorConf extends Logging {
     MaxReconnectionDelayParam,
     CompressionParam,
     QueryRetryParam,
-    QueryRetryDelayParam,
     ReadTimeoutParam,
     SSLEnabledParam,
     SSLTrustStoreTypeParam,

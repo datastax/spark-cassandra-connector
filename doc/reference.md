@@ -74,12 +74,6 @@ may also be used. ("127.0.0.1,192.168.0.1")
   <td>Number of times to retry a timed-out query</td>
 </tr>
 <tr>
-  <td><code>query.retry.delay</code></td>
-  <td>4 * 1.5</td>
-  <td>The delay between subsequent retries (can be constant,
- like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)</td>
-</tr>
-<tr>
   <td><code>read.timeout_ms</code></td>
   <td>120000</td>
   <td>Maximum period of time to wait for a read to return </td>
