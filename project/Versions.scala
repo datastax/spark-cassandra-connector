@@ -40,7 +40,6 @@ object Versions {
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val JOpt            = "3.2"
-  val Kafka           = "0.8.2.2"
   val Lzf             = "0.8.4"
   val Netty           = "4.0.33.Final"
   val CodaHaleMetrics = "3.0.2"

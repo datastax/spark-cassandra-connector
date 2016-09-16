@@ -30,13 +30,11 @@ object CassandraSparkBuild extends Build {
 
   val namespace = "spark-cassandra-connector"
 
-  val demosPath = file(s"$namespace-demos")
-
   lazy val root = RootProject(
     name = "root",
     dir = file("."),
     settings = rootSettings ++ Seq(cassandraServerClasspath := { "" }),
-    contains = Seq(embedded, connectorDistribution, demos)
+    contains = Seq(embedded, connectorDistribution)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
   lazy val cassandraServerProject = Project(
@@ -128,27 +126,6 @@ object CassandraSparkBuild extends Build {
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
-
-  lazy val demos = RootProject(
-    name = "demos",
-    dir = demosPath,
-    contains = Seq(simpleDemos, kafkaStreaming)
-  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
-
-  lazy val simpleDemos = Project(
-    id = "simple-demos",
-    base = demosPath / "simple-demos",
-    settings = demoSettings,
-    dependencies = Seq(connectorDistribution, embedded)
-  ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
-
-  lazy val kafkaStreaming = Project(
-    id = "kafka-streaming",
-    base = demosPath / "kafka-streaming",
-    settings = demoSettings ++ Seq(libraryDependencies ++= Seq(Artifacts.Demos.kafka, Artifacts.Demos.kafkaStreaming)),
-    dependencies = Seq(connectorDistribution, embedded))
-      .disablePlugins(AssemblyPlugin, SparkPackagePlugin)
-
   lazy val refDoc = Project(
     id = s"$namespace-doc",
     base = file(s"$namespace-doc"),
@@ -237,12 +214,6 @@ object Artifacts {
       .exclude("org.apache.spark", s"spark-bagel_$scalaBinary")
       .exclude("org.apache.spark", s"spark-mllib_$scalaBinary")
       .exclude("org.scala-lang", "scala-compiler")
-
-    def kafkaExclusions(): ModuleID = module
-      .exclude("org.slf4j", "slf4j-simple")
-      .exclude("com.sun.jmx", "jmxri")
-      .exclude("com.sun.jdmk", "jmxtools")
-      .exclude("net.sf.jopt-simple", "jopt-simple")
   }
 
   val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
@@ -260,7 +231,6 @@ object Artifacts {
   val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
   val airlift             = "io.airlift"              % "airline"                % Airlift
 
-  /* To allow spark artifact inclusion in the demos at runtime, we set 'provided' below. */
   val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark sparkCoreExclusions() // ApacheV2
   val sparkRepl           = "org.apache.spark"        %% "spark-repl"            % Spark sparkExclusions()     // ApacheV2
   val sparkUnsafe         = "org.apache.spark"        %% "spark-unsafe"          % Spark sparkExclusions()     // ApacheV2
@@ -284,15 +254,9 @@ object Artifacts {
   object Embedded {
     val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"           % Akka                                    // ApacheV2
     val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt
-    val kafka             = "org.apache.kafka"        %% "kafka"                  % Kafka                 kafkaExclusions   // ApacheV2
     val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark % "provided"    replExclusions    // ApacheV2
     val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7"
     val snakeYaml         = "org.yaml"                % "snakeyaml"               % "1.16"
-  }
-
-  object Demos {
-    val kafka             = "org.apache.kafka"        %% "kafka"                      % Kafka                 kafkaExclusions   // ApacheV2
-    val kafkaStreaming    = "org.apache.spark"        %% "spark-streaming-kafka-0-8"  % Spark   % "provided"  sparkExclusions   // ApacheV2
   }
 
   object Test {
@@ -388,15 +352,12 @@ object Dependencies {
     cassandraServer % "it,test",
     Embedded.jopt,
     Embedded.sparkRepl,
-    Embedded.kafka,
     Embedded.snappy,
     Embedded.snakeYaml,
     guava,
     config).map(_ exclude(org = "org.slf4j", name = "log4j-over-slf4j"))
 
   val perf = logging ++ spark ++ cassandra
-
-  val kafka = Seq(Demos.kafka, Demos.kafkaStreaming)
 
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),

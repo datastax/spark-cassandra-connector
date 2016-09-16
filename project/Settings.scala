@@ -208,11 +208,6 @@ object Settings extends Build {
     updateOptions := updateOptions.value.withCachedResolution(true)
   )
 
-  lazy val demoSettings = projectSettings ++ noPublish ++ Seq(
-    publishArtifact in (Test,packageBin) := false,
-    javaOptions in run ++= Seq("-Djava.library.path=./sigar","-Xms128m", "-Xmx1024m", "-XX:+UseConcMarkSweepGC")
-  )
-
   val testConfigs = inConfig(Test)(Defaults.testTasks) ++ inConfig(IntegrationTest)(Defaults.itSettings)
 
   val pureTestClasspath = taskKey[Set[String]]("Show classpath which is obtained as (test:fullClasspath + it:fullClasspath) - compile:fullClasspath")
