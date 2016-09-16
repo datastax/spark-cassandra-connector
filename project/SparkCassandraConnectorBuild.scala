@@ -126,12 +126,6 @@ object CassandraSparkBuild extends Build {
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
-  lazy val refDoc = Project(
-    id = s"$namespace-doc",
-    base = file(s"$namespace-doc"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
-  ) dependsOn connectorDistribution
-
   lazy val perf = Project(
     id = s"$namespace-perf",
     base = file(s"$namespace-perf"),

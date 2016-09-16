@@ -10,7 +10,7 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
   val pwd = System.getenv("PWD")
 
   val reRunMessage =
-    """******* re-run sbt spark-cassandra-connector-doc/run to regenerate properties file
+    """******* re-run sbt spark-cassandra-connector-unshaded/run to regenerate properties file
       |*******.
     """.stripMargin
 

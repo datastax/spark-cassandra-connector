@@ -175,7 +175,7 @@ Then copy the generated test jar to your Spark nodes and run:
 ## Generating Documents
 To generate the Reference Document use 
 
-    ./sbt/sbt spark-cassandra-connector-doc/run (outputLocation)
+    ./sbt/sbt spark-cassandra-connector-unshaded/run (outputLocation)
     
 outputLocation defaults to doc/reference.md
 
