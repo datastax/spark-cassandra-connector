@@ -2,14 +2,13 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.{Constructor, Method}
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.TypeTag
-
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
+import com.datastax.driver.mapping.annotations.{Column, Field}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
+import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
+
+import scala.reflect.ClassTag
 
 abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
@@ -29,6 +28,26 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
   protected def constructorParamToColumnName(
       paramName: String,
       columns: Map[String, ColumnRef]): Option[ColumnRef]
+
+  protected def annotationForFieldName(
+      fieldName: String): String = {
+    // POJO is either a table or an UDT
+    // We have to cover both cases
+    try {
+      val f = cls.getField(fieldName)
+
+      if (f.isAnnotationPresent(classOf[Column])) {
+        f.getAnnotation(classOf[Column]).name()
+      } else if (f.isAnnotationPresent(classOf[Field])) {
+        f.getAnnotation(classOf[Field]).name()
+      } else {
+        ""
+      }
+    } catch {
+      case e: NoSuchFieldException => { "" }
+    }
+
+  }
 
   protected def allowsNull: Boolean
 

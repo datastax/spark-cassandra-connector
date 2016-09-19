@@ -1,0 +1,45 @@
+package com.datastax.spark.connector.mapper;
+
+import com.datastax.driver.mapping.annotations.Column;
+
+/**
+ * This is a Java Bean style class with Java Driver style annotations built in.
+ * This class also contains nested UDTs with its own mappings
+ */
+public class JavaTestBean {
+    public JavaTestBean(int property1, int anotherProperty) {
+        this.property1 = property1;
+        this.property1 = anotherProperty;
+    }
+
+    @Column(name = "property_1")
+    Integer property1;
+    @Column(name = "camel_case_property")
+    Integer camelCaseProperty;
+    JavaTestUDTBean nested;
+
+    public int getProperty1() {
+        return property1;
+    }
+
+    public void setProperty1(int property1) {
+        this.property1 = property1;
+    }
+
+    public int getCamelCaseProperty() {
+        return camelCaseProperty;
+    }
+
+    public void setCamelCaseProperty(int camelCaseProperty) {
+        this.camelCaseProperty = camelCaseProperty;
+    }
+
+    public JavaTestUDTBean getNested() {
+        return nested;
+    }
+
+    public void setNested(JavaTestUDTBean nested) {
+        this.nested = nested;
+    }
+
+}
