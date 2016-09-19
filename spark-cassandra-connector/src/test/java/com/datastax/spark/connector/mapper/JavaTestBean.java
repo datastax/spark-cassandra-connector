@@ -2,15 +2,13 @@ package com.datastax.spark.connector.mapper;
 
 import com.datastax.driver.mapping.annotations.Column;
 
+import java.io.Serializable;
+
 /**
  * This is a Java Bean style class with Java Driver style annotations built in.
  * This class also contains nested UDTs with its own mappings
  */
-public class JavaTestBean {
-    public JavaTestBean(int property1, int anotherProperty) {
-        this.property1 = property1;
-        this.property1 = anotherProperty;
-    }
+public class JavaTestBean implements Serializable {
 
     @Column(name = "property_1")
     Integer property1;
