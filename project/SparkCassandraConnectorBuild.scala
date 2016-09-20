@@ -32,7 +32,7 @@ object CassandraSparkBuild extends Build {
   lazy val root = RootProject(
     name = "root",
     dir = file("."),
-    settings = rootSettings ++ Seq(cassandraServerClasspath := { "" }),
+    settings = rootSettings ++ Seq(Testing.cassandraServerClasspath := { "" }),
     contains = Seq(embedded, connectorDistribution)
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin)
 
@@ -41,7 +41,7 @@ object CassandraSparkBuild extends Build {
     base = file(namespace),
     settings = defaultSettings ++ Seq(
       libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
-      cassandraServerClasspath := {
+      Testing.cassandraServerClasspath := {
         (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
       },
       target := target.value / "cassandra-server",
@@ -88,7 +88,7 @@ object CassandraSparkBuild extends Build {
         (artifact.value, (assembly in shadedConnector).value)
       },
       sbt.Keys.`package` := packageBin.value)
-      ++ pureCassandraSettings
+      ++ Testing.pureCassandraSettings
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
 
@@ -107,7 +107,7 @@ object CassandraSparkBuild extends Build {
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test,it"),
       target := target.value / "full"
     )
-      ++ pureCassandraSettings,
+      ++ Testing.pureCassandraSettings,
     base = Some(namespace)
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test")) configs IntegrationTest
 
@@ -123,7 +123,7 @@ object CassandraSparkBuild extends Build {
       target := target.value / "shaded",
       test in assembly := {},
       publishArtifact in (Compile, packageBin) := false)
-      ++ pureCassandraSettings,
+      ++ Testing.pureCassandraSettings,
     base = Some(namespace)
   ).copy(dependencies = Seq(embedded % "test->test;it->it,test;")
   ) configs IntegrationTest
@@ -205,9 +205,6 @@ object Artifacts {
       .exclude("org.scala-lang", "scala-compiler")
   }
 
-  val akkaActor           = "com.typesafe.akka"       %% "akka-actor"            % Akka           % "provided"  // ApacheV2
-  val akkaRemote          = "com.typesafe.akka"       %% "akka-remote"           % Akka           % "provided"  // ApacheV2
-  val akkaSlf4j           = "com.typesafe.akka"       %% "akka-slf4j"            % Akka           % "provided"  // ApacheV2
   val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver driverExclusions() // ApacheV2
   val commonsBeanUtils    = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
   val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
@@ -228,7 +225,7 @@ object Artifacts {
   val sparkCatalyst       = "org.apache.spark"        %% "spark-catalyst"        % Spark sparkExclusions()        // ApacheV2
   val sparkHive           = "org.apache.spark"        %% "spark-hive"            % Spark sparkExclusions()        // ApacheV2
 
-  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Settings.cassandraTestVersion      logbackExclude()  exclude(org = "org.slf4j", name = "log4j-over-slf4j")  // ApacheV2
+  val cassandraServer     = "org.apache.cassandra"    % "cassandra-all"          % Testing.cassandraTestVersion      logbackExclude()  exclude(org = "org.slf4j", name = "log4j-over-slf4j")  // ApacheV2
 
   object Metrics {
     val metricsCore       = "com.codahale.metrics"    % "metrics-core"           % CodaHaleMetrics % "provided"
@@ -241,7 +238,6 @@ object Artifacts {
   }
 
   object Embedded {
-    val akkaCluster       = "com.typesafe.akka"       %% "akka-cluster"           % Akka                                    // ApacheV2
     val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt
     val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark % "provided"    replExclusions    // ApacheV2
     val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7"
@@ -249,7 +245,6 @@ object Artifacts {
   }
 
   object Test {
-    val akkaTestKit       = "com.typesafe.akka"       %% "akka-testkit"                 % Akka      % "test,it"       // ApacheV2
     val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
     val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
@@ -279,7 +274,6 @@ object Dependencies {
 
   val testKit = Seq(
     sparkRepl % "test,it",
-    Test.akkaTestKit,
     Test.commonsIO,
     Test.junit,
     Test.junitInterface,
@@ -293,8 +287,6 @@ object Dependencies {
     Test.powerMock,
     Test.powerMockMockito
   )
-
-  val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
 
   val cassandra = Seq(cassandraDriver)
 
@@ -337,7 +329,7 @@ object Dependencies {
     }
   }
 
-  val embedded = logging ++ spark ++ cassandra ++ akka ++ Seq(
+  val embedded = logging ++ spark ++ cassandra ++ Seq(
     cassandraServer % "it,test",
     Embedded.jopt,
     Embedded.sparkRepl,
@@ -349,9 +341,6 @@ object Dependencies {
   val documentationMappings = Seq(
     DocumentationMapping(url(s"http://spark.apache.org/docs/${Versions.Spark}/api/scala/"),
       sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive
-    ),
-    DocumentationMapping(url(s"http://doc.akka.io/api/akka/${Versions.Akka}/"),
-      akkaActor, akkaRemote, akkaSlf4j
     )
   )
 

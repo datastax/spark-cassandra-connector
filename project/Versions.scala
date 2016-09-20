@@ -71,6 +71,6 @@ object Versions {
         |  Scala: $versionInReapply ${hint(binaryInReapply)}
         |  Scala Binary: $binaryInReapply
         |  Java: target=$JDK user=${Properties.javaVersion}
-        |  Cassandra version for testing: ${Settings.cassandraTestVersion} [can be overridden by specifying '-Dtest.cassandra.version=<version>']
+        |  Cassandra version for testing: ${Testing.cassandraTestVersion} [can be overridden by specifying '-Dtest.cassandra.version=<version>']
         """.stripMargin)
 }
