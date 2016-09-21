@@ -8,7 +8,7 @@ import com.datastax.spark.connector.types.{CassandraOption, Unset}
 
 class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.Default))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session, ks)

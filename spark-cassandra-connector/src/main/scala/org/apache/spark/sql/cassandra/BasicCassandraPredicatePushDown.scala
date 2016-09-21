@@ -1,5 +1,7 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.driver.core.ProtocolVersion
+import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TimeUUIDType
 
@@ -26,7 +28,13 @@ import com.datastax.spark.connector.types.TimeUUIDType
  * @param predicates list of filter predicates available in the user query
  * @param table Cassandra table definition
  */
-class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[Predicate], table: TableDef) {
+class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
+  predicates: Set[Predicate],
+  table: TableDef,
+  pv: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED) {
+
+  val pvOrdering = implicitly[Ordering[ProtocolVersion]]
+  import pvOrdering._
 
   private val Predicates = implicitly[PredicateOps[Predicate]]
 
@@ -125,7 +133,10 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[
   private val indexedColumnPredicatesToPushDown: Set[Predicate] = {
     val inPredicateInPrimaryKey = partitionKeyPredicatesToPushDown.exists(Predicates.isInPredicate)
     val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
-    val eqIndexedPredicates = eqIndexedColumns.flatMap(eqPredicatesByName)
+    //No Partition Key Equals Predicates In PV < 4
+    val eqIndexedPredicates = eqIndexedColumns
+      .filter{ c => pv >= V4 || !partitionKeyColumns.contains(c)}
+      .flatMap(eqPredicatesByName)
 
     // Don't include partition predicates in nonIndexedPredicates if partition predicates can't
     // be pushed down because we use token range query which already has partition columns in the
@@ -133,8 +144,7 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](predicates: Set[
     val nonIndexedPredicates = for {
       c <- allColumns if
         partitionKeyPredicatesToPushDown.nonEmpty && !eqIndexedColumns.contains(c) ||
-        partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) &&
-          !partitionKeyColumns.contains(c)
+        partitionKeyPredicatesToPushDown.isEmpty && !eqIndexedColumns.contains(c) && !partitionKeyColumns.contains(c)
       p <- firstNonEmptySet(eqPredicatesByName(c), rangePredicatesByName(c))
     } yield p
 

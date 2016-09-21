@@ -15,7 +15,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   conn.withSessionDo { session =>
     createKeyspace(session)
 

@@ -2,9 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.Try
 import scala.util.control.NonFatal
 
 import org.apache.spark.SparkConf
@@ -224,6 +222,7 @@ object CassandraConnectorConf extends Logging {
     } yield hostAddress
     
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
+
     val authConf = AuthConf.fromSparkConf(conf)
     val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
 

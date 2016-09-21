@@ -8,7 +8,7 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with SparkRepl {
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(null)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

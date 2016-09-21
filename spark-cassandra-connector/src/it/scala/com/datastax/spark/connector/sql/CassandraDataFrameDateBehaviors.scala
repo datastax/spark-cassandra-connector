@@ -8,6 +8,7 @@ import org.apache.spark.sql.{Row, SQLContext}
 import org.joda.time.DateTimeZone
 import org.scalatest.FlatSpec
 import com.datastax.driver.core.LocalDate
+import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
@@ -18,10 +19,10 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val sqlContext: SQLContext = new SQLContext(sc)
 
-  def dataFrame(timeZone: TimeZone): Unit = {
+  def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(V4){
 
     TimeZone.setDefault(timeZone)
     DateTimeZone.setDefault(DateTimeZone.forTimeZone(timeZone))

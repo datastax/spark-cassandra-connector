@@ -29,7 +29,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
   val otherTable = "other_table"
   val smallerTable = "smaller_table"

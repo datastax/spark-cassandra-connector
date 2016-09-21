@@ -9,7 +9,7 @@ class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq(YamlTransformations.Default))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
 
   conn.withSessionDo { session =>

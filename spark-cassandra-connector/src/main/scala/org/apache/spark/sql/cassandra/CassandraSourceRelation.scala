@@ -107,8 +107,10 @@ private[cassandra] class CassandraSourceRelation(
   private def predicatePushDown(filters: Array[Filter]) = {
     logInfo(s"Input Predicates: [${filters.mkString(", ")}]")
 
+    val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+
     /** Apply built in rules **/
-    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef)
+    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
     logDebug(s"Basic Rules Applied:\n$basicPushdown")
 

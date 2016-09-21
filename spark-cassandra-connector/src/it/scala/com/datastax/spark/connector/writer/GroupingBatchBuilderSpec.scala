@@ -12,7 +12,7 @@ import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, Spark
 
 class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.Default))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
