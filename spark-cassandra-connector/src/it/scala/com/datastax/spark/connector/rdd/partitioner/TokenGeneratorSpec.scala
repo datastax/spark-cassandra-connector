@@ -16,7 +16,7 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase {
   case class ComplexKey(key1: Int, key2: Int, key3: String)
 
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   val simpleKeys = Seq(1, -500, 2801, 4000000, -95500).map(SimpleKey(_))
   val complexKey = simpleKeys.map{ case SimpleKey(x) => ComplexKey(x, x, x.toString)}

@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{ProtocolVersion, Row}
 
 class TinyIntTypeTest extends AbstractTypeTest[Int, java.lang.Byte] {
+  override val minPV = ProtocolVersion.V4
   override protected val typeName: String = "tinyint"
 
   override protected val typeData: Seq[Int] =Seq(1, 2, 3, 4, 5)

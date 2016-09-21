@@ -13,7 +13,7 @@ class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with AsyncAssertion
   useCassandraConfig(Seq("cassandra-default.yaml.template"))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val count = 1000
 
   val tab = "mt_test"

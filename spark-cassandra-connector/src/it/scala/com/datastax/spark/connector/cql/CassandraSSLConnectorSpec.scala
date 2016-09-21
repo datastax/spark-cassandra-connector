@@ -8,7 +8,7 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
 
   useCassandraConfig(Seq("cassandra-ssl.yaml.template"))
 
-  val conn = CassandraConnector(
+  override val conn = CassandraConnector(
     hosts = Set(EmbeddedCassandra.getHost(0)),
     port = EmbeddedCassandra.getPort(0),
     cassandraSSLConf = CassandraSSLConf(

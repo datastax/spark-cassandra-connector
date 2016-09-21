@@ -62,7 +62,7 @@ batchlog_replay_throttle_in_kb: 1024
 # - PasswordAuthenticator relies on username/password pairs to authenticate
 #   users. It keeps usernames and hashed passwords in system_auth.credentials table.
 #   Please increase system_auth keyspace replication factor if you use this authenticator.
-authenticator: PasswordAuthenticator
+authenticator: AllowAllAuthenticator
 
 # Authorization backend, implementing IAuthorizer; used to limit access/provide permissions
 # Out of the box, Cassandra provides org.apache.cassandra.auth.{AllowAllAuthorizer,
@@ -421,7 +421,7 @@ native_transport_port: ${native_transport_port}
 # native_transport_max_concurrent_connections_per_ip: -1
 
 # Whether to start the thrift rpc server.
-start_rpc: true
+start_rpc: false
 
 # The address or interface to bind the Thrift RPC service and native transport
 # server to.
@@ -779,14 +779,12 @@ server_encryption_options:
     # protocol: TLS
     # algorithm: SunX509
     # store_type: JKS
-    cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA]
+    # cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA]
     # require_client_auth: false
 
 # enable or disable client/server encryption.
 client_encryption_options:
     enabled: true
-    # If enabled and optional is set to true encrypted and unencrypted connections are handled.
-    optional: false
     keystore: ${keystore_path}
     keystore_password: connector
     # require_client_auth: false
@@ -797,7 +795,7 @@ client_encryption_options:
     # protocol: TLS
     # algorithm: SunX509
     # store_type: JKS
-    # cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA]
+    cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA]
 
 # internode_compression controls whether traffic between nodes is
 # compressed.

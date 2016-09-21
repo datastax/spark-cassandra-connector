@@ -2,8 +2,9 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.Method
 
+import com.datastax.driver.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.{TableDef, StructDef}
+import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
 import scala.reflect.ClassTag
 
@@ -52,7 +53,10 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
   override protected def allowsNull = true
 
   // TODO: Implement
-  override def newTable(keyspaceName: String, tableName: String): TableDef = ???
+  override def newTable(
+    keyspaceName: String,
+    tableName: String,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = ???
 }
 
 object JavaBeanColumnMapper {
