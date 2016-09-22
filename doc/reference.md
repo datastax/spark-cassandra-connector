@@ -34,7 +34,7 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
 <tr>
   <td><code>connection.host</code></td>
   <td>localhost</td>
-  <td>Contact point to connect to the Cassandra cluster. A comma seperated list
+  <td>Contact point to connect to the Cassandra cluster. A comma separated list
 may also be used. ("127.0.0.1,192.168.0.1")
       </td>
 </tr>
@@ -89,7 +89,7 @@ may also be used. ("127.0.0.1,192.168.0.1")
 <tr>
   <td><code>sql.pushdown.additionalClasses</code></td>
   <td></td>
-  <td>A comma seperated list of classes to be used (in order) to apply additional
+  <td>A comma separated list of classes to be used (in order) to apply additional
  pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
       </td>
 </tr>
