@@ -224,7 +224,7 @@ object CassandraSourceRelation {
     section = ReferenceSection,
     default = List.empty,
     description =
-      """A comma seperated list of classes to be used (in order) to apply additional
+      """A comma separated list of classes to be used (in order) to apply additional
         | pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
       """.stripMargin
   )
