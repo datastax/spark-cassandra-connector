@@ -13,8 +13,7 @@ import scala.concurrent.Future
 class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with Logging  {
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
-
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val sqlContext: SQLContext = new SQLContext(sc)
 
   val cassandraFormat = "org.apache.spark.sql.cassandra"

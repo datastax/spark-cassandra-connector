@@ -5,7 +5,6 @@ import scala.concurrent.Future
 import org.apache.spark.rdd.RDD
 import org.scalatest.BeforeAndAfter
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
@@ -14,7 +13,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with BeforeAndA
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.Default))
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

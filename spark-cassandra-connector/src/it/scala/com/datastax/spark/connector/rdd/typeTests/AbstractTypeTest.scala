@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd.typeTests
 
+import com.datastax.driver.core.ProtocolVersion
+
 import scala.concurrent.Future
 import scala.collection.JavaConverters._
 import scala.reflect._
@@ -32,6 +34,8 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   rowWriterCollection: RowWriterFactory[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])],
   rowWriterNull: RowWriterFactory[(TestType, TestType, Null, Null, Null, Null)])
   extends SparkCassandraITFlatSpecBase {
+
+  def minPV: ProtocolVersion = ProtocolVersion.V3
 
   protected lazy val typeNormalTable: String = s"${typeName}_normal"
   protected lazy val typeCollectionTable: String = s"${typeName}_collection"
@@ -81,43 +85,43 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   lazy val sqlContext = new SQLContext(sc)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
-  s"This type" should "be insertable via the CassandraConnector" in {
+  s"This type" should "be insertable via the CassandraConnector" in skipIfProtocolVersionLT(minPV){
     checkJDriverInsertsNormal
     checkJDriverInsertsCollections
     checkJDriverInsertsNull
   }
 
-  it should "be readable via cassandraTable" in {
+  it should "be readable via cassandraTable" in skipIfProtocolVersionLT(minPV){
     checkSparkReadNormal
   }
 
-  it should "be readable via cassandraTable in Collections" in {
+  it should "be readable via cassandraTable in Collections" in skipIfProtocolVersionLT(minPV){
     checkSparkReadCollections
   }
 
-  it should "be readable via cassandraTable when nulled " in {
+  it should "be readable via cassandraTable when nulled " in skipIfProtocolVersionLT(minPV){
     checkSparkReadNull
   }
 
-  it should "be writable from an RDD via saveToCassandra " in {
+  it should "be writable from an RDD via saveToCassandra " in skipIfProtocolVersionLT(minPV){
     sparkWriteNormal
   }
 
-  it should "be writable from an RDD with collections via saveToCassandra " in {
+  it should "be writable from an RDD with collections via saveToCassandra " in skipIfProtocolVersionLT(minPV){
     sparkWriteCollections
   }
 
-  it should "be able to write NULLS to a C* table via saveToCassandra" in {
+  it should "be able to write NULLS to a C* table via saveToCassandra" in skipIfProtocolVersionLT(minPV){
     sparkWriteNulls
   }
 
-  it should "be readable and writable with DataFrames" in {
+  it should "be readable and writable with DataFrames" in skipIfProtocolVersionLT(minPV){
     dataframeReadWrite
   }
 
-  override def beforeAll() {
+  override def beforeAll() = skipIfProtocolVersionLT(minPV){
     generateKsTable()
     truncateTables()
     insertData()

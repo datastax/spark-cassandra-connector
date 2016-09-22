@@ -9,6 +9,8 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.writer.WriteConf
 
+import com.datastax.driver.core.ProtocolVersion._
+
 import scala.concurrent.Future
 
 case class RandomListSelector[T](list: Seq[T]) {
@@ -22,7 +24,7 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
 
   val numrows: Long = 1000
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   override val ks = "doc_example"
 
   conn.withSessionDo { session =>
@@ -84,13 +86,13 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
     ).saveToCassandra(ks, "purchases")
   }
 
-  "Docs" should "demonstrate copying a table without deletes" in {
+  "Docs" should "demonstrate copying a table without deletes" in skipIfProtocolVersionLT(V4){
     sc.cassandraTable[(Int, CassandraOption[Int], CassandraOption[Int])](ks, "tab1")
       .saveToCassandra(ks, "tab2")
     sc.cassandraTable[(Int, Int, Int)](ks, "tab2").collect should contain((1, 5, 1))
   }
 
-  it should "demonstrate only deleting some records" in {
+  it should "demonstrate only deleting some records" in skipIfProtocolVersionLT(V4){
     sc.parallelize(1 to 6).map(x => (x, x, x)).saveToCassandra(ks, "tab1")
     sc.parallelize(1 to 6).map(x => x match {
       case x if (x >= 5) => (x, CassandraOption.Null, CassandraOption.Unset)
@@ -109,7 +111,7 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
       (6, None, Some(6)))
   }
 
-  it should "demonstrate converting Options to CassandraOptions" in {
+  it should "demonstrate converting Options to CassandraOptions" in skipIfProtocolVersionLT(V4){
     import com.datastax.spark.connector.types.CassandraOption
     //Setup original data (1, 1, 1) --> (6, 6, 6)
     sc.parallelize(1 to 6).map(x => (x, x, x)).saveToCassandra(ks, "tab1")
@@ -134,7 +136,7 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
 
   }
 
-  it should "show using a write conf to ignore nulls" in {
+  it should "show using a write conf to ignore nulls" in skipIfProtocolVersionLT(V4){
     //Setup original data (1, 1, 1) --> (6, 6, 6)
     sc.parallelize(1 to 6).map(x => (x, x, x)).saveToCassandra(ks, "tab1")
 

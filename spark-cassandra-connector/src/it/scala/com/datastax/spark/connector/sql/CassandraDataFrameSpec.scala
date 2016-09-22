@@ -2,19 +2,27 @@ package com.datastax.spark.connector.sql
 
 import java.io.IOException
 
+import com.datastax.driver.core.DataType
+import com.datastax.driver.core.ProtocolVersion._
+
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
+import org.apache.spark.sql.cassandra._
+import org.joda.time.LocalDate
+import org.scalatest.concurrent.Eventually
 
-class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
+case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
+
+class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventually{
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   val sqlContext: SQLContext = new SQLContext(sc)
 
@@ -55,6 +63,15 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"CREATE TABLE $ks.tuple_test1 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
         session.execute(s"CREATE TABLE $ks.tuple_test2 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
         session.execute(s"INSERT INTO $ks.tuple_test1 (id, t) VALUES (1, ('xyz', 3))")
+      },
+
+      Future {
+        info ("Setting up Date Tables")
+        skipIfProtocolVersionLT(V4) {
+        session.execute(s"create table $ks.date_test (key int primary key, dd date)")
+        session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
+        session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
+        }
       }
     )
   }
@@ -201,4 +218,55 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase {
       session.execute(s"select count(1) from $ks.tuple_test2").one().getLong(0) should be (1)
     }
   }
+
+  it should "read and write C* LocalDate columns" in skipIfProtocolVersionLT(V4){
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "date_test", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .load
+
+    df.count should be (1)
+    df.first.getDate(1) should be (new LocalDate(1930, 5, 31).toDate)
+
+    df.write
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "date_test2", "keyspace" -> ks, "cluster" -> "ClusterOne"))
+      .save
+
+    conn.withSessionDo { session =>
+      session.execute(s"select count(1) from $ks.date_test2").one().getLong(0) should be (1)
+    }
+  }
+
+  it should "be able to write to ProtocolVersion 3 Tables correctly with V4 Types" in skipIfProtocolVersionGTE(V4){
+
+    val table = "newtypetable"
+
+    val rdd = sc.parallelize(1 to 100).map( x =>
+      RowWithV4Types(x, Byte.MinValue, Short.MinValue, java.sql.Date.valueOf("2016-08-03")))
+
+    val df = sqlContext.createDataFrame(rdd)
+    df.createCassandraTable(ks, table)
+
+    val tableColumns = eventually(
+      conn.withClusterDo(_.getMetadata.getKeyspace(ks).getTable(table)).getColumns.map(_.getType))
+
+    tableColumns should contain theSameElementsInOrderAs(
+      Seq(DataType.cint(), DataType.cint(), DataType.cint(), DataType.timestamp()))
+
+    df.write.cassandraFormat(table, ks).save()
+
+    val  rows = sqlContext
+      .read
+      .cassandraFormat(table, ks)
+      .load()
+      .collect
+      .map(row => (row.getInt(1), row.getInt(2), row.getTimestamp(3).toString))
+
+    val firstRow = rows(0)
+    firstRow should be((Byte.MinValue.toInt, Short.MinValue.toInt, "2016-08-03 00:00:00.0"))
+  }
+
+
 }

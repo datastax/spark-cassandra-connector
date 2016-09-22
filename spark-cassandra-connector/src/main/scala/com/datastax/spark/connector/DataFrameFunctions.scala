@@ -23,7 +23,10 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf)): Unit = {
 
-    val rawTable = TableDef.fromDataFrame(dataFrame, keyspaceName, tableName)
+    val protocolVersion = connector.
+      withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+
+    val rawTable = TableDef.fromDataFrame(dataFrame, keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName
 
     val columnNames = columnMapping.keys.toSet

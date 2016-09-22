@@ -12,7 +12,7 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspec
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
   val tableName = "data"
   val noMinimalThreshold = Int.MinValue

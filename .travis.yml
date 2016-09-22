@@ -21,4 +21,6 @@ before_cache:
 script:
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true test"
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true it:test"
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=2.1.15 -Dtravis=true test"
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=2.1.15 -Dtravis=true it:test"
   - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true assembly"

@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.driver.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
@@ -37,7 +38,10 @@ trait ColumnMapper[T] {
   def columnMapForWriting(struct: StructDef, selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForWriting
 
   /** Provides a definition of the table that class `T` could be saved to. */
-  def newTable(keyspaceName: String, tableName: String): TableDef
+  def newTable(
+    keyspaceName: String,
+    tableName: String,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef
 
 }
 

@@ -7,7 +7,7 @@ import com.datastax.spark.connector.embedded.{EmbeddedCassandra, YamlTransformat
 class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq(YamlTransformations.ClientEncryption))
 
-  val conn = CassandraConnector(
+  override val conn = CassandraConnector(
     hosts = Set(EmbeddedCassandra.getHost(0)),
     port = EmbeddedCassandra.getPort(0),
     cassandraSSLConf = CassandraSSLConf(
