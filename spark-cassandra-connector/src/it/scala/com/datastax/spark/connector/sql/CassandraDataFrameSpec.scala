@@ -15,6 +15,7 @@ import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.cassandra._
 import org.joda.time.LocalDate
 import org.scalatest.concurrent.Eventually
+import org.apache.spark.sql.{SQLContext, SparkSession}
 
 case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
 
@@ -23,8 +24,6 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
-
-  val sqlContext: SQLContext = new SQLContext(sc)
 
   def pushDown: Boolean = true
 
@@ -77,7 +76,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   }
 
   "A DataFrame" should "be able to be created programmatically" in {
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -92,7 +91,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   }
 
   it should "be able to be saved programmatically" in {
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -115,7 +114,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
       )
       .save()
 
-    val dfCopy = sqlContext
+    val dfCopy = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -141,11 +140,11 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
       rs.one().getLong(0)
     }
 
-    writeTime should be === 1470009600000000L
+    writeTime shouldEqual 1470009600000000L
   }
 
   it should " be able to create a C* schema from a table" in {
-     val df = sqlContext
+     val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -167,7 +166,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
   it should " provide error out with a sensible message when a table can't be found" in {
     val exception = intercept[IOException] {
-      val df = sqlContext
+      val df = sparkSession
         .read
         .format("org.apache.spark.sql.cassandra")
         .options(
@@ -183,7 +182,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
   it should " provide useful suggestions if a table can't be found but a close match exists" in {
     val exception = intercept[IOException] {
-      val df = sqlContext
+      val df = sparkSession
         .read
         .format("org.apache.spark.sql.cassandra")
         .options(
@@ -199,7 +198,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   }
 
   it should "read and write C* Tuple columns" in {
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map("table" -> "tuple_test1", "keyspace" -> ks, "cluster" -> "ClusterOne"))
@@ -220,7 +219,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   }
 
   it should "read and write C* LocalDate columns" in skipIfProtocolVersionLT(V4){
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map("table" -> "date_test", "keyspace" -> ks, "cluster" -> "ClusterOne"))
@@ -246,7 +245,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
     val rdd = sc.parallelize(1 to 100).map( x =>
       RowWithV4Types(x, Byte.MinValue, Short.MinValue, java.sql.Date.valueOf("2016-08-03")))
 
-    val df = sqlContext.createDataFrame(rdd)
+    val df = sparkSession.createDataFrame(rdd)
     df.createCassandraTable(ks, table)
 
     val tableColumns = eventually(
@@ -257,7 +256,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
     df.write.cassandraFormat(table, ks).save()
 
-    val  rows = sqlContext
+    val  rows = sparkSession
       .read
       .cassandraFormat(table, ks)
       .load()

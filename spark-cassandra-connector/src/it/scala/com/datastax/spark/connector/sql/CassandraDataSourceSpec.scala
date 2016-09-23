@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.BeforeAndAfterEach
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
@@ -72,7 +72,6 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     )
   }
 
-  val sqlContext: SQLContext = new SQLContext(sc)
   def pushDown: Boolean = true
 
   override def beforeAll() {
@@ -81,7 +80,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
   override def afterAll() {
     super.afterAll()
-    sqlContext.dropTempTable("tmpTable")
+    sparkSession.sql("DROP VIEW tmpTable")
   }
 
   override def afterEach(): Unit ={
@@ -89,7 +88,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
-    sqlContext.sql(
+    sparkSession.sql(
       s"""
         |CREATE TEMPORARY TABLE $tmpTable
         |USING org.apache.spark.sql.cassandra
@@ -101,7 +100,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   def cassandraTable(tableRef: TableRef) : DataFrame = {
-    sqlContext.baseRelationToDataFrame(CassandraSourceRelation(tableRef, sqlContext))
+    sparkSession.baseRelationToDataFrame(CassandraSourceRelation(tableRef, sparkSession.sqlContext))
   }
 
   it should "allow to select all rows" in {
@@ -112,23 +111,23 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
   it should "allow to register as a temp table" in {
     cassandraTable(TableRef("test1", ks)).createOrReplaceTempView("test1")
-    val temp = sqlContext.sql("SELECT * from test1").select("b").collect()
+    val temp = sparkSession.sql("SELECT * from test1").select("b").collect()
     temp should have length 8
     temp.head should have length 1
-    sqlContext.dropTempTable("test1")
+    sparkSession.sql("DROP VIEW test1")
   }
 
   it should "allow to insert data into a cassandra table" in {
     createTempTable(ks, "test_insert", "insertTable")
-    sqlContext.sql("SELECT * FROM insertTable").collect() should have length 0
+    sparkSession.sql("SELECT * FROM insertTable").collect() should have length 0
 
-    sqlContext.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM tmpTable")
-    sqlContext.sql("SELECT * FROM insertTable").collect() should have length 1
-    sqlContext.dropTempTable("insertTable")
+    sparkSession.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM tmpTable")
+    sparkSession.sql("SELECT * FROM insertTable").collect() should have length 1
+    sparkSession.sql("DROP VIEW insertTable")
   }
 
   it should "allow to save data to a cassandra table" in {
-    sqlContext.sql("SELECT a, b from tmpTable")
+    sparkSession.sql("SELECT a, b from tmpTable")
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(ErrorIfExists)
@@ -138,7 +137,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     cassandraTable(TableRef("test_insert1", ks)).collect() should have length 1
 
     val message = intercept[UnsupportedOperationException] {
-      sqlContext.sql("SELECT a, b from tmpTable")
+      sparkSession.sql("SELECT a, b from tmpTable")
         .write
         .format("org.apache.spark.sql.cassandra")
         .mode(ErrorIfExists)
@@ -152,35 +151,36 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to overwrite a cassandra table" in {
-    sqlContext.sql("SELECT a, b from tmpTable")
+    sparkSession.sql("SELECT a, b from tmpTable")
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
       .options(Map("table" -> "test_insert2", "keyspace" -> ks))
       .save()
     createTempTable(ks, "test_insert2", "insertTable2")
-    sqlContext.sql("SELECT * FROM insertTable2").collect() should have length 1
-    sqlContext.dropTempTable("insertTable2")
+    sparkSession.sql("SELECT * FROM insertTable2").collect() should have length 1
+    sparkSession.sql("DROP VIEW insertTable2")
   }
 
   it should "allow to filter a table" in {
-    sqlContext.sql("SELECT a, b FROM tmpTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
+    sparkSession.sql("SELECT a, b FROM tmpTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
   }
 
   it should "allow to filter a table with a function for a column alias" in {
-    sqlContext.sql("SELECT * FROM (SELECT (a + b + c) AS x, d FROM tmpTable) " +
+    sparkSession.sql("SELECT * FROM (SELECT (a + b + c) AS x, d FROM tmpTable) " +
       "AS tmpTable1 WHERE x= 3").collect() should have length 4
   }
 
   it should "allow to filter a table with alias" in {
-    sqlContext.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
+    sparkSession.sql("SELECT * FROM (SELECT a AS a1, b AS b1, c AS c1, d AS d1, e AS e1" +
       " FROM tmpTable) AS tmpTable1 WHERE  a1=1 and b1=2 and c1=1 and e1=1 ").collect() should have length 2
   }
 
   it should "be able to save DF with reversed order columns to a Cassandra table" in {
     val test_df = Test(1400820884, "http://foobar", "Firefox", 123242)
 
-    import sqlContext.implicits._
+    val ss = sparkSession
+    import ss.implicits._
     val df = sc.parallelize(Seq(test_df)).toDF
 
     df.write
@@ -194,7 +194,8 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   it should "be able to save DF with partial columns to a Cassandra table" in {
     val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
 
-    import sqlContext.implicits._
+    val ss = sparkSession
+    import ss.implicits._
     val df = sc.parallelize(Seq(test_df)).toDF
 
     df.write
@@ -210,7 +211,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
       "com.datastax.spark.connector.sql.PushdownNothing")
 
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map("keyspace" -> ks, "table" -> "test1"))
@@ -226,7 +227,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
       "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly")
 
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map("keyspace" -> ks, "table" -> "test1"))

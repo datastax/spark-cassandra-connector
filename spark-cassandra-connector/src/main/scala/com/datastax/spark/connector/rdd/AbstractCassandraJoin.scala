@@ -132,7 +132,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     query
   }
 
-  private def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
+  private[rdd] def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
     val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
     val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
     new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)

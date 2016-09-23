@@ -19,7 +19,7 @@ trait DemoApp extends App with Logging {
     .setAppName(getClass.getSimpleName)
 
   // Connect to the Spark cluster:
-  lazy val sc = new SparkContext(conf)
+  lazy val sc = SparkContext.getOrCreate(conf)
 }
 
 object DemoApp {
