@@ -34,18 +34,31 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
     val clusteringKeyNames = clusteringKeyColumns.getOrElse(Seq.empty)
     val regularColumnNames = (columnNames -- (partitionKeyNames ++ clusteringKeyNames)).toSeq
 
+    def missingColumnException(columnName: String, columnType: String) = {
+      new IllegalArgumentException(
+        s""""$columnName" not Found. Unable to make specified column $columnName a $columnType.
+          |Available Columns: $columnNames""".stripMargin)
+
+    }
+
     val table = rawTable.copy (
       partitionKey = partitionKeyNames
-          .map(columnMapping.get(_).get)
+          .map(partitionKeyName =>
+            columnMapping.getOrElse(partitionKeyName,
+              throw missingColumnException(partitionKeyName, "Partition Key Column")))
           .map(_.copy(columnRole = PartitionKeyColumn))
       ,
       clusteringColumns = clusteringKeyNames
-          .map(columnMapping.get(_).get)
+          .map(clusteringKeyName =>
+            columnMapping.getOrElse(clusteringKeyName,
+              throw missingColumnException(clusteringKeyName, "Clustering Column")))
           .zipWithIndex
           .map { case (col, index) => col.copy(columnRole = ClusteringColumn(index))}
       ,
       regularColumns = regularColumnNames
-          .map(columnMapping.get(_).get)
+          .map(regularColumnName =>
+             columnMapping.getOrElse(regularColumnName,
+                  throw missingColumnException(regularColumnName, "Regular Column")))
           .map(_.copy(columnRole = RegularColumn))
     )
 
