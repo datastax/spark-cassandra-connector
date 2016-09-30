@@ -164,6 +164,30 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
   }
 
+  it should " provide useful messages when creating a table with columnName mismatches" in {
+    val df = sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+
+    val pkError = intercept[IllegalArgumentException] {
+      df.createCassandraTable(ks, "kv_auto", Some(Seq("cara")))
+    }
+    pkError.getMessage should include ("\"cara\" not Found.")
+
+    val ccError = intercept[IllegalArgumentException] {
+      df.createCassandraTable(ks, "kv_auto", Some(Seq("k")), Some(Seq("sundance")))
+    }
+    ccError.getMessage should include ("\"sundance\" not Found.")
+
+  }
+
   it should " provide error out with a sensible message when a table can't be found" in {
     val exception = intercept[IOException] {
       val df = sparkSession
