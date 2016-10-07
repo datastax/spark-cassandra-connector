@@ -9,7 +9,7 @@ import org.apache.spark.repl.{Main, SparkILoop}
 import scala.collection.mutable.ArrayBuffer
 import scala.tools.nsc.GenericRunnerSettings
 
-trait SparkRepl {
+object SparkRepl {
 
   def runInterpreter(input: String, conf: SparkConf): String = {
     val in = new BufferedReader(new StringReader(input + "\n"))
