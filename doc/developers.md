@@ -33,20 +33,18 @@ This sub project contains all of the actual connector code and is where
 any new features or tests should go. This Scala project also contains the
 Java api and related code.
 
+It includes the code for building reference documentation. This 
+automatically determines what belongs in the reference file. It should 
+mostly be used for regenerating the reference file after new parameters 
+have been added or old parameters have been changed. Tests will throw 
+errors if the reference file is not up to date. To fix this run 
+`spark-cassandra-connector-unshaded/run` to update the file. It is still 
+necessary to commit the changed file after running this sub-project.
+
 #### spark-cassandra-connector-embedded
 The code used to start the embedded services used in the integration tests. 
 This contains methods for starting up C* as a thread within the running
 test code.
-
-#### spark-cassandra-connector-doc
-Code for building reference documentation. This uses the code from 
-`spark-cassandra-connector` to determine what belongs in the reference
-file. It should mostly be used for regenerating the reference file after
-new parameters have been added or old parameters have been changed. Tests
-in `spark-cassandra-connector` will throw errors if the reference file is
-not up to date. To fix this run `spark-cassandra-connector-doc/run` to
-update the file. It is still necessary to commit the changed file after
-running this sub-project.
 
 #### spark-cassandra-connector-perf
 Code for performance based tests. Add any performance comparisons needed

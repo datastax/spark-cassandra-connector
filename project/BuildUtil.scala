@@ -1,7 +1,9 @@
 import java.io.IOException
+import java.lang.management.ManagementFactory
 import java.net.URLDecoder
 import java.nio.file.Paths
 
+import com.sun.management.OperatingSystemMXBean
 import org.xml.sax.SAXParseException
 import sbt._
 
@@ -74,5 +76,17 @@ object BuildUtil {
     }
 
   }
+
+  lazy val parallelTasks: Int = {
+    // Travis has limited quota, so we cannot use many C* instances simultaneously
+    val isTravis = sys.props.getOrElse("travis", "false").toBoolean
+
+    val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
+    val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
+    val singleRunRequiredMem = 3 * 1024 + 512
+    val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
+    parallelTasks
+  }
+
 
 }

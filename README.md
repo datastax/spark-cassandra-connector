@@ -108,7 +108,6 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Customizing the object mapping](doc/6_advanced_mapper.md)
   - [Using Connector in Java](doc/7_java_api.md)
   - [Spark Streaming with Cassandra](doc/8_streaming.md)
-  - [About The Demos](doc/9_demos.md)
   - [The spark-cassandra-connector-embedded Artifact](doc/10_embedded.md)
   - [Performance monitoring](doc/11_metrics.md)
   - [Building And Artifacts](doc/12_building_and_artifacts.md)
@@ -176,7 +175,7 @@ Then copy the generated test jar to your Spark nodes and run:
 ## Generating Documents
 To generate the Reference Document use 
 
-    ./sbt/sbt spark-cassandra-connector-doc/run (outputLocation)
+    ./sbt/sbt spark-cassandra-connector-unshaded/run (outputLocation)
     
 outputLocation defaults to doc/reference.md
 

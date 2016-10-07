@@ -23,6 +23,8 @@ trait SparkCassandraITAbstractSpecBase extends AbstractSpec with SparkCassandraI
 
 trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCassandra with SparkTemplate with BeforeAndAfterAll {
 
+  val originalProps = sys.props.clone()
+
   def getKsName = {
     val className = this.getClass.getSimpleName
     val suffix =  StringUtils.splitByCharacterTypeCamelCase(className.filter(_.isLetterOrDigit)).mkString("_")
@@ -65,9 +67,15 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
     session.execute(keyspaceCql(name))
   }
 
+  def restoreSystemProps(): Unit = {
+    sys.props ++= originalProps
+    sys.props --= (sys.props.keySet -- originalProps.keySet)
+  }
+
   override protected def afterAll(): Unit = {
     super.afterAll()
     clearCache()
+    restoreSystemProps()
   }
 }
 

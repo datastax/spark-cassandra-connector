@@ -165,7 +165,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
   }
 
   it should " provide useful messages when creating a table with columnName mismatches" in {
-    val df = sqlContext
+    val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
