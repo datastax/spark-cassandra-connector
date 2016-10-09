@@ -1,16 +1,15 @@
 package com.datastax.spark.connector.rdd
 
+import java.io.IOException
+import java.util.Date
+
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
-
-import java.io.IOException
-import java.util.Date
-
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import org.joda.time.{DateTime, LocalDate}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
@@ -521,7 +520,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getInt("zip") should be(11120)
   }
 
-  it should "allow to save UDT columns from mapped Java objects and read them as UDTValue objects" in {
+  it should "allow to save UDT columns from mapped Java objects and read them as UDTValue or Java objects" in {
     val judt = new JavaTestUDTBean
     val jb = new JavaTestBean
 
@@ -555,6 +554,15 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getInt("field") should be(3)
     udtValue.getInt("another_field") should be(4)
     udtValue.getInt("yet_another_field") should be(5)
+
+    // Let's do one more test, this time reading it back as the POJO
+    val bean = sc.cassandraTable[JavaTestBean](ks, "udts_nested").select("property_1", "camel_case_property", "nested").first()
+
+    bean.getProperty1 should be(1)
+    bean.getCamelCaseProperty should be(2)
+    bean.getNested.getField should be(3)
+    bean.getNested.getAnotherField should be(4)
+    bean.getNested.getCompletelyUnrelatedField should be(5)
 
   }
 
