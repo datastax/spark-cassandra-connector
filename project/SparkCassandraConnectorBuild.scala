@@ -289,14 +289,7 @@ object Dependencies {
     Test.powerMockMockito
   )
 
-<<<<<<< 07b47effeb10480b4b80b2686d0e6874aefa0a24
-  val cassandra = Seq(cassandraDriver)
-=======
-  val akka = Seq(akkaActor, akkaRemote, akkaSlf4j)
-
   val cassandra = Seq(cassandraDriver, cassandraDriverMapping)
->>>>>>> Updating runtime mapping to recognize supplied annotations on the Java object mapped beans.
-
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   /**
