@@ -2,22 +2,24 @@ package com.datastax.spark.connector.sql
 
 import java.io.IOException
 
-import com.datastax.driver.core.DataType
-import com.datastax.driver.core.ProtocolVersion._
-
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
-import org.apache.spark.sql.{SQLContext, SparkSession}
+import com.datastax.driver.core.DataType
+import com.datastax.driver.core.ProtocolVersion._
 import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.functions._
 import org.joda.time.LocalDate
 import org.scalatest.concurrent.Eventually
-import org.apache.spark.sql.{SQLContext, SparkSession}
+
+import scala.util.Random
 
 case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
+case class TestData(id: String, col1: Int, col2: Int)
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventually{
   useCassandraConfig(Seq(YamlTransformations.Default))
@@ -289,6 +291,42 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
     val firstRow = rows(0)
     firstRow should be((Byte.MinValue.toInt, Short.MinValue.toInt, "2016-08-03 00:00:00.0"))
+  }
+
+  //Test whether Pruned Source Reused Exchange is Broken
+  it should "aggregate and union correctly" in {
+    val table = "sparkc429"
+
+    val data = List(TestData("A", 1, 7))
+    val frame = sparkSession
+      .sqlContext
+      .createDataFrame(sparkSession.sparkContext.parallelize(data))
+
+    frame.createCassandraTable(
+      ks,
+      table,
+      partitionKeyColumns = Some(Seq("id")))
+
+    frame
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(SaveMode.Append)
+      .options(Map("table" -> table, "keyspace" -> ks))
+      .save()
+
+    val loaded = sparkSession.sqlContext
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> table, "keyspace" -> ks))
+      .load()
+      .select("id", "col1", "col2")
+
+    val min1 = loaded.groupBy("id").agg(min("col1").as("min"))
+    val min2 = loaded.groupBy("id").agg(min("col2").as("min"))
+    val m1 = min1.union(min2).collect
+    val m2 = min2.union(min1).collect
+    m1 should contain theSameElementsAs m2
+
   }
 
 
