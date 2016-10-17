@@ -214,7 +214,7 @@ sealed trait CassandraOption[+A] extends Product with Serializable
     case object Null extends CassandraOption[Nothing]
 ```
 
-This can be used when reading and writing from C*. When a column is loaded as a `CassandraOption` 
+This can be used when reading and writing from Cassandra. When a column is loaded as a `CassandraOption` 
 any missing columns will be represented as `Unset`. On writing, these parameters will remain unbound.
 This means a table loaded via `CassandraOption` can be written to a second table without any missing
 column values being treated as deletes.
@@ -304,7 +304,7 @@ results
 WriteConf also now contains a parameter `ignoreNulls` which can be set 
 via using a `SparkConf` key `spark.cassandra.output.ignoreNulls`. The 
 default is `false` which will cause `null`s to be treated as in previous 
-versions (being inserted into C* as is). When set to `true` all `null`s 
+versions (being inserted into Cassandra as is). When set to `true` all `null`s 
 will be treated as `unset`. This can be used with DataFrames to skip 
 null records and avoid tombstones.
 

@@ -16,7 +16,7 @@ connector without any Spark or Cassandra nodes running. The most common
 commands to use when developing the connector are
 
 1. `test` - Runs the the unit tests for the project.
-2. `it:test` - Runs the integeration tests with embedded C* and Spark
+2. `it:test` - Runs the integeration tests with embedded Cassandra and Spark
 3. `assembly` - Builds a fat jar for using with --jars in spark submit or spark-shell
 
 The integration tests located in `spark-cassandra-connector/src/it` should
@@ -43,7 +43,7 @@ necessary to commit the changed file after running this sub-project.
 
 #### spark-cassandra-connector-embedded
 The code used to start the embedded services used in the integration tests. 
-This contains methods for starting up C* as a thread within the running
+This contains methods for starting up Cassandra as a thread within the running
 test code.
 
 #### spark-cassandra-connector-perf

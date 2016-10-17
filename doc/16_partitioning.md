@@ -97,7 +97,7 @@ rdd2.partitioner
 ### Capabilities and limitations of CassandraPartitioner
 
 Having a partitioner allow for groupByKey operations to no longer require a shuffle. Previously
-`spanByKey` allowed Spark to take advantage of the natural ordering of C* tables. The new partitioner
+`spanByKey` allowed Spark to take advantage of the natural ordering of Cassandra tables. The new partitioner
 allows this to go a step further and group on any combination of the primary key which also contains
 the partition key.
 
@@ -153,8 +153,7 @@ large examples we've seen the cost of the shuffle even double the total compute 
 *Limitations*
 
 This can only be applied to RDDs that are keyed with their partition key, so it can not be used
-to group or reduce on a generic Cassandra column. As long as you are grouping/reducing within a C*
-partition this approach should save significant time.
+to group or reduce on a generic Cassandra column. As long as you are grouping/reducing within a Cassandra partition this approach should save significant time.
 
 
 #### Joining to Cassandra RDDs from non Cassandra RDDs
@@ -205,7 +204,7 @@ joinnopart.count
 //16/04/08 17:30:04 INFO DAGScheduler: Job 19 finished: count at <console>:37, took 6.308165 s
 ```
 
-So again we can save the time of a shuffle if we are joining on a partition key of a C* table. The
+So again we can save the time of a shuffle if we are joining on a partition key of a Cassandra table. The
 advantages here scale as well, the larger the data to be joined the greater the advantage to be 
 gained.
 
@@ -275,7 +274,7 @@ Again we can save a significant portion of time by eliminating the need for a sh
 
 
 ### Caveats
-The partitioning mechanism is very sensitive to the underlying C* tables partitioning so this is
+The partitioning mechanism is very sensitive to the underlying Cassandra tables partitioning so this is
 not a generic solution to all joins and groupBys. In addition it is important to note 
 
 `applyPartitionerFrom` will copy the partitioning exactly from the host RDD to the target. 
@@ -291,7 +290,7 @@ Due to the way RDDs are constructed, the CassandraPartitioner cannot be applied 
 an explicit `KeyBy` call.
 
 The class of the Key must be a true class and not a primitive. The Partitioner uses the a `RowWriter`
-like the `saveToCassandra` method to convert key data to a C* token. This `RowWriter` cannot be 
+like the `saveToCassandra` method to convert key data to a Cassandra token. This `RowWriter` cannot be 
 built for primitives which is why the above examples use `Tuple1` so frequently.
 
 This functionality does not currently function in DataFrames.

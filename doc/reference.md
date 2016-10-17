@@ -90,14 +90,14 @@ may also be used. ("127.0.0.1,192.168.0.1")
   <td><code>sql.pushdown.additionalClasses</code></td>
   <td></td>
   <td>A comma separated list of classes to be used (in order) to apply additional
- pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+ pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
       </td>
 </tr>
 <tr>
   <td><code>table.size.in.bytes</code></td>
   <td>None</td>
   <td>Used by DataFrames Internally, will be updated in a future release to
-retrieve size from C*. Can be set manually now</td>
+retrieve size from Cassandra. Can be set manually now</td>
 </tr>
 </table>
 
@@ -182,7 +182,7 @@ retrieve size from C*. Can be set manually now</td>
   <td><code>dev.customFromDriver</code></td>
   <td>None</td>
   <td>Provides an additional class implementing CustomDriverConverter for those
-clients that need to read non-standard primitive Cassandra types. If your C* implementation
+clients that need to read non-standard primitive Cassandra types. If your Cassandra implementation
 uses a Java Driver which can read DataType.custom() you may need it this. If you are using
 OSS Cassandra this should never be used.</td>
 </tr>
@@ -207,7 +207,7 @@ OSS Cassandra this should never be used.</td>
 <tr>
   <td><code>input.join.throughput_query_per_sec</code></td>
   <td>9223372036854775807</td>
-  <td>Maximum read throughput allowed per single core in query/s while joining RDD with C* table</td>
+  <td>Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table</td>
 </tr>
 <tr>
   <td><code>input.metrics</code></td>

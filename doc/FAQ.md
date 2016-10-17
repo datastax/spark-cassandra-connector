@@ -64,7 +64,7 @@ Spark partitions(tasks) created is directly controlled by the setting
 `spark.cassandra.input.split.size_in_mb`.
 This number reflects the approximate amount of Cassandra Data in any given Spark partition.
 To increase the number of Spark Partitions decrease this number from the default (64mb) to one that
-will sufficiently break up your C* token range. This can also be adjusted on a per cassandraTable basis
+will sufficiently break up your Cassandra token range. This can also be adjusted on a per cassandraTable basis
 with the function `withReadConf` and specifying a new `ReadConf` object.
 
 If there is more than one task but only a single machine is working, make sure that the job itself
@@ -72,8 +72,8 @@ has been allocated multiple executor slots to work with. This is set at the time
 creation with `spark.cores.max` in the `SparkConf` and cannot be changed during the job.
 
 One last thing to check is whether there is a `where` clause with a partition-key predicate. Currently 
-the Spark Cassandra Connector creates Spark Tasks which contain entire C* partitions. This method 
-ensures a single C* partition request will always create a single Spark task. `where` clauses with
+the Spark Cassandra Connector creates Spark Tasks which contain entire Cassandra partitions. This method 
+ensures a single Cassandra partition request will always create a single Spark task. `where` clauses with
 an `in` will also generate a single Spark Partition.
 
 ### Why can't the spark job find Spark Cassandra Connector Classes? (ClassNotFound Exceptions for SCC Classes)
@@ -116,7 +116,7 @@ or in versions of the Spark Cassandra Connector greater than or equal to  1.2.0 
 
    spark.cassandra.output.throughput_mb_per_sec
    
-which will allow you to control the amount of data written to C* per Spark core per second.
+which will allow you to control the amount of data written to Cassandra per Spark core per second.
    
 ### Why are my executors throwing `OutOfMemoryException`s while Reading from Cassandra?
 
@@ -149,7 +149,7 @@ Make sure that you are setting the `spark.cassandra.connection.host` property to
 the rpc_address is set to.
 
 When troubleshooting Cassandra connections it is sometimes useful to set the rpc_address in the
-C* yaml file to `0.0.0.0` so any incoming connection will work.
+cassandra.yaml file to `0.0.0.0` so any incoming connection will work.
 
 ### How does the connector evaluate number of Spark partitions?
 
@@ -159,8 +159,8 @@ The Connector evaluates the number of Spark partitions by dividing table size es
 
 ### What does input.split.size_in_mb use to determine size?
 
-Input.split.size_in_mb uses a internal system table in C* ( >= 2.1.5) to determine the size
-of the data in C*. The table is called system.size_estimates is not meant to be absolutely accurate 
+Input.split.size_in_mb uses a internal system table in Cassandra ( >= 2.1.5) to determine the size
+of the data in Cassandra. The table is called system.size_estimates is not meant to be absolutely accurate 
 so there will be some inaccuracy with smaller tables and split sizes.
 
 ### Can I contribute to the Spark Cassandra Connector?

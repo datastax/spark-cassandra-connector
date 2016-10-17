@@ -16,12 +16,12 @@ DataSources in Spark take a map of Options which define how the source should ac
 Connector provides a CassandraSource which recognizes the following Key Value pairs.
 Those followed with a default of N/A are required, all others are optional.
 
-| Option Key  | Controls                                              | Values        | Default  |
-|-------------|-------------------------------------------------------|---------------|----------|
-| table       | The Cassandra table to connect to                     | String        | N/A      |
-| keyspace    | The keyspace where table is looked for                | String        | N/A      |
-| cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
-| pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
+| Option Key  | Controls                                                     | Values        | Default  |
+|-------------|--------------------------------------------------------------|---------------|----------|
+| table       | The Cassandra table to connect to                            | String        | N/A      |
+| keyspace    | The keyspace where table is looked for                       | String        | N/A      |
+| cluster     | The group of the Cluster Level Settings to inherit           | String        | "default"|
+| pushdown    | Enables pushing down predicates to Cassandra when applicable | (true,false)  | true     |
 
 #### Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
@@ -283,7 +283,7 @@ INSERT INTO words (user, word, count ) VALUES ( 'Zebra', 'zed', 100 );
 ```
 
 First we can create a DataFrame and see that it has no `pushdown filters` set in the log. This
-means all requests will go directly to C* and we will require reading all of the data to `show`
+means all requests will go directly to Cassandra and we will require reading all of the data to `show`
 this DataFrame.
 
 #### Example Catalyst Optimization with Cassandra Server Side Pushdowns
@@ -318,12 +318,12 @@ df.show
 +-----+-----+-----+
 ```
 
-The example schema has a clustering key of "word" so we can pushdown filters on that column to C*. We
+The example schema has a clustering key of "word" so we can pushdown filters on that column to Cassandra. We
 do this by applying a normal DataFrame filter. The connector will automatically determine that the
 filter can be pushed down and will add it to `pushdown filters`. All of the elements of
-`pushdown filters` will be automatically added to the CQL requests made to C* for the
-data from this table. The subsequent call will then only serialize data from C* which passes the filter,
-reducing the load on C*.
+`pushdown filters` will be automatically added to the CQL requests made to Cassandra for the
+data from this table. The subsequent call will then only serialize data from Cassandra which passes the filter,
+reducing the load on Cassandra.
 
 ```scala
 val dfWithPushdown = df.filter(df("word") > "ham")
