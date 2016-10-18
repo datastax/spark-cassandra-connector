@@ -218,7 +218,7 @@ object CassandraSourceRelation {
     default = None,
     description =
       """Used by DataFrames Internally, will be updated in a future release to
-        |retrieve size from C*. Can be set manually now""".stripMargin
+        |retrieve size from Cassandra. Can be set manually now""".stripMargin
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
@@ -227,7 +227,7 @@ object CassandraSourceRelation {
     default = List.empty,
     description =
       """A comma separated list of classes to be used (in order) to apply additional
-        | pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+        | pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
       """.stripMargin
   )
 
