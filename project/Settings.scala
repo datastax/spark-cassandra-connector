@@ -24,7 +24,6 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
-import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
 import sbt._
 import sbtassembly.Plugin.AssemblyKeys._
@@ -82,7 +81,7 @@ object Settings extends Build {
 
   val encoding = Seq("-encoding", "UTF-8")
 
-  lazy val projectSettings = graphSettings ++ Seq(
+  lazy val projectSettings = Seq(
 
     aggregate in update := false,
 
@@ -191,7 +190,7 @@ object Settings extends Build {
     publish in (IntegrationTest,packageBin) := ()
   )
 
-  lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
+  lazy val testSettings = testConfigs ++ testArtifacts ++ Seq(
     parallelExecution in Test := false,
     parallelExecution in IntegrationTest := false,
     javaOptions in IntegrationTest ++= Seq(
