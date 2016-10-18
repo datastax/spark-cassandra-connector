@@ -194,7 +194,7 @@ class CassandraJoinRDD[L, R] private[connector](
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $limitClause $orderBy"
+        s"WHERE $filter $orderBy $limitClause"
     logDebug(s"Query : $query")
     query
   }
@@ -211,7 +211,8 @@ class CassandraJoinRDD[L, R] private[connector](
     val bsb = new BoundStatementBuilder[L](rowWriter, stmt, pv, where.values)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
-    val countingIterator = new CountingIterator(rowIterator, limit)
+    //Do not limit single partition query iterators
+    val countingIterator = new CountingIterator(rowIterator, None)
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
