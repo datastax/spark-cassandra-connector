@@ -244,6 +244,13 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
+  it should "work with both limit and order clauses SPARKC-433" in {
+    val source = sc.parallelize(keys).map(x => new KVRow(x))
+    val someCass = source.joinWithCassandraTable(ks, tableName).limit(1).withAscOrder
+    val result = someCass.collect
+    checkArrayCassandraRow(result)
+  }
+
   it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in withoutLogging {
     val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
     val ex = the[Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
@@ -329,11 +336,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be be able to be limited" in {
-    val source = sc.parallelize(keys).map(x => (x, x * 100))
-    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).limit(3)
+  it should "be able to be limited" in {
+    val source = sc.parallelize(keys).map(x => KVRow(x))
+    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key")).limit(3)
     val result = someCass.collect
-    result should have size (3 * someCass.partitions.size)
+    result should have size (3 * keys.length)
   }
 
   it should "have be able to be counted" in {
