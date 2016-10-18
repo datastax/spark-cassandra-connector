@@ -24,7 +24,6 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import com.typesafe.tools.mima.plugin.MimaPlugin._
-import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import sbt.Keys._
 import sbt.Tests._
 import sbt._
@@ -123,7 +122,7 @@ object Settings extends Build {
 
   val installSparkTask = taskKey[Unit]("Optionally install Spark from Git to local Maven repository")
 
-  lazy val projectSettings = graphSettings ++ Seq(
+  lazy val projectSettings = Seq(
 
     concurrentRestrictions in Global += Tags.limit(Tags.Test, parallelTasks),
 
