@@ -273,7 +273,7 @@ object Settings extends Build {
     }.toSeq
   }
 
-  lazy val testSettings = testConfigs ++ testArtifacts ++ graphSettings ++ Seq(
+  lazy val testSettings = testConfigs ++ testArtifacts ++ Seq(
     parallelExecution in Test := true,
     parallelExecution in IntegrationTest := true,
     javaOptions in IntegrationTest ++= TEST_JAVA_OPTS,
