@@ -22,6 +22,7 @@ Those followed with a default of N/A are required, all others are optional.
 | keyspace    | The keyspace where table is looked for                       | String        | N/A      |
 | cluster     | The group of the Cluster Level Settings to inherit           | String        | "default"|
 | pushdown    | Enables pushing down predicates to Cassandra when applicable | (true,false)  | true     |
+| prepend.columns| A list of collection columns separated by comma to have data prepended       | String        | N/A      |
 
 #### Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing
@@ -425,4 +426,55 @@ INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation
 INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(clusterkey1,1), EqualTo(clusterkey2,1))
 ```
 
+#### Example append data to collection table column
+
+```sql
+CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+USE test;
+CREATE table test_list (
+    a INT PRIMARY KEY,
+    b List<INT>,
+    c List<INT>);
+
+CREATE table test_insert_list (
+    a INT PRIMARY KEY,
+    b List<INT>,
+    c List<INT>);
+
+INSERT INTO test_list (a, b, c ) VALUES (3, [1,2], [1,2]);
+INSERT INTO test_insert_list (a, b, c ) VALUES (3, [4,5], [4,5]);
+```
+
+First read from table test_list
+
+```scala
+val df = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map("table" -> "test_list", "keyspace" -> "test"))
+  .load()
+```
+
+Then write it to test_insert_list
+
+```scala
+df.write
+  .format("org.apache.spark.sql.cassandra")
+  .mode(Append)
+  .options(Map("table" -> "test_insert_list", "keyspace" -> "test"))
+  .save()
+```
+
+Data is appended to test_insert_list table b and c columns after the existing data.
+
+To append the data in front of b and c columns' existing data, set table option "prepend.columns" to
+"b, c".
+
+```scala
+df.write
+  .format("org.apache.spark.sql.cassandra")
+  .mode(Append)
+  .options(Map("table" -> "test_insert_list", "keyspace" -> "test", "prepend.columns -> "b,c"))
+  .save()
+```
 [Next - Python DataFrames](15_python.md)
