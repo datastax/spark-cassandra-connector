@@ -137,7 +137,7 @@ establish a relation between the CassandraTable and the internally used DataSour
 Create Relation with the Cassandra table test.words
 ```scala
 scala> sqlContext.sql(
-   """CREATE TEMPORARY TABLE words
+   """CREATE TEMPORARY VIEW words
      |USING org.apache.spark.sql.cassandra
      |OPTIONS (
      |  table "words",

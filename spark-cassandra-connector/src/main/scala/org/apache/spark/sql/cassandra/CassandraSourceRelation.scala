@@ -37,6 +37,7 @@ private[cassandra] class CassandraSourceRelation(
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
+    prependColumns: Set[String],
     override val sqlContext: SQLContext)
   extends BaseRelation
   with InsertableRelation
@@ -47,6 +48,14 @@ private[cassandra] class CassandraSourceRelation(
     connector,
     tableRef.keyspace,
     tableRef.table)
+
+  private[this] val preappendColumns = tableDef.columns.map(_.columnName)
+    .filter(preappendColumn(_, prependColumns)).toSet
+
+  /** Check whether user define the collection column to have data prepended */
+  private[this] def preappendColumn(columnName: String, prependColumns: Set[String]): Boolean = {
+    prependColumns.nonEmpty && prependColumns.contains(columnName)
+  }
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
@@ -62,8 +71,20 @@ private[cassandra] class CassandraSourceRelation(
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
+    val columns = SomeColumns(data.columns.map(x => columnRef(x, overwrite)): _*)
     data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
+  }
+
+  private[this] def columnRef(columnName: String, overwrite: Boolean): ColumnRef = {
+    if (!overwrite && tableDef.columnByName(columnName).isCollection) {
+      if (preappendColumns.contains(columnName)) {
+        CollectionColumnName(columnName, alias = None, collectionBehavior = CollectionPrepend)
+      } else {
+        CollectionColumnName(columnName, alias = None, collectionBehavior = CollectionAppend)
+      }
+    } else {
+      ColumnName(columnName)
+    }
   }
 
   override def sizeInBytes: Long = {
@@ -268,6 +289,7 @@ object CassandraSourceRelation {
     }
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
+    val prependColumns = options.cassandraConfs.getOrElse("prepend.columns", "").split(",").toSet
 
     new CassandraSourceRelation(
       tableRef = tableRef,
@@ -277,6 +299,7 @@ object CassandraSourceRelation {
       connector = cassandraConnector,
       readConf = readConf,
       writeConf = writeConf,
+      prependColumns = prependColumns,
       sqlContext = sqlContext)
   }
 

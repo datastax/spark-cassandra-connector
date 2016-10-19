@@ -47,6 +47,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       },
 
       Future {
+        session.execute(s"CREATE TABLE $ks.test_list (a INT PRIMARY KEY, b List<INT>)")
+        session.execute(s"INSERT INTO $ks.test_list (a, b) VALUES (3,[1,2])")
+        session.execute(s"CREATE TABLE $ks.test_insert_list (a INT PRIMARY KEY, b List<INT>)")
+        session.execute(s"INSERT INTO $ks.test_insert_list (a, b) VALUES (3,[4,5])")
+      },
+
+      Future {
         session.execute(
           s"""
              |CREATE TABLE $ks.df_test(
@@ -75,7 +82,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   def pushDown: Boolean = true
 
   override def beforeAll() {
-    createTempTable(ks, "test1", "tmpTable")
+    createTempView(ks, "test1", "tmpTable")
   }
 
   override def afterAll() {
@@ -87,10 +94,10 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
      sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
   }
 
-  def createTempTable(keyspace: String, table: String, tmpTable: String) = {
+  def createTempView(keyspace: String, table: String, tmpTable: String) = {
     sparkSession.sql(
       s"""
-        |CREATE TEMPORARY TABLE $tmpTable
+        |CREATE TEMPORARY VIEW $tmpTable
         |USING org.apache.spark.sql.cassandra
         |OPTIONS (
         | table "$table",
@@ -118,7 +125,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   it should "allow to insert data into a cassandra table" in {
-    createTempTable(ks, "test_insert", "insertTable")
+    createTempView(ks, "test_insert", "insertTable")
     sparkSession.sql("SELECT * FROM insertTable").collect() should have length 0
 
     sparkSession.sql("INSERT OVERWRITE TABLE insertTable SELECT a, b FROM tmpTable")
@@ -157,7 +164,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .mode(Overwrite)
       .options(Map("table" -> "test_insert2", "keyspace" -> ks))
       .save()
-    createTempTable(ks, "test_insert2", "insertTable2")
+    createTempView(ks, "test_insert2", "insertTable2")
     sparkSession.sql("SELECT * FROM insertTable2").collect() should have length 1
     sparkSession.sql("DROP VIEW insertTable2")
   }
@@ -235,6 +242,30 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
     val qp = df.queryExecution.executedPlan
     println(qp.constraints)
+  }
+
+  it should "allow to append to a cassandra table collection column" in {
+    createTempView(ks, "test_list", "listTable")
+    sparkSession.sql("SELECT a, b from listTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test_insert_list", "keyspace" -> ks))
+      .save()
+    createTempView(ks, "test_insert_list", "insertListTable")
+    sparkSession.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(3) shouldBe 2
+    sparkSession.sqlContext.dropTempTable("insertListTable")
+
+    sparkSession.sql("SELECT a, b from listTable")
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test_insert_list", "keyspace" -> ks, "prepend.columns" -> "b"))
+      .save()
+    createTempView(ks, "test_insert_list", "insertListTable")
+    sparkSession.sql("SELECT b FROM insertListTable WHERE a = 3").collect().head.getList[Int](0).get(0) shouldBe 1
+    sparkSession.catalog.dropTempView("insertListTable")
+    sparkSession.catalog.dropTempView("listTable")
   }
 }
 

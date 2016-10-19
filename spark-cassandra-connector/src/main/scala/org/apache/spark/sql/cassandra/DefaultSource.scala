@@ -18,7 +18,7 @@ import com.datastax.spark.connector.writer.WriteConf
  * It's used internally by Spark SQL to create Relation for a table which specifies the Cassandra data source
  * e.g.
  *
- *      CREATE TEMPORARY TABLE tmpTable
+ *      CREATE TEMPORARY VIEW tmpTable
  *      USING org.apache.spark.sql.cassandra
  *      OPTIONS (
  *       table "table",
@@ -113,6 +113,8 @@ object DefaultSource {
   val CassandraDataSourceClusterNameProperty = "cluster"
   val CassandraDataSourceUserDefinedSchemaNameProperty = "schema"
   val CassandraDataSourcePushdownEnableProperty = "pushdown"
+  // A list of collection columns separated by comma to have data prepended
+  val CassandraDataSourcePrependColumnsProperty = "prepend.columns"
   val CassandraDataSourceProviderPackageName = DefaultSource.getClass.getPackage.getName
   val CassandraDataSourceProviderClassName = CassandraDataSourceProviderPackageName + ".DefaultSource"
 
@@ -137,7 +139,7 @@ object DefaultSource {
 
   /** Construct a map stores Cassandra Conf settings from options */
   def buildConfMap(parameters: Map[String, String]): Map[String, String] =
-    parameters.filterKeys(confProperties.contains)
+    parameters.filterKeys(name => confProperties.contains(name) || CassandraDataSourcePrependColumnsProperty == name)
 
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {
