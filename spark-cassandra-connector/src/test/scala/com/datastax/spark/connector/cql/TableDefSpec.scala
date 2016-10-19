@@ -95,7 +95,7 @@ class TableDefSpec extends WordSpec with Matchers {
         val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
         val column2 = ColumnDef("c2", RegularColumn, VarCharType)
         val column3 = ColumnDef("c3", RegularColumn, VarCharType)
-        val tableDef = TableDef("keyspace", "table", Seq(column1), Seq.empty, Seq(column2,column3),options=Seq("bloom_filter_fp_chance = 0.01"))
+        val tableDef = TableDef("keyspace", "table", Seq(column1), Seq.empty, Seq(column2,column3),tableOptions=Map("bloom_filter_fp_chance" -> "0.01"))
         tableDef.cql should be(
           """CREATE TABLE "keyspace"."table" (
             |  "c1" int,
@@ -111,7 +111,7 @@ class TableDefSpec extends WordSpec with Matchers {
         val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
         val column2 = ColumnDef("c2", ClusteringColumn(0), VarCharType)
         val column3 = ColumnDef("c3", RegularColumn, VarCharType)
-        val tableDef = TableDef("keyspace", "table", Seq(column1), Seq(column2), Seq(column3),options=Seq("bloom_filter_fp_chance = 0.01"))
+        val tableDef = TableDef("keyspace", "table", Seq(column1), Seq(column2), Seq(column3),tableOptions=Map("bloom_filter_fp_chance" -> "0.01"))
         tableDef.cql should be(
           """CREATE TABLE "keyspace"."table" (
             |  "c1" int,

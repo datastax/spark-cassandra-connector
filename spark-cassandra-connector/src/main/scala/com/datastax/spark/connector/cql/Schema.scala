@@ -151,12 +151,11 @@ case class TableDef(
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
     isView: Boolean = false,
-    options: Seq[String] = Seq.empty) extends StructDef {
+    tableOptions: Map[String,String] = Map.empty) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
-  require(options.forall( option => !(option.toLowerCase.contains("and") && !(option.toLowerCase.contains("with")))), "Table options must not contain WITH OR AND")
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
@@ -203,11 +202,20 @@ case class TableDef(
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
-    val ordered = clusteringColumns.map( col => s"${quote(col.columnName)} ${col.clusteringOrder}")
+
+    val clusteringOrderingClause = clusteringColumns.map( col => s"${quote(col.columnName)} ${col.clusteringOrder}")
       .mkString("CLUSTERING ORDER BY (", ", ",")")
 
-    val orderWithOptions:Seq[String] = if (clusteringColumns.size > 0) options.+:(ordered) else options
-    if (orderWithOptions.size > 0) s"""$stmt${Properties.lineSeparator}WITH ${orderWithOptions.mkString(s"${Properties.lineSeparator}  AND ")}""" else stmt
+    val tableOptionsString:Seq[String] = tableOptions.map(option => s"${option._1} = ${option._2}").toSeq
+
+    val tableOptionsClause:Seq[String] = if (clusteringColumns.size > 0)
+        tableOptionsString.+:(clusteringOrderingClause)
+      else tableOptionsString
+
+    if (tableOptionsClause.size > 0)
+      s"""$stmt${Properties.lineSeparator}WITH ${tableOptionsClause.mkString(s"${Properties.lineSeparator}  AND ")}"""
+    else
+      stmt
   }
 
   type ValueRepr = CassandraRow
