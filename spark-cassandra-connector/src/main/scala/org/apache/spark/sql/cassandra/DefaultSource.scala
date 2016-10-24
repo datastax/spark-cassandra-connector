@@ -123,7 +123,7 @@ object DefaultSource {
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
-    val cassandraConfs = buildConfMap(parameters)
+    val cassandraConfs = parameters
 
     (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
   }
@@ -134,10 +134,6 @@ object DefaultSource {
     CassandraSourceRelation.Properties.map(_.name) ++
     AuthConfFactory.Properties.map(_.name) ++
     DefaultAuthConfFactory.properties
-
-  /** Construct a map stores Cassandra Conf settings from options */
-  def buildConfMap(parameters: Map[String, String]): Map[String, String] =
-    parameters.filterKeys(confProperties.contains)
 
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {
