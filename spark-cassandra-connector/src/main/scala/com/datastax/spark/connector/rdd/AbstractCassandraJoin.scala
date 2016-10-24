@@ -127,7 +127,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $limitClause $orderBy"
+        s"WHERE $filter $orderBy $limitClause"
     logDebug(s"Query : $query")
     query
   }
@@ -148,7 +148,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val bsb = boundStatementBuilder(session)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
-    val countingIterator = new CountingIterator(rowIterator, limit)
+    val countingIterator = new CountingIterator(rowIterator, None)
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
