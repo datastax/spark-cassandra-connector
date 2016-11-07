@@ -9,7 +9,7 @@ launching script for sbt so it is unneccessary to download it. To invoke
 this script you can run `./sbt/sbt` from a clone of this repository.
 
 For information on setting up your clone please follow the [Github 
-Help](https://help.github.com/articles/cloning-a-repository/)
+Help](https://help.github.com/articles/cloning-a-repository/).
 
 Once in the sbt shell you will be able to build and run tests for the
 connector without any Spark or Cassandra nodes running. The most common
@@ -28,10 +28,11 @@ coverage.
 ### Sub-Projects
 
 The connector currently contains several subprojects
+
 #### spark-cassandra-connector
-This sub project contains all of the actual connector code and is where
+This subproject contains all of the actual connector code and is where
 any new features or tests should go. This Scala project also contains the
-Java api and related code.
+Java API and related code.
 
 It includes the code for building reference documentation. This 
 automatically determines what belongs in the reference file. It should 
@@ -77,6 +78,3 @@ of your publish command.
 
 This same method should work with `publishLocal`
 after the merging of [SPARK-12666](https://issues.apache.org/jira/browse/SPARK-12666)
-
-
-
