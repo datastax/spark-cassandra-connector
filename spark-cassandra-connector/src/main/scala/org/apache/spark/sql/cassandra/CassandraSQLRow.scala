@@ -1,22 +1,22 @@
 package org.apache.spark.sql.cassandra
 
+import java.math.BigInteger
 import java.net.InetAddress
 import java.sql.Timestamp
 import java.util.{Date, UUID}
-import java.math.BigInteger
 
 import com.datastax.driver.core.Row
-import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
-import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
-import com.datastax.spark.connector.types.TypeConverter
-
+import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}
+import com.datastax.spark.connector.{CassandraRowMetadata, ColumnRef, GettableData, TupleValue, UDTValue}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.{BaseGenericInternalRow, UnsafeProjection}
+import org.apache.spark.sql.types.{Decimal, StructType}
 import org.apache.spark.sql.{Row => SparkRow}
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.sql.types.Decimal
-import org.joda.time.DateTimeZone.UTC
 
-final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
-  extends GettableData with SparkRow with Serializable {
+final class CassandraSQLRow(val cassandraRow: Row, val metaData: CassandraRowMetadata)
+  extends BaseGenericInternalRow with Serializable {
 
   protected def fieldNames = metaData
 
@@ -24,43 +24,37 @@ final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues
 
   /** Generic getter for getting columns of any type.
     * Looks the column up by its index. First column starts at index 0. */
-  private def get[T](index: Int)(implicit c: TypeConverter[T]): T =
-    c.convert(columnValues(index))
 
-  override def apply(i: Int) = columnValues(i)
-  override def copy() = this // immutable
-  override def size = super.size
+  override protected def genericGet(ordinal: Int): Any =
+  CassandraSQLRow.toSparkSqlType(GettableData.get(cassandraRow, ordinal, metaData.codecs(ordinal)))
 
-  override def getDouble(i: Int) = get[Double](i)
-  override def getFloat(i: Int) = get[Float](i)
-  override def getLong(i: Int) = get[Long](i)
-  override def getByte(i: Int) = get[Byte](i)
-  override def getBoolean(i: Int) = get[Boolean](i)
-  override def getShort(i: Int) = get[Short](i)
-  override def getInt(i: Int) = get[Int](i)
-  override def getString(i: Int) = get[String](i)
-  override def get(i: Int) = get[Any](i)
+  override def numFields: Int = metaData.columnNames.length
 
-  override def isNullAt(i: Int): Boolean = super[GettableData].isNullAt(i)
-
-  override def toSeq: Seq[Any] = columnValues
+  override def copy(): InternalRow = this //immutable row
 }
-
 
 object CassandraSQLRow {
 
-  def fromJavaDriverRow(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow = {
-    val data = CassandraRow.dataFromJavaDriverRow(row, metaData)
-    new CassandraSQLRow(metaData, data.map(toSparkSqlType))
+  def fromJavaDriverRow(row: Row, metaData: CassandraRowMetadata): CassandraSQLRow = {
+    new CassandraSQLRow(row, metaData)
   }
 
-  implicit object CassandraSQLRowReader extends RowReader[CassandraSQLRow] with ThisRowReaderAsFactory[CassandraSQLRow] {
+  case class CassandraSQLRowReader(resultSchema: StructType) extends RowReader[InternalRow] {
+    @transient
+    lazy val unsafeProjection = UnsafeProjection.create(resultSchema)
 
-    override def read(row: Row, metaData:CassandraRowMetadata): CassandraSQLRow =
-      fromJavaDriverRow(row, metaData)
+    override def read(row: Row, metaData: CassandraRowMetadata): InternalRow =
+      unsafeProjection(fromJavaDriverRow(row, metaData))
 
     override def neededColumns = None
-    override def targetClass = classOf[CassandraSQLRow]
+  }
+
+  case class CassandraSQLRowReaderFactory(resultSchema: StructType) extends RowReaderFactory[InternalRow] {
+    override def rowReader(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]): RowReader[InternalRow] = {
+      CassandraSQLRowReader(resultSchema)
+    }
+
+    override def targetClass = classOf[InternalRow]
   }
 
   private def toSparkSqlType(value: Any): AnyRef = {
@@ -74,7 +68,7 @@ object CassandraSQLRow {
       case uuid: UUID => UTF8String.fromString(uuid.toString)
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
-      case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
+      case map: Map[_, _] => map map { case (k, v) => (toSparkSqlType(k), toSparkSqlType(v)) }
       case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType): _*)
       case _ => value.asInstanceOf[AnyRef]

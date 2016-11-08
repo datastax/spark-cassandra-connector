@@ -3,17 +3,7 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.UUID
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
-import org.apache.spark.sql.cassandra.DataTypeConverter._
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
-import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.SparkConf
-
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
@@ -22,6 +12,15 @@ import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReaderFactory
+import org.apache.spark.sql.cassandra.DataTypeConverter._
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types.{StructType, _}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
+import org.apache.spark.unsafe.types.UTF8String
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -48,9 +47,16 @@ private[cassandra] class CassandraSourceRelation(
     tableRef.keyspace,
     tableRef.table)
 
+  /**
+    * allows us to use InternalRows instead of public API rows.
+    */
+  override val needConversion: Boolean = false
+
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
   }
+
+  lazy val schemaMap = schema.fields.map(f => (f.name, f)).toMap
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
@@ -71,12 +77,13 @@ private[cassandra] class CassandraSourceRelation(
     tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
   }
 
-  implicit val cassandraConnector = connector
-  implicit val readconf = readConf
-  private[this] val baseRdd =
-    sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
-
-  def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
+  /**
+    * check that table is empty
+    * 'select * from table limit 1' is the fastest way
+    */
+  def isEmpty(): Boolean = connector.withSessionDo(session => {
+    ! session.execute(s"select * from ${quote(tableRef.keyspace)}.${quote(tableRef.table)} limit 1").iterator.hasNext
+  })
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
     case true => predicatePushDown(filters).handledBySpark.toArray
@@ -128,6 +135,15 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
+    // result row will contains only requested columns
+    val resultSchema: StructType = StructType(requiredColumns.map(column => schemaMap.get(column).get))
+
+    implicit val cassandraConnector = connector
+    implicit val readconf = readConf
+    implicit val rwf = CassandraSQLRowReaderFactory(resultSchema)
+    val baseRdd =
+      sqlContext.sparkContext.cassandraTable[InternalRow](tableRef.keyspace, tableRef.table)
+
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     val prunedFilteredRdd = {
       if(filterPushdown) {
@@ -142,7 +158,7 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   /** Define a type for CassandraRDD[CassandraSQLRow]. It's used by following methods */
-  private type RDDType = CassandraRDD[CassandraSQLRow]
+  private type RDDType = CassandraRDD[InternalRow]
 
   /** Transfer selection to limit to columns specified */
   private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDDType = {

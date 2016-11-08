@@ -85,7 +85,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
       case Append => table.insert(data, overwrite = false)
       case Overwrite => table.insert(data, overwrite = true)
       case ErrorIfExists =>
-        if (table.buildScan().isEmpty()) {
+        if (table.isEmpty()) {
           table.insert(data, overwrite = false)
         } else {
           throw new UnsupportedOperationException(
@@ -95,7 +95,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
                |Example: df.write.format.options.mode(SaveMode.Append).save()" '""".stripMargin)
         }
       case Ignore =>
-        if (table.buildScan().isEmpty()) {
+        if (table.isEmpty()) {
           table.insert(data, overwrite = false)
         }
     }
