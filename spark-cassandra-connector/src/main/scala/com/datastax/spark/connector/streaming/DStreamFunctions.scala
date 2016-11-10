@@ -55,6 +55,25 @@ class DStreamFunctions[T](dstream: DStream[T])
   }
 
   /**
+    * Delete data from Cassandra table, using data from the stream as a list of primary keys.
+    * Uses the specified column names.
+    * @see [[com.datastax.spark.connector.writer.WritableToCassandra]]
+    */
+  def deleteFromCassandra(
+    keyspaceName: String,
+    tableName: String,
+    deleteColumns: ColumnSelector = SomeColumns(),
+    keyColumns: ColumnSelector = PrimaryKeyColumns,
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T]): Unit = {
+
+    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf)
+    dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.delete(deleteColumns) _))
+  }
+
+  /**
    * Transforms RDDs with [[com.datastax.spark.connector.RDDFunctions.repartitionByCassandraReplica]]
    * for each produced RDD.
    */

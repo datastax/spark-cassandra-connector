@@ -61,6 +61,17 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         rddFunctions.saveToCassandra(keyspace, table, columnNames, conf, connector, rowWriterFactory);
     }
 
+    public void deleteFromCassandra(
+            String keyspace,
+            String table,
+            RowWriterFactory<T> rowWriterFactory,
+            ColumnSelector deleteColumns,
+            ColumnSelector keyColumns,
+            WriteConf conf,
+            CassandraConnector connector
+    ) {
+        rddFunctions.deleteFromCassandra(keyspace, table, deleteColumns, keyColumns, conf, connector, rowWriterFactory);
+    }
     /**
      * Applies a function to each item, and groups consecutive items having the same value together.
      * Contrary to {@code groupBy}, items from the same group must be already next to each other in the
