@@ -47,4 +47,42 @@ abstract class WritableToCassandra[T] {
                       writeConf: WriteConf)
                      (implicit connector: CassandraConnector, rwf: RowWriterFactory[T])
 
+  /**
+    * Delete data from Cassandra table, using data from the [[org.apache.spark.rdd.RDD RDD]] as a list of primary keys.
+    * Uses the specified column names.
+    * By default, it deletes all columns from corresponding Cassandra rows.
+    *
+    * Example:
+    * {{{
+    *   CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
+    *   CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
+    *   INSERT INTO test.words((word,count,other) values ('foo', 5, 'foo');
+    * }}}
+    *
+    * {{{
+    *   case class WordCount(word: String, count: Int, other: String)
+    *   val rdd = sc.cassandraTable("test", "words")
+    * }}}
+    *
+    * The underlying RDD class must provide data for all primary key columns.
+    * Delete "other" column values
+    * {{{
+    *   rdd.deleteFromCassandra("test", "words", Seq("other"))
+    * }}}
+    *
+    * This delete consistency level and other properties are the same as for writes
+    *
+    * @param keyspaceName the name of the Keyspace to use
+    * @param tableName the name of the Table to use
+    * @param deleteColumns The list of column names to delete, empty ColumnSelector means full row.
+    * @param keyColumns Primary key columns selector, Optional. All RDD primary columns columns will be checked by default
+    * @param writeConf additional configuration object allowing to set consistency level, batch size, etc.
+    */
+  def deleteFromCassandra(keyspaceName: String,
+                          tableName: String,
+                          deleteColumns: ColumnSelector,
+                          keyColumns: ColumnSelector,
+                          writeConf: WriteConf)
+                         (implicit connector: CassandraConnector, rwf: RowWriterFactory[T])
+
 }

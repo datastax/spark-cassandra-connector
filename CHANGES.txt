@@ -1,3 +1,4 @@
+ * Add RDD.deleteFromCassandra() method (SPARKC-349)
  * Fixed use of connection.local_dc parameter (SPARKC-448)
  * Removed demos and benchmarks (SPARKC-398)
  * Refactor usages of SQLContext so that SparkSession is used instead (SPARKC-400)
