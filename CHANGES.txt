@@ -1,3 +1,4 @@
+ * Add RDD.deleteFromCassandra() method (SPARKC-349)
  * Fixed use of connection.local_dc parameter (SPARKC-448)
 
 1.6.3

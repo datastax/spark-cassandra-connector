@@ -22,4 +22,6 @@ private[connector] object TestEvent {
 
   case class WordCount(word: String, count: Int)
 
+  case class Key(word: String)
+
 }
