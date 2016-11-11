@@ -25,6 +25,7 @@ execute arbitrary CQL queries in your Spark applications.
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
  - Saves RDDs back to Cassandra by implicit `saveToCassandra` call
+ - Delete rows and columns from cassandra by implicit `deleteFromCassandra` call
  - Join with a subset of Cassandra data using `joinWithCassandraTable` call
  - Partition RDDs according to Cassandra replication using `repartitionByCassandraReplica` call
  - Converts data types between Cassandra and Scala
@@ -110,7 +111,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [Loading datasets from Cassandra](doc/2_loading.md)
   - [Server-side data selection and filtering](doc/3_selection.md)   
   - [Working with user-defined case classes and tuples](doc/4_mapper.md)
-  - [Saving datasets to Cassandra](doc/5_saving.md)
+  - [Saving and deleting datasets to/from Cassandra](doc/5_saving.md)
   - [Customizing the object mapping](doc/6_advanced_mapper.md)
   - [Using Connector in Java](doc/7_java_api.md)
   - [Spark Streaming with Cassandra](doc/8_streaming.md)

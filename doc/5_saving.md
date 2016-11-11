@@ -1,5 +1,5 @@
 # Documentation
-## Saving RDDs to Cassandra
+## Saving and deleting to/from Cassandra
 
 It is possible to save any `RDD` to Cassandra, not just a `CassandraRDD`. 
 The only requirement is that the object class of `RDD` is a tuple or 
@@ -14,6 +14,8 @@ and call the `saveToCassandra` method with the keyspace name, table name
 and a list of columns. Make sure to include at least all primary key columns.
 To save an `RDD` to a new table, instead of calling `saveToCassandra`, 
 call `saveAsCassandraTable` or `saveAsCassandraTableEx`.
+
+`deleteFromCassandra` can be used to delete columns or full rows from Cassandra table base on `RDD` with primary keys
  
 ## Saving an RDD of Tuples
 
@@ -470,6 +472,53 @@ val table = TableDef("test","words",Seq(p1Col),Seq(c1Col, c2Col),Seq(rCol))
 // Map rdd into custom data structure and create table
 val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
+```
+## Deleting rows and columns
+`RDD.deleteFromCassandra(keyspaceName, tableName)` delete rows from specified Cassandra table, using data from the RDD as primary keys.
+
+Keys RDD could be loaded from the same table:
+
+```
+sc.cassandraTable("test", "words")
+  .filter(row => ...).
+  .deleteFromCassandra("test", "words")
+```
+Or from any external source:
+
+```
+CREATE TABLE test.word_groups (group text, word text, count int,
+  PRIMARY KEY (group,word));
+```
+
+```
+sc.parallelize(Seq(("animal", "trex"), ("animal", "mammoth")))
+  .deleteFromCassandra("test", "test")
+```
+
+`deleteColumns: ColumnSelector` optional parameter allows selected columns deletion only
+
+```
+ sc.parallelize(Seq(("animal", "mammoth")))
+     .deleteFromCassandra("test", "test", SomeColumns("count"))
+```
+result:
+
+```
+cqlsh:t> select * from test.word_groups;
+
+ group  | word   | count
+--------+--------+-------
+ animal | mammoth|  null
+```
+
+`deleteFromCassandra` uses the same WriteConf and configuration options as `saveToCassandra`
+For example the timestamp can be passed as WriteConf parameter to delete only records older then the timestamp
+
+```
+import com.datastax.spark.connector.writer._
+...
+rdd.deleteFromCassandra("test", "tab",
+  writeConf = WriteConf(timestamp = TimestampOption.constant(ts)))
 ```
 
 ## Tuning
