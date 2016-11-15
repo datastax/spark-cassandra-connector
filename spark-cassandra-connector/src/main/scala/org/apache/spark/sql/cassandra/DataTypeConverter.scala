@@ -1,12 +1,11 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.types.{TupleFieldDef, UDTFieldDef}
 import org.apache.spark.Logging
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.{types => catalystTypes}
-
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
+import com.datastax.spark.connector.types.{ColumnType, TupleFieldDef, UDTFieldDef}
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.{types => catalystTypes}
 
 /** Convert Cassandra data type to Catalyst data type */
 object DataTypeConverter extends Logging {
@@ -55,9 +54,20 @@ object DataTypeConverter extends Logging {
       case connector.types.TupleType(fields @ _* )    => catalystTypes.StructType(fields.map(catalystStructFieldFromTuple))
       case connector.types.VarIntType                 =>
         logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
-        primitiveTypeMap(cassandraType)
-      case _                                          => primitiveTypeMap(cassandraType)
+        primitiveCatalystDataType(cassandraType)
+      case _                                          => primitiveCatalystDataType(cassandraType)
     }
+  }
+
+  def primitiveCatalystDataType(cassandraType: connector.types.ColumnType[_]): catalystTypes.DataType = {
+    val getColumnType: PartialFunction[ColumnType[_], catalystTypes.DataType] = customCatalystDataType orElse { primitiveTypeMap }
+    getColumnType(cassandraType)
+  }
+
+  private lazy val customCatalystDataType: PartialFunction[ColumnType[_], catalystTypes.DataType] = {
+    ColumnType.customDriverConverter
+      .flatMap(clazz => Some(clazz.catalystDataType))
+      .getOrElse(PartialFunction.empty)
   }
 
   /** Create a Catalyst StructField from a Cassandra Column */
