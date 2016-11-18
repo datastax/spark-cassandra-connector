@@ -1,5 +1,10 @@
 1.6.3
  * Added SSL client authentication (SPARKC-359)
+ * Correct order of "Limit" and "orderBy" clauses in JWCT (SPARKC-433)
+ * Improved error messages on CreateCassandraTable from DataFrame (SPARKC-428)
+ * Improved backwards compatibility with older Cassandra versions
+   (SPARKC-387, SPARKC-402)
+ * Fix partitioner on Integer.MIN_VALUE (SPARKC-419)
 
 1.6.2
  * Fixed shading in artifacts published to Maven
