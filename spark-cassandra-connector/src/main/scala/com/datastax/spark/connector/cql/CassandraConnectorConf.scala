@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
+import java.io.{ObjectOutputStream, ObjectInputStream, ByteArrayOutputStream, ByteArrayInputStream}
+import java.util.Base64
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
@@ -27,7 +29,26 @@ case class CassandraConnectorConf(
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
-)
+) {
+
+  @transient
+  lazy val serializedConfString: String = {
+    val baos = new ByteArrayOutputStream
+    val oos = new ObjectOutputStream(baos)
+    oos.writeObject(this);
+    oos.close;
+    Base64.getEncoder.encodeToString(baos.toByteArray)
+  }
+
+  override def hashCode: Int = serializedConfString.hashCode
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case that: CassandraConnectorConf => that.hashCode == serializedConfString.hashCode
+      case _ => false
+    }
+  }
+}
 
 /** A factory for [[CassandraConnectorConf]] objects.
   * Allows for manually setting connection properties or reading them from [[org.apache.spark.SparkConf SparkConf]]
