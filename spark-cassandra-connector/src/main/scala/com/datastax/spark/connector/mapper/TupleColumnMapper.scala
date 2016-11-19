@@ -1,9 +1,9 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.driver.core.ProtocolVersion
+
 import scala.reflect.runtime.universe._
-
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
 import com.datastax.spark.connector.{ColumnName, ColumnRef}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
@@ -69,14 +69,18 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     SimpleColumnMapForWriting(getters)
   }
   
-  override def newTable(keyspaceName: String, tableName: String): TableDef = {
+  override def newTable(
+    keyspaceName: String,
+    tableName: String,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = {
+
     val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
     val ctorSymbol = Reflect.constructor(tpe).asMethod
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
     val ctorParamTypes = ctorMethod.params.map(_.typeSignature)
     require(ctorParamTypes.nonEmpty, "Expected a constructor with at least one parameter")
 
-    val columnTypes = ctorParamTypes.map(ColumnType.fromScalaType)
+    val columnTypes = ctorParamTypes.map(ColumnType.fromScalaType(_, protocolVersion))
     val columns = {
       for ((columnType, i) <- columnTypes.zipWithIndex) yield {
         val columnName = "_" + (i + 1).toString

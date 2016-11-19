@@ -1,9 +1,9 @@
 package com.datastax.spark.connector
 
-import com.datastax.spark.connector.util.{RefBuilder, ConfigCheck}
+import java.io.{File, FileWriter}
 
-import scala.io.Source
-import java.io.{FileWriter, File, PrintWriter}
+import com.datastax.spark.connector.util.{ConfigCheck, RefBuilder}
+
 import scala.util.Try
 
 object DocUtil {

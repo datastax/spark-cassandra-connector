@@ -1,9 +1,9 @@
 package org.apache.spark.sql.cassandra
 
-import org.scalatest.{Matchers, FlatSpec}
-
+import com.datastax.driver.core.ProtocolVersion
+import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.types.IntType
+import com.datastax.spark.connector.types.{IntType, TimeUUIDType}
 
 class PredicatePushDownSpec extends FlatSpec with Matchers {
 
@@ -39,6 +39,9 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   val i2 = ColumnDef("i2", RegularColumn, IntType)
   val r1 = ColumnDef("r1", RegularColumn, IntType)
   val r2 = ColumnDef("r2", RegularColumn, IntType)
+  val t1 = ColumnDef("t1", RegularColumn, TimeUUIDType)
+
+  val timeUUIDc1 = ColumnDef("c1", ClusteringColumn(0), TimeUUIDType)
 
   val table = TableDef(
     keyspaceName = "test",
@@ -51,11 +54,53 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
       IndexDef("DummyIndex", "i2", "IndexTwo", Map.empty))
   )
 
+  val timeUUIDTable = TableDef(
+    keyspaceName = "test",
+    tableName = "uuidtab",
+    partitionKey = Seq(pk1, pk2),
+    clusteringColumns = Seq(timeUUIDc1),
+    regularColumns = Seq(i1, i2, r1, r2, t1)
+  )
+
+  val table2 = TableDef(
+    keyspaceName = "test",
+    tableName = "test",
+    partitionKey = Seq(pk1, pk2),
+    clusteringColumns = Seq(c1, c2, c3),
+    regularColumns = Seq(i1, i2, r1, r2),
+    indexes = Seq(
+      IndexDef("DummyIndex", "i1", "IndexOne", Map.empty),
+      IndexDef("DummyIndex", "i2", "IndexTwo", Map.empty),
+      IndexDef("DummyIndex", "pk1", "IndexThree", Map.empty))
+  )
+
   "BasicCassandraPredicatePushDown" should "push down all equality predicates restricting partition key columns" in {
     val f1 = EqFilter("pk1")
     val f2 = EqFilter("pk2")
     val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
     ppd.predicatesToPushDown should contain allOf(f1, f2)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should " break if the user tries to use a TimeUUID on a fully unhandled predicate" in {
+    val f1 = GtFilter("t1")
+
+    val ex = intercept[IllegalArgumentException] {
+      val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
+    }
+  }
+
+  it should " work if the user tries to use a TimeUUID on a fully handled predicate" in {
+    val f1 = GtFilter("c1")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
+    ppd.predicatesToPushDown should contain (f1)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should " work if the user tries to use a TimeUUID column in a eq predicate" in {
+    val f1 = EqFilter("c1")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
+    ppd.predicatesToPushDown should contain (f1)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -172,6 +217,20 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain only f1
+  }
+
+  it should "not push down partition key index equality predicates in P3" in {
+    val f1 = EqFilter("pk1")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table2, ProtocolVersion.V3)
+    ppd.predicatesToPushDown shouldBe empty
+    ppd.predicatesToPreserve should contain only f1
+  }
+
+  it should "push down partition key index equality predicates " in {
+    val f1 = EqFilter("pk1")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table2)
+    ppd.predicatesToPushDown should contain only f1
+    ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "push down equality predicates on regular indexed columns" in {

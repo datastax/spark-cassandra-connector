@@ -56,20 +56,24 @@ package object cassandra {
     }
   }
 
+  @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
   implicit class CassandraSQLContextFunctions(val sqlContext: SQLContext) extends AnyVal {
 
     import org.apache.spark.sql.cassandra.CassandraSQLContextParams._
 
     /** Set current used cluster name */
+    @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def setCluster(cluster: String): SQLContext = {
       sqlContext.setConf(SqlClusterParam.name, cluster)
       sqlContext
     }
 
     /** Get current used cluster name */
+    @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def getCluster: String = sqlContext.getConf(SqlClusterParam.name, SqlClusterParam.default)
 
     /** Set the Spark Cassandra Connector configuration parameters */
+    @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def setCassandraConf(options: Map[String, String]): SQLContext = {
       setCassandraConf(SqlClusterParam.default, options)
       sqlContext
@@ -77,6 +81,7 @@ package object cassandra {
 
     /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
       * a given cluster */
+    @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def setCassandraConf(
         cluster: String,
         options: Map[String, String]): SQLContext = {
@@ -87,6 +92,7 @@ package object cassandra {
 
     /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
       * a given keyspace in a given cluster */
+    @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def setCassandraConf(
         cluster: String,
         keyspace: String,
@@ -95,12 +101,46 @@ package object cassandra {
       for ((k, v) <- options) sqlContext.setConf(s"$cluster:$keyspace/$k", v)
       sqlContext
     }
+  }
 
-    private def checkOptions(options: Map[String, String]): Unit = {
-      options.keySet.foreach { name =>
-        require(DefaultSource.confProperties.contains(name),
-          s"Unrelated parameter. You can only set the following parameters: ${DefaultSource.confProperties.mkString(", ")}")
-      }
+  implicit class CassandraSparkSessionFunctions(val sparkSession: SparkSession) extends AnyVal {
+
+    import org.apache.spark.sql.cassandra.CassandraSQLContextParams._
+
+    /** Set current used cluster name */
+    def setCluster(cluster: String): SparkSession = {
+      sparkSession.conf.set(SqlClusterParam.name, cluster)
+      sparkSession
+    }
+
+    /** Get current used cluster name */
+    def getCluster: String = sparkSession.conf.get(SqlClusterParam.name, SqlClusterParam.default)
+
+    /** Set the Spark Cassandra Connector configuration parameters */
+    def setCassandraConf(options: Map[String, String]): SparkSession = {
+      setCassandraConf(SqlClusterParam.default, options)
+      sparkSession
+    }
+
+    /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+      * a given cluster */
+    def setCassandraConf(
+        cluster: String,
+        options: Map[String, String]): SparkSession = {
+      checkOptions(options)
+      for ((k, v) <- options) sparkSession.conf.set(s"$cluster/$k", v)
+      sparkSession
+    }
+
+    /** Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+      * a given keyspace in a given cluster */
+    def setCassandraConf(
+        cluster: String,
+        keyspace: String,
+        options: Map[String, String]): SparkSession = {
+      checkOptions(options)
+      for ((k, v) <- options) sparkSession.conf.set(s"$cluster:$keyspace/$k", v)
+      sparkSession
     }
   }
 
@@ -117,9 +157,14 @@ package object cassandra {
       default = "default",
       description = "Sets the default Cluster to inherit configuration from")
 
-    val Properties = Seq(
-      SqlClusterParam
-    )
+    val Properties = Seq(SqlClusterParam)
+
+    private[cassandra] def checkOptions(options: Map[String, String]): Unit = {
+      options.keySet.foreach { name =>
+        require(DefaultSource.confProperties.contains(name),
+          s"Unrelated parameter. You can only set the following parameters: ${DefaultSource.confProperties.mkString(", ")}")
+      }
+    }
   }
 
 }

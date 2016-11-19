@@ -6,13 +6,14 @@ import java.util.Date
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
-
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
+
+import com.datastax.driver.core.ProtocolVersion._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -53,11 +54,10 @@ case class TypeWithTupleSetter(id: Int) {
 }
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000
 
   conn.withSessionDo { session =>
@@ -65,8 +65,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
     awaitAll(
       Future {
-        if (versionGreaterThanOrEquals(2,2)) {
-          println(s"Found version $cassandraMajorVersion  $cassandraMinorVersion")
+        skipIfProtocolVersionLT(V4) {
+          markup(s"Making PV4 Types")
           session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
           session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
           session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
@@ -134,7 +134,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
       },
       Future {
-        if (versionGreaterThanOrEquals(2, 2)) {
+        skipIfProtocolVersionLT(V4) {
           session.execute(
             s"""
                |CREATE TABLE $ks.user(
@@ -187,8 +187,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       },
 
       Future {
-        session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
-        session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")
+        info("Making table with Date Type")
+        skipIfProtocolVersionLT(V4) {
+          session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
+          session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")
+        }
       }
     )
   }
@@ -251,6 +254,12 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   it should "allow to read a Cassandra table as Array of user-defined class (with no fields) objects" in {
     val result = sc.cassandraTable[SampleScalaClassWithNoFields](ks, "simple_kv").collect()
     result should have length 3
+  }
+
+  it should "not overflow on reasonable but large split_size_in_mb" in {
+    sc.cassandraTable(ks, "simple_kv")
+      .withReadConf(ReadConf(splitSizeInMB = 10000))
+      .splitSize should be (10485760000L)
   }
 
   it should "allow to read a Cassandra table as Array of user-defined case class (nested) objects" in {
@@ -886,7 +895,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     result should have length 0
   }
 
-  it should "suggest similar tables or views if the table doesn't exist" in {
+  it should "suggest similar tables or views if the table doesn't exist" in skipIfProtocolVersionLT(V4){
     val ioe = the [IOException] thrownBy sc.cassandraTable(ks, "user_by_county").collect()
     val message = ioe.getMessage
     message should include (s"$ks.user_by_country")
@@ -963,14 +972,14 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     dataColumns.count shouldBe 1
   }
 
-  it should "be able to read SMALLINT columns from" in {
+  it should "be able to read SMALLINT columns from" in skipIfProtocolVersionLT(V4) {
     val result = sc.cassandraTable[(Int, Short)](ks, "short_value").collect
     result should contain ((1, 100))
     result should contain ((2, 200))
     result should contain ((3, 300))
   }
 
-  it should "be able to read a Materialized View" in  {
+  it should "be able to read a Materialized View" in skipIfProtocolVersionLT(V4){
     val result = sc.cassandraTable[(String, Int, String, String, String)](ks, "user_by_country")
       .where("country='US'")
       .collect
@@ -980,7 +989,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     )
   }
 
-  it should "throw an exception when trying to write to a Materialized View" in {
+  it should "throw an exception when trying to write to a Materialized View" in skipIfProtocolVersionLT(V4){
     intercept[IllegalArgumentException] {
       sc.parallelize(Seq(("US", 1, "John", "DOE", "jdoe"))).saveToCassandra(ks, "user_by_country")
     }
@@ -1033,7 +1042,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "write Java dates as C* date type" in {
+  it should "write Java dates as C* date type" in skipIfProtocolVersionLT(V4){
     val rows = List(
       (6, new java.sql.Date(new Date().getTime)),
       (7, new Date()),
@@ -1049,7 +1058,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     resultSet.one().getLong(0) should be(rows.size)
   }
 
-  it should "read C* row with dates as Java dates" in {
+  it should "read C* row with dates as Java dates" in skipIfProtocolVersionLT(V4){
     val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
     val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
 
@@ -1058,7 +1067,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     row.get[LocalDate]("dd") should be(expected)
   }
 
-  it should "read LocalDate as tuple value with given type" in {
+  it should "read LocalDate as tuple value with given type" in skipIfProtocolVersionLT(V4){
     val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
     val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
     val localDate = sc.cassandraTable[(Int, LocalDate)](ks, "date_test").where("key = 1").first._2

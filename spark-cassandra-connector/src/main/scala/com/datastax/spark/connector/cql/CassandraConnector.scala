@@ -42,7 +42,6 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.auth.password`:                        password for password authentication
   *   - `spark.cassandra.auth.conf.factory`:                    name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
   *   - `spark.cassandra.query.retry.count`:                    how many times to reattempt a failed query (default 10)
-  *   - `spark.cassandra.query.retry.delay`:                    the delay between subsequent retries
   *   - `spark.cassandra.read.timeout_ms`:                      maximum period of time to wait for a read to return
   *   - `spark.cassandra.connection.ssl.enabled`:               enable secure connection to Cassandra cluster
   *   - `spark.cassandra.connection.ssl.trustStore.path`:      path for the trust store being used
@@ -201,8 +200,7 @@ object CassandraConnector extends Logging {
             connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
             readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
             connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-            cassandraSSLConf: CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
-            queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default) = {
+            cassandraSSLConf: CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf) = {
 
     val config = CassandraConnectorConf(
       hosts = hosts,
@@ -216,8 +214,7 @@ object CassandraConnector extends Logging {
       connectTimeoutMillis = connectTimeoutMillis,
       readTimeoutMillis = readTimeoutMillis,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf,
-      queryRetryDelay = queryRetryDelay
+      cassandraSSLConf = cassandraSSLConf
     )
 
     new CassandraConnector(config)

@@ -25,7 +25,7 @@ class CheckpointStreamSpec
   with BeforeAndAfterAll
   with SharedEmbeddedCassandra {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   //Stop the default context because the Spark Test Suite will start it's own
   useSparkConf(null)
 

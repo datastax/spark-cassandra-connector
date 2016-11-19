@@ -2,19 +2,17 @@ package com.datastax.spark.connector.rdd
 
 import org.apache.cassandra.tools.NodeProbe
 import org.scalatest.Inspectors
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra}
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 
 class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspectors {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
   val tableName = "data"
   val noMinimalThreshold = Int.MinValue
@@ -94,7 +92,8 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspec
     }
     for (host <- conn.hosts) {
       val nodeProbe = new NodeProbe(host.getHostAddress,
-        EmbeddedCassandra.cassandraRunners(0).map(_.jmxPort).getOrElse(CassandraRunner.DefaultJmxPort))
+        EmbeddedCassandra.cassandraRunners.get(0).map(_.baseConfiguration.jmxPort)
+          .getOrElse(CassandraRunner.DefaultJmxPort))
       nodeProbe.forceKeyspaceFlush(ks, tableName)
     }
 

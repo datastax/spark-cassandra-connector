@@ -61,7 +61,7 @@ object ReadConf {
     section = ReferenceSection,
     default = Long.MaxValue,
     description =
-      "Maximum read throughput allowed per single core in query/s while joining RDD with C* table")
+      "Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table")
 
   // Whitelist for allowed Read environment variables
   val Properties = Set(

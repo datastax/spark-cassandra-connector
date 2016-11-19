@@ -1,15 +1,15 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{Schema, CassandraConnector}
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
-  val conn = CassandraConnector(defaultConf)
+  useCassandraConfig(Seq(YamlTransformations.Default))
+  override val conn = CassandraConnector(defaultConf)
   implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
 
   conn.withSessionDo { session =>

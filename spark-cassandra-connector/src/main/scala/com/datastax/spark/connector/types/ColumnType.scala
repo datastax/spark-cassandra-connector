@@ -2,26 +2,17 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{Date, UUID}
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
-import com.datastax.driver.core.{TupleType => DriverTupleType, UserType => DriverUserType, DataType}
+import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
+import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil, Symbols}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
-
-import org.apache.spark.sql.types.{
-  DataType => SparkSqlDataType,
-  DateType => SparkSqlDateType,
-  FloatType => SparkSqlFloatType,
-  DoubleType => SparkSqlDoubleType,
-  DecimalType => SparkSqlDecimalType,
-  BooleanType => SparkSqlBooleanType,
-  TimestampType => SparkSqlTimestampType,
-  MapType => SparkSqlMapType, _}
+import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DataType => SparkSqlDataType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
@@ -55,7 +46,7 @@ object ColumnTypeConf {
     section = ReferenceSection,
     default = None,
     description = """Provides an additional class implementing CustomDriverConverter for those
-        |clients that need to read non-standard primitive Cassandra types. If your C* implementation
+        |clients that need to read non-standard primitive Cassandra types. If your Cassandra implementation
         |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
         |OSS Cassandra this should never be used.""".stripMargin('|')
   )
@@ -64,6 +55,9 @@ object ColumnTypeConf {
 }
 
 object ColumnType {
+
+  val protocolVersionOrdering = implicitly[Ordering[ProtocolVersion]]
+  import protocolVersionOrdering._
 
   private[connector] val primitiveTypeMap = Map[DataType, ColumnType[_]](
     DataType.text() -> TextType,
@@ -127,13 +121,15 @@ object ColumnType {
   }
 
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */
-  def fromSparkSqlType(dataType: SparkSqlDataType): ColumnType[_] = {
+  def fromSparkSqlType(
+    dataType: SparkSqlDataType,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): ColumnType[_] = {
 
     def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
 
     dataType match {
-      case ByteType => IntType
-      case ShortType => IntType
+      case ByteType => if (protocolVersion >= V4) TinyIntType else IntType
+      case ShortType => if (protocolVersion >= V4) SmallIntType else IntType
       case IntegerType => IntType
       case LongType => BigIntType
       case SparkSqlFloatType => FloatType
@@ -142,7 +138,7 @@ object ColumnType {
       case BinaryType => BlobType
       case SparkSqlBooleanType => BooleanType
       case SparkSqlTimestampType => TimestampType
-      case SparkSqlDateType => DateType
+      case SparkSqlDateType => if (protocolVersion >= V4) DateType else TimestampType
       case SparkSqlDecimalType() => DecimalType
       case ArrayType(sparkSqlElementType, containsNull) =>
         val argType = fromSparkSqlType(sparkSqlElementType)
@@ -157,7 +153,9 @@ object ColumnType {
   }
 
   /** Returns natural Cassandra type for representing data of the given Scala type */
-  def fromScalaType(dataType: Type): ColumnType[_] = {
+  def fromScalaType(
+    dataType: Type,
+    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): ColumnType[_] = {
 
     def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
 
@@ -166,10 +164,10 @@ object ColumnType {
     else if (dataType =:= typeOf[java.lang.Integer]) IntType
     else if (dataType =:= typeOf[Long]) BigIntType
     else if (dataType =:= typeOf[java.lang.Long]) BigIntType
-    else if (dataType =:= typeOf[Short]) SmallIntType
-    else if (dataType =:= typeOf[java.lang.Short]) SmallIntType
-    else if (dataType =:= typeOf[Byte]) TinyIntType
-    else if (dataType =:= typeOf[java.lang.Byte]) TinyIntType
+    else if (dataType =:= typeOf[Short]) if (protocolVersion >= V4) SmallIntType else IntType
+    else if (dataType =:= typeOf[java.lang.Short]) if (protocolVersion >= V4) SmallIntType else IntType
+    else if (dataType =:= typeOf[Byte]) if (protocolVersion >=  V4) TinyIntType else IntType
+    else if (dataType =:= typeOf[java.lang.Byte]) if (protocolVersion >= V4) TinyIntType else IntType
     else if (dataType =:= typeOf[Float]) FloatType
     else if (dataType =:= typeOf[java.lang.Float]) FloatType
     else if (dataType =:= typeOf[Double]) DoubleType
@@ -183,7 +181,7 @@ object ColumnType {
     else if (dataType =:= typeOf[String]) VarCharType
     else if (dataType =:= typeOf[InetAddress]) InetType
     else if (dataType =:= typeOf[Date]) TimestampType
-    else if (dataType =:= typeOf[java.sql.Date]) TimestampType
+    else if (dataType =:= typeOf[java.sql.Date]) if (protocolVersion >= V4) DateType else TimestampType
     else if (dataType =:= typeOf[org.joda.time.DateTime]) TimestampType
     else if (dataType =:= typeOf[UUID]) UUIDType
     else if (dataType =:= typeOf[ByteBuffer]) BlobType

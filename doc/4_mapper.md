@@ -21,6 +21,7 @@ For multi-word column identifiers, separate each word by an underscore in Cassan
 and use the camel case convention on the Scala side. Then provide the explicit class name
 when invoking `cassandraTable`:
 
+#### Example Mapping a Cassandra Row to a Scala Case Class
 ```scala
 case class WordCount(word: String, count: Int)
 sc.cassandraTable[WordCount]("test", "words").toArray
@@ -50,7 +51,8 @@ The class doesn't necessarily need to be a case class. The only requirements are
   - it must be compiled with debug information, so it is possible to read parameter names at runtime
 
 Property values might be also set by Scala-style setters. The following class is also compatible:
-    
+
+#### Example of Mappable Standard Scala Class
 ```scala
 class WordCount extends Serializable {
   var word: String = ""
@@ -59,10 +61,11 @@ class WordCount extends Serializable {
 ```       
 
 ### Using explicitly specified property names
-It is possible to specify property names explicitly when rows are mapped to objects. In order to
-do this, you need to use `as` method on a selected column name.
+It is possible to specify property names explicitly when rows are mapped 
+to objects. In order to do this, you need to use `as` method on a 
+selected column name.
 
-Example:
+#### Example Mapping a Cassandra Column to a Differently Named Scala Class Property
 Say, we have a table with columns `word TEXT` and `num INT`. We would like to map rows from this
 table to the objects of class with fields `word: String` and `count: Int`:
 
@@ -101,8 +104,10 @@ INSERT INTO test.users (user_name, domain, password_hash, last_visit) VALUES ('j
 ```
 
 We can map each rows of this table into a key-value pair by using the `keyBy` 
-method of `CassandraTableScanRDD` class. 
+method of `CassandraTableScanRDD` class. Using `keyBy` also has performance
+implications see (partitioning)[16_partitioning.md]
 
+#### Example using keyBy to Map a Cassandra Table to Pairs of Objects
 ```scala
 import org.joda.time.DateTime
 case class UserId(userName: String, domain: String)
@@ -116,6 +121,21 @@ sc.cassandraTable[(String, DateTime)]("test", "users")
   .select("password_hash", "last_visit", "user_name", "domain")   
   .keyBy[(String, String)]("user_name", "domain")
 
+```
+
+### Mapping User Defined Types
+User Defined Types (UDTs) can be mapped similarly to rows by making a 
+class that has a field for every element in the UDT. For example
+``` scala
+case class Address(street: String, city: String, zip: Int)
+case class ClassWithUDT(key: Int, name: String, addr: Address)
+```
+
+ClassWithUDT now can map to row in a CassandraTable with the following 
+schema
+``` sql
+CREATE TYPE ks.address (street text, city text, zip int)
+CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)
 ```
 
 [Next - Saving data](5_saving.md)

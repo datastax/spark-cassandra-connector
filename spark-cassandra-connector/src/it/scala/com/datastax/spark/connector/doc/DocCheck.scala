@@ -9,9 +9,13 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
 
   val pwd = System.getenv("PWD")
 
-  "The Reference Doc File" should "contain all of the current properties" in {
-    val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
+  val reRunMessage =
+    """******* re-run sbt spark-cassandra-connector-unshaded/run to regenerate properties file
+      |*******.
+    """.stripMargin
 
+  "The Reference Doc File" should "contain all of the current properties" in withClue(reRunMessage){
+    val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
 
     val missingProperties =
       for (propertyName <- ConfigCheck.validStaticPropertyNames
@@ -22,7 +26,7 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
     info(s"Reference contains ${ConfigCheck.validStaticPropertyNames.size} entries")
   }
 
-  "it" should "match a freshly created reference file" in {
+  "it" should "match a freshly created reference file" in withClue(reRunMessage){
     val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
     RefBuilder.getMarkDown() should be(refFile)
 

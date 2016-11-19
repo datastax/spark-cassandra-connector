@@ -4,14 +4,13 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.Random
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.spark.connector.testkit._
 
@@ -23,12 +22,12 @@ class RDDStreamingSpec
 
   import com.datastax.spark.connector.testkit.TestEvent._
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   import org.scalatest.time.SpanSugar._
 
-  implicit val pc = PatienceConfig(60 seconds, 1 second)
+  implicit val pc = PatienceConfig(60.seconds, 1.second)
 
   CassandraConnector(defaultConf).withSessionDo { session =>
 

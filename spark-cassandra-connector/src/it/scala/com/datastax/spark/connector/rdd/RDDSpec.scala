@@ -3,10 +3,10 @@ package com.datastax.spark.connector.rdd
 import java.lang.{Long => JLong}
 
 import scala.concurrent.Future
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 
 case class KVRow(key: Int)
@@ -26,11 +26,10 @@ case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
 class RDDSpec extends SparkCassandraITFlatSpecBase {
-
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
   val otherTable = "other_table"
   val smallerTable = "smaller_table"
@@ -312,6 +311,13 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkArrayCassandraRow(result)
   }
 
+  it should "work with both limit and order clauses SPARKC-433" in {
+    val source = sc.parallelize(keys).map(x => new KVRow(x))
+    val someCass = source.joinWithCassandraTable(ks, tableName).limit(1).withAscOrder
+    val result = someCass.collect
+    checkArrayCassandraRow(result)
+  }
+
   it should "throw a meaningful exception if partition column is null when joining with Cassandra table" in withoutLogging {
     val source = sc.parallelize(keys).map(x ⇒ new KVWithOptionRow(None))
     val ex = the[Exception] thrownBy source.joinWithCassandraTable[(Int, Long, String)](ks, tableName).collect()
@@ -397,11 +403,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be be able to be limited" in {
-    val source = sc.parallelize(keys).map(x => (x, x * 100))
-    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).limit(3)
+  it should "be able to be limited" in {
+    val source = sc.parallelize(keys).map(x => KVRow(x))
+    val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key")).limit(3)
     val result = someCass.collect
-    result should have size (3 * someCass.partitions.size)
+    result should have size (3 * keys.length)
   }
 
   it should "have be able to be counted" in {

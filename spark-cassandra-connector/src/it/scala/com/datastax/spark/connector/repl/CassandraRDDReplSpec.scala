@@ -2,14 +2,14 @@ package com.datastax.spark.connector.repl
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
+import org.scalatest.Matchers
 
-class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with SparkRepl {
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with Matchers {
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(null)
 
-  val conn = CassandraConnector(defaultConf)
+  override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
@@ -21,7 +21,7 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with SparkRepl {
   }
 
   it should "allow to read a Cassandra table as Array of Scala class objects in REPL" in {
-    val output = runInterpreter(
+    val output = SparkRepl.runInterpreter(
       s"""
         |import com.datastax.spark.connector._
         |

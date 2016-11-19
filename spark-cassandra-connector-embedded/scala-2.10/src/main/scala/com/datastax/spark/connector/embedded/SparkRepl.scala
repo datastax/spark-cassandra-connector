@@ -7,16 +7,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.repl.SparkILoop
-import org.scalatest.{BeforeAndAfter, Suite}
 
-trait SparkRepl extends Suite with BeforeAndAfter {
-
-  val originalProps = sys.props.clone()
-
-  after {
-    sys.props ++= originalProps
-    sys.props --= (sys.props.keySet -- originalProps.keySet)
-  }
+object SparkRepl {
 
   def runInterpreter(input: String, conf: SparkConf): String = {
     val in = new BufferedReader(new StringReader(input + "\n"))

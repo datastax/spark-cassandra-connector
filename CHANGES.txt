@@ -1,3 +1,13 @@
+ * Removed demos and benchmarks (SPARKC-398)
+ * Refactor usages of SQLContext so that SparkSession is used instead (SPARKC-400)
+ * Removed deprecated QueryRetryDelay configuration parameter (SPARKC-423)
+
+2.0.0 M3
+ * Includes all patches up to 1.6.2
+
+2.0.0 M2
+ * Includes all patches up to 1.6.1
+
 2.0.0 M1
  * Added support for left outer joins with C* table (SPARKC-181)
  * Removed CassandraSqlContext and underscore based options (SPARKC-399)
@@ -9,6 +19,20 @@
     - Update few components and tests to make them work with Spark 2.0.0
     - Fix Spark SQL - temporarily
     - Update plugins and Scala version
+
+********************************************************************************
+
+1.6.3
+ * Added SSL client authentication (SPARKC-359)
+
+1.6.2
+ * Fixed shading in artifacts published to Maven
+
+1.6.1
+ * Disallow TimeUUID Predicate Pushdown (SPARKC-405)
+ * Avoid overflow on SplitSizeInMB param (SPARKC-413)
+ * Fix conversion of LocalDate to Joda LocalDate (SPARKC-391)
+ * Shade Guava to avoid conflict with outdated Guava in Spark (SPARKC-355)
 
 1.6.0
  * SparkSql write supports TTL per row (SPARKC-345)
@@ -201,6 +225,7 @@
 
 ********************************************************************************
 
+1.2.6
  * Fixed Default ReadConf for JoinWithCassandra Table (SPARKC-294)
  * Added refresh cassandra schema cache to CassandraSQLContext (SPARKC-234)
 

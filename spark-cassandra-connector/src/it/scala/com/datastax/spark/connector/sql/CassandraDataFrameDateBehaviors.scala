@@ -4,24 +4,24 @@ import java.sql.Date
 import java.util.TimeZone
 
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.{Row, SQLContext, SparkSession}
 import org.joda.time.DateTimeZone
 import org.scalatest.FlatSpec
-
 import com.datastax.driver.core.LocalDate
+import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   this: FlatSpec =>
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
-  val conn = CassandraConnector(defaultConf)
-  val sqlContext: SQLContext = new SQLContext(sc)
+  override val conn = CassandraConnector(defaultConf)
 
-  def dataFrame(timeZone: TimeZone): Unit = {
+  def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(V4){
 
     TimeZone.setDefault(timeZone)
     DateTimeZone.setDefault(DateTimeZone.forTimeZone(timeZone))
@@ -37,7 +37,7 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
     }
 
     it should s"read C* LocalDate columns in ${timeZone.getID} timezone" in {
-      val df = sqlContext
+      val df = sparkSession
         .read
         .format("org.apache.spark.sql.cassandra")
         .options(Map("table" -> readTable, "keyspace" -> ks, "cluster" -> "ClusterOne"))
@@ -65,7 +65,7 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
         Row(1, Date.valueOf("1987-01-02"))
       ))
 
-      val dataFrame = sqlContext.createDataFrame(rows, schema)
+      val dataFrame = sparkSession.createDataFrame(rows, schema)
 
       dataFrame.write
         .format("org.apache.spark.sql.cassandra")

@@ -2,9 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.Try
 import scala.util.control.NonFatal
 
 import org.apache.spark.SparkConf
@@ -28,9 +26,7 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
 )
 
 /** A factory for [[CassandraConnectorConf]] objects.
@@ -46,66 +42,12 @@ object CassandraConnectorConf extends Logging {
     trustStorePassword: Option[String] = None,
     trustStoreType: String = "JKS",
     protocol: String = "TLS",
-    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
+    enabledAlgorithms: Set[String] = Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"),
+    clientAuthEnabled: Boolean = false,
+    keyStorePath: Option[String] = None,
+    keyStorePassword: Option[String] = None,
+    keyStoreType: String = "JKS"
   )
-
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  trait RetryDelayConf {
-    def forRetry(retryNumber: Int): Duration
-  }
-
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  object RetryDelayConf extends Serializable {
-
-    case class ConstantDelay(delay: Duration) extends RetryDelayConf {
-      require(delay.length >= 0, "Delay must not be negative")
-
-      override def forRetry(nbRetry: Int) = delay
-      override def toString() = s"${delay.length}"
-    }
-
-    case class LinearDelay(initialDelay: Duration, increaseBy: Duration) extends RetryDelayConf {
-      require(initialDelay.length >= 0, "Initial delay must not be negative")
-      require(increaseBy.length > 0, "Delay increase must be greater than 0")
-
-      override def forRetry(nbRetry: Int) = initialDelay + (increaseBy * (nbRetry - 1).max(0))
-      override def toString() = s"${initialDelay.length} + ${increaseBy}"
-    }
-
-    case class ExponentialDelay(initialDelay: Duration, increaseBy: Double) extends RetryDelayConf {
-      require(initialDelay.length >= 0, "Initial delay must not be negative")
-      require(increaseBy > 0, "Delay increase must be greater than 0")
-
-      override def forRetry(nbRetry: Int) =
-        (initialDelay.toMillis * math.pow(increaseBy, (nbRetry - 1).max(0))).toLong milliseconds
-      override def toString() = s"${initialDelay.length} * $increaseBy"
-    }
-
-    private val ConstantDelayEx = """(\d+)""".r
-    private val LinearDelayEx = """(\d+)\+(.+)""".r
-    private val ExponentialDelayEx = """(\d+)\*(.+)""".r
-
-    def fromString(s: String): Option[RetryDelayConf] = s.trim match {
-      case "" => None
-
-      case ConstantDelayEx(delayStr) =>
-        val d = for (delay <- Try(delayStr.toInt)) yield ConstantDelay(delay milliseconds)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of constant delay: $s; it should be <integer number>."))
-
-      case LinearDelayEx(delayStr, increaseStr) =>
-        val d = for (delay <- Try(delayStr.toInt); increaseBy <- Try(increaseStr.toInt))
-          yield LinearDelay(delay milliseconds, increaseBy milliseconds)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of linearly increasing delay: $s; it should be <integer number>+<integer number>"))
-
-      case ExponentialDelayEx(delayStr, increaseStr) =>
-        val d = for (delay <- Try(delayStr.toInt); increaseBy <- Try(increaseStr.toDouble))
-          yield ExponentialDelay(delay milliseconds, increaseBy)
-        d.toOption.orElse(throw new IllegalArgumentException(
-          s"Invalid format of exponentially increasing delay: $s; it should be <integer number>*<real number>"))
-    }
-  }
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
@@ -114,7 +56,7 @@ object CassandraConnectorConf extends Logging {
     section = ReferenceSection,
     default = "localhost",
     description =
-      """Contact point to connect to the Cassandra cluster. A comma seperated list
+      """Contact point to connect to the Cassandra cluster. A comma separated list
         |may also be used. ("127.0.0.1,192.168.0.1")
       """.stripMargin)
 
@@ -166,20 +108,11 @@ object CassandraConnectorConf extends Logging {
     default = 10,
     description = """Number of times to retry a timed-out query""")
 
-  @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
-  val QueryRetryDelayParam = ConfigParameter[RetryDelayConf](
-    name = "spark.cassandra.query.retry.delay",
-    section = ReferenceSection,
-    default = RetryDelayConf.ExponentialDelay(4 seconds, 1.5d),
-    description = """The delay between subsequent retries (can be constant,
-      | like 1000; linearly increasing, like 1000+100; or exponential, like 1000*2)""".stripMargin)
-
   val ReadTimeoutParam = ConfigParameter[Int](
     name = "spark.cassandra.read.timeout_ms",
     section = ReferenceSection,
     default = 120000,
     description = """Maximum period of time to wait for a read to return """)
-
 
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
   val DefaultCassandraSSLConf = CassandraSSLConf()
@@ -223,6 +156,30 @@ object CassandraConnectorConf extends Logging {
     default = DefaultCassandraSSLConf.enabledAlgorithms,
     description = """SSL cipher suites""")
 
+  val SSLClientAuthEnabledParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.connection.ssl.clientAuth.enabled",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.clientAuthEnabled,
+    description = """Enable 2-way secure connection to Cassandra cluster""")
+
+  val SSLKeyStorePathParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.keyStore.path",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStorePath,
+    description = """Path for the key store being used""")
+
+  val SSLKeyStorePasswordParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.ssl.keyStore.password",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStorePassword,
+    description = """Key store password""")
+
+  val SSLKeyStoreTypeParam = ConfigParameter[String](
+    name = "spark.cassandra.connection.ssl.keyStore.type",
+    section = ReferenceSectionSSL,
+    default = DefaultCassandraSSLConf.keyStoreType,
+    description = """Key store type""")
+
   //Whitelist for allowed CassandraConnector environment variables
   val Properties: Set[ConfigParameter[_]] = Set(
     ConnectionHostParam,
@@ -234,14 +191,17 @@ object CassandraConnectorConf extends Logging {
     MaxReconnectionDelayParam,
     CompressionParam,
     QueryRetryParam,
-    QueryRetryDelayParam,
     ReadTimeoutParam,
     SSLEnabledParam,
     SSLTrustStoreTypeParam,
     SSLTrustStorePathParam,
     SSLTrustStorePasswordParam,
     SSLProtocolParam,
-    SSLEnabledAlgorithmsParam
+    SSLEnabledAlgorithmsParam,
+    SSLClientAuthEnabledParam,
+    SSLKeyStorePathParam,
+    SSLKeyStorePasswordParam,
+    SSLKeyStoreTypeParam
   )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {
@@ -255,13 +215,14 @@ object CassandraConnectorConf extends Logging {
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
     ConfigCheck.checkConfig(conf)
-    val hostsStr = conf.get(ConnectionHostParam.name, InetAddress.getLocalHost.getHostAddress)
+    val hostsStr = conf.get(ConnectionHostParam.name, ConnectionHostParam.default)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
       hostAddress <- resolveHost(hostName.trim)
     } yield hostAddress
     
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
+
     val authConf = AuthConf.fromSparkConf(conf)
     val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
 
@@ -284,12 +245,20 @@ object CassandraConnectorConf extends Logging {
     val sslProtocol = conf.get(SSLProtocolParam.name, SSLProtocolParam.default)
     val sslEnabledAlgorithms = conf.getOption(SSLEnabledAlgorithmsParam.name)
       .map(_.split(",").map(_.trim).toSet).getOrElse(SSLEnabledAlgorithmsParam.default)
+    val sslClientAuthEnabled = conf.getBoolean(SSLClientAuthEnabledParam.name, SSLClientAuthEnabledParam.default)
+    val sslKeyStorePath = conf.getOption(SSLKeyStorePathParam.name).orElse(SSLKeyStorePathParam.default)
+    val sslKeyStorePassword = conf.getOption(SSLKeyStorePasswordParam.name).orElse(SSLKeyStorePasswordParam.default)
+    val sslKeyStoreType = conf.get(SSLKeyStoreTypeParam.name, SSLKeyStoreTypeParam.default)
 
     val cassandraSSLConf = CassandraSSLConf(
       enabled = sslEnabled,
       trustStorePath = sslTrustStorePath,
       trustStorePassword = sslTrustStorePassword,
       trustStoreType = sslTrustStoreType,
+      clientAuthEnabled = sslClientAuthEnabled,
+      keyStorePath = sslKeyStorePath,
+      keyStorePassword = sslKeyStorePassword,
+      keyStoreType = sslKeyStoreType,
       protocol = sslProtocol,
       enabledAlgorithms = sslEnabledAlgorithms
     )

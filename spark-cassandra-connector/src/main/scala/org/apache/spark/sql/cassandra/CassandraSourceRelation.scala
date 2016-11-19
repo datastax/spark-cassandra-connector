@@ -106,8 +106,10 @@ private[cassandra] class CassandraSourceRelation(
   private def predicatePushDown(filters: Array[Filter]) = {
     logInfo(s"Input Predicates: [${filters.mkString(", ")}]")
 
+    val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+
     /** Apply built in rules **/
-    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef)
+    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
     logDebug(s"Basic Rules Applied:\n$basicPushdown")
 
@@ -234,7 +236,7 @@ object CassandraSourceRelation {
     default = None,
     description =
       """Used by DataFrames Internally, will be updated in a future release to
-        |retrieve size from C*. Can be set manually now""".stripMargin
+        |retrieve size from Cassandra. Can be set manually now""".stripMargin
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
@@ -242,8 +244,8 @@ object CassandraSourceRelation {
     section = ReferenceSection,
     default = List.empty,
     description =
-      """A comma seperated list of classes to be used (in order) to apply additional
-        | pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
+      """A comma separated list of classes to be used (in order) to apply additional
+        | pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
       """.stripMargin
   )
 

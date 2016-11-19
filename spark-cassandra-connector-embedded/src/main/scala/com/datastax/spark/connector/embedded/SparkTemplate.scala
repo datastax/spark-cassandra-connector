@@ -4,16 +4,20 @@ import java.io.File
 
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
 
 trait SparkTemplate {
   /** Obtains the active [[org.apache.spark.SparkContext SparkContext]] object. */
   def sc: SparkContext = SparkTemplate.sc
 
+  /** Obtains the active [[org.apache.spark.sql.SparkSession SparkSession]] object. */
+  def sparkSession: SparkSession = SparkTemplate.sparkSession
+
   /** Ensures that the currently running [[org.apache.spark.SparkContext SparkContext]] uses the provided
     * configuration. If the configurations are different or force is `true` Spark context is stopped and
     * started again with the given configuration. */
-  def useSparkConf(conf: SparkConf, force: Boolean = false): SparkContext =
+  def useSparkConf(conf: SparkConf, force: Boolean = false): SparkSession =
     SparkTemplate.useSparkConf(conf, force)
 
   def defaultConf = SparkTemplate.defaultConf
@@ -27,7 +31,6 @@ object SparkTemplate {
     .set("spark.cassandra.connection.port", getPort(0).toString)
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
     .set("spark.cassandra.connection.timeout_ms", "30000")
-    .set("spark.cassandra.query.retry.delay", "1")
     .set("spark.ui.showConsoleProgress", "false")
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
@@ -36,27 +39,31 @@ object SparkTemplate {
 
   def defaultConf = _defaultConf.clone()
 
-  private var _sc: SparkContext = _
+  private var _session: SparkSession = _
 
   private var _conf: SparkConf = _
   /** Ensures that the currently running [[org.apache.spark.SparkContext SparkContext]] uses the provided
     * configuration. If the configurations are different or force is `true` Spark context is stopped and
     * started again with the given configuration. */
-  def useSparkConf(conf: SparkConf = SparkTemplate.defaultConf, force: Boolean = false): SparkContext = {
+  def useSparkConf(conf: SparkConf = SparkTemplate.defaultConf, force: Boolean = false): SparkSession = {
     if (conf == null) {
       _conf = null
-      if (_sc != null) {
-        _sc.stop()
-        _sc = null
+      if (_session != null) {
+        _session.stop()
+        SparkSession.clearActiveSession()
+        SparkSession.clearDefaultSession()
+        _session = null
       }
     } else if (force || _conf == null || _conf.getAll.toMap != conf.getAll.toMap)
       resetSparkContext(conf)
-    _sc
+    _session
   }
 
   private def resetSparkContext(conf: SparkConf) = {
-    if (_sc != null) {
-      _sc.stop()
+    if (_session != null) {
+      _session.stop()
+      SparkSession.clearActiveSession()
+      SparkSession.clearDefaultSession()
     }
 
     System.err.println("Starting SparkContext with the following configuration:\n" +
@@ -67,12 +74,13 @@ object SparkTemplate {
         cp.split(File.pathSeparatorChar)
           .filter(_.endsWith(".jar"))
           .map(new File(_).getAbsoluteFile.toURI.toString))
-    _sc = new SparkContext(conf)
-    _sc
+    _session = SparkSession.builder().config(conf).getOrCreate()
+    _session
   }
 
   /** Obtains the active [[org.apache.spark.SparkContext SparkContext]] object. */
-  def sc: SparkContext = _sc
+  def sc: SparkContext = _session.sparkContext
+  def sparkSession: SparkSession = _session
 
   def withoutLogging[T]( f: => T): T={
     val level = Logger.getRootLogger.getLevel
