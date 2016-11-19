@@ -78,15 +78,7 @@ private[cassandra] class CassandraSourceRelation(
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
-    case true => 
-      val optimizedFilters = FiltersOptimizer(filters).build()
-      val optimizationCanBeApplied = isOptimizationAvailable(optimizedFilters)
-      if(optimizationCanBeApplied) {
-        // all such filters are the same, take first one
-        predicatePushDown(optimizedFilters.head).handledBySpark.toArray
-      } else {
-        predicatePushDown(filters).handledBySpark.toArray
-      }
+    case true => analyzePredicates(filters).head.handledBySpark.toArray
     case false => filters
   }
 
@@ -132,30 +124,32 @@ private[cassandra] class CassandraSourceRelation(
     finalPushdown
   }
 
-  private def isOptimizationAvailable(optimizedFilters: List[Array[Filter]]): Boolean =
-    enableWhereClauseOptimization && optimizedFilters.size > 1 &&
-      optimizedFilters.sliding(2).forall{ set =>
-        // check whether all non-pushed down filters are equals for each separate rdd
-        predicatePushDown(set.head).handledBySpark == predicatePushDown(set.last).handledBySpark
-      }
-  
+  private def analyzePredicates(filters: Array[Filter]): List[AnalyzedPredicates] = {
+    if (enableWhereClauseOptimization){
+      val optimizedFilters = FiltersOptimizer.build(filters)
+      val partitions = optimizedFilters.map(predicatePushDown)
+        val allHandledBySparkAreTheSame = partitions.map(_.handledBySpark).sliding(2).forall { tuple =>
+          tuple.head == tuple.last
+        }
+        if(allHandledBySparkAreTheSame){
+          partitions
+        } else {
+          List(predicatePushDown(filters))
+        }
+    } else {
+      List(predicatePushDown(filters))
+    }
+  }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val optimizedFilters = new FiltersOptimizer(filters).build()
-        val optimizationCanBeApplied = isOptimizationAvailable(optimizedFilters)
-        val filteredRdd = if(optimizationCanBeApplied) {
-          optimizedFilters.map { predicate =>
-            val pushdownFilters = predicatePushDown(predicate).handledByCassandra.toArray
-            maybePushdownFilters(prunedRdd, pushdownFilters).asInstanceOf[RDD[Row]]
-          }.reduce(_ union _)
-        } else {
-          val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
-          maybePushdownFilters(prunedRdd, pushdownFilters)
-        }
-        filteredRdd.asInstanceOf[RDD[Row]]
+        val pushdownFilters = analyzePredicates(filters)
+        pushdownFilters.map { predicate =>
+          val pushdownFilters = predicate.handledByCassandra.toArray
+          maybePushdownFilters(prunedRdd, pushdownFilters).asInstanceOf[RDD[Row]]
+        }.reduce(_ union _)
       } else {
         prunedRdd
       }

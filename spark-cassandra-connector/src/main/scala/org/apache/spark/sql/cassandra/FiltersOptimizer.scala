@@ -2,7 +2,6 @@ package org.apache.spark.sql.cassandra
 
 import org.apache.spark.sql.sources._
 
-
 /**
   * Optimizer will try to transform pushdown filter into `sum of products`.
   * So that the filter like
@@ -11,28 +10,23 @@ import org.apache.spark.sql.sources._
   * 'field1 < 3 AND field2 = "val1" OR field1 < 3 AND field2 = "val2" OR
   * field1 > 7 AND field2 = "val1" OR field1 > 7 AND field2 = "val2"'
   *
-  * @param filters Array of logical statements [[org.apache.spark.sql.sources.Filter]]
-  * that forms `where`-clause with `AND` operator, for example:
-  * val Array(f1, f2, ... fn) = ... // such that `where f1 AND f2 AND ... AND fn`
-  *
   */
-class FiltersOptimizer(filters: Array[Filter]) {
-
-  private val fullFilterAst =
-    if (filters.nonEmpty) Some(filters.reduce((left, right) => And(left, right))) else None
-
-  import FiltersOptimizer._
-
-  def build(): List[Array[Filter]] = fullFilterAst match {
-    case Some(ast) => (toNNF andThen toDNF andThen traverse andThen groupByAnd).apply(ast)
-    case None => List.empty
-  }
-
-}
-
 object FiltersOptimizer{
 
-  def apply(filters: Array[Filter]): FiltersOptimizer = new FiltersOptimizer(filters)
+  /**
+    * @param filters Array of logical statements [[org.apache.spark.sql.sources.Filter]]
+    * that forms `where`-clause with `AND` operator, for example:
+    * val Array(f1, f2, ... fn) = ... // such that `where f1 AND f2 AND ... AND fn`*
+    * @return list of filters in disjunctive form
+    */
+  def build(filters: Array[Filter]): List[Array[Filter]] = {
+    if (filters.nonEmpty) {
+      val ast = filters.reduce((left, right) => And(left, right))
+      (toNNF andThen toDNF andThen traverse andThen groupByAnd).apply(ast)
+    } else {
+      List.empty
+    }
+  }
 
   private[cassandra] def dist(predL: Filter, predR: Filter): Filter = (predL, predR) match {
     case (Or(l, r), p) => Or(dist(l, p), dist(r, p))

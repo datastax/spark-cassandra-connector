@@ -5,7 +5,9 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, CqlWhereClause}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSourceRelation
 import org.apache.spark.sql.execution.{FilterExec, RDDScanExec, RowDataSourceScanExec, SparkPlan, WholeStageCodegenExec}
+
 import scala.concurrent.Future
 
 class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with Logging  {
@@ -47,7 +49,7 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   val fieldsOptions = Map("keyspace" -> ks, "table" -> "fields")
   val metricsOptions = Map("keyspace" -> ks, "table" -> "metrics")
   val withPushdown = Map("pushdown" -> "true")
-  val withWhereClauseOptimizationEnabled = Map("spark.cassandra.sql.enable.where.clause.optimization" -> "true")
+  val withWhereClauseOptimizationEnabled = Map(CassandraSourceRelation.EnableWhereClauseOptimizationParam.name -> "true")
   val withoutPushdown = Map("pushdown" -> "false")
 
   "CassandraPrunedFilteredScan" should "pushdown predicates for clustering keys" in {
