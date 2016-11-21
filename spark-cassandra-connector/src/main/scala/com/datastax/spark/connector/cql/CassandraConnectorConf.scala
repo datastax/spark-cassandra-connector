@@ -44,7 +44,7 @@ case class CassandraConnectorConf(
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: CassandraConnectorConf => that.hashCode == serializedConfString.hashCode
+      case that: CassandraConnectorConf => that.serializedConfString == serializedConfString
       case _ => false
     }
   }
