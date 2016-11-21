@@ -127,8 +127,7 @@ class CassandraConnector(conf: CassandraConnectorConf)
     withClusterDo { cluster =>
       LocalNodeFirstLoadBalancingPolicy
         .sortNodesByStatusAndProximity(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
-        .filter(_.isUp)
-        .headOption
+        .find(_.isUp)
         .getOrElse(throw new IOException("Cannot connect to Cassandra: No live hosts found"))
     }
   }
