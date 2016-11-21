@@ -7,9 +7,13 @@ import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, CqlWhereClause}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSourceRelation
-import org.apache.spark.sql.execution.{FilterExec, RDDScanExec, RowDataSourceScanExec, SparkPlan, WholeStageCodegenExec}
-
-import org.apache.spark.sql.execution._
+import org.apache.spark.sql.execution.{
+  FilterExec,
+  RDDScanExec,
+  RowDataSourceScanExec,
+  SparkPlan,
+  WholeStageCodegenExec
+}
 
 import scala.concurrent.Future
 
@@ -52,7 +56,8 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   val fieldsOptions = Map("keyspace" -> ks, "table" -> "fields")
   val metricsOptions = Map("keyspace" -> ks, "table" -> "metrics")
   val withPushdown = Map("pushdown" -> "true")
-  val withWhereClauseOptimizationEnabled = Map(CassandraSourceRelation.EnableWhereClauseOptimizationParam.name -> "true")
+  val withWhereClauseOptimizationEnabled =
+    Map(CassandraSourceRelation.EnableWhereClauseOptimizationParam.name -> "true")
   val withoutPushdown = Map("pushdown" -> "false")
 
   "CassandraPrunedFilteredScan" should "pushdown predicates for clustering keys" in {
@@ -88,7 +93,10 @@ class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with 
   }
 
   it should "optimize table scan if all filters can be pushed down" in {
-    val fieldsDF = sqlContext.read.format(cassandraFormat).options(metricsOptions ++ withPushdown ++ withWhereClauseOptimizationEnabled ).load()
+    val fieldsDF = sparkSession.read
+                               .format(cassandraFormat)
+                               .options(metricsOptions ++ withPushdown ++ withWhereClauseOptimizationEnabled )
+                               .load()
     val df = fieldsDF.filter("a = 5 and (b > 5 or b < 3)")
     val executionPlan = df.queryExecution.executedPlan
     val cts = findAllCassandraTableScanRDD(executionPlan)
