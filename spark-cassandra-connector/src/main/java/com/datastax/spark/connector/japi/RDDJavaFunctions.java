@@ -103,6 +103,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         Option<ClusteringOrder> clusteringOrder = Option.empty();
         Option<Object> limit = Option.empty();
         CqlWhereClause whereClause = CqlWhereClause.empty();
+        FCqlWhereClause<T> fwhereClause = FCqlWhereClause.empty();
         ReadConf readConf = ReadConf.fromSparkConf(rdd.conf());
 
         CassandraJoinRDD<T, R> joinRDD = new CassandraJoinRDD<>(
@@ -113,6 +114,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
                 selectedColumns,
                 joinColumns,
                 whereClause,
+                fwhereClause,
                 limit,
                 clusteringOrder,
                 readConf,

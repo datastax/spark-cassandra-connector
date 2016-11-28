@@ -10,6 +10,16 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
+
+case class FCqlWhereClause[L](predicates: Seq[String], values: L => Seq[Any])  {
+  def apply(v1: L): CqlWhereClause = CqlWhereClause(predicates,values(v1))
+  def and(other: FCqlWhereClause[L]) = FCqlWhereClause(predicates ++ other.predicates, (l: L) => values(l) ++ other.values(l))
+}
+object FCqlWhereClause{
+  def empty[L] : FCqlWhereClause[L] = FCqlWhereClause[L](Nil,(l: L) => Nil)
+}
+
+
 /**
  * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
  * Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
@@ -27,6 +37,7 @@ class CassandraJoinRDD[L, R] private[connector](
     val columnNames: ColumnSelector = AllColumns,
     val joinColumns: ColumnSelector = PartitionKeyColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
+    val fwhere : FCqlWhereClause[L] = FCqlWhereClause.empty[L],
     val limit: Option[Long] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf(),
@@ -50,7 +61,7 @@ class CassandraJoinRDD[L, R] private[connector](
     case None => rowReaderFactory.rowReader(tableDef, columnNames.selectFrom(tableDef))
   }
 
-  override protected def copy(
+  protected def copy(
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
     limit: Option[Long] = limit,
@@ -67,11 +78,35 @@ class CassandraJoinRDD[L, R] private[connector](
       columnNames = columnNames,
       joinColumns = joinColumns,
       where = where,
+      fwhere = fwhere,
       limit = limit,
       clusteringOrder = clusteringOrder,
       readConf = readConf
     )
   }
+
+  // I was not able to do a proper copy because of the inheritance.
+  def setFWhere(
+    fwhere : FCqlWhereClause[L]
+  ): Self = {
+
+    new CassandraJoinRDD[L, R](
+      left = left,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      connector = connector,
+      columnNames = columnNames,
+      joinColumns = joinColumns,
+      where = where,
+      fwhere = fwhere,
+      limit = limit,
+      clusteringOrder = clusteringOrder,
+      readConf = readConf
+    )
+  }
+
+  def where(f : FCqlWhereClause[L]) : Self = setFWhere(fwhere = fwhere and f)
+  def where(clause : String, f : L => Seq[Any]) : Self = where(FCqlWhereClause(Seq(clause),f))
 
   override def cassandraCount(): Long = {
     columnNames match {
@@ -89,6 +124,7 @@ class CassandraJoinRDD[L, R] private[connector](
         columnNames = SomeColumns(RowCountRef),
         joinColumns = joinColumns,
         where = where,
+        fwhere = fwhere,
         limit = limit,
         clusteringOrder = clusteringOrder,
         readConf = readConf
@@ -106,13 +142,14 @@ class CassandraJoinRDD[L, R] private[connector](
       columnNames = columnNames,
       joinColumns = joinColumns,
       where = where,
+      fwhere = fwhere,
       limit = limit,
       clusteringOrder = clusteringOrder,
       readConf = readConf
     )
   }
 
-  private[rdd] def fetchIterator(
+  override private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
     leftIterator: Iterator[L]
@@ -121,7 +158,6 @@ class CassandraJoinRDD[L, R] private[connector](
     val rateLimiter = new RateLimiter(
       readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
     )
-
     def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
       val resultFuture = SettableFuture.create[Iterator[(L, R)]]
       val leftSide = Iterator.continually(left)
@@ -141,6 +177,7 @@ class CassandraJoinRDD[L, R] private[connector](
       resultFuture
     }
     val queryFutures = leftIterator.map(left => {
+
       rateLimiter.maybeSleep(1)
       pairWithRight(left)
     }).toList
@@ -162,6 +199,7 @@ class CassandraJoinRDD[L, R] private[connector](
       columnNames,
       joinColumns,
       where,
+      fwhere,
       limit,
       clusteringOrder,
       readConf,

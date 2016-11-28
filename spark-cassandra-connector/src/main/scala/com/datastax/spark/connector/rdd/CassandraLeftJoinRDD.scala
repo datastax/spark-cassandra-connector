@@ -27,6 +27,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
     val columnNames: ColumnSelector = AllColumns,
     val joinColumns: ColumnSelector = PartitionKeyColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
+    val fwhere : FCqlWhereClause[L] = FCqlWhereClause.empty[L],
     val limit: Option[Long] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf(),
@@ -67,11 +68,35 @@ class CassandraLeftJoinRDD[L, R] private[connector](
       columnNames = columnNames,
       joinColumns = joinColumns,
       where = where,
+      fwhere = fwhere,
       limit = limit,
       clusteringOrder = clusteringOrder,
       readConf = readConf
     )
   }
+
+  // I was not able to do a proper copy because of the inheritance.
+  def setFWhere(
+                 fwhere : FCqlWhereClause[L]
+               ): Self = {
+
+    new CassandraLeftJoinRDD[L, R](
+      left = left,
+      keyspaceName = keyspaceName,
+      tableName = tableName,
+      connector = connector,
+      columnNames = columnNames,
+      joinColumns = joinColumns,
+      where = where,
+      fwhere = fwhere,
+      limit = limit,
+      clusteringOrder = clusteringOrder,
+      readConf = readConf
+    )
+  }
+
+  def where(f : FCqlWhereClause[L]) : Self = setFWhere(fwhere = fwhere and f)
+  def where(clause : String, f : L => Seq[Any]) : Self = where(FCqlWhereClause(Seq(clause),f))
 
   override def cassandraCount(): Long = {
     columnNames match {
@@ -89,6 +114,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
         columnNames = SomeColumns(RowCountRef),
         joinColumns = joinColumns,
         where = where,
+        fwhere = fwhere,
         limit = limit,
         clusteringOrder = clusteringOrder,
         readConf = readConf
@@ -106,6 +132,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
       columnNames = columnNames,
       joinColumns = joinColumns,
       where = where,
+      fwhere = fwhere,
       limit = limit,
       clusteringOrder = clusteringOrder,
       readConf = readConf
@@ -127,6 +154,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
       columnNames,
       joinColumns,
       where,
+      fwhere,
       limit,
       clusteringOrder,
       readConf,
@@ -144,7 +172,6 @@ class CassandraLeftJoinRDD[L, R] private[connector](
     val rateLimiter = new RateLimiter(
       readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
     )
-
     def pairWithRight(left: L): SettableFuture[Iterator[(L, Option[R])]] = {
       val resultFuture = SettableFuture.create[Iterator[(L, Option[R])]]
       val leftSide = Iterator.continually(left)

@@ -23,6 +23,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
 
   val left: RDD[L]
   val joinColumns: ColumnSelector
+  val fwhere : FCqlWhereClause[L]
   val manualRowWriter: Option[RowWriter[L]]
   implicit val rowWriterFactory: RowWriterFactory[L]
 
@@ -99,7 +100,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   //We need to make sure we get selectedColumnRefs before serialization so that our RowReader is
   //built
   lazy val singleKeyCqlQuery: (String) = {
-    val whereClauses = where.predicates.flatMap(CqlWhereParser.parse)
+    val whereClauses = where.predicates.flatMap(CqlWhereParser.parse) ++ fwhere.predicates.flatMap(CqlWhereParser.parse)
     val joinColumns = joinColumnNames.map(_.columnName)
     val joinColumnPredicates = whereClauses.collect {
       case EqPredicate(c, _) if joinColumns.contains(c) => c
@@ -121,7 +122,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val joinWhere = joinColumnNames.map(_.columnName).map(name => s"${quote(name)} = :$name")
     val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
-    val filter = (where.predicates ++ joinWhere).mkString(" AND ")
+    val filter = (where.predicates ++ fwhere.predicates ++ joinWhere).mkString(" AND ")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
     val query =
@@ -135,7 +136,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   private def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
     val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
     val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel)
-    new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
+    new BoundStatementBuilder[L](rowWriter, stmt, where.values, fwhere, protocolVersion = protocolVersion)
   }
 
   /**
