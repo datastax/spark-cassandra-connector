@@ -1210,12 +1210,40 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
     results should have size 6
 
-    results should contain theSameElementsAs Seq((10, 10, Some("1010")),
-    (10, 11, Some("1011")),
-    (10, 12, Some("1012")),
-    (20, 20, None),
-    (20, 21, None),
-    (20, 22, None))
+    results should contain theSameElementsAs Seq(
+      (10, 10, Some("1010")),
+      (10, 11, Some("1011")),
+      (10, 12, Some("1012")),
+      (20, 20, None),
+      (20, 21, None),
+      (20, 22, None))
+  }
+
+  it should "delete base on partition key only" in {
+
+    conn.withSessionDo { session =>
+      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_short_rows_partition""")
+      session.execute(s"""CREATE TABLE $ks.delete_short_rows_partition(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 10, '1010')""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 11, '1011')""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 12, '1012')""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 20, '2020')""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 21, '2021')""")
+      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 22, '2022')""")
+    }
+
+    sc.parallelize(Seq(Key(20)))
+      .deleteFromCassandra(ks, "delete_short_rows_partition", keyColumns = SomeColumns("key"))
+
+    val results = sc.cassandraTable[(Int, Int, Option[String])](ks, "delete_short_rows_partition")
+      .collect()
+
+    results should have size 3
+
+    results should contain theSameElementsAs Seq(
+      (10, 10, Some("1010")),
+      (10, 11, Some("1011")),
+      (10, 12, Some("1012")))
 
   }
 }

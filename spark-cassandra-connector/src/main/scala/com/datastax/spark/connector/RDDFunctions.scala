@@ -110,8 +110,12 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     rwf: RowWriterFactory[T]): Unit = {
-
-    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf)
+    // column delete require full primary key, partion key is enough otherwise
+    val columnDelete = deleteColumns match {
+      case c :SomeColumns => c.columns.nonEmpty
+      case _  => false
+    }
+    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf, !columnDelete)
     rdd.sparkContext.runJob(rdd, writer.delete(deleteColumns) _)
   }
 

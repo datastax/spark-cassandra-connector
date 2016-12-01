@@ -230,6 +230,14 @@ object TableWriter {
         s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")}")
   }
 
+  private def checkMissingPartitionKeyColumns(table: TableDef, columnNames: Seq[String]) {
+    val partitionKeyColumnNames = table.partitionKey.map(_.columnName)
+    val missingPartitionKeyColumns = partitionKeyColumnNames.toSet -- columnNames
+    if (missingPartitionKeyColumns.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Some partition key columns are missing in RDD or have not been selected: ${missingPartitionKeyColumns.mkString(", ")}")
+  }
+
   /**
    * Check whether a collection behavior is being applied to a non collection column
    * Check whether prepend is used on any Sets or Maps
@@ -290,10 +298,11 @@ object TableWriter {
       )
   }
 
-  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) = {
+  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef], checkPartitionKey: Boolean) = {
     val columnNames = columnRefs.map(_.columnName)
     checkMissingColumns(table, columnNames)
-    checkMissingPrimaryKeyColumns(table, columnNames)
+    if(checkPartitionKey) checkMissingPartitionKeyColumns(table, columnNames)
+    else checkMissingPrimaryKeyColumns(table, columnNames)
     checkCollectionBehaviors(table, columnRefs)
   }
 
@@ -302,7 +311,8 @@ object TableWriter {
       keyspaceName: String,
       tableName: String,
       columnNames: ColumnSelector,
-      writeConf: WriteConf): TableWriter[T] = {
+      writeConf: WriteConf,
+      checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val selectedColumns = columnNames.selectFrom(tableDef)
@@ -311,7 +321,7 @@ object TableWriter {
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
       selectedColumns ++ optionColumns.map(_.ref))
 
-    checkColumns(tableDef, selectedColumns)
+    checkColumns(tableDef, selectedColumns, checkPartitionKey)
     new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
   }
 }
