@@ -1,16 +1,15 @@
 package com.datastax.spark.connector.cql
 
-import java.nio.ByteBuffer
-
-import java.util.{Iterator => JIterator, Collection => JCollection}
-import com.datastax.driver.core.policies.LoadBalancingPolicy
-import com.datastax.driver.core._
 import java.net.{InetAddress, NetworkInterface}
+import java.nio.ByteBuffer
+import java.util.{Collection => JCollection, Iterator => JIterator}
+
+import com.datastax.driver.core._
+import com.datastax.driver.core.policies.LoadBalancingPolicy
+import org.apache.spark.Logging
 
 import scala.collection.JavaConversions._
 import scala.util.Random
-
-import org.apache.spark.Logging
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.
   * For writes, if a statement has a routing key set, this LBP is token aware - it prefers the nodes which
@@ -37,20 +36,12 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     nodes = hosts.toSet
     // use explicitly set DC if available, otherwise see if all contact points have same DC
     // if so, use that DC; if not, throw an error
-    dcToUse = localDC match { 
-      case Some(local) => local
-      case None => 
-        val dcList = dcs(nodesInTheSameDC(contactPoints, hosts.toSet))
-        if (dcList.size == 1) 
-          dcList.head
-        else 
-          throw new IllegalArgumentException(s"Contact points contain multiple data centers: ${dcList.mkString(", ")}")
-    }
+    dcToUse = localDC.getOrElse(determineDataCenter(contactPoints, nodes))
     clusterMetadata = cluster.getMetadata
   }
 
   private def tokenUnawareQueryPlan(query: String, statement: Statement): JIterator[Host] = {
-    sortNodesByStatusAndProximity(contactPoints, nodes).iterator
+    sortNodesByStatusAndProximity(dcToUse, nodes).iterator
   }
 
   private def findReplicas(keyspace: String, partitionKey: ByteBuffer): Set[Host] = {
@@ -73,7 +64,7 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
     (localReplica.iterator #:: maybeShuffled.iterator #:: otherHosts #:: Stream.empty).flatten.iterator
   }
 
-  override def newQueryPlan (loggedKeyspace: String, statement: Statement): JIterator[Host] = {
+  override def newQueryPlan(loggedKeyspace: String, statement: Statement): JIterator[Host] = {
     val keyspace = if (statement.getKeyspace == null) loggedKeyspace else statement.getKeyspace
 
     if (statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) == null || keyspace == null)
@@ -122,26 +113,37 @@ object LocalNodeFirstLoadBalancingPolicy {
     hostAddress.isLoopbackAddress || localAddresses.contains(hostAddress)
   }
 
-  /** Finds the DCs of the contact points and returns hosts in those DC(s) from `allHosts`.
-    * It guarantees to return at least the hosts pointed by `contactPoints`, even if their
-    * DC information is missing. Other hosts with missing DC information are not considered.*/
-  def nodesInTheSameDC(contactPoints: Set[InetAddress], allHosts: Set[Host]): Set[Host] = {
-    val contactNodes = allHosts.filter(h => contactPoints.contains(h.getAddress))
-    val contactDCs = contactNodes.map(_.getDatacenter).filter(_ != null).toSet
-    contactNodes ++ allHosts.filter(h => contactDCs.contains(h.getDatacenter))
+  /** Sorts nodes in the following order:
+    * 1. local node in a given DC
+    * 2. live nodes in a given DC
+    * 3. the rest of nodes in a given DC
+    *
+    * Nodes within a group are ordered randomly. Nodes from other DCs are not included. */
+  def sortNodesByStatusAndProximity(dc: String, hostsToSort: Set[Host]): Seq[Host] = {
+    val grouped = hostsToSort.groupBy {
+      case host if host.getDatacenter != dc => None
+      case host if !host.isUp => Some(2)
+      case host if !isLocalHost(host) => Some(1)
+      case _ => Some(0)
+    } - None
+
+    grouped.toSeq.sortBy(_._1.get).flatMap {
+      case (_, hosts) => random.shuffle(hosts).toSeq
+    }
   }
 
-  /** Sorts nodes in the following order:
-    * 1. live nodes in the same DC as `contactPoints` starting with localhost if up
-    * 2. down nodes in the same DC as `contactPoints`
+  /** Returns a common data center name of the given contact points.
     *
-    * Nodes within a group are ordered randomly.
-    * Nodes from other DCs are not included. */
-  def sortNodesByStatusAndProximity(contactPoints: Set[InetAddress], hostsToSort: Set[Host]): Seq[Host] = {
-    val nodesInLocalDC = nodesInTheSameDC(contactPoints, hostsToSort)
-    val (allUpHosts, downHosts) = nodesInLocalDC.partition(_.isUp)
-    val (localHost, upHosts) = allUpHosts.partition(isLocalHost)
-    localHost.toSeq ++ random.shuffle(upHosts.toSeq) ++ random.shuffle(downHosts.toSeq)
+    * For each contact point there must be a [[Host]] in `allHosts` collection in order to determine its data center
+    * name. If contact points belong to more than a single data center, an [[IllegalArgumentException]] is thrown.
+    */
+  def determineDataCenter(contactPoints: Set[InetAddress], allHosts: Set[Host]): String = {
+    val dcs = allHosts
+      .filter(host => contactPoints.contains(host.getAddress))
+      .flatMap(host => Option(host.getDatacenter))
+    assert(dcs.nonEmpty, "There are no contact points in the given set of hosts")
+    require(dcs.size == 1, s"Contact points contain multiple data centers: ${dcs.mkString(", ")}")
+    dcs.head
   }
 
 }
