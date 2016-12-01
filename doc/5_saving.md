@@ -473,13 +473,14 @@ val table = TableDef("test","words",Seq(p1Col),Seq(c1Col, c2Col),Seq(rCol))
 val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
 ```
-## Deleting rows and columns
-`RDD.deleteFromCassandra(keyspaceName, tableName)` deletes row from the specified Cassandra table.
-The values in the RDD are interpreted as Primary Key Constraints.
+## Deleting Rows and Columns
+`RDD.deleteFromCassandra(keyspaceName, tableName)` deletes specific rows 
+from the specified Cassandra table. The values in the RDD are 
+interpreted as Primary Key Constraints.
 
-`deleteColumns: ColumnSelector` optional parameter allows selected columns deletion only
+`deleteColumns: ColumnSelector` optional parameter delete only selected columns 
 
-`keyColumns: ColumnSelector`  optional parameter allows to manually specify key columns. That allows ommiting
+`keyColumns: ColumnSelector`  optional parameter allows to manually specify key columns. That allows omitting
 some or all cluster keys for range deletes.
 
 `deleteColumns` and `keyColumns` could not be specified togather as Cassandra does not support range deletes of specific columns
@@ -487,7 +488,7 @@ some or all cluster keys for range deletes.
 `deleteFromCassandra` uses the same WriteConf and configuration options as `saveToCassandra`,
  for example the timestamp can be passed as WriteConf parameter to delete only records older then the timestamp
 
-#### Example loading row keys to delete from the same RDD
+#### Example Deleting All Rows in a Table Based on a Condition
 
 Assume the following table definition:
 ```sql
@@ -503,18 +504,18 @@ sc.cassandraTable("test", "word_groups")
   .deleteFromCassandra("test", "word_groups")
 ```
 
-#### Example: row keys from external source
+#### Example Deleting Rows Specified in an RDD
 
 ```scala
 sc.parallelize(Seq(("animal", "trex"), ("animal", "mammoth")))
   .deleteFromCassandra("test", "word_groups")
 ```
 
-#### Example: specific column delete
+#### Example Deleting only a Specific Column
 
 ```scala
- sc.parallelize(Seq(("animal", "mammoth")))
-   .deleteFromCassandra("test", "word_groups", SomeColumns("count"))
+sc.parallelize(Seq(("animal", "mammoth")))
+  .deleteFromCassandra("test", "word_groups", SomeColumns("count"))
 ```
 result:
 
@@ -527,12 +528,12 @@ cqlsh:t> select * from test.word_groups;
  animal | terex  |  0
 ```
 
-#### Example: range delete base on partion key only
+#### Example Deleting a Range from a Partition
 
 ```scala
- case class Key (group:String)
- sc.parallelize(Seq(Key("animal")))
-   .deleteFromCassandra("test", "word_groups", keyColumns = SomeColumns("group"))
+case class Key (group:String)
+sc.parallelize(Seq(Key("animal")))
+  .deleteFromCassandra("test", "word_groups", keyColumns = SomeColumns("group"))
 ```
 result:
 
@@ -544,12 +545,14 @@ cqlsh:t> select * from test.word_groups;
 ```
 
 
-#### Example: Delete records older then the timestamp
+#### Example Deleting Rows older than a Specified Timestamp 
 
-```
+```scala
 import com.datastax.spark.connector.writer._
 ...
-rdd.deleteFromCassandra("test", "tab",
+rdd.deleteFromCassandra(
+  "test",
+  "tab",
   writeConf = WriteConf(timestamp = TimestampOption.constant(ts)))
 ```
 
