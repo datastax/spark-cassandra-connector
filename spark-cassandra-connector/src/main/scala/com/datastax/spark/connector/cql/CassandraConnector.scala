@@ -84,9 +84,8 @@ class CassandraConnector(conf: CassandraConnectorConf)
     val session = sessionCache.acquire(_config)
     try {
       val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
-      val myNodes = LocalNodeFirstLoadBalancingPolicy
-        .nodesInTheSameDC(_config.hosts, allNodes)
-        .map(_.getAddress)
+      val dcToUse = _config.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(_config.hosts, allNodes))
+      val myNodes = allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
 
       // We need a separate SessionProxy here to protect against double closing the session.
@@ -128,10 +127,14 @@ class CassandraConnector(conf: CassandraConnectorConf)
   /** Returns the local node, if it is one of the cluster nodes. Otherwise returns any node. */
   def closestLiveHost: Host = {
     withClusterDo { cluster =>
+      lazy val allHosts = cluster.getMetadata.getAllHosts.toSet
+      val dcToUse = _config.localDC match {
+        case Some(dc) => dc
+        case None => allHosts.filter(host => _config.hosts.contains(host.getAddress)).map(_.getDatacenter).head
+      }
+
       LocalNodeFirstLoadBalancingPolicy
-        .sortNodesByStatusAndProximity(_config.hosts, cluster.getMetadata.getAllHosts.toSet)
-        .filter(_.isUp)
-        .headOption
+        .sortNodesByStatusAndProximity(dcToUse, allHosts).find(_.isUp)
         .getOrElse(throw new IOException("Cannot connect to Cassandra: No live hosts found"))
     }
   }
@@ -202,8 +205,9 @@ object CassandraConnector extends Logging {
 
   // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: Session): Set[CassandraConnectorConf] = {
-    val cluster = session.getCluster
-    val hosts = LocalNodeFirstLoadBalancingPolicy.nodesInTheSameDC(conf.hosts, cluster.getMetadata.getAllHosts.toSet)
+    val allHosts = session.getCluster.getMetadata.getAllHosts.toSet
+    val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(conf.hosts, allHosts))
+    val hosts = allHosts.filter(_.getDatacenter == dcToUse)
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
 
