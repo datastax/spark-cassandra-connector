@@ -1,3 +1,4 @@
+ * Fixed use of connection.local_dc parameter (SPARKC-448)
  * Added support timestamp in collection, udt and tuples (SPARKC-254)
 
 1.3.1
@@ -53,6 +54,8 @@
  * Added support to use aliases with Tuples (SPARKC-125)
 
 ********************************************************************************
+
+ * Fixed use of connection.local_dc parameter (SPARKC-448)
 
 1.2.6
  * Fixed Default ReadConf for JoinWithCassandra Table (SPARKC-294)
