@@ -69,7 +69,12 @@ class DStreamFunctions[T](dstream: DStream[T])
     connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
     rwf: RowWriterFactory[T]): Unit = {
 
-    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf)
+    // column delete require full primary key, partition key is enough otherwise
+    val columnDelete = deleteColumns match {
+      case c :SomeColumns => c.columns.nonEmpty
+      case _  => false
+    }
+    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf, !columnDelete)
     dstream.foreachRDD(rdd => rdd.sparkContext.runJob(rdd, writer.delete(deleteColumns) _))
   }
 

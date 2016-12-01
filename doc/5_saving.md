@@ -15,7 +15,7 @@ and a list of columns. Make sure to include at least all primary key columns.
 To save an `RDD` to a new table, instead of calling `saveToCassandra`, 
 call `saveAsCassandraTable` or `saveAsCassandraTableEx`.
 
-`deleteFromCassandra` can be used to delete columns or full rows from Cassandra table base on `RDD` with primary keys
+`deleteFromCassandra` can be used to delete columns or full rows from Cassandra table based on `RDD` with primary keys
  
 ## Saving an RDD of Tuples
 
@@ -474,45 +474,77 @@ val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
 ```
 ## Deleting rows and columns
-`RDD.deleteFromCassandra(keyspaceName, tableName)` delete rows from specified Cassandra table, using data from the RDD as primary keys.
+`RDD.deleteFromCassandra(keyspaceName, tableName)` deletes row from the specified Cassandra table.
+The values in the RDD are interpreted as Primary Key Constraints.
 
-Keys RDD could be loaded from the same table:
+`deleteColumns: ColumnSelector` optional parameter allows selected columns deletion only
 
-```
-sc.cassandraTable("test", "words")
-  .filter(row => ...).
-  .deleteFromCassandra("test", "words")
-```
-Or from any external source:
+`keyColumns: ColumnSelector`  optional parameter allows to manually specify key columns. That allows ommiting
+some or all cluster keys for range deletes.
 
-```
+`deleteColumns` and `keyColumns` could not be specified togather as Cassandra does not support range deletes of specific columns
+
+`deleteFromCassandra` uses the same WriteConf and configuration options as `saveToCassandra`,
+ for example the timestamp can be passed as WriteConf parameter to delete only records older then the timestamp
+
+#### Example loading row keys to delete from the same RDD
+
+Assume the following table definition:
+```sql
 CREATE TABLE test.word_groups (group text, word text, count int,
   PRIMARY KEY (group,word));
 ```
 
+Delete all rare words with count < 10
+
+```scala
+sc.cassandraTable("test", "word_groups")
+  .where("count < 10")
+  .deleteFromCassandra("test", "word_groups")
 ```
+
+#### Example: row keys from external source
+
+```scala
 sc.parallelize(Seq(("animal", "trex"), ("animal", "mammoth")))
-  .deleteFromCassandra("test", "test")
+  .deleteFromCassandra("test", "word_groups")
 ```
 
-`deleteColumns: ColumnSelector` optional parameter allows selected columns deletion only
+#### Example: specific column delete
 
-```
+```scala
  sc.parallelize(Seq(("animal", "mammoth")))
-     .deleteFromCassandra("test", "test", SomeColumns("count"))
+   .deleteFromCassandra("test", "word_groups", SomeColumns("count"))
 ```
 result:
 
-```
+```sql
 cqlsh:t> select * from test.word_groups;
 
  group  | word   | count
 --------+--------+-------
  animal | mammoth|  null
+ animal | terex  |  0
 ```
 
-`deleteFromCassandra` uses the same WriteConf and configuration options as `saveToCassandra`
-For example the timestamp can be passed as WriteConf parameter to delete only records older then the timestamp
+#### Example: range delete base on partion key only
+
+```scala
+ case class Key (group:String)
+ sc.parallelize(Seq(Key("animal")))
+   .deleteFromCassandra("test", "word_groups", keyColumns = SomeColumns("group"))
+```
+result:
+
+```sql
+cqlsh:t> select * from test.word_groups;
+
+ group  | word   | count
+--------+--------+-------
+```
+
+
+#### Example: Delete records older then the timestamp
 
 ```
 import com.datastax.spark.connector.writer._

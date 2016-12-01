@@ -187,7 +187,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       },
 
       Future {
-        //info("Making table with Date Type")
         skipIfProtocolVersionLT(V4) {
           session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
           session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")

@@ -62,7 +62,8 @@ class TableWriter[T] private (
     val deleteColumnNames: Seq[String] = deleteColumns.selectFrom(tableDef).map(_.columnName)
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     if (regularColumns.nonEmpty) {
-      logWarning(s"Only primary key column could be used in delete. ${regularColumns.mkString(", ")} columns are ignored")
+      throw new IllegalArgumentException(
+        s"Only primary key columns can be used in delete. Regular columns found: ${regularColumns.mkString(", ")}")
     }
     TableWriter.checkMissingColumns(tableDef, deleteColumnNames)
 
@@ -167,7 +168,7 @@ class TableWriter[T] private (
     * @param data primary key values to select delete rows
     */
   def delete(columns: ColumnSelector) (taskContext: TaskContext, data: Iterator[T]): Unit =
-    writeInternal(deleteQueryTemplate (columns), taskContext, data)
+    writeInternal(deleteQueryTemplate(columns), taskContext, data)
 
   private def writeInternal(queryTemplate: String, taskContext: TaskContext, data: Iterator[T]) {
     val updater = OutputMetricsUpdater(taskContext, writeConf)
