@@ -10,9 +10,9 @@ import java.io.Serializable;
  */
 public class JavaTestBean implements Serializable {
 
-    @Column(name = "property_1")
+    @Column(name = "cassandra_property_1")
     Integer property1;
-    @Column(name = "camel_case_property")
+    @Column(name = "cassandra_camel_case_property")
     Integer camelCaseProperty;
     JavaTestUDTBean nested;
 

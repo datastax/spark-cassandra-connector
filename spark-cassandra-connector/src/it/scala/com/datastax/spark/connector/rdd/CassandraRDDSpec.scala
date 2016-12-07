@@ -122,8 +122,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       },
 
       Future {
-        session.execute( s"""CREATE TYPE $ks.nested (field int, another_field int, yet_another_field int)""")
-        session.execute( s"""CREATE TABLE $ks.udts_nested(property_1 INT PRIMARY KEY, camel_case_property text, nested frozen<nested>)""")
+        session.execute( s"""CREATE TYPE $ks.nested (field int, cassandra_another_field int, cassandra_yet_another_field int)""")
+        session.execute( s"""CREATE TABLE $ks.udts_nested(cassandra_property_1 INT PRIMARY KEY, cassandra_camel_case_property text, nested frozen<nested>)""")
       },
 
       Future {
@@ -543,7 +543,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     sc.parallelize(Seq(jb)).saveToCassandra(ks,"udts_nested")
 
     // Saving is done via POJO with annotations, now to read them back in
-    val result = sc.cassandraTable(ks, "udts_nested").select("property_1", "camel_case_property", "nested").collect()
+    val result = sc.cassandraTable(ks, "udts_nested").select("cassandra_property_1", "cassandra_camel_case_property", "nested").collect()
     result should have length 1
     val row = result.head
     row.getInt(0) should be(1)
@@ -552,11 +552,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     val udtValue = row.getUDTValue(2)
     udtValue.size should be(3)
     udtValue.getInt("field") should be(3)
-    udtValue.getInt("another_field") should be(4)
-    udtValue.getInt("yet_another_field") should be(5)
+    udtValue.getInt("cassandra_another_field") should be(4)
+    udtValue.getInt("cassandra_yet_another_field") should be(5)
 
     // Let's do one more test, this time reading it back as the POJO
-    val bean = sc.cassandraTable[JavaTestBean](ks, "udts_nested").select("property_1", "camel_case_property", "nested").first()
+    val bean = sc.cassandraTable[JavaTestBean](ks, "udts_nested").select("cassandra_property_1", "cassandra_camel_case_property", "nested").first()
 
     bean.getProperty1 should be(1)
     bean.getCamelCaseProperty should be(2)

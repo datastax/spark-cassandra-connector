@@ -3,7 +3,6 @@ package com.datastax.spark.connector.mapper
 import java.lang.reflect.Method
 
 import com.datastax.driver.core.ProtocolVersion
-import com.datastax.driver.mapping.annotations.{Column, Field}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
 
@@ -19,9 +18,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
     val fieldName = strippedName(0).toLower + strippedName.substring(1)
     // For Java Beans, we need to figure out if there is
     // an equivalent name on the annotation if it has one
-    val annotationName = annotationForFieldName(fieldName)
-    // Return the annotation if found else field
-    if (annotationName.isEmpty) fieldName else annotationName
+    annotationForFieldName(fieldName) getOrElse fieldName
   }
 
   override protected def isGetter(method: Method): Boolean =
@@ -33,24 +30,6 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
     SetterRegex.findFirstMatchIn(method.getName).isDefined &&
     method.getParameterTypes.size == 1 &&
     method.getReturnType == Void.TYPE
-
-  private def annotationForFieldName(fieldName: String): String = {
-    // POJO is either a table or an UDT
-    // We have to cover both cases
-    try {
-      val f = cls.getField(fieldName)
-
-      if (f.isAnnotationPresent(classOf[Column])) {
-        f.getAnnotation(classOf[Column]).name()
-      } else if (f.isAnnotationPresent(classOf[Field])) {
-        f.getAnnotation(classOf[Field]).name()
-      } else {
-        ""
-      }
-    } catch {
-      case e: NoSuchFieldException => { "" }
-    }
-  }
 
   private def resolve(name: String, columns: Map[String, ColumnRef]): Option[ColumnRef] = {
     val overridenName = columnNameOverride.getOrElse(name, name)

@@ -5,13 +5,15 @@ import com.datastax.driver.mapping.annotations.Field;
 import java.io.Serializable;
 
 /**
+ * This Java POJO represents an UDT in Cassandra
+ *
  * Created by soumya on 9/15/16.
  */
 public class JavaTestUDTBean implements Serializable {
     public Integer field;
-    @Field(name = "another_field")
+    @Field(name = "cassandra_another_field")
     public Integer anotherField;
-    @Field(name = "yet_another_field")
+    @Field(name = "cassandra_yet_another_field")
     public Integer completelyUnrelatedField;
 
     public Integer getField() {

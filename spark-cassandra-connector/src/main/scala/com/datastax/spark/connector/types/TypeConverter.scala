@@ -50,7 +50,7 @@ trait TypeConverter[T] extends Serializable {
 }
 
 /** Handles nullable types and converts any null to null. */
-trait NullableTypeConverter[T] extends TypeConverter[T] {
+trait NullableTypeConverter[T <: AnyRef] extends TypeConverter[T] {
   override def convert(obj: Any): T =
     if (obj != null)
       super.convert(obj)

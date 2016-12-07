@@ -2,12 +2,14 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.{Constructor, Method}
 
+import com.datastax.driver.mapping.annotations.{Column, Field}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
@@ -32,6 +34,20 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
 
   private def columnRefByAliasName(selectedColumns: IndexedSeq[ColumnRef]): Map[String, ColumnRef] =
     (for (c <- selectedColumns) yield (c.selectedAs, c)).toMap
+
+  protected def annotationForFieldName(fieldName: String): Option[String] = {
+    // POJO is either a table or an UDT
+    // We have to cover both cases
+    val maybeField = Try(cls.getField(fieldName))
+    maybeField.toOption.flatMap {
+      case f =>
+        if (f.isAnnotationPresent(classOf[Column])) {
+          Some(f.getAnnotation(classOf[Column]).name())
+        } else if (f.isAnnotationPresent(classOf[Field])) {
+          Some(f.getAnnotation(classOf[Field]).name())
+        } else None
+    }
+  }
 
   protected val cls = SparkReflectionLock.synchronized { implicitly[ClassTag[T]].runtimeClass }
 

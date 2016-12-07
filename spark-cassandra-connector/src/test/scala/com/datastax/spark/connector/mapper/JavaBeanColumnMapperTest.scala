@@ -8,11 +8,14 @@ import org.junit.Assert._
 import org.junit.Test
 
 class JavaBeanColumnMapperTestClass {
-  def getProperty1: String = ???
-  def setProperty1(str: String): Unit = ???
+  def getCassandraProperty1: String = ???
+  def setCassandraProperty1(str: String): Unit = ???
 
-  def getCamelCaseProperty: Int = ???
-  def setCamelCaseProperty(str: Int): Unit = ???
+  def getCassandraCamelCaseProperty: Int = ???
+  def setCassandraCamelCaseProperty(str: Int): Unit = ???
+
+  def getColumn: Int = ???
+  def setColumn(flag: Int): Unit = ???
 
   def isFlagged: Boolean = ???
   def setFlagged(flag: Boolean): Unit = ???
@@ -36,11 +39,11 @@ object JavaBeanColumnMapperTestClass {
 
 class JavaBeanColumnMapperTest {
   private val uf1 = UDTFieldDef("field", IntType)
-  private val uf2 = UDTFieldDef("another_field", IntType)
-  private val uf3 = UDTFieldDef("yet_another_field", IntType)
+  private val uf2 = UDTFieldDef("cassandra_another_field", IntType)
+  private val uf3 = UDTFieldDef("cassandra_yet_another_field", IntType)
   private val u1 = UserDefinedType("udt", IndexedSeq(uf1,uf2,uf3))
-  private val c1 = ColumnDef("property_1", PartitionKeyColumn, IntType)
-  private val c2 = ColumnDef("camel_case_property", ClusteringColumn(0), IntType)
+  private val c1 = ColumnDef("cassandra_property_1", PartitionKeyColumn, IntType)
+  private val c2 = ColumnDef("cassandra_camel_case_property", ClusteringColumn(0), IntType)
   private val c3 = ColumnDef("flagged", RegularColumn, IntType)
   private val c4 = ColumnDef("marked", RegularColumn, IntType)
   private val c5 = ColumnDef("column", RegularColumn, IntType)
@@ -55,8 +58,8 @@ class JavaBeanColumnMapperTest {
       .columnMapForWriting(table1, table1.columnRefs
       )
     val getters = columnMap.getters
-    assertEquals(ColumnName(c1.columnName), getters("getProperty1"))
-    assertEquals(ColumnName(c2.columnName), getters("getCamelCaseProperty"))
+    assertEquals(ColumnName(c1.columnName), getters("getCassandraProperty1"))
+    assertEquals(ColumnName(c2.columnName), getters("getCassandraCamelCaseProperty"))
     assertEquals(ColumnName(c3.columnName), getters("isFlagged"))
   }
 
@@ -75,19 +78,19 @@ class JavaBeanColumnMapperTest {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass]
       .columnMapForReading(table1, table1.columnRefs)
     val setters = columnMap.setters
-    assertEquals(ColumnName(c1.columnName), setters("setProperty1"))
-    assertEquals(ColumnName(c2.columnName), setters("setCamelCaseProperty"))
+    assertEquals(ColumnName(c1.columnName), setters("setCassandraProperty1"))
+    assertEquals(ColumnName(c2.columnName), setters("setCassandraCamelCaseProperty"))
     assertEquals(ColumnName(c3.columnName), setters("setFlagged"))
   }
 
   @Test
   def testColumnNameOverrideGetters() {
-    val columnNameOverrides: Map[String, String] = Map("property1" -> c5.columnName, "flagged" -> c4.columnName)
+    val columnNameOverrides: Map[String, String] = Map("cassandra_property_1" -> c5.columnName, "flagged" -> c4.columnName)
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass](columnNameOverrides)
       .columnMapForWriting(table2, IndexedSeq(c5.ref, c2.ref, c4.ref))
     val getters = columnMap.getters
-    assertEquals(ColumnName(c5.columnName), getters("getProperty1"))
-    assertEquals(ColumnName(c2.columnName), getters("getCamelCaseProperty"))
+    assertEquals(ColumnName(c5.columnName), getters("getColumn"))
+    assertEquals(ColumnName(c2.columnName), getters("getCassandraCamelCaseProperty"))
     assertEquals(ColumnName(c4.columnName), getters("isFlagged"))
   }
 
@@ -97,8 +100,8 @@ class JavaBeanColumnMapperTest {
     val columnMap = new JavaBeanColumnMapper[JavaBeanColumnMapperTestClass](columnNameOverrides)
       .columnMapForReading(table2, IndexedSeq(c5.ref, c2.ref, c4.ref))
     val setters = columnMap.setters
-    assertEquals(ColumnName(c5.columnName), setters("setProperty1"))
-    assertEquals(ColumnName(c2.columnName), setters("setCamelCaseProperty"))
+    assertEquals(ColumnName(c5.columnName), setters("setColumn"))
+    assertEquals(ColumnName(c2.columnName), setters("setCassandraCamelCaseProperty"))
     assertEquals(ColumnName(c4.columnName), setters("setFlagged"))
   }
 
