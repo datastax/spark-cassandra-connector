@@ -11,10 +11,10 @@ import java.io.Serializable;
 public class JavaTestBean implements Serializable {
 
     @Column(name = "cassandra_property_1")
-    Integer property1;
+    public Integer property1;
     @Column(name = "cassandra_camel_case_property")
-    Integer camelCaseProperty;
-    JavaTestUDTBean nested;
+    public Integer camelCaseProperty;
+    public JavaTestUDTBean nested;
 
     public int getProperty1() {
         return property1;
