@@ -21,6 +21,12 @@ case object PartitionKeyColumns extends ColumnSelector {
     table.partitionKey.map(_.ref).toIndexedSeq
 }
 
+case object PrimaryKeyColumns extends ColumnSelector {
+  override def aliases: Map[String, String] = Map.empty.withDefault(x => x)
+  override def selectFrom(table: TableDef) =
+    table.primaryKey.map(_.ref)
+}
+
 case class SomeColumns(columns: ColumnRef*) extends ColumnSelector {
 
   override def aliases: Map[String, String] = columns.map {

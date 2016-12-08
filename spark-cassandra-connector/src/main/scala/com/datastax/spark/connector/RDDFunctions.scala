@@ -7,10 +7,9 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.rdd.{ReadConf, CassandraJoinRDD, CassandraLeftJoinRDD, SpannedRDD, ValidRDDType}
+import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.writer.{ReplicaLocator, _}
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -36,7 +35,6 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }
-
   /**
    * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a new table defined by the given `TableDef`.
    *
@@ -96,6 +94,29 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
 
     val table = TableDef.fromType[T](keyspaceName, tableName, protocolVersion)
     saveAsCassandraTableEx(table, columns, writeConf)
+  }
+
+  /**
+   * Delete data from Cassandra table, using data from the [[org.apache.spark.rdd.RDD RDD]] as primary keys.
+   * Uses the specified column names.
+   * @see [[com.datastax.spark.connector.writer.WritableToCassandra]]
+   */
+  def deleteFromCassandra(
+    keyspaceName: String,
+    tableName: String,
+    deleteColumns: ColumnSelector = SomeColumns(),
+    keyColumns: ColumnSelector = PrimaryKeyColumns,
+    writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    rwf: RowWriterFactory[T]): Unit = {
+    // column delete require full primary key, partition key is enough otherwise
+    val columnDelete = deleteColumns match {
+      case c :SomeColumns => c.columns.nonEmpty
+      case _  => false
+    }
+    val writer = TableWriter(connector, keyspaceName, tableName, keyColumns, writeConf, !columnDelete)
+    rdd.sparkContext.runJob(rdd, writer.delete(deleteColumns) _)
   }
 
   /** Applies a function to each item, and groups consecutive items having the same value together.

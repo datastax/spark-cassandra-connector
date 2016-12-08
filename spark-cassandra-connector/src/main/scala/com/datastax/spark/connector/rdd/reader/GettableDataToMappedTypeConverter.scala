@@ -81,7 +81,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
     E.g. for a list type, we recursively call this method to get the converter for the
     list items and then we call `TypeConverter.forType` to get a proper converter for lists.
     */
-    val tpe = typeTag[U].tpe
+    val tpe = SparkReflectionLock.synchronized(typeTag[U].tpe)
     (columnType, tpe) match {
       case (argColumnType, TypeRef(_, Symbols.OptionSymbol, List(argScalaType))) =>
         val argConverter = converter(argColumnType, argScalaType)

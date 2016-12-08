@@ -1,18 +1,18 @@
 package com.datastax.spark.connector.streaming
 
-import scala.collection.mutable
-import scala.concurrent.Future
-import scala.language.postfixOps
-import scala.util.Random
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.testkit._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
-import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.spark.connector.testkit._
+
+import scala.collection.mutable
+import scala.concurrent.Future
+import scala.language.postfixOps
+import scala.util.Random
 
 class RDDStreamingSpec
   extends SparkCassandraITFlatSpecBase
@@ -48,6 +48,12 @@ class RDDStreamingSpec
       },
       Future {
         session.execute(s"CREATE TABLE $ks.dstream_join_output (word TEXT PRIMARY KEY, count COUNTER)")
+      },
+      Future {
+        session.execute(s"CREATE TABLE $ks.streaming_deletes (word TEXT PRIMARY KEY, count INT)")
+        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1words', 1)")
+        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1round', 2)")
+        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('survival', 3)")
       }
     )
   }
@@ -168,4 +174,27 @@ class RDDStreamingSpec
       ssc.sparkContext.cassandraTable(ks, "dstream_join_output").collect.size should be(data.size)
     }
   }
+
+  it should "delete rows from cassandra table base on streaming keys" in withStreamingContext { ssc =>
+    val stream = ssc.queueStream[String](dataRDDs)
+
+    val wc = stream
+      .map(Key(_))
+      .deleteFromCassandra(ks, "streaming_deletes")
+
+    // start the streaming context so the data can be processed and actor started
+    ssc.start()
+    eventually {
+      dataRDDs shouldBe empty
+    }
+
+    eventually {
+      val rdd = ssc.cassandraTable[WordCount](ks, "streaming_deletes")
+      val result = rdd.collect
+      result.length should be(1)
+      result(0) should be(WordCount("survival", 3))
+    }
+  }
 }
+
+
