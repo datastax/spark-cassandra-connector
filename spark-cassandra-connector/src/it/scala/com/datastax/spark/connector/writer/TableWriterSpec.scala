@@ -79,6 +79,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       Future {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+        session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
+
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
@@ -398,6 +400,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         row.getUDTValue(2).getInt("zip") shouldEqual 90210
       }
     }
+  }
+
+  it should "write values of user-defined-types in Cassandra Collections" in {
+    val address = Address(city = "New Orleans", zip = 20401, street = "Magazine")
+    val rows = Seq((1, Seq(address), Map("home" -> address)))
+    sc.parallelize(rows).saveToCassandra(ks, "udtcollection")
+    val result = sc.cassandraTable[(Int, Seq[Address], Map[String, Address])](ks, "udtcollection").collect
+    result should contain theSameElementsAs (rows)
   }
 
   it should "write values of user-defined-types in Cassandra" in {
