@@ -10,6 +10,7 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.util.Logging
+import org.apache.spark.SparkConf
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
   useCassandraConfig(Seq(YamlTransformations.Default))
@@ -219,7 +220,6 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
     val qp = df.queryExecution.executedPlan.toString
     qp should include ("Filter (") // Should have a Spark Filter Step
-    println(qp)
   }
 
   it should "apply user custom predicates in the order they are specified" in {
@@ -233,8 +233,36 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1"))
       .load().filter("a=1 and b=2 and c=1 and e=1")
 
+    val qp = df.queryExecution
+      .executedPlan
+      .children(0)
+      .children(0)
+    qp.toString should include ("EqualTo(a,1), EqualTo(b,2), EqualTo(c,1)")
+  }
+
+  it should "pass through local conf properties" in {
+    sc.setLocalProperty(
+      CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
+      "com.datastax.spark.connector.sql.PushdownUsesConf")
+
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1", PushdownUsesConf.testKey -> "Don't Remove"))
+      .load().filter("g=1 and h=1")
+
     val qp = df.queryExecution.executedPlan
-    println(qp.constraints)
+    qp.constraints should not be empty
+
+    val df2 = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1"))
+      .load().filter("g=1 and h=1")
+
+
+    val qp2 = df2.queryExecution.executedPlan
+    qp2.constraints shouldBe empty
   }
 }
 
@@ -245,7 +273,8 @@ case class TestPartialColumns(epoch: Long, browser: String, customer_id: Int)
 object PushdownEverything extends CassandraPredicateRules {
   override def apply(
     predicates: AnalyzedPredicates,
-    tableDef: TableDef): AnalyzedPredicates = {
+    tableDef: TableDef,
+    sparkConf: SparkConf): AnalyzedPredicates = {
 
     AnalyzedPredicates(predicates.handledByCassandra ++ predicates.handledBySpark, Set.empty)
   }
@@ -254,19 +283,39 @@ object PushdownEverything extends CassandraPredicateRules {
 object PushdownNothing extends CassandraPredicateRules {
   override def apply(
     predicates: AnalyzedPredicates,
-    tableDef: TableDef): AnalyzedPredicates = {
+    tableDef: TableDef,
+    sparkConf: SparkConf): AnalyzedPredicates = {
 
     AnalyzedPredicates(Set.empty, predicates.handledByCassandra ++ predicates.handledBySpark)
   }
 }
 
 object PushdownEqualsOnly extends CassandraPredicateRules {
-  override def apply(predicates: AnalyzedPredicates, tableDef: TableDef): AnalyzedPredicates = {
+  override def apply(
+    predicates: AnalyzedPredicates,
+    tableDef: TableDef,
+    sparkConf: SparkConf): AnalyzedPredicates = {
+
     val eqFilters = (predicates.handledByCassandra ++ predicates.handledBySpark).collect {
       case x: EqualTo => x: Filter
     }
     AnalyzedPredicates(
       eqFilters,
       (predicates.handledBySpark ++ predicates.handledByCassandra) -- eqFilters)
+  }
+}
+
+object PushdownUsesConf extends CassandraPredicateRules {
+  val testKey = "testkey"
+  val notSet = "notset"
+  override def apply(
+    predicates: AnalyzedPredicates,
+    tableDef: TableDef,
+    conf: SparkConf): AnalyzedPredicates = {
+      if (conf.get(testKey, notSet) == notSet){
+        AnalyzedPredicates(Set.empty, Set.empty)
+      } else {
+        predicates
+      }
   }
 }

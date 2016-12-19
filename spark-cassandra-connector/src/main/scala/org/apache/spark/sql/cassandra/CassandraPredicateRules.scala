@@ -2,6 +2,7 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.cql.TableDef
 import org.apache.spark.sql.sources.Filter
+import org.apache.spark.SparkConf
 
 case class AnalyzedPredicates(
   handledByCassandra: Set[Filter],
@@ -13,5 +14,5 @@ case class AnalyzedPredicates(
 }
 
 trait CassandraPredicateRules{
-  def apply(predicates: AnalyzedPredicates, tableDef: TableDef): AnalyzedPredicates
+  def apply(predicates: AnalyzedPredicates, tableDef: TableDef, conf: SparkConf): AnalyzedPredicates
 }

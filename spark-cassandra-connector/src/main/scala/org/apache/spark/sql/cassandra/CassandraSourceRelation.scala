@@ -37,6 +37,7 @@ private[cassandra] class CassandraSourceRelation(
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
+    sparkConf: SparkConf,
     override val sqlContext: SQLContext)
   extends BaseRelation
   with InsertableRelation
@@ -117,7 +118,7 @@ private[cassandra] class CassandraSourceRelation(
     /** Apply any user defined rules **/
     val finalPushdown =  additionalRules.foldRight(basicPushdown)(
       (rules, pushdowns) => {
-        val pd = rules(pushdowns, tableDef)
+        val pd = rules(pushdowns, tableDef, sparkConf)
         logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
         pd
       }
@@ -277,6 +278,7 @@ object CassandraSourceRelation {
       connector = cassandraConnector,
       readConf = readConf,
       writeConf = writeConf,
+      sparkConf = conf,
       sqlContext = sqlContext)
   }
 
@@ -291,6 +293,7 @@ object CassandraSourceRelation {
     sqlConf: Map[String, String],
     tableRef: TableRef,
     tableConf: Map[String, String]) : SparkConf = {
+
     //Default settings
     val conf = sparkConf.clone()
     val cluster = tableRef.cluster.getOrElse(defaultClusterName)
@@ -304,6 +307,8 @@ object CassandraSourceRelation {
         sqlConf.get(s"default/$prop")).flatten.headOption
       value.foreach(conf.set(prop, _))
     }
+    //Set all user properties
+    conf.setAll(tableConf -- DefaultSource.confProperties)
     conf
   }
 }
