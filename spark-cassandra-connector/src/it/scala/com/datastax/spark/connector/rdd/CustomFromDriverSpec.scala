@@ -1,13 +1,10 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.DataType
-import com.datastax.driver.core.DataType.Name
-import com.datastax.spark.connector.{types, SparkCassandraITFlatSpecBase}
-import com.datastax.spark.connector.types.{
-  ColumnTypeConf,
-  IntType,
-  CustomDriverConverter,
-  ColumnType}
+import com.datastax.spark.connector.types.{ColumnType, ColumnTypeConf, CustomDriverConverter, IntType}
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, types}
+import org.apache.spark.sql.cassandra.DataTypeConverter
+import org.apache.spark.sql.{types => catalystTypes}
 
 class CustomFromDriverSpec extends SparkCassandraITFlatSpecBase {
 
@@ -21,13 +18,25 @@ class CustomFromDriverSpec extends SparkCassandraITFlatSpecBase {
       ColumnType.fromDriverType(driverType) should be(expectedType)
     }
   }
+
+  it should "support SparkSQL" in {
+    DataTypeConverter.catalystDataType(types.IntType, true) should be(catalystTypes.StringType)
+  }
 }
 
 object DumbConverter extends CustomDriverConverter {
-  val asciiType = DataType.ascii()
+
   override val fromDriverRowExtension: PartialFunction[DataType, ColumnType[_]] = {
     case (x: DataType.CustomType) => {
       IntType
     }
+  }
+
+  override val catalystDataType: PartialFunction[ColumnType[_], catalystTypes.DataType] = {
+    case IntType => catalystTypes.StringType
+  }
+
+  override val catalystDataTypeConverter: PartialFunction[Any, AnyRef] = {
+    case x:DataType.CustomType => x.toString
   }
 }

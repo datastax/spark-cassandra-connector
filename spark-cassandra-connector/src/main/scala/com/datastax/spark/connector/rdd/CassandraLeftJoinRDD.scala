@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
  * @tparam L item type on the left side of the join (any RDD)
  * @tparam R item type on the right side of the join (fetched from Cassandra)
  */
-class CassandraJoinRDD[L, R] private[connector](
+class CassandraLeftJoinRDD[L, R] private[connector](
     override val left: RDD[L],
     val keyspaceName: String,
     val tableName: String,
@@ -37,11 +37,11 @@ class CassandraJoinRDD[L, R] private[connector](
     val rightClassTag: ClassTag[R],
     @transient val rowWriterFactory: RowWriterFactory[L],
     @transient val rowReaderFactory: RowReaderFactory[R])
-  extends CassandraRDD[(L, R)](left.sparkContext, left.dependencies)
+  extends CassandraRDD[(L, Option[R])](left.sparkContext, left.dependencies)
   with CassandraTableRowReaderProvider[R]
-  with AbstractCassandraJoin[L, R] {
+  with AbstractCassandraJoin[L, Option[R]] {
 
-  override type Self = CassandraJoinRDD[L, R]
+  override type Self = CassandraLeftJoinRDD[L, R]
 
   override protected val classTag = rightClassTag
 
@@ -59,7 +59,7 @@ class CassandraJoinRDD[L, R] private[connector](
     connector: CassandraConnector = connector
   ): Self = {
 
-    new CassandraJoinRDD[L, R](
+    new CassandraLeftJoinRDD[L, R](
       left = left,
       keyspaceName = keyspaceName,
       tableName = tableName,
@@ -81,7 +81,7 @@ class CassandraJoinRDD[L, R] private[connector](
     }
 
     val counts =
-      new CassandraJoinRDD[L, Long](
+      new CassandraLeftJoinRDD[L, Long](
         left = left,
         connector = connector,
         keyspaceName = keyspaceName,
@@ -94,11 +94,11 @@ class CassandraJoinRDD[L, R] private[connector](
         readConf = readConf
       )
 
-    counts.map(_._2).reduce(_ + _)
+    counts.map(_._2.getOrElse(0L)).reduce(_ + _)
   }
 
-  def on(joinColumns: ColumnSelector): CassandraJoinRDD[L, R] = {
-    new CassandraJoinRDD[L, R](
+  def on(joinColumns: ColumnSelector): CassandraLeftJoinRDD[L, R] = {
+    new CassandraLeftJoinRDD[L, R](
       left = left,
       connector = connector,
       keyspaceName = keyspaceName,
@@ -112,49 +112,14 @@ class CassandraJoinRDD[L, R] private[connector](
     )
   }
 
-  private[rdd] def fetchIterator(
-    session: Session,
-    bsb: BoundStatementBuilder[L],
-    leftIterator: Iterator[L]
-  ): Iterator[(L, R)] = {
-    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
-    val rateLimiter = new RateLimiter(
-      readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
-    )
-
-    def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
-      val resultFuture = SettableFuture.create[Iterator[(L, R)]]
-      val leftSide = Iterator.continually(left)
-
-      val queryFuture = session.executeAsync(bsb.bind(left))
-      Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
-        def onSuccess(rs: ResultSet) {
-          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
-          val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs);
-          val rightSide = resultSet.map(rowReader.read(_, columnMetaData))
-          resultFuture.set(leftSide.zip(rightSide))
-        }
-        def onFailure(throwable: Throwable) {
-          resultFuture.setException(throwable)
-        }
-      })
-      resultFuture
-    }
-    val queryFutures = leftIterator.map(left => {
-      rateLimiter.maybeSleep(1)
-      pairWithRight(left)
-    }).toList
-    queryFutures.iterator.flatMap(_.get)
-  }
-
   /**
-   * Turns this CassandraJoinRDD into a factory for converting other RDD's after being serialized
+   * Turns this CassandraLeftJoinRDD into a factory for converting other RDD's after being serialized
    * This method is for streaming operations as it allows us to Serialize a template JoinRDD
    * and the use that serializable template in the DStream closure. This gives us a fully serializable
-   * joinWithCassandra operation
+   * leftJoinWithCassandra operation
    */
-  private[connector] def applyToRDD(left: RDD[L]): CassandraJoinRDD[L, R] = {
-    new CassandraJoinRDD[L, R](
+  private[connector] def applyToRDD(left: RDD[L]): CassandraLeftJoinRDD[L, R] = {
+    new CassandraLeftJoinRDD[L, R](
       left,
       keyspaceName,
       tableName,
@@ -168,5 +133,43 @@ class CassandraJoinRDD[L, R] private[connector](
       Some(rowReader),
       Some(rowWriter)
     )
+  }
+
+  private[rdd] def fetchIterator(
+    session: Session,
+    bsb: BoundStatementBuilder[L],
+    leftIterator: Iterator[L]
+  ): Iterator[(L, Option[R])] = {
+    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
+    val rateLimiter = new RateLimiter(
+      readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
+    )
+
+    def pairWithRight(left: L): SettableFuture[Iterator[(L, Option[R])]] = {
+      val resultFuture = SettableFuture.create[Iterator[(L, Option[R])]]
+      val leftSide = Iterator.continually(left)
+
+      val queryFuture = session.executeAsync(bsb.bind(left))
+      Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
+        def onSuccess(rs: ResultSet) {
+          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
+          val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
+          val rightSide = resultSet.isEmpty match {
+            case true => Iterator.single(None)
+            case false => resultSet.map(r => Some(rowReader.read(r, columnMetaData)))
+          }
+          resultFuture.set(leftSide.zip(rightSide))
+        }
+        def onFailure(throwable: Throwable) {
+          resultFuture.setException(throwable)
+        }
+      })
+      resultFuture
+    }
+    val queryFutures = leftIterator.map(left => {
+      rateLimiter.maybeSleep(1)
+      pairWithRight(left)
+    }).toList
+    queryFutures.iterator.flatMap(_.get)
   }
 }

@@ -82,10 +82,14 @@ object ColumnType {
     DataType.time() -> TimeType
   )
 
-  private lazy val customFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
+  lazy val customDriverConverter: Option[CustomDriverConverter] = {
     Option(SparkEnv.get)
       .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
+  }
+
+  private lazy val customFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
+    customDriverConverter
       .flatMap(clazz => Some(clazz.fromDriverRowExtension))
       .getOrElse(PartialFunction.empty)
   }

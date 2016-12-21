@@ -2,16 +2,16 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
-import com.datastax.spark.connector.types.{MapType, ListType, ColumnType}
-import org.apache.spark.metrics.OutputMetricsUpdater
-
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.util.CountingIterator
+import com.datastax.spark.connector.types.{ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
-import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.Logging
+import com.datastax.spark.connector.util.CountingIterator
+import org.apache.spark.TaskContext
+import org.apache.spark.metrics.OutputMetricsUpdater
 
 import scala.collection._
 
@@ -59,6 +59,21 @@ class TableWriter[T] private (
     s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $ifNotExistsSpec$optionsSpec".trim
   }
 
+  private def deleteQueryTemplate(deleteColumns: ColumnSelector): String = {
+    val deleteColumnNames: Seq[String] = deleteColumns.selectFrom(tableDef).map(_.columnName)
+    val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
+    if (regularColumns.nonEmpty) {
+      throw new IllegalArgumentException(
+        s"Only primary key columns can be used in delete. Regular columns found: ${regularColumns.mkString(", ")}")
+    }
+    TableWriter.checkMissingColumns(tableDef, deleteColumnNames)
+
+    def quotedColumnNames(columns: Seq[ColumnDef]) = columns.map(_.columnName).map(quote)
+    val deleteColumnsClause = deleteColumnNames.map(quote).mkString(", ")
+    val whereClause = quotedColumnNames(primaryKey).map(c => s"$c = :$c").mkString(" AND ")
+
+    s"DELETE ${deleteColumnsClause} FROM ${quote(keyspaceName)}.${quote(tableName)} WHERE $whereClause"
+  }
   private lazy val queryTemplateUsingUpdate: String = {
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
@@ -93,14 +108,8 @@ class TableWriter[T] private (
   private val containsCollectionBehaviors =
     columnSelector.exists(_.isInstanceOf[CollectionColumnName])
 
-  private val queryTemplate: String = {
-    if (isCounterUpdate || containsCollectionBehaviors)
-      queryTemplateUsingUpdate
-    else
-      queryTemplateUsingInsert
-  }
 
-  private def prepareStatement(session: Session): PreparedStatement = {
+  private def prepareStatement(queryTemplate:String, session: Session): PreparedStatement = {
     try {
       session.prepare(queryTemplate)
     }
@@ -128,13 +137,46 @@ class TableWriter[T] private (
     }
   }
 
-  /** Main entry point */
-  def write(taskContext: TaskContext, data: Iterator[T]) {
+  /**
+    * Main entry point
+    * if counter or collection column need to be updated Cql UPDATE command will be used
+    * INSERT otherwise
+    */
+  def write(taskContext: TaskContext, data: Iterator[T]): Unit = {
+    if (isCounterUpdate || containsCollectionBehaviors) {
+      update(taskContext, data)
+    }
+    else {
+      insert(taskContext, data)
+    }
+  }
+
+  /**
+    * Write data with Cql UPDATE statement
+    */
+  def update(taskContext: TaskContext, data: Iterator[T]): Unit =
+    writeInternal(queryTemplateUsingUpdate, taskContext, data)
+  /**
+    * Write data with Cql INSERT statement
+    */
+  def insert(taskContext: TaskContext, data: Iterator[T]):Unit =
+    writeInternal(queryTemplateUsingInsert, taskContext, data)
+
+  /**
+    * Cql DELETE statement
+    * @param columns columns to delete, the row will be deleted comletely if the list is empty
+    * @param taskContext
+    * @param data primary key values to select delete rows
+    */
+  def delete(columns: ColumnSelector) (taskContext: TaskContext, data: Iterator[T]): Unit =
+    writeInternal(deleteQueryTemplate(columns), taskContext, data)
+
+  private def writeInternal(queryTemplate: String, taskContext: TaskContext, data: Iterator[T]) {
     val updater = OutputMetricsUpdater(taskContext, writeConf)
     connector.withSessionDo { session =>
       val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
       val rowIterator = new CountingIterator(data)
-      val stmt = prepareStatement(session).setConsistencyLevel(writeConf.consistencyLevel)
+      val stmt = prepareStatement(queryTemplate, session).setConsistencyLevel(writeConf.consistencyLevel)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
         Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
@@ -188,6 +230,14 @@ object TableWriter {
     if (missingPrimaryKeyColumns.nonEmpty)
       throw new IllegalArgumentException(
         s"Some primary key columns are missing in RDD or have not been selected: ${missingPrimaryKeyColumns.mkString(", ")}")
+  }
+
+  private def checkMissingPartitionKeyColumns(table: TableDef, columnNames: Seq[String]) {
+    val partitionKeyColumnNames = table.partitionKey.map(_.columnName)
+    val missingPartitionKeyColumns = partitionKeyColumnNames.toSet -- columnNames
+    if (missingPartitionKeyColumns.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Some partition key columns are missing in RDD or have not been selected: ${missingPartitionKeyColumns.mkString(", ")}")
   }
 
   /**
@@ -250,10 +300,11 @@ object TableWriter {
       )
   }
 
-  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef]) = {
+  private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef], checkPartitionKey: Boolean) = {
     val columnNames = columnRefs.map(_.columnName)
     checkMissingColumns(table, columnNames)
-    checkMissingPrimaryKeyColumns(table, columnNames)
+    if(checkPartitionKey) checkMissingPartitionKeyColumns(table, columnNames)
+    else checkMissingPrimaryKeyColumns(table, columnNames)
     checkCollectionBehaviors(table, columnRefs)
   }
 
@@ -262,7 +313,8 @@ object TableWriter {
       keyspaceName: String,
       tableName: String,
       columnNames: ColumnSelector,
-      writeConf: WriteConf): TableWriter[T] = {
+      writeConf: WriteConf,
+      checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val selectedColumns = columnNames.selectFrom(tableDef)
@@ -271,7 +323,7 @@ object TableWriter {
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
       selectedColumns ++ optionColumns.map(_.ref))
 
-    checkColumns(tableDef, selectedColumns)
+    checkColumns(tableDef, selectedColumns, checkPartitionKey)
     new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
   }
 }
