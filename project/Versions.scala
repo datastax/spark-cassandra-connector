@@ -33,7 +33,7 @@ object Versions {
   val CassandraDriver = "3.0.2"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
-  val CommonsBeanUtils= "1.8.0"
+  val CommonsBeanUtils= "1.9.3"
   val Config          = "1.2.1"
   val Guava           = "16.0.1"
   val JDK             = "1.7"
