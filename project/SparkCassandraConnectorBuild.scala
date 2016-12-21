@@ -205,17 +205,18 @@ object Artifacts {
       .exclude("org.scala-lang", "scala-compiler")
   }
 
-  val cassandraDriver     = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver driverExclusions() // ApacheV2
-  val commonsBeanUtils    = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
-  val config              = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
-  val guava               = "com.google.guava"        % "guava"                  % Guava
-  val jodaC               = "org.joda"                % "joda-convert"           % JodaC
-  val jodaT               = "joda-time"               % "joda-time"              % JodaT
-  val lzf                 = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
-  val netty               = "io.netty"                % "netty-all"              % Netty
-  val slf4jApi            = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
-  val jsr166e             = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
-  val airlift             = "io.airlift"              % "airline"                % Airlift
+  val cassandraDriver         = "com.datastax.cassandra"  % "cassandra-driver-core"  % CassandraDriver driverExclusions() // ApacheV2
+  val cassandraDriverMapping  = "com.datastax.cassandra"  % "cassandra-driver-mapping"  % CassandraDriver driverExclusions() // ApacheV2
+  val commonsBeanUtils        = "commons-beanutils"       % "commons-beanutils"      % CommonsBeanUtils                 exclude("commons-logging", "commons-logging") // ApacheV2
+  val config                  = "com.typesafe"            % "config"                 % Config         % "provided"  // ApacheV2
+  val guava                   = "com.google.guava"        % "guava"                  % Guava
+  val jodaC                   = "org.joda"                % "joda-convert"           % JodaC
+  val jodaT                   = "joda-time"               % "joda-time"              % JodaT
+  val lzf                     = "com.ning"                % "compress-lzf"           % Lzf            % "provided"
+  val netty                   = "io.netty"                % "netty-all"              % Netty
+  val slf4jApi                = "org.slf4j"               % "slf4j-api"              % Slf4j          % "provided"  // MIT
+  val jsr166e                 = "com.twitter"             % "jsr166e"                % JSR166e                      // Creative Commons
+  val airlift                 = "io.airlift"              % "airline"                % Airlift
 
   val sparkCore           = "org.apache.spark"        %% "spark-core"            % Spark sparkCoreExclusions() // ApacheV2
   val sparkRepl           = "org.apache.spark"        %% "spark-repl"            % Spark sparkExclusions()     // ApacheV2
@@ -288,15 +289,14 @@ object Dependencies {
     Test.powerMockMockito
   )
 
-  val cassandra = Seq(cassandraDriver)
-
+  val cassandra = Seq(cassandraDriver, cassandraDriverMapping)
   val spark = Seq(sparkCore, sparkStreaming, sparkSql, sparkCatalyst, sparkHive, sparkUnsafe)
 
   /**
     * Dependencies which will be shaded in our distribution artifact and not listed on the
     * distribution artifact's dependency list.
     */
-  val shaded = Seq(guava, cassandraDriver)
+  val shaded = Seq(guava, cassandraDriver, cassandraDriverMapping)
 
   /**
     * This is the full dependency list required to build an assembly with all dependencies

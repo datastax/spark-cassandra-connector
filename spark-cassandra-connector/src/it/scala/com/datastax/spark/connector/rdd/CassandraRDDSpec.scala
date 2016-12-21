@@ -7,7 +7,7 @@ import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
-import com.datastax.spark.connector.mapper.DefaultColumnMapper
+import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
 import org.joda.time.{DateTime, LocalDate}
 
@@ -119,6 +119,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
         session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+      },
+
+      Future {
+        session.execute( s"""CREATE TYPE $ks.nested (field int, cassandra_another_field int, cassandra_yet_another_field int)""")
+        session.execute( s"""CREATE TABLE $ks.udts_nested(cassandra_property_1 INT PRIMARY KEY, cassandra_camel_case_property text, nested frozen<nested>)""")
       },
 
       Future {
@@ -512,6 +517,52 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     udtValue.getString("street") should be("Some Street")
     udtValue.getString("city") should be("Paris")
     udtValue.getInt("zip") should be(11120)
+  }
+
+  it should "allow to save UDT columns from mapped Java objects and read them as UDTValue or Java objects" in {
+    val judt = new JavaTestUDTBean
+    val jb = new JavaTestBean
+
+    // maps to field
+    judt.setField(3)
+    // maps to another_field
+    judt.setAnotherField(4)
+    // maps to yet_another_field
+    judt.setCompletelyUnrelatedField(5)
+
+    // maps to property_1
+    jb.setProperty1(1)
+    // maps to camel_case_property
+    jb.setCamelCaseProperty(2)
+    // maps to nested
+    jb.setNested(judt)
+
+    // We need to bridge the Object mapper in Java to Scala with the JavaBeanColumnMapper
+    implicit val columnMapper = new JavaBeanColumnMapper[JavaTestBean]()
+    sc.parallelize(Seq(jb)).saveToCassandra(ks,"udts_nested")
+
+    // Saving is done via POJO with annotations, now to read them back in
+    val result = sc.cassandraTable(ks, "udts_nested").select("cassandra_property_1", "cassandra_camel_case_property", "nested").collect()
+    result should have length 1
+    val row = result.head
+    row.getInt(0) should be(1)
+    row.getInt(1) should be(2)
+
+    val udtValue = row.getUDTValue(2)
+    udtValue.size should be(3)
+    udtValue.getInt("field") should be(3)
+    udtValue.getInt("cassandra_another_field") should be(4)
+    udtValue.getInt("cassandra_yet_another_field") should be(5)
+
+    // Let's do one more test, this time reading it back as the POJO
+    val bean = sc.cassandraTable[JavaTestBean](ks, "udts_nested").select("cassandra_property_1", "cassandra_camel_case_property", "nested").first()
+
+    bean.getProperty1 should be(1)
+    bean.getCamelCaseProperty should be(2)
+    bean.getNested.getField should be(3)
+    bean.getNested.getAnotherField should be(4)
+    bean.getNested.getCompletelyUnrelatedField should be(5)
+
   }
 
   it should "allow to fetch UDT columns as objects of case classes" in {
