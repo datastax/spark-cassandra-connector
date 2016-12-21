@@ -1,9 +1,10 @@
 # Documentation
+
 ## Saving and deleting to/from Cassandra
 
-It is possible to save any `RDD` to Cassandra, not just a `CassandraRDD`. 
-The only requirement is that the object class of `RDD` is a tuple or 
-has property names corresponding to Cassandra column names. 
+It is possible to save any `RDD` to Cassandra, not just `CassandraRDD`. 
+The only requirement is that the object class of `RDD` is a tuple or has property names 
+corresponding to Cassandra column names. 
 
 It is possible to save an `RDD` to an existing Cassandra table as well 
 as to let the connector create appropriate table automatically based on 
@@ -13,11 +14,11 @@ To save an `RDD` to an existing table, import `com.datastax.spark.connector._`
 and call the `saveToCassandra` method with the keyspace name, table name 
 and a list of columns. Make sure to include at least all primary key columns.
 To save an `RDD` to a new table, instead of calling `saveToCassandra`, 
-call `saveAsCassandraTable` or `saveAsCassandraTableEx`.
+call `saveAsCassandraTable` or `saveAsCassandraTableEx` with the name of the table you want to create.
 
 `deleteFromCassandra` can be used to delete columns or full rows from Cassandra table based on `RDD` with primary keys
- 
-## Saving an RDD of Tuples
+
+## Saving a collection of tuples
 
 #### Example Saving an RDD of Tuples with Default Mapping
 Assume the following table definition:

@@ -111,8 +111,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     require(
       joinColumnPredicates.isEmpty,
       s"""Columns specified in both the join on clause and the where clause.
-          |Partition key columns are always part of the join clause.
-          |Columns in both: ${joinColumnPredicates.mkString(", ")}""".stripMargin
+         |Partition key columns are always part of the join clause.
+         |Columns in both: ${joinColumnPredicates.mkString(", ")}""".stripMargin
     )
 
     logDebug("Generating Single Key Query Prepared Statement String")

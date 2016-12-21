@@ -44,6 +44,18 @@
  * Fix conversion of LocalDate to Joda LocalDate (SPARKC-391)
  * Shade Guava to avoid conflict with outdated Guava in Spark (SPARKC-355)
 
+2.0.0 M1
+ * Added support for left outer joins with C* table (SPARKC-181)
+ * Removed CassandraSqlContext and underscore based options (SPARKC-399)
+ * Upgrade to Spark 2.0.0-preview (SPARKC-396)
+    - Removed Twitter demo because there is no spark-streaming-twitter package available anymore
+    - Removed Akka Actor demo becaues there is no support for such streams anymore
+    - Bring back Kafka project and make it compile
+    - Update several classes to use our Logging instead of Spark Logging because Spark Logging became private
+    - Update few components and tests to make them work with Spark 2.0.0
+    - Fix Spark SQL - temporarily
+    - Update plugins and Scala version
+
 1.6.0
  * SparkSql write supports TTL per row (SPARKC-345)
  * Make Repartition by Cassandra Replica Deterministic (SPARKC-278)

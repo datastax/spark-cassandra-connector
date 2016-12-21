@@ -1156,7 +1156,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     rdd.partitions.size should be (4)
   }
 
-  it should "delete rows just selected from the C*" in {
+  "RDD.deleteFromCassandra" should "delete rows just selected from the C*" in {
 
     conn.withSessionDo { session =>
       session.execute(s"""DROP TABLE IF EXISTS $ks.delete_wide_rows1""")
