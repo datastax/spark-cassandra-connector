@@ -2,7 +2,7 @@
 
 ## Frequently Asked Questions
 
-### What does this mean NoClassDefFoundError: scala/collection/GenTraversableOnce$class?
+### What does this mean "`NoClassDefFoundError: scala/collection/GenTraversableOnce$class?`"
 
 This means that there is a mix of Scala versions in the libraries used in your
 code. The collection api is different between Scala 2.10 and 2.11 and this the 
