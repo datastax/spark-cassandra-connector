@@ -2,6 +2,40 @@
 
 ## Frequently Asked Questions
 
+### What does this mean NoClassDefFoundError: scala/collection/GenTraversableOnce$class?
+
+This means that there is a mix of Scala versions in the libraries used in your
+code. The collection api is different between Scala 2.10 and 2.11 and this the 
+most common error which occurs if a scala 2.10 library is attempted to be loaded
+in a Scala 2.11 runtime. To fix this make sure that the name has the correct
+Scala version suffix to match your Scala version. 
+
+##### Spark Cassandra Connector built against Scala 2.10
+```xml
+<artifactId>spark-cassandra-connector_2.10</artifactId>
+```
+2.10 needs to match the Scala version of Spark and all other
+Scala libs.
+
+
+##### Spark Cassandra Connector dependency in SBT
+In sbt `%%` means append the suffix of Scala version in use for
+compilation.
+
+```
+  "com.datastax.spark" %% "spark-cassandra-connector" % connectorVersion % "provided"
+```
+
+
+For reference the defaults of Spark as downloaded from the Apache Website are
+
+| Spark Version | Scala Version Default | Supported Scala Version|
+----------------|-----------------------|------------------------|
+| 0 -> 1.6      | 2.10                  | 2.10, 2.11             |
+| 2.0 ->        | 2.11                  | 2.10(*), 2.11          |
+
+\* Deprecated
+
 ### How do I Fix Guava Classpath Errors
 
 Guava errors come from a conflict between Guava brought in by some 
