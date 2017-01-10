@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import java.util.concurrent.{ThreadFactory, TimeUnit, Executors}
+import java.util.ConcurrentModificationException
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -53,6 +54,18 @@ final class RefCountedCache[K, V](create: K => V,
         else
           acquire(key)
       case None =>
+        syncAcquire(key)
+    }
+  }
+
+  private[this] def syncAcquire(key: K): V = synchronized {
+    cache.get(key) match {
+      case Some(value) =>
+        if (refCounter.acquireIfNonZero(value) > 0)
+          value
+        else
+          acquire(key)
+      case None =>
         val (value, keySet) = createNewValueAndKeys(key)
         refCounter.acquire(value)
         cache.putIfAbsent(key, value) match {
@@ -61,12 +74,7 @@ final class RefCountedCache[K, V](create: K => V,
             valuesToKeys.put(value, keySet)
             value
           case Some(otherValue) =>
-            destroy(value)
-            refCounter.release(value)
-            if (refCounter.acquireIfNonZero(otherValue) > 0)
-              otherValue
-            else
-              acquire(key)
+            throw new ConcurrentModificationException("It shouldn't reach here as it is synchronized")
         }
     }
   }
