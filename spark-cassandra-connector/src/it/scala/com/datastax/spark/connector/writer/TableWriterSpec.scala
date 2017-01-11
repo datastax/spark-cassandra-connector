@@ -13,6 +13,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
 
+case class Address(street: String, city: String, zip: Int)
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
@@ -75,6 +76,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       Future {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+        session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
@@ -314,21 +316,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "write values of user-defined-types from case classes into Cassandra" in {
-    val address = Address(city = "Oakland", zip = 90210, street = "Broadway")
-    val col = Seq((1, "Joe", address))
-    sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
-
-    conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all()
-      result should have size 1
-      for (row <- result) {
-        row.getInt(0) shouldEqual 1
-        row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Oakland"
-        row.getUDTValue(2).getInt("zip") shouldEqual 90210
-      }
-    }
+  it should "write values of user-defined-types in Cassandra Collections" in {
+    val address = Address(city = "New Orleans", zip = 20401, street = "Magazine")
+    val rows = Seq((1, Seq(address), Map("home" -> address)))
+    sc.parallelize(rows).saveToCassandra(ks, "udtcollection")
+    val result = sc.cassandraTable[(Int, Seq[Address], Map[String, Address])](ks, "udtcollection").collect
+    result should contain theSameElementsAs (rows)
   }
 
   it should "write values of user-defined-types in Cassandra" in {
