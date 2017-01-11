@@ -13,6 +13,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.types.{BigIntType, TextType, IntType, TypeConverter}
 
+case class Address(street: String, city: String, zip: Int)
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
@@ -59,6 +60,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
 
     session.execute(s"""CREATE TYPE "$ks".address (street text, city text, zip int)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+    session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
+
 
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
     session.execute(s"""CREATE TABLE IF NOT EXISTS "$ks".tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
@@ -281,6 +284,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       for (row <- result)
         row.getString(2) shouldEqual "foo"
     }
+  }
+
+  it should "write values of user-defined-types in Cassandra Collections" in {
+    val address = Address(city = "New Orleans", zip = 20401, street = "Magazine")
+    val rows = Seq((1, Seq(address), Map("home" -> address)))
+    sc.parallelize(rows).saveToCassandra(ks, "udtcollection")
+    val result = sc.cassandraTable[(Int, Seq[Address], Map[String, Address])](ks, "udtcollection").collect
+    result should contain theSameElementsAs (rows)
   }
 
   it should "write values of user-defined-types in Cassandra" in {
