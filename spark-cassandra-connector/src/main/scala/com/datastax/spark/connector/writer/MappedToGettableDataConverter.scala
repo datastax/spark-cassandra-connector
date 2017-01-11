@@ -9,7 +9,7 @@ import com.datastax.spark.connector.{ColumnRef, GettableByIndexData, TupleValue,
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{ColumnType, ListType, MapType, SetType, TupleType, TypeConverter}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 private[connector] object MappedToGettableDataConverter extends Logging{
 
