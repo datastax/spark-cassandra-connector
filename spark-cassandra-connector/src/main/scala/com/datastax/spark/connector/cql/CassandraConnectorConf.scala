@@ -2,8 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 import java.io.{ObjectOutputStream, ObjectInputStream, ByteArrayOutputStream, ByteArrayInputStream}
-
-import org.apache.commons.codec.binary.Base64
+import java.util.Base64
 
 import com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf
 
@@ -43,7 +42,7 @@ case class CassandraConnectorConf(
     val oos = new ObjectOutputStream(baos)
     oos.writeObject(this);
     oos.close;
-    Base64.encodeBase64String(baos.toByteArray)
+    Base64.getEncoder.encodeToString(baos.toByteArray)
   }
 
   override def hashCode: Int = serializedConfString.hashCode
