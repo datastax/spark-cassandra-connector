@@ -1,4 +1,10 @@
- * Fixed use of connection.local_dc parameter (SPARKC-448)
+1.4.5
+* Find converters for classes on different classloaders (SPARKC-363)
+* Disallow TimeUUID predicate pushdown (SPARKC-405)
+* Avoid overflow on SplitSizeInMB param (SPARKC-413)
+* Fix CassandraConnector and Session Race Condition (SPARKC-441)
+* Correct Order of "limit" and "orderBy" clauses in JWCT (SPARKC-443)
+* Fixed use of connection.local_dc parameter (SPARKC-448)
 
 1.5.1
  * Includes all patches up to 1.4.4
