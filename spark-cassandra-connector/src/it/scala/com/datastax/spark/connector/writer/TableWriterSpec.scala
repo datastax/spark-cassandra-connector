@@ -13,6 +13,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 
+case class Address(street: String, city: String, zip: Int)
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
