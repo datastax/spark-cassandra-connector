@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
+import java.io.{ObjectOutputStream, ObjectInputStream, ByteArrayOutputStream, ByteArrayInputStream}
+import java.util.Base64
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -28,7 +30,26 @@ case class CassandraConnectorConf(
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
   @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   queryRetryDelay: CassandraConnectorConf.RetryDelayConf = CassandraConnectorConf.QueryRetryDelayParam.default
-)
+) {
+
+  @transient
+  lazy val serializedConfString: String = {
+    val baos = new ByteArrayOutputStream
+    val oos = new ObjectOutputStream(baos)
+    oos.writeObject(this);
+    oos.close;
+    Base64.getEncoder.encodeToString(baos.toByteArray)
+  }
+
+  override def hashCode: Int = serializedConfString.hashCode
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case that: CassandraConnectorConf => that.serializedConfString == serializedConfString
+      case _ => false
+    }
+  }
+}
 
 /** A factory for [[CassandraConnectorConf]] objects.
   * Allows for manually setting connection properties or reading them from [[org.apache.spark.SparkConf SparkConf]]
