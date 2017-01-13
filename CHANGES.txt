@@ -1,5 +1,10 @@
- * Add RDD.deleteFromCassandra() method (SPARKC-349)
- * Fixed use of connection.local_dc parameter (SPARKC-448)
+1.6.4
+* Find converters for classes on different classloaders (SPARKC-363)
+* Fix CassandraConnector and Session Race Condition (SPARKC-441)
+* Fixed use of connection.local_dc parameter (SPARKC-448) 
+* Add RDD.deleteFromCassandra() method (SPARKC-349) (backport)
+* Left join with Cassandra (SPARKC-181) (backport)
+* CustomDriverConverter support for DataFrame Conversions (SPARKC-440)
 
 1.6.3
  * Added SSL client authentication (SPARKC-359)
@@ -70,7 +75,13 @@
 
 ********************************************************************************
 
- * Fixed use of connection.local_dc parameter (SPARKC-448)
+1.5.2
+* Find converters for classes on different classloaders (SPARKC-363)
+* Disallow TimeUUID predicate pushdown (SPARKC-405)
+* Avoid overflow on SplitSizeInMB param (SPARKC-413)
+* Fix CassandraConnector and Session Race Condition (SPARKC-441)
+* Correct Order of "limit" and "orderBy" clauses in JWCT (SPARKC-443)
+* Fixed use of connection.local_dc parameter (SPARKC-448)
 
 1.5.1
  * Includes all patches up to 1.4.4
@@ -112,7 +123,13 @@
 
 ********************************************************************************
 
- * Fixed use of connection.local_dc parameter (SPARKC-448)
+1.4.5
+* Find converters for classes on different classloaders (SPARKC-363)
+* Disallow TimeUUID predicate pushdown (SPARKC-405)
+* Avoid overflow on SplitSizeInMB param (SPARKC-413)
+* Fix CassandraConnector and Session Race Condition (SPARKC-441)
+* Correct Order of "limit" and "orderBy" clauses in JWCT (SPARKC-443)
+* Fixed use of connection.local_dc parameter (SPARKC-448)
 
 1.4.4
  * Use executeAsync when joining with C* table (SPARKC-233)
