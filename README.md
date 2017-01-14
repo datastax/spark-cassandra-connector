@@ -67,18 +67,18 @@ API documentation for the Scala and Java interfaces are available online:
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector/)
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector-embedded/)
 
-### 1.6.0
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.0/spark-cassandra-connector-embedded/)
+### 1.6.4
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.4/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.4/spark-cassandra-connector-embedded/)
 
-### 1.5.0
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-java/)
+### 1.5.2
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.2/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.2/spark-cassandra-connector-java/)
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.0/spark-cassandra-connector-embedded/)
 
-### 1.4.2
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector/)
-* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-java/)
+### 1.4.5
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.5/spark-cassandra-connector/)
+* [Spark-Cassandra-Connector-Java](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.5/spark-cassandra-connector-java/)
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.4.2/spark-cassandra-connector-embedded/)
 
 ### 1.3.1

@@ -78,3 +78,19 @@ of your publish command.
 
 This same method should work with `publishLocal`
 after the merging of [SPARK-12666](https://issues.apache.org/jira/browse/SPARK-12666)
+
+
+### Publishing Docs
+
+Run the generateDocs script with all the versions to generate docs for
+
+```bash
+./generateDocs Version Version Version Version
+```
+Which will checkout those tags v$Version and run sbt doc for each of them.
+The output files will eventually be moved to the gh-pages branch. After the
+script has finished inspect the results then if they are good run.
+
+```bash
+git add .; git commit
+```
