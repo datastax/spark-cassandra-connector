@@ -80,7 +80,7 @@ This same method should work with `publishLocal`
 after the merging of [SPARK-12666](https://issues.apache.org/jira/browse/SPARK-12666)
 
 
-### Publishing Docs
+### Publishing ScalaDocs
 
 Run the generateDocs script with all the versions to generate docs for
 
