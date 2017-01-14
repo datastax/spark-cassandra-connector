@@ -1,0 +1,761 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>DStreamFunctions - com.datastax.spark.connector.streaming.DStreamFunctions</title>
+          <meta name="description" content="DStreamFunctions - com.datastax.spark.connector.streaming.DStreamFunctions" />
+          <meta name="keywords" content="DStreamFunctions com.datastax.spark.connector.streaming.DStreamFunctions" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.streaming.DStreamFunctions';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img src="../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a>.<a href="package.html" class="extype" name="com.datastax.spark.connector.streaming">streaming</a></p>
+        <h1>DStreamFunctions</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DStreamFunctions</span><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.streaming.DStreamFunctions"><span>DStreamFunctions</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="com.datastax.spark.connector.writer.WritableToCassandra"><span>WritableToCassandra</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+                <span class="filtertype">Implicitly<br />
+                </span>
+                <ol id="implicits"> <li class="in" name="scala.Predef.any2stringadd" data-hidden="true"><span>by any2stringadd</span></li><li class="in" name="scala.Predef.any2stringfmt" data-hidden="true"><span>by any2stringfmt</span></li><li class="in" name="scala.Predef.any2ArrowAssoc" data-hidden="true"><span>by any2ArrowAssoc</span></li><li class="in" name="scala.Predef.any2Ensuring" data-hidden="true"><span>by any2Ensuring</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="com.datastax.spark.connector.streaming.DStreamFunctions#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(dstream:org.apache.spark.streaming.dstream.DStream[T]):com.datastax.spark.connector.streaming.DStreamFunctions[T]"></a>
+      <a id="&lt;init&gt;:DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DStreamFunctions</span><span class="params">(<span name="dstream">dstream: <a href="http://spark.apache.org/docs/1.4.1/api/scala/index.html#org.apache.spark.streaming.dstream.DStream" class="extype" target="_top">DStream</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>)</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:AnyRef):Boolean"></a>
+      <a id="!=(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Predef.any2stringadd#+" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="+(other:String):String"></a>
+      <a id="+(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $plus" class="implicit">+</span><span class="params">(<span name="other">other: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.runtime.StringAdd">StringAdd</span> performed by method any2stringadd in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>StringAdd</dd></dl></div>
+    </li><li name="scala.Predef.any2ArrowAssoc#-&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="-&gt;[B](y:B):(A,B)"></a>
+      <a id="-&gt;[B](B):(DStreamFunctions[T],B)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $minus$greater" class="implicit">-&gt;</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="y">y: <span class="extype" name="scala.Predef.ArrowAssoc.-&gt;.B">B</span></span>)</span><span class="result">: (<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>], <span class="extype" name="scala.Predef.ArrowAssoc.-&gt;.B">B</span>)</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2ArrowAssoc in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>ArrowAssoc</dd><dt>Annotations</dt><dd>
+                <span class="name">@inline</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:AnyRef):Boolean"></a>
+      <a id="==(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.streaming.DStreamFunctions#conf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="conf:org.apache.spark.SparkConf"></a>
+      <a id="conf:SparkConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">conf</span><span class="result">: <a href="http://spark.apache.org/docs/1.4.1/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:A=&gt;Boolean,msg:=&gt;Any):A"></a>
+      <a id="ensuring((DStreamFunctions[T])⇒Boolean,⇒Any):DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: (<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="msg">msg: ⇒ <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:A=&gt;Boolean):A"></a>
+      <a id="ensuring((DStreamFunctions[T])⇒Boolean):DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: (<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:Boolean,msg:=&gt;Any):A"></a>
+      <a id="ensuring(Boolean,⇒Any):DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="msg">msg: ⇒ <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:Boolean):A"></a>
+      <a id="ensuring(Boolean):DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.Predef.any2stringfmt#formatted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="formatted(fmtstr:String):String"></a>
+      <a id="formatted(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">formatted</span><span class="params">(<span name="fmtstr">fmtstr: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.runtime.StringFormat">StringFormat</span> performed by method any2stringfmt in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>StringFormat</dd><dt>Annotations</dt><dd>
+                <span class="name">@inline</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.streaming.DStreamFunctions#joinWithCassandraTable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="joinWithCassandraTable[R](keyspaceName:String,tableName:String,selectedColumns:com.datastax.spark.connector.ColumnSelector,joinColumns:com.datastax.spark.connector.ColumnSelector)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitnewType:scala.reflect.ClassTag[R],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[R],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[R],implicitcurrentType:scala.reflect.ClassTag[T],implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):org.apache.spark.streaming.dstream.DStream[(T,R)]"></a>
+      <a id="joinWithCassandraTable[R](String,String,ColumnSelector,ColumnSelector)(CassandraConnector,ClassTag[R],RowReaderFactory[R],ValidRDDType[R],ClassTag[T],RowWriterFactory[T]):DStream[(T,R)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">joinWithCassandraTable</span><span class="tparams">[<span name="R">R</span>]</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="selectedColumns">selectedColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">AllColumns</a></span></span></span>, <span name="joinColumns">joinColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">PartitionKeyColumns</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> = <span class="defval" name='<span class="name"><a href="#sparkContext:org.apache.spark.SparkContext">CassandraConnector(sparkContext.getConf)</a></span>'>...</span></span>, <span name="newType">newType: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.joinWithCassandraTable.R">R</span>]</span>, <span name="rrf">rrf: <a href="../rdd/reader/RowReaderFactory.html" class="extype" name="com.datastax.spark.connector.rdd.reader.RowReaderFactory">RowReaderFactory</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.joinWithCassandraTable.R">R</span>]</span>, <span name="ev">ev: <a href="../rdd/ValidRDDType.html" class="extype" name="com.datastax.spark.connector.rdd.ValidRDDType">ValidRDDType</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.joinWithCassandraTable.R">R</span>]</span>, <span name="currentType">currentType: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>, <span name="rwf">rwf: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/1.4.1/api/scala/index.html#org.apache.spark.streaming.dstream.DStream" class="extype" target="_top">DStream</a>[(<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>, <span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.joinWithCassandraTable.R">R</span>)]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Transforms RDDs with <a href="../RDDFunctions.html#joinWithCassandraTable[R](keyspaceName:String,tableName:String,selectedColumns:com.datastax.spark.connector.ColumnSelector,joinColumns:com.datastax.spark.connector.ColumnSelector)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitnewType:scala.reflect.ClassTag[R],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[R],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[R],implicitcurrentType:scala.reflect.ClassTag[T],implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):com.datastax.spark.connector.rdd.CassandraJoinRDD[T,R]" class="extmbr" name="com.datastax.spark.connector.RDDFunctions#joinWithCassandraTable">com.datastax.spark.connector.RDDFunctions.joinWithCassandraTable</a>
+for each produced RDD
+</p>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.streaming.DStreamFunctions#repartitionByCassandraReplica" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="repartitionByCassandraReplica(keyspaceName:String,tableName:String,partitionsPerHost:Int,partitionKeyMapper:com.datastax.spark.connector.ColumnSelector)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitcurrentType:scala.reflect.ClassTag[T],implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):org.apache.spark.streaming.dstream.DStream[T]"></a>
+      <a id="repartitionByCassandraReplica(String,String,Int,ColumnSelector)(CassandraConnector,ClassTag[T],RowWriterFactory[T]):DStream[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">repartitionByCassandraReplica</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="partitionsPerHost">partitionsPerHost: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">10</span></span>, <span name="partitionKeyMapper">partitionKeyMapper: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">PartitionKeyColumns</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> = <span class="symbol"><span class="name"><a href="#conf:org.apache.spark.SparkConf">CassandraConnector(conf)</a></span></span></span>, <span name="currentType">currentType: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>, <span name="rwf">rwf: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/1.4.1/api/scala/index.html#org.apache.spark.streaming.dstream.DStream" class="extype" target="_top">DStream</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Transforms RDDs with <a href="../RDDFunctions.html#repartitionByCassandraReplica(keyspaceName:String,tableName:String,partitionsPerHost:Int,partitionKeyMapper:com.datastax.spark.connector.ColumnSelector)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitcurrentType:scala.reflect.ClassTag[T],implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD[T]" class="extmbr" name="com.datastax.spark.connector.RDDFunctions#repartitionByCassandraReplica">com.datastax.spark.connector.RDDFunctions.repartitionByCassandraReplica</a>
+for each produced RDD.</p>
+    </li><li name="com.datastax.spark.connector.streaming.DStreamFunctions#saveToCassandra" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="saveToCassandra(keyspaceName:String,tableName:String,columnNames:com.datastax.spark.connector.ColumnSelector,writeConf:com.datastax.spark.connector.writer.WriteConf)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):Unit"></a>
+      <a id="saveToCassandra(String,String,ColumnSelector,WriteConf)(CassandraConnector,RowWriterFactory[T]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveToCassandra</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="columnNames">columnNames: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">AllColumns</a></span></span></span>, <span name="writeConf">writeConf: <a href="../writer/WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a> = <span class="symbol"><span class="name"><a href="#conf:org.apache.spark.SparkConf">WriteConf.fromSparkConf(conf)</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> = <span class="symbol"><span class="name"><a href="#conf:org.apache.spark.SparkConf">CassandraConnector(conf)</a></span></span></span>, <span name="rwf">rwf: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Performs <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">com.datastax.spark.connector.writer.WritableToCassandra</a> for each produced RDD.</p><div class="fullcomment"><div class="comment cmt"><p>Performs <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">com.datastax.spark.connector.writer.WritableToCassandra</a> for each produced RDD.
+Uses specific column names with an additional batch size.</p></div><dl class="paramcmts block"><dt class="param">keyspaceName</dt><dd class="cmt"><p>the name of the Keyspace to use
+</p></dd><dt class="param">tableName</dt><dd class="cmt"><p>the name of the Table to use
+</p></dd><dt class="param">columnNames</dt><dd class="cmt"><p>The list of column names to save data to.
+               Uses only the unique column names, and you must select at least all primary key
+               columns. All other fields are discarded. Non-selected property/column names are left unchanged.
+</p></dd><dt class="param">writeConf</dt><dd class="cmt"><p>additional configuration object allowing to set consistency level, batch size, etc.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a> → <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.streaming.DStreamFunctions#sparkContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sparkContext:org.apache.spark.SparkContext"></a>
+      <a id="sparkContext:SparkContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sparkContext</span><span class="result">: <a href="http://spark.apache.org/docs/1.4.1/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a> → <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.Predef.any2ArrowAssoc#→" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="→[B](y:B):(A,B)"></a>
+      <a id="→[B](B):(DStreamFunctions[T],B)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $u2192" class="implicit">→</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="y">y: <span class="extype" name="scala.Predef.ArrowAssoc.→.B">B</span></span>)</span><span class="result">: (<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>], <span class="extype" name="scala.Predef.ArrowAssoc.→.B">B</span>)</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2ArrowAssoc in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>ArrowAssoc</dd></dl></div>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Shadowed Implicit Value Members</h3>
+              <ol><li name="scala.Predef.any2stringadd#self" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="self:Any"></a>
+      <a id="self:Any"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit shadowed">self</span><span class="result">: <span class="extype" name="scala.Any">Any</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.runtime.StringAdd">StringAdd</span> performed by method any2stringadd in scala.Predef.
+            
+          </dd><dt class="implicit">Shadowing</dt><dd>This implicitly inherited member is ambiguous. One or more implicitly inherited members have similar signatures, so calling this member may produce an ambiguous implicit conversion compiler error.<br />To access this member you can use a <a href="http://stackoverflow.com/questions/2087250/what-is-the-purpose-of-type-ascription-in-scala" target="_blank">type ascription</a>:<br /><div class="cmt"><pre>(dStreamFunctions: StringAdd).self</pre></div></dd><dt>Definition Classes</dt><dd>StringAdd</dd></dl></div>
+    </li><li name="scala.Predef.any2stringfmt#self" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="self:Any"></a>
+      <a id="self:Any"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit shadowed">self</span><span class="result">: <span class="extype" name="scala.Any">Any</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.runtime.StringFormat">StringFormat</span> performed by method any2stringfmt in scala.Predef.
+            
+          </dd><dt class="implicit">Shadowing</dt><dd>This implicitly inherited member is ambiguous. One or more implicitly inherited members have similar signatures, so calling this member may produce an ambiguous implicit conversion compiler error.<br />To access this member you can use a <a href="http://stackoverflow.com/questions/2087250/what-is-the-purpose-of-type-ascription-in-scala" target="_blank">type ascription</a>:<br /><div class="cmt"><pre>(dStreamFunctions: StringFormat).self</pre></div></dd><dt>Definition Classes</dt><dd>StringFormat</dd></dl></div>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.Predef.any2ArrowAssoc#x" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="x:A"></a>
+      <a id="x:DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit shadowed deprecated" title="Deprecated: (Since version 2.10.0) Use leftOfArrow instead">x</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2ArrowAssoc in scala.Predef.
+            
+          </dd><dt class="implicit">Shadowing</dt><dd>This implicitly inherited member is ambiguous. One or more implicitly inherited members have similar signatures, so calling this member may produce an ambiguous implicit conversion compiler error.<br />To access this member you can use a <a href="http://stackoverflow.com/questions/2087250/what-is-the-purpose-of-type-ascription-in-scala" target="_blank">type ascription</a>:<br /><div class="cmt"><pre>(dStreamFunctions: ArrowAssoc[DStreamFunctions[T]]).x</pre></div></dd><dt>Definition Classes</dt><dd>ArrowAssoc</dd><dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.10.0)</i> Use <code><u>leftOfArrow<code> instead</code></u></code></p></dd></dl></div>
+    </li><li name="scala.Predef.any2Ensuring#x" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="x:A"></a>
+      <a id="x:DStreamFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit shadowed deprecated" title="Deprecated: (Since version 2.10.0) Use resultOfEnsuring instead">x</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]] performed by method any2Ensuring in scala.Predef.
+            
+          </dd><dt class="implicit">Shadowing</dt><dd>This implicitly inherited member is ambiguous. One or more implicitly inherited members have similar signatures, so calling this member may produce an ambiguous implicit conversion compiler error.<br />To access this member you can use a <a href="http://stackoverflow.com/questions/2087250/what-is-the-purpose-of-type-ascription-in-scala" target="_blank">type ascription</a>:<br /><div class="cmt"><pre>(dStreamFunctions: Ensuring[DStreamFunctions[T]]).x</pre></div></dd><dt>Definition Classes</dt><dd>Ensuring</dd><dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.10.0)</i> Use <code><u>resultOfEnsuring<code> instead</code></u></code></p></dd></dl></div>
+    </li></ol>
+            </div>
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.writer.WritableToCassandra">
+              <h3>Inherited from <a href="../writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]</h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        <div class="conversion" name="scala.Predef.any2stringadd">
+              <h3>Inherited by implicit conversion any2stringadd from
+                <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to <span class="extype" name="scala.runtime.StringAdd">StringAdd</span>
+              </h3>
+            </div><div class="conversion" name="scala.Predef.any2stringfmt">
+              <h3>Inherited by implicit conversion any2stringfmt from
+                <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to <span class="extype" name="scala.runtime.StringFormat">StringFormat</span>
+              </h3>
+            </div><div class="conversion" name="scala.Predef.any2ArrowAssoc">
+              <h3>Inherited by implicit conversion any2ArrowAssoc from
+                <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]]
+              </h3>
+            </div><div class="conversion" name="scala.Predef.any2Ensuring">
+              <h3>Inherited by implicit conversion any2Ensuring from
+                <a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>] to <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions">DStreamFunctions</a>[<span class="extype" name="com.datastax.spark.connector.streaming.DStreamFunctions.T">T</span>]]
+              </h3>
+            </div>
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../../lib/template.js"></script>
+    </body>
+      </html>

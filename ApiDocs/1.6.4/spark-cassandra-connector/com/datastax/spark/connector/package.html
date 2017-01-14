@@ -1,0 +1,908 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>connector - com.datastax.spark.connector</title>
+          <meta name="description" content="connector - com.datastax.spark.connector" />
+          <meta name="keywords" content="connector com.datastax.spark.connector" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'com.datastax.spark.connector.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../package.html" class="extype" name="com.datastax.spark">spark</a></p>
+        <h1>connector</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">connector</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>The root package of Cassandra connector for Apache Spark.
+Offers handy implicit conversions that add Cassandra-specific methods to
+<a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> and <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>.</p><p>Call <a href="SparkContextFunctions.html#cassandraTable[T](keyspace:String,table:String)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitreadConf:com.datastax.spark.connector.rdd.ReadConf,implicitct:scala.reflect.ClassTag[T],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[T],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[T]):com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]" class="extmbr" name="com.datastax.spark.connector.SparkContextFunctions#cassandraTable">cassandraTable</a> method on
+the <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> object
+to create a <a href="rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraRDD</a> exposing
+Cassandra tables as Spark RDDs.</p><p>Call <a href="RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a> <code>saveToCassandra</code>
+function on any <code>RDD</code> to save distributed collection to a Cassandra table.</p><p>Example:</p><pre>CREATE KEYSPACE test WITH replication = {<span class="lit">'class'</span>: 'SimpleStrategy<span class="lit">', '</span>replication_factor': <span class="num">1</span> };
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+INSERT INTO test.words(word, count) VALUES (<span class="lit">"and"</span>, <span class="num">50</span>);</pre><pre><span class="kw">import</span> com.datastax.spark.connector._
+
+<span class="kw">val</span> sparkMasterHost = <span class="lit">"127.0.0.1"</span>
+<span class="kw">val</span> cassandraHost = <span class="lit">"127.0.0.1"</span>
+<span class="kw">val</span> keyspace = <span class="lit">"test"</span>
+<span class="kw">val</span> table = <span class="lit">"words"</span>
+
+<span class="cmt">// Tell Spark the address of one Cassandra node:</span>
+<span class="kw">val</span> conf = <span class="kw">new</span> SparkConf(<span class="kw">true</span>).set(<span class="lit">"spark.cassandra.connection.host"</span>, cassandraHost)
+
+<span class="cmt">// Connect to the Spark cluster:</span>
+<span class="kw">val</span> sc = <span class="kw">new</span> SparkContext(<span class="lit">"spark://"</span> + sparkMasterHost + <span class="lit">":7077"</span>, <span class="lit">"example"</span>, conf)
+
+<span class="cmt">// Read the table and print its contents:</span>
+<span class="kw">val</span> rdd = sc.cassandraTable(keyspace, table)
+rdd.toArray().foreach(println)
+
+<span class="cmt">// Write two rows to the table:</span>
+<span class="kw">val</span> col = sc.parallelize(<span class="std">Seq</span>((<span class="lit">"of"</span>, <span class="num">1200</span>), (<span class="lit">"the"</span>, <span class="lit">"863"</span>)))
+col.saveToCassandra(keyspace, table)
+
+sc.stop()</pre></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector"><span>connector</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.BatchSize" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BatchSizeextendsAnyRef"></a>
+      <a id="BatchSize:BatchSize"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BatchSize.html"><span class="name">BatchSize</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.BytesInBatch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BytesInBatchextendsBatchSizewithProductwithSerializable"></a>
+      <a id="BytesInBatch:BytesInBatch"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="BytesInBatch.html"><span class="name">BytesInBatch</span></a><span class="params">(<span name="batchSize">batchSize: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <a href="BatchSize.html" class="extype" name="com.datastax.spark.connector.BatchSize">BatchSize</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CassandraRow" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRowextendsScalaGettableDatawithSerializable"></a>
+      <a id="CassandraRow:CassandraRow"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRow.html"><span class="name">CassandraRow</span></a><span class="result"> extends <a href="ScalaGettableData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Represents a single row fetched from Cassandra.</p>
+    </li><li name="com.datastax.spark.connector.CassandraRowMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRowMetadataextendsProductwithSerializable"></a>
+      <a id="CassandraRowMetadata:CassandraRowMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRowMetadata.html"><span class="name">CassandraRowMetadata</span></a><span class="params">(<span name="columnNames">columnNames: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="resultSetColumnNames">resultSetColumnNames: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">scala.None</span></span>, <span name="codecs">codecs: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="com.datastax.driver.core.TypeCodec">TypeCodec</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]] = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">All CassandraRows shared data
+</p>
+    </li><li name="com.datastax.spark.connector.CassandraTableScanPairRDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraTableScanPairRDDFunctions[K,V]extendsSerializable"></a>
+      <a id="CassandraTableScanPairRDDFunctions[K,V]:CassandraTableScanPairRDDFunctions[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraTableScanPairRDDFunctions.html"><span class="name">CassandraTableScanPairRDDFunctions</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CassandraTableScanRDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraTableScanRDDFunctions[R]extendsSerializable"></a>
+      <a id="CassandraTableScanRDDFunctions[R]:CassandraTableScanRDDFunctions[R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraTableScanRDDFunctions.html"><span class="name">CassandraTableScanRDDFunctions</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CollectionBehavior" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="CollectionBehaviorextendsAnyRef"></a>
+      <a id="CollectionBehavior:CollectionBehavior"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionBehavior.html"><span class="name">CollectionBehavior</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Insert behaviors for Collections.</p>
+    </li><li name="com.datastax.spark.connector.CollectionColumnName" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectionColumnNameextendsColumnRefwithProductwithSerializable"></a>
+      <a id="CollectionColumnName:CollectionColumnName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionColumnName.html"><span class="name">CollectionColumnName</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="alias">alias: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="collectionBehavior">collectionBehavior: <a href="CollectionBehavior.html" class="extype" name="com.datastax.spark.connector.CollectionBehavior">CollectionBehavior</a> = <span class="symbol">CollectionOverwrite</span></span>)</span><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References a collection column by name with insert instructions</p>
+    </li><li name="com.datastax.spark.connector.ColumnName" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ColumnNameextendsColumnRefwithProductwithSerializable"></a>
+      <a id="ColumnName:ColumnName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnName.html"><span class="name">ColumnName</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="alias">alias: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References a column by name.</p>
+    </li><li name="com.datastax.spark.connector.ColumnNameFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ColumnNameFunctionsextendsAnyVal"></a>
+      <a id="ColumnNameFunctions:ColumnNameFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="package$$ColumnNameFunctions.html"><span class="name">ColumnNameFunctions</span></a><span class="result"> extends <span class="extype" name="scala.AnyVal">AnyVal</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.ColumnNotFoundException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ColumnNotFoundExceptionextendsException"></a>
+      <a id="ColumnNotFoundException:ColumnNotFoundException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnNotFoundException.html"><span class="name">ColumnNotFoundException</span></a><span class="result"> extends <span class="extype" name="scala.Exception">Exception</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Thrown when the requested column does not exist in the result set.</p>
+    </li><li name="com.datastax.spark.connector.ColumnRef" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ColumnRefextendsAnyRef"></a>
+      <a id="ColumnRef:ColumnRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnRef.html"><span class="name">ColumnRef</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A column that can be selected from CQL results set by name.</p>
+    </li><li name="com.datastax.spark.connector.ColumnSelector" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ColumnSelectorextendsAnyRef"></a>
+      <a id="ColumnSelector:ColumnSelector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnSelector.html"><span class="name">ColumnSelector</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.DataFrameFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DataFrameFunctionsextendsSerializable"></a>
+      <a id="DataFrameFunctions:DataFrameFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DataFrameFunctions.html"><span class="name">DataFrameFunctions</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.sql.DataFrame" class="extype" target="_top">org.apache.spark.sql.DataFrame</a></p>
+    </li><li name="com.datastax.spark.connector.FunctionCallRef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FunctionCallRefextendsColumnRefwithProductwithSerializable"></a>
+      <a id="FunctionCallRef:FunctionCallRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="FunctionCallRef.html"><span class="name">FunctionCallRef</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="actualParams">actualParams: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Either">Either</span>[<a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a>, <span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">collection.this.Seq.empty[Nothing]</span></span>, <span name="alias">alias: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References a function call *</p>
+    </li><li name="com.datastax.spark.connector.GettableByIndexData" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GettableByIndexDataextendsSerializable"></a>
+      <a id="GettableByIndexData:GettableByIndexData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="GettableByIndexData.html"><span class="name">GettableByIndexData</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.GettableData" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GettableDataextendsGettableByIndexData"></a>
+      <a id="GettableData:GettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="GettableData.html"><span class="name">GettableData</span></a><span class="result"> extends <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.PairRDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PairRDDFunctions[K,V]extendsSerializable"></a>
+      <a id="PairRDDFunctions[K,V]:PairRDDFunctions[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PairRDDFunctions.html"><span class="name">PairRDDFunctions</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.RDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RDDFunctions[T]extendsWritableToCassandra[T]withSerializable"></a>
+      <a id="RDDFunctions[T]:RDDFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RDDFunctions.html"><span class="name">RDDFunctions</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a>[<span class="extype" name="com.datastax.spark.connector.RDDFunctions.T">T</span>] with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a></p>
+    </li><li name="com.datastax.spark.connector.RowsInBatch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RowsInBatchextendsBatchSizewithProductwithSerializable"></a>
+      <a id="RowsInBatch:RowsInBatch"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RowsInBatch.html"><span class="name">RowsInBatch</span></a><span class="params">(<span name="batchSize">batchSize: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <a href="BatchSize.html" class="extype" name="com.datastax.spark.connector.BatchSize">BatchSize</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ScalaGettableByIndexDataextendsGettableByIndexData"></a>
+      <a id="ScalaGettableByIndexData:ScalaGettableByIndexData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ScalaGettableByIndexData.html"><span class="name">ScalaGettableByIndexData</span></a><span class="result"> extends <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableData" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ScalaGettableDataextendsScalaGettableByIndexDatawithGettableData"></a>
+      <a id="ScalaGettableData:ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ScalaGettableData.html"><span class="name">ScalaGettableData</span></a><span class="result"> extends <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a> with <a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.SomeColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SomeColumnsextendsColumnSelectorwithProductwithSerializable"></a>
+      <a id="SomeColumns:SomeColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="SomeColumns.html"><span class="name">SomeColumns</span></a><span class="params">(<span name="columns">columns: <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a>*</span>)</span><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.SparkContextFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SparkContextFunctionsextendsSerializable"></a>
+      <a id="SparkContextFunctions:SparkContextFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SparkContextFunctions.html"><span class="name">SparkContextFunctions</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></p>
+    </li><li name="com.datastax.spark.connector.TTL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TTLextendsColumnRefwithProductwithSerializable"></a>
+      <a id="TTL:TTL"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TTL.html"><span class="name">TTL</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="alias">alias: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References TTL of a column.</p>
+    </li><li name="com.datastax.spark.connector.TupleValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TupleValueextendsScalaGettableByIndexDatawithProductwithSerializable"></a>
+      <a id="TupleValue:TupleValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TupleValue.html"><span class="name">TupleValue</span></a><span class="params">(<span name="values">values: <span class="extype" name="scala.Any">Any</span>*</span>)</span><span class="result"> extends <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.UDTValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UDTValueextendsScalaGettableDatawithProductwithSerializable"></a>
+      <a id="UDTValue:UDTValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="UDTValue.html"><span class="name">UDTValue</span></a><span class="params">(<span name="columnNames">columnNames: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="columnValues">columnValues: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]</span>)</span><span class="result"> extends <a href="ScalaGettableData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.WriteTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="WriteTimeextendsColumnRefwithProductwithSerializable"></a>
+      <a id="WriteTime:WriteTime"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteTime.html"><span class="name">WriteTime</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="alias">alias: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References write time of a column.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.AllColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AllColumns"></a>
+      <a id="AllColumns:AllColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="AllColumns$.html"><span class="name">AllColumns</span></a><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.BatchSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BatchSize"></a>
+      <a id="BatchSize:BatchSize"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="BatchSize$.html"><span class="name">BatchSize</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CassandraRow" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRow"></a>
+      <a id="CassandraRow:CassandraRow"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRow$.html"><span class="name">CassandraRow</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CassandraRowMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRowMetadata"></a>
+      <a id="CassandraRowMetadata:CassandraRowMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRowMetadata$.html"><span class="name">CassandraRowMetadata</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CollectionAppend" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectionAppend"></a>
+      <a id="CollectionAppend:CollectionAppend"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionAppend$.html"><span class="name">CollectionAppend</span></a><span class="result"> extends <a href="CollectionBehavior.html" class="extype" name="com.datastax.spark.connector.CollectionBehavior">CollectionBehavior</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CollectionOverwrite" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectionOverwrite"></a>
+      <a id="CollectionOverwrite:CollectionOverwrite"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionOverwrite$.html"><span class="name">CollectionOverwrite</span></a><span class="result"> extends <a href="CollectionBehavior.html" class="extype" name="com.datastax.spark.connector.CollectionBehavior">CollectionBehavior</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CollectionPrepend" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectionPrepend"></a>
+      <a id="CollectionPrepend:CollectionPrepend"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionPrepend$.html"><span class="name">CollectionPrepend</span></a><span class="result"> extends <a href="CollectionBehavior.html" class="extype" name="com.datastax.spark.connector.CollectionBehavior">CollectionBehavior</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.CollectionRemove" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CollectionRemove"></a>
+      <a id="CollectionRemove:CollectionRemove"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CollectionRemove$.html"><span class="name">CollectionRemove</span></a><span class="result"> extends <a href="CollectionBehavior.html" class="extype" name="com.datastax.spark.connector.CollectionBehavior">CollectionBehavior</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.GettableData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GettableData"></a>
+      <a id="GettableData:GettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="GettableData$.html"><span class="name">GettableData</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.PartitionKeyColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PartitionKeyColumns"></a>
+      <a id="PartitionKeyColumns:PartitionKeyColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PartitionKeyColumns$.html"><span class="name">PartitionKeyColumns</span></a><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.PrimaryKeyColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PrimaryKeyColumns"></a>
+      <a id="PrimaryKeyColumns:PrimaryKeyColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PrimaryKeyColumns$.html"><span class="name">PrimaryKeyColumns</span></a><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.RowCountRef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RowCountRef"></a>
+      <a id="RowCountRef:RowCountRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RowCountRef$.html"><span class="name">RowCountRef</span></a><span class="result"> extends <a href="ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">References a row count value returned from SELECT count(*)</p>
+    </li><li name="com.datastax.spark.connector.SomeColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SomeColumns"></a>
+      <a id="SomeColumns:SomeColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="SomeColumns$.html"><span class="name">SomeColumns</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.TupleValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TupleValue"></a>
+      <a id="TupleValue:TupleValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TupleValue$.html"><span class="name">TupleValue</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.UDTValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UDTValue"></a>
+      <a id="UDTValue:UDTValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="UDTValue$.html"><span class="name">UDTValue</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cql"></a>
+      <a id="cql:cql"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="cql/package.html"><span class="name">cql</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Contains a <a href="cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">cql.CassandraConnector</a> object which is used to connect
+to a Cassandra cluster and to send CQL statements to it.</p>
+    </li><li name="com.datastax.spark.connector.japi" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="japi"></a>
+      <a id="japi:japi"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="japi/package.html"><span class="name">japi</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.mapper" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="mapper"></a>
+      <a id="mapper:mapper"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="mapper/package.html"><span class="name">mapper</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Provides machinery for mapping Cassandra tables to user defined Scala classes or tuples.</p>
+    </li><li name="com.datastax.spark.connector.rdd" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="rdd"></a>
+      <a id="rdd:rdd"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="rdd/package.html"><span class="name">rdd</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Contains <a href="rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">com.datastax.spark.connector.rdd.CassandraTableScanRDD</a> class that is the main entry point for
+analyzing Cassandra data from Spark.</p>
+    </li><li name="com.datastax.spark.connector.streaming" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="streaming"></a>
+      <a id="streaming:streaming"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="streaming/package.html"><span class="name">streaming</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toCassandraTableScanFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toCassandraTableScanFunctions[T](rdd:com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]):com.datastax.spark.connector.CassandraTableScanRDDFunctions[T]"></a>
+      <a id="toCassandraTableScanFunctions[T](CassandraTableScanRDD[T]):CassandraTableScanRDDFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toCassandraTableScanFunctions</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="rdd">rdd: <a href="rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a>[<span class="extype" name="com.datastax.spark.connector.toCassandraTableScanFunctions.T">T</span>]</span>)</span><span class="result">: <a href="CassandraTableScanRDDFunctions.html" class="extype" name="com.datastax.spark.connector.CassandraTableScanRDDFunctions">CassandraTableScanRDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toCassandraTableScanFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toCassandraTableScanRDDPairFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toCassandraTableScanRDDPairFunctions[K,V](rdd:com.datastax.spark.connector.rdd.CassandraTableScanRDD[(K,V)]):com.datastax.spark.connector.CassandraTableScanPairRDDFunctions[K,V]"></a>
+      <a id="toCassandraTableScanRDDPairFunctions[K,V](CassandraTableScanRDD[(K,V)]):CassandraTableScanPairRDDFunctions[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toCassandraTableScanRDDPairFunctions</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="rdd">rdd: <a href="rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a>[(<span class="extype" name="com.datastax.spark.connector.toCassandraTableScanRDDPairFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toCassandraTableScanRDDPairFunctions.V">V</span>)]</span>)</span><span class="result">: <a href="CassandraTableScanPairRDDFunctions.html" class="extype" name="com.datastax.spark.connector.CassandraTableScanPairRDDFunctions">CassandraTableScanPairRDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toCassandraTableScanRDDPairFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toCassandraTableScanRDDPairFunctions.V">V</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toDataFrameFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toDataFrameFunctions(dataFrame:org.apache.spark.sql.DataFrame):com.datastax.spark.connector.DataFrameFunctions"></a>
+      <a id="toDataFrameFunctions(DataFrame):DataFrameFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toDataFrameFunctions</span><span class="params">(<span name="dataFrame">dataFrame: <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.sql.DataFrame" class="extype" target="_top">DataFrame</a></span>)</span><span class="result">: <a href="DataFrameFunctions.html" class="extype" name="com.datastax.spark.connector.DataFrameFunctions">DataFrameFunctions</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toNamedColumnRef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toNamedColumnRef(columnName:String):com.datastax.spark.connector.ColumnName"></a>
+      <a id="toNamedColumnRef(String):ColumnName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toNamedColumnRef</span><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="ColumnName.html" class="extype" name="com.datastax.spark.connector.ColumnName">ColumnName</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toPairRDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toPairRDDFunctions[K,V](rdd:org.apache.spark.rdd.RDD[(K,V)]):com.datastax.spark.connector.PairRDDFunctions[K,V]"></a>
+      <a id="toPairRDDFunctions[K,V](RDD[(K,V)]):PairRDDFunctions[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toPairRDDFunctions</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[(<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>)]</span>)</span><span class="result">: <a href="PairRDDFunctions.html" class="extype" name="com.datastax.spark.connector.PairRDDFunctions">PairRDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toRDDFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toRDDFunctions[T](rdd:org.apache.spark.rdd.RDD[T]):com.datastax.spark.connector.RDDFunctions[T]"></a>
+      <a id="toRDDFunctions[T](RDD[T]):RDDFunctions[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toRDDFunctions</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>)</span><span class="result">: <a href="RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.package#toSparkContextFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toSparkContextFunctions(sc:org.apache.spark.SparkContext):com.datastax.spark.connector.SparkContextFunctions"></a>
+      <a id="toSparkContextFunctions(SparkContext):SparkContextFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toSparkContextFunctions</span><span class="params">(<span name="sc">sc: <a href="http://spark.apache.org/docs/1.6.1/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>)</span><span class="result">: <a href="SparkContextFunctions.html" class="extype" name="com.datastax.spark.connector.SparkContextFunctions">SparkContextFunctions</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.types" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="types"></a>
+      <a id="types:types"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="types/package.html"><span class="name">types</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Offers type conversion magic, so you can receive Cassandra column values in a form you like the most.</p>
+    </li><li name="com.datastax.spark.connector.util" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="util"></a>
+      <a id="util:util"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="util/package.html"><span class="name">util</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Useful stuff that didn't fit elsewhere.</p>
+    </li><li name="com.datastax.spark.connector.writer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="writer"></a>
+      <a id="writer:writer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="writer/package.html"><span class="name">writer</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Contains components for writing RDDs to Cassandra</p>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
+    </body>
+      </html>
