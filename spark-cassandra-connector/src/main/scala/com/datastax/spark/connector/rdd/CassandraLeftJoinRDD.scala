@@ -142,7 +142,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
   ): Iterator[(L, Option[R])] = {
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
     val rateLimiter = new RateLimiter(
-      readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
+      readConf.readsPerSec, readConf.readsPerSec
     )
 
     def pairWithRight(left: L): SettableFuture[Iterator[(L, Option[R])]] = {
