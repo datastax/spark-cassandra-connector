@@ -4,8 +4,7 @@ import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.{CassandraSQLContextParams, CassandraSourceRelation}
-
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf, SessionProxy}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf

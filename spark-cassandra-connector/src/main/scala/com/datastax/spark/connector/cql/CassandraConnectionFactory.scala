@@ -9,7 +9,10 @@ import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core._
+import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
+import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 
 /** Creates both native and Thrift connections to Cassandra.
@@ -22,6 +25,17 @@ trait CassandraConnectionFactory extends Serializable {
 
   /** List of allowed custom property names passed in SparkConf */
   def properties: Set[String] = Set.empty
+
+  def getScanMethod(
+    readConf: ReadConf,
+    session: Session,
+    columnNames: IndexedSeq[String]): (Statement) => (Iterator[Row], CassandraRowMetadata) = {
+      case statement: Statement =>
+            val rs = session.execute(statement)
+            val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
+            val iterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
+            (iterator, columnMetaData)
+  }
 }
 
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
