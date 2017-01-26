@@ -4,7 +4,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.Future
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{
   AnalyzedPredicates,

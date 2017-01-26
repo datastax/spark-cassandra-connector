@@ -7,13 +7,13 @@ import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import org.apache.spark.Logging
 
 import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
+import com.datastax.spark.connector.util.Logging
 
 /** Creates CassandraPartitions for given Cassandra table */
 private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](

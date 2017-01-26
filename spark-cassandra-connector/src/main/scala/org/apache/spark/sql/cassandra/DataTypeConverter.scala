@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
 import com.datastax.spark.connector.types.{ColumnType, TupleFieldDef, UDTFieldDef}

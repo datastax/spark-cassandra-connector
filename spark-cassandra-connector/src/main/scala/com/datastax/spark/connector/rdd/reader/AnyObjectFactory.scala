@@ -7,10 +7,10 @@ import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.reflect.ConstructorUtils
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-import org.apache.spark.Logging
 import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
 
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.Reflect
 
 /** Factory for creating objects of any type by invoking their primary constructor.

@@ -8,7 +8,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.CountingIterator
 import org.apache.spark.TaskContext
 import org.apache.spark.metrics.OutputMetricsUpdater

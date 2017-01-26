@@ -2,9 +2,9 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import com.datastax.driver.core.{Token, MetadataHook}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
 import com.datastax.spark.connector.writer.{BoundStatementBuilder, RoutingKeyGenerator, RowWriter}
-import org.apache.spark.Logging
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine

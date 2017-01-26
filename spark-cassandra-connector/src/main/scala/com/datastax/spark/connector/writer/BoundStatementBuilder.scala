@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{Unset, ColumnType}
 import com.datastax.spark.connector.util.CodecRegistryUtil
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 /**
  * Class for binding row-like objects into prepared statements. prefixVals

@@ -6,7 +6,7 @@ import java.util.{Collection => JCollection, Iterator => JIterator}
 
 import com.datastax.driver.core._
 import com.datastax.driver.core.policies.LoadBalancingPolicy
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 
 import scala.collection.JavaConversions._
 import scala.util.Random

@@ -4,12 +4,11 @@ import scala.language.existentials
 import scala.reflect.runtime.universe._
 import scala.util.control.NonFatal
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
+import com.datastax.spark.connector.util.{Logging, ReflectionUtil, Symbols}
 import com.datastax.spark.connector.{ColumnRef, GettableByIndexData, TupleValue, UDTValue}
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.types.{ColumnType, ListType, MapType, SetType, TupleType, TypeConverter}
-import org.apache.spark.Logging
 
 private[connector] object MappedToGettableDataConverter extends Logging{
 
