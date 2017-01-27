@@ -27,7 +27,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
     val columnNames: ColumnSelector = AllColumns,
     val joinColumns: ColumnSelector = PartitionKeyColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
-    val limit: Option[Long] = None,
+    val limit: Option[CassandraLimit] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf(),
     manualRowReader: Option[RowReader[R]] = None,
@@ -53,7 +53,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
   override protected def copy(
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
-    limit: Option[Long] = limit,
+    limit: Option[CassandraLimit] = limit,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector

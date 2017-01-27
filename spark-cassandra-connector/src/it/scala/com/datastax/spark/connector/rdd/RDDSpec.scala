@@ -9,6 +9,8 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 
+import com.datastax.driver.core.ProtocolVersion._
+
 case class KVRow(key: Int)
 
 case class KVWithOptionRow(key: Option[Int])
@@ -385,6 +387,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     someCass.readConf.consistencyLevel should be (com.datastax.driver.core.ConsistencyLevel.ONE)
   }
 
+
   it should "be joinable on both partitioning key and clustering key" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source.joinWithCassandraTable(ks, wideTable, joinColumns = SomeColumns("key", "group"))
@@ -410,12 +413,23 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     result should have size (3 * keys.length)
   }
 
-  it should "have be able to be counted" in {
+  it should "be able to be counted" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key", "group")).cassandraCount()
     someCass should be(201)
 
   }
+
+  it should "should be joinable with a PER PARTITION LIMIT limit" in skipIfProtocolVersionLT(V4){
+    val source = sc.parallelize(keys).map(x => (x, x * 100))
+    val someCass = source
+      .joinWithCassandraTable(ks, wideTable, joinColumns = SomeColumns("key", "group"))
+      .perPartitionLimit(1)
+      .collect
+
+    source.collect should have length (someCass.length)
+  }
+
 
   "A CassandraRDD " should "be joinable with Cassandra" in {
     val source = sc.cassandraTable(ks, otherTable)

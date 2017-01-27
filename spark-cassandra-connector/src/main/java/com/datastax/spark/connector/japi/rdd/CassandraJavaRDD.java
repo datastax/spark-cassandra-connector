@@ -151,6 +151,15 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
     }
 
     /**
+     * Adds the PER PARTITION LIMIT clause to CQL select statement. The limit will be applied for each
+     * Cassandra Partition
+     */
+    public CassandraJavaRDD<R> perPartitionLimit(Long rowsNumber) {
+        CassandraRDD<R> newRDD = rdd().perPartitionLimit(rowsNumber);
+        return wrap(newRDD);
+    }
+
+    /**
      * Applies a function to each item, and groups consecutive items having the same value together.
      * Contrary to `groupBy`, items from the same group must be already next to each other in the
      * original collection. Works locally on each partition, so items from different partitions will

@@ -124,6 +124,16 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     }
 
     /**
+     * Adds the PER PARTITION LIMIT clause to CQL select statement. The limit will be applied for each
+     * Cassandra Partition
+     */
+    @SuppressWarnings("unchecked")
+    public CassandraJavaPairRDD<K, V> perPartitionLimit(Long rowsNumber) {
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().perPartitionLimit(rowsNumber);
+        return wrap(newRDD);
+    }
+
+    /**
      * Returns the names of columns to be selected from the table.
      */
     @SuppressWarnings("RedundantCast")

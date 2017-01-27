@@ -2,15 +2,18 @@ package com.datastax.spark.connector
 
 import java.util.concurrent.Executors
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import org.apache.commons.lang3.StringUtils
 import org.scalatest._
+import org.scalatest.concurrent.Eventually._
 import com.datastax.driver.core.{ProtocolVersion, Session}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
 import com.datastax.spark.connector.testkit.{AbstractSpec, SharedEmbeddedCassandra}
 import com.datastax.spark.connector.util.SerialShutdownHooks
+import org.scalatest.time.{Millis, Seconds, Span}
 
 
 trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase {
@@ -65,6 +68,23 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
   def createKeyspace(session: Session, name: String = ks): Unit = {
     session.execute(s"DROP KEYSPACE IF EXISTS $name")
     session.execute(keyspaceCql(name))
+  }
+
+  /**
+    * Ensures that the tables exist in the metadata object for this session. This can be
+    * an issue with some schema debouncing.
+    */
+  def awaitTables(tableNames: String*): Unit = {
+    eventually (timeout(Span(2, Seconds))) {
+      conn.withSessionDo( session =>
+        session
+          .getCluster
+          .getMetadata
+          .getKeyspace(ks)
+          .getTables()
+          .containsAll(tableNames.asJava)
+      )
+    }
   }
 
   def restoreSystemProps(): Unit = {

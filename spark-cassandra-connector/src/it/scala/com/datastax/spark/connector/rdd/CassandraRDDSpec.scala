@@ -132,6 +132,112 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       },
 
       Future {
+        session.execute(s"""CREATE TABLE $ks.delete_short_rows_partition(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 21, '2021')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 22, '2022')""")
+      },
+
+      Future {
+        session.execute(s"""CREATE TABLE $ks.delete_short_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 21, '2021')""")
+        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 22, '2022')""")
+      },
+
+      Future {
+        session.execute(s"""CREATE TABLE $ks.delete_wide_rows4(key INT, group TEXT, group2 INT, value VARCHAR, PRIMARY KEY ((key, group), group2))""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 1, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 2, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '2', 1, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (1, '2', 2, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (2, '2', 1, '2021')""")
+      },
+
+      Future {
+        session.execute(s"""CREATE TABLE $ks.delete_wide_rows3(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (1, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (2, 21, '2021')""")
+      },
+
+      Future {
+        session.execute(s"""CREATE TABLE $ks.delete_wide_rows2(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 21, '2021')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 22, '2022')""")
+      },
+
+      Future {
+        session.execute(s"""CREATE TABLE $ks.delete_wide_rows1(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 21, '2021')""")
+        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 22, '2022')""")
+       },
+
+      Future {
+        session.execute(
+          s"""CREATE TYPE $ks."Attachment" (
+            |  "Id" text,
+            |  "MimeType" text,
+            |  "FileName" text
+            |)
+          """.stripMargin)
+        session.execute(
+          s"""CREATE TABLE $ks."Interaction" (
+            |  "Id" text PRIMARY KEY,
+            |  "Attachments" map<text,frozen<"Attachment">>,
+            |  "ContactId" text
+            |)
+          """.stripMargin)
+        session.execute(
+          s"""INSERT INTO $ks."Interaction"(
+            |  "Id",
+            |  "Attachments",
+            |  "ContactId"
+            |)
+            |VALUES (
+            |  '000000a5ixIEvmPD',
+            |  null,
+            |  'xcb9HMoQ'
+            |)
+          """.stripMargin)
+        session.execute(
+          s"""UPDATE $ks."Interaction"
+            |SET
+            |  "Attachments" = "Attachments" + {'rVpgK':
+            |  {"Id":'rVpgK',
+            |  "MimeType":'text/plain',
+            |  "FileName":'notes.txt'}}
+            |WHERE "Id" = '000000a5ixIEvmPD'
+          """.stripMargin)
+      },
+
+      Future {
+        val tableName = "caseclasstuplegrouped"
+        session.execute(s"""CREATE TABLE IF NOT EXISTS $ks.$tableName (key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 10, '1010')""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 11, '1011')""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 12, '1012')""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 20, '2020')""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 21, '2021')""")
+        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 22, '2022')""")
+      },
+      Future {
         createKeyspace(session, s""""MixedSpace"""")
         session.execute(s"""CREATE TABLE "MixedSpace"."MixedCase"(key INT PRIMARY KEY, value INT)""")
         session.execute(s"""CREATE TABLE "MixedSpace"."MiXEDCase"(key INT PRIMARY KEY, value INT)""")
@@ -682,21 +788,16 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
     results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
   }
+  it should "allow the use of PER PARTITION LIMITs " in skipIfProtocolVersionLT(V4){
+    val result = sc.cassandraTable(ks, "clustering_time").perPartitionLimit(1).collect
+    result.size should be (1)
+  }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {
 
-    conn.withSessionDo { session =>
-      session.execute(s"""CREATE TABLE IF NOT EXISTS $ks.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')""")
-      session.execute(s"""INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')""")
-    }
-
+    val tableName = "caseclasstuplegrouped"
     val results = sc
-      .cassandraTable[(Int, Int, String)](ks, "wide_rows")
+      .cassandraTable[(Int, Int, String)](ks, tableName)
       .select("key", "group", "value")
       .keyBy[Key]
       .spanByKey
@@ -980,43 +1081,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "handle upper case characters in UDT fields" in {
-    conn.withSessionDo { session =>
-      session.execute(
-        s"""CREATE TYPE $ks."Attachment" (
-          |  "Id" text,
-          |  "MimeType" text,
-          |  "FileName" text
-          |)
-        """.stripMargin)
-      session.execute(
-        s"""CREATE TABLE $ks."Interaction" (
-          |  "Id" text PRIMARY KEY,
-          |  "Attachments" map<text,frozen<"Attachment">>,
-          |  "ContactId" text
-          |)
-        """.stripMargin)
-      session.execute(
-        s"""INSERT INTO $ks."Interaction"(
-          |  "Id",
-          |  "Attachments",
-          |  "ContactId"
-          |)
-          |VALUES (
-          |  '000000a5ixIEvmPD',
-          |  null,
-          |  'xcb9HMoQ'
-          |)
-        """.stripMargin)
-      session.execute(
-        s"""UPDATE $ks."Interaction"
-          |SET
-          |  "Attachments" = "Attachments" + {'rVpgK':
-          |  {"Id":'rVpgK',
-          |  "MimeType":'text/plain',
-          |  "FileName":'notes.txt'}}
-          |WHERE "Id" = '000000a5ixIEvmPD'
-        """.stripMargin)
-    }
+
     val tableRdd = sc.cassandraTable(ks, "Interaction")
     val dataColumns = tableRdd.map(row => row.getString("ContactId"))
     dataColumns.count shouldBe 1
@@ -1158,17 +1223,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   "RDD.deleteFromCassandra" should "delete rows just selected from the C*" in {
 
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_wide_rows1""")
-      session.execute(s"""CREATE TABLE $ks.delete_wide_rows1(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 21, '2021')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 22, '2022')""")
-    }
-
     sc.cassandraTable(ks, "delete_wide_rows1").where("key = 20")
       .deleteFromCassandra(ks, "delete_wide_rows1")
 
@@ -1187,17 +1241,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "delete rows with specified mapping" in {
-
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_wide_rows2""")
-      session.execute(s"""CREATE TABLE $ks.delete_wide_rows2(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 21, '2021')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 22, '2022')""")
-    }
 
     sc.cassandraTable[(Int, Int)](ks, "delete_wide_rows2")
       .select("group", "key").where("key = 20")
@@ -1219,16 +1262,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "delete rows with joins" in {
 
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_wide_rows3""")
-      session.execute(s"""CREATE TABLE $ks.delete_wide_rows3(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (1, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (2, 21, '2021')""")
-    }
-
     sc.cassandraTable(ks, "delete_wide_rows3").joinWithCassandraTable(ks, "key_value").map(_._1)
       .deleteFromCassandra(ks, "delete_wide_rows3")
 
@@ -1248,16 +1281,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "delete rows with composite key" in {
 
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_wide_rows4""")
-      session.execute(s"""CREATE TABLE $ks.delete_wide_rows4(key INT, group TEXT, group2 INT, value VARCHAR, PRIMARY KEY ((key, group), group2))""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 1, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 2, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '2', 1, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (1, '2', 2, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (2, '2', 1, '2021')""")
-    }
-
     sc.parallelize(Seq((10, "1", 1), (10, "2", 1)))
       .deleteFromCassandra(ks, "delete_wide_rows4")
 
@@ -1271,18 +1294,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "delete just selected column from the C*" in {
 
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_short_rows""")
-      session.execute(s"""CREATE TABLE $ks.delete_short_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 21, '2021')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 22, '2022')""")
-    }
-
-    sc.cassandraTable(ks, "delete_short_rows").where("key = 20")
+   sc.cassandraTable(ks, "delete_short_rows").where("key = 20")
       .deleteFromCassandra(ks, "delete_short_rows", SomeColumns("value"))
 
     val results = sc.cassandraTable[(Int, Int, Option[String])](ks, "delete_short_rows")
@@ -1300,17 +1312,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "delete base on partition key only" in {
-
-    conn.withSessionDo { session =>
-      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_short_rows_partition""")
-      session.execute(s"""CREATE TABLE $ks.delete_short_rows_partition(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 10, '1010')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 11, '1011')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 12, '1012')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 20, '2020')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 21, '2021')""")
-      session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 22, '2022')""")
-    }
 
     sc.parallelize(Seq(Key(20)))
       .deleteFromCassandra(ks, "delete_short_rows_partition", keyColumns = SomeColumns("key"))

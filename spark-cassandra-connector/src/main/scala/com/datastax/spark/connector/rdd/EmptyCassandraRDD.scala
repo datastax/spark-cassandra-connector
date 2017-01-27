@@ -15,7 +15,7 @@ class EmptyCassandraRDD[R : ClassTag](
     val tableName: String,
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
-    val limit: Option[Long] = None,
+    val limit: Option[CassandraLimit] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf())
   extends CassandraRDD[R](sc, Seq.empty) {
@@ -25,7 +25,7 @@ class EmptyCassandraRDD[R : ClassTag](
   override protected def copy(
       columnNames: ColumnSelector = columnNames,
       where: CqlWhereClause = where,
-      limit: Option[Long] = limit,
+      limit: Option[CassandraLimit] = limit,
       clusteringOrder: Option[ClusteringOrder] = None,
       readConf: ReadConf = readConf,
       connector: CassandraConnector = connector) = {

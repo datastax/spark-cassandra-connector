@@ -5,6 +5,7 @@ import java.io.IOException
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token => ConnectorToken}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraPartitionGenerator, CqlTokenRange, NodeAddresses, _}
 import com.datastax.spark.connector.rdd.reader._
@@ -65,7 +66,7 @@ class CassandraTableScanRDD[R] private[connector](
     val tableName: String,
     val columnNames: ColumnSelector = AllColumns,
     val where: CqlWhereClause = CqlWhereClause.empty,
-    val limit: Option[Long] = None,
+    val limit: Option[CassandraLimit] = None,
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf(),
     overridePartitioner: Option[Partitioner] = None)(
@@ -81,7 +82,7 @@ class CassandraTableScanRDD[R] private[connector](
   override protected def copy(
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
-    limit: Option[Long] = limit,
+    limit: Option[CassandraLimit] = limit,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self = {
@@ -291,7 +292,7 @@ class CassandraTableScanRDD[R] private[connector](
       range.cql(partitionKeyStr)
     }
     val filter = (cql +: where.predicates).filter(_.nonEmpty).mkString(" AND ")
-    val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
+    val limitClause = limitToClause(limit)
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
@@ -362,7 +363,7 @@ class CassandraTableScanRDD[R] private[connector](
     // than all of the rows returned by the previous query have been consumed
     val rowIterator = tokenRanges.iterator.flatMap(
       fetchTokenRange(session, _: CqlTokenRange[_, _], metricsUpdater))
-    val countingIterator = new CountingIterator(rowIterator, limit)
+    val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
