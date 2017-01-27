@@ -80,7 +80,7 @@ object EmbeddedCassandra {
   val cassandraVersion = System.getProperty("test.cassandra.version", DEFAULT_CASSANDRA_VERSION)
   val (cassandraMajorVersion, cassandraMinorVersion) = {
     val parts = cassandraVersion.split("\\.")
-    require(parts.length > 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
+    require(parts.length >= 2, s"Can't determine Cassandra Version from $cassandraVersion : ${parts.mkString(",")}")
     (parts(0).toInt, parts(1).toInt)
   }
 
