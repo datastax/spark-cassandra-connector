@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core._
+import com.datastax.spark.connector.rdd.FCqlWhereClause
 import com.datastax.spark.connector.types.{ColumnType, Unset}
 import com.datastax.spark.connector.util.{CodecRegistryUtil, Logging}
 
@@ -13,6 +14,7 @@ private[connector] class BoundStatementBuilder[T](
     val rowWriter: RowWriter[T],
     val preparedStmt: PreparedStatement,
     val prefixVals: Seq[Any] = Seq.empty,
+    val dependentValues : FCqlWhereClause[T] = FCqlWhereClause.empty[T],
     val ignoreNulls: Boolean = false,
     val protocolVersion: ProtocolVersion) extends Logging {
 
@@ -91,11 +93,21 @@ private[connector] class BoundStatementBuilder[T](
     prefixConverter =  ColumnType.converterToCassandra(prefixType)
   } yield prefixConverter.convert(prefixVal)
 
+  private def variablesConverted(row : T): Seq[AnyRef] = {
+    val values = dependentValues.values(row)
+    for {
+      index <- 0 until values.length
+      value = values(index)
+      valueType = preparedStmt.getVariables.getType(prefixVals.length + index)
+      valueConverter =  ColumnType.converterToCassandra(valueType)
+    } yield valueConverter.convert(value)
+  }
+
   /** Creates `BoundStatement` from the given data item */
   def bind(row: T): RichBoundStatement = {
     val boundStatement = new RichBoundStatement(preparedStmt)
-    boundStatement.bind(prefixConverted: _*)
-
+    val variables = prefixConverted ++ variablesConverted(row)
+    boundStatement.bind(variables: _*)
     rowWriter.readColumnValues(row, buffer)
     var bytesCount = 0
     for (i <- 0 until columnNames.size) {

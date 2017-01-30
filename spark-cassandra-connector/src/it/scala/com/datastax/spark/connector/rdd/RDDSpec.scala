@@ -511,6 +511,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
     results should have length keys.count(_ >= 5)
   }
 
+  it should " support functional where clauses" in {
+    val someCass = sc.parallelize(keys).map(x => new KVRow(x)).joinWithCassandraTable(ks, tableName).where("group = ?", (k : KVRow) => Seq(k.key * 100))
+    val results = someCass.collect.map(_._2)
+    results should have length keys.size
+  }
+
   it should " throw an exception if using a where on a column that is specified by the join" in {
     val exc = intercept[IllegalArgumentException] {
       val someCass = sc.parallelize(keys).map(x => (x, x * 100L))
