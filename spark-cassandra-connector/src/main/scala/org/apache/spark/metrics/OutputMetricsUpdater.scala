@@ -7,6 +7,7 @@ import com.twitter.jsr166e.LongAdder
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
 import org.apache.spark.TaskContext
 
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
 import com.datastax.spark.connector.util.Logging
 

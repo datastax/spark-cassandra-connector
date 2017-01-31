@@ -10,8 +10,8 @@ import scala.util.control.NonFatal
 import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.ProtocolOptions
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
-import com.datastax.spark.connector.util.Logging
+
+import com.datastax.spark.connector.util.{Logging, ConfigCheck, ConfigParameter}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */

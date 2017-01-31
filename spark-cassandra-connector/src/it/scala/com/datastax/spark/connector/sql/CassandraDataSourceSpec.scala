@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
+
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
