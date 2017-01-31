@@ -87,6 +87,12 @@ may also be used. ("127.0.0.1,192.168.0.1")
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>sql.enable.where.clause.optimization</code></td>
+  <td>false</td>
+  <td>Connector will try to optimize sql query `where`-clause, to increase
+ number of filters that can be pushed down. Experimental.</td>
+</tr>
+<tr>
   <td><code>sql.pushdown.additionalClasses</code></td>
   <td></td>
   <td>A comma separated list of classes to be used (in order) to apply additional

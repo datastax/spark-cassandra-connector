@@ -3,17 +3,7 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.UUID
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
-import org.apache.spark.sql.cassandra.DataTypeConverter._
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
-import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.SparkConf
-
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
@@ -22,6 +12,14 @@ import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
+import org.apache.spark.sql.cassandra.DataTypeConverter._
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
+import org.apache.spark.unsafe.types.UTF8String
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -34,6 +32,7 @@ private[cassandra] class CassandraSourceRelation(
     userSpecifiedSchema: Option[StructType],
     filterPushdown: Boolean,
     tableSizeInBytes: Option[Long],
+    enableWhereClauseOptimization: Boolean,
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
@@ -80,7 +79,7 @@ private[cassandra] class CassandraSourceRelation(
   def buildScan(): RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = filterPushdown match {
-    case true => predicatePushDown(filters).handledBySpark.toArray
+    case true => analyzePredicates(filters).head.handledBySpark.toArray
     case false => filters
   }
 
@@ -128,13 +127,32 @@ private[cassandra] class CassandraSourceRelation(
     finalPushdown
   }
 
+  private def analyzePredicates(filters: Array[Filter]): List[AnalyzedPredicates] = {
+    if (enableWhereClauseOptimization){
+      val optimizedFilters = FiltersOptimizer.build(filters)
+      val partitions = optimizedFilters.map(predicatePushDown)
+        val allHandledBySparkAreTheSame = partitions.map(_.handledBySpark).sliding(2).forall { tuple =>
+          tuple.head == tuple.last
+        }
+        if(allHandledBySparkAreTheSame){
+          partitions
+        } else {
+          List(predicatePushDown(filters))
+        }
+    } else {
+      List(predicatePushDown(filters))
+    }
+  }
+
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val prunedRdd = maybeSelect(baseRdd, requiredColumns)
     val prunedFilteredRdd = {
       if(filterPushdown) {
-        val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
-        val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
-        filteredRdd.asInstanceOf[RDD[Row]]
+        val pushdownFilters = analyzePredicates(filters)
+        pushdownFilters.map { predicate =>
+          val pushdownFilters = predicate.handledByCassandra.toArray
+          maybePushdownFilters(prunedRdd, pushdownFilters).asInstanceOf[RDD[Row]]
+        }.reduce(_ union _)
       } else {
         prunedRdd
       }
@@ -232,9 +250,19 @@ object CassandraSourceRelation {
       """.stripMargin
   )
 
+  val EnableWhereClauseOptimizationParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.sql.enable.where.clause.optimization",
+    section = ReferenceSection,
+    default = false,
+    description =
+      """Connector will try to optimize sql query `where`-clause, to increase
+        | number of filters that can be pushed down. Experimental.""".stripMargin
+  )
+
   val Properties = Seq(
     AdditionalCassandraPushDownRulesParam,
-    TableSizeInBytesParam
+    TableSizeInBytesParam,
+    EnableWhereClauseOptimizationParam
   )
 
   val defaultClusterName = "default"
@@ -250,6 +278,9 @@ object CassandraSourceRelation {
     val conf =
       consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(TableSizeInBytesParam.name)
+    val enableWhereClauseOptimization = 
+      conf.getOption(EnableWhereClauseOptimizationParam.name)
+            .map( _.equalsIgnoreCase("true") ).getOrElse(false)
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
     val tableSizeInBytes = tableSizeInBytesString match {
@@ -275,6 +306,7 @@ object CassandraSourceRelation {
       userSpecifiedSchema = schema,
       filterPushdown = options.pushdown,
       tableSizeInBytes = tableSizeInBytes,
+      enableWhereClauseOptimization = enableWhereClauseOptimization,
       connector = cassandraConnector,
       readConf = readConf,
       writeConf = writeConf,
