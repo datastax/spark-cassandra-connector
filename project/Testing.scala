@@ -77,6 +77,7 @@ object Testing extends Build {
       else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
       else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
+      else if (test.name.contains("Connector")) "connector"
       else test.name.reverse.dropWhile(_ != '.').reverse
     }
 
@@ -94,6 +95,7 @@ object Testing extends Build {
       else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
       else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
+      else if (test.name.contains("Connector")) "connector"
       else "other"
     }
 
