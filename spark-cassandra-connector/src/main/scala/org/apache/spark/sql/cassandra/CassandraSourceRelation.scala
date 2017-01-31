@@ -11,7 +11,7 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.{Logging, SparkConf}
+import org.apache.spark.SparkConf
 
 import com.datastax.driver.core.Metadata
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
@@ -20,7 +20,7 @@ import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{ConfigParameter, NameTools, ReflectionUtil}
+import com.datastax.spark.connector.util.{Logging, ConfigParameter, NameTools, ReflectionUtil}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 

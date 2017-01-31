@@ -2,12 +2,11 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import scala.collection.JavaConversions._
 
-import org.apache.spark.Logging
 
 import com.datastax.driver.core.exceptions.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{TokenFactory, Token}
-
+import com.datastax.spark.connector.util.Logging
 
 /** Estimates amount of data in the Cassandra table.
   * Takes token range size estimates from the `system.size_estimates` table, 

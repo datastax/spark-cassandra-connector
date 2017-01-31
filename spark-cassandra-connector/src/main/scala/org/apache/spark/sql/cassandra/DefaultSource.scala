@@ -2,13 +2,13 @@ package org.apache.spark.sql.cassandra
 
 import scala.collection.mutable
 
-import org.apache.spark.Logging
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.DefaultSource._
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf, DefaultAuthConfFactory}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.writer.WriteConf

@@ -4,7 +4,6 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
-import org.apache.spark.Logging
 import org.apache.spark.sql.DataFrame
 
 import scala.collection.JavaConversions._
@@ -14,6 +13,7 @@ import com.datastax.driver.core._
 import com.datastax.spark.connector.types.{ColumnType, CounterType}
 import com.datastax.spark.connector.util.NameTools
 import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.util.Logging
 
 /** Abstract column / field definition.
   * Common to tables and user-defined types */

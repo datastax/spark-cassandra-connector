@@ -3,8 +3,9 @@ package com.datastax.spark.connector.rdd.partitioner
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import org.apache.spark.{Logging, Partitioner}
+import org.apache.spark.Partitioner
 
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
 import com.datastax.spark.connector.writer.RowWriterFactory

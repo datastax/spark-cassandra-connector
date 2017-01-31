@@ -5,7 +5,7 @@ import com.datastax.spark.connector.rdd.CassandraTableScanRDD
 import scala.collection.JavaConversions._
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
-import org.apache.spark.Logging
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.catalyst.analysis.Catalog
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
