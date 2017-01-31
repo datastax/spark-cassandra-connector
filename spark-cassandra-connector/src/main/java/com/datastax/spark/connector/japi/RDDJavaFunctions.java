@@ -112,7 +112,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
 
         CassandraConnector connector = defaultConnector();
         Option<ClusteringOrder> clusteringOrder = Option.empty();
-        Option<Object> limit = Option.empty();
+        Option<CassandraLimit> limit = Option.empty();
         CqlWhereClause whereClause = CqlWhereClause.empty();
         ReadConf readConf = ReadConf.fromSparkConf(rdd.conf());
 

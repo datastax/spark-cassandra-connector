@@ -3,6 +3,7 @@ package com.datastax.spark.connector.japi.rdd;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.column;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -111,4 +112,12 @@ public class CassandraJavaRDDTest {
         assertThat(jrdd.limit(1L).rdd(), is(rdd2));
     }
 
+    @Test
+    public void testPerPartitionLimit() {
+        CassandraRDD<Integer> rdd = mock(CassandraRDD.class);
+        CassandraRDD<Integer> rdd2 = mock(CassandraRDD.class);
+        when(rdd.perPartitionLimit(1L)).thenReturn(rdd2);
+        CassandraJavaRDD<Integer> jrdd = new CassandraJavaRDD<>(rdd, Integer.class);
+        assertThat(jrdd.perPartitionLimit(1L).rdd(), is(rdd2));
+    }
 }

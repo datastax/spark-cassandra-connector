@@ -2,7 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, ClusteringOrder, CqlWhereClause, ReadConf}
+import com.datastax.spark.connector.rdd._
 import com.datastax.spark.connector.{AllColumns, ColumnSelector}
 import org.apache.spark.streaming.StreamingContext
 
@@ -18,7 +18,7 @@ class CassandraStreamingRDD[R] private[connector] (
     columns: ColumnSelector = AllColumns,
     where: CqlWhereClause = CqlWhereClause.empty,
     empty: Boolean = false,
-    limit: Option[Long] = None,
+    limit: Option[CassandraLimit] = None,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = ReadConf())(
   implicit

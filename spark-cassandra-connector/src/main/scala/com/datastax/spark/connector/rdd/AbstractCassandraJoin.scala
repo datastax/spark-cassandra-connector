@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
@@ -119,7 +120,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     logDebug(s"SelectedColumns : $selectedColumnRefs -- JoinColumnNames : $joinColumnNames")
     val columns = selectedColumnRefs.map(_.cql).mkString(", ")
     val joinWhere = joinColumnNames.map(_.columnName).map(name => s"${quote(name)} = :$name")
-    val limitClause = limit.map(limit => s"LIMIT $limit").getOrElse("")
+    val limitClause = limitToClause(limit)
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val filter = (where.predicates ++ joinWhere).mkString(" AND ")
     val quotedKeyspaceName = quote(keyspaceName)

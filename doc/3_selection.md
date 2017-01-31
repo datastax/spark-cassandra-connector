@@ -84,6 +84,12 @@ predicate for the where clause, you will get unpredictable amount of
 rows because the limit will be applied on each Spark partition which 
 is created for the RDD.
 
+If you are connecting to Cassandra 3.6 or greater you can also use the 
+`perPartitionLimit` method. This will add `PER PARTITION LIMIT` clause
+to all CQL executed by the RDD. The `PARTITION` here is a Cassandra 
+Partition so it will only retrieve `rowsNumber` CQL Rows for each 
+partition key in the result.
+
 ### Grouping rows by partition key
 
 Physically, Cassandra stores data already grouped by partition key and 

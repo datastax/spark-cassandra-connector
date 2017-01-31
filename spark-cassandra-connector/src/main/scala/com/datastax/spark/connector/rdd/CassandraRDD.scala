@@ -17,8 +17,6 @@ abstract class CassandraRDD[R : ClassTag](
     dep: Seq[Dependency[_]])
   extends RDD[R](sc, dep) {
 
-  require(limit.isEmpty || limit.get > 0, "Limit must be greater than 0")
-
   /** This is slightly different than Scala this.type.
     * this.type is the unique singleton type of an object which is not compatible with other
     * instances of the same type, so returning anything other than `this` is not really possible
@@ -38,7 +36,7 @@ abstract class CassandraRDD[R : ClassTag](
 
   protected def readConf: ReadConf
 
-  protected def limit: Option[Long]
+  protected def limit: Option[CassandraLimit]
 
   protected def clusteringOrder: Option[ClusteringOrder]
 
@@ -53,7 +51,7 @@ abstract class CassandraRDD[R : ClassTag](
   protected def copy(
     columnNames: ColumnSelector = columnNames,
     where: CqlWhereClause = where,
-    limit: Option[Long] = limit,
+    limit: Option[CassandraLimit] = limit,
     clusteringOrder: Option[ClusteringOrder] = None,
     readConf: ReadConf = readConf,
     connector: CassandraConnector = connector): Self
@@ -100,7 +98,13 @@ abstract class CassandraRDD[R : ClassTag](
     * partition when the table is designed so that it uses clustering keys and a partition key
     * predicate is passed to the where clause. */
   def limit(rowLimit: Long): Self = {
-    copy(limit = Some(rowLimit))
+    copy(limit = Some(SparkPartitionLimit(rowLimit)))
+  }
+
+  /** Adds the PER PARTITION LIMIT clause to CQL select statement. The limit will be applied for
+    * every Cassandra Partition. Only Valid For Cassandra 3.6+ */
+  def perPartitionLimit(rowLimit: Long): Self = {
+    copy(limit = Some(CassandraPartitionLimit(rowLimit)))
   }
 
   /** Adds a CQL `ORDER BY` clause to the query.

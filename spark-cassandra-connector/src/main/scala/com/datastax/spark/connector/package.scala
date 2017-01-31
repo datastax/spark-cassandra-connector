@@ -1,6 +1,6 @@
 package com.datastax.spark
 
-import com.datastax.spark.connector.rdd.CassandraTableScanRDD
+import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, SparkPartitionLimit}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
@@ -72,7 +72,6 @@ package object connector {
   implicit def toCassandraTableScanRDDPairFunctions[K, V](
     rdd: CassandraTableScanRDD[(K, V)]): CassandraTableScanPairRDDFunctions[K, V] =
     new CassandraTableScanPairRDDFunctions(rdd)
-
 
   implicit class ColumnNameFunctions(val columnName: String) extends AnyVal {
     def writeTime: WriteTime = WriteTime(columnName)

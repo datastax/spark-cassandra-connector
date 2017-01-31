@@ -114,4 +114,13 @@ public class CassandraJavaPairRDDTest {
         assertThat(jrdd.limit(1L).rdd(), is(rdd2));
     }
 
+    @Test
+    public void testPerPartitionLimit() {
+        CassandraRDD<Tuple2<String, Integer>> rdd = mock(CassandraRDD.class);
+        CassandraRDD<Tuple2<String, Integer>> rdd2 = mock(CassandraRDD.class);
+        when(rdd.perPartitionLimit(1L)).thenReturn(rdd2);
+        CassandraJavaPairRDD<String, Integer> jrdd = new CassandraJavaPairRDD<>(rdd, String.class, Integer.class);
+        assertThat(jrdd.perPartitionLimit(1L).rdd(), is(rdd2));
+    }
+
 }
