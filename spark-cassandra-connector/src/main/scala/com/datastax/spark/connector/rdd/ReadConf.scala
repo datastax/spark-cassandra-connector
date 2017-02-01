@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.ConsistencyLevel
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck, Logging}
 import org.apache.spark.SparkConf
 
 /** Read settings for RDD
@@ -13,19 +13,20 @@ import org.apache.spark.SparkConf
   * @param consistencyLevel consistency level for reads, default LOCAL_ONE;
   *                         higher consistency level will disable data-locality
   * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+)
-  * @param throughputJoinQueryPerSec maximum read throughput allowed per single core in query/s while
-  *                                  joining a RDD with C* table (joinWithCassandraTable operation)*/
+  * @param readsPerSec maximum read throughput allowed per single core in requests/s while
+  *                                  joining an RDD with C* table (joinWithCassandraTable operation)
+  *                                  also used by enterprise integrations*/
 case class ReadConf(
   splitCount: Option[Int] = None,
   splitSizeInMB: Int = ReadConf.SplitSizeInMBParam.default,
   fetchSizeInRows: Int = ReadConf.FetchSizeInRowsParam.default,
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
-  throughputJoinQueryPerSec: Long = ReadConf.ThroughputJoinQueryPerSecParam.default
+  readsPerSec: Int = ReadConf.ReadsPerSecParam.default
 )
 
 
-object ReadConf {
+object ReadConf extends Logging {
   val ReferenceSection = "Read Tuning Parameters"
 
   val SplitSizeInMBParam = ConfigParameter[Int](
@@ -59,15 +60,25 @@ object ReadConf {
   val ThroughputJoinQueryPerSecParam = ConfigParameter[Long] (
     name = "spark.cassandra.input.join.throughput_query_per_sec",
     section = ReferenceSection,
-    default = Long.MaxValue,
+    default = Int.MaxValue,
     description =
-      "Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table")
+      "**Deprecated** Please use input.reads_per_sec. Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table")
+
+
+  val ReadsPerSecParam = ConfigParameter[Int] (
+    name = "spark.cassandra.input.reads_per_sec",
+    section = ReferenceSection,
+    default = Int.MaxValue,
+    description =
+      """Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations"""
+  )
 
   // Whitelist for allowed Read environment variables
   val Properties = Set(
-    SplitSizeInMBParam,
-    FetchSizeInRowsParam,
     ConsistencyLevelParam,
+    FetchSizeInRowsParam,
+    ReadsPerSecParam,
+    SplitSizeInMBParam,
     TaskMetricParam,
     ThroughputJoinQueryPerSecParam
   )
@@ -76,13 +87,32 @@ object ReadConf {
 
     ConfigCheck.checkConfig(conf)
 
+    val throughtputJoinQueryPerSec = conf.getOption(ThroughputJoinQueryPerSecParam.name)
+      .map { str =>
+        logWarning(
+          s"""${ThroughputJoinQueryPerSecParam.name} is deprecated
+             | please use ${ReadsPerSecParam.name}""".stripMargin)
+        val longStr = str.toLong
+        if (longStr > Int.MaxValue) {
+          logDebug(
+            s"""${ThroughputJoinQueryPerSecParam.name} was set to a value larger than
+               | ${Int.MaxValue} using ${Int.MaxValue}""".stripMargin)
+          Int.MaxValue
+        } else {
+          longStr.toInt
+        }
+      }
+
     ReadConf(
       fetchSizeInRows = conf.getInt(FetchSizeInRowsParam.name, FetchSizeInRowsParam.default),
       splitSizeInMB = conf.getInt(SplitSizeInMBParam.name, SplitSizeInMBParam.default),
-      consistencyLevel = ConsistencyLevel.valueOf(conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
+
+      consistencyLevel = ConsistencyLevel.valueOf(
+        conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
+
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
-      throughputJoinQueryPerSec = conf.getLong(ThroughputJoinQueryPerSecParam.name,
-        ThroughputJoinQueryPerSecParam.default)
+      readsPerSec = conf.getInt(ReadsPerSecParam.name,
+        throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default))
     )
   }
 

@@ -1,26 +1,18 @@
 language: scala
 jdk:
   - oraclejdk8
+
 sudo: required
+
 dist: trusty
 scala:
   - 2.10.6
   - 2.11.8
 
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot
-    - $HOME/.coursier-cache
-
-before_cache:
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
-  - find $HOME/.sbt -name "*.lock" -delete
+env:
+ - CASSANDRA_VERSION=2.1.15
+ - CASSANDRA_VERSION=3.6
 
 script:
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true test"
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true it:test"
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=2.1.15 -Dtravis=true test"
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=2.1.15 -Dtravis=true it:test"
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true assembly"
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=$CASSANDRA_VERSION -Dtravis=true -Dtravis=true it:test"  #Integration Suite
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtest.cassandra.version=$CASSANDRA_VERSION -Dtravis=true -Dtravis=true assembly" #Test Suite and Assembly Test

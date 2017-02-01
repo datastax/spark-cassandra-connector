@@ -12,7 +12,7 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, Predicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
+import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, ReflectionUtil}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.{PartitionCoalescer, RDD}
@@ -327,7 +327,8 @@ class CassandraTableScanRDD[R] private[connector](
   private def fetchTokenRange(
     session: Session,
     range: CqlTokenRange[_, _],
-    inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
+    inputMetricsUpdater: InputMetricsUpdater,
+    scanExecuteMethod: Statement => (Iterator[Row], CassandraRowMetadata)): Iterator[R] = {
 
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(
@@ -337,11 +338,8 @@ class CassandraTableScanRDD[R] private[connector](
     val stmt = createStatement(session, cql, values: _*)
 
     try {
-      val rs = session.execute(stmt)
-      val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
-      val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames,rs)
+      val (iterator, columnMetaData) = scanExecuteMethod(stmt)
 
-      val iterator = new PrefetchingResultSetIterator(rs, fetchSize)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, columnMetaData))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
@@ -358,11 +356,14 @@ class CassandraTableScanRDD[R] private[connector](
     val tokenRanges = partition.tokenRanges
     val metricsUpdater = InputMetricsUpdater(context, readConf)
 
+    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
+    val scanExecuteMethod = connector.connectionFactory.getScanMethod(readConf, session, columnNames)
+
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
     val rowIterator = tokenRanges.iterator.flatMap(
-      fetchTokenRange(session, _: CqlTokenRange[_, _], metricsUpdater))
+      fetchTokenRange(session, _: CqlTokenRange[_, _], metricsUpdater, scanExecuteMethod))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
     context.addTaskCompletionListener { (context) =>

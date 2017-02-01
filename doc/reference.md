@@ -206,13 +206,18 @@ OSS Cassandra this should never be used.</td>
 </tr>
 <tr>
   <td><code>input.join.throughput_query_per_sec</code></td>
-  <td>9223372036854775807</td>
-  <td>Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table</td>
+  <td>2147483647</td>
+  <td>**Deprecated** Please use input.reads_per_sec. Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table</td>
 </tr>
 <tr>
   <td><code>input.metrics</code></td>
   <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
+</tr>
+<tr>
+  <td><code>input.reads_per_sec</code></td>
+  <td>2147483647</td>
+  <td>Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations</td>
 </tr>
 <tr>
   <td><code>input.split.size_in_mb</code></td>
