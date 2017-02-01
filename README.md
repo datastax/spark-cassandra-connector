@@ -43,20 +43,16 @@ named "bX.Y" where X.Y is the major+minor version; for example the "b1.6" branch
 corresponds to the 1.6 release. The "master" branch will normally contain
 development for the next connector release in progress.
 
-Refer to the compatibility table below which shows the major.minor version range
-supported between the connector, Apache Spark, Apache Cassandra, and the
-Cassandra Java driver:
-
-| Connector | Spark         | Cassandra | Cassandra Java Driver |
-| --------- | ------------- | --------- | --------------------- |
-| 2.0       | 2.0           | 2.1.5*, 2.2, 3.0  | 3.0           |
-| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           |
-| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           |
-| 1.4       | 1.4           | 2.1.5*    | 2.1                   |
-| 1.3       | 1.3           | 2.1.5*    | 2.1                   |
-| 1.2       | 1.2           | 2.1, 2.0  | 2.1                   |
-| 1.1       | 1.1, 1.0      | 2.1, 2.0  | 2.1                   |
-| 1.0       | 1.0, 0.9      | 2.0       | 2.0                   |
+| Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
+| --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
+| 2.0       | 2.0, 2.1      | 2.1.5*, 2.2, 3.0 | 3.0            | 8                    | 2.10, 2.11               |
+| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           | 7                    | 2.10, 2.11               |
+| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           | 7                    | 2.10, 2.11               |
+| 1.4       | 1.4           | 2.1.5*    | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.3       | 1.3           | 2.1.5*    | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.2       | 1.2           | 2.1, 2.0  | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.1       | 1.1, 1.0      | 2.1, 2.0  | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.0       | 1.0, 0.9      | 2.0       | 2.0                   | 7                    | 2.10, 2.11               |
 
 **Compatible with 2.1.X where X >= 5*
 
