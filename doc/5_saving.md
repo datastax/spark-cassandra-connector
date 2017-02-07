@@ -182,14 +182,16 @@ CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
 
 #### Example Using Case Classes to Insert into a Cassandra Row With UDTs
 ```scala
-case class Address(street: String, city: String, zip: Int)
-val address = Address(city = "Oakland", zip = 90210, street = "Broadway")
-val col = Seq((1, "Joe", address))
-sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
+import com.datastax.spark.connector._
+case class Address(city: String, street: String, number: Int)
+case class CompanyRow(name: String, address: Address)
+val address = Address(city = "Oakland", street = "Broadway", number = 3400)
+sc.parallelize(Seq(("Paul", address))).saveToCassandra("test", "companies")
 ```
 
 #### Example Using UDTValue.fromMap to Insert into a Cassandra Row With UDTs
 ```scala
+//In the REPL you may need to use :paste mode depending on your Spark Version for the import to be valid
 import com.datastax.spark.connector.UDTValue
 case class Company(name: String, address: UDTValue)
 val address = UDTValue.fromMap(Map("city" -> "Santa Clara", "street" -> "Freedom Circle", "number" -> 3975))
