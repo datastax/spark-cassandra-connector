@@ -1,9 +1,18 @@
 package org.apache.spark.sql.cassandra
 
-import java.io.IOException
 import java.net.InetAddress
 import java.util.UUID
 
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
+import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
+import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
+import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
+import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
+import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
+import com.datastax.spark.connector.{SomeColumns, _}
+import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.cassandra.DataTypeConverter._
@@ -11,18 +20,6 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.SparkConf
-
-import com.datastax.driver.core.Metadata
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.rdd.partitioner.CassandraPartitionGenerator._
-import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
-import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
-import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
-import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{Logging, ConfigParameter, NameTools, ReflectionUtil}
-import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
-import com.datastax.spark.connector.{SomeColumns, _}
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -129,29 +126,34 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
-    val prunedRdd = maybeSelect(baseRdd, requiredColumns)
-    val prunedFilteredRdd = {
+    val filteredRdd = {
       if(filterPushdown) {
         val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
-        val filteredRdd = maybePushdownFilters(prunedRdd, pushdownFilters)
-        filteredRdd.asInstanceOf[RDD[Row]]
+        maybePushdownFilters(baseRdd, pushdownFilters)
       } else {
-        prunedRdd
+        baseRdd
       }
     }
-    prunedFilteredRdd.asInstanceOf[RDD[Row]]
+    maybeSelect(filteredRdd, requiredColumns)
   }
 
   /** Define a type for CassandraRDD[CassandraSQLRow]. It's used by following methods */
   private type RDDType = CassandraRDD[CassandraSQLRow]
 
   /** Transfer selection to limit to columns specified */
-  private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDDType = {
-    if (requiredColumns.nonEmpty) {
+  private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDD[Row] = {
+    val prunedRdd = if (requiredColumns.nonEmpty) {
       rdd.select(requiredColumns.map(column => column: ColumnRef): _*)
     } else {
-      rdd
+      rdd match {
+        case rdd: CassandraTableScanRDD[_] =>
+          CassandraTableScanRDD.countRDD(rdd)
+            .mapPartitions(_.flatMap(count => Iterator.fill(count.toInt)(CassandraSQLRow.empty)))
+        case _ => rdd
+      }
+
     }
+    prunedRdd.asInstanceOf[RDD[Row]]
   }
 
   /** Push down filters to CQL query */
