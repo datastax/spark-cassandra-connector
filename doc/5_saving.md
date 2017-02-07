@@ -186,7 +186,8 @@ import com.datastax.spark.connector._
 case class Address(city: String, street: String, number: Int)
 case class CompanyRow(name: String, address: Address)
 val address = Address(city = "Oakland", street = "Broadway", number = 3400)
-sc.parallelize(Seq(CompanyRow("Paul", address))).saveToCassandra("test", "companies")```
+sc.parallelize(Seq(CompanyRow("Paul", address))).saveToCassandra("test", "companies")
+```
 
 #### Example Using UDTValue.fromMap to Insert into a Cassandra Row With UDTs
 ```scala
