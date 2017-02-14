@@ -29,7 +29,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     columns: ColumnSelector = AllColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T]): Unit = {
 
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
@@ -57,7 +57,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     columns: ColumnSelector = AllColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T]): Unit = {
 
     connector.withSessionDo(session => session.execute(table.cql))
@@ -86,7 +86,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     columns: ColumnSelector = AllColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T],
     columnMapper: ColumnMapper[T]): Unit = {
 
@@ -108,7 +108,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     keyColumns: ColumnSelector = PrimaryKeyColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T]): Unit = {
     // column delete require full primary key, partition key is enough otherwise
     val columnDelete = deleteColumns match {
@@ -154,7 +154,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     selectedColumns: ColumnSelector = AllColumns,
     joinColumns: ColumnSelector = PartitionKeyColumns)(
   implicit 
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     newType: ClassTag[R], rrf: RowReaderFactory[R], 
     ev: ValidRDDType[R],
     currentType: ClassTag[T], 
@@ -200,7 +200,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     selectedColumns: ColumnSelector = AllColumns,
     joinColumns: ColumnSelector = PartitionKeyColumns)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     newType: ClassTag[R], rrf: RowReaderFactory[R],
     ev: ValidRDDType[R],
     currentType: ClassTag[T],
@@ -231,7 +231,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     partitionsPerHost: Int = 10,
     partitionKeyMapper: ColumnSelector = PartitionKeyColumns)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
 
@@ -286,7 +286,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     tableName: String,
     partitionKeyMapper: ColumnSelector = PartitionKeyColumns)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): RDD[(Set[InetAddress], T)] = {
 

@@ -8,7 +8,7 @@ abstract class WritableToCassandra[T] {
 
   def sparkContext: SparkContext
 
-  private[connector] lazy val connector = CassandraConnector(sparkContext.getConf)
+  private[connector] lazy val connector = CassandraConnector(sparkContext)
 
   /**
    * Saves the data from [[org.apache.spark.rdd.RDD RDD]] to a Cassandra table.

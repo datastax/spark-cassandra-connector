@@ -5,11 +5,8 @@ import java.net.InetAddress
 
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
-
-import org.apache.spark.SparkConf
-
-import com.datastax.driver.core.{Cluster, Host, ProtocolVersion, Session}
-
+import org.apache.spark.{SparkConf, SparkContext}
+import com.datastax.driver.core._
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.SerialShutdownHooks
 import com.datastax.spark.connector.util.Logging
@@ -85,6 +82,11 @@ class CassandraConnector(conf: CassandraConnectorConf)
       val dcToUse = _config.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(_config.hosts, allNodes))
       val myNodes = allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
+
+      val connectionsPerHost = _config.maxConnectionsPerExecutor.getOrElse(1)
+      val poolingOptions = session.getCluster.getConfiguration.getPoolingOptions
+      poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, connectionsPerHost)
+      poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, connectionsPerHost)
 
       // We need a separate SessionProxy here to protect against double closing the session.
       // Closing SessionProxy is not really closing the session, because sessions are shared.
@@ -191,6 +193,19 @@ object CassandraConnector extends Logging {
   /** Returns a CassandraConnector created from properties found in the [[org.apache.spark.SparkConf SparkConf]] object */
   def apply(conf: SparkConf): CassandraConnector = {
     new CassandraConnector(CassandraConnectorConf(conf))
+  }
+
+  /** Returns a CassandraConnector with runtime Cluster Environment information. This can set maxConnectionsPerHost based
+    * on cores and executors in use
+    */
+  def apply(sc: SparkContext): CassandraConnector = {
+    val conf = CassandraConnectorConf(sc.getConf)
+    val numExecutors: Int =
+      math.max(Option(sc.getExecutorStorageStatus).getOrElse(Array.empty).length, 1)
+    val numCores: Int = sc.defaultParallelism
+    val coresPerExecutor: Int = math.max( numCores / numExecutors , 1)
+    val runtimeConf = conf.copy( maxConnectionsPerExecutor = conf.maxConnectionsPerExecutor orElse (Some(coresPerExecutor)))
+    new CassandraConnector(runtimeConf)
   }
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */

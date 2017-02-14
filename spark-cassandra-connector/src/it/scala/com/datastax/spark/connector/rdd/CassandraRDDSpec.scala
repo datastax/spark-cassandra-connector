@@ -3,9 +3,10 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
+import com.datastax.driver.core.HostDistance
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
@@ -1190,6 +1191,25 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     date should be(expected.toDateTimeAtStartOfDay.toDate)
     localDate should be(expected)
   }
+
+  it should "adjust maxConnections based on the runtime config" in {
+    val expected = math.max(sc.defaultParallelism/ sc.getExecutorStorageStatus.length, 1)
+    markup(s"Expected = $expected, 1 is default")
+    val rdd = sc.cassandraTable(ks, "big_table")
+    val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (expected)
+    poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (expected)
+  }
+
+  it should "allow forcing a larger maxConnection based on a runtime conf change" in {
+    val expected = 10
+    val conf = sc.getConf.set(CassandraConnectorConf.MaxConnectionsPerExecutorParam.name, "10")
+    val rdd = sc.cassandraTable(ks, "big_table").withConnector(CassandraConnector(conf))
+    val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (expected)
+    poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (expected)
+  }
+
 
   "RDD.coalesce"  should "not loose data" in {
     val rdd = sc.cassandraTable(ks, "big_table").coalesce(4)
