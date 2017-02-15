@@ -394,18 +394,7 @@ class CassandraTableScanRDD[R] private[connector](
       case _ =>
     }
 
-    val counts =
-      new CassandraTableScanRDD[Long](
-        sc = sc,
-        connector = connector,
-        keyspaceName = keyspaceName,
-        tableName = tableName,
-        columnNames = SomeColumns(RowCountRef),
-        where = where,
-        limit = limit,
-        clusteringOrder = clusteringOrder,
-        readConf = readConf)
-
+    val counts = CassandraTableScanRDD.countRDD(this)
     counts.reduce(_ + _)
   }
 
@@ -474,5 +463,24 @@ object CassandraTableScanRDD {
       columnNames = AllColumns,
       where = CqlWhereClause.empty)
     rdd.withPartitioner(rdd.partitionGenerator.partitioner[K](PartitionKeyColumns))
+  }
+
+  /**
+    * It is used by cassandraCount() and spark sql cassandra source to push down counts to cassandra
+    * @param rdd
+    * @tparam R
+    * @return rdd, each partitions will have only one long value: number of rows in the partition
+    */
+  def countRDD[R] (rdd: CassandraTableScanRDD[R]): CassandraTableScanRDD[Long] = {
+    new CassandraTableScanRDD[Long](
+      sc = rdd.sc,
+      connector = rdd.connector,
+      keyspaceName = rdd.keyspaceName,
+      tableName = rdd.tableName,
+      columnNames = SomeColumns(RowCountRef),
+      where = rdd.where,
+      limit = rdd.limit,
+      clusteringOrder = rdd.clusteringOrder,
+      readConf = rdd.readConf)
   }
 }

@@ -85,5 +85,7 @@ object CassandraSQLRow {
     }
     sparkSqlType(value)
   }
+
+  val empty = new CassandraSQLRow(null, IndexedSeq.empty)
 }
 
