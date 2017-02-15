@@ -436,7 +436,7 @@ object CassandraTableScanRDD {
 
     new CassandraTableScanRDD[T](
       sc = sc,
-      connector = CassandraConnector(sc.getConf),
+      connector = CassandraConnector(sc),
       keyspaceName = keyspaceName,
       tableName = tableName,
       readConf = ReadConf.fromSparkConf(sc.getConf),
@@ -456,7 +456,7 @@ object CassandraTableScanRDD {
 
     val rdd = new CassandraTableScanRDD[(K, V)](
       sc = sc,
-      connector = CassandraConnector(sc.getConf),
+      connector = CassandraConnector(sc),
       keyspaceName = keyspaceName,
       tableName = tableName,
       readConf = ReadConf.fromSparkConf(sc.getConf),

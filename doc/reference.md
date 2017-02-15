@@ -26,6 +26,13 @@
   <td>Compression to use (LZ4, SNAPPY or NONE)</td>
 </tr>
 <tr>
+  <td><code>connection.connections_per_executor_max</code></td>
+  <td>None</td>
+  <td>Maximum number of connections per Host set on each Executor JVM. Will be
+updated to DefaultParallelism / Executors for Spark Commands. Defaults to 1
+ if not specifying and not in a Spark Env</td>
+</tr>
+<tr>
   <td><code>connection.factory</code></td>
   <td>DefaultConnectionFactory</td>
   <td>Name of a Scala module or class implementing

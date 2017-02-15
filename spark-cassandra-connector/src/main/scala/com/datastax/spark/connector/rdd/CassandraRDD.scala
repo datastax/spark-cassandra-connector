@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.rdd
 
+import com.datastax.driver.core.HostDistance
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._
@@ -25,6 +26,7 @@ abstract class CassandraRDD[R : ClassTag](
   type Self <: CassandraRDD[R]
   
   ConfigCheck.checkConfig(sc.getConf)
+
 
   protected[connector] def keyspaceName: String
 
@@ -235,11 +237,11 @@ abstract class CassandraRDD[R : ClassTag](
 
 object CassandraRDD {
   def apply[T](sc: SparkContext, keyspaceName: String, tableName: String)
-              (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraRDD[T] =
+              (implicit ct: ClassTag[T], rrf: RowReaderFactory[T]): CassandraRDD[T] = {
 
     new CassandraTableScanRDD[T](
       sc,
-      CassandraConnector(sc.getConf),
+      CassandraConnector(sc),
       keyspaceName,
       tableName,
       AllColumns,
@@ -248,13 +250,14 @@ object CassandraRDD {
       None,
       ReadConf.fromSparkConf(sc.getConf)
     )
+  }
 
   def apply[K, V](sc: SparkContext, keyspaceName: String, tableName: String)
                  (implicit keyCT: ClassTag[K], valueCT: ClassTag[V], rrf: RowReaderFactory[(K, V)]): CassandraRDD[(K, V)] =
 
     new CassandraTableScanRDD[(K, V)](
       sc,
-      CassandraConnector(sc.getConf),
+      CassandraConnector(sc),
       keyspaceName,
       tableName,
       AllColumns,

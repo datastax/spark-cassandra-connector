@@ -1,18 +1,15 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
-import java.io.{ObjectOutputStream, ObjectInputStream, ByteArrayOutputStream, ByteArrayInputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import org.apache.commons.codec.binary.Base64
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-
-import org.apache.spark.SparkConf
-
+import org.apache.spark.{SparkConf, SparkContext}
 import com.datastax.driver.core.ProtocolOptions
-
-import com.datastax.spark.connector.util.{Logging, ConfigCheck, ConfigParameter}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, Logging}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -24,6 +21,7 @@ case class CassandraConnectorConf(
   keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
   minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
   maxReconnectionDelayMillis: Int = CassandraConnectorConf.MaxReconnectionDelayParam.default,
+  maxConnectionsPerExecutor: Option[Int] = CassandraConnectorConf.MaxConnectionsPerExecutorParam.default,
   compression: ProtocolOptions.Compression = CassandraConnectorConf.CompressionParam.default,
   queryRetryCount: Int = CassandraConnectorConf.QueryRetryParam.default,
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
@@ -36,7 +34,8 @@ case class CassandraConnectorConf(
   lazy val serializedConfString: String = {
     val baos = new ByteArrayOutputStream
     val oos = new ObjectOutputStream(baos)
-    oos.writeObject(this);
+    // Ignore maxConnectionsPerExecutor when comparing Connection Confs
+    oos.writeObject(this.copy(maxConnectionsPerExecutor = None));
     oos.close;
     Base64.encodeBase64String(baos.toByteArray)
   }
@@ -117,6 +116,16 @@ object CassandraConnectorConf extends Logging {
     section = ReferenceSection,
     default = 60000,
     description = """Maximum period of time to wait before reconnecting to a dead node""")
+
+  val MaxConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
+    name = "spark.cassandra.connection.connections_per_executor_max",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Maximum number of connections per Host set on each Executor JVM. Will be
+        |updated to DefaultParallelism / Executors for Spark Commands. Defaults to 1
+        | if not specifying and not in a Spark Env""".stripMargin
+  )
 
   val CompressionParam = ConfigParameter[ProtocolOptions.Compression](
     name = "spark.cassandra.connection.compression",
@@ -211,6 +220,7 @@ object CassandraConnectorConf extends Logging {
     KeepAliveMillisParam,
     MinReconnectionDelayParam,
     MaxReconnectionDelayParam,
+    MaxConnectionsPerExecutorParam,
     CompressionParam,
     QueryRetryParam,
     ReadTimeoutParam,
@@ -251,6 +261,7 @@ object CassandraConnectorConf extends Logging {
     val localDC = conf.getOption(LocalDCParam.name)
     val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
     val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
+    val maxConnections = conf.getOption(MaxConnectionsPerExecutorParam.name).map(_.toInt)
     val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
     val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
     val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
@@ -293,6 +304,7 @@ object CassandraConnectorConf extends Logging {
       keepAliveMillis = keepAlive,
       minReconnectionDelayMillis = minReconnectionDelay,
       maxReconnectionDelayMillis = maxReconnectionDelay,
+      maxConnectionsPerExecutor = maxConnections,
       compression = compression,
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeout,

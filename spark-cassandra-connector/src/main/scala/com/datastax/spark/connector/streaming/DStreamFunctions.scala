@@ -66,7 +66,7 @@ class DStreamFunctions[T](dstream: DStream[T])
     keyColumns: ColumnSelector = PrimaryKeyColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T]): Unit = {
 
     // column delete require full primary key, partition key is enough otherwise
@@ -118,7 +118,7 @@ class DStreamFunctions[T](dstream: DStream[T])
     selectedColumns: ColumnSelector = AllColumns,
     joinColumns: ColumnSelector = PartitionKeyColumns)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf),
+    connector: CassandraConnector = CassandraConnector(sparkContext),
     newType: ClassTag[R],
     @transient rrf: RowReaderFactory[R],
     ev: ValidRDDType[R],

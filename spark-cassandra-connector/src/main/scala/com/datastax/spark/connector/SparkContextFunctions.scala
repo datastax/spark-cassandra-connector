@@ -49,7 +49,7 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
     keyspace: String,
     table: String)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sc.getConf),
+    connector: CassandraConnector = CassandraConnector(sc),
     readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
     ct: ClassTag[T], rrf: RowReaderFactory[T],
     ev: ValidRDDType[T]) = new CassandraTableScanRDD[T](sc, connector, keyspace, table, readConf = readConf)
@@ -57,7 +57,7 @@ class SparkContextFunctions(@transient val sc: SparkContext) extends Serializabl
   /** Produces the empty CassandraRDD which does not perform any validation and it does not even
     * try to return any rows. */
   def emptyCassandraTable[T](keyspace: String, table: String)
-                            (implicit connector: CassandraConnector = CassandraConnector(sc.getConf),
+                            (implicit connector: CassandraConnector = CassandraConnector(sc),
                              readConf: ReadConf = ReadConf.fromSparkConf(sc.getConf),
                              ct: ClassTag[T], rrf: RowReaderFactory[T],
                              ev: ValidRDDType[T]) =

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.ProtocolOptions
+import com.datastax.driver.core.{HostDistance, ProtocolOptions}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.embedded._
 import org.scalatest.BeforeAndAfterEach
@@ -28,6 +28,21 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
       assert(cluster.getMetadata.getClusterName != null)
       assert(cluster.getMetadata.getAllHosts.size > 0)
     }
+  }
+
+  it should "have the default max hosts in pooling options" in {
+    val poolingConf = conn.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (1)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (1)
+  }
+
+  it should "have larger max hosts if set" in {
+    val maxCon = CassandraConnector(
+      defaultConf.set(CassandraConnectorConf.MaxConnectionsPerExecutorParam.name, "5"))
+
+    val poolingConf = maxCon.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (5)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (5)
   }
 
   it should "run queries" in {

@@ -21,7 +21,7 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
     partitionKeyColumns: Option[Seq[String]] = None,
     clusteringKeyColumns: Option[Seq[String]] = None)(
   implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext.getConf)): Unit = {
+    connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
 
     val protocolVersion = connector.
       withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
