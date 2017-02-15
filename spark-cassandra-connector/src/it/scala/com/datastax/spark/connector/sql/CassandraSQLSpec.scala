@@ -414,8 +414,22 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "allow to select rows with group by clause" in {
-    val result = cc.sql(s"SELECT count(*) FROM test1 GROUP BY b").collect()
+    val result = cc.sql(s"SELECT b, count(*) FROM test1 GROUP BY b order by b").collect()
+    result(0).getInt(0) should be (1)
+    result(1).getInt(0) should be (2)
+    result(0).getLong(1) should be (4L)
+    result(1).getLong(1) should be (4L)
     result should have length 2
+  }
+
+  it should "return correct count(*)" in {
+    val result = cc.sql(s"SELECT count(*) FROM test1").collect()
+    result(0).getLong(0) should be (8L)
+  }
+
+  it should "return correct count(1)" in {
+    val result = cc.sql(s"SELECT count(1) FROM test1").collect()
+    result(0).getLong(0) should be (8L)
   }
 
   it should "allow to select rows with union clause" in {
