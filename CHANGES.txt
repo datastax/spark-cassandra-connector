@@ -1,3 +1,20 @@
+2.0.0 RC1
+ * Includes all patches up to 1.6.5
+ * Automatic adjustment of Max Connections (SPARKC-471)
+ * Allow for Custom Table Scan Method (SPARKC-459)
+ * Enable PerPartitionLimit (SPARKC-446)
+ * Support client certificate authentication for two-way SSL Encryption (SPARKC-359)
+ * Change Config Generation for Cassandra Runners (SPARKC-424)
+ * Remove deprecated QueryRetryDelay parameter (SPARKC-423)
+ * User ConnectionHostParam.default as default hosts String
+ * Update usages of deprecated SQLContext so that SparkSession is used instead (SPARKC-400)
+ * Test Reused Exchange SPARK-17673 (SPARKC-429)
+ * Module refactoring (SPARKC-398)
+ * Recognition of Java Driver Annotated Classes (SPARKC-427)
+ * RDD.deleteFromCassandra (SPARKC-349)
+ * Coalesce Pushdown to Cassandra (SPARKC-161)
+ * Custom Conf options in Custom Pushdowns (SPARKC-435)
+ * Upgrade CommonBeatUtils to 1.9.3 to Avoid SID-760 (SPARKC-457)
 
 2.0.0 M3
  * Includes all patches up to 1.6.2
@@ -49,18 +66,6 @@
  * Avoid overflow on SplitSizeInMB param (SPARKC-413)
  * Fix conversion of LocalDate to Joda LocalDate (SPARKC-391)
  * Shade Guava to avoid conflict with outdated Guava in Spark (SPARKC-355)
-
-2.0.0 M1
- * Added support for left outer joins with C* table (SPARKC-181)
- * Removed CassandraSqlContext and underscore based options (SPARKC-399)
- * Upgrade to Spark 2.0.0-preview (SPARKC-396)
-    - Removed Twitter demo because there is no spark-streaming-twitter package available anymore
-    - Removed Akka Actor demo becaues there is no support for such streams anymore
-    - Bring back Kafka project and make it compile
-    - Update several classes to use our Logging instead of Spark Logging because Spark Logging became private
-    - Update few components and tests to make them work with Spark 2.0.0
-    - Fix Spark SQL - temporarily
-    - Update plugins and Scala version
 
 1.6.0
  * SparkSql write supports TTL per row (SPARKC-345)
