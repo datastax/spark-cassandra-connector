@@ -19,6 +19,12 @@
 
 ********************************************************************************
 
+1.6.5
+* Optimize Spark Sql Count(*) with CassandraCount (SPARKC-412)
+* Fix Incomplete Shading of Guava (SPARKC-461)
+* Replace all Logging Dependencies from Spark-Core with Internal Class (SPARKC-460)
+* Remove Java8 Dependency in CassandraConnectorConf (SPARKC-462)
+
 1.6.4
  * Find converters for classes on different classloaders (SPARKC-363)
  * Fix CassandraConnector and Session Race Condition (SPARKC-441)
