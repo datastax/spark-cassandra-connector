@@ -118,6 +118,9 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
         s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
   }
 
+  def codecs(name: String): TypeCodec[AnyRef] =
+    codecs(namesToIndex(name))
+
   def unaliasedColumnNames = resultSetColumnNames.getOrElse(columnNames)
 }
 
