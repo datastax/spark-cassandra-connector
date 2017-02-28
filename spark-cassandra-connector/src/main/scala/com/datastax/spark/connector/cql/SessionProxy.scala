@@ -4,6 +4,9 @@ import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, 
 
 import com.datastax.driver.core.{RegularStatement, Session, SimpleStatement}
 
+import org.apache.commons.lang3.ClassUtils
+
+
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
   *  - `prepare` methods to cache `PreparedStatement` objects. */
@@ -56,10 +59,14 @@ object SessionProxy {
 
   /** Creates a new `SessionProxy` delegating to the given `Session`.
     * Additionally registers a callback on `Session#close` method.
+    *
     * @param afterClose code to be invoked after the session has been closed */
-  def wrapWithCloseAction(session: Session)(afterClose: Session => Any): Session =
+  def wrapWithCloseAction(session: Session)(afterClose: Session => Any): Session = {
+    val listInterfaces = ClassUtils.getAllInterfaces(session.getClass)
+    val availableInterfaces = listInterfaces.toArray[Class[_]](new Array[Class[_]](listInterfaces.size))
     Proxy.newProxyInstance(
       session.getClass.getClassLoader,
-      Array(classOf[Session]),
+      availableInterfaces,
       new SessionProxy(session, afterClose)).asInstanceOf[Session]
+  }
 }
