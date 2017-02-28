@@ -14,7 +14,10 @@ class ValueRowReader[T: TypeConverter](columnRef: ColumnRef) extends RowReader[T
     * @param row row fetched from Cassandra
     * @param rowMetaData: column names available in the `row` */
   override def read(row: Row, rowMetaData: CassandraRowMetadata): T =
-    converter.convert(GettableData.get(row, columnRef.cqlValueName))
+    converter.convert(GettableData.get(
+      row,
+      columnRef.cqlValueName,
+      rowMetaData.codecs(columnRef.cqlValueName)))
 
   /** List of columns this `RowReader` is going to read.
     * Useful to avoid fetching the columns that are not needed. */
