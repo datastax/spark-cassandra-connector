@@ -1,3 +1,7 @@
+2.0.0
+ * Upgrade driver version for 2.0.0 Release to 3.1.4 (SPARKC-474)
+ * Extend SPARKC-383 to All Row Readers (SPARKC-473)
+
 2.0.0 RC1
  * Includes all patches up to 1.6.5
  * Automatic adjustment of Max Connections (SPARKC-471)
