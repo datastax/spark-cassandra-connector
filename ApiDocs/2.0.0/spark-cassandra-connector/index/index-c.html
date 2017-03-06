@@ -78,6 +78,9 @@
       <div class="name">CassandraLeftJoinRDD</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/package.html" class="extype" name="com.datastax.spark.connector.rdd">rdd</a> </div>
     </div><div class="entry">
+      <div class="name">CassandraLimit</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/package.html" class="extype" name="com.datastax.spark.connector.rdd">rdd</a> </div>
+    </div><div class="entry">
       <div class="name">CassandraOption</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/types/package.html" class="extype" name="com.datastax.spark.connector.types">types</a> </div>
     </div><div class="entry">
@@ -92,6 +95,9 @@
     </div><div class="entry">
       <div class="name">CassandraPartitionGenerator</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/partitioner/package.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner">partitioner</a> </div>
+    </div><div class="entry">
+      <div class="name">CassandraPartitionLimit</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/package.html" class="extype" name="com.datastax.spark.connector.rdd">rdd</a> </div>
     </div><div class="entry">
       <div class="name">CassandraPartitionedRDD</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/partitioner/package.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner">partitioner</a> </div>
@@ -130,6 +136,9 @@
       <div class="occurrences"><a href="../org/apache/spark/sql/cassandra/package.html" class="extype" name="org.apache.spark.sql.cassandra">cassandra</a> </div>
     </div><div class="entry">
       <div class="name">CassandraSourceRelation</div>
+      <div class="occurrences"><a href="../org/apache/spark/sql/cassandra/package.html" class="extype" name="org.apache.spark.sql.cassandra">cassandra</a> </div>
+    </div><div class="entry">
+      <div class="name">CassandraSparkSessionFunctions</div>
       <div class="occurrences"><a href="../org/apache/spark/sql/cassandra/package.html" class="extype" name="org.apache.spark.sql.cassandra">cassandra</a> </div>
     </div><div class="entry">
       <div class="name">CassandraStreamingJavaUtil</div>
@@ -261,9 +270,6 @@
       <div class="name">ConsistencyLevelParam</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/ReadConf$.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a> <a href="../com/datastax/spark/connector/writer/WriteConf$.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a> </div>
     </div><div class="entry">
-      <div class="name">ConstantDelay</div>
-      <div class="occurrences"><a href="../com/datastax/spark/connector/cql/CassandraConnectorConf$$RetryDelayConf$.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf">RetryDelayConf</a> </div>
-    </div><div class="entry">
       <div class="name">CounterType</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/types/package.html" class="extype" name="com.datastax.spark.connector.types">types</a> </div>
     </div><div class="entry">
@@ -331,7 +337,10 @@
       <div class="occurrences"><a href="../org/apache/spark/sql/package.html" class="extype" name="org.apache.spark.sql">sql</a> </div>
     </div><div class="entry">
       <div class="name">catalystDataType</div>
-      <div class="occurrences"><a href="../org/apache/spark/sql/cassandra/DataTypeConverter$.html" class="extype" name="org.apache.spark.sql.cassandra.DataTypeConverter">DataTypeConverter</a> </div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/types/CustomDriverConverter.html" class="extype" name="com.datastax.spark.connector.types.CustomDriverConverter">CustomDriverConverter</a> <a href="../org/apache/spark/sql/cassandra/DataTypeConverter$.html" class="extype" name="org.apache.spark.sql.cassandra.DataTypeConverter">DataTypeConverter</a> </div>
+    </div><div class="entry">
+      <div class="name">catalystDataTypeConverter</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/types/CustomDriverConverter.html" class="extype" name="com.datastax.spark.connector.types.CustomDriverConverter">CustomDriverConverter</a> </div>
     </div><div class="entry">
       <div class="name">checkColumnsExistence</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a> </div>
@@ -351,6 +360,9 @@
       <div class="name">clear</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/cql/RefCountMap.html" class="extype" name="com.datastax.spark.connector.cql.RefCountMap">RefCountMap</a> </div>
     </div><div class="entry">
+      <div class="name">clientAuthEnabled</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/cql/CassandraConnectorConf$$CassandraSSLConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf">CassandraSSLConf</a> </div>
+    </div><div class="entry">
       <div class="name">close</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/cql/LocalNodeFirstLoadBalancingPolicy.html" class="extype" name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy">LocalNodeFirstLoadBalancingPolicy</a> <a href="../com/datastax/spark/connector/cql/MultipleRetryPolicy.html" class="extype" name="com.datastax.spark.connector.cql.MultipleRetryPolicy">MultipleRetryPolicy</a> </div>
     </div><div class="entry">
@@ -361,7 +373,7 @@
       <div class="occurrences"><a href="../com/datastax/spark/connector/cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> </div>
     </div><div class="entry">
       <div class="name">cls</div>
-      <div class="occurrences"><a href="../com/datastax/spark/connector/mapper/TupleColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.TupleColumnMapper">TupleColumnMapper</a> <a href="../com/datastax/spark/connector/writer/PropertyExtractor.html" class="extype" name="com.datastax.spark.connector.writer.PropertyExtractor">PropertyExtractor</a> </div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/mapper/ReflectionColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ReflectionColumnMapper">ReflectionColumnMapper</a> <a href="../com/datastax/spark/connector/mapper/TupleColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.TupleColumnMapper">TupleColumnMapper</a> <a href="../com/datastax/spark/connector/writer/PropertyExtractor.html" class="extype" name="com.datastax.spark.connector.writer.PropertyExtractor">PropertyExtractor</a> </div>
     </div><div class="entry">
       <div class="name">cluster</div>
       <div class="occurrences"><a href="../org/apache/spark/sql/cassandra/TableRef.html" class="extype" name="org.apache.spark.sql.cassandra.TableRef">TableRef</a> </div>
@@ -378,8 +390,14 @@
       <div class="name">clusteringOrder</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/CassandraJoinRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD">CassandraJoinRDD</a> <a href="../com/datastax/spark/connector/rdd/CassandraLeftJoinRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD">CassandraLeftJoinRDD</a> <a href="../com/datastax/spark/connector/rdd/CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a> <a href="../com/datastax/spark/connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a> <a href="../com/datastax/spark/connector/rdd/EmptyCassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.EmptyCassandraRDD">EmptyCassandraRDD</a> </div>
     </div><div class="entry">
+      <div class="name">coalesce</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a> </div>
+    </div><div class="entry">
       <div class="name">codecFor</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/util/CodecRegistryUtil$.html" class="extype" name="com.datastax.spark.connector.util.CodecRegistryUtil">CodecRegistryUtil</a> </div>
+    </div><div class="entry">
+      <div class="name">codecs</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/CassandraRowMetadata.html" class="extype" name="com.datastax.spark.connector.CassandraRowMetadata">CassandraRowMetadata</a> </div>
     </div><div class="entry">
       <div class="name">collectionBehavior</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/CollectionColumnName.html" class="extype" name="com.datastax.spark.connector.CollectionColumnName">CollectionColumnName</a> </div>
@@ -513,6 +531,9 @@
       <div class="name">count</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/util/CountingIterator.html" class="extype" name="com.datastax.spark.connector.util.CountingIterator">CountingIterator</a> </div>
     </div><div class="entry">
+      <div class="name">countRDD</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/rdd/CassandraTableScanRDD$.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a> </div>
+    </div><div class="entry">
       <div class="name">cql</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/CollectionColumnName.html" class="extype" name="com.datastax.spark.connector.CollectionColumnName">CollectionColumnName</a> <a href="../com/datastax/spark/connector/ColumnName.html" class="extype" name="com.datastax.spark.connector.ColumnName">ColumnName</a> <a href="../com/datastax/spark/connector/ColumnRef.html" class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</a> <a href="../com/datastax/spark/connector/FunctionCallRef.html" class="extype" name="com.datastax.spark.connector.FunctionCallRef">FunctionCallRef</a> <a href="../com/datastax/spark/connector/RowCountRef$.html" class="extype" name="com.datastax.spark.connector.RowCountRef">RowCountRef</a> <a href="../com/datastax/spark/connector/TTL.html" class="extype" name="com.datastax.spark.connector.TTL">TTL</a> <a href="../com/datastax/spark/connector/WriteTime.html" class="extype" name="com.datastax.spark.connector.WriteTime">WriteTime</a> <a href="../com/datastax/spark/connector/package.html" class="extype" name="com.datastax.spark.connector">connector</a> <a href="../com/datastax/spark/connector/cql/ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a> <a href="../com/datastax/spark/connector/cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a> <a href="../com/datastax/spark/connector/rdd/partitioner/CqlTokenRange.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.CqlTokenRange">CqlTokenRange</a> </div>
     </div><div class="entry">
@@ -539,5 +560,8 @@
     </div><div class="entry">
       <div class="name">ctorParamToColumnName</div>
       <div class="occurrences"><a href="../com/datastax/spark/connector/mapper/DefaultColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.DefaultColumnMapper">DefaultColumnMapper</a> </div>
+    </div><div class="entry">
+      <div class="name">customDriverConverter</div>
+      <div class="occurrences"><a href="../com/datastax/spark/connector/types/ColumnType$.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a> </div>
     </div></body>
       </html>

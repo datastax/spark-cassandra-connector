@@ -132,15 +132,15 @@ useful for reading property values of type <code>T</code> and writing them to Ca
 Throws <span class="extype" name="IllegalArgumentException">IllegalArgumentException</span> if <code>selectedColumns</code> contains some columns that
 don't have matching getters.</p></div></div>
     </li><li name="com.datastax.spark.connector.mapper.ColumnMapper#newTable" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="newTable(keyspaceName:String,tableName:String):com.datastax.spark.connector.cql.TableDef"></a>
-      <a id="newTable(String,String):TableDef"></a>
+      <a id="newTable(keyspaceName:String,tableName:String,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="newTable(String,String,ProtocolVersion):TableDef"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
+        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Provides a definition of the table that class <code>T</code> could be saved to.</p>

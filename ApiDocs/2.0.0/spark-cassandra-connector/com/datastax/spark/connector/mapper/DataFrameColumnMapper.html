@@ -93,7 +93,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">DataFrameColumnMapper</span><span class="params">(<span name="structType">structType: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.types.StructType" class="extype" target="_top">StructType</a></span>)</span>
+        <span class="name">DataFrameColumnMapper</span><span class="params">(<span name="structType">structType: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.StructType" class="extype" target="_top">StructType</a></span>)</span>
       </span>
       </h4>
       
@@ -459,15 +459,15 @@ don't have matching getters.</p></div><dl class="attributes block"> <dt>Definiti
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="com.datastax.spark.connector.mapper.DataFrameColumnMapper#newTable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="newTable(keyspaceName:String,tableName:String):com.datastax.spark.connector.cql.TableDef"></a>
-      <a id="newTable(String,String):TableDef"></a>
+      <a id="newTable(keyspaceName:String,tableName:String,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="newTable(String,String,ProtocolVersion):TableDef"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
+        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Provides a definition of the table that class <code>T</code> could be saved to.</p><div class="fullcomment"><div class="comment cmt"><p>Provides a definition of the table that class <code>T</code> could be saved to.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.datastax.spark.connector.mapper.DataFrameColumnMapper">DataFrameColumnMapper</a> → <a href="ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a></dd></dl></div>

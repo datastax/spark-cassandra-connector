@@ -96,7 +96,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">RDDJavaFunctions</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>)</span>
+        <span class="name">RDDJavaFunctions</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>)</span>
       </span>
       </h4>
       
@@ -285,6 +285,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="RDDAndDStreamCommonJavaFunctions.html" class="extype" name="com.datastax.spark.connector.japi.RDDAndDStreamCommonJavaFunctions">RDDAndDStreamCommonJavaFunctions</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.japi.RDDJavaFunctions#deleteFromCassandra" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="deleteFromCassandra(keyspace:String,table:String,rowWriterFactory:com.datastax.spark.connector.writer.RowWriterFactory[T],deleteColumns:com.datastax.spark.connector.ColumnSelector,keyColumns:com.datastax.spark.connector.ColumnSelector,conf:com.datastax.spark.connector.writer.WriteConf,connector:com.datastax.spark.connector.cql.CassandraConnector):Unit"></a>
+      <a id="deleteFromCassandra(String,String,RowWriterFactory[T],ColumnSelector,ColumnSelector,WriteConf,CassandraConnector):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">deleteFromCassandra</span><span class="params">(<span name="keyspace">keyspace: <span class="extype" name="java.lang.String">String</span></span>, <span name="table">table: <span class="extype" name="java.lang.String">String</span></span>, <span name="rowWriterFactory">rowWriterFactory: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>, <span name="deleteColumns">deleteColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="keyColumns">keyColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="conf">conf: <a href="../writer/WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>, <span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ensuring(cond:A=&gt;Boolean,msg:=&gt;Any):A"></a>
       <a id="ensuring((RDDJavaFunctions[T])⇒Boolean,⇒Any):RDDJavaFunctions[T]"></a>
@@ -440,7 +453,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getConf</span><span class="params">()</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>
+        <span class="name">getConf</span><span class="params">()</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions">RDDJavaFunctions</a> → <a href="RDDAndDStreamCommonJavaFunctions.html" class="extype" name="com.datastax.spark.connector.japi.RDDAndDStreamCommonJavaFunctions">RDDAndDStreamCommonJavaFunctions</a></dd></dl></div>
@@ -531,7 +544,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">repartitionByCassandraReplica</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="java.lang.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="java.lang.String">String</span></span>, <span name="partitionsPerHost">partitionsPerHost: <span class="extype" name="scala.Int">Int</span></span>, <span name="partitionkeyMapper">partitionkeyMapper: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="rowWriterFactory">rowWriterFactory: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.api.java.JavaRDD" class="extype" target="_top">JavaRDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>
+        <span class="name">repartitionByCassandraReplica</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="java.lang.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="java.lang.String">String</span></span>, <span name="partitionsPerHost">partitionsPerHost: <span class="extype" name="scala.Int">Int</span></span>, <span name="partitionkeyMapper">partitionkeyMapper: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="rowWriterFactory">rowWriterFactory: <a href="../writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.api.java.JavaRDD" class="extype" target="_top">JavaRDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]</span>
       </span>
       </h4>
       
@@ -570,7 +583,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">spanBy</span><span class="tparams">[<span name="U">U</span>]</span><span class="params">(<span name="f">f: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.api.java.function.Function" class="extype" target="_top">Function</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>, <span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>]</span>, <span name="keyClassTag">keyClassTag: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.api.java.JavaPairRDD" class="extype" target="_top">JavaPairRDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>, <span class="extype" name="java.lang.Iterable">Iterable</span>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]]</span>
+        <span class="name">spanBy</span><span class="tparams">[<span name="U">U</span>]</span><span class="params">(<span name="f">f: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.api.java.function.Function" class="extype" target="_top">Function</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>, <span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>]</span>, <span name="keyClassTag">keyClassTag: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.api.java.JavaPairRDD" class="extype" target="_top">JavaPairRDD</a>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.spanBy.U">U</span>, <span class="extype" name="java.lang.Iterable">Iterable</span>[<span class="extype" name="com.datastax.spark.connector.japi.RDDJavaFunctions.T">T</span>]]</span>
       </span>
       </h4>
       

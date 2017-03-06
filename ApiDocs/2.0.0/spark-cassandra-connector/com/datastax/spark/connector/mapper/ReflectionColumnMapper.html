@@ -173,15 +173,15 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="com.datastax.spark.connector.mapper.ColumnMapper#newTable" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="newTable(keyspaceName:String,tableName:String):com.datastax.spark.connector.cql.TableDef"></a>
-      <a id="newTable(String,String):TableDef"></a>
+      <a id="newTable(keyspaceName:String,tableName:String,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="newTable(String,String,ProtocolVersion):TableDef"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
+        <span class="name">newTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="result">: <a href="../cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Provides a definition of the table that class <code>T</code> could be saved to.</p><div class="fullcomment"><div class="comment cmt"><p>Provides a definition of the table that class <code>T</code> could be saved to.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a></dd></dl></div>
@@ -305,6 +305,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.mapper.ReflectionColumnMapper#annotationForFieldName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="annotationForFieldName(fieldName:String):Option[String]"></a>
+      <a id="annotationForFieldName(String):Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">annotationForFieldName</span><span class="params">(<span name="fieldName">fieldName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -337,6 +350,19 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.mapper.ReflectionColumnMapper#cls" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cls:Class[_]"></a>
+      <a id="cls:Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cls</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="com.datastax.spark.connector.mapper.ReflectionColumnMapper#columnMapForReading" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="columnMapForReading(struct:com.datastax.spark.connector.cql.StructDef,selectedColumns:IndexedSeq[com.datastax.spark.connector.ColumnRef]):com.datastax.spark.connector.mapper.ColumnMapForReading"></a>
       <a id="columnMapForReading(StructDef,IndexedSeq[ColumnRef]):ColumnMapForReading"></a>

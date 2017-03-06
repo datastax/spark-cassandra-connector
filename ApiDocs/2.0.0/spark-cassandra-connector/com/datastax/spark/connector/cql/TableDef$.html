@@ -228,28 +228,28 @@
               
         </dd></dl></div>
     </li><li name="com.datastax.spark.connector.cql.TableDef#fromDataFrame" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromDataFrame(dataFrame:org.apache.spark.sql.DataFrame,keyspaceName:String,tableName:String):com.datastax.spark.connector.cql.TableDef"></a>
-      <a id="fromDataFrame(DataFrame,String,String):TableDef"></a>
+      <a id="fromDataFrame(dataFrame:org.apache.spark.sql.DataFrame,keyspaceName:String,tableName:String,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="fromDataFrame(DataFrame,String,String,ProtocolVersion):TableDef"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromDataFrame</span><span class="params">(<span name="dataFrame">dataFrame: <a href="../../../../../org/apache/spark/sql/package.html#DataFrame=org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]" class="extmbr" name="org.apache.spark.sql.DataFrame">DataFrame</a></span>, <span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
+        <span class="name">fromDataFrame</span><span class="params">(<span name="dataFrame">dataFrame: <a href="../../../../../org/apache/spark/sql/package.html#DataFrame=org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]" class="extmbr" name="org.apache.spark.sql.DataFrame">DataFrame</a></span>, <span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span></span>)</span><span class="result">: <a href="TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
       </span>
       </h4>
       
     </li><li name="com.datastax.spark.connector.cql.TableDef#fromType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromType[T](keyspaceName:String,tableName:String)(implicitevidence$1:com.datastax.spark.connector.mapper.ColumnMapper[T]):com.datastax.spark.connector.cql.TableDef"></a>
-      <a id="fromType[T](String,String)(ColumnMapper[T]):TableDef"></a>
+      <a id="fromType[T](keyspaceName:String,tableName:String,protocolVersion:com.datastax.driver.core.ProtocolVersion)(implicitevidence$1:com.datastax.spark.connector.mapper.ColumnMapper[T]):com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="fromType[T](String,String,ProtocolVersion)(ColumnMapper[T]):TableDef"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromType</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a>[<span class="extype" name="com.datastax.spark.connector.cql.TableDef.fromType.T">T</span>]</span>)</span><span class="result">: <a href="TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
+        <span class="name">fromType</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a>[<span class="extype" name="com.datastax.spark.connector.cql.TableDef.fromType.T">T</span>]</span>)</span><span class="result">: <a href="TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Constructs a table definition based on the mapping provided by

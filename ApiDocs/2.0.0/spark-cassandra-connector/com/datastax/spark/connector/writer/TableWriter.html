@@ -266,6 +266,20 @@ Each RDD partition is processed by a single thread.</p></div><div class="toggleC
       </span>
       </h4>
       
+    </li><li name="com.datastax.spark.connector.writer.TableWriter#delete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="delete(columns:com.datastax.spark.connector.ColumnSelector)(taskContext:org.apache.spark.TaskContext,data:Iterator[T]):Unit"></a>
+      <a id="delete(ColumnSelector)(TaskContext,Iterator[T]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">delete</span><span class="params">(<span name="columns">columns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>)</span><span class="params">(<span name="taskContext">taskContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.TaskContext" class="extype" target="_top">TaskContext</a></span>, <span name="data">data: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.writer.TableWriter.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Cql DELETE statement</p><div class="fullcomment"><div class="comment cmt"><p>Cql DELETE statement</p></div><dl class="paramcmts block"><dt class="param">columns</dt><dd class="cmt"><p>columns to delete, the row will be deleted comletely if the list is empty</p></dd><dt class="param">taskContext</dt><dd class="cmt"></dd><dt class="param">data</dt><dd class="cmt"><p>primary key values to select delete rows
+</p></dd></dl></div>
     </li><li name="scala.Predef.any2Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ensuring(cond:A=&gt;Boolean,msg:=&gt;Any):A"></a>
       <a id="ensuring((TableWriter[T])⇒Boolean,⇒Any):TableWriter[T]"></a>
@@ -425,6 +439,20 @@ Each RDD partition is processed by a single thread.</p></div><div class="toggleC
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.writer.TableWriter#insert" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="insert(taskContext:org.apache.spark.TaskContext,data:Iterator[T]):Unit"></a>
+      <a id="insert(TaskContext,Iterator[T]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">insert</span><span class="params">(<span name="taskContext">taskContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.TaskContext" class="extype" target="_top">TaskContext</a></span>, <span name="data">data: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.writer.TableWriter.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Write data with Cql INSERT statement
+</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -698,6 +726,20 @@ Each RDD partition is processed by a single thread.</p></div><div class="toggleC
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.writer.TableWriter#update" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="update(taskContext:org.apache.spark.TaskContext,data:Iterator[T]):Unit"></a>
+      <a id="update(TaskContext,Iterator[T]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">update</span><span class="params">(<span name="taskContext">taskContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.TaskContext" class="extype" target="_top">TaskContext</a></span>, <span name="data">data: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.writer.TableWriter.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Write data with Cql UPDATE statement
+</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -764,10 +806,13 @@ Each RDD partition is processed by a single thread.</p></div><div class="toggleC
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">write</span><span class="params">(<span name="taskContext">taskContext: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.TaskContext" class="extype" target="_top">TaskContext</a></span>, <span name="data">data: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.writer.TableWriter.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">write</span><span class="params">(<span name="taskContext">taskContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.TaskContext" class="extype" target="_top">TaskContext</a></span>, <span name="data">data: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.writer.TableWriter.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Main entry point</p>
+      <p class="shortcomment cmt">Main entry point
+if counter or collection column need to be updated Cql UPDATE command will be used
+INSERT otherwise
+</p>
     </li><li name="scala.Predef.any2ArrowAssoc#→" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="→[B](y:B):(A,B)"></a>
       <a id="→[B](B):(TableWriter[T],B)"></a>

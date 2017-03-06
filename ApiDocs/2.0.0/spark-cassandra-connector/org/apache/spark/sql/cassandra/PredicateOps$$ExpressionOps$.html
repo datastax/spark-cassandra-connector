@@ -35,13 +35,13 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">ExpressionOps</span><span class="result"> extends <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>]</span>
+        <span class="name">ExpressionOps</span><span class="result"> extends <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>]</span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Adapts the API of Catalyst <code>Expression</code> to the API expected by <code>BasicCassandraPredicatePushDown</code></p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -191,7 +191,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">columnName</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">columnName</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns the column name of the only column in the predicate.</p><div class="fullcomment"><div class="comment cmt"><p>Returns the column name of the only column in the predicate.
@@ -276,7 +276,7 @@ Will throw <code>IllegalArgumentException</code> if predicate is not a single-co
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isEqualToPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isEqualToPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns true for predicates of type: column = value</p><div class="fullcomment"><div class="comment cmt"><p>Returns true for predicates of type: column = value</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps.ExpressionOps">ExpressionOps</a> → <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a></dd></dl></div>
@@ -289,7 +289,7 @@ Will throw <code>IllegalArgumentException</code> if predicate is not a single-co
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isInPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isInPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns true for predicates of type: column IN (value1, value2, .</p><div class="fullcomment"><div class="comment cmt"><p>Returns true for predicates of type: column IN (value1, value2, ...)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps.ExpressionOps">ExpressionOps</a> → <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a></dd></dl></div>
@@ -315,7 +315,7 @@ Will throw <code>IllegalArgumentException</code> if predicate is not a single-co
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isRangePredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isRangePredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns true for predicates of type: column (&lt; | &lt;= | &gt;= | &gt;) value</p><div class="fullcomment"><div class="comment cmt"><p>Returns true for predicates of type: column (&lt; | &lt;= | &gt;= | &gt;) value</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps.ExpressionOps">ExpressionOps</a> → <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a></dd></dl></div>
@@ -328,7 +328,7 @@ Will throw <code>IllegalArgumentException</code> if predicate is not a single-co
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isSingleColumnPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isSingleColumnPredicate</span><span class="params">(<span name="p">p: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns true if the predicate restricts exactly one column.</p><div class="fullcomment"><div class="comment cmt"><p>Returns true if the predicate restricts exactly one column.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps.ExpressionOps">ExpressionOps</a> → <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a></dd></dl></div>
@@ -464,7 +464,7 @@ Will throw <code>IllegalArgumentException</code> if predicate is not a single-co
 
         <div id="inheritedMembers">
         <div class="parent" name="org.apache.spark.sql.cassandra.PredicateOps">
-              <h3>Inherited from <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>]</h3>
+              <h3>Inherited from <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.catalyst.expressions.Expression" class="extype" target="_top">Expression</a>]</h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

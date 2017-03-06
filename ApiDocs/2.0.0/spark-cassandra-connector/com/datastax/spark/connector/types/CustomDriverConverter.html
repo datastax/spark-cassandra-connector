@@ -100,7 +100,8 @@
         <span class="name">fromDriverRowExtension</span><span class="result">: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="com.datastax.driver.core.DataType">DataType</span>, <a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Function to get connector type for RDD conversions
+</p>
     </li></ol>
             </div>
 
@@ -221,6 +222,36 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.types.CustomDriverConverter#catalystDataType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="catalystDataType:PartialFunction[com.datastax.spark.connector.types.ColumnType[_],org.apache.spark.sql.types.DataType]"></a>
+      <a id="catalystDataType:PartialFunction[ColumnType[_],DataType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">catalystDataType</span><span class="result">: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_], <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Function to get SparkSQL type for the connector type
+ Should be overridden If sparkSQL support is needed for the types.</p>
+    </li><li name="com.datastax.spark.connector.types.CustomDriverConverter#catalystDataTypeConverter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="catalystDataTypeConverter:PartialFunction[Any,AnyRef]"></a>
+      <a id="catalystDataTypeConverter:PartialFunction[Any,AnyRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">catalystDataTypeConverter</span><span class="result">: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="scala.Any">Any</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"> Should convert custom C* types to the catalyst compatible one.</p><div class="fullcomment"><div class="comment cmt"><p> Should convert custom C* types to the catalyst compatible one.
+ Should be overridden If sparkSQL support is needed for the types.
+ Good approach is to use kryo serializer here or correct toString implementation.
+</p></div></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>

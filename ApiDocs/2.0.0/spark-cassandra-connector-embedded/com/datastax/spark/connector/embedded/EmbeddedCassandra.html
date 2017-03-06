@@ -211,19 +211,6 @@ because they will &quot;steal&quot; the server.</p></div><div class="toggleConta
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.datastax.spark.connector.embedded.EmbeddedCassandra#DEFAULT_CASSANDRA_VERSION" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DEFAULT_CASSANDRA_VERSION:String"></a>
-      <a id="DEFAULT_CASSANDRA_VERSION:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">DEFAULT_CASSANDRA_VERSION</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -237,45 +224,6 @@ because they will &quot;steal&quot; the server.</p></div><div class="toggleConta
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.datastax.spark.connector.embedded.EmbeddedCassandra#cassandraMajorVersion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="cassandraMajorVersion:Int"></a>
-      <a id="cassandraMajorVersion:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">cassandraMajorVersion</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.datastax.spark.connector.embedded.EmbeddedCassandra#cassandraMinorVersion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="cassandraMinorVersion:Int"></a>
-      <a id="cassandraMinorVersion:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">cassandraMinorVersion</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.datastax.spark.connector.embedded.EmbeddedCassandra#cassandraVersion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="cassandraVersion:String"></a>
-      <a id="cassandraVersion:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">cassandraVersion</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -533,15 +481,15 @@ because they will &quot;steal&quot; the server.</p></div><div class="toggleConta
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="com.datastax.spark.connector.embedded.EmbeddedCassandra#useCassandraConfig" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="useCassandraConfig(configTemplates:Seq[String],forceReload:Boolean):Unit"></a>
-      <a id="useCassandraConfig(Seq[String],Boolean):Unit"></a>
+      <a id="useCassandraConfig(configTemplates:Seq[com.datastax.spark.connector.embedded.YamlTransformations],forceReload:Boolean):Unit"></a>
+      <a id="useCassandraConfig(Seq[YamlTransformations],Boolean):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">useCassandraConfig</span><span class="params">(<span name="configTemplates">configTemplates: <a href="../../../../../scala/package.html#Seq[+A]=Seq[A]" class="extmbr" name="scala.Seq">Seq</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="forceReload">forceReload: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">useCassandraConfig</span><span class="params">(<span name="configTemplates">configTemplates: <a href="../../../../../scala/package.html#Seq[+A]=Seq[A]" class="extmbr" name="scala.Seq">Seq</a>[<a href="YamlTransformations.html" class="extype" name="com.datastax.spark.connector.embedded.YamlTransformations">YamlTransformations</a>]</span>, <span name="forceReload">forceReload: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Switches the Cassandra server to use the new configuration if the requested configuration

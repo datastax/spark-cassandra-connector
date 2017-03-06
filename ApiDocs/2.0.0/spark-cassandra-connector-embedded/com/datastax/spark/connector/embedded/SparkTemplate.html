@@ -233,7 +233,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">defaultConf</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>
+        <span class="name">defaultConf</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>
       </span>
       </h4>
       
@@ -457,10 +457,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sc</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
+        <span class="name">sc</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Obtains the active <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> object.</p>
+      <p class="shortcomment cmt">Obtains the active <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> object.</p>
+    </li><li name="com.datastax.spark.connector.embedded.SparkTemplate#sparkSession" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="sparkSession:org.apache.spark.sql.SparkSession"></a>
+      <a id="sparkSession:SparkSession"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sparkSession</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SparkSession" class="extype" target="_top">SparkSession</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Obtains the active <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SparkSession" class="extype" target="_top">SparkSession</a> object.</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -488,19 +501,19 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="com.datastax.spark.connector.embedded.SparkTemplate#useSparkConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="useSparkConf(conf:org.apache.spark.SparkConf,force:Boolean):org.apache.spark.SparkContext"></a>
-      <a id="useSparkConf(SparkConf,Boolean):SparkContext"></a>
+      <a id="useSparkConf(conf:org.apache.spark.SparkConf,force:Boolean):org.apache.spark.sql.SparkSession"></a>
+      <a id="useSparkConf(SparkConf,Boolean):SparkSession"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">useSparkConf</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>, <span name="force">force: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
+        <span class="name">useSparkConf</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>, <span name="force">force: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SparkSession" class="extype" target="_top">SparkSession</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Ensures that the currently running <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> uses the provided
-configuration.</p><div class="fullcomment"><div class="comment cmt"><p>Ensures that the currently running <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> uses the provided
+      <p class="shortcomment cmt">Ensures that the currently running <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> uses the provided
+configuration.</p><div class="fullcomment"><div class="comment cmt"><p>Ensures that the currently running <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> uses the provided
 configuration. If the configurations are different or force is <code>true</code> Spark context is stopped and
 started again with the given configuration.</p></div></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">

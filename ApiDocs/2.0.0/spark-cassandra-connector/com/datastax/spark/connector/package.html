@@ -41,8 +41,8 @@
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>The root package of Cassandra connector for Apache Spark.
 Offers handy implicit conversions that add Cassandra-specific methods to
-<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> and <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>.</p><p>Call <a href="SparkContextFunctions.html#cassandraTable[T](keyspace:String,table:String)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitreadConf:com.datastax.spark.connector.rdd.ReadConf,implicitct:scala.reflect.ClassTag[T],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[T],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[T]):com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]" class="extmbr" name="com.datastax.spark.connector.SparkContextFunctions#cassandraTable">cassandraTable</a> method on
-the <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> object
+<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> and <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>.</p><p>Call <a href="SparkContextFunctions.html#cassandraTable[T](keyspace:String,table:String)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitreadConf:com.datastax.spark.connector.rdd.ReadConf,implicitct:scala.reflect.ClassTag[T],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[T],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[T]):com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]" class="extmbr" name="com.datastax.spark.connector.SparkContextFunctions#cassandraTable">cassandraTable</a> method on
+the <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> object
 to create a <a href="rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraRDD</a> exposing
 Cassandra tables as Spark RDDs.</p><p>Call <a href="RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a> <code>saveToCassandra</code>
 function on any <code>RDD</code> to save distributed collection to a Cassandra table.</p><p>Example:</p><pre>CREATE KEYSPACE test WITH replication = {<span class="lit">'class'</span>: 'SimpleStrategy<span class="lit">', '</span>replication_factor': <span class="num">1</span> };
@@ -357,7 +357,7 @@ sc.stop()</pre></div><div class="toggleContainer block">
         <a href="RDDFunctions.html"><span class="name">RDDFunctions</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="writer/WritableToCassandra.html" class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra">WritableToCassandra</a>[<span class="extype" name="com.datastax.spark.connector.RDDFunctions.T">T</span>] with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a></p>
+      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a></p>
     </li><li name="com.datastax.spark.connector.RowsInBatch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="RowsInBatchextendsBatchSizewithProductwithSerializable"></a>
       <a id="RowsInBatch:RowsInBatch"></a>
@@ -422,7 +422,7 @@ sc.stop()</pre></div><div class="toggleContainer block">
         <a href="SparkContextFunctions.html"><span class="name">SparkContextFunctions</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></p>
+      <p class="comment cmt">Provides Cassandra-specific methods on <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></p>
     </li><li name="com.datastax.spark.connector.TTL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TTLextendsColumnRefwithProductwithSerializable"></a>
       <a id="TTL:TTL"></a>
@@ -586,6 +586,19 @@ sc.stop()</pre></div><div class="toggleContainer block">
       </span>
       </h4>
       
+    </li><li name="com.datastax.spark.connector.DocUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DocUtil"></a>
+      <a id="DocUtil:DocUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DocUtil$.html"><span class="name">DocUtil</span></a>
+      </span>
+      </h4>
+      
     </li><li name="com.datastax.spark.connector.GettableData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="GettableData"></a>
       <a id="GettableData:GettableData"></a>
@@ -609,6 +622,19 @@ sc.stop()</pre></div><div class="toggleContainer block">
       </span>
       <span class="symbol">
         <a href="PartitionKeyColumns$.html"><span class="name">PartitionKeyColumns</span></a><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.PrimaryKeyColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PrimaryKeyColumns"></a>
+      <a id="PrimaryKeyColumns:PrimaryKeyColumns"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PrimaryKeyColumns$.html"><span class="name">PrimaryKeyColumns</span></a><span class="result"> extends <a href="ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -792,7 +818,7 @@ analyzing Cassandra data from Spark.</p>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toPairRDDFunctions</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[(<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>)]</span>)</span><span class="result">: <a href="PairRDDFunctions.html" class="extype" name="com.datastax.spark.connector.PairRDDFunctions">PairRDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>]</span>
+        <span class="name">toPairRDDFunctions</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[(<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>)]</span>)</span><span class="result">: <a href="PairRDDFunctions.html" class="extype" name="com.datastax.spark.connector.PairRDDFunctions">PairRDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.K">K</span>, <span class="extype" name="com.datastax.spark.connector.toPairRDDFunctions.V">V</span>]</span>
       </span>
       </h4>
       
@@ -805,7 +831,7 @@ analyzing Cassandra data from Spark.</p>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toRDDFunctions</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>)</span><span class="result">: <a href="RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>
+        <span class="name">toRDDFunctions</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="rdd">rdd: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>)</span><span class="result">: <a href="RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a>[<span class="extype" name="com.datastax.spark.connector.toRDDFunctions.T">T</span>]</span>
       </span>
       </h4>
       
@@ -818,7 +844,7 @@ analyzing Cassandra data from Spark.</p>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toSparkContextFunctions</span><span class="params">(<span name="sc">sc: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>)</span><span class="result">: <a href="SparkContextFunctions.html" class="extype" name="com.datastax.spark.connector.SparkContextFunctions">SparkContextFunctions</a></span>
+        <span class="name">toSparkContextFunctions</span><span class="params">(<span name="sc">sc: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>)</span><span class="result">: <a href="SparkContextFunctions.html" class="extype" name="com.datastax.spark.connector.SparkContextFunctions">SparkContextFunctions</a></span>
       </span>
       </h4>
       

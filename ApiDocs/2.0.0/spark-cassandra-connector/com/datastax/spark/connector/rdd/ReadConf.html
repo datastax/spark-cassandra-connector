@@ -35,15 +35,16 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">ReadConf</span><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="throughputJoinQueryPerSec">throughputJoinQueryPerSec: <span class="extype" name="scala.Long">Long</span> = <span class="defval" name="ReadConf.ThroughputJoinQueryPerSecParam.default">...</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ReadConf</span><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="readsPerSec">readsPerSec: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.ReadsPerSecParam.default</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Read settings for RDD
 </p></div><dl class="paramcmts block"><dt class="param">splitCount</dt><dd class="cmt"><p>number of partitions to divide the data into; unset by default</p></dd><dt class="param">splitSizeInMB</dt><dd class="cmt"><p>size of Cassandra data to be read in a single Spark task;
                      determines the number of partitions, but ignored if <code>splitCount</code> is set</p></dd><dt class="param">fetchSizeInRows</dt><dd class="cmt"><p>number of CQL rows to fetch in a single round-trip to Cassandra</p></dd><dt class="param">consistencyLevel</dt><dd class="cmt"><p>consistency level for reads, default LOCAL_ONE;
-                        higher consistency level will disable data-locality</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd><dt class="param">throughputJoinQueryPerSec</dt><dd class="cmt"><p>maximum read throughput allowed per single core in query/s while
-                                 joining a RDD with C* table (joinWithCassandraTable operation)</p></dd></dl><div class="toggleContainer block">
+                        higher consistency level will disable data-locality</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd><dt class="param">readsPerSec</dt><dd class="cmt"><p>maximum read throughput allowed per single core in requests/s while
+                                 joining an RDD with C* table (joinWithCassandraTable operation)
+                                 also used by enterprise integrations</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -89,7 +90,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.datastax.spark.connector.rdd.ReadConf#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(splitCount:Option[Int],splitSizeInMB:Int,fetchSizeInRows:Int,consistencyLevel:com.datastax.driver.core.ConsistencyLevel,taskMetricsEnabled:Boolean,throughputJoinQueryPerSec:Long):com.datastax.spark.connector.rdd.ReadConf"></a>
+      <a id="&lt;init&gt;(splitCount:Option[Int],splitSizeInMB:Int,fetchSizeInRows:Int,consistencyLevel:com.datastax.driver.core.ConsistencyLevel,taskMetricsEnabled:Boolean,readsPerSec:Int):com.datastax.spark.connector.rdd.ReadConf"></a>
       <a id="&lt;init&gt;:ReadConf"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,13 +98,14 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ReadConf</span><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="throughputJoinQueryPerSec">throughputJoinQueryPerSec: <span class="extype" name="scala.Long">Long</span> = <span class="defval" name="ReadConf.ThroughputJoinQueryPerSecParam.default">...</span></span>)</span>
+        <span class="name">ReadConf</span><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="readsPerSec">readsPerSec: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.ReadsPerSecParam.default</span></span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">splitCount</dt><dd class="cmt"><p>number of partitions to divide the data into; unset by default</p></dd><dt class="param">splitSizeInMB</dt><dd class="cmt"><p>size of Cassandra data to be read in a single Spark task;
                      determines the number of partitions, but ignored if <code>splitCount</code> is set</p></dd><dt class="param">fetchSizeInRows</dt><dd class="cmt"><p>number of CQL rows to fetch in a single round-trip to Cassandra</p></dd><dt class="param">consistencyLevel</dt><dd class="cmt"><p>consistency level for reads, default LOCAL_ONE;
-                        higher consistency level will disable data-locality</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd><dt class="param">throughputJoinQueryPerSec</dt><dd class="cmt"><p>maximum read throughput allowed per single core in query/s while
-                                 joining a RDD with C* table (joinWithCassandraTable operation)</p></dd></dl></div>
+                        higher consistency level will disable data-locality</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd><dt class="param">readsPerSec</dt><dd class="cmt"><p>maximum read throughput allowed per single core in requests/s while
+                                 joining an RDD with C* table (joinWithCassandraTable operation)
+                                 also used by enterprise integrations</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -459,6 +461,21 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.rdd.ReadConf#readsPerSec" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readsPerSec:Int"></a>
+      <a id="readsPerSec:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readsPerSec</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">maximum read throughput allowed per single core in requests/s while
+                                 joining an RDD with C* table (joinWithCassandraTable operation)
+                                 also used by enterprise integrations</p>
     </li><li name="com.datastax.spark.connector.rdd.ReadConf#splitCount" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="splitCount:Option[Int]"></a>
       <a id="splitCount:Option[Int]"></a>
@@ -512,20 +529,6 @@
       </span>
       </h4>
       <p class="shortcomment cmt">whether or not enable task metrics updates (requires Spark 1.</p><div class="fullcomment"><div class="comment cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></div></div>
-    </li><li name="com.datastax.spark.connector.rdd.ReadConf#throughputJoinQueryPerSec" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="throughputJoinQueryPerSec:Long"></a>
-      <a id="throughputJoinQueryPerSec:Long"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">throughputJoinQueryPerSec</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">maximum read throughput allowed per single core in query/s while
-                                 joining a RDD with C* table (joinWithCassandraTable operation)</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

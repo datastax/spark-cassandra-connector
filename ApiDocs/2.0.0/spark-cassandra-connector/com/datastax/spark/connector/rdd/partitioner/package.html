@@ -117,7 +117,7 @@ Each partition can be processed locally on at least one cluster node.</p></div><
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CassandraPartitionedRDD.html"><span class="name">CassandraPartitionedRDD</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD.T">T</span>]</span>
+        <a href="CassandraPartitionedRDD.html"><span class="name">CassandraPartitionedRDD</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD.T">T</span>]</span>
       </span>
       </h4>
       <p class="comment cmt">RDD created by repartitionByCassandraReplica with preferred locations mapping to the CassandraReplicas
@@ -157,7 +157,7 @@ each partition was created for.</p>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="EndpointPartition.html"><span class="name">EndpointPartition</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.Partition" class="extype" target="_top">Partition</a></span>
+        <a href="EndpointPartition.html"><span class="name">EndpointPartition</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.Partition" class="extype" target="_top">Partition</a></span>
       </span>
       </h4>
       
@@ -223,7 +223,7 @@ such that for any (t1: T) &gt; (t2: T), bucket(t1) &gt;= bucket(t2).</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ReplicaPartitioner.html"><span class="name">ReplicaPartitioner</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.Partitioner" class="extype" target="_top">Partitioner</a></span>
+        <a href="ReplicaPartitioner.html"><span class="name">ReplicaPartitioner</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.Partitioner" class="extype" target="_top">Partitioner</a></span>
       </span>
       </h4>
       <p class="comment cmt">The replica partitioner will work on an RDD which is keyed on sets of InetAddresses representing Cassandra

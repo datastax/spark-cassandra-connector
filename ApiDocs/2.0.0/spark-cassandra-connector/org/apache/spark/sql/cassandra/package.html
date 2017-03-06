@@ -90,7 +90,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="AnalyzedPredicates.html"><span class="name">AnalyzedPredicates</span></a><span class="params">(<span name="handledByCassandra">handledByCassandra: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.Filter" class="extype" target="_top">Filter</a>]</span>, <span name="handledBySpark">handledBySpark: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.Filter" class="extype" target="_top">Filter</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="AnalyzedPredicates.html"><span class="name">AnalyzedPredicates</span></a><span class="params">(<span name="handledByCassandra">handledByCassandra: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.Filter" class="extype" target="_top">Filter</a>]</span>, <span name="handledBySpark">handledBySpark: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.Filter" class="extype" target="_top">Filter</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -142,7 +142,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CassandraSQLRow.html"><span class="name">CassandraSQLRow</span></a><span class="result"> extends <a href="../../../../../com/datastax/spark/connector/GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> with <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.Row" class="extype" target="_top">Row</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="CassandraSQLRow.html"><span class="name">CassandraSQLRow</span></a><span class="result"> extends <a href="../../../../../com/datastax/spark/connector/GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> with <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.Row" class="extype" target="_top">Row</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -159,6 +159,19 @@
       </span>
       </h4>
       <p class="comment cmt">Store data source options</p>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSparkSessionFunctions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraSparkSessionFunctionsextendsAnyVal"></a>
+      <a id="CassandraSparkSessionFunctions:CassandraSparkSessionFunctions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="package$$CassandraSparkSessionFunctions.html"><span class="name">CassandraSparkSessionFunctions</span></a><span class="result"> extends <span class="extype" name="scala.AnyVal">AnyVal</span></span>
+      </span>
+      </h4>
+      
     </li><li name="org.apache.spark.sql.cassandra.DataFrameReaderWrapper" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DataFrameReaderWrapperextendsAnyVal"></a>
       <a id="DataFrameReaderWrapper:DataFrameReaderWrapper"></a>
@@ -194,7 +207,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="DefaultSource.html"><span class="name">DefaultSource</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a> with <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+        <a href="DefaultSource.html"><span class="name">DefaultSource</span></a><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a> with <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
       </span>
       </h4>
       <p class="comment cmt">Cassandra data source extends <span class="extype" name="RelationProvider">RelationProvider</span>, <span class="extype" name="SchemaRelationProvider">SchemaRelationProvider</span> and <span class="extype" name="CreatableRelationProvider">CreatableRelationProvider</span>.</p>

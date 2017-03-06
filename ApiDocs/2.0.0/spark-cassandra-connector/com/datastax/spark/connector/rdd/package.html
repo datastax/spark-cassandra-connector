@@ -94,7 +94,7 @@ analyzing Cassandra data from Spark.</p></div><div class="toggleContainer block"
         <a href="CassandraJoinRDD.html"><span class="name">CassandraJoinRDD</span></a><span class="tparams">[<span name="L">L</span>, <span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[(<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.L">L</span>, <span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>)] with <a href="CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>] with <span class="extype" name="com.datastax.spark.connector.rdd.AbstractCassandraJoin">AbstractCassandraJoin</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.L">L</span>, <span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>]</span>
       </span>
       </h4>
-      <p class="comment cmt">An <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+      <p class="comment cmt">An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
 Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
 advantage of RDDs that have been partitioned with the
 <a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
@@ -111,11 +111,37 @@ advantage of RDDs that have been partitioned with the
         <a href="CassandraLeftJoinRDD.html"><span class="name">CassandraLeftJoinRDD</span></a><span class="tparams">[<span name="L">L</span>, <span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[(<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.L">L</span>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>])] with <a href="CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>] with <span class="extype" name="com.datastax.spark.connector.rdd.AbstractCassandraJoin">AbstractCassandraJoin</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.L">L</span>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>]]</span>
       </span>
       </h4>
-      <p class="comment cmt">An <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+      <p class="comment cmt">An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
 Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
 advantage of RDDs that have been partitioned with the
 <a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
 </p>
+    </li><li name="com.datastax.spark.connector.rdd.CassandraLimit" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="CassandraLimitextendsAnyRef"></a>
+      <a id="CassandraLimit:CassandraLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraLimit.html"><span class="name">CassandraLimit</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraPartitionLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraPartitionLimitextendsCassandraLimitwithProductwithSerializable"></a>
+      <a id="CassandraPartitionLimit:CassandraPartitionLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraPartitionLimit.html"><span class="name">CassandraPartitionLimit</span></a><span class="params">(<span name="rowsNumber">rowsNumber: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result"> extends <a href="CassandraLimit.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraLimit">CassandraLimit</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="com.datastax.spark.connector.rdd.CassandraRDD" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="CassandraRDD[R]extendsRDD[R]"></a>
       <a id="CassandraRDD[R]:CassandraRDD[R]"></a>
@@ -125,7 +151,7 @@ advantage of RDDs that have been partitioned with the
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CassandraRDD.html"><span class="name">CassandraRDD</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD.R">R</span>]</span>
+        <a href="CassandraRDD.html"><span class="name">CassandraRDD</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD.R">R</span>]</span>
       </span>
       </h4>
       
@@ -204,11 +230,24 @@ scala objects.</p>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ReadConf.html"><span class="name">ReadConf</span></a><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="throughputJoinQueryPerSec">throughputJoinQueryPerSec: <span class="extype" name="scala.Long">Long</span> = <span class="defval" name="ReadConf.ThroughputJoinQueryPerSecParam.default">...</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ReadConf.html"><span class="name">ReadConf</span></a><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.SplitSizeInMBParam.default</span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name="ReadConf.FetchSizeInRowsParam.default">...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name="ReadConf.ConsistencyLevelParam.default">...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">ReadConf.TaskMetricParam.default</span></span>, <span name="readsPerSec">readsPerSec: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">ReadConf.ReadsPerSecParam.default</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Read settings for RDD
 </p>
+    </li><li name="com.datastax.spark.connector.rdd.SparkPartitionLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SparkPartitionLimitextendsCassandraLimitwithProductwithSerializable"></a>
+      <a id="SparkPartitionLimit:SparkPartitionLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="SparkPartitionLimit.html"><span class="name">SparkPartitionLimit</span></a><span class="params">(<span name="rowsNumber">rowsNumber: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result"> extends <a href="CassandraLimit.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraLimit">CassandraLimit</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="com.datastax.spark.connector.rdd.ValidRDDType" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="ValidRDDType[T]extendsAnyRef"></a>
       <a id="ValidRDDType[T]:ValidRDDType[T]"></a>
@@ -235,7 +274,20 @@ scala objects.</p>
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="com.datastax.spark.connector.rdd.CassandraRDD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="com.datastax.spark.connector.rdd.CassandraLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraLimit"></a>
+      <a id="CassandraLimit:CassandraLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraLimit$.html"><span class="name">CassandraLimit</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraRDD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="CassandraRDD"></a>
       <a id="CassandraRDD:CassandraRDD"></a>
       <h4 class="signature">
@@ -296,7 +348,7 @@ scala objects.</p>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="ReadConf$.html"><span class="name">ReadConf</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ReadConf$.html"><span class="name">ReadConf</span></a><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       

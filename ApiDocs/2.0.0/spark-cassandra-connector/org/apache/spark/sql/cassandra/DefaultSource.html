@@ -35,7 +35,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">DefaultSource</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a> with <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+        <span class="name">DefaultSource</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a> with <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a> with <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
       </span>
       </h4>
       
@@ -54,7 +54,7 @@ e.g.</p><p>     CREATE TEMPORARY TABLE tmpTable
      )
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a>, <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a>, <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a>, <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a>, <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -262,7 +262,7 @@ e.g.</p><p>     CREATE TEMPORARY TABLE tmpTable
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="mode">mode: <span class="extype" name="org.apache.spark.sql.SaveMode">SaveMode</span></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="data">data: <a href="../package.html#DataFrame=org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]" class="extmbr" name="org.apache.spark.sql.DataFrame">DataFrame</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
+        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="mode">mode: <span class="extype" name="org.apache.spark.sql.SaveMode">SaveMode</span></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="data">data: <a href="../package.html#DataFrame=org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]" class="extmbr" name="org.apache.spark.sql.DataFrame">DataFrame</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates a new relation for a cassandra table given table, keyspace, cluster, push_down and schema
@@ -278,7 +278,7 @@ as parameters. It saves the data to the Cassandra table depends on <span class="
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="schema">schema: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.types.StructType" class="extype" target="_top">StructType</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
+        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="schema">schema: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.StructType" class="extype" target="_top">StructType</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates a new relation for a cassandra table given table, keyspace, cluster and push_down
@@ -295,7 +295,7 @@ as parameters and explicitly pass schema <span class="extype" name="StructType">
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
+        <span class="name">createRelation</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>, <span name="parameters">parameters: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.BaseRelation" class="extype" target="_top">BaseRelation</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates a new relation for a cassandra table.</p><div class="fullcomment"><div class="comment cmt"><p>Creates a new relation for a cassandra table.
@@ -878,11 +878,11 @@ The parameters map stores table level data. User can specify vale for following 
         <div class="parent" name="com.datastax.spark.connector.util.Logging">
               <h3>Inherited from <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></h3>
             </div><div class="parent" name="org.apache.spark.sql.sources.CreatableRelationProvider">
-              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a></h3>
+              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.CreatableRelationProvider" class="extype" target="_top">CreatableRelationProvider</a></h3>
             </div><div class="parent" name="org.apache.spark.sql.sources.SchemaRelationProvider">
-              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a></h3>
+              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.SchemaRelationProvider" class="extype" target="_top">SchemaRelationProvider</a></h3>
             </div><div class="parent" name="org.apache.spark.sql.sources.RelationProvider">
-              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a></h3>
+              <h3>Inherited from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.sources.RelationProvider" class="extype" target="_top">RelationProvider</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

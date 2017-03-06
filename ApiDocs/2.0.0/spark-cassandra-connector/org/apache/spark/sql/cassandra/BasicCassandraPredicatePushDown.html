@@ -99,7 +99,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(predicates:Set[Predicate],table:com.datastax.spark.connector.cql.TableDef)(implicitevidence$1:org.apache.spark.sql.cassandra.PredicateOps[Predicate]):org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown[Predicate]"></a>
+      <a id="&lt;init&gt;(predicates:Set[Predicate],table:com.datastax.spark.connector.cql.TableDef,pv:com.datastax.driver.core.ProtocolVersion)(implicitevidence$1:org.apache.spark.sql.cassandra.PredicateOps[Predicate]):org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown[Predicate]"></a>
       <a id="&lt;init&gt;:BasicCassandraPredicatePushDown[Predicate]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -107,7 +107,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">BasicCassandraPredicatePushDown</span><span class="params">(<span name="predicates">predicates: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>, <span name="table">table: <a href="../../../../../com/datastax/spark/connector/cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>)</span>
+        <span class="name">BasicCassandraPredicatePushDown</span><span class="params">(<span name="predicates">predicates: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>, <span name="table">table: <a href="../../../../../com/datastax/spark/connector/cql/TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a></span>, <span name="pv">pv: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="defval" name="com.datastax.driver.core.ProtocolVersion.NEWEST_SUPPORTED">...</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="PredicateOps.html" class="extype" name="org.apache.spark.sql.cassandra.PredicateOps">PredicateOps</a>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">predicates</dt><dd class="cmt"><p>list of filter predicates available in the user query</p></dd><dt class="param">table</dt><dd class="cmt"><p>Cassandra table definition
@@ -493,6 +493,19 @@ so they must be applied by Spark</p>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns the set of predicates that can be safely pushed down to Cassandra</p>
+    </li><li name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown#pvOrdering" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pvOrdering:Ordering[com.datastax.driver.core.ProtocolVersion]"></a>
+      <a id="pvOrdering:Ordering[ProtocolVersion]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pvOrdering</span><span class="result">: <span class="extype" name="scala.Ordering">Ordering</span>[<span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span>]</span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -506,6 +519,27 @@ so they must be applied by Spark</p>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown#timeUUIDNonEqual" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="timeUUIDNonEqual:IndexedSeq[Predicate]"></a>
+      <a id="timeUUIDNonEqual:IndexedSeq[Predicate]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">timeUUIDNonEqual</span><span class="result">: <span class="extype" name="scala.collection.IndexedSeq">IndexedSeq</span>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">All non-equal predicates on a TimeUUID column are going to fail and fail
+in silent way.</p><div class="fullcomment"><div class="comment cmt"><p>All non-equal predicates on a TimeUUID column are going to fail and fail
+in silent way. The basic issue here is that when you use a comparison on
+a time UUID column in C* it compares based on the Time portion of the UUID. When
+Spark executes this filter (unhandled behavior) it will compare lexically, this
+will lead to results being incorrectly filtered out of the set. As long as the
+range predicate is handled completely by the connector the correct result
+will be obtained.
+</p></div></div>
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
@@ -519,6 +553,19 @@ so they must be applied by Spark</p>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown#unhandledTimeUUIDNonEqual" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="unhandledTimeUUIDNonEqual:scala.collection.immutable.Set[Predicate]"></a>
+      <a id="unhandledTimeUUIDNonEqual:Set[Predicate]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unhandledTimeUUIDNonEqual</span><span class="result">: <span class="extype" name="scala.collection.immutable.Set">Set</span>[<span class="extype" name="org.apache.spark.sql.cassandra.BasicCassandraPredicatePushDown.Predicate">Predicate</span>]</span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

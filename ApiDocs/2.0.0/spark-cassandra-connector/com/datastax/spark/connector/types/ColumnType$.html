@@ -196,6 +196,19 @@
       </h4>
       <p class="shortcomment cmt">Returns a converter that converts values to the type of this column expected by the
 Cassandra Java driver when saving the row.</p>
+    </li><li name="com.datastax.spark.connector.types.ColumnType#customDriverConverter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="customDriverConverter:Option[com.datastax.spark.connector.types.CustomDriverConverter]"></a>
+      <a id="customDriverConverter:Option[CustomDriverConverter]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">customDriverConverter</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="CustomDriverConverter.html" class="extype" name="com.datastax.spark.connector.types.CustomDriverConverter">CustomDriverConverter</a>]</span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -255,28 +268,28 @@ Cassandra Java driver when saving the row.</p>
       </h4>
       
     </li><li name="com.datastax.spark.connector.types.ColumnType#fromScalaType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromScalaType(dataType:reflect.runtime.universe.Type):com.datastax.spark.connector.types.ColumnType[_]"></a>
-      <a id="fromScalaType(scala.reflect.api.JavaUniverse.Type):ColumnType[_]"></a>
+      <a id="fromScalaType(dataType:reflect.runtime.universe.Type,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.types.ColumnType[_]"></a>
+      <a id="fromScalaType(scala.reflect.api.JavaUniverse.Type,ProtocolVersion):ColumnType[_]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromScalaType</span><span class="params">(<span name="dataType">dataType: <span class="extype" name="scala.reflect.api.Types.Type">scala.reflect.api.JavaUniverse.Type</span></span>)</span><span class="result">: <a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>
+        <span class="name">fromScalaType</span><span class="params">(<span name="dataType">dataType: <span class="extype" name="scala.reflect.api.Types.Type">scala.reflect.api.JavaUniverse.Type</span></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="result">: <a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns natural Cassandra type for representing data of the given Scala type</p>
     </li><li name="com.datastax.spark.connector.types.ColumnType#fromSparkSqlType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromSparkSqlType(dataType:org.apache.spark.sql.types.DataType):com.datastax.spark.connector.types.ColumnType[_]"></a>
-      <a id="fromSparkSqlType(DataType):ColumnType[_]"></a>
+      <a id="fromSparkSqlType(dataType:org.apache.spark.sql.types.DataType,protocolVersion:com.datastax.driver.core.ProtocolVersion):com.datastax.spark.connector.types.ColumnType[_]"></a>
+      <a id="fromSparkSqlType(DataType,ProtocolVersion):ColumnType[_]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromSparkSqlType</span><span class="params">(<span name="dataType">dataType: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a></span>)</span><span class="result">: <a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>
+        <span class="name">fromSparkSqlType</span><span class="params">(<span name="dataType">dataType: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a></span>, <span name="protocolVersion">protocolVersion: <span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span> = <span class="symbol"><span class="name"><a href="../../../../package.html">ProtocolVersion.NEWEST_SUPPORTED</a></span></span></span>)</span><span class="result">: <a href="ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Returns natural Cassandra type for representing data of the given Spark SQL type</p>
@@ -358,6 +371,19 @@ Cassandra Java driver when saving the row.</p>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.types.ColumnType#protocolVersionOrdering" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="protocolVersionOrdering:Ordering[com.datastax.driver.core.ProtocolVersion]"></a>
+      <a id="protocolVersionOrdering:Ordering[ProtocolVersion]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">protocolVersionOrdering</span><span class="result">: <span class="extype" name="scala.Ordering">Ordering</span>[<span class="extype" name="com.datastax.driver.core.ProtocolVersion">ProtocolVersion</span>]</span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

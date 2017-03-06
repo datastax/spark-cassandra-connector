@@ -249,7 +249,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">createCassandraTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="partitionKeyColumns">partitionKeyColumns: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">None</span></span>, <span name="clusteringKeyColumns">clusteringKeyColumns: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">None</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> = <span class="defval" name='<span class="name"><a href="#sparkContext:org.apache.spark.SparkContext">CassandraConnector(sparkContext.getConf)</a></span>'>...</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">createCassandraTable</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="partitionKeyColumns">partitionKeyColumns: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">None</span></span>, <span name="clusteringKeyColumns">clusteringKeyColumns: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]] = <span class="symbol">None</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a> = <span class="symbol"><span class="name"><a href="#sparkContext:org.apache.spark.SparkContext">CassandraConnector(sparkContext)</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt"> Creates a C* table based on the DataFrame Struct provided.</p><div class="fullcomment"><div class="comment cmt"><p> Creates a C* table based on the DataFrame Struct provided. Optionally
@@ -477,7 +477,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">sparkContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
+        <span class="name">sparkContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
       </span>
       </h4>
       

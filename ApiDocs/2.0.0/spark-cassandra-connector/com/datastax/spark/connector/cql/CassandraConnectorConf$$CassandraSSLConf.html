@@ -35,7 +35,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">CassandraSSLConf</span><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">CassandraSSLConf</span><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>, <span name="clientAuthEnabled">clientAuthEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="keyStorePath">keyStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStorePassword">keyStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStoreType">keyStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -85,7 +85,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(enabled:Boolean,trustStorePath:Option[String],trustStorePassword:Option[String],trustStoreType:String,protocol:String,enabledAlgorithms:Set[String]):com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf"></a>
+      <a id="&lt;init&gt;(enabled:Boolean,trustStorePath:Option[String],trustStorePassword:Option[String],trustStoreType:String,protocol:String,enabledAlgorithms:Set[String],clientAuthEnabled:Boolean,keyStorePath:Option[String],keyStorePassword:Option[String],keyStoreType:String):com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf"></a>
       <a id="&lt;init&gt;:CassandraSSLConf"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -93,7 +93,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">CassandraSSLConf</span><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>)</span>
+        <span class="name">CassandraSSLConf</span><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>, <span name="clientAuthEnabled">clientAuthEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="keyStorePath">keyStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStorePassword">keyStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStoreType">keyStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>)</span>
       </span>
       </h4>
       
@@ -221,6 +221,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf#clientAuthEnabled" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="clientAuthEnabled:Boolean"></a>
+      <a id="clientAuthEnabled:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clientAuthEnabled</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -412,6 +425,45 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf#keyStorePassword" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="keyStorePassword:Option[String]"></a>
+      <a id="keyStorePassword:Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keyStorePassword</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf#keyStorePath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="keyStorePath:Option[String]"></a>
+      <a id="keyStorePath:Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keyStorePath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf#keyStoreType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="keyStoreType:String"></a>
+      <a id="keyStoreType:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keyStoreType</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>

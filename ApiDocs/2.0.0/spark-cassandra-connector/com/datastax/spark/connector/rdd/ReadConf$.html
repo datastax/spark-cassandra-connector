@@ -35,13 +35,13 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">ReadConf</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ReadConf</span><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -59,7 +59,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.datastax.spark.connector.rdd.ReadConf"><span>ReadConf</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.datastax.spark.connector.rdd.ReadConf"><span>ReadConf</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="com.datastax.spark.connector.util.Logging"><span>Logging</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -177,15 +177,28 @@
       </h4>
       
     </li><li name="com.datastax.spark.connector.rdd.ReadConf#Properties" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Properties:scala.collection.immutable.Set[com.datastax.spark.connector.util.ConfigParameter[_&gt;:LongwithBooleanwithcom.datastax.driver.core.ConsistencyLevelwithInt]]"></a>
-      <a id="Properties:Set[ConfigParameter[_&gt;:LongwithBooleanwithConsistencyLevelwithInt]]"></a>
+      <a id="Properties:scala.collection.immutable.Set[com.datastax.spark.connector.util.ConfigParameter[_&gt;:LongwithBooleanwithIntwithcom.datastax.driver.core.ConsistencyLevel]]"></a>
+      <a id="Properties:Set[ConfigParameter[_&gt;:LongwithBooleanwithIntwithConsistencyLevel]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">Properties</span><span class="result">: <span class="extype" name="scala.collection.immutable.Set">Set</span>[<a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[_ &gt;: <span class="extype" name="scala.Long">Long</span> with <span class="extype" name="scala.Boolean">Boolean</span> with <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> with <span class="extype" name="scala.Int">Int</span>]]</span>
+        <span class="name">Properties</span><span class="result">: <span class="extype" name="scala.collection.immutable.Set">Set</span>[<a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[_ &gt;: <span class="extype" name="scala.Long">Long</span> with <span class="extype" name="scala.Boolean">Boolean</span> with <span class="extype" name="scala.Int">Int</span> with <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span>]]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.rdd.ReadConf#ReadsPerSecParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReadsPerSecParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="ReadsPerSecParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ReadsPerSecParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
       </span>
       </h4>
       
@@ -327,7 +340,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromSparkConf</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>)</span><span class="result">: <a href="ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>
+        <span class="name">fromSparkConf</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>)</span><span class="result">: <a href="ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>
       </span>
       </h4>
       
@@ -370,6 +383,175 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#isTraceEnabled" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isTraceEnabled():Boolean"></a>
+      <a id="isTraceEnabled():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isTraceEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logDebug(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String):Unit"></a>
+      <a id="logDebug(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logError(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logInfo(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String):Unit"></a>
+      <a id="logInfo(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logName:String"></a>
+      <a id="logName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logTrace(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String):Unit"></a>
+      <a id="logTrace(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logWarning(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String):Unit"></a>
+      <a id="logWarning(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -505,6 +687,8 @@
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.util.Logging">
+              <h3>Inherited from <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

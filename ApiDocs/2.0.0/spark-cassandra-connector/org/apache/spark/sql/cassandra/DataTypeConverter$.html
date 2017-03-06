@@ -172,7 +172,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">catalystDataType</span><span class="params">(<span name="cassandraType">cassandraType: <a href="../../../../../com/datastax/spark/connector/types/ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>, <span name="nullable">nullable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a></span>
+        <span class="name">catalystDataType</span><span class="params">(<span name="cassandraType">cassandraType: <a href="../../../../../com/datastax/spark/connector/types/ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>, <span name="nullable">nullable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Convert Cassandra data type to Catalyst data type</p>
@@ -487,6 +487,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.DataTypeConverter#primitiveCatalystDataType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="primitiveCatalystDataType(cassandraType:com.datastax.spark.connector.types.ColumnType[_]):org.apache.spark.sql.types.DataType"></a>
+      <a id="primitiveCatalystDataType(ColumnType[_]):DataType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">primitiveCatalystDataType</span><span class="params">(<span name="cassandraType">cassandraType: <a href="../../../../../com/datastax/spark/connector/types/ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.DataType" class="extype" target="_top">DataType</a></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -522,7 +535,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toStructField</span><span class="params">(<span name="column">column: <a href="../../../../../com/datastax/spark/connector/cql/ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.types.StructField" class="extype" target="_top">StructField</a></span>
+        <span class="name">toStructField</span><span class="params">(<span name="column">column: <a href="../../../../../com/datastax/spark/connector/cql/ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.types.StructField" class="extype" target="_top">StructField</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">Create a Catalyst StructField from a Cassandra Column</p>

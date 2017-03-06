@@ -40,9 +40,9 @@
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A factory for <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a> objects.
-Allows for manually setting connection properties or reading them from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>
-object. By embedding connection information in <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>,
-<a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> can offer Cassandra specific methods which require establishing
+Allows for manually setting connection properties or reading them from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>
+object. By embedding connection information in <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>,
+<a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a> can offer Cassandra specific methods which require establishing
 connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -94,26 +94,10 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="CassandraConnectorConf$$CassandraSSLConf.html"><span class="name">CassandraSSLConf</span></a><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="CassandraConnectorConf$$CassandraSSLConf.html"><span class="name">CassandraSSLConf</span></a><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="scala.this.Predef.Set.apply[String](&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>, <span name="clientAuthEnabled">clientAuthEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="keyStorePath">keyStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStorePassword">keyStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">scala.None</span></span>, <span name="keyStoreType">keyStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="RetryDelayConfextendsAnyRef"></a>
-      <a id="RetryDelayConf:RetryDelayConf"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="CassandraConnectorConf$$RetryDelayConf.html"><span class="name deprecated" title="Deprecated: (Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1) delayed retrying has been disabled; see SPARKC-360">RetryDelayConf</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
-                <span class="name">@deprecated</span>
-              
-        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1)</i> delayed retrying has been disabled; see SPARKC-360</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -316,6 +300,19 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
       </span>
       </h4>
       
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#MaxConnectionsPerExecutorParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MaxConnectionsPerExecutorParam:com.datastax.spark.connector.util.ConfigParameter[Option[Int]]"></a>
+      <a id="MaxConnectionsPerExecutorParam:ConfigParameter[Option[Int]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MaxConnectionsPerExecutorParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]]</span>
+      </span>
+      </h4>
+      
     </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#MaxReconnectionDelayParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MaxReconnectionDelayParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
       <a id="MaxReconnectionDelayParam:ConfigParameter[Int]"></a>
@@ -407,6 +404,19 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
       </span>
       </h4>
       
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLClientAuthEnabledParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLClientAuthEnabledParam:com.datastax.spark.connector.util.ConfigParameter[Boolean]"></a>
+      <a id="SSLClientAuthEnabledParam:ConfigParameter[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLClientAuthEnabledParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4>
+      
     </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLEnabledAlgorithmsParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="SSLEnabledAlgorithmsParam:com.datastax.spark.connector.util.ConfigParameter[Set[String]]"></a>
       <a id="SSLEnabledAlgorithmsParam:ConfigParameter[Set[String]]"></a>
@@ -430,6 +440,45 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
       </span>
       <span class="symbol">
         <span class="name">SSLEnabledParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStorePasswordParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStorePasswordParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLKeyStorePasswordParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStorePasswordParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStorePathParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStorePathParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLKeyStorePathParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStorePathParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStoreTypeParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStoreTypeParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="SSLKeyStoreTypeParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStoreTypeParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4>
       
@@ -494,7 +543,7 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>)</span><span class="result">: <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a></span>
+        <span class="name">apply</span><span class="params">(<span name="conf">conf: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a></span>)</span><span class="result">: <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a></span>
       </span>
       </h4>
       
@@ -910,42 +959,7 @@ connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
 
         
 
-        <div id="values" class="values members">
-              <h3>Deprecated Value Members</h3>
-              <ol><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#QueryRetryDelayParam" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="QueryRetryDelayParam:com.datastax.spark.connector.util.ConfigParameter[com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf]"></a>
-      <a id="QueryRetryDelayParam:ConfigParameter[RetryDelayConf]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name deprecated" title="Deprecated: (Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1) delayed retrying has been disabled; see SPARKC-360">QueryRetryDelayParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<a href="CassandraConnectorConf$$RetryDelayConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf">RetryDelayConf</a>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
-                <span class="name">@deprecated</span>
-              
-        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1)</i> delayed retrying has been disabled; see SPARKC-360</p></dd></dl></div>
-    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.RetryDelayConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="RetryDelayConf"></a>
-      <a id="RetryDelayConf:RetryDelayConf"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="CassandraConnectorConf$$RetryDelayConf$.html"><span class="name deprecated" title="Deprecated: (Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1) delayed retrying has been disabled; see SPARKC-360">RetryDelayConf</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
-                <span class="name">@deprecated</span>
-              
-        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 1.2.6, 1.3.2, 1.4.3, 1.5.1)</i> delayed retrying has been disabled; see SPARKC-360</p></dd></dl></div>
-    </li></ol>
-            </div>
+        
         </div>
 
         <div id="inheritedMembers">

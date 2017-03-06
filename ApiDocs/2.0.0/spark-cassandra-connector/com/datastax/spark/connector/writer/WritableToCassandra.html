@@ -107,7 +107,28 @@
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="com.datastax.spark.connector.writer.WritableToCassandra#saveToCassandra" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+              <ol><li name="com.datastax.spark.connector.writer.WritableToCassandra#deleteFromCassandra" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="deleteFromCassandra(keyspaceName:String,tableName:String,deleteColumns:com.datastax.spark.connector.ColumnSelector,keyColumns:com.datastax.spark.connector.ColumnSelector,writeConf:com.datastax.spark.connector.writer.WriteConf)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):Unit"></a>
+      <a id="deleteFromCassandra(String,String,ColumnSelector,ColumnSelector,WriteConf)(CassandraConnector,RowWriterFactory[T]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">deleteFromCassandra</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="deleteColumns">deleteColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="keyColumns">keyColumns: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="writeConf">writeConf: <a href="WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>, <span name="rwf">rwf: <a href="RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Delete data from Cassandra table, using data from the <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> as a list of primary keys.</p><div class="fullcomment"><div class="comment cmt"><p>Delete data from Cassandra table, using data from the <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> as a list of primary keys.
+Uses the specified column names.
+By default, it deletes all columns from corresponding Cassandra rows.</p><p>Example:</p><pre>CREATE KEYSPACE test WITH replication = {<span class="lit">'class'</span>: 'SimpleStrategy<span class="lit">', '</span>replication_factor': <span class="num">1</span> };
+CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);
+INSERT INTO test.words((word,count,other) values (<span class="lit">'foo'</span>, <span class="num">5</span>, <span class="lit">'foo'</span>);</pre><pre><span class="kw">case</span> <span class="kw">class</span> WordCount(word: <span class="std">String</span>, count: <span class="std">Int</span>, other: <span class="std">String</span>)
+<span class="kw">val</span> rdd = sc.cassandraTable(<span class="lit">"test"</span>, <span class="lit">"words"</span>)</pre><p>The underlying RDD class must provide data for all primary key columns.
+Delete &quot;other&quot; column values</p><pre>rdd.deleteFromCassandra(<span class="lit">"test"</span>, <span class="lit">"words"</span>, <span class="std">Seq</span>(<span class="lit">"other"</span>))</pre><p>This delete consistency level and other properties are the same as for writes
+</p></div><dl class="paramcmts block"><dt class="param">keyspaceName</dt><dd class="cmt"><p>the name of the Keyspace to use</p></dd><dt class="param">tableName</dt><dd class="cmt"><p>the name of the Table to use</p></dd><dt class="param">deleteColumns</dt><dd class="cmt"><p>The list of column names to delete, empty ColumnSelector means full row.</p></dd><dt class="param">keyColumns</dt><dd class="cmt"><p>Primary key columns selector, Optional. All RDD primary columns columns will be checked by default</p></dd><dt class="param">writeConf</dt><dd class="cmt"><p>additional configuration object allowing to set consistency level, batch size, etc.
+</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.writer.WritableToCassandra#saveToCassandra" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="saveToCassandra(keyspaceName:String,tableName:String,columnNames:com.datastax.spark.connector.ColumnSelector,writeConf:com.datastax.spark.connector.writer.WriteConf)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):Unit"></a>
       <a id="saveToCassandra(String,String,ColumnSelector,WriteConf)(CassandraConnector,RowWriterFactory[T]):Unit"></a>
       <h4 class="signature">
@@ -119,7 +140,7 @@
         <span class="name">saveToCassandra</span><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="columnNames">columnNames: <a href="../ColumnSelector.html" class="extype" name="com.datastax.spark.connector.ColumnSelector">ColumnSelector</a></span>, <span name="writeConf">writeConf: <a href="WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="connector">connector: <a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>, <span name="rwf">rwf: <a href="RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="com.datastax.spark.connector.writer.WritableToCassandra.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Saves the data from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> to a Cassandra table.</p><div class="fullcomment"><div class="comment cmt"><p>Saves the data from <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> to a Cassandra table.
+      <p class="shortcomment cmt">Saves the data from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> to a Cassandra table.</p><div class="fullcomment"><div class="comment cmt"><p>Saves the data from <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> to a Cassandra table.
 By default, it saves all properties that have corresponding Cassandra columns.</p><p>Example:</p><pre>CREATE KEYSPACE test WITH replication = {<span class="lit">'class'</span>: 'SimpleStrategy<span class="lit">', '</span>replication_factor': <span class="num">1</span> };
 CREATE TABLE test.words(word VARCHAR PRIMARY KEY, count INT, other VARCHAR);</pre><pre><span class="kw">case</span> <span class="kw">class</span> WordCount(word: <span class="std">String</span>, count: <span class="std">Int</span>, other: <span class="std">String</span>)
 <span class="kw">val</span> rdd = sc.parallelize(<span class="std">Seq</span>(WordCount(<span class="lit">"foo"</span>, <span class="num">5</span>, <span class="lit">"bar"</span>)))</pre><p>By default, the underlying RDD class must provide data for all columns:</p><pre>rdd.saveToCassandra(<span class="lit">"test"</span>, <span class="lit">"words"</span>)</pre><p>By default, writes are performed at ConsistencyLevel.LOCAL_QUORUM.
@@ -137,7 +158,7 @@ This write consistency level is controlled by the following property:</p><ul><li
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sparkContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
+        <span class="name">sparkContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a></span>
       </span>
       </h4>
       

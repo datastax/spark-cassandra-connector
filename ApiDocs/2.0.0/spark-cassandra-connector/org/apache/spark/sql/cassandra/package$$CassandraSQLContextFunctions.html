@@ -93,7 +93,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">CassandraSQLContextFunctions</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>)</span>
+        <span class="name">CassandraSQLContextFunctions</span><span class="params">(<span name="sqlContext">sqlContext: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>)</span>
       </span>
       </h4>
       
@@ -296,19 +296,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyVal → Any</dd></dl></div>
-    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#getCluster" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCluster:String"></a>
-      <a id="getCluster:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCluster</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Get current used cluster name</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -322,60 +309,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setCassandraConf(cluster:String,keyspace:String,options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
-      <a id="setCassandraConf(String,String,Map[String,String]):SQLContext"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setCassandraConf</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="keyspace">keyspace: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters which will be used when accessing
-a given keyspace in a given cluster</p>
-    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setCassandraConf(cluster:String,options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
-      <a id="setCassandraConf(String,Map[String,String]):SQLContext"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setCassandraConf</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters which will be used when accessing
-a given cluster</p>
-    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setCassandraConf(options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
-      <a id="setCassandraConf(Map[String,String]):SQLContext"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setCassandraConf</span><span class="params">(<span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters</p>
-    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCluster" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setCluster(cluster:String):org.apache.spark.sql.SQLContext"></a>
-      <a id="setCluster(String):SQLContext"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setCluster</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Set current used cluster name</p>
     </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#sqlContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="sqlContext:org.apache.spark.sql.SQLContext"></a>
       <a id="sqlContext:SQLContext"></a>
@@ -385,7 +318,7 @@ a given cluster</p>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">sqlContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
+        <span class="name">sqlContext</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
       </span>
       </h4>
       
@@ -463,7 +396,91 @@ a given cluster</p>
 
         <div id="values" class="values members">
               <h3>Deprecated Value Members</h3>
-              <ol><li name="scala.Predef.any2ArrowAssoc#x" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+              <ol><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#getCluster" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getCluster:String"></a>
+      <a id="getCluster:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 2.0.0) Use SparkSession instead of SQLContext">getCluster</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Get current used cluster name</p><div class="fullcomment"><div class="comment cmt"><p>Get current used cluster name</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.0.0)</i> Use SparkSession instead of SQLContext</p></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setCassandraConf(cluster:String,keyspace:String,options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
+      <a id="setCassandraConf(String,String,Map[String,String]):SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 2.0.0) Use SparkSession instead of SQLContext">setCassandraConf</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="keyspace">keyspace: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+a given keyspace in a given cluster</p><div class="fullcomment"><div class="comment cmt"><p>Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+a given keyspace in a given cluster</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.0.0)</i> Use SparkSession instead of SQLContext</p></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setCassandraConf(cluster:String,options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
+      <a id="setCassandraConf(String,Map[String,String]):SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 2.0.0) Use SparkSession instead of SQLContext">setCassandraConf</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+a given cluster</p><div class="fullcomment"><div class="comment cmt"><p>Set the Spark Cassandra Connector configuration parameters which will be used when accessing
+a given cluster</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.0.0)</i> Use SparkSession instead of SQLContext</p></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCassandraConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setCassandraConf(options:Map[String,String]):org.apache.spark.sql.SQLContext"></a>
+      <a id="setCassandraConf(Map[String,String]):SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 2.0.0) Use SparkSession instead of SQLContext">setCassandraConf</span><span class="params">(<span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set the Spark Cassandra Connector configuration parameters</p><div class="fullcomment"><div class="comment cmt"><p>Set the Spark Cassandra Connector configuration parameters</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.0.0)</i> Use SparkSession instead of SQLContext</p></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSQLContextFunctions#setCluster" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setCluster(cluster:String):org.apache.spark.sql.SQLContext"></a>
+      <a id="setCluster(String):SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 2.0.0) Use SparkSession instead of SQLContext">setCluster</span><span class="params">(<span name="cluster">cluster: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.sql.SQLContext" class="extype" target="_top">SQLContext</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set current used cluster name</p><div class="fullcomment"><div class="comment cmt"><p>Set current used cluster name</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 2.0.0)</i> Use SparkSession instead of SQLContext</p></dd></dl></div>
+    </li><li name="scala.Predef.any2ArrowAssoc#x" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="x:A"></a>
       <a id="x:CassandraSQLContextFunctions"></a>
       <h4 class="signature">

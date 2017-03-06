@@ -182,6 +182,21 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy#determineDataCenter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="determineDataCenter(contactPoints:Set[java.net.InetAddress],allHosts:Set[com.datastax.driver.core.Host]):String"></a>
+      <a id="determineDataCenter(Set[InetAddress],Set[Host]):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">determineDataCenter</span><span class="params">(<span name="contactPoints">contactPoints: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>, <span name="allHosts">allHosts: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a common data center name of the given contact points.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a common data center name of the given contact points.</p><p>For each contact point there must be a <span class="extype" name="Host">Host</span> in <code>allHosts</code> collection in order to determine its data center
+name. If contact points belong to more than a single data center, an <span class="extype" name="IllegalArgumentException">IllegalArgumentException</span> is thrown.
+</p></div></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -292,21 +307,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy#nodesInTheSameDC" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="nodesInTheSameDC(contactPoints:Set[java.net.InetAddress],allHosts:Set[com.datastax.driver.core.Host]):Set[com.datastax.driver.core.Host]"></a>
-      <a id="nodesInTheSameDC(Set[InetAddress],Set[Host]):Set[Host]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">nodesInTheSameDC</span><span class="params">(<span name="contactPoints">contactPoints: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>, <span name="allHosts">allHosts: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Finds the DCs of the contact points and returns hosts in those DC(s) from <code>allHosts</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Finds the DCs of the contact points and returns hosts in those DC(s) from <code>allHosts</code>.
-It guarantees to return at least the hosts pointed by <code>contactPoints</code>, even if their
-DC information is missing. Other hosts with missing DC information are not considered.</p></div></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -334,22 +334,22 @@ DC information is missing. Other hosts with missing DC information are not consi
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy#sortNodesByStatusAndProximity" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="sortNodesByStatusAndProximity(contactPoints:Set[java.net.InetAddress],hostsToSort:Set[com.datastax.driver.core.Host]):Seq[com.datastax.driver.core.Host]"></a>
-      <a id="sortNodesByStatusAndProximity(Set[InetAddress],Set[Host]):Seq[Host]"></a>
+      <a id="sortNodesByStatusAndProximity(dc:String,hostsToSort:Set[com.datastax.driver.core.Host]):Seq[com.datastax.driver.core.Host]"></a>
+      <a id="sortNodesByStatusAndProximity(String,Set[Host]):Seq[Host]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sortNodesByStatusAndProximity</span><span class="params">(<span name="contactPoints">contactPoints: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>, <span name="hostsToSort">hostsToSort: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>
+        <span class="name">sortNodesByStatusAndProximity</span><span class="params">(<span name="dc">dc: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hostsToSort">hostsToSort: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="com.datastax.driver.core.Host">Host</span>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Sorts nodes in the following order:
 1.</p><div class="fullcomment"><div class="comment cmt"><p>Sorts nodes in the following order:
-1. live nodes in the same DC as <code>contactPoints</code> starting with localhost if up
-2. down nodes in the same DC as <code>contactPoints</code></p><p>Nodes within a group are ordered randomly.
-Nodes from other DCs are not included.</p></div></div>
+1. local node in a given DC
+2. live nodes in a given DC
+3. the rest of nodes in a given DC</p><p>Nodes within a group are ordered randomly. Nodes from other DCs are not included.</p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
