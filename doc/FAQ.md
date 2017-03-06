@@ -81,7 +81,7 @@ manually shaded projects. Using these unshaded artifacts will require you to
 with an "uber-jar." Using `--packages` will no longer work.
 
 For some hints on shading see how the Cassandra Connector does this in
-the [settings file.](https://github.com/datastax/spark-cassandra-connector/blob/v2.0.0-M3/project/Settings.scala#L329-L347)
+the [settings file.](https://github.com/datastax/spark-cassandra-connector/blob/v2.0.0/project/Settings.scala#L329-L347)
 
 ### Why is my job running on a single executor? Why am I not seeing any parallelism?
 
