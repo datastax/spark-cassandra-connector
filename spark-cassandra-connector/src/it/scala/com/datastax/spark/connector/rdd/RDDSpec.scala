@@ -44,7 +44,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   conn.withSessionDo { session =>
     createKeyspace(session)
-
+    session.getCluster.getConfiguration.getPoolingOptions.setMaxQueueSize(20000)
     awaitAll(
       Future {
         session.execute(
@@ -61,7 +61,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
             value: Integer,
             (value * 100).toLong: JLong,
             value.toString)
-          ).par.foreach(_.getUninterruptibly)
+          ).foreach(_.getUninterruptibly)
       },
 
       Future {
@@ -79,7 +79,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
             value: Integer,
             (value * 100).toLong: JLong,
             value.toString)
-          ).par.foreach(_.getUninterruptibly)
+          ).foreach(_.getUninterruptibly)
       },
 
       Future {

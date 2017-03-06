@@ -30,7 +30,7 @@ object Versions {
 
   val Akka            = "2.3.4"
   val Cassandra       = "3.6"
-  val CassandraDriver = "3.0.2"
+  val CassandraDriver = "3.1.4"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
   val CommonsBeanUtils= "1.9.3"
