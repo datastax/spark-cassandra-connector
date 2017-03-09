@@ -102,15 +102,17 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
                                 // transient because codecs are not serializable and used only at Row parsing
                                 // not and option as deserialized fileld will be null not None
                                 @transient private[connector] val codecs: IndexedSeq[TypeCodec[AnyRef]] = null) {
+
   @transient
   lazy val namesToIndex: Map[String, Int] = columnNames.zipWithIndex.toMap.withDefaultValue(-1)
 
+  import scala.collection.JavaConverters._
   @transient
-  lazy val unaliasedNamesToIndex: Map[String, Int] = unaliasedColumnNames.zipWithIndex.toMap
+  lazy val unaliasedNamesToIndex: java.util.Map[String, Int] = unaliasedColumnNames.zipWithIndex.toMap.asJava
 
   def indexOfCqlColumnOrThrow(colName: String) =
     try {
-      unaliasedNamesToIndex(colName)
+      unaliasedNamesToIndex.get(colName)
     } catch {
       case notFound: java.util.NoSuchElementException =>
         throw new ColumnNotFoundException(
