@@ -17,9 +17,7 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
     selectedColumns: IndexedSeq[ColumnRef])
   extends RowReader[R] {
 
-  private val converter =
-    new GettableDataToMappedTypeConverter[R](table, selectedColumns)
-  private val convert: (CassandraRow => R) = converter.convert(_: CassandraRow)
+  private val converter = new GettableDataToMappedTypeConverter[R](table, selectedColumns)
 
   private val isReadingTuples =
     SparkReflectionLock.synchronized(typeTag[R].tpe.typeSymbol.fullName startsWith "scala.Tuple")
@@ -32,7 +30,7 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
 
   override def read(row: Row,  rowMetaData: CassandraRowMetadata): R = {
     val cassandraRow = CassandraRow.fromJavaDriverRow(row, rowMetaData)
-    convert(cassandraRow)
+    converter.convert(cassandraRow)
   }
 }
 

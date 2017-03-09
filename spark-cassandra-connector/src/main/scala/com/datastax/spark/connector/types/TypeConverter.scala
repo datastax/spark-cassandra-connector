@@ -38,6 +38,12 @@ trait TypeConverter[T] extends Serializable {
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
 
+  /**
+    * Performance Modification:
+    * To o prevent the Scala compiler from at any time thinking that this is mutable we need
+    * to force it to a val. This will prevent any creation of new PartialFunction objects which can
+    * cause GC pressure.
+    */
   @transient lazy val _convertPF = convertPF
 
   /** Converts and object or throws TypeConversionException if the object can't be converted. */
@@ -45,7 +51,7 @@ trait TypeConverter[T] extends Serializable {
     try {
       _convertPF.apply(obj)
     } catch {
-      case e: Exception => {
+      case e: scala.MatchError => {
         if (obj != null)
           throw new TypeConversionException(s"Cannot convert object $obj of type ${obj.getClass} to $targetTypeName.")
         else

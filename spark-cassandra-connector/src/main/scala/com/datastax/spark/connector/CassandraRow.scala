@@ -106,6 +106,13 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
   @transient
   lazy val namesToIndex: Map[String, Int] = columnNames.zipWithIndex.toMap.withDefaultValue(-1)
 
+  /**
+    * Performance Modification:
+    * We access this a lot when creating CassandraRow Objects. This ends up creating a Scala Some()
+    * object for every access if we use a Scala Immutable map.  To avoid this pressure we can just us
+    * a plain old Java Hashmap. In the future we amy just want to move the resultset-index information
+    * in the ColumnReference or MapReader to avoid any sort of map-lookup.
+    */
   import scala.collection.JavaConverters._
   @transient
   lazy val unaliasedNamesToIndex: java.util.Map[String, Int] = new java.util.HashMap(unaliasedColumnNames.zipWithIndex.toMap.asJava)
