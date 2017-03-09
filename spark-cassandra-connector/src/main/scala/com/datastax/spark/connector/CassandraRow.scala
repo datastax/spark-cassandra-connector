@@ -108,7 +108,7 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
 
   import scala.collection.JavaConverters._
   @transient
-  lazy val unaliasedNamesToIndex: java.util.Map[String, Int] = unaliasedColumnNames.zipWithIndex.toMap.asJava
+  lazy val unaliasedNamesToIndex: java.util.Map[String, Int] = new java.util.HashMap(unaliasedColumnNames.zipWithIndex.toMap.asJava)
 
   def indexOfCqlColumnOrThrow(colName: String) =
     try {
