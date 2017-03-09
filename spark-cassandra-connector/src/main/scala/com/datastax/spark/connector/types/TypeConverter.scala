@@ -38,11 +38,12 @@ trait TypeConverter[T] extends Serializable {
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
 
-  /** Converts and object or throws TypeConversionException if the object can't be converted. */
+  val _convertPF = convertPF
+
   /** Converts and object or throws TypeConversionException if the object can't be converted. */
   def convert(obj: Any): T = {
     try {
-      convertPF.apply(obj)
+      _convertPF.apply(obj)
     } catch {
       case e: Exception => {
         if (obj != null)
@@ -277,8 +278,8 @@ object TypeConverter {
 
     def convertPF = {
       case x: Date => TimestampFormatter.format(x)
-      case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
-      case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
+      case x: Array[Byte] => x.map("%02x".format(_)).mkString("0x","","")
+      case x: Map[_, _] => x.map(kv => s"${convert(kv._1)} : ${convert(kv._2)}").mkString("{", ",", "}")
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x: Any => x.toString
