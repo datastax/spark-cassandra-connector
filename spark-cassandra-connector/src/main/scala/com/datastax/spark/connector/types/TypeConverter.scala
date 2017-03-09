@@ -38,7 +38,7 @@ trait TypeConverter[T] extends Serializable {
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
 
-  val _convertPF = convertPF
+  @transient lazy val _convertPF = convertPF
 
   /** Converts and object or throws TypeConversionException if the object can't be converted. */
   def convert(obj: Any): T = {
