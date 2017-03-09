@@ -104,12 +104,19 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
                                 @transient private[connector] val codecs: IndexedSeq[TypeCodec[AnyRef]] = null) {
   @transient
   lazy val namesToIndex: Map[String, Int] = columnNames.zipWithIndex.toMap.withDefaultValue(-1)
+
   @transient
-  lazy val indexOfCqlColumnOrThrow = unaliasedColumnNames.zipWithIndex.toMap.withDefault { name =>
-    throw new ColumnNotFoundException(
-      s"Column not found: $name. " +
-        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-  }
+  lazy val unaliasedNamesToIndex: Map[String, Int] = unaliasedColumnNames.zipWithIndex.toMap
+
+  def indexOfCqlColumnOrThrow(colName: String) =
+    try {
+      unaliasedNamesToIndex(colName)
+    } catch {
+      case notFound: java.util.NoSuchElementException =>
+        throw new ColumnNotFoundException(
+          s"Column not found: $colName. " +
+            s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
+    }
 
   @transient
   lazy val indexOfOrThrow = namesToIndex.withDefault { name =>
