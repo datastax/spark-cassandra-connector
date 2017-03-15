@@ -10,7 +10,8 @@ import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core._
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.rdd.ReadConf
-import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
+import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
+import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter, ReflectionUtil}
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -136,6 +137,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
+
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
   """Name of a Scala module or class implementing
     |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
@@ -149,6 +151,8 @@ object CassandraConnectionFactory {
         |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)
 
   val Properties = Set(FactoryParam)
+
+  val DeprecatedProperties: Set[DeprecatedConfigParameter] = Set.empty
 
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
     conf.getOption(FactoryParam.name)

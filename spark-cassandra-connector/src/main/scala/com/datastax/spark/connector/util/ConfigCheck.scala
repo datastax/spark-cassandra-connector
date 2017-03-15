@@ -32,6 +32,18 @@ object ConfigCheck {
 
   val validStaticPropertyNames = validStaticProperties.map(_.name)
 
+  val deprecatedProperties: Set[DeprecatedConfigParameter] =
+    WriteConf.DeprecatedProperties ++
+    ReadConf.DeprecatedProperties ++
+    CassandraConnectorConf.DeprecatedProperties ++
+    AuthConfFactory.DeprecatedProperties ++
+    CassandraConnectionFactory.DeprecatedProperties ++
+    CassandraSourceRelation.DeprecatedProperties ++
+    ColumnTypeConf.DeprecatedProperties
+
+
+
+
 
   /**
    * Checks the SparkConf Object for any unknown spark.cassandra.* properties and throws an exception
@@ -40,9 +52,25 @@ object ConfigCheck {
    * @param conf SparkConf object to check
    */
   def checkConfig(conf: SparkConf): Unit = {
+    for (deprecatedProperty <- deprecatedProperties) {
+      deprecatedProperty.maybeReplace(conf)
+    }
+
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
     val authConfFactory = AuthConfFactory.fromSparkConf(conf)
     val extraProps = connectionFactory.properties ++ authConfFactory.properties
+
+    /** Any properties with Capitals will not work inside SparkSQL/DataFrame Options so
+    * we will be protecting against this by throwing an error if any of the properties
+    * have capitals
+    */
+    val invalidProperties =
+      (validStaticPropertyNames ++ extraProps)
+        .filter( property => property.toLowerCase != property)
+
+    if (invalidProperties.nonEmpty) throw new IllegalArgumentException(
+    s"Developer Error: These properties will not work in SparkSql/DataSets " +
+      s"because of capitals: ${invalidProperties.mkString(",")}")
 
     val unknownProps = unknownProperties(conf, extraProps)
     if (unknownProps.nonEmpty) {

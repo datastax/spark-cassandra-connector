@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider}
-import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
+import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter, ReflectionUtil}
 import org.apache.spark.SparkConf
 
 /** Stores credentials used to authenticate to a Cassandra cluster and uses them
@@ -46,6 +46,8 @@ object AuthConfFactory {
     description = "Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"  )
 
   val Properties = Set(FactoryParam)
+
+  val DeprecatedProperties: Set[DeprecatedConfigParameter] = Set.empty
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf

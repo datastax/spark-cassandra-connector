@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.ConsistencyLevel
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck, Logging}
+import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck, DeprecatedConfigParameter, Logging}
 import org.apache.spark.SparkConf
 
 /** Read settings for RDD
@@ -58,13 +58,6 @@ object ReadConf extends Logging {
     description = """Sets whether to record connector specific metrics on write"""
   )
 
-  val ThroughputJoinQueryPerSecParam = ConfigParameter[Long] (
-    name = "spark.cassandra.input.join.throughput_query_per_sec",
-    section = ReferenceSection,
-    default = Int.MaxValue,
-    description =
-      "**Deprecated** Please use input.reads_per_sec. Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table")
-
   val ParallelismLevelParam = ConfigParameter[Int] (
     name = "spark.cassandra.concurrent.reads",
     section = ReferenceSection,
@@ -82,6 +75,12 @@ object ReadConf extends Logging {
       """Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations"""
   )
 
+  val ThroughputJoinQueryPerSecParam = DeprecatedConfigParameter (
+    oldName = "spark.cassandra.input.join.throughput_query_per_sec",
+    newName = Some(ReadsPerSecParam.name),
+    deprecatedSince = "2.0.0")
+
+
   // Whitelist for allowed Read environment variables
   val Properties = Set(
     ConsistencyLevelParam,
@@ -89,29 +88,15 @@ object ReadConf extends Logging {
     ReadsPerSecParam,
     SplitSizeInMBParam,
     TaskMetricParam,
-    ThroughputJoinQueryPerSecParam,
     ParallelismLevelParam
   )
 
+  val DeprecatedProperties = Set(
+    ThroughputJoinQueryPerSecParam
+  )
+
   def fromSparkConf(conf: SparkConf): ReadConf = {
-
     ConfigCheck.checkConfig(conf)
-
-    val throughtputJoinQueryPerSec = conf.getOption(ThroughputJoinQueryPerSecParam.name)
-      .map { str =>
-        logWarning(
-          s"""${ThroughputJoinQueryPerSecParam.name} is deprecated
-             | please use ${ReadsPerSecParam.name}""".stripMargin)
-        val longStr = str.toLong
-        if (longStr > Int.MaxValue) {
-          logDebug(
-            s"""${ThroughputJoinQueryPerSecParam.name} was set to a value larger than
-               | ${Int.MaxValue} using ${Int.MaxValue}""".stripMargin)
-          Int.MaxValue
-        } else {
-          longStr.toInt
-        }
-      }
 
     ReadConf(
       fetchSizeInRows = conf.getInt(FetchSizeInRowsParam.name, FetchSizeInRowsParam.default),
@@ -121,8 +106,7 @@ object ReadConf extends Logging {
         conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
 
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
-      readsPerSec = conf.getInt(ReadsPerSecParam.name,
-        throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default))
+      readsPerSec = conf.getInt(ReadsPerSecParam.name, ReadsPerSecParam.default)
     )
   }
 

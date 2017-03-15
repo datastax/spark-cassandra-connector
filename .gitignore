@@ -22,3 +22,4 @@ metastore_db
 .idea_modules
 
 checkpoint
+*.orig

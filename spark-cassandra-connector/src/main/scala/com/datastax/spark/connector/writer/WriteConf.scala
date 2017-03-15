@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
@@ -101,21 +101,33 @@ object WriteConf {
     |""".stripMargin)
 
   val IfNotExistsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.ifNotExists",
+    name = "spark.cassandra.output.if_not_exists",
     section = ReferenceSection,
     default = false,
     description =
       """Determines that the INSERT operation is not performed if a row with the same primary
 				|key already exists. Using the feature incurs a performance hit.""".stripMargin)
 
+  val deprecatedIfNotExistsParam = DeprecatedConfigParameter(
+    oldName = "spark.cassandra.output.ifNotExists",
+    newName = Some(IfNotExistsParam.name),
+    deprecatedSince = "1.6.10, 2.0.6"
+  )
+
   val IgnoreNullsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.ignoreNulls",
+    name = "spark.cassandra.output.ignore_nulls",
     section = ReferenceSection,
     default = false,
     description =
       """ In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
         |this to true will cause all null values to be left as unset rather than bound. For
         |finer control see the CassandraOption class""".stripMargin)
+
+  val deprecatedIgnoreNullsParam = DeprecatedConfigParameter(
+    oldName = "spark.cassandra.output.ignoreNulls",
+    newName = Some(IgnoreNullsParam.name),
+    deprecatedSince = "1.6.10, 2.0.6"
+  )
 
   val ParallelismLevelParam = ConfigParameter[Int] (
     name = "spark.cassandra.output.concurrent.writes",
@@ -170,8 +182,12 @@ object WriteConf {
     TaskMetricsParam
   )
 
-  def fromSparkConf(conf: SparkConf): WriteConf = {
+  val DeprecatedProperties: Set[DeprecatedConfigParameter] = Set (
+    deprecatedIfNotExistsParam,
+    deprecatedIgnoreNullsParam
+  )
 
+  def fromSparkConf(conf: SparkConf): WriteConf = {
     ConfigCheck.checkConfig(conf)
 
     val batchSizeInBytes = conf.getInt(BatchSizeBytesParam.name, BatchSizeBytesParam.default)
