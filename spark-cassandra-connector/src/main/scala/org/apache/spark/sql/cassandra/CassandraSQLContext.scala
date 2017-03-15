@@ -5,8 +5,7 @@ import java.util.NoSuchElementException
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.{DataFrame, SQLContext, execution => sparkexecution}
-
-import com.datastax.spark.connector.util.ConfigParameter
+import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter}
 
 /** Allows to execute SQL queries against Cassandra and access results as
   * `SchemaRDD` collections. Predicate pushdown to Cassandra is supported.
@@ -111,6 +110,7 @@ class CassandraSQLContext(sc: SparkContext) extends SQLContext(sc) {
 }
 
 object CassandraSQLContext {
+
   // Should use general used database than Cassandra specific keyspace?
   // Other source tables don't have keyspace concept. We should make
   // an effort to set CassandraSQLContext a more database like to join
@@ -133,4 +133,6 @@ object CassandraSQLContext {
     KSNameParam,
     SqlClusterParam
   )
+
+  val DeprecatedProperties: Set[DeprecatedConfigParameter] =  Set.empty
 }

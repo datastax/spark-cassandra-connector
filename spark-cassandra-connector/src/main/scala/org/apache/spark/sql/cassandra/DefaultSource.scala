@@ -139,7 +139,6 @@ object DefaultSource {
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
   // Map converted property to origin property name
-  // TODO check SPARK 1.4 it may be fixed
   private val propertiesMap : Map[String, String] = {
     confProperties.map(prop => (prop.replace(".", "_"), prop)).toMap
   }

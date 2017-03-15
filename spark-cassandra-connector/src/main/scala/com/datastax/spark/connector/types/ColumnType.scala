@@ -4,11 +4,11 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
 import com.datastax.driver.core.ProtocolVersion._
-import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil, Symbols}
+import com.datastax.spark.connector.util._
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -39,10 +39,11 @@ trait ColumnType[T] extends Serializable {
 
 object ColumnTypeConf {
 
+
   val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
 
   val CustomDriverTypeParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.dev.customFromDriver",
+    name = "spark.cassandra.dev.custom_from_driver",
     section = ReferenceSection,
     default = None,
     description = """Provides an additional class implementing CustomDriverConverter for those
@@ -51,8 +52,23 @@ object ColumnTypeConf {
         |OSS Cassandra this should never be used.""".stripMargin('|')
   )
 
+  val deprecatedFromDriverTypeParam = DeprecatedConfigParameter (
+    oldName = "spark.cassandra.dev.customFromDriver",
+    newName = Some(CustomDriverTypeParam.name),
+    deprecatedSince = ("1.6.10, 2.0.6")
+  )
+
   val Properties = Set(CustomDriverTypeParam)
+
+  val DeprecatedProperties = Set(deprecatedFromDriverTypeParam)
+
+  def fromSparkConf(conf: SparkConf): ColumnTypeConf = {
+    ConfigCheck.checkConfig(conf)
+    ColumnTypeConf(conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
+  }
 }
+
+case class ColumnTypeConf(customFromDriver: Option[String])
 
 object ColumnType {
 
@@ -84,7 +100,7 @@ object ColumnType {
 
   lazy val customDriverConverter: Option[CustomDriverConverter] = {
     Option(SparkEnv.get)
-      .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
+      .flatMap(env => ColumnTypeConf.fromSparkConf(env.conf).customFromDriver)
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
   }
 

@@ -94,7 +94,7 @@ Setting this to -1 means unlimited retries</td>
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>sql.pushdown.additionalClasses</code></td>
+  <td><code>sql.pushdown.additional_classes</code></td>
   <td></td>
   <td>A comma seperated list of classes to be used (in order) to apply additional
  pushdown rules for C* Dataframes. Classes must implement CassandraPredicateRules
@@ -133,7 +133,7 @@ retrieve size from C*. Can be set manually now</td>
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>connection.ssl.clientAuth.enabled</code></td>
+  <td><code>connection.ssl.client_auth.enabled</code></td>
   <td>false</td>
   <td>Enable 2-way secure connection to Cassandra cluster</td>
 </tr>
@@ -143,22 +143,22 @@ retrieve size from C*. Can be set manually now</td>
   <td>Enable secure connection to Cassandra cluster</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.enabledAlgorithms</code></td>
+  <td><code>connection.ssl.enabled_algorithms</code></td>
   <td>Set(TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)</td>
   <td>SSL cipher suites</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.keyStore.password</code></td>
+  <td><code>connection.ssl.keystore.password</code></td>
   <td>None</td>
   <td>Key store password</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.keyStore.path</code></td>
+  <td><code>connection.ssl.keystore.path</code></td>
   <td>None</td>
   <td>Path for the key store being used</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.keyStore.type</code></td>
+  <td><code>connection.ssl.keystore.type</code></td>
   <td>JKS</td>
   <td>Key store type</td>
 </tr>
@@ -168,17 +168,17 @@ retrieve size from C*. Can be set manually now</td>
   <td>SSL protocol</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.trustStore.password</code></td>
+  <td><code>connection.ssl.truststore.password</code></td>
   <td>None</td>
   <td>Trust store password</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.trustStore.path</code></td>
+  <td><code>connection.ssl.truststore.path</code></td>
   <td>None</td>
   <td>Path for the trust store being used</td>
 </tr>
 <tr>
-  <td><code>connection.ssl.trustStore.type</code></td>
+  <td><code>connection.ssl.truststore.type</code></td>
   <td>JKS</td>
   <td>Trust store type</td>
 </tr>
@@ -191,7 +191,7 @@ retrieve size from C*. Can be set manually now</td>
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>dev.customFromDriver</code></td>
+  <td><code>dev.custom_from_driver</code></td>
   <td>None</td>
   <td>Provides an additional class implementing CustomDriverConverter for those
 clients that need to read non-standard primitive Cassandra types. If your C* implementation
@@ -288,13 +288,13 @@ in each row</td>
   <td>Consistency level for writing</td>
 </tr>
 <tr>
-  <td><code>output.ifNotExists</code></td>
+  <td><code>output.if_not_exists</code></td>
   <td>false</td>
   <td>Determines that the INSERT operation is not performed if a row with the same primary
 key already exists. Using the feature incurs a performance hit.</td>
 </tr>
 <tr>
-  <td><code>output.ignoreNulls</code></td>
+  <td><code>output.ignore_nulls</code></td>
   <td>false</td>
   <td> In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
 this to true will cause all null values to be left as unset rather than bound. For

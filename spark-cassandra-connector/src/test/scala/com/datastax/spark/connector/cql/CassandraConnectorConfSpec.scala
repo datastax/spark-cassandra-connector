@@ -58,7 +58,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.trustStorePassword shouldBe Some("secret")
     connConf.cassandraSSLConf.trustStoreType shouldBe "JCEKS"
     connConf.cassandraSSLConf.protocol shouldBe "SSLv3"
-    connConf.cassandraSSLConf.enabledAlgorithms should contain theSameElementsAs Seq("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
+    connConf.cassandraSSLConf.enabledAlgorithms should contain theSameElementsAs Set("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
     connConf.cassandraSSLConf.clientAuthEnabled shouldBe true
     connConf.cassandraSSLConf.keyStorePath shouldBe Some("/etc/keys/.keystore")
     connConf.cassandraSSLConf.keyStorePassword shouldBe Some("secret")
