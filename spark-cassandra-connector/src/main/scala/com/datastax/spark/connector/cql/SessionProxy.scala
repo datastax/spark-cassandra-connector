@@ -8,6 +8,9 @@ import org.apache.commons.lang3.ClassUtils
 
 import collection.JavaConverters._
 
+import org.apache.commons.lang3.ClassUtils
+
+
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
   *  - `prepare` methods to cache `PreparedStatement` objects. */
@@ -60,6 +63,7 @@ object SessionProxy extends Logging {
 
   /** Creates a new `SessionProxy` delegating to the given `Session`.
     * Additionally registers a callback on `Session#close` method.
+    *
     * @param afterClose code to be invoked after the session has been closed */
   def wrapWithCloseAction(session: Session)(afterClose: Session => Any): Session = {
     val listInterfaces = ClassUtils.getAllInterfaces(session.getClass)
