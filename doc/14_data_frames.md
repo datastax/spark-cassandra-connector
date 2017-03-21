@@ -124,6 +124,27 @@ val df2 = sqlContext
   .read
   .cassandraFormat("words", "test", "cluster_A")
   .load()
+
+```
+
+Path of table identifier can be passed to load method to make creating data frames easier. They can be accessed after importing
+`org.apache.spark.sql.cassandra` package. In the following example, all the commands used to create a data frame are
+equivalent:
+
+#### Example Using load(path)
+```scala
+import org.apache.spark.sql.cassandra._
+
+val df1 = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map("table" -> "words", "keyspace" -> "test", "cluster" -> "cluster_A"))
+  .load()
+
+val df2 = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .load("cluster_A.test.words")
 ```
 
 ### Creating DataFrames using Spark SQL

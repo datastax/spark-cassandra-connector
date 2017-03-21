@@ -112,6 +112,7 @@ object DefaultSource {
   val CassandraDataSourceTableNameProperty = "table"
   val CassandraDataSourceKeyspaceNameProperty = "keyspace"
   val CassandraDataSourceClusterNameProperty = "cluster"
+  val CassandraDataSourcePathProperty = "path"
   val CassandraDataSourceUserDefinedSchemaNameProperty = "schema"
   val CassandraDataSourcePushdownEnableProperty = "pushdown"
   val CassandraDataSourceProviderPackageName = DefaultSource.getClass.getPackage.getName
@@ -120,13 +121,36 @@ object DefaultSource {
 
   /** Parse parameters into CassandraDataSourceOptions and TableRef object */
   def TableRefAndOptions(parameters: Map[String, String]) : (TableRef, CassandraSourceOptions) = {
-    val tableName = parameters(CassandraDataSourceTableNameProperty)
-    val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
-    val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
+
+    val (tableName, keyspaceName, clusterName) = tableIdentifier(parameters)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
     val cassandraConfs = parameters
 
     (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
+  }
+
+  private def tableIdentifier(parameters: Map[String, String]) : (String, String, Option[String]) = {
+    val path = parameters.get(CassandraDataSourcePathProperty)
+    if (path.isEmpty) {
+      tableIdentFromParam(parameters)
+    } else {
+      val tableIdent = path.get.split("\\.")
+      if (tableIdent.size == 2)
+        (tableIdent(1), tableIdent(0), Option.empty)
+      else if (tableIdent.size == 3)
+        (tableIdent(2), tableIdent(1), Option(tableIdent(0)))
+      else
+      {
+        tableIdentFromParam(parameters)
+      }
+    }
+  }
+
+  private def tableIdentFromParam(parameters: Map[String, String]) : (String, String, Option[String]) = {
+    val tableName = parameters(CassandraDataSourceTableNameProperty)
+    val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
+    val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
+    (tableName, keyspaceName, clusterName)
   }
 
   val confProperties = ReadConf.Properties.map(_.name) ++

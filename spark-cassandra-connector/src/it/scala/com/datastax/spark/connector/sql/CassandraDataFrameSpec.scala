@@ -81,13 +81,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
     val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "kv",
-          "keyspace" -> ks
-        )
-      )
-      .load()
+      .load(s"$ks.kv")
 
     df.count() should be(1000)
   }
