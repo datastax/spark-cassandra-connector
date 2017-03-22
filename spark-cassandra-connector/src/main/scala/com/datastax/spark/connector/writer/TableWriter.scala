@@ -240,6 +240,14 @@ object TableWriter {
         s"Some partition key columns are missing in RDD or have not been selected: ${missingPartitionKeyColumns.mkString(", ")}")
   }
 
+  private def onlyPartitionKeyAndStatic(table: TableDef, columnNames: Seq[String]): Boolean = {
+    val nonPartitionKeyColumnNames = columnNames.toSet -- table.partitionKey.map(_.columnName)
+    val nonPartitionKeyColumnRefs = table
+      .allColumns
+      .filter(columnDef => nonPartitionKeyColumnNames.contains(columnDef.columnName))
+    nonPartitionKeyColumnRefs.forall( columnDef => columnDef.columnRole == StaticColumn)
+  }
+
   /**
    * Check whether a collection behavior is being applied to a non collection column
    * Check whether prepend is used on any Sets or Maps
@@ -303,8 +311,18 @@ object TableWriter {
   private def checkColumns(table: TableDef, columnRefs: IndexedSeq[ColumnRef], checkPartitionKey: Boolean) = {
     val columnNames = columnRefs.map(_.columnName)
     checkMissingColumns(table, columnNames)
-    if(checkPartitionKey) checkMissingPartitionKeyColumns(table, columnNames)
-    else checkMissingPrimaryKeyColumns(table, columnNames)
+    if (checkPartitionKey) {
+      // For Deletes we only need a partition Key for a valid delete statement
+      checkMissingPartitionKeyColumns(table, columnNames)
+    }
+    else if (onlyPartitionKeyAndStatic(table, columnNames)) {
+      // Cassandra only requires a Partition Key Column on insert if all other columns are Static
+      checkMissingPartitionKeyColumns(table, columnNames)
+    }
+    else {
+      // For all other normal Cassandra writes we require the full primary key to be present
+      checkMissingPrimaryKeyColumns(table, columnNames)
+    }
     checkCollectionBehaviors(table, columnRefs)
   }
 
