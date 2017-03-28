@@ -325,10 +325,11 @@ class CassandraTableScanRDD[R] private[connector](
   }
 
   private def fetchTokenRange(
-    session: Session,
+    scanner: Scanner,
     range: CqlTokenRange[_, _],
-    inputMetricsUpdater: InputMetricsUpdater,
-    scanExecuteMethod: Statement => (Iterator[Row], CassandraRowMetadata)): Iterator[R] = {
+    inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
+
+    val session = scanner.getSession()
 
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(
@@ -338,10 +339,10 @@ class CassandraTableScanRDD[R] private[connector](
     val stmt = createStatement(session, cql, values: _*)
 
     try {
-      val (iterator, columnMetaData) = scanExecuteMethod(stmt)
+      val scanResult = scanner.scan(stmt)
 
-      val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
-      val result = iteratorWithMetrics.map(rowReader.read(_, columnMetaData))
+      val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
+      val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
       result
     } catch {
@@ -351,26 +352,26 @@ class CassandraTableScanRDD[R] private[connector](
   }
 
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
-    val session = connector.openSession()
     val partition = split.asInstanceOf[CassandraPartition[_, _]]
     val tokenRanges = partition.tokenRanges
     val metricsUpdater = InputMetricsUpdater(context, readConf)
 
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
-    val scanExecuteMethod = connector.connectionFactory.getScanMethod(readConf, session, columnNames)
+
+    val scanner = connector.connectionFactory.getScanner(readConf, connector.conf, columnNames)
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
     val rowIterator = tokenRanges.iterator.flatMap(
-      fetchTokenRange(session, _: CqlTokenRange[_, _], metricsUpdater, scanExecuteMethod))
+      fetchTokenRange(scanner, _: CqlTokenRange[_, _], metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
     context.addTaskCompletionListener { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
         f"for partition ${partition.index} in $duration%.3f s.")
-      session.close()
+      scanner.close()
     }
     countingIterator
   }

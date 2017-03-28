@@ -48,7 +48,7 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.connection.ssl.protocol`:              SSL protocol (default TLS)
   *   - `spark.cassandra.connection.ssl.enabledAlgorithms`:         SSL cipher suites (default TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)
   */
-class CassandraConnector(conf: CassandraConnectorConf)
+class CassandraConnector(val conf: CassandraConnectorConf)
   extends Serializable with Logging {
 
   import com.datastax.spark.connector.cql.CassandraConnector._
