@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.{Cluster, Row, Session, Statement}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import com.datastax.spark.connector.cql.{CassandraConnectionFactory, CassandraConnector, CassandraConnectorConf, DefaultConnectionFactory}
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
@@ -51,12 +51,10 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Inspec
 object DummyFactory extends CassandraConnectionFactory {
   
   val nie = new NotImplementedError("TestingOnly")
-  override def getScanMethod(
+  override def getScanner(
     readConf: ReadConf,
-    session: Session,
-    columnNames: IndexedSeq[String]): (Statement) => (Iterator[Row], CassandraRowMetadata) = {
-    throw nie
-  }
+    connConf: CassandraConnectorConf,
+    columnNames: IndexedSeq[String]): Scanner = throw nie
 
   /** Creates and configures native Cassandra connection */
   override def createCluster(conf: CassandraConnectorConf): Cluster =
