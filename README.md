@@ -4,9 +4,9 @@ Chat with us at [DataStax Academy #spark-cassandra-connector](#datastax-academy)
 
 ### Most Recent Release Scala Docs
 
-### 2.0.0
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector-embedded/)
+### 2.0.1
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.1/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.1/spark-cassandra-connector-embedded/)
 
 [All Versions API Docs](#hosted-api-docs)
 
@@ -58,7 +58,7 @@ development for the next connector release in progress.
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
-### 2.0.0
+### 2.0.1
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector/)
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.0/spark-cassandra-connector-embedded/)
 
