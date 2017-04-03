@@ -65,10 +65,11 @@ This command would set the Spark Cassandra Connector parameter
 `spark.cassandra.connection.host` to `127.0.0.1`. Change this
 to the address of one of the nodes in your Cassandra cluster.
  
-Enable Cassandra-specific functions on the `SparkContext`, `RDD`, and `DataFrame`:
+Enable Cassandra-specific functions on the `SparkContext`, `SparkSession`, `RDD`, and `DataFrame`:
 
 ```scala
 import com.datastax.spark.connector._
+import org.apache.spark.sql.cassandra._
 ```
 
 ### Loading and analyzing data from Cassandra
