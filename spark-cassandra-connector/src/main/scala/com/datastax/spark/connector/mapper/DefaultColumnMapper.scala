@@ -90,7 +90,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
   }
 
   override def columnMapForWriting(
-      struct: StructDef, 
+      struct: StructDef,
       selectedColumns: IndexedSeq[ColumnRef]): ColumnMapForWriting = {
 
     val columns = columnByName(selectedColumns)

@@ -14,6 +14,7 @@ import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 
 case class Address(street: String, city: String, zip: Int)
+case class KV(key: Int, value: String)
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
@@ -72,6 +73,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.static_test (key INT, group BIGINT, value TEXT STATIC, PRIMARY KEY (key, group))""")
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
@@ -190,6 +194,25 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     )
     sc.parallelize(col).saveToCassandra(ks, "key_value")
     verifyKeyValueTable("key_value")
+  }
+
+  it should "write to a table with only partition key and static columns without clustering" in {
+    sc.parallelize(1 to 10)
+      .map( x => KV(x, x.toString))
+      .saveToCassandra(ks, "static_test", SomeColumns("key", "value"))
+
+    sc.cassandraTable(ks, "static_test").count should be (10)
+  }
+
+  it should "throw an exception if writing to a table with only pk and non-static columns" in {
+    val ex  = intercept[IllegalArgumentException] {
+      sc.parallelize(1 to 10)
+        .map(x => KV(x, x.toString))
+        .saveToCassandra(ks, "key_value", SomeColumns("key", "value"))
+    }
+    val message = ex.getMessage
+    message should include ("primary key")
+    message should include ("group")
   }
 
   it should "ignore unset inserts" in {
