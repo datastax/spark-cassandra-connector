@@ -205,6 +205,11 @@ would like to add. We would be happy to discuss it with you and see your work. F
 that you are satisfied with and passes all the tests (`/dev/run_tests.sh`) make a GitHub PR against
 your target Connector Version and set your Jira to Reviewing.
 
+### Is there a CassandraRDDMock I can use in my tests?
+
+Yes. Please see CassandraRDDMock.scala for the class and CassandraRDDMockSpec.scala for example
+usage.
+
 ### What should I do if I find a bug? 
 
 Feel free to post a repo on the Mailing List or if you are feeling ambitious file a Jira with
