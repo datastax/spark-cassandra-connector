@@ -112,6 +112,15 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     result.head should have length 1
   }
 
+  it should "allow to override options by load method " in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test2"))
+      .load(s"$ks.test1")
+    df.collect() should have length 8
+  }
+
   it should "allow to register as a temp table" in {
     cassandraTable(TableRef("test1", ks)).createOrReplaceTempView("test1")
     val temp = sparkSession.sql("SELECT * from test1").select("b").collect()
