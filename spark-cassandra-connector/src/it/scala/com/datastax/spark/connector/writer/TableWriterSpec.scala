@@ -18,7 +18,9 @@ case class KV(key: Int, value: String)
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithTransient(key: Int, group: Long, value: String, @transient transientField: String)
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
+case class KeyValueWithNullableTTL(key: Int, group: Long, value: String, ttl: java.lang.Integer)
 case class KeyValueWithTimestamp(key: Int, group: Long, value: String, timestamp: Long)
+case class KeyValueWithNullableTS(key: Int, group: Long, value: String, timestamp: java.lang.Long)
 case class KeyValueWithConversion(key: String, group: Int, value: String)
 case class ClassWithWeirdProps(devil: String, cat: Int, value: String)
 
@@ -616,10 +618,51 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "write RDD of case class objects with null TTLS setting them to the table default" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
+    val col = Seq(
+      KeyValueWithNullableTTL(1, 1L, "value1", null),
+      KeyValueWithNullableTTL(2, 2L, "value2", 200),
+      KeyValueWithNullableTTL(3, 3L, "value3", 300))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(ttl = TTLOption.perRow("ttl")))
+
+    verifyKeyValueTable("key_value")
+
+    val resultMap = conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
+      result should have size 3
+      result.map( row => (row.getInt(0), row.getInt(1))).toMap
+      }
+
+    resultMap(1) should be (0)
+  }
+
+  it should "write RDD of case class objects with null TTLS setting them to a user default" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
+    val col = Seq(
+      KeyValueWithNullableTTL(1, 1L, "value1", null),
+      KeyValueWithNullableTTL(2, 2L, "value2", 200),
+      KeyValueWithNullableTTL(3, 3L, "value3", 300))
+    sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(ttl = TTLOption.perRow("ttl", Some(55))))
+
+    verifyKeyValueTable("key_value")
+
+    val resultMap = conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
+      result should have size 3
+      result.map( row => (row.getInt(0), row.getInt(1))).toMap
+      }
+
+    resultMap(1) should be (55)
+  }
+
   it should "write RDD of case class objects with per-row timestamp" in {
     conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val ts = System.currentTimeMillis() - 1000L
-    val col = Seq(KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L), KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L), KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
+    val col = Seq(
+      KeyValueWithTimestamp(1, 1L, "value1", ts * 1000L + 100L),
+      KeyValueWithTimestamp(2, 2L, "value2", ts * 1000L + 200L),
+      KeyValueWithTimestamp(3, 3L, "value3", ts * 1000L + 300L))
     sc.parallelize(col).saveToCassandra(ks, "key_value", writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
 
     verifyKeyValueTable("key_value")
@@ -632,6 +675,53 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       })
     }
   }
+
+  it should "write RDD of case class objects with per-row timestamp with nulls" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
+    val ts = System.currentTimeMillis() - 1000L
+    val col = Seq(
+      KeyValueWithNullableTS(1, 1L, "value1", null),
+      KeyValueWithNullableTS(2, 2L, "value2", ts * 1000L + 200L),
+      KeyValueWithNullableTS(3, 3L, "value3", ts * 1000L + 300L))
+    sc.parallelize(col).saveToCassandra(
+      ks,
+      "key_value",
+      writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp")))
+
+    verifyKeyValueTable("key_value")
+
+    val resultMap = conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
+      result.map( row => (row.getInt(0), row.getLong(1))).toMap
+      }
+
+    resultMap(1) should be < System.currentTimeMillis() * 1000L
+    resultMap(1) should be > (System.currentTimeMillis() - 10000L) * 1000L
+  }
+
+  it should "write RDD of case class objects with per-row timestamp with nulls and a default" in {
+    conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
+    val ts = System.currentTimeMillis() - 1000L
+    val col = Seq(
+      KeyValueWithNullableTS(1, 1L, "value1", null),
+      KeyValueWithNullableTS(2, 2L, "value2", ts * 1000L + 200L),
+      KeyValueWithNullableTS(3, 3L, "value3", ts * 1000L + 300L))
+    sc.parallelize(col).saveToCassandra(
+      ks,
+      "key_value",
+      writeConf = WriteConf(timestamp = TimestampOption.perRow("timestamp", Some(55L))))
+
+    verifyKeyValueTable("key_value")
+
+    val resultMap = conn.withSessionDo { session =>
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
+      result.map( row => (row.getInt(0), row.getLong(1))).toMap
+      }
+
+    resultMap(1) should be (55L)
+  }
+
+
 
   it should "write RDD of case class objects with per-row TTL with custom mapping" in {
     conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))

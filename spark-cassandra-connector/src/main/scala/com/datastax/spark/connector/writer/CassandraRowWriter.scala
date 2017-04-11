@@ -6,7 +6,7 @@ import com.datastax.spark.connector.cql.TableDef
 /** A [[RowWriter]] that can write [[CassandraRow]] objects.*/
 class CassandraRowWriter(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]) extends RowWriter[CassandraRow] {
 
-  override val columnNames = selectedColumns.map(_.columnName)
+  override val columnRefs = selectedColumns
 
   private val columns = columnNames.map(table.columnByName).toIndexedSeq
   private val converters = columns.map(_.columnType.converterToCassandra)

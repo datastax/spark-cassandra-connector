@@ -42,13 +42,13 @@ class TableWriter[T] private (
     val ifNotExistsSpec = if (writeConf.ifNotExists) "IF NOT EXISTS " else ""
 
     val ttlSpec = writeConf.ttl match {
-      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
+      case TTLOption(PerRowWriteOptionValue(placeholder, _)) => Some(s"TTL :$placeholder")
       case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
       case _ => None
     }
 
     val timestampSpec = writeConf.timestamp match {
-      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
+      case TimestampOption(PerRowWriteOptionValue(placeholder, _)) => Some(s"TIMESTAMP :$placeholder")
       case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
       case _ => None
     }
@@ -337,9 +337,12 @@ object TableWriter {
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
     val selectedColumns = columnNames.selectFrom(tableDef)
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
+    val optionRefs = writeConf.optionsAsColumnRef(
+      Schema.ttlFromCassandra(connector, keyspaceName, tableName))
+
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
-      selectedColumns ++ optionColumns.map(_.ref))
+      selectedColumns ++ optionRefs)
 
     checkColumns(tableDef, selectedColumns, checkPartitionKey)
     new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)

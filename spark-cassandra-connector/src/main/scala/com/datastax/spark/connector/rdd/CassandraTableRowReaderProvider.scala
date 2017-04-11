@@ -58,11 +58,11 @@ trait CassandraTableRowReaderProvider[R] {
         case ColumnName(columnName, _) =>
           if (!allColumnNames.contains(column.columnName))
             throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
-        case TTL(columnName, _) =>
+        case TTL(columnName, _, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
-        case WriteTime(columnName, _) =>
+        case WriteTime(columnName, _, _) =>
           if (!regularColumnNames.contains(columnName))
             throw new IOException(s"TTL can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")

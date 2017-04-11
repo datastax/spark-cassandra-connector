@@ -15,7 +15,7 @@ class DefaultRowWriter[T : TypeTag : ColumnMapper](
   extends RowWriter[T] {
 
   private val converter = MappedToGettableDataConverter[T](table, selectedColumns)
-  override val columnNames = selectedColumns.map(_.columnName)
+  override val columnRefs = selectedColumns
 
   override def readColumnValues(data: T, buffer: Array[Any]) = {
     val row = converter.convert(data)

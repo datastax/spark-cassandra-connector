@@ -8,6 +8,7 @@ import com.datastax.spark.connector.writer.*;
 import org.apache.spark.SparkConf;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import scala.Option;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -401,12 +402,29 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * Returns a copy of this builder with the new write configuration which has write timestamp set
          * to a placeholder which will be filled-in by mapper.
          *
+         * If the value in the placeholder column is null then the current timestamp on the executor
+         * will be used.
+         *
          * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
          *
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withPerRowTimestamp(String placeholder) {
-            return withTimestamp(TimestampOption$.MODULE$.perRow(placeholder));
+            return withTimestamp(TimestampOption$.MODULE$.perRow(placeholder, Option.empty()));
+        }
+
+        /**
+         * Returns a copy of this builder with the new write configuration which has write timestamp set
+         * to a placeholder which will be filled-in by mapper.
+         *
+         * DefaultTimestamp will be applied if the placeholder value is null
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
+        public WriterBuilder withPerRowTimestamp(String placeholder, Long defaultTimestamp) {
+            return withTimestamp(TimestampOption$.MODULE$.perRow(placeholder, Option.<Object>apply(defaultTimestamp)));
         }
 
 
@@ -468,12 +486,28 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * Returns a copy of this builder with the new write configuration which has TTL set to a placeholder
          * which will be filled-in by mapper.
          *
+         * If a value in the placeholder column is null the Table's Default TTL will be used.
+         *
          * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
          *
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withPerRowTTL(String placeholder) {
-            return withTTL(TTLOption$.MODULE$.perRow(placeholder));
+            return withTTL(TTLOption$.MODULE$.perRow(placeholder, Option.empty()));
+        }
+
+        /**
+         * Returns a copy of this builder with the new write configuration which has TTL set to a placeholder
+         * which will be filled-in by mapper.
+         *
+         * DefaultTTL will be applied if the given placeholder is null
+         *
+         * <p>If the same instance is passed as the one which is currently set, no copy of this builder is created.</p>
+         *
+         * @return this instance or copy to allow method invocation chaining
+         */
+        public WriterBuilder withPerRowTTL(String placeholder, Integer defaultTTL) {
+            return withTTL(TTLOption$.MODULE$.perRow(placeholder, Option.<Object>apply(defaultTTL)));
         }
 
         /**

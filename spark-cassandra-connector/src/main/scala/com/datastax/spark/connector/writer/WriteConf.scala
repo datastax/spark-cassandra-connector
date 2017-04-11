@@ -3,8 +3,8 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
-import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
+import com.datastax.spark.connector.{BatchSize, BytesInBatch, ColumnRef, RowsInBatch, TTL, WriteTime}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
@@ -36,17 +36,34 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
-    case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
+    case WriteOption(PerRowWriteOptionValue(placeholder, _)) => placeholder
   }
 
   private[writer] val optionsAsColumns: (String, String) => Seq[ColumnDef] = { (keyspace, table) =>
     def toRegularColDef(opt: WriteOption[_], dataType: DataType) = opt match {
-      case WriteOption(PerRowWriteOptionValue(placeholder)) =>
+      case WriteOption(PerRowWriteOptionValue(placeholder, _)) =>
         Some(ColumnDef(placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
       case _ => None
     }
 
     Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
+  }
+
+  private[writer] val optionsAsColumnRef: (Option[Int]) => Seq[ColumnRef] = { tableTTL =>
+    def toRegularColRef(opt: WriteOption[_]) = opt match {
+      case TTLOption(PerRowWriteOptionValue(placeholder, valueIfNull)) =>
+        Some(TTL(
+          placeholder,
+          Some(placeholder),
+          valueIfNull orElse tableTTL orElse Some(0)))
+
+      case TimestampOption(PerRowWriteOptionValue(placeholder, valueIfNull)) =>
+        Some(WriteTime(placeholder, Some(placeholder), valueIfNull))
+
+      case _ => None
+    }
+
+    Seq(toRegularColRef(ttl), toRegularColRef(timestamp)).flatten
   }
 
   val throttlingEnabled = throughputMiBPS < WriteConf.ThroughputMiBPSParam.default

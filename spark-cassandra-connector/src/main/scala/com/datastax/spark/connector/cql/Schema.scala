@@ -356,4 +356,21 @@ object Schema extends Logging {
         throw new IOException(errorMessage)
       }
     }
+
+  /**
+    * Get default TTL for Table
+    */
+  def ttlFromCassandra(
+    connector: CassandraConnector,
+    keyspaceName: String,
+    tableName: String) : Option[Int] = {
+
+    tableFromCassandra(connector, keyspaceName, tableName) // Checks for existence of table
+    Try(connector.withClusterDo(
+      _.getMetadata
+      .getKeyspace(keyspaceName)
+      .getTable(tableName)
+      .getOptions
+      .getDefaultTimeToLive)).toOption
+  }
 }
