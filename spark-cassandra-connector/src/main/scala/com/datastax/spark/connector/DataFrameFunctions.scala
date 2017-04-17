@@ -28,7 +28,7 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
 
     val columnNames = columnMapping.keys.toSet
     val partitionKeyNames = partitionKeyColumns.getOrElse(rawTable.partitionKey.map(_.columnName))
-    val clusteringKeyNames = clusteringKeyColumns.getOrElse(Seq.empty)
+    val clusteringKeyNames = clusteringKeyColumns.getOrElse(rawTable.clusteringColumns.map(_.columnName))
     val regularColumnNames = (columnNames -- (partitionKeyNames ++ clusteringKeyNames)).toSeq
 
     val table = rawTable.copy (
