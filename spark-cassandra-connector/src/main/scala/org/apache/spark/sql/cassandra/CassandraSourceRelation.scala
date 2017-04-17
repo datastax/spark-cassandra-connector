@@ -18,7 +18,7 @@ import org.apache.spark.sql.{sources, DataFrame, Row, SQLContext}
 import org.apache.spark.unsafe.types.UTF8String
 
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.{TableDef, CassandraConnectorConf, CassandraConnector, Schema}
 import com.datastax.spark.connector.rdd.{CassandraRDD, ReadConf}
 import com.datastax.spark.connector.writer.{WriteConf, SqlRowWriter}
 import com.datastax.spark.connector.util.Quote._
@@ -34,31 +34,19 @@ import com.datastax.spark.connector.rdd.partitioner.CassandraRDDPartitioner._
  *
  */
 private[cassandra] class CassandraSourceRelation(
-    tableRef: TableRef,
+    tableDef: TableDef,
     userSpecifiedSchema: Option[StructType],
     filterPushdown: Boolean,
     tableSizeInBytes: Option[Long],
     connector: CassandraConnector,
     readConf: ReadConf,
     writeConf: WriteConf,
+    preappendColumns: Set[String],
     override val sqlContext: SQLContext)
   extends BaseRelation
   with InsertableRelation
   with PrunedFilteredScan
   with Logging {
-
-  private[this] val tableDef = {
-    val tableName = tableRef.table
-    val keyspaceName = tableRef.keyspace
-    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
-      case Some(t) => t
-      case None =>
-        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
-        val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
-        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
-        throw new IOException(errorMessage)
-    }
-  }
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
@@ -67,15 +55,27 @@ private[cassandra] class CassandraSourceRelation(
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
       connector.withSessionDo {
-        val keyspace = quote(tableRef.keyspace)
-        val table = quote(tableRef.table)
+        val keyspace = quote(tableDef.keyspaceName)
+        val table = quote(tableDef.tableName)
         session => session.execute(s"TRUNCATE $keyspace.$table")
       }
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
-    data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
+    val columns = SomeColumns(data.columns.map(x => columnRef(x, overwrite)): _*)
+    data.rdd.saveToCassandra(tableDef.keyspaceName, tableDef.tableName, columns, writeConf)
+  }
+
+  private[this] def columnRef(columnName: String, overwrite: Boolean): ColumnRef = {
+    if (!overwrite && tableDef.columnByName(columnName).isCollection) {
+      if (preappendColumns.contains(columnName)) {
+        CollectionColumnName(columnName, alias = None, collectionBehavior = CollectionPrepend)
+      } else {
+        CollectionColumnName(columnName, alias = None, collectionBehavior = CollectionAppend)
+      }
+    } else {
+      ColumnName(columnName)
+    }
   }
 
   override def sizeInBytes: Long = {
@@ -86,7 +86,7 @@ private[cassandra] class CassandraSourceRelation(
   implicit val cassandraConnector = connector
   implicit val readconf = readConf
   private[this] val baseRdd =
-    sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
+    sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableDef.keyspaceName, tableDef.tableName)
 
   def buildScan() : RDD[Row] = baseRdd.asInstanceOf[RDD[Row]]
 
@@ -223,15 +223,29 @@ object CassandraSourceRelation {
     }
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
+    val tableDef = {
+      val tableName = tableRef.table
+      val keyspaceName = tableRef.keyspace
+      Schema.fromCassandra(cassandraConnector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+        case Some(t) => t
+        case None =>
+          val metadata: Metadata = cassandraConnector.withClusterDo(_.getMetadata)
+          val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
+          val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
+          throw new IOException(errorMessage)
+      }
+    }
+    val preappendColumns = tableDef.columns.map(_.columnName).filter(preappendColumn(_, options.cassandraConfs)).toSet
 
     new CassandraSourceRelation(
-      tableRef = tableRef,
+      tableDef = tableDef,
       userSpecifiedSchema = schema,
       filterPushdown = options.pushdown,
       tableSizeInBytes = tableSizeInBytes,
       connector = cassandraConnector,
       readConf = readConf,
       writeConf = writeConf,
+      preappendColumns = preappendColumns,
       sqlContext = sqlContext)
   }
 
@@ -263,5 +277,10 @@ object CassandraSourceRelation {
         conf.set(prop, tableLevelValue.get)
     }
     conf
+  }
+
+  def preappendColumn(columnName: String, cassandraConfs: Map[String, String]): Boolean = {
+    val preappendSetting = cassandraConfs.get(s"$columnName.preappend")
+    preappendSetting.nonEmpty && preappendSetting.get.toLowerCase.equals("true")
   }
 }
