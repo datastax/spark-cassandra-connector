@@ -1,4 +1,4 @@
-package com.datastax.spark.connector.writer
+﻿package com.datastax.spark.connector.writer
 
 import java.nio.ByteBuffer
 
@@ -44,10 +44,11 @@ class RoutingKeyGenerator(table: TableDef, columnNames: Seq[String])
 
   private def fillRoutingKey(stmt: BoundStatement): Array[ByteBuffer] = {
     val rk = routingKey.get
-    for (i ← partitionKeyIdxs.indices) {
-      if (stmt.isNull(partitionKeyIdxs(i)))
-        throw NullKeyColumnException(columnNames(partitionKeyIdxs(i)))
-      rk(i) = stmt.getBytesUnsafe(partitionKeyIdxs(i))
+    val newKey = table.partitionKey
+    for (i <- newKey.indices) {
+      if (stmt.isNull(newKey(i).columnName))
+        throw NullKeyColumnException(newKey(i).columnName)
+      rk(i) = stmt.getBytesUnsafe(table.partitionKey(i).columnName)
     }
     rk
   }
