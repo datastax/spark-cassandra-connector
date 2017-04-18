@@ -80,7 +80,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     data: DataFrame): BaseRelation = {
 
     val (tableRef, options) = TableRefAndOptions(parameters)
-    val table = CassandraSourceRelation(tableRef, sqlContext, options)
+    val table = CassandraSourceRelation(tableRef, sqlContext, options, Option(data.schema))
 
     mode match {
       case Append => table.insert(data, overwrite = false)
@@ -101,7 +101,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
         }
     }
 
-    CassandraSourceRelation(tableRef, sqlContext, options)
+    CassandraSourceRelation(tableRef, sqlContext, options, Option(data.schema))
   }
 }
 
