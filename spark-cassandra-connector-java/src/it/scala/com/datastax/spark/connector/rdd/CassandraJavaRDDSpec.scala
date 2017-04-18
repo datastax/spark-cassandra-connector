@@ -2,24 +2,22 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.collection.JavaConversions._
+import scala.concurrent.Future
+
+import org.apache.commons.lang3.tuple
+import org.apache.spark.api.java.function.{Function => JFunction}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.types.TypeConverter
-import org.apache.commons.lang3.tuple
-import org.apache.spark.api.java.function.{Function => JFunction}
-
-import scala.collection.JavaConversions._
 
 class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

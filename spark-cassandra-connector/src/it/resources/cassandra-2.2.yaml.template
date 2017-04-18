@@ -7,7 +7,7 @@
 
 # The name of the cluster. This is mainly used to prevent machines in
 # one logical cluster from joining another.
-cluster_name: '${cluster_name}'
+cluster_name: 'Test Cluster'
 
 # This defines the number of tokens randomly assigned to this node on the ring
 # The more tokens, relative to other nodes, the larger the proportion of data
@@ -24,17 +24,6 @@ cluster_name: '${cluster_name}'
 # multiple tokens per node, see http://wiki.apache.org/cassandra/Operations
 num_tokens: 256
 
-# Triggers automatic allocation of num_tokens tokens for this node. The allocation
-# algorithm attempts to choose tokens in a way that optimizes replicated load over
-# the nodes in the datacenter for the replication strategy used by the specified
-# keyspace.
-#
-# The load assigned to each node will be close to proportional to its number of
-# vnodes.
-#
-# Only supported with the Murmur3Partitioner.
-# allocate_tokens_for_keyspace: KEYSPACE
-
 # initial_token allows you to specify tokens manually.  While you can use # it with
 # vnodes (num_tokens > 1, above) -- in which case you should provide a
 # comma-separated list -- it's primarily used when adding nodes # to legacy clusters
@@ -42,40 +31,24 @@ num_tokens: 256
 # initial_token:
 
 # See http://wiki.apache.org/cassandra/HintedHandoff
-# May either be "true" or "false" to enable globally
+# May either be "true" or "false" to enable globally, or contain a list
+# of data centers to enable per-datacenter.
+# hinted_handoff_enabled: DC1,DC2
 hinted_handoff_enabled: true
-# When hinted_handoff_enabled is true, a black list of data centers that will not
-# perform hinted handoff
-#hinted_handoff_disabled_datacenters:
-#    - DC1
-#    - DC2
 # this defines the maximum amount of time a dead host will have hints
 # generated.  After it has been dead this long, new hints for it will not be
 # created until it has been seen alive and gone down again.
 max_hint_window_in_ms: 10800000 # 3 hours
-
 # Maximum throttle in KBs per second, per delivery thread.  This will be
 # reduced proportionally to the number of nodes in the cluster.  (If there
 # are two nodes in the cluster, each delivery thread will use the maximum
 # rate; if there are three, each will throttle to half of the maximum,
 # since we expect two nodes to be delivering hints simultaneously.)
 hinted_handoff_throttle_in_kb: 1024
-
 # Number of threads with which to deliver hints;
 # Consider increasing this number when you have multi-dc deployments, since
 # cross-dc handoff tends to be slower
 max_hints_delivery_threads: 2
-
-# Directory where Cassandra should store hints.
-# If not set, the default directory is $CASSANDRA_HOME/data/hints.
-hints_directory: ${cassandra_dir}/hints
-
-# How often hints should be flushed from the internal buffers to disk.
-# Will *not* trigger fsync.
-hints_flush_period_in_ms: 10000
-
-# Maximum size for a single hints file, in megabytes.
-max_hints_file_size_in_mb: 128
 
 # Maximum throttle in KBs per second, total. This will be
 # reduced proportionally to the number of nodes in the cluster.
@@ -158,13 +131,13 @@ partitioner: org.apache.cassandra.dht.Murmur3Partitioner
 # will spread data evenly across them, subject to the granularity of
 # the configured compaction strategy.
 # If not set, the default directory is $CASSANDRA_HOME/data/data.
-data_file_directories:
-     - ${cassandra_dir}/data
+# data_file_directories:
+#     - /var/lib/cassandra/data
 
 # commit log.  when running on magnetic HDD, this should be a
 # separate spindle than the data directories.
 # If not set, the default directory is $CASSANDRA_HOME/data/commitlog.
-commitlog_directory: ${cassandra_dir}/commitlog
+# commitlog_directory: /var/lib/cassandra/commitlog
 
 # policy for data disk failures:
 # die: shut down gossip and client transports and kill the JVM for any fs errors or
@@ -276,7 +249,7 @@ counter_cache_save_period: 7200
 
 # saved caches
 # If not set, the default directory is $CASSANDRA_HOME/data/saved_caches.
-saved_caches_directory: ${cassandra_dir}/saved_caches
+# saved_caches_directory: /var/lib/cassandra/saved_caches
 
 # commitlog_sync may be either "periodic" or "batch."
 #
@@ -288,7 +261,7 @@ saved_caches_directory: ${cassandra_dir}/saved_caches
 # concurrent_writes for the same reason.)
 #
 # commitlog_sync: batch
-# commitlog_sync_batch_window_in_ms: 50
+# commitlog_sync_batch_window_in_ms: 2
 #
 # the other option is "periodic" where writes may be acked immediately
 # and the CommitLog is simply synced every commitlog_sync_period_in_ms
@@ -305,21 +278,15 @@ commitlog_sync_period_in_ms: 10000
 # archiving commitlog segments (see commitlog_archiving.properties),
 # then you probably want a finer granularity of archiving; 8 or 16 MB
 # is reasonable.
-# Max mutation size is also configurable via max_mutation_size_in_kb setting in
-# cassandra.yaml. The default is half the size commitlog_segment_size_in_mb * 1024.
-#
-# NOTE: If max_mutation_size_in_kb is set explicitly then commitlog_segment_size_in_mb must
-# be set to at least twice the size of max_mutation_size_in_kb / 1024
-#
 commitlog_segment_size_in_mb: 32
 
 # Compression to apply to the commit log. If omitted, the commit log
 # will be written uncompressed.  LZ4, Snappy, and Deflate compressors
 # are supported.
-commitlog_compression:
-   - class_name: LZ4Compressor
-     parameters:
-         -
+#commitlog_compression:
+#   - class_name: LZ4Compressor
+#     parameters:
+#         -
 
 # any class that implements the SeedProvider interface and has a
 # constructor that takes a Map<String, String> of parameters will do.
@@ -332,7 +299,7 @@ seed_provider:
       parameters:
           # seeds is actually a comma-delimited list of addresses.
           # Ex: "<ip1>,<ip2>,<ip3>"
-          - seeds: "${seeds}"
+          - seeds: "127.0.0.1"
 
 # For workloads with more data than can fit in memory, Cassandra's
 # bottleneck will be reads that need to fetch data from
@@ -349,26 +316,9 @@ concurrent_reads: 32
 concurrent_writes: 32
 concurrent_counter_writes: 32
 
-# For materialized view writes, as there is a read involved, so this should
-# be limited by the less of concurrent reads or concurrent writes.
-concurrent_materialized_view_writes: 32
-
-# Maximum memory to use for pooling sstable buffers. Defaults to the smaller
-# of 1/4 of heap or 512MB. This pool is allocated off-heap, so is in addition
-# to the memory allocated for heap. Memory is only allocated as needed.
+# Total memory to use for sstable-reading buffers.  Defaults to
+# the smaller of 1/4 of heap or 512MB.
 # file_cache_size_in_mb: 512
-
-# Flag indicating whether to allocate on or off heap when the sstable buffer
-# pool is exhausted, that is when it has exceeded the maximum memory
-# file_cache_size_in_mb, beyond which it will not cache buffers but allocate on request.
-
-# buffer_pool_use_heap_if_exhausted: true
-
-# The strategy for optimizing disk read
-# Possible values are:
-# ssd (for solid state disks, the default)
-# spinning (for spinning disks)
-# disk_optimization_strategy: ssd
 
 # Total permitted memory to use for memtables. Cassandra will stop
 # accepting writes when the limit is exceeded until a flush completes,
@@ -390,6 +340,7 @@ concurrent_materialized_view_writes: 32
 # Options are:
 #   heap_buffers:    on heap nio buffers
 #   offheap_buffers: off heap (direct) nio buffers
+#   offheap_objects: native memory, eliminating nio buffer heap overhead
 memtable_allocation_type: heap_buffers
 
 # Total space to use for commit logs on disk.
@@ -438,12 +389,12 @@ trickle_fsync_interval_in_kb: 10240
 
 # TCP port, for commands and data
 # For security reasons, you should not expose this port to the internet.  Firewall it if needed.
-storage_port: ${storage_port}
+storage_port: 7000
 
 # SSL port, for encrypted communication.  Unused unless enabled in
 # encryption_options
 # For security reasons, you should not expose this port to the internet.  Firewall it if needed.
-ssl_storage_port: ${ssl_storage_port}
+ssl_storage_port: 7001
 
 # Address or interface to bind to and tell other Cassandra nodes to connect to.
 # You _must_ change this if you want multiple nodes to be able to communicate!
@@ -462,13 +413,21 @@ ssl_storage_port: ${ssl_storage_port}
 # you can specify which should be chosen using listen_interface_prefer_ipv6. If false the first ipv4
 # address will be used. If true the first ipv6 address will be used. Defaults to false preferring
 # ipv4. If there is only one address it will be selected regardless of ipv4/ipv6.
-listen_address: ${listen_address}
+listen_address: localhost
 # listen_interface: eth0
 # listen_interface_prefer_ipv6: false
 
 # Address to broadcast to other Cassandra nodes
 # Leaving this blank will set it to the same value as listen_address
 # broadcast_address: 1.2.3.4
+
+# When using multiple physical network interfaces, set this
+# to true to listen on broadcast_address in addition to
+# the listen_address, allowing nodes to communicate in both
+# interfaces.
+# Ignore this property if the network configuration automatically
+# routes  between the public and private networks such as EC2.
+# listen_on_broadcast_address: false
 
 # Internode authentication backend, implementing IInternodeAuthenticator;
 # used to allow/disallow connections from peer nodes.
@@ -480,15 +439,7 @@ listen_address: ${listen_address}
 start_native_transport: true
 # port for the CQL native transport to listen for clients on
 # For security reasons, you should not expose this port to the internet.  Firewall it if needed.
-native_transport_port: ${native_transport_port}
-# Enabling native transport encryption in client_encryption_options allows you to either use
-# encryption for the standard port or to use a dedicated, additional port along with the unencrypted
-# standard native_transport_port.
-# Enabling client encryption and keeping native_transport_port_ssl disabled will use encryption
-# for native_transport_port. Setting native_transport_port_ssl to a different value
-# from native_transport_port will use encryption for native_transport_port_ssl while
-# keeping native_transport_port unencrypted.
-# native_transport_port_ssl: 9142
+native_transport_port: 9042
 # The maximum threads for handling requests when the native transport is used.
 # This is similar to rpc_max_threads though the default differs slightly (and
 # there is no native_transport_min_threads, idle threads will always be stopped
@@ -528,7 +479,7 @@ start_rpc: false
 # you can specify which should be chosen using rpc_interface_prefer_ipv6. If false the first ipv4
 # address will be used. If true the first ipv6 address will be used. Defaults to false preferring
 # ipv4. If there is only one address it will be selected regardless of ipv4/ipv6.
-rpc_address: ${rpc_address}
+rpc_address: localhost
 # rpc_interface: eth1
 # rpc_interface_prefer_ipv6: false
 
@@ -689,7 +640,8 @@ sstable_preemptive_open_interval_in_mb: 50
 # this setting allows users to throttle inter dc stream throughput in addition
 # to throttling all network stream traffic as configured with
 # stream_throughput_outbound_megabits_per_sec
-# inter_dc_stream_throughput_outbound_megabits_per_sec:
+# When unset, the default is 200 Mbps or 25 MB/s
+# inter_dc_stream_throughput_outbound_megabits_per_sec: 200
 
 # How long the coordinator should wait for read operations to complete
 read_request_timeout_in_ms: 5000
@@ -871,6 +823,8 @@ server_encryption_options:
 # enable or disable client/server encryption.
 client_encryption_options:
     enabled: false
+    # If enabled and optional is set to true encrypted and unencrypted connections are handled.
+    optional: false
     keystore: conf/.keystore
     keystore_password: cassandra
     # require_client_auth: false
@@ -903,17 +857,14 @@ tracetype_repair_ttl: 604800
 # GC Pauses greater than gc_warn_threshold_in_ms will be logged at WARN level
 # Adjust the threshold based on your application throughput requirement
 # By default, Cassandra logs GC Pauses greater than 200 ms at INFO level
-gc_warn_threshold_in_ms: 1000
+# gc_warn_threshold_in_ms: 1000
 
 # UDFs (user defined functions) are disabled by default.
-# As of Cassandra 3.0 there is a sandbox in place that should prevent execution of evil code.
+# As of Cassandra 2.2, there is no security manager or anything else in place that
+# prevents execution of evil code. CASSANDRA-9402 will fix this issue for Cassandra 3.0.
+# This will inherently be backwards-incompatible with any 2.2 UDF that perform insecure
+# operations such as opening a socket or writing to the filesystem.
 enable_user_defined_functions: false
-
-# Enables scripted UDFs (JavaScript UDFs).
-# Java UDFs are always enabled, if enable_user_defined_functions is true.
-# Enable this option to be able to use UDFs with "language javascript" or any custom JSR-223 provider.
-# This option has no effect, if enable_user_defined_functions is false.
-enable_scripted_user_defined_functions: false
 
 # The default Windows kernel timer and scheduling resolution is 15.6ms for power conservation.
 # Lowering this value on Windows can provide much tighter latency and better throughput, however

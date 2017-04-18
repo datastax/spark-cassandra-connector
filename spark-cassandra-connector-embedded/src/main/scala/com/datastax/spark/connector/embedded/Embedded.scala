@@ -58,11 +58,12 @@ private[embedded] trait EmbeddedIO {
 
   /** Waits until a port at the given address is open or timeout passes.
     * @return true if managed to connect to the port, false if timeout happened first */
-  def waitForPortOpen(host: InetAddress, port: Int, timeout: Long): Boolean = {
+  def waitForPortOpen(host: InetAddress, port: Int, timeout: Long, stopIf: () => Boolean = () => false): Boolean = {
     val startTime = System.currentTimeMillis()
     val portProbe = Iterator.continually {
       Try {
         Thread.sleep(100)
+        if (stopIf()) throw new RuntimeException
         val socket = new Socket(host, port)
         socket.close()
       }

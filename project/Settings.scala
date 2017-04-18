@@ -70,6 +70,7 @@ object Settings extends Build {
     "-Xms256m",
     "-Xmx512m",
     "-Dsun.io.serialization.extendedDebugInfo=true",
+    s"-Dtest.cassandra.version=$cassandraTestVersion",
     s"-DbaseDir=${mainDir.getAbsolutePath}") ++ uRandomParams
 
   var TEST_ENV: Option[Map[String, String]] = None

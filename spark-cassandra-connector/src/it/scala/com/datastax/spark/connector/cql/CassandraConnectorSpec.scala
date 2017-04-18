@@ -9,7 +9,7 @@ case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
 class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig(Seq("cassandra-default.yaml.template"))
+  useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf)
 
   val conn = CassandraConnector(defaultConf)

@@ -2,6 +2,8 @@ package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
 
+import com.datastax.spark.connector.embedded.YamlTransformations.CassandraConfiguration
+
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
   * This is not thread safe, and test suites must not be run in parallel,
@@ -14,10 +16,11 @@ trait EmbeddedCassandra {
   /** Switches the Cassandra server to use the new configuration if the requested configuration
     * is different than the currently used configuration. When the configuration is switched, all
     * the state (including data) of the previously running cassandra cluster is lost.
+    *
     * @param configTemplates name of the cassandra.yaml template resources
     * @param forceReload if set to true, the server will be reloaded fresh
     *                    even if the configuration didn't change */
-  def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
+  def useCassandraConfig(configTemplates: Seq[YamlTransformations], forceReload: Boolean = false) {
     import com.datastax.spark.connector.embedded.EmbeddedCassandra._
     import com.datastax.spark.connector.embedded.UserDefinedProperty._
     require(hosts.isEmpty || configTemplates.size <= hosts.size,
@@ -26,20 +29,19 @@ trait EmbeddedCassandra {
     if (getProperty(HostProperty).isEmpty) {
       clearCache()
 
-      val templatePairs = configTemplates.zipAll(currentConfigTemplates, "missing value", null)
-      for (i <- cassandraRunners.indices.toSet -- configTemplates.indices.toSet) {
-        cassandraRunners.lift(i).flatten.foreach(_.destroy())
-        cassandraRunners = cassandraRunners.patch(i, Seq(None), 1)
+      val templatePairs = configTemplates.zipAll(currentConfigTemplates, null, null)
+      for (runnerToDestroy <- cassandraRunners.indices.toSet -- configTemplates.indices.toSet) {
+        cassandraRunners.lift(runnerToDestroy).flatten.foreach(_.destroy())
+        cassandraRunners = cassandraRunners.patch(runnerToDestroy, Seq(None), 1)
       }
       currentConfigTemplates = currentConfigTemplates.take(configTemplates.length)
       for (i <- configTemplates.indices) {
-        require(configTemplates(i) != null && configTemplates(i).trim.nonEmpty,
-          "Configuration template can't be null or empty")
+        require(configTemplates(i) != null, "Configuration template can't be null or empty")
 
-        if (templatePairs(i)._2 != templatePairs(i)._1 || forceReload) {
+        if (templatePairs(i)._2 != templatePairs(i)._1 || forceReload || templatePairs(i)._2 == null) {
           cassandraRunners.lift(i).flatten.foreach(_.destroy())
           cassandraRunners = cassandraRunners.patch(i,
-            Seq(Some(new CassandraRunner(configTemplates(i), getProps(i)))), 1)
+            Seq(Some(new CassandraRunner(configTemplates(i), getBaseYamlTransformer(i)))), 1)
           currentConfigTemplates = currentConfigTemplates.patch(i, Seq(configTemplates(i)), 1)
         }
       }
@@ -73,7 +75,7 @@ object EmbeddedCassandra {
 
   private[connector] var cassandraRunners: IndexedSeq[Option[CassandraRunner]] = IndexedSeq(None)
 
-  private[connector] var currentConfigTemplates: IndexedSeq[String] = IndexedSeq()
+  private[connector] var currentConfigTemplates: IndexedSeq[YamlTransformations] = IndexedSeq()
 
   private def countCommaSeparatedItemsIn(s: String): Int = s.count(_ == ',')
 
@@ -90,6 +92,21 @@ object EmbeddedCassandra {
       "listen_address" -> host,
       "cluster_name" -> getClusterName(index),
       "keystore_path" -> ClassLoader.getSystemResource("keystore").getPath)
+  }
+
+  def getBaseYamlTransformer(index: Integer): CassandraConfiguration = {
+    require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
+    val host = getHost(index).getHostAddress
+    YamlTransformations.CassandraConfiguration(
+      seeds = List.empty,
+      clusterName = getClusterName(index),
+      storagePort = cassandraPorts.getStoragePort(index),
+      sslStoragePort = cassandraPorts.getSslStoragePort(index),
+      nativeTransportPort = getPort(index),
+      rpcAddress = host,
+      listenAddress = host,
+      jmxPort = cassandraPorts.getJmxPort(index)
+    )
   }
 
   def getClusterName(index: Integer) = s"Test Cluster $index"
@@ -112,7 +129,5 @@ object EmbeddedCassandra {
       release()
     }
   }))
-
-
 
 }
