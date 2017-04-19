@@ -2,6 +2,8 @@
 ### [Spark Cassandra Connector Spark Packages Website](http://spark-packages.org/package/datastax/spark-cassandra-connector)
 Chat with us at [DataStax Academy #spark-cassandra-connector](#datastax-academy)
 
+[![Join the chat at https://gitter.im/datastax/spark-cassandra-connector](https://badges.gitter.im/datastax/spark-cassandra-connector.svg)](https://gitter.im/datastax/spark-cassandra-connector?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### Most Recent Release Scala Docs
 
 ### 2.0.1
