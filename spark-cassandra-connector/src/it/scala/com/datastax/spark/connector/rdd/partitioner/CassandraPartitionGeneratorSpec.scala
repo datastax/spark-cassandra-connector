@@ -1,13 +1,16 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import com.datastax.driver.core.Row
 import org.apache.cassandra.tools.NodeProbe
-import org.scalatest.{Inspectors, Matchers, FlatSpec}
-
+import org.scalatest.{FlatSpec, Inspectors, Matchers}
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{Schema, CassandraConnector}
-import com.datastax.spark.connector.embedded.{CassandraRunner, SparkTemplate, EmbeddedCassandra}
-import com.datastax.spark.connector.rdd.CqlWhereClause
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, SparkTemplate}
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.{Murmur3TokenFactory, RandomPartitionerTokenFactory}
+import com.datastax.spark.connector.rdd.{CqlWhereClause, ReadConf}
 import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
+
+import scala.collection.JavaConverters._
 
 class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase with Inspectors  {
@@ -18,6 +21,7 @@ class CassandraPartitionGeneratorSpec
   conn.withSessionDo { session =>
     createKeyspace(session)
     session.execute(s"CREATE TABLE $ks.empty(key INT PRIMARY KEY)")
+    session.execute(s"CREATE TABLE $ks.overflow(key INT PRIMARY KEY)")
   }
 
   // TODO: Currently CassandraPartitionGenerator uses a size-based algorithm that doesn't guarantee exact
@@ -79,4 +83,70 @@ class CassandraPartitionGeneratorSpec
     forAll (partToIndex) { case (part, index) => part.index should be (index) }
   }
 
+  it should "not fail if the sizeEstimates overflow" in {
+    val table = Schema.fromCassandra(conn, Some(ks), Some("overflow")).tables.head
+
+    fudgeSizeEstimatesTable("overflow", Long.MaxValue)
+    val partitions = CassandraPartitionGenerator(
+      conn,
+      table,
+      splitCount = None,
+      splitSize = ReadConf.SplitSizeInMBParam.default * 1024 * 1024).partitions
+
+    partitions.size should be >= 1
+    partitions.size should be <= conn.withClusterDo(_.getMetadata.getAllHosts.size * 2 + 5)
+  }
+
+  it should "fail fast if splitSize is 0" in {
+    val table = Schema.fromCassandra(conn, Some(ks), Some("overflow")).tables.head
+    intercept[IllegalArgumentException]{
+      CassandraPartitionGenerator(
+      conn,
+      table,
+      splitCount = None,
+      splitSize = 0)
+    }
+  }
+
+
+  /**
+    * Fudges the size estimates information for the given table
+    * Attempts to replace all records for existing ranges with a single record
+    * giving a mean size of sizeFudgeInMB
+    */
+  def fudgeSizeEstimatesTable(tableName: String, sizeFudgeInMB: Long) = {
+
+    val meta = conn.withClusterDo(_.getMetadata)
+    val tokenFactory = meta.getPartitioner match {
+      case "org.apache.cassandra.dht.RandomPartitioner" => RandomPartitionerTokenFactory
+      case "org.apache.cassandra.dht.Murmur3Partitioner" => Murmur3TokenFactory
+      case x => throw new IllegalArgumentException(x)
+    }
+
+    conn.withSessionDo { case session =>
+      session.execute(
+        """DELETE FROM system.size_estimates
+          |where keyspace_name = ?
+          |AND table_name = ?""".stripMargin, ks, "overflow")
+
+      session.execute(
+        """
+          |INSERT INTO system.size_estimates (
+          |  keyspace_name,
+          |  table_name,
+          |  range_start,
+          |  range_end,
+          |  mean_partition_size,
+          |  partitions_count)
+          |  VALUES (?,?,?,?,?,?)
+        """.
+          stripMargin,
+        ks,
+        tableName,
+        tokenFactory.minToken.toString,
+        tokenFactory.maxToken.toString,
+        sizeFudgeInMB * 1024 * 1024: java.lang.Long,
+        1L: java.lang.Long)
+      }
+    }
 }

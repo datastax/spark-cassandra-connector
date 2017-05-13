@@ -17,12 +17,12 @@ class Murmur3PartitionerTokenRangeSplitter(dataSize: Long)
   def split(range: TR, splitSize: Long): Seq[TR] = {
     val rangeSize = range.dataSize
     val rangeTokenCount = tokenFactory.distance(range.start, range.end)
-    val n = math.max(1, math.round(rangeSize.toDouble / splitSize).toInt)
+    val n = math.max(1, math.round(rangeSize.toDouble / splitSize))
 
     val left = range.start.value
     val right = range.end.value
     val splitPoints =
-      (for (i <- 0 until n) yield left + (rangeTokenCount * i / n).toLong) :+ right
+      (for (i <- 0L until n) yield left + (rangeTokenCount * i / n).toLong) :+ right
 
     for (Seq(l, r) <- splitPoints.sliding(2).toSeq) yield
       new TokenRange[Long, LongToken](
