@@ -30,6 +30,9 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   private val keyspaceName = tableDef.keyspaceName
   private val tableName = tableDef.tableName
 
+  if (splitSize == 0)
+    throw new IllegalArgumentException(s"Split Size Cannot be 0, Currently set to $splitSize")
+
   private val totalDataSize: Long = {
     // If we know both the splitCount and splitSize, we should pretend the total size of the data is
     // their multiplication. TokenRangeSplitter will try to produce splits of desired size, and this way
@@ -37,7 +40,24 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     // we just go to C* and read the estimated data size from an appropriate system table
     splitCount match {
       case Some(c) => c * splitSize
-      case None => new DataSizeEstimates(connector, keyspaceName, tableName).dataSizeInBytes
+      case None => {
+        val estimate = new DataSizeEstimates(connector, keyspaceName, tableName).dataSizeInBytes
+        if (estimate == Long.MaxValue || estimate < 0) {
+          val meta = connector.withClusterDo(_.getMetadata)
+          val local_dc = connector.closestLiveHost.getDatacenter
+          val endpoints = meta.getAllHosts.count(host => host.getDatacenter == local_dc)
+          val targetPartitionsAmount = (endpoints * 2 + 1)
+          logWarning(
+            s"""Size Estimates has overflowed and calculated that the data size is Infinite.
+              |Falling back to $targetPartitionsAmount (2 * EndpointsInDC + 1) Split Count.
+              |This is most likely occurring because you are reading size_estimates
+              |from a DataCenter which has very small primary ranges. Explicitly set
+              |the splitCount when reading to manually adjust this""".stripMargin)
+          targetPartitionsAmount * splitSize
+        } else {
+          estimate
+        }
+      }
     }
   }
 

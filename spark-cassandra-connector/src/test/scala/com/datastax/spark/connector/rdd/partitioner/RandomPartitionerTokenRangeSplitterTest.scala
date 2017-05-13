@@ -4,9 +4,9 @@ import java.net.InetAddress
 
 import org.junit.Assert._
 import org.junit.Test
-
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.RandomPartitionerTokenFactory
-import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, TokenFactory}
+import com.datastax.spark.connector.rdd.partitioner.dht.BigIntToken
+
 
 class RandomPartitionerTokenRangeSplitterTest {
 
@@ -87,5 +87,4 @@ class RandomPartitionerTokenRangeSplitterTest {
     assertNoHoles(out)
     assertSimilarSize(out)
   }
-
 }
