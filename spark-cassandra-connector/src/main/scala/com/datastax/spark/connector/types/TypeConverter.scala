@@ -473,11 +473,7 @@ object TypeConverter {
         val ld = x.toLocalDate
         LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
       }
-      case x: Date => {
-        val a = JodaLocalDate.fromDateFields(x)
-        val b = LocalDateConverter.convert(a)
-        b
-      }
+      case x: Date => convert(JodaLocalDate.fromDateFields(x))
     }
   }
 
@@ -486,6 +482,73 @@ object TypeConverter {
     def convertPF = {
       case x: Date => TimeUnit.MILLISECONDS.toNanos(x.getTime)
       case x: Long => x.toLong
+    }
+  }
+
+  private val JavaLocalDateTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.LocalDate]]
+  }
+
+  implicit object JavaLocalDateConverter extends NullableTypeConverter[java.time.LocalDate] {
+    def targetTypeTag = JavaLocalDateTypeTag
+
+    def convertPF = {
+      case x: java.time.LocalDate => x
+      case x: String => java.time.LocalDate.parse(x)
+      case x: Int => java.time.LocalDate.ofEpochDay(x)
+      case x: Long => java.time.LocalDate.ofEpochDay(x)
+      case x: JodaLocalDate => java.time.LocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      case x: DateTime => {
+        val ld = x.toLocalDate
+        java.time.LocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      }
+      case x: Date => convert(JodaLocalDate.fromDateFields(x))
+    }
+  }
+
+  private val JavaLocalTimeTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.LocalTime]]
+  }
+
+  implicit object JavaLocalTimeConverter extends NullableTypeConverter[java.time.LocalTime] {
+    def targetTypeTag = JavaLocalTimeTypeTag
+
+    def convertPF = {
+      case x: java.time.LocalTime => x
+      case x: String => java.time.LocalTime.parse(x)
+      case x: Long => java.time.LocalTime.ofNanoOfDay(x)
+      case x: Int => java.time.LocalTime.ofNanoOfDay(x)
+    }
+  }
+
+  private val JavaDurationTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.Duration]]
+  }
+
+  implicit object JavaDurationConverter extends NullableTypeConverter[java.time.Duration] {
+    def targetTypeTag = JavaDurationTypeTag
+
+
+    def convertPF = {
+      case x: java.time.Duration => x
+      case x: String => java.time.Duration.parse(x)
+      case x: Long => java.time.Duration.ofMillis(x)
+      case x: Int => java.time.Duration.ofMillis(x)
+    }
+  }
+
+  private val JavaInstantTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.Instant]]
+  }
+
+  implicit object JavaInstantConverter extends NullableTypeConverter[java.time.Instant] {
+    def targetTypeTag = JavaInstantTypeTag
+
+    def convertPF = {
+      case x: java.time.Instant => x
+      case x: String => java.time.Instant.parse(x)
+      case x: Long => java.time.Instant.ofEpochMilli(x)
+      case x: java.sql.Timestamp => x.toInstant
     }
   }
 
@@ -866,7 +929,11 @@ object TypeConverter {
     ByteArrayConverter,
     UDTValueConverter,
     LocalDateConverter,
-    TimeTypeConverter
+    TimeTypeConverter,
+    JavaLocalDateConverter,
+    JavaLocalTimeConverter,
+    JavaDurationConverter,
+    JavaInstantConverter
   )
 
   private val originalConverters = converters.toSet
@@ -963,6 +1030,11 @@ object TypeConverter {
     }
   }
 
+  def forType(cl: Class[_]): TypeConverter[_] = {
+    // scala reflection incorrectly returns Array[T] for byte[]. Force proper behaviour
+    if (cl == classOf[Array[Byte]]) forType(ByteArrayTypeTag)
+    else forType(runtimeMirror(cl.getClassLoader).classSymbol(cl).toType)
+  }
 
   /** Registers a custom converter */
   def registerConverter(c: TypeConverter[_]) {
