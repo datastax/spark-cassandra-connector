@@ -1350,8 +1350,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   "DataSize Estimates" should "handle overflows in the size estimates for a table" in {
-    fudgeSizeEstimatesTable("user", Long.MaxValue)
-    val partitions = sc.cassandraTable(ks, "user").partitions
+    fudgeSizeEstimatesTable("key_value", Long.MaxValue)
+    val partitions = sc.cassandraTable(ks, "key_value").partitions
     partitions.size should be <= (sc.defaultParallelism * 3)
   }
 
@@ -1370,7 +1370,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       session.execute(
         """DELETE FROM system.size_estimates
           |where keyspace_name = ?
-          |AND table_name = ?""".stripMargin, ks, "overflow")
+          |AND table_name = ?""".stripMargin, ks, tableName)
 
       session.execute(
         """
