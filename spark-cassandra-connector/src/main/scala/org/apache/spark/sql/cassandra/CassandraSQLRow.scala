@@ -67,11 +67,15 @@ object CassandraSQLRow {
       .getOrElse(PartialFunction.empty)
   }
 
-  private def toSparkSqlType(value: Any): AnyRef = {
+  def toSparkSqlType(value: Any): AnyRef = {
     val sparkSqlType: PartialFunction[Any, AnyRef] = customCatalystDataTypeConverter orElse {
       case date: Date => new Timestamp(date.getTime)
       case localDate: org.joda.time.LocalDate =>
         new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis)
+      case localDate: java.time.LocalDate => java.sql.Date.valueOf(localDate)
+      case localTime: java.time.LocalTime => localTime.toNanoOfDay.asInstanceOf[AnyRef]
+      case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
+      case instant: java.time.Instant => new java.sql.Timestamp(instant.toEpochMilli)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
