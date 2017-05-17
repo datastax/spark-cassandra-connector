@@ -9,6 +9,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
 import org.joda.time.{DateTime, LocalDate}
 
@@ -1346,5 +1347,49 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       (10, 11, Some("1011")),
       (10, 12, Some("1012")))
 
+  }
+
+  "DataSize Estimates" should "handle overflows in the size estimates for a table" in {
+    fudgeSizeEstimatesTable("key_value", Long.MaxValue)
+    val partitions = sc.cassandraTable(ks, "key_value").partitions
+    partitions.size should be <= (sc.defaultParallelism * 3)
+  }
+
+
+  /**
+    * Fudges the size estimates information for the given table
+    * Attempts to replace all records for existing ranges with a single record
+    * giving a mean size of sizeFudgeInMB
+    */
+  def fudgeSizeEstimatesTable(tableName: String, sizeFudgeInMB: Long) = {
+
+    val meta = conn.withClusterDo(_.getMetadata)
+    val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
+
+    conn.withSessionDo { case session =>
+      session.execute(
+        """DELETE FROM system.size_estimates
+          |where keyspace_name = ?
+          |AND table_name = ?""".stripMargin, ks, tableName)
+
+      session.execute(
+        """
+          |INSERT INTO system.size_estimates (
+          |  keyspace_name,
+          |  table_name,
+          |  range_start,
+          |  range_end,
+          |  mean_partition_size,
+          |  partitions_count)
+          |  VALUES (?,?,?,?,?,?)
+        """.
+          stripMargin,
+        ks,
+        tableName,
+        tokenFactory.minToken.toString,
+        tokenFactory.maxToken.toString,
+        sizeFudgeInMB * 1024 * 1024: java.lang.Long,
+        1L: java.lang.Long)
+    }
   }
 }
