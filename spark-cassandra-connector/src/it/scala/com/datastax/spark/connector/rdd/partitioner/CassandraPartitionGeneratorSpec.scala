@@ -1,9 +1,17 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.driver.core.Row
+import org.apache.cassandra.tools.NodeProbe
+import org.scalatest.{FlatSpec, Inspectors, Matchers}
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, SparkTemplate}
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.{Murmur3TokenFactory, RandomPartitionerTokenFactory}
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.rdd.{CqlWhereClause, ReadConf}
+import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
 import com.datastax.spark.connector.embedded.YamlTransformations
+
 
 class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase {

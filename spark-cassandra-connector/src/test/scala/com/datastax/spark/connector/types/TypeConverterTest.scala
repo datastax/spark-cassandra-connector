@@ -3,6 +3,7 @@ package com.datastax.spark.connector.types
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.{Date, GregorianCalendar, UUID}
 
@@ -236,6 +237,46 @@ class TypeConverterTest {
     val date = new Date(1482)
     assertEquals(targetTime, c.convert(targetTime))
     assertEquals(targetTime, c.convert(date))
+  }
+
+  @Test
+  def testJavaLocalDate(): Unit = {
+    val c = TypeConverter.forType(classOf[java.time.LocalDate])
+    val testDate = java.time.LocalDate.of(1985, 8, 3)
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    val date = dateFormat.parse("1985-08-03")
+    assertEquals(testDate, c.convert("1985-08-03"))
+    assertEquals(testDate, c.convert(5693))
+    assertEquals(testDate, c.convert(date))
+    assertEquals(testDate, c.convert(java.sql.Date.valueOf("1985-08-03")))
+    assertEquals(testDate, c.convert(new DateTime(date)))
+    assertEquals(testDate, c.convert(new org.joda.time.LocalDate(1985, 8, 3)))
+  }
+
+  @Test
+  def testJavaLocalTime(): Unit = {
+    val c = TypeConverter.forType(classOf[java.time.LocalTime])
+    val testTime = java.time.LocalTime.parse("10:15:30")
+    assertEquals(testTime, c.convert(testTime.toNanoOfDay))
+    assertEquals(testTime, c.convert("10:15:30"))
+  }
+
+  @Test
+  def testJavaDurationTypeTag(): Unit = {
+    val c = TypeConverter.forType(classOf[java.time.Duration])
+    val testDuration = java.time.Duration.parse("PT10S")
+    assertEquals(testDuration, c.convert(10000))
+    assertEquals(testDuration, c.convert("PT10S"))
+  }
+
+  @Test
+  def testJavaInstantTypeTag(): Unit = {
+    val c = TypeConverter.forType(classOf[java.time.Instant])
+    val testInstant = java.time.Instant.parse("2007-12-03T10:15:30.00Z")
+    val ms = testInstant.toEpochMilli
+    assertEquals(testInstant, c.convert(ms))
+    assertEquals(testInstant, c.convert(new Timestamp(ms)))
+    assertEquals(testInstant, c.convert("2007-12-03T10:15:30.00Z"))
   }
 
   @Test
@@ -523,5 +564,23 @@ class TypeConverterTest {
     assertEquals(2, chainedConverter2.convert("2"))
   }
 
-
+  @Test
+  def testJavaMapping (): Unit = {
+    assertEquals(TypeConverter.JavaBooleanConverter, TypeConverter.forType(classOf[java.lang.Boolean]))
+    assertEquals(TypeConverter.JavaShortConverter, TypeConverter.forType(classOf[java.lang.Short]))
+    assertEquals(TypeConverter.JavaIntConverter, TypeConverter.forType(classOf[java.lang.Integer]))
+    assertTrue(TypeConverter.forType(classOf[java.lang.Long]).isInstanceOf[ChainedTypeConverter[_]])
+    assertEquals(TypeConverter.JavaFloatConverter, TypeConverter.forType(classOf[java.lang.Float]))
+    assertEquals(TypeConverter.JavaDoubleConverter, TypeConverter.forType(classOf[java.lang.Double]))
+    assertEquals(TypeConverter.JavaBigDecimalConverter, TypeConverter.forType(classOf[java.math.BigDecimal]))
+    assertEquals(TypeConverter.JavaBigIntegerConverter, TypeConverter.forType(classOf[java.math.BigInteger]))
+    assertEquals(TypeConverter.JavaLocalDateConverter, TypeConverter.forType(classOf[java.time.LocalDate]))
+    assertEquals(TypeConverter.JavaLocalTimeConverter, TypeConverter.forType(classOf[java.time.LocalTime]))
+    assertEquals(TypeConverter.JavaDurationConverter, TypeConverter.forType(classOf[java.time.Duration]))
+    assertEquals(TypeConverter.JavaInstantConverter, TypeConverter.forType(classOf[java.time.Instant]))
+    assertEquals(TypeConverter.StringConverter, TypeConverter.forType(classOf[java.lang.String]))
+    assertEquals(TypeConverter.UUIDConverter, TypeConverter.forType(classOf[java.util.UUID]))
+    assertEquals(TypeConverter.InetAddressConverter, TypeConverter.forType(classOf[java.net.InetAddress]))
+    assertEquals(TypeConverter.ByteArrayConverter, TypeConverter.forType(classOf[Array[Byte]]))
+  }
 }

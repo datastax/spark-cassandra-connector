@@ -18,8 +18,18 @@ private[rdd] trait SplitSizeEstimator[R] {
 
   def estimateSplitCount(splitSize: Long): Int = {
     require(splitSize > 0, "Split size must be greater than zero.")
-    val splitCountEstimate = estimateDataSize / splitSize
-    Math.max(splitCountEstimate.toInt, minimalSplitCount)
+    if (estimateDataSize == Long.MaxValue || estimateDataSize < 0) {
+      logWarning(
+        s"""Size Estimates has overflowed and calculated that the data size is Infinite.
+        |Falling back to $minimalSplitCount (2 * SparkCores + 1) Split Count.
+        |This is most likely occurring because you are reading size_estimates
+        |from a DataCenter which has very small primary ranges. Explicitly set
+        |the splitCount when reading to manually adjust this.""".stripMargin)
+      minimalSplitCount
+    } else {
+      val splitCountEstimate = estimateDataSize / splitSize
+      Math.max(splitCountEstimate.toInt, minimalSplitCount)
+    }
   }
 
 }
