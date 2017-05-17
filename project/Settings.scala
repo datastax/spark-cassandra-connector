@@ -39,6 +39,7 @@ object Settings extends Build {
 
   val asfSnapshotsResolver = "ASF Snapshots" at "https://repository.apache.org/content/groups/snapshots"
   val asfStagingResolver = "ASF Staging" at "https://repository.apache.org/content/groups/staging"
+  val otherStaging = "Spark Staging" at "https://repository.apache.org/content/repositories/orgapachespark-1236/"
 
   def currentVersion = ("git describe --tags --match v*" !!).trim.substring(1)
 
@@ -148,7 +149,7 @@ object Settings extends Build {
       val dir = new File(".").toPath
       SparkInstaller(scalaBinaryVersion.value, dir)
     },
-    resolvers ++= Seq(mavenLocalResolver, asfStagingResolver, asfSnapshotsResolver),
+    resolvers ++= Seq(mavenLocalResolver, asfStagingResolver, asfSnapshotsResolver, otherStaging),
     update <<= (installSparkTask, update) map {(_, out) => out}
   )
 
