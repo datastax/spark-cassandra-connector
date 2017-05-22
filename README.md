@@ -1,7 +1,7 @@
 # Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](http://travis-ci.org/datastax/spark-cassandra-connector)
 ### [Spark Cassandra Connector Spark Packages Website](http://spark-packages.org/package/datastax/spark-cassandra-connector)
 
-Chat with us at [DataStax Academy's #spark-connector Slack channel](#Slack)
+Chat with us at [DataStax Academy's #spark-connector Slack channel](#slack)
 
 ### Most Recent Release Scala Docs
 
