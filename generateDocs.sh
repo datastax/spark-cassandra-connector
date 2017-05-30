@@ -15,9 +15,9 @@ for VERSION in $@ ;do
     sbt doc
     mkdir $OUTPUT/$VERSION
     
-    for FOLDER in $SCC_HOME/spark*; do
+    for MODULE in spark-cassandra-connector spark-cassandra-connector-embedded; do
+        FOLDER=$SCC_HOME/$MODULE
         echo "COPYING $FOLDER to $OUTPUT/$VERSION/$MODULE"
-        MODULE=$(basename $folder)
         cp -vr $FOLDER/target/scala-2.10/api $OUTPUT/$VERSION/$MODULE
     done
 done
