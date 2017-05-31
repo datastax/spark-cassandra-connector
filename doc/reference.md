@@ -21,8 +21,18 @@
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>connection.auth.username</code></td>
+  <td>None</td>
+  <td>Username used to authenticate against DSE.</td>
+</tr>
+<tr>
+  <td><code>connection.auth.password</code></td>
+  <td>None</td>
+  <td>Password used to authenticate against DSE.</td>
+</tr>
+<tr>
   <td><code>connection.compression</code></td>
-  <td></td>
+  <td>NONE</td>
   <td>Compression to use (LZ4, SNAPPY or NONE)</td>
 </tr>
 <tr>
