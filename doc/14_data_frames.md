@@ -22,6 +22,7 @@ Those followed with a default of N/A are required, all others are optional.
 | keyspace    | The keyspace where table is looked for                | String        | N/A      |
 | cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
 | pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
+| confirm.truncate | Confirm to truncate table when use Save.overwrite mode | (true,false) | false |
 
 ####Read, Writing and CassandraConnector Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing

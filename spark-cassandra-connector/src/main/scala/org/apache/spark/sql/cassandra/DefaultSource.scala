@@ -105,7 +105,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 }
 
 /** Store data source options */
-case class CassandraSourceOptions(pushdown: Boolean = true, cassandraConfs: Map[String, String] = Map.empty)
+case class CassandraSourceOptions(pushdown: Boolean = true, confirmTruncate: Boolean = false, cassandraConfs: Map[String, String] = Map.empty)
 
 object DefaultSource {
   val CassandraDataSourceTableNameProperty = "table"
@@ -113,6 +113,7 @@ object DefaultSource {
   val CassandraDataSourceClusterNameProperty = "cluster"
   val CassandraDataSourceUserDefinedSchemaNameProperty = "schema"
   val CassandraDataSourcePushdownEnableProperty = "pushdown"
+  val CassandraDataSourceConfirmTruncateProperty = "confirm.truncate"
   val CassandraDataSourceProviderPackageName = DefaultSource.getClass.getPackage.getName
   val CassandraDataSourceProviderClassName = CassandraDataSourceProviderPackageName + ".DefaultSource"
 
@@ -123,9 +124,10 @@ object DefaultSource {
     val keyspaceName = parameters(CassandraDataSourceKeyspaceNameProperty)
     val clusterName = parameters.get(CassandraDataSourceClusterNameProperty)
     val pushdown : Boolean = parameters.getOrElse(CassandraDataSourcePushdownEnableProperty, "true").toBoolean
+    val confirmTruncate : Boolean = parameters.getOrElse(CassandraDataSourceConfirmTruncateProperty, "false").toBoolean
     val cassandraConfs = buildConfMap(parameters)
 
-    (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, cassandraConfs))
+    (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, confirmTruncate, cassandraConfs))
   }
 
   val confProperties = ReadConf.Properties.map(_.name) ++
