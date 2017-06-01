@@ -158,9 +158,14 @@ class TypeConverterTest {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     val utilDate = dateFormat.parse("2014-04-23")
 
+    assertEquals(targetDate, c.convert("2014-04-23"))
     assertEquals(targetDate, c.convert(localDate))
     assertEquals(targetDate, c.convert(jodaLocalDate))
     assertEquals(targetDate, c.convert(utilDate))
+
+    val targetYear = java.sql.Date.valueOf("2014-01-01")
+    assertEquals(targetYear, c.convert("2014"))
+
   }
 
   @Test

@@ -8,11 +8,9 @@ import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.tuple
 import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
-
 import com.datastax.driver.core.LocalDate
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
@@ -333,6 +331,7 @@ object TypeConverter {
     def targetTypeTag = SqlDateTypeTag
 
     def convertPF = {
+      case x: String => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: Date => new java.sql.Date(x.getTime)
       case x: LocalDate => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: JodaLocalDate => new java.sql.Date(x.toDateTimeAtStartOfDay.getMillis)
@@ -355,9 +354,10 @@ object TypeConverter {
   implicit object JodaLocalDateConverter extends NullableTypeConverter[JodaLocalDate] {
     def targetTypeTag = JodaLocalDateTypeTag
     def convertPF = {
+      case x: String => JodaLocalDate.fromDateFields(TimestampParser.parse(x))
       case x: JodaLocalDate => x
       case x: LocalDate => new JodaLocalDate(x.getYear, x.getMonth, x.getDay)
-      case x: java.sql.Date => JodaLocalDate.fromDateFields(x)
+      case x: java.util.Date => JodaLocalDate.fromDateFields(x)
     }
   }
 

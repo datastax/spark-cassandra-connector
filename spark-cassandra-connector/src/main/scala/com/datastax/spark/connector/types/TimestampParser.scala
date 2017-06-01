@@ -39,7 +39,8 @@ object TimestampParser {
     "yyyy-MM-dd'T'HH:mm:ss.SSS",
     "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
     "yyyy-MM-dd",
-    "yyyy-MM-ddZ")
+    "yyyy-MM-ddZ",
+    "yyyy")
 
   private val parsers =
     dateStringPatterns.map(DateTimeFormat.forPattern)
