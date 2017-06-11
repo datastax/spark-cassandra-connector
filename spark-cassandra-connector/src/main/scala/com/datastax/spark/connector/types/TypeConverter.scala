@@ -2,6 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.time.{ZoneId, LocalDate => JavaLocalDate}
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
@@ -320,6 +321,7 @@ object TypeConverter {
       case x: LocalDate => DateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: String => TimestampParser.parse(x)
       case x: JodaLocalDate => x.toDateTimeAtStartOfDay.toDate
+      case x: JavaLocalDate => Date.from(x.atStartOfDay(ZoneId.systemDefault()).toInstant)
     }
   }
 
@@ -335,6 +337,7 @@ object TypeConverter {
       case x: Date => new java.sql.Date(x.getTime)
       case x: LocalDate => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: JodaLocalDate => new java.sql.Date(x.toDateTimeAtStartOfDay.getMillis)
+      case x: JavaLocalDate => new java.sql.Date(x.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli)
     }
   }
 
@@ -469,6 +472,7 @@ object TypeConverter {
       case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: JodaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      case x: JavaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthValue, x.getDayOfMonth)
       case x: DateTime => {
         val ld = x.toLocalDate
         LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
@@ -486,21 +490,21 @@ object TypeConverter {
   }
 
   private val JavaLocalDateTypeTag = SparkReflectionLock.synchronized {
-    implicitly[TypeTag[java.time.LocalDate]]
+    implicitly[TypeTag[JavaLocalDate]]
   }
 
-  implicit object JavaLocalDateConverter extends NullableTypeConverter[java.time.LocalDate] {
+  implicit object JavaLocalDateConverter extends NullableTypeConverter[JavaLocalDate] {
     def targetTypeTag = JavaLocalDateTypeTag
 
     def convertPF = {
-      case x: java.time.LocalDate => x
-      case x: String => java.time.LocalDate.parse(x)
-      case x: Int => java.time.LocalDate.ofEpochDay(x)
-      case x: Long => java.time.LocalDate.ofEpochDay(x)
-      case x: JodaLocalDate => java.time.LocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      case x: JavaLocalDate => x
+      case x: String => JavaLocalDate.parse(x)
+      case x: Int => JavaLocalDate.ofEpochDay(x)
+      case x: Long => JavaLocalDate.ofEpochDay(x)
+      case x: JodaLocalDate => JavaLocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
       case x: DateTime => {
         val ld = x.toLocalDate
-        java.time.LocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+        JavaLocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
       }
       case x: Date => convert(JodaLocalDate.fromDateFields(x))
     }
