@@ -17,12 +17,13 @@ DataSources in Spark take a map of Options which define how the source should ac
 Connector provides a CassandraSource which recognizes the following key/value pairs.
 Those followed with a default of N/A are required, all others are optional.
 
-| Option Key  | Controls                                                     | Values        | Default  |
-|-------------|--------------------------------------------------------------|---------------|----------|
-| table       | The Cassandra table to connect to                            | String        | N/A      |
-| keyspace    | The keyspace where table is looked for                       | String        | N/A      |
-| cluster     | The group of the Cluster Level Settings to inherit           | String        | "default"|
-| pushdown    | Enables pushing down predicates to Cassandra when applicable | (true,false)  | true     |
+| Option Key  | Controls                                              | Values        | Default  |
+|-------------|-------------------------------------------------------|---------------|----------|
+| table       | The Cassandra table to connect to                     | String        | N/A      |
+| keyspace    | The keyspace where table is looked for                | String        | N/A      |
+| cluster     | The group of the Cluster Level Settings to inherit    | String        | "default"|
+| pushdown    | Enables pushing down predicates to C* when applicable | (true,false)  | true     |
+| confirm.truncate | Confirm to truncate table when use Save.overwrite mode | (true,false) | false |
 
 #### General Read, Write and Connection Options
 Any normal Spark Connector configuration options for Connecting, Reading or Writing

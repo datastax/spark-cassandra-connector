@@ -1,6 +1,8 @@
 2.0.2
-  * Protect against Size Estimate Overflows (SPARKC-492)
-  * Add java.time classes support to converters and sparkSQL (SPARKC-491)
+  * Protect against Size Estimate Overflows
+(SPARKC-492)
+  * Add java.time classes support to converters and sparkSQL
+(SPARKC-491)
   * Allow Writes to Static Columnns and Partition Keys (SPARKC-470)
 
 2.0.1
@@ -47,6 +49,10 @@
     - Update plugins and Scala version
 
 ********************************************************************************
+
+1.6.7
+* Protect against overflows in Size Estimates (SPARKC-492)
+* Confirm truncation with datasource writes (SPARKC-472)
 
 1.6.6
 * Allow Writes to Static Columns and Partition Keys (SPARKC-470)

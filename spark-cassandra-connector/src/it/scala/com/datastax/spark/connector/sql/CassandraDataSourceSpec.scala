@@ -91,7 +91,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   override def afterEach(): Unit ={
-     sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
+    sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
   }
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
@@ -102,7 +102,8 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
         |OPTIONS (
         | table "$table",
         | keyspace "$keyspace",
-        | pushdown "$pushDown")
+        | pushdown "$pushDown",
+        | confirm.truncate "true")
       """.stripMargin.replaceAll("\n", " "))
   }
 
@@ -162,7 +163,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "test_insert2", "keyspace" -> ks))
+      .options(Map("table" -> "test_insert2", "keyspace" -> ks, "confirm.truncate" -> "true"))
       .save()
     createTempTable(ks, "test_insert2", "insertTable2")
     sparkSession.sql("SELECT * FROM insertTable2").collect() should have length 1
@@ -198,7 +199,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     df.write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "df_test", "keyspace" -> ks))
+      .options(Map("table" -> "df_test", "keyspace" -> ks, "confirm.truncate" -> "true"))
       .save()
     cassandraTable(TableRef("df_test", ks)).collect() should have length 1
   }
@@ -213,9 +214,30 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     df.write
       .format("org.apache.spark.sql.cassandra")
       .mode(Overwrite)
-      .options(Map("table" -> "df_test2", "keyspace" -> ks))
+      .options(Map("table" -> "df_test2", "keyspace" -> ks, "confirm.truncate" -> "true"))
       .save()
     cassandraTable(TableRef("df_test2", ks)).collect() should have length 1
+  }
+
+  it should "throws exception during overwriting a table when confirm.truncate is false" in {
+    val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
+    val ss = sparkSession
+    import ss.implicits._
+
+    val df = sc.parallelize(Seq(test_df)).toDF
+
+    val message = intercept[UnsupportedOperationException] {
+      df.write
+        .format("org.apache.spark.sql.cassandra")
+        .mode(Overwrite)
+        .options(Map("table" -> "df_test2", "keyspace" -> ks, "confirm.truncate" -> "false"))
+        .save()
+    }.getMessage
+
+    assert(
+      message.contains("You are attempting to use overwrite mode"),
+      "Exception should be thrown when  attempting to overwrite a table if confirm.truncate is false")
+
   }
 
   it should "apply user custom predicates which erase basic pushdowns" in {
