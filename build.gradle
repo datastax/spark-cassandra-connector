@@ -1,0 +1,127 @@
+/*
+ * Copyright DataStax, Inc.
+ *
+ * Please see the included license file for details.
+ */
+
+apply plugin: 'scala'
+
+sourceSets {
+    // enable joint compilation
+    main {
+        java.srcDirs = []
+        scala {
+            srcDirs += "src/main/java"
+        }
+    }
+    test {
+        java.srcDirs = []
+        scala {
+            srcDirs += "src/test/java"
+            srcDirs += "src/it/java"
+            srcDirs += "src/it/scala"
+        }
+        resources.srcDirs += "src/it/resources"
+    }
+}
+
+dependencies {
+
+    def commonExcludes = {
+        exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.sun.jersey'
+        exclude group: 'commons-io', module: 'commons-io'
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'io.dropwizard.metrics'
+        exclude group: 'io.netty'
+        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'jline', module: 'jline'
+
+        exclude group: 'net.java.dev.jets3t', module: 'jets3t'
+        exclude group: 'net.java.dev.jna', module: 'jna'
+        exclude group: 'org.apache.avro', module: 'avro-ipc'
+        exclude group: 'org.apache.cassandra', module: 'cassandra-all'
+        exclude group: 'org.apache.cassandra', module: 'cassandra-thrift'
+        exclude group: 'org.apache.curator'
+        exclude group: 'org.jboss.netty'
+        exclude group: 'org.scala-lang'
+        exclude group: 'org.scalacheck', module: "scalacheck_${scalaLibVersion}"
+        exclude group: 'org.scalatest', module: "scalatest_${scalaLibVersion}"
+        exclude group: 'org.slf4j'
+        exclude group: 'org.xerial.snappy', module: 'snappy-java'
+
+        exclude module: 'jackson-mapper-asl'
+        exclude module: 'paranamer'
+        exclude module: 'py4j'
+    }
+
+    def hadoopExcludes = {
+        exclude group: 'org.apache.hadoop'
+    }
+
+    def sparkExcludes = commonExcludes << hadoopExcludes
+
+    compile "org.scala-lang:scala-compiler:${scalaVersion}"
+    compile "org.scala-lang:scala-library:${scalaVersion}"
+    compile "org.scala-lang:scala-reflect:${scalaVersion}"
+
+    compile "com.datastax.dse:dse-java-driver-core:${cassandraDseJavaDriverVersion}"
+    compile "com.datastax.dse:dse-java-driver-mapping:${cassandraDseJavaDriverVersion}"
+
+    compile("org.apache.hadoop:hadoop-client:${hadoopVersion}", commonExcludes)
+
+    compile "org.joda:joda-convert:${jodaConvertVersion}"
+    compile "joda-time:joda-time:${jodaTimeVersion}"
+
+    compile("com.google.guava:guava:${guavaVersion}")
+    compile("com.thoughtworks.paranamer:paranamer:${paranamerVersion}")
+
+    compile("com.datastax.spark:spark-core_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-catalyst_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-hive_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-sql_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compile("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+
+    compile "com.esotericsoftware:kryo:${kryoVersion}"
+    compile "com.typesafe:config:${typesafeConfigVersion}"
+
+    compile "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}"
+    compile "commons-codec:commons-codec:${commonsCodecVersion}"
+    compile "commons-configuration:commons-configuration:${commonsConfigurationVersion}"
+    compile "commons-io:commons-io:${commonsIoVersion}"
+
+    compile "org.eclipse.jetty.aggregate:jetty-all:${jettyVersion}"
+
+    compile "io.dropwizard.metrics:metrics-core:${codahaleMetricsVersion}"
+    compile "io.dropwizard.metrics:metrics-jvm:${codahaleMetricsVersion}"
+    compile "io.dropwizard.metrics:metrics-json:${codahaleMetricsVersion}"
+    compile "io.netty:netty-all:${nettyVersion}"
+
+    compile "org.scala-lang.modules:scala-parser-combinators_${scalaLibVersion}:${scalaParserCombinatorsVersion}"
+
+    compile("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${sparkFasterxmlJacksonVersion}") { force = true }
+
+    testCompile(project(':dse-core'))
+    testCompile(project(path: ':dse-core', configuration: 'testOutput'))
+
+    testCompile "org.scalacheck:scalacheck_${scalaLibVersion}:${scalaCheckVersion}"
+    testCompile "org.scalamock:scalamock-scalatest-support_${scalaLibVersion}:${scalaMockVersion}"
+
+    testCompile(group: "com.datastax.spark", name: "spark-core_${scalaLibVersion}", version: "${sparkVersion}", classifier: 'tests', sparkExcludes)
+    testCompile(group: "com.datastax.spark", name: "spark-streaming_${scalaLibVersion}", version: "${sparkVersion}", classifier: 'tests', sparkExcludes)
+
+    testRuntime 'log4j:log4j:1.2.17'
+
+}
+
+compileTestScala {
+    dependsOn ':test-support:jar'
+    doFirst {
+        scalaCompileOptions.additionalParameters = ["-Xplugin:${project(':test-support').jar.archivePath}".toString()]
+    }
+}
+
+rootProject.test.tasks << test
