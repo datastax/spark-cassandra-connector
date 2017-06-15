@@ -25,6 +25,17 @@ trait EmbeddedCassandra {
       (major == cassandraMajorVersion && minor <= cassandraMinorVersion)
   }
 
+  val templateDir = {
+    if (cassandraMajorVersion >= 3) {
+      cassandraMajorVersion.toString
+    } else {
+      s"$cassandraMajorVersion.$cassandraMinorVersion"
+    }
+  }
+
+  def getVersionedConfigTemplate(templateFile: String) = {
+    Paths.get(templateDir, templateFile).toString
+  }
 
   /** Switches the Cassandra server to use the new configuration if the requested configuration
     * is different than the currently used configuration. When the configuration is switched, all
@@ -32,7 +43,8 @@ trait EmbeddedCassandra {
     *
     * @param configTemplates name of the cassandra.yaml template resources
     * @param forceReload if set to true, the server will be reloaded fresh
-    *                    even if the configuration didn't change */
+    *                    even if the configuration didn't change
+    **/
   def useCassandraConfig(configTemplates: Seq[String], forceReload: Boolean = false) {
     import com.datastax.spark.connector.embedded.EmbeddedCassandra._
     import com.datastax.spark.connector.embedded.UserDefinedProperty._
@@ -40,16 +52,7 @@ trait EmbeddedCassandra {
       "Configuration templates can't be more than the number of specified hosts")
 
 
-    val templateDir = {
-      if (cassandraMajorVersion >= 3) {
-        cassandraMajorVersion.toString
-      } else {
-        s"$cassandraMajorVersion.$cassandraMinorVersion"
-      }
-    }
-
-    val versionedConfigTemplates = configTemplates.map( templateFile =>
-      Paths.get(templateDir, templateFile).toString)
+    val versionedConfigTemplates = configTemplates.map(getVersionedConfigTemplate)
 
 
     if (getProperty(HostProperty).isEmpty) {
@@ -111,7 +114,7 @@ object EmbeddedCassandra {
   def getProps(index: Integer): Map[String, String] = {
     require(hosts.isEmpty || index < hosts.length, s"$index index is overflow the size of ${hosts.length}")
     val host = getHost(index).getHostAddress
-    Map(
+    val settings = Map(
       "seeds" -> "",
       "storage_port" -> cassandraPorts.getStoragePort(index).toString,
       "ssl_storage_port" -> cassandraPorts.getSslStoragePort(index).toString,
@@ -122,12 +125,13 @@ object EmbeddedCassandra {
       "cluster_name" -> getClusterName(index),
       "keystore_path" -> ClassLoader.getSystemResource("keystore").getPath,
       "truststore_path" -> ClassLoader.getSystemResource("truststore").getPath)
+    settings
   }
 
   def getClusterName(index: Integer) = s"Test Cluster $index"
 
   def getHost(index: Integer): InetAddress =
-    if (hosts.isEmpty) InetAddress.getByName("127.0.0.1") else hosts(index)
+    if (hosts.isEmpty) InetAddress.getByName(s"127.0.0.1") else hosts(index)
 
   def getPort(index: Integer): Int = cassandraPorts.getRpcPort(index)
 

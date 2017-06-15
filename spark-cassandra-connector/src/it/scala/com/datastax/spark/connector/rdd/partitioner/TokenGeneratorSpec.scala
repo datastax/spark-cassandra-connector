@@ -5,7 +5,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.cql.Schema
 import com.datastax.driver.core.Token
 import com.datastax.spark.connector.writer.RowWriterFactory
-import org.scalatest.Inspectors
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
