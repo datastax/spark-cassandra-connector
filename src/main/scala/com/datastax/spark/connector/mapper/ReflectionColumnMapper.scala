@@ -71,6 +71,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
         val paramNames = paranamer.lookupParameterNames(ctor)
         paramNames
           .filter(_ != "$_outer")
+          .filter(!_.startsWith("this$"))
           .map(columnRefOrThrow)
       }
     }
