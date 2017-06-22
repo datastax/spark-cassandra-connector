@@ -43,9 +43,7 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "ignore null values if ignoreNulls is set and protocol version >= 4" in {
-    val testProtocols = (ProtocolVersion.V4.toInt to ProtocolVersion.NEWEST_SUPPORTED.toInt)
-      .map(ProtocolVersion.fromInt(_))
-
+    val testProtocols = Seq(ProtocolVersion.V4, ProtocolVersion.V5, ProtocolVersion.DSE_V1)
     for (testProtocol <- testProtocols) {
       val bsb = new BoundStatementBuilder(
         rowWriter,
