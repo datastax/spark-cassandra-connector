@@ -7,7 +7,7 @@ import scala.collection.JavaConversions._
 
 class DocCheck extends SparkCassandraITFlatSpecBase{
 
-  val pwd = System.getenv("PWD")
+  val subprojectRoot = System.getenv("PWD") + "/spark-connector"
 
   val reRunMessage =
     """******* re-run sbt spark-cassandra-connector-unshaded/run to regenerate properties file
@@ -15,7 +15,7 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
     """.stripMargin
 
   "The Reference Doc File" should "contain all of the current properties" in withClue(reRunMessage){
-    val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
+    val refFile = scala.io.Source.fromFile(new File(s"$subprojectRoot/doc/reference.md")).mkString
 
     val missingProperties =
       for (propertyName <- ConfigCheck.validStaticPropertyNames
@@ -27,14 +27,14 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
   }
 
   "it" should "match a freshly created reference file" in withClue(reRunMessage){
-    val refFile = scala.io.Source.fromFile(new File(s"$pwd/doc/reference.md")).mkString
+    val refFile = scala.io.Source.fromFile(new File(s"$subprojectRoot/doc/reference.md")).mkString
     RefBuilder.getMarkDown() should be(refFile)
 
   }
 
   case class ParameterFound (parameter: String, fileName : String)
   "The Docs" should "only reference current parameters" in {
-    val docFiles = new java.io.File(s"$pwd/doc").listFiles()
+    val docFiles = new java.io.File(s"$subprojectRoot/doc").listFiles()
     val allDocs = docFiles.map( file => (file, scala.io.Source.fromFile(file).mkString))
 
     val SparkParamRegex = """spark\.cassandra\.\w+""".r.unanchored
