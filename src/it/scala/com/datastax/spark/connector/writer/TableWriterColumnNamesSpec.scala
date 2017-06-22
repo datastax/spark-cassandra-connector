@@ -17,7 +17,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     session.execute(s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
   }
 
-  before {
+  beforeTest {
     conn.withSessionDo { session =>
       session.execute(s"""TRUNCATE $ks.key_value""")
     }
