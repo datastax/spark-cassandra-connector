@@ -129,7 +129,7 @@ object AnyObjectFactory extends Logging {
   private[connector] def resolveConstructor[T](clazz: Class[T]): Constructor[T] = {
     lazy val defaultCtor = Try {
       val ctor = getDefaultConstructor(clazz)
-      logDebug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getSimpleName)} for ${clazz.getName}")
+      logDebug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getName)} for ${clazz.getName}")
       ctor
     }
 
