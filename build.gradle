@@ -62,9 +62,9 @@ dependencies {
 
     def sparkExcludes = commonExcludes << hadoopExcludes
 
-    compile "org.scala-lang:scala-compiler:${scalaVersion}"
-    compile "org.scala-lang:scala-library:${scalaVersion}"
-    compile "org.scala-lang:scala-reflect:${scalaVersion}"
+    compile("org.scala-lang:scala-compiler:${scalaVersion}") { force = true }
+    compile("org.scala-lang:scala-library:${scalaVersion}") { force = true }
+    compile("org.scala-lang:scala-reflect:${scalaVersion}") { force = true }
 
     compile "com.datastax.dse:dse-java-driver-core:${cassandraDseJavaDriverVersion}"
     compile "com.datastax.dse:dse-java-driver-mapping:${cassandraDseJavaDriverVersion}"
