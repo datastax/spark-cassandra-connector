@@ -24,10 +24,7 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase {
     session.prepare( s"""INSERT INTO "$ks".tab (id, value) VALUES (?, ?) """))
 
   "BoundStatementBuilder" should "ignore Unset values if ProtocolVersion >= 4" in {
-    val testProtocols = (ProtocolVersion.V4.toInt to ProtocolVersion.NEWEST_SUPPORTED.toInt)
-      .map(ProtocolVersion.fromInt(_))
-
-    for (testProtocol <- testProtocols) {
+    for (testProtocol <- Seq(ProtocolVersion.V4, ProtocolVersion.V5, ProtocolVersion.DSE_V1)) {
       val bsb = new BoundStatementBuilder(rowWriter, ps, protocolVersion = testProtocol)
       val x = bsb.bind((1, CassandraOption.Unset))
       withClue(s"$testProtocol should ignore unset values :")(x.isSet("value") should be(false))
