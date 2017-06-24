@@ -47,15 +47,8 @@ object YamlTransformations {
 
   private def readTemplate(): JMap[String, AnyRef]@unchecked = {
     val templatePackage = "com/datastax/spark/connector/embedded/"
-    val exactTmplt =
-      Option(ClassLoader.getSystemResourceAsStream(s"$templatePackage/cassandra-$YamlTemplateVersion.yaml.template"))
-    lazy val fallbackTmplt = {
-      System.err.println(s"Warning: Using fallback template for Cassandra 3.2 because " +
-        s"the template for Cassandra $YamlTemplateVersion could not be found.")
-      Option(ClassLoader.getSystemResourceAsStream(s"$templatePackage/cassandra.yaml.template"))
-    }
-
-    yaml.load(exactTmplt orElse fallbackTmplt orNull) match {
+    val template = ClassLoader.getSystemResourceAsStream(s"$templatePackage/cassandra.yaml.template")
+    yaml.load(template) match {
       case map: JMap[String, AnyRef]@unchecked => map
     }
   }
