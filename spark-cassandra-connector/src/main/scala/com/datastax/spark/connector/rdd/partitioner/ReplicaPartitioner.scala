@@ -67,18 +67,18 @@ implicit
     key match {
       case key: T if clazz.isInstance(key) =>
         //Only use ReplicaEndpoints in the connected DC
-        val token = tokenGenerator.getTokenFor(key)
-        val tokenHash = Math.abs(token.hashCode())
+        val routingKey = tokenGenerator.getSerializedRoutingKeyFor(key)
+        val routingKeyHash = Math.abs(routingKey.hashCode())
         val replicas = metadata
-          .getReplicas(keyspace, token.serialize(protocolVersion))
+          .getReplicas(keyspace, routingKey)
           .map(_.getBroadcastAddress)
 
         val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {
-          val endpoint = replicaSetInDC(absModulo(tokenHash, replicaSetInDC.size))
-          hostMap(endpoint)(absModulo(tokenHash, partitionsPerReplicaSet))
+          val endpoint = replicaSetInDC(absModulo(routingKeyHash, replicaSetInDC.size))
+          hostMap(endpoint)(absModulo(routingKeyHash, partitionsPerReplicaSet))
         } else {
-          hostMap(randomHost(tokenHash))(absModulo(tokenHash, partitionsPerReplicaSet))
+          hostMap(randomHost(routingKeyHash))(absModulo(routingKeyHash, partitionsPerReplicaSet))
         }
       case _ => throw new IllegalArgumentException(
         "ReplicaPartitioner can only determine the partition of a tuple whose key is a non-empty Set[InetAddress]. " +

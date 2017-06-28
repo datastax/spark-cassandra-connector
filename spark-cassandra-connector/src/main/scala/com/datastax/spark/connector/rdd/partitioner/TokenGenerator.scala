@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import java.nio.ByteBuffer
+
 import com.datastax.driver.core.{Token, MetadataHook}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.PatitionKeyTools._
@@ -34,5 +36,9 @@ private[connector] class TokenGenerator[T] (
 
   def getTokenFor(key: T): Token = {
     MetadataHook.newToken(metadata, routingKeyGenerator.apply(boundStmtBuilder.bind(key)))
+  }
+
+  def getSerializedRoutingKeyFor(key: T): ByteBuffer = {
+    routingKeyGenerator(boundStmtBuilder.bind(key))
   }
 }
