@@ -6,6 +6,10 @@
 
 apply plugin: 'scala'
 
+configurations {
+    testCompile.extendsFrom compileOnly
+}
+
 sourceSets {
     // enable joint compilation
     main {
@@ -77,13 +81,13 @@ dependencies {
     compile("com.google.guava:guava:${guavaVersion}")
     compile("com.thoughtworks.paranamer:paranamer:${paranamerVersion}")
 
-    compile("com.datastax.spark:spark-core_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-catalyst_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-hive_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-sql_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compile("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-core_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-catalyst_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-hive_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-sql_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    compileOnly("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
 
     compile "com.esotericsoftware:kryo:${kryoVersion}"
     compile "com.typesafe:config:${typesafeConfigVersion}"
