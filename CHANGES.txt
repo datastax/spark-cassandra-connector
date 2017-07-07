@@ -1,3 +1,11 @@
+2.0.3
+ * Includes patches up to 1.6.8
+
+2.0.2
+ * Protect against Size Estimate Overflows (SPARKC-492)
+ * Add java.time classes support to converters and sparkSQL(SPARKC-491)
+ * Allow Writes to Static Columnns and Partition Keys (SPARKC-470)
+
 2.0.1
  * Refactor Custom Scan Method (SPARKC-481)
 
