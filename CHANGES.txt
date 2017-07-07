@@ -1,3 +1,7 @@
+1.6.8
+* Fix ReplicaPartitioner Endpoint Call (SPARKC-485)
+* MultipleRetryPolicy should retry with null (SPARKC-494)
+
 1.6.7
 * Protect against overflows in Size Estimates (SPARKC-492)
 * Confirm truncation with datasource writes (SPARKC-472)
