@@ -58,7 +58,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
   val location = Thread.currentThread().getStackTrace
     .filter(_.getClassName.startsWith("com.datastax")).lastOption
     .map(ste => s"   at ${ste.getFileName}:${ste.getLineNumber} (${ste.getClassName}.${ste.getMethodName}").getOrElse("")
-  println(s"--------======== Starting Embedded Cassandra on port ${props.get("native_transport_port").get} ========--------\n$location")
+  println(s"--------======== Starting Embedded Cassandra ${props.get("listen_address")} on port ${props.get("native_transport_port").get} ========--------\n$location")
 
   private[embedded] val process = new ProcessBuilder()
     .command(javaBin,
@@ -75,7 +75,7 @@ private[connector] class CassandraRunner(val configTemplate: String, props: Map[
     throw new IOException("Failed to start Cassandra.")
 
   def destroy() {
-    System.err.println(s"========-------- Stopping Embedded Cassandra at ${props.get("native_transport_port").get} --------========")
+    System.err.println(s"========-------- Stopping Embedded Cassandra  ${props.get("listen_address")} on port ${props.get("native_transport_port").get} --------========")
     process.destroy()
     process.waitFor()
     FileUtils.forceDelete(tempDir)
