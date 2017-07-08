@@ -1,0 +1,370 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>util - com.datastax.spark.connector.util</title>
+          <meta name="description" content="util - com.datastax.spark.connector.util" />
+          <meta name="keywords" content="util com.datastax.spark.connector.util" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.util.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>util</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">util</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Useful stuff that didn't fit elsewhere.</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.util"><span>util</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.util.BufferedIterator2" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BufferedIterator2[T]extendsIterator[T]"></a>
+      <a id="BufferedIterator2[T]:BufferedIterator2[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BufferedIterator2.html"><span class="name">BufferedIterator2</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.util.BufferedIterator2.T">T</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Serves the same purpose as <code>BufferedIterator</code> in Scala, but its <code>takeWhile</code> method
+properly doesn't consume the next element.</p>
+    </li><li name="com.datastax.spark.connector.util.ConfigParameter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConfigParameter[T]extendsDataFrameOptionwithProductwithSerializable"></a>
+      <a id="ConfigParameter[T]:ConfigParameter[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConfigParameter.html"><span class="name">ConfigParameter</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="section">section: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="default">default: <span class="extype" name="com.datastax.spark.connector.util.ConfigParameter.T">T</span></span>, <span name="description">description: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="DataFrameOption.html" class="extype" name="com.datastax.spark.connector.util.DataFrameOption">DataFrameOption</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.CountingIterator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CountingIterator[T]extendsIterator[T]"></a>
+      <a id="CountingIterator[T]:CountingIterator[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CountingIterator.html"><span class="name">CountingIterator</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.util.CountingIterator.T">T</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Counts elements fetched form the underlying iterator.</p>
+    </li><li name="com.datastax.spark.connector.util.DataFrameOption" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DataFrameOptionextendsAnyRef"></a>
+      <a id="DataFrameOption:DataFrameOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DataFrameOption.html"><span class="name">DataFrameOption</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.Logging" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="LoggingextendsAnyRef"></a>
+      <a id="Logging:Logging"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Logging.html"><span class="name">Logging</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Utility trait for classes that want to log data.</p>
+    </li><li name="com.datastax.spark.connector.util.PriorityHashMap" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PriorityHashMap[K,V]extendsAnyRef"></a>
+      <a id="PriorityHashMap[K,V]:PriorityHashMap[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PriorityHashMap.html"><span class="name">PriorityHashMap</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A HashMap and a PriorityQueue hybrid.</p>
+    </li><li name="com.datastax.spark.connector.util.SpanningIterator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SpanningIterator[K,T]extendsIterator[(K,Seq[T])]"></a>
+      <a id="SpanningIterator[K,T]:SpanningIterator[K,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SpanningIterator.html"><span class="name">SpanningIterator</span></a><span class="tparams">[<span name="K">K</span>, <span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[(<span class="extype" name="com.datastax.spark.connector.util.SpanningIterator.K">K</span>, <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="com.datastax.spark.connector.util.SpanningIterator.T">T</span>])]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An iterator that groups items having the same value of the given function (key).</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.util.ByteBufferUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ByteBufferUtil"></a>
+      <a id="ByteBufferUtil:ByteBufferUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ByteBufferUtil$.html"><span class="name">ByteBufferUtil</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.CodecRegistryUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CodecRegistryUtil"></a>
+      <a id="CodecRegistryUtil:CodecRegistryUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CodecRegistryUtil$.html"><span class="name">CodecRegistryUtil</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.ConfigCheck" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConfigCheck"></a>
+      <a id="ConfigCheck:ConfigCheck"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ConfigCheck$.html"><span class="name">ConfigCheck</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Helper class to throw exceptions if there are environment variables in the spark.</p>
+    </li><li name="com.datastax.spark.connector.util.CqlWhereParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CqlWhereParser"></a>
+      <a id="CqlWhereParser:CqlWhereParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CqlWhereParser$.html"><span class="name">CqlWhereParser</span></a><span class="result"> extends <span class="extype" name="scala.util.parsing.combinator.RegexParsers">RegexParsers</span> with <a href="Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.JavaApiHelper" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="JavaApiHelper"></a>
+      <a id="JavaApiHelper:JavaApiHelper"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="JavaApiHelper$.html"><span class="name">JavaApiHelper</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">A helper class to make it possible to access components written in Scala from Java code.</p>
+    </li><li name="com.datastax.spark.connector.util.MagicalTypeTricks" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MagicalTypeTricks"></a>
+      <a id="MagicalTypeTricks:MagicalTypeTricks"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MagicalTypeTricks$.html"><span class="name">MagicalTypeTricks</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.NameTools" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NameTools"></a>
+      <a id="NameTools:NameTools"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NameTools$.html"><span class="name">NameTools</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.PatitionKeyTools" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatitionKeyTools"></a>
+      <a id="PatitionKeyTools:PatitionKeyTools"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PatitionKeyTools$.html"><span class="name">PatitionKeyTools</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.Quote" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Quote"></a>
+      <a id="Quote:Quote"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Quote$.html"><span class="name">Quote</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.RefBuilder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RefBuilder"></a>
+      <a id="RefBuilder:RefBuilder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RefBuilder$.html"><span class="name">RefBuilder</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.ReflectionUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReflectionUtil"></a>
+      <a id="ReflectionUtil:ReflectionUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReflectionUtil$.html"><span class="name">ReflectionUtil</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.datastax.spark.connector.util.Symbols" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Symbols"></a>
+      <a id="Symbols:Symbols"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Symbols$.html"><span class="name">Symbols</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../../lib/template.js"></script>
+    </body>
+      </html>
