@@ -8,7 +8,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, Logging}
+import com.datastax.spark.connector.util._
 import org.apache.spark.TaskContext
 import org.apache.spark.metrics.OutputMetricsUpdater
 
@@ -196,7 +196,7 @@ class TableWriter[T] private (
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
 
       for (stmtToWrite <- batchBuilder) {
-        queryExecutor.executeAsync(stmtToWrite)
+        queryExecutor.executeAsync(maybeExecutingAs(stmtToWrite, writeConf.executeAs))
         assert(stmtToWrite.bytesCount > 0)
         rateLimiter.maybeSleep(stmtToWrite.bytesCount)
       }

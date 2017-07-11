@@ -22,8 +22,8 @@ case class ReadConf(
   fetchSizeInRows: Int = ReadConf.FetchSizeInRowsParam.default,
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
-  readsPerSec: Int = ReadConf.ReadsPerSecParam.default
-)
+  readsPerSec: Int = ReadConf.ReadsPerSecParam.default,
+  executeAs: Option[String] = None)
 
 
 object ReadConf extends Logging {

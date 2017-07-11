@@ -33,7 +33,8 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue,
-                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default) {
+                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
+                     executeAs: Option[String] = None) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder

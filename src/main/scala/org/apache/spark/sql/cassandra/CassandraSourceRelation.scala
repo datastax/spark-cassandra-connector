@@ -3,13 +3,16 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.UUID
 
+import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.security.UserGroupInformation
+
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
+import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil, maybeExecutingAs}
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 import org.apache.spark.SparkConf
@@ -63,7 +66,8 @@ private[cassandra] class CassandraSourceRelation(
         connector.withSessionDo { session =>
           val keyspace = quote(tableRef.keyspace)
           val table = quote(tableRef.table)
-          session.execute(s"TRUNCATE $keyspace.$table")
+          val stmt = maybeExecutingAs(session.prepare(s"TRUNCATE $keyspace.$table").bind(), writeConf.executeAs)
+          session.execute(stmt)
         }
       } else {
         throw new UnsupportedOperationException(
@@ -239,7 +243,9 @@ private[cassandra] class CassandraSourceRelation(
   }
 }
 
-object CassandraSourceRelation {
+object CassandraSourceRelation extends Logging {
+  private lazy val hiveConf = new HiveConf()
+
   val ReferenceSection = "Cassandra DataFrame Source Parameters"
   val DseReferenceSection = "DSE Exclusive Datasource Parameters"
 
@@ -306,8 +312,10 @@ object CassandraSourceRelation {
           Option(dataSizeInBytes)
         }
     }
-    val readConf = ReadConf.fromSparkConf(conf)
-    val writeConf = WriteConf.fromSparkConf(conf)
+
+    val proxyUser = getProxyUser(sqlContext)
+    val readConf = ReadConf.fromSparkConf(conf).copy(executeAs = proxyUser)
+    val writeConf = WriteConf.fromSparkConf(conf).copy(executeAs = proxyUser)
 
     new CassandraSourceRelation(
       tableRef = tableRef,
@@ -351,6 +359,21 @@ object CassandraSourceRelation {
     //Set all user properties
     conf.setAll(tableConf -- DefaultSource.confProperties)
     conf
+  }
+
+  private def getProxyUser(sqlContext: SQLContext): Option[String] = {
+    val doAsEnabled = hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS)
+    val authenticationEnabled = hiveConf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION).toUpperCase match {
+      case "NONE" => false
+      case _ => true
+    }
+    val user = UserGroupInformation.getCurrentUser
+
+    if (doAsEnabled && authenticationEnabled) {
+      Some(user.getUserName)
+    } else {
+      None
+    }
   }
 }
 

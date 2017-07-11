@@ -7,6 +7,7 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
 import org.apache.spark.rdd.RDD
+import com.datastax.spark.connector.util.maybeExecutingAs
 
 import scala.reflect.ClassTag
 
@@ -128,7 +129,7 @@ class CassandraJoinRDD[L, R] private[connector](
       val resultFuture = SettableFuture.create[Iterator[(L, R)]]
       val leftSide = Iterator.continually(left)
 
-      val queryFuture = queryExecutor.executeAsync(bsb.bind(left))
+      val queryFuture = queryExecutor.executeAsync(maybeExecutingAs(bsb.bind(left), readConf.executeAs))
       Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
         def onSuccess(rs: ResultSet) {
           val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)

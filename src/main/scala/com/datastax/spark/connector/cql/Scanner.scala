@@ -4,6 +4,7 @@ import com.datastax.driver.core.{Row, Session, Statement}
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
+import com.datastax.spark.connector.util.maybeExecutingAs
 
 /**
   * Object which will be used in Table Scanning Operations.
@@ -31,7 +32,7 @@ class DefaultScanner (
   }
 
   override def scan(statement: Statement): ScanResult = {
-    val rs = session.execute(statement)
+    val rs = session.execute(maybeExecutingAs(statement, readConf.executeAs))
     val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
     val iterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
     ScanResult(iterator, columnMetaData)
