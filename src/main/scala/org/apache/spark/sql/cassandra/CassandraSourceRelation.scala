@@ -31,15 +31,15 @@ import org.apache.spark.unsafe.types.UTF8String
  *
  */
 private[cassandra] class CassandraSourceRelation(
-    tableRef: TableRef,
-    userSpecifiedSchema: Option[StructType],
-    filterPushdown: Boolean,
-    confirmTruncate: Boolean,
-    tableSizeInBytes: Option[Long],
-    connector: CassandraConnector,
-    readConf: ReadConf,
-    writeConf: WriteConf,
-    sparkConf: SparkConf,
+    val tableRef: TableRef,
+    val userSpecifiedSchema: Option[StructType],
+    val filterPushdown: Boolean,
+    val confirmTruncate: Boolean,
+    val tableSizeInBytes: Option[Long],
+    val connector: CassandraConnector,
+    val readConf: ReadConf,
+    val writeConf: WriteConf,
+    val sparkConf: SparkConf,
     override val sqlContext: SQLContext)
   extends BaseRelation
   with InsertableRelation
@@ -241,6 +241,40 @@ private[cassandra] class CassandraSourceRelation(
     val args = cqlValue.flatMap(_._2)
     (cql, args)
   }
+
+  def canEqual(a: Any) = a.isInstanceOf[CassandraSourceRelation]
+
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: CassandraSourceRelation => that.canEqual(this) &&
+          this.hashCode == that.hashCode &&
+          this.tableRef == that.tableRef &&
+          this.confirmTruncate == that.confirmTruncate &&
+          this.readconf == that.readconf &&
+          this.writeConf == that.writeConf &&
+          this.userSpecifiedSchema == that.userSpecifiedSchema &&
+          this.filterPushdown == that.filterPushdown &&
+          this.tableSizeInBytes == that.tableSizeInBytes &&
+          CassandraConnectorConf(this.sparkConf) == CassandraConnectorConf(that.sparkConf)
+      case _ => false
+    }
+
+  override def hashCode: Int = {
+    val prime = 31
+    var result = 1
+    result = prime * result + tableRef.hashCode
+    result = prime * result + confirmTruncate.hashCode
+    result = prime * result + readconf.hashCode
+    result = prime * result + writeConf.hashCode
+    result = prime * result + userSpecifiedSchema.hashCode
+    result = prime * result + filterPushdown.hashCode
+    result = prime * result + tableSizeInBytes.hashCode
+    result = prime * result + CassandraConnectorConf(sparkConf).hashCode
+
+    return result
+  }
+
+  override def toString : String = this.getClass.getCanonicalName
 }
 
 object CassandraSourceRelation extends Logging {
