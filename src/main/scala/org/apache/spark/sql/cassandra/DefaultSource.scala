@@ -2,7 +2,7 @@ package org.apache.spark.sql.cassandra
 
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.DefaultSource._
-import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider, StreamSinkProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
@@ -10,6 +10,9 @@ import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer.WriteConf
+
+import org.apache.spark.sql.execution.streaming.Sink
+import org.apache.spark.sql.streaming.OutputMode
 
 /**
  * Cassandra data source extends [[RelationProvider]], [[SchemaRelationProvider]] and [[CreatableRelationProvider]].
@@ -28,7 +31,12 @@ import com.datastax.spark.connector.writer.WriteConf
  *       spark.cassandra.connection.timeout_ms "1000"
  *      )
  */
-class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider with Logging {
+class DefaultSource
+  extends RelationProvider
+  with SchemaRelationProvider
+  with CreatableRelationProvider
+  with StreamSinkProvider
+  with Logging {
 
   /**
    * Creates a new relation for a cassandra table.
@@ -99,6 +107,16 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     }
 
     CassandraSourceRelation(tableRef, sqlContext, options)
+  }
+
+  override def createSink(
+    sqlContext: SQLContext,
+    parameters: Map[String, String],
+    partitionColumns: Seq[String],
+    outputMode: OutputMode): Sink = {
+
+    val (tableRef, options) = TableRefAndOptions(parameters)
+    CassandraStreamingSinkRelation(tableRef, sqlContext, options, outputMode)
   }
 }
 

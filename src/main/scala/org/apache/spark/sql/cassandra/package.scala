@@ -1,8 +1,8 @@
 package org.apache.spark.sql
 
 import scala.language.implicitConversions
-
 import com.datastax.spark.connector.util.ConfigParameter
+import org.apache.spark.sql.streaming.DataStreamWriter
 
 package object cassandra {
 
@@ -25,7 +25,7 @@ package object cassandra {
   implicit class DataFrameReaderWrapper(val dfReader: DataFrameReader) extends AnyVal {
     /** Sets the format used to access Cassandra through Connector */
     def cassandraFormat: DataFrameReader = {
-      dfReader.format("org.apache.spark.sql.cassandra")
+      dfReader.format(CassandraFormat)
     }
 
     /** Sets the format used to access Cassandra through Connector and configure a path to Cassandra table. */
@@ -42,7 +42,7 @@ package object cassandra {
   implicit class DataFrameWriterWrapper[T](val dfWriter: DataFrameWriter[T]) extends AnyVal {
     /** Sets the format used to access Cassandra through Connector */
     def cassandraFormat: DataFrameWriter[T] = {
-      dfWriter.format("org.apache.spark.sql.cassandra")
+      dfWriter.format(CassandraFormat)
     }
 
     /** Sets the format used to access Cassandra through Connector and configure a path to Cassandra table. */
@@ -51,6 +51,23 @@ package object cassandra {
         keyspace: String,
         cluster: String = CassandraSourceRelation.defaultClusterName,
         pushdownEnable: Boolean = true): DataFrameWriter[T] = {
+
+      cassandraFormat.options(cassandraOptions(table, keyspace, cluster, pushdownEnable))
+    }
+  }
+
+  implicit class DataStreamWriterWrapper[T](val dsWriter: DataStreamWriter[T]) extends AnyVal {
+    /** Sets the format used to access Cassandra through Connector */
+    def cassandraFormat: DataStreamWriter[T] = {
+      dsWriter.format(CassandraFormat)
+    }
+
+    /** Sets the format used to access Cassandra through Connector and configure a path to Cassandra table. */
+    def cassandraFormat(
+      table: String,
+      keyspace: String,
+      cluster: String = CassandraSourceRelation.defaultClusterName,
+      pushdownEnable: Boolean = true): DataStreamWriter[T] = {
 
       cassandraFormat.options(cassandraOptions(table, keyspace, cluster, pushdownEnable))
     }
