@@ -22,7 +22,7 @@ import org.apache.spark.metrics.InputMetricsUpdater
  * @tparam L item type on the left side of the join (any RDD)
  * @tparam R item type on the right side of the join (fetched from Cassandra)
  */
-class CassandraJoinRDD[L, R] private[connector](
+class CassandraJoinRDD[L, R] (
     override val left: RDD[L],
     val keyspaceName: String,
     val tableName: String,

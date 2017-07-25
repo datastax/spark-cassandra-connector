@@ -3,7 +3,8 @@ package com.datastax.spark
 import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, SparkPartitionLimit}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.{DataFrame, Dataset, Encoder, Row}
 
 import scala.language.implicitConversions
 
@@ -63,8 +64,11 @@ package object connector {
   implicit def toCassandraTableScanFunctions[T](rdd: CassandraTableScanRDD[T]) =
     new CassandraTableScanRDDFunctions(rdd)
 
-  implicit def toDataFrameFunctions(dataFrame: DataFrame): DataFrameFunctions =
-    new DataFrameFunctions(dataFrame)
+  implicit def toDataFrameFunctions(dataFrame: DataFrame): DatasetFunctions[Row] =
+    new DatasetFunctions[Row](dataFrame)(RowEncoder(dataFrame.schema))
+
+  implicit def toDatasetFunctions[K: Encoder](dataset: Dataset[K]): DatasetFunctions[K] =
+    new DatasetFunctions[K](dataset)
 
   implicit def toPairRDDFunctions[K, V](rdd: RDD[(K, V)]): PairRDDFunctions[K, V] =
     new PairRDDFunctions(rdd)

@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, Dataset}
 
 import scala.collection.JavaConversions._
 import scala.language.existentials
@@ -216,13 +216,13 @@ object TableDef {
     protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
-  def fromDataFrame(
-    dataFrame: DataFrame,
+  def fromDataset(
+    dataset: Dataset[_],
     keyspaceName: String,
     tableName: String,
     protocolVersion: ProtocolVersion): TableDef =
 
-    new DataFrameColumnMapper(dataFrame.schema).newTable(keyspaceName, tableName, protocolVersion)
+    new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */

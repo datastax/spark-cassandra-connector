@@ -367,13 +367,13 @@ object PushdownUsesConf extends CassandraPredicateRules {
   val testKey = "testkey"
   val notSet = "notset"
   override def apply(
-    predicates: AnalyzedPredicates,
-    tableDef: TableDef,
-    conf: SparkConf): AnalyzedPredicates = {
-      if (conf.contains(testKey)){
-        predicates
-      } else {
-        throw new IllegalAccessException(s"Conf did not contain $testKey")
-      }
+                      predicates: AnalyzedPredicates,
+                      tableDef: TableDef,
+                      conf: SparkConf): AnalyzedPredicates = {
+    if (conf.contains(testKey)){
+      predicates
+    } else {
+      throw new IllegalAccessException(s"Conf did not contain $testKey")
+    }
   }
 }
