@@ -260,19 +260,26 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly")
 
     val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(Map("keyspace" -> ks, "table" -> "test1"))
-      .load().filter("a=1 and b=2 and c=1 and e=1")
+        .read
+        .format("org.apache.spark.sql.cassandra")
+        .options(Map("keyspace" -> ks, "table" -> "test1"))
+        .load()
+        .filter("a=1 and b=2 and c=1 and e=1")
+        .select("a", "b", "c", "e")
+
 
     val qp = df.queryExecution
-      .executedPlan
-      .children(0)
-      .children(0)
-    qp.toString should include ("EqualTo(a,1), EqualTo(b,2), EqualTo(c,1)")
+        .executedPlan
+        .children(0)
+        .children(0)
+        .toString
+    qp should include("*EqualTo(a,1)")
+    qp should include("*EqualTo(b,2)")
+    qp should include("*EqualTo(c,1)")
   }
 
   it should "pass through local conf properties" in {
+
     sc.setLocalProperty(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
       "com.datastax.spark.connector.sql.PushdownUsesConf")
