@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
-
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
@@ -11,8 +10,11 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
   useCassandraConfig(Seq(YamlTransformations.Default))
@@ -110,7 +112,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     sparkSession.baseRelationToDataFrame(CassandraSourceRelation(tableRef, sparkSession.sqlContext))
   }
 
-  it should "allow to select all rows" in {
+  "Cassandra Source Relation" should "allow to select all rows" in {
     val result = cassandraTable(TableRef("test1", ks)).select("a").collect()
     result should have length 8
     result.head should have length 1
@@ -254,28 +256,41 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     qp should include ("Filter (") // Should have a Spark Filter Step
   }
 
-  it should "apply user custom predicates in the order they are specified" in {
+  it should "apply user custom predicate rules in the order they are specified" in {
     sc.setLocalProperty(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
       "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly")
 
     val df = sparkSession
-        .read
-        .format("org.apache.spark.sql.cassandra")
-        .options(Map("keyspace" -> ks, "table" -> "test1"))
-        .load()
-        .filter("a=1 and b=2 and c=1 and e=1")
-        .select("a", "b", "c", "e")
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1"))
+      .load()
+      .filter("a=1 and b=2 and c=1 and e=1")
+      .select("a", "b", "c", "e")
 
+    def getSourceRDD(rdd: RDD[_]): RDD[_] = {
+      if (rdd.dependencies.nonEmpty)
+        getSourceRDD(rdd.dependencies.head.rdd)
+      else
+        rdd
+    }
 
-    val qp = df.queryExecution
-        .executedPlan
-        .children(0)
-        .children(0)
-        .toString
-    qp should include("*EqualTo(a,1)")
-    qp should include("*EqualTo(b,2)")
-    qp should include("*EqualTo(c,1)")
+    val cassandraTableScanRDD = getSourceRDD(df.queryExecution
+      .executedPlan
+      .collectLeaves().head //Get Source
+      .asInstanceOf[RowDataSourceScanExec]
+      .rdd).asInstanceOf[CassandraTableScanRDD[_]]
+
+    val pushedWhere = cassandraTableScanRDD.where
+    val predicates = pushedWhere.predicates.head.split("AND").map(_.trim)
+    val values = pushedWhere.values
+    val pushedPredicates = predicates.zip(values)
+    pushedPredicates should contain allOf(
+      ("\"a\" = ?", 1),
+      ("\"b\" = ?", 2),
+      ("\"c\" = ?", 1),
+      ("\"e\" = ?", 1))
   }
 
   it should "pass through local conf properties" in {
