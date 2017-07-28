@@ -4,7 +4,12 @@
  * Please see the included license file for details.
  */
 
-apply plugin: 'scala'
+plugins {
+    id 'nebula.maven-publish' version '4.10.0'
+    id 'nebula.source-jar' version '4.9.1'
+    id 'nebula.javadoc-jar' version '4.9.1'
+    id 'scala'
+}
 
 configurations {
     testCompile.extendsFrom compileOnly
