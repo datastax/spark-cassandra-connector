@@ -55,10 +55,10 @@ private[cassandra] class CassandraSourceRelation(
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
       if (confirmTruncate) {
-        connector.withSessionDo {
+        connector.withSessionDo { session =>
           val keyspace = quote(tableRef.keyspace)
           val table = quote(tableRef.table)
-          session => session.execute(s"TRUNCATE $keyspace.$table")
+          session.execute(s"TRUNCATE $keyspace.$table")
         }
       } else {
         throw new UnsupportedOperationException(

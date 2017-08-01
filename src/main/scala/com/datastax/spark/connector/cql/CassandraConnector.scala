@@ -113,6 +113,16 @@ class CassandraConnector(val conf: CassandraConnectorConf)
     }
   }
 
+  /**
+    * Allows use of a Cassandra `Session` in a safe way without
+    * risk of forgetting to close it from java. See `withSessionDo`
+    *
+    * We should not need this in scala 2.12
+    */
+  def jWithSessionDo[T](code: java.util.function.Function[Session, T]): T = {
+    withSessionDo(session => code.apply(session))
+  }
+
   /** Allows to use Cassandra `Cluster` in a safe way without
     * risk of forgetting to close it. Multiple, concurrent calls might share the same
     * `Cluster`. The `Cluster` will be closed when not in use for some time.
