@@ -296,7 +296,7 @@ built for primitives which is why the above examples use `Tuple1` so frequently.
 This functionality does not currently function in DataFrames.
 
 
-###Data Generator
+### Data Generator
 ```scala
 
 import com.datastax.spark.connector._

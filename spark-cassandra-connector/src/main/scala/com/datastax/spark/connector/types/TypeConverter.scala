@@ -463,10 +463,12 @@ object TypeConverter {
   implicit object LocalDateConverter extends NullableTypeConverter[LocalDate] {
     def targetTypeTag = LocalDateTypeTag
     val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+    val yearRegx = """(\d\d\d\d)""".r
 
     def convertPF = {
       case x: LocalDate => x
       case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
+      case yearRegx(y) => LocalDate.fromYearMonthDay(y.toInt, 1, 1)
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: JodaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
       case x: DateTime => {
