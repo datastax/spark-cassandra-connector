@@ -128,7 +128,7 @@ object LocalNodeFirstLoadBalancingPolicy {
     } - None
 
     grouped.toSeq.sortBy(_._1.get).flatMap {
-      case (_, hosts) => random.shuffle(hosts).toSeq
+      case (_, hosts) => random.shuffle(hosts.toIndexedSeq)
     }
   }
 
