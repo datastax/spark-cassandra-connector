@@ -15,11 +15,14 @@ import com.datastax.driver.core.exceptions.{BusyPoolException, NoHostAvailableEx
 class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
     successHandler: Option[Handler[T]] = None, failureHandler: Option[Handler[T]]) extends Logging {
 
-  @volatile private var _successful = true
-
   private val semaphore = new Semaphore(maxConcurrentTasks)
   private val pendingFutures = new TrieMap[ListenableFuture[R], Boolean]
-  var latestExeception: Option[Throwable] = None
+  @volatile private var latestException: Option[Throwable] = None
+
+  /** Returns an exception if any of the futures had an exception.
+    * Returning None means that no exceptions have been thrown.
+    */
+  def getLatestException(): Option[Throwable] = latestException
 
   /** Executes task asynchronously or blocks if more than `maxConcurrentTasks` limit is reached */
   def executeAsync(task: T): ListenableFuture[R] = {
@@ -54,10 +57,9 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
 
             case otherException =>
               logError("Failed to execute: " + task, throwable)
-              if (_successful) _successful = false
+              latestException = Some(throwable)
               release()
               settable.setException(throwable)
-              latestExeception = Some(throwable)
               failureHandler.foreach(_ (task, submissionTimestamp, executionTimestamp))
           }
         }
@@ -76,9 +78,6 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
     for ((future, _) <- pendingFutures.snapshot())
       Try(future.get())
   }
-
-  def successful = _successful
-
 }
 
 object AsyncExecutor {

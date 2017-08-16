@@ -200,7 +200,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         .saveToCassandra(ks, "key_value")
     }
 
-    ioException.getMessage should include ("Invalid null value in condition for column group")
+    ioException.getMessage should include ("Invalid null value")
   }
 
   it should "write to a table with only partition key and static columns without clustering" in {
