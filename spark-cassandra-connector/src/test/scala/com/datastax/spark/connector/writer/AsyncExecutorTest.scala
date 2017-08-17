@@ -40,7 +40,7 @@ class AsyncExecutorTest {
     asyncExecutor.waitForCurrentlyExecutingTasks()
     assertEquals(maxParallel, maxParallelCounter.get())
     assertEquals(taskCount, totalFinishedExecutionsCounter.get())
-    assertEquals(true, asyncExecutor.successful)
+    assertEquals(None, asyncExecutor.getLatestException())
   }
 
 
