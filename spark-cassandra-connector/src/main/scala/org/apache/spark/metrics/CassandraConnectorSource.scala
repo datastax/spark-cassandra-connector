@@ -17,6 +17,7 @@ class CassandraConnectorSource extends Source {
   val writeBatchTimer = metricRegistry.timer("write-batch-timer")
   val writeBatchWaitTimer = metricRegistry.timer("write-batch-wait-timer")
   val writeTaskTimer = metricRegistry.timer("write-task-timer")
+  val writeBatchSizeHistogram = metricRegistry.histogram("write-batch-size-histogram")
 
   val writeSuccessCounter = metricRegistry.counter("write-success-counter")
   val writeFailureCounter = metricRegistry.counter("write-failure-counter")

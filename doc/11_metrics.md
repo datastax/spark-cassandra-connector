@@ -33,17 +33,18 @@ configuration:
 - `spark.cassandra.output.metrics` - set to `false` to disable collection of output task metrics
 
 ### Available metrics
-Metric name            | Unit description
------------------------|---------------------------------------------------------------
-write-byte-meter       | Number of bytes written to Cassandra
-write-row-meter        | Number of rows written to Cassandra
-write-batch-timer      | Batch write time length
-write-batch-wait-timer | The length of time batches sit in the queue before being submitted to Cassandra
-write-task-timer       | Timer to measure time of writing a single partition
-write-success-counter  | Number successfully written batches
-write-failure-counter  | Number of failed batches
-read-byte-meter        | Number of bytes read from Cassandra
-read-row-meter         | Number of rows read from Cassandra
-read-task-timer        | Timer to measure time of reading a single partition
+Metric name                | Unit description
+---------------------------|---------------------------------------------------------------
+write-byte-meter           | Number of bytes written to Cassandra
+write-row-meter            | Number of rows written to Cassandra
+write-batch-timer          | Batch write time length
+write-batch-wait-timer     | The length of time batches sit in the queue before being submitted to Cassandra
+write-batch-size-histogram | The distribution of the rows in batches
+write-task-timer           | Timer to measure time of writing a single partition
+write-success-counter      | Number successfully written batches
+write-failure-counter      | Number of failed batches
+read-byte-meter            | Number of bytes read from Cassandra
+read-row-meter             | Number of rows read from Cassandra
+read-task-timer            | Timer to measure time of reading a single partition
 
 [Next - Building And Artifacts](12_building_and_artifacts.md)
