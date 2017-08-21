@@ -99,4 +99,49 @@ class DefaultRowWriterTest {
       TypeConverter.unregisterConverter(StringWrapperConverter)
     }
   }
+
+  case class UnderSpecified(c1: String, c2: Int)
+  case class UnderSpecifiedReversed(c2: Int, c1: String)
+  case class UnderSpecifiedOutOfOrder(c1: String, c3: Int)
+
+  @Test
+  def testIgnoresRegularTableColumns(): Unit = {
+    val column = ColumnDef("c1", PartitionKeyColumn, TextType)
+    val column2 = ColumnDef("c2", RegularColumn, IntType)
+    val column3 = ColumnDef("c3", RegularColumn, IntType)
+    val table = TableDef("test", "table", Seq(column), Nil, Seq(column2, column3))
+    val rowWriter = new DefaultRowWriter[UnderSpecified](table, table.columnRefs)
+    val obj = UnderSpecified("some text", 10)
+    val buf = Array.ofDim[Any](3)
+    rowWriter.readColumnValues(obj, buf)
+    assertEquals("some text", buf(0))
+    assertEquals(10, buf(1))
+    assertEquals(null, buf(2))
+  }
+  @Test
+  def testIgnoresReglarTableColumnsReversedOrder(): Unit = {
+    val column = ColumnDef("c1", PartitionKeyColumn, TextType)
+    val column2 = ColumnDef("c2", RegularColumn, IntType)
+    val column3 = ColumnDef("c3", RegularColumn, IntType)
+    val table = TableDef("test", "table", Seq(column), Nil, Seq(column2, column3))
+    val rowWriter = new DefaultRowWriter[UnderSpecifiedReversed](table, table.columnRefs)
+    val obj = UnderSpecifiedReversed(10, "some text")
+    val buf = Array.ofDim[Any](3)
+    rowWriter.readColumnValues(obj, buf)
+    assertEquals("some text", buf(0))
+    assertEquals(10, buf(1))
+    assertEquals(null, buf(2))
+  }
+
+  @Test(expected = classOf[IllegalArgumentException])
+  def testWriterFailsForColumnsOutOfOrder(): Unit = {
+    val column = ColumnDef("c1", PartitionKeyColumn, TextType)
+    val column2 = ColumnDef("c2", RegularColumn, IntType)
+    val column3 = ColumnDef("c3", RegularColumn, IntType)
+    val table = TableDef("test", "table", Seq(column), Nil, Seq(column2, column3))
+    val rowWriter = new DefaultRowWriter[UnderSpecifiedOutOfOrder](table, table.columnRefs)
+    val obj = UnderSpecifiedOutOfOrder("some text", 10)
+    val buf = Array.ofDim[Any](3)
+    rowWriter.readColumnValues(obj, buf)
+  }
 }

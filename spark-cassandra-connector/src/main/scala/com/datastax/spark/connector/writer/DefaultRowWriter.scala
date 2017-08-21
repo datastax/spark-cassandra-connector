@@ -19,13 +19,12 @@ class DefaultRowWriter[T : TypeTag : ColumnMapper](
 
   override def readColumnValues(data: T, buffer: Array[Any]) = {
     val row = converter.convert(data)
-    for (i <- columnNames.indices)
+    for (i <- row.columnValues.indices)
       buffer(i) = row.getRaw(i)
   }
 }
 
 object DefaultRowWriter {
-
   def factory[T : ColumnMapper : TypeTag] = new RowWriterFactory[T] {
     override def rowWriter(tableDef: TableDef, selectedColumns: IndexedSeq[ColumnRef]) = {
       new DefaultRowWriter[T](tableDef, selectedColumns)

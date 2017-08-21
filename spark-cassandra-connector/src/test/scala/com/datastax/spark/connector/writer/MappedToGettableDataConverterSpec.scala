@@ -17,6 +17,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
   val addressType = UserDefinedType("address", IndexedSeq(streetColumn, numberColumn))
 
   val loginColumn = ColumnDef("login", PartitionKeyColumn, VarCharType)
+  val logoutColumn = ColumnDef("logout", RegularColumn, VarCharType)
   val passwordColumn = ColumnDef("password", RegularColumn, VarCharType)
   val addressColumn = ColumnDef("address", RegularColumn, addressType)
   val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(addressType))
@@ -27,9 +28,9 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     new TableDef("test", "test", partitionKeyColumns, clusteringColumns, regularColumns)
   }
 
-
   case class User(login: String, password: String)
   case class Address(street: String, number: Int)
+  case class Session(logout: String, login: String)
 
   "MappedToGettableDataConverter" should "be Serializable" in {
     val userTable = newTable(loginColumn, passwordColumn)
@@ -278,18 +279,17 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     row.getTupleValue(1).getUDTValue(2).getInt("number") shouldEqual 3
   }
 
-  class UnknownType
-  case class UserWithUnknownType(login: String, address: UnknownType)
+  case class UserWithUnknownType(login: String, address: String)
 
   it should "throw a meaningful exception when a column has an incorrect type" in {
     val userTable = newTable(loginColumn, addressColumn)
-    val user = UserWithUnknownType("foo", new UnknownType)
+    val user = UserWithUnknownType("foo", "bar")
     val exception = the[IllegalArgumentException] thrownBy {
       val converter = MappedToGettableDataConverter[UserWithUnknownType](userTable, userTable.columnRefs)
       converter.convert(user)
     }
     exception.getMessage should include("UserWithUnknownType")
-    exception.getMessage should include("UnknownType")
+    exception.getMessage should include("String")
     exception.getMessage should include("address")
     exception.getMessage should include("test")
   }
@@ -322,5 +322,14 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     val row = converter2.convert(value)
     row.getString("login") shouldEqual "login"
     row.getString("password") shouldEqual "password"
+  }
+
+  it should "work when fields are reversed" in {
+    val loginTable = newTable(loginColumn, logoutColumn)
+    val converter = MappedToGettableDataConverter[Session](loginTable, loginTable.columnRefs)
+    val value = Session("user_logout", "user_login")
+    val row = converter.convert(value)
+    row.getString("login") shouldEqual "user_login"
+    row.getString("logout") shouldEqual "user_logout"
   }
 }

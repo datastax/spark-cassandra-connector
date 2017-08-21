@@ -102,10 +102,10 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
       } yield (getterName, columnRef)
     }.toMap
 
-    // Check if we have all the required columns:
+    // Check if all columns at start of table description are present in the case class:
     val mappedColumns = getterMap.values.toSet
     val unmappedColumns = selectedColumns.filterNot(mappedColumns)
-    require(unmappedColumns.isEmpty, s"Columns not found in $tpe: [${unmappedColumns.mkString(", ")}]")
+    require(selectedColumns.endsWith(unmappedColumns), s"Unmapped columns nust be at end of table definition: [${unmappedColumns.mkString(", ")}]")
 
     SimpleColumnMapForWriting(getterMap)
   }

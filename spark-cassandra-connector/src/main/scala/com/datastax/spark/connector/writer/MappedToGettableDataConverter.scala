@@ -166,7 +166,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       }
 
       private val getters =
-        columnNames.map(getterByColumnName)
+        columnNames.flatMap(col => getterByColumnName.get(col))
 
       @transient
       private val scalaTypes: IndexedSeq[Type] =
@@ -179,7 +179,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         new PropertyExtractor(cls, getters)
 
       private val converters = {
-        for (i <- columnNames.indices) yield {
+        for (i <- getters.indices) yield {
           try {
             val ct = columnTypes(i)
             val st = scalaTypes(i)

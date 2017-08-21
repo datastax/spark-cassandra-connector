@@ -205,11 +205,4 @@ class DefaultColumnMapperTest {
     new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
       .columnMapForReading(table1, table1.columnRefs.tail)
   }
-
-  @Test(expected = classOf[IllegalArgumentException])
-  def testNotEnoughPropertiesForWriting(): Unit = {
-    new DefaultColumnMapper[DefaultColumnMapperTestClass1]()
-      .columnMapForWriting(table1, table1.columnRefs :+ ColumnName("missingColumn"))
-  }
-
 }
