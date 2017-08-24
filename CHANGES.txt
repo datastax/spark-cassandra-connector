@@ -51,6 +51,9 @@
 
 ********************************************************************************
 
+1.6.9
+* Fix Shuffling of a Set in Local Node FirstPolicy (SPARKC-496)
+
 1.6.8
 * Fix ReplicaPartitioner Endpoint Call (SPARKC-485)
 * MultipleRetryPolicy should retry with null (SPARKC-494)
