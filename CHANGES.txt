@@ -1,3 +1,7 @@
+2.0.4
+ * Includes partches up to 1.6.9
+ * Retry PoolBusy Exceptions, Throttle JWCT Calls (SPARKC-503) 
+
 2.0.3
  * Includes patches up to 1.6.8
 
