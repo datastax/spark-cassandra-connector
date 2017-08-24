@@ -6,7 +6,7 @@
 | ---------- | ----- |
 | Packages   | [Spark Cassandra Connector Spark Packages Website](https://spark-packages.org/package/datastax/spark-cassandra-connector) |
 | Community  | Chat with us at [DataStax Academy's #spark-connector Slack channel](#slack) |
-| Scala Docs | Most Recent Release (2.0.3): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.3/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.3/spark-cassandra-connector-embedded/) |
+| Scala Docs | Most Recent Release (2.0.4): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.4/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.4/spark-cassandra-connector-embedded/) |
 
 ## Features
 
@@ -42,7 +42,7 @@ development for the next connector release in progress.
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
-| 2.0       | 2.0, 2.1      | 2.1.5*, 2.2, 3.0 | 3.0            | 8                    | 2.10, 2.11               |
+| 2.0       | 2.0, 2.1, 2.2      | 2.1.5*, 2.2, 3.0 | 3.0            | 8                    | 2.10, 2.11               |
 | 1.6       | 1.6           | 2.1.5*, 2.2, 3.0  | 3.0           | 7                    | 2.10, 2.11               |
 | 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0  | 3.0           | 7                    | 2.10, 2.11               |
 | 1.4       | 1.4           | 2.1.5*    | 2.1                   | 7                    | 2.10, 2.11               |
@@ -56,13 +56,13 @@ development for the next connector release in progress.
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
-### 2.0.3
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.3/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.3/spark-cassandra-connector-embedded/)
+### 2.0.4
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.4/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.0.4/spark-cassandra-connector-embedded/)
 
 ### 1.6.8
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.8/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.8/spark-cassandra-connector-embedded/)
+* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.9/spark-cassandra-connector/)
+* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.6.9/spark-cassandra-connector-embedded/)
 
 ### 1.5.2
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/1.5.2/spark-cassandra-connector/)
