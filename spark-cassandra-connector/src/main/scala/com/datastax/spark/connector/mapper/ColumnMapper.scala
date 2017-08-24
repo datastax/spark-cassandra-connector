@@ -26,6 +26,8 @@ import scala.reflect.runtime.universe._
   */
 trait ColumnMapper[T] {
 
+  val isTopLevel: Boolean = true
+
   /** Provides a mapping between given table or UDT and properties of type `T`,
     * useful for creating objects of type `T`. Throws [[IllegalArgumentException]] if
     * `selectedColumns` does not provide some columns needed to instantiate object of type `T`*/

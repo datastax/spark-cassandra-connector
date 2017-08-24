@@ -31,6 +31,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
   case class User(login: String, password: String)
   case class Address(street: String, number: Int)
   case class Session(logout: String, login: String)
+  case class SessionWithPassword(logout: String, login: String, password: Option[String])
 
   "MappedToGettableDataConverter" should "be Serializable" in {
     val userTable = newTable(loginColumn, passwordColumn)
@@ -279,19 +280,45 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     row.getTupleValue(1).getUDTValue(2).getInt("number") shouldEqual 3
   }
 
-  case class UserWithUnknownType(login: String, address: String)
+  class UnknownType
+  case class UserWithUnknownType(login: String, address: UnknownType)
 
   it should "throw a meaningful exception when a column has an incorrect type" in {
     val userTable = newTable(loginColumn, addressColumn)
-    val user = UserWithUnknownType("foo", "bar")
+    val user = UserWithUnknownType("foo", new UnknownType)
     val exception = the[IllegalArgumentException] thrownBy {
       val converter = MappedToGettableDataConverter[UserWithUnknownType](userTable, userTable.columnRefs)
       converter.convert(user)
     }
     exception.getMessage should include("UserWithUnknownType")
-    exception.getMessage should include("String")
+    exception.getMessage should include("UnknownType")
     exception.getMessage should include("address")
     exception.getMessage should include("test")
+  }
+
+  case class UnderSpecifiedAddress(street: String)
+  case class UnderSpecifiedUser1(login: String, address: UnderSpecifiedAddress)
+  case class UnderSpecifiedUser2(login: String)
+
+  it should "throw a meaningful exception when a nested column is not fully specified" in {
+    val userTable = newTable(loginColumn, addressColumn)
+    val user = UnderSpecifiedUser1("foo", UnderSpecifiedAddress("main street"))
+    val exception = the[IllegalArgumentException] thrownBy {
+      val converter = MappedToGettableDataConverter[UnderSpecifiedUser1](userTable, userTable.columnRefs)
+      converter.convert(user)
+    }
+    exception.getMessage should include("UnderSpecifiedAddress")
+    exception.getMessage should include("address")
+    exception.getMessage should include("test")
+  }
+
+  it should "work when the top level row is not fully specified" in {
+    val userTable = newTable(loginColumn, addressColumn)
+    val user = UnderSpecifiedUser2("foo")
+    val converter = MappedToGettableDataConverter[UnderSpecifiedUser2](userTable, userTable.columnRefs)
+    val row = converter.convert(user)
+    row.getString("login") shouldEqual "foo"
+    row.length shouldEqual 1
   }
 
   it should "throw a meaningful exception when a tuple field has an incorrect number of components" in {
