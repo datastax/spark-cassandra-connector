@@ -72,12 +72,15 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with BeforeAndAfte
     ccs.writeByteMeter.getCount shouldBe 100L
     ccs.writeSuccessCounter.getCount shouldBe 1L
     ccs.writeFailureCounter.getCount shouldBe 0L
+    ccs.writeBatchSizeHistogram.getSnapshot.getMedian shouldBe 10.0
+    ccs.writeBatchSizeHistogram.getCount shouldBe 1L
 
     updater.batchFinished(success = false, rc, ts, ts)
     ccs.writeRowMeter.getCount shouldBe 10L
     ccs.writeByteMeter.getCount shouldBe 100L
     ccs.writeSuccessCounter.getCount shouldBe 1L
     ccs.writeFailureCounter.getCount shouldBe 1L
+    ccs.writeBatchSizeHistogram.getCount shouldBe 1L
 
     updater.finish()
     ccs.writeTaskTimer.getCount shouldBe 1L
