@@ -14,7 +14,7 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
       |*******.
     """.stripMargin
 
-  "The Reference Doc File" should "contain all of the current properties" in withClue(reRunMessage){
+  ignore should "contain all of the current properties" in withClue(reRunMessage){
     val refFile = scala.io.Source.fromFile(new File(s"$subprojectRoot/doc/reference.md")).mkString
 
     val missingProperties =
@@ -26,14 +26,14 @@ class DocCheck extends SparkCassandraITFlatSpecBase{
     info(s"Reference contains ${ConfigCheck.validStaticPropertyNames.size} entries")
   }
 
-  "it" should "match a freshly created reference file" in withClue(reRunMessage){
+  ignore should "match a freshly created reference file" in withClue(reRunMessage){
     val refFile = scala.io.Source.fromFile(new File(s"$subprojectRoot/doc/reference.md")).mkString
     RefBuilder.getMarkDown() should be(refFile)
 
   }
 
   case class ParameterFound (parameter: String, fileName : String)
-  "The Docs" should "only reference current parameters" in {
+  ignore should "only reference current parameters" in {
     val docFiles = new java.io.File(s"$subprojectRoot/doc").listFiles()
     val allDocs = docFiles.map( file => (file, scala.io.Source.fromFile(file).mkString))
 
