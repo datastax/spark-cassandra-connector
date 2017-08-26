@@ -2,14 +2,13 @@ package org.apache.spark.metrics
 
 import java.util.concurrent.CountDownLatch
 
+import com.datastax.bdp.test.ng.DseScalaTestBase
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-
-import com.datastax.bdp.test.ng.DseScalaTestBase
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
 
 class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestBase with MockitoSugar {
@@ -73,12 +72,15 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestB
     ccs.writeByteMeter.getCount shouldBe 100L
     ccs.writeSuccessCounter.getCount shouldBe 1L
     ccs.writeFailureCounter.getCount shouldBe 0L
+    ccs.writeBatchSizeHistogram.getSnapshot.getMedian shouldBe 10.0
+    ccs.writeBatchSizeHistogram.getCount shouldBe 1L
 
     updater.batchFinished(success = false, rc, ts, ts)
     ccs.writeRowMeter.getCount shouldBe 10L
     ccs.writeByteMeter.getCount shouldBe 100L
     ccs.writeSuccessCounter.getCount shouldBe 1L
     ccs.writeFailureCounter.getCount shouldBe 1L
+    ccs.writeBatchSizeHistogram.getCount shouldBe 1L
 
     updater.finish()
     ccs.writeTaskTimer.getCount shouldBe 1L
