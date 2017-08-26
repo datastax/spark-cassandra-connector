@@ -137,12 +137,14 @@ class TypeConverterTest {
     val dayOnlyStr = "2014-04-23"
     val localDate = LocalDate.fromYearMonthDay(2014, 4, 23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
+    val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
 
     val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").parse(dateStr)
     val dateDayOnly = new SimpleDateFormat("yyyy-MM-dd").parse(dayOnlyStr)
 
     assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(dateDayOnly, c.convert(jodaLocalDate))
+    assertEquals(dateDayOnly, c.convert(javaLocalDate))
     assertEquals(date, c.convert(dateStr))
   }
 
@@ -154,6 +156,7 @@ class TypeConverterTest {
 
     val localDate = LocalDate.fromYearMonthDay(2014,4,23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
+    val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     val utilDate = dateFormat.parse("2014-04-23")
@@ -161,6 +164,7 @@ class TypeConverterTest {
     assertEquals(targetDate, c.convert("2014-04-23"))
     assertEquals(targetDate, c.convert(localDate))
     assertEquals(targetDate, c.convert(jodaLocalDate))
+    assertEquals(targetDate, c.convert(javaLocalDate))
     assertEquals(targetDate, c.convert(utilDate))
 
     val targetYear = java.sql.Date.valueOf("2014-01-01")
@@ -233,6 +237,7 @@ class TypeConverterTest {
     assertEquals(testDate, c.convert(java.sql.Date.valueOf("1985-08-03")))
     assertEquals(testDate, c.convert(new DateTime(date)))
     assertEquals(testDate, c.convert(new org.joda.time.LocalDate(1985, 8, 3)))
+    assertEquals(testDate, c.convert(java.time.LocalDate.of(1985, 8, 3)))
   }
 
   @Test
