@@ -48,6 +48,11 @@ private[cassandra] class CassandraSourceRelation(
     tableRef.keyspace,
     tableRef.table)
 
+  val solrOptimizationEnabled =
+    sparkConf.getBoolean(
+      CassandraSourceRelation.SolrPredicateOptimizationParam.name,
+      CassandraSourceRelation.SolrPredicateOptimizationParam.default)
+
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
   }
@@ -159,11 +164,21 @@ private[cassandra] class CassandraSourceRelation(
     } else {
       rdd match {
         case rdd: CassandraTableScanRDD[_] =>
-          CassandraTableScanRDD.countRDD(rdd)
-            .mapPartitions(_.flatMap(count => Iterator.fill(count.toInt)(CassandraSQLRow.empty)))
+          val tableIsSolrIndexed =
+            rdd.tableDef
+              .indexes
+              .exists(index => index.className == SolrConstants.DseSolrIndexClassName)
+          val countRDD =
+            if (solrOptimizationEnabled && tableIsSolrIndexed && rdd.where.predicates.isEmpty){
+              //This will shortcut actually reading the rows out of Cassandra and just hit the
+              //solr indexes
+              CassandraTableScanRDD.countRDD(rdd).where(s"${SolrConstants.SolrQuery} = '*:*'")
+            } else {
+              CassandraTableScanRDD.countRDD(rdd)
+            }
+            countRDD.mapPartitions(_.flatMap(count => Iterator.fill(count.toInt)(CassandraSQLRow.empty)))
         case _ => rdd
       }
-
     }
     prunedRdd.asInstanceOf[RDD[Row]]
   }
@@ -226,6 +241,7 @@ private[cassandra] class CassandraSourceRelation(
 
 object CassandraSourceRelation {
   val ReferenceSection = "Cassandra DataFrame Source Parameters"
+  val DseReferenceSection = "DSE Exclusive Datasource Parameters"
 
   val TableSizeInBytesParam = ConfigParameter[Option[Long]](
     name = "spark.cassandra.table.size.in.bytes",
@@ -246,9 +262,18 @@ object CassandraSourceRelation {
       """.stripMargin
   )
 
+  val SolrPredicateOptimizationParam = ConfigParameter[Boolean] (
+    name = "spark.sql.dse.solr.enable_optimization",
+    section = DseReferenceSection,
+    default = false,
+    description = "Enables SparkSQL to automatically replace Cassandra Pushdowns with Solr Pushdowns" +
+      "utilizing lucene indexes."
+  )
+
   val Properties = Seq(
     AdditionalCassandraPushDownRulesParam,
-    TableSizeInBytesParam
+    TableSizeInBytesParam,
+    SolrPredicateOptimizationParam
   )
 
   val defaultClusterName = "default"
@@ -319,11 +344,17 @@ object CassandraSourceRelation {
         tableConf.get(prop),
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
-        sqlConf.get(s"default/$prop")).flatten.headOption
+        sqlConf.get(s"default/$prop"),
+        sqlConf.get(prop)).flatten.headOption
       value.foreach(conf.set(prop, _))
     }
     //Set all user properties
     conf.setAll(tableConf -- DefaultSource.confProperties)
     conf
   }
+}
+
+object SolrConstants {
+  val DseSolrIndexClassName = "com.datastax.bdp.search.solr.Cql3SolrSecondaryIndex"
+  val SolrQuery = "solr_query"
 }
