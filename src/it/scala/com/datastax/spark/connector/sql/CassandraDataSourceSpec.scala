@@ -305,8 +305,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1", PushdownUsesConf.testKey -> "Don't Remove"))
       .load().filter("g=1 and h=1")
 
-    val qp = df.queryExecution.executedPlan
-    qp.constraints should not be empty
+    df.queryExecution.executedPlan // Will throw an exception if local key is not set
 
     val df2 = sparkSession
       .read
@@ -314,9 +313,11 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1"))
       .load().filter("g=1 and h=1")
 
+    intercept[IllegalAccessException] {
+      df2.explain() //
+    }
 
-    val qp2 = df2.queryExecution.executedPlan
-    qp2.constraints shouldBe empty
+
   }
 }
 
@@ -359,6 +360,9 @@ object PushdownEqualsOnly extends CassandraPredicateRules {
   }
 }
 
+/**
+  * Throws an exception if test key is not set
+  */
 object PushdownUsesConf extends CassandraPredicateRules {
   val testKey = "testkey"
   val notSet = "notset"
@@ -366,10 +370,10 @@ object PushdownUsesConf extends CassandraPredicateRules {
     predicates: AnalyzedPredicates,
     tableDef: TableDef,
     conf: SparkConf): AnalyzedPredicates = {
-      if (conf.get(testKey, notSet) == notSet){
-        AnalyzedPredicates(Set.empty, Set.empty)
-      } else {
+      if (conf.contains(testKey)){
         predicates
+      } else {
+        throw new IllegalAccessException(s"Conf did not contain $testKey")
       }
   }
 }

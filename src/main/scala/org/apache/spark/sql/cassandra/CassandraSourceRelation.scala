@@ -24,6 +24,13 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
 import org.apache.spark.unsafe.types.UTF8String
 
+sealed trait DseSearchOptimizationSetting { def enabled = false}
+case object On extends DseSearchOptimizationSetting { override def enabled = true}
+case object Off extends DseSearchOptimizationSetting
+case class Auto(ratio: Double) extends DseSearchOptimizationSetting { override def enabled = true}
+
+import scala.collection.concurrent.TrieMap
+
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
  * It inserts data to and scans Cassandra table. If filterPushdown is true, it pushs down
@@ -51,10 +58,33 @@ private[cassandra] class CassandraSourceRelation(
     tableRef.keyspace,
     tableRef.table)
 
-  val solrOptimizationEnabled =
-    sparkConf.getBoolean(
-      CassandraSourceRelation.SolrPredicateOptimizationParam.name,
-      CassandraSourceRelation.SolrPredicateOptimizationParam.default)
+  val searchOptimization: DseSearchOptimizationSetting =
+    if (sparkConf.contains(CassandraSourceRelation.SolrPredciateOptimizationParam.name)){
+      logWarning(CassandraSourceRelation.SolrPredciateOptimizationParam.description)
+      if (sparkConf.getBoolean(
+        CassandraSourceRelation.SolrPredciateOptimizationParam.name,
+        CassandraSourceRelation.SolrPredciateOptimizationParam.default)) {
+          On
+      } else {
+        Off
+      }
+    } else {
+      sparkConf.get(
+        CassandraSourceRelation.SearchPredicateOptimizationParam.name,
+        CassandraSourceRelation.SearchPredicateOptimizationParam.default
+      ).toLowerCase match {
+        case "auto" => Auto(sparkConf.getDouble(
+          CassandraSourceRelation.SearchPredicateOptimizationRatio.name,
+          CassandraSourceRelation.SearchPredicateOptimizationRatio.default))
+        case "on" | "true" => On
+        case "off" | "false" => Off
+        case unknown => throw new IllegalArgumentException(
+          s"""
+             |Attempted to set ${CassandraSourceRelation.SearchPredicateOptimizationParam.name} to
+             |$unknown which is invalid. Acceptable values are: auto, on, and off
+           """.stripMargin)
+      }
+    }
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
@@ -123,7 +153,14 @@ private[cassandra] class CassandraSourceRelation(
     }
   }
 
-  private def predicatePushDown(filters: Array[Filter]) = {
+  /*
+  Eliminate duplicate calculation of predicate pushdowns
+  (once for unhandled filters and once for actually building the scan)
+  */
+  val pushdownCache: TrieMap[Seq[Filter], AnalyzedPredicates] = TrieMap.empty
+
+  private def predicatePushDown(filters: Array[Filter]) = pushdownCache.getOrElseUpdate(filters.toSeq, {
+
     logInfo(s"Input Predicates: [${filters.mkString(", ")}]")
 
     val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
@@ -133,8 +170,21 @@ private[cassandra] class CassandraSourceRelation(
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
     logDebug(s"Basic Rules Applied:\n$basicPushdown")
 
+    logDebug(s"Applying DSE Only Predicate Rules")
+    /** Apply Dse Predicate Rules **/
+    val dsePredicates: AnalyzedPredicates = {
+      val dseBasicPredicates = DsePredicateRules.apply(basicPushdown, tableDef, sparkConf)
+      if (searchOptimization.enabled) {
+        logDebug(s"Search Optimization Enabled - $searchOptimization")
+        SolrPredicateRules.apply(dseBasicPredicates, tableDef, sparkConf, searchOptimization)
+      } else {
+          dseBasicPredicates
+      }
+    }
+    logDebug(s"Applied DSE Predicate Rules Pushdown Filters: \n$dsePredicates")
+
     /** Apply any user defined rules **/
-    val finalPushdown =  additionalRules.foldRight(basicPushdown)(
+    val finalPushdown =  additionalRules.foldRight(dsePredicates)(
       (rules, pushdowns) => {
         val pd = rules(pushdowns, tableDef, sparkConf)
         logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
@@ -144,11 +194,11 @@ private[cassandra] class CassandraSourceRelation(
 
     logDebug(s"Final Pushdown filters:\n$finalPushdown")
     finalPushdown
-  }
+  })
 
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val filteredRdd = {
-      if(filterPushdown) {
+      if (filterPushdown) {
         val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
         maybePushdownFilters(baseRdd, pushdownFilters)
       } else {
@@ -173,7 +223,7 @@ private[cassandra] class CassandraSourceRelation(
               .indexes
               .exists(index => index.className == SolrConstants.DseSolrIndexClassName)
           val countRDD =
-            if (solrOptimizationEnabled && tableIsSolrIndexed && rdd.where.predicates.isEmpty){
+            if (searchOptimization.enabled && tableIsSolrIndexed && rdd.where.predicates.isEmpty){
               //This will shortcut actually reading the rows out of Cassandra and just hit the
               //solr indexes
               CassandraTableScanRDD.countRDD(rdd).where(s"${SolrConstants.SolrQuery} = '*:*'")
@@ -302,18 +352,41 @@ object CassandraSourceRelation extends Logging {
       """.stripMargin
   )
 
-  val SolrPredicateOptimizationParam = ConfigParameter[Boolean] (
+  val SearchPredicateOptimizationRatio = ConfigParameter[Double] (
+    name = "spark.sql.dse.search.auto_ratio",
+    section = DseReferenceSection,
+    default = 0.03,
+    description = "When Search Predicate Optimization is set to auto, Search optimizations will be " +
+      "preformed if this parameter * the total number of rows is greater than the number of rows" +
+      "to be returned by the solr query"
+  )
+
+  val SearchPredicateOptimizationParam = ConfigParameter[String] (
+    name = "spark.sql.dse.search.enable_optimization",
+    section = DseReferenceSection,
+    default = "auto",
+    description =
+      s"""Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
+        |Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
+        |optimizations when the solr query will pull less than $SearchPredicateOptimizationRatio * the
+        |total table record count""".stripMargin
+  )
+
+  val SolrPredciateOptimizationParam = ConfigParameter[Boolean] (
     name = "spark.sql.dse.solr.enable_optimization",
     section = DseReferenceSection,
     default = false,
-    description = "Enables SparkSQL to automatically replace Cassandra Pushdowns with Solr Pushdowns" +
-      "utilizing lucene indexes."
+    description = s"Deprecated parameter 'spark.sql.dse.solr.enable_optimization' found for turning on Solr Optimization. " +
+      s"Use $SearchPredicateOptimizationParam.name instead"
   )
+
 
   val Properties = Seq(
     AdditionalCassandraPushDownRulesParam,
     TableSizeInBytesParam,
-    SolrPredicateOptimizationParam
+    SearchPredicateOptimizationParam,
+    SearchPredicateOptimizationRatio,
+    SolrPredciateOptimizationParam
   )
 
   val defaultClusterName = "default"

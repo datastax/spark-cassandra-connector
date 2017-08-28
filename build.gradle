@@ -116,6 +116,8 @@ dependencies {
 
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${sparkFasterxmlJacksonVersion}") { force = true }
 
+    compile "org.apache.solr:solr-solrj:${solrVersion}"
+
     testCompile(project(':dse-core'))
     testCompile(project(path: ':dse-core', configuration: 'testOutput'))
 
