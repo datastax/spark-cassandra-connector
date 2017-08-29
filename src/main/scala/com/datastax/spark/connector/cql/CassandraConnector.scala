@@ -174,7 +174,10 @@ object CassandraConnector extends Logging {
     }
     catch {
       case e: Throwable =>
-        cluster.close()
+        try cluster.close()
+        catch {
+          case t: Throwable => logDebug(s"Closing cluster due to [${e.getMessage}] failed with.", e)
+        }
         throw new IOException(s"Failed to open native connection to Cassandra at $endpointsStr", e)
     }
   }
