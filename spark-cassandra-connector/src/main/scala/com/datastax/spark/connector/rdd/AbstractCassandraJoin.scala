@@ -65,6 +65,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
 
     // Initialize RowWriter and Query to be used for accessing Cassandra
     rowWriter.columnNames
+    rowWriter.isValidRowWriter
     singleKeyCqlQuery.length
 
     def checkSingleColumn(column: ColumnRef): Unit = {

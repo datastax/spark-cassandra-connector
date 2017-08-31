@@ -196,7 +196,8 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       }
 
       override def targetTypeTag = typeTag[struct.ValueRepr]
-
+      override def filteredColumns =
+        columnNames.toSet.intersect(columnMap.getters.values.map(_.toString).toSet)
 
       override def convertPF = {
         case obj if cls.isInstance(obj) =>

@@ -22,6 +22,13 @@ class DefaultRowWriter[T : TypeTag : ColumnMapper](
     for (i <- row.columnValues.indices)
       buffer(i) = row.getRaw(i)
   }
+
+  override def isValidRowWriter(): Unit = {
+    val availableColumns = converter.filteredColumns
+    val unmatchedPartitionKeys = table.partitionKey.filter(pk => !availableColumns.contains(pk.columnName))
+    require(unmatchedPartitionKeys.isEmpty,
+      s"The following partition keys are missing: [${unmatchedPartitionKeys.mkString(",")}]")
+  }
 }
 
 object DefaultRowWriter {

@@ -45,6 +45,9 @@ trait TypeConverter[T] extends Serializable {
         throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName.")
     )
   }
+
+  def filteredColumns: Set[String] = Set()
+
 }
 
 /** Handles nullable types and converts any null to null. */
