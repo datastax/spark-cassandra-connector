@@ -11,6 +11,9 @@ import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.SerialShutdownHooks
 import com.datastax.spark.connector.util.Logging
 
+import scala.tools.nsc.interpreter
+import scala.tools.nsc.interpreter.session
+
 /** Provides and manages connections to Cassandra.
   *
   * A `CassandraConnector` instance is serializable and
@@ -78,10 +81,8 @@ class CassandraConnector(val conf: CassandraConnectorConf)
   def openSession() = {
     val session = sessionCache.acquire(_config)
     try {
-      val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
-      val dcToUse = _config.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(_config.hosts, allNodes))
-      val myNodes = allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
-      _config = _config.copy(hosts = myNodes)
+      val foundNodes = findNodes(session)
+      _config = _config.copy(hosts = foundNodes)
 
       val connectionsPerHost = _config.maxConnectionsPerExecutor.getOrElse(1)
       val poolingOptions = session.getCluster.getConfiguration.getPoolingOptions
@@ -99,6 +100,18 @@ class CassandraConnector(val conf: CassandraConnectorConf)
       case e: Throwable =>
         sessionCache.release(session, 0)
         throw e
+    }
+  }
+
+  private def findNodes(session: Session) = {
+    val allNodes: Set[Host] = session.getCluster.getMetadata.getAllHosts.toSet
+
+    session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy match {
+      case policy: DataCenterAware => {
+        val dcToUse = _config.localDC.getOrElse(policy.determineDataCenter(_config.hosts, allNodes))
+       allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
+      }
+      case _ => allNodes.map(_.getAddress)
     }
   }
 
