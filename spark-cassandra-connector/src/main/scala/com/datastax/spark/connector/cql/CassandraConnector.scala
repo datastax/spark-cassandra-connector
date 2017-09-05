@@ -3,16 +3,13 @@ package com.datastax.spark.connector.cql
 import java.io.IOException
 import java.net.InetAddress
 
-import scala.collection.JavaConversions._
-import scala.language.reflectiveCalls
-import org.apache.spark.{SparkConf, SparkContext}
 import com.datastax.driver.core._
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
-import com.datastax.spark.connector.util.SerialShutdownHooks
-import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
+import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.tools.nsc.interpreter
-import scala.tools.nsc.interpreter.session
+import scala.collection.JavaConversions._
+import scala.language.reflectiveCalls
 
 /** Provides and manages connections to Cassandra.
   *
