@@ -8,7 +8,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-
 import com.datastax.driver.core.ProtocolVersion._
 
 case class KVRow(key: Int)
@@ -27,7 +26,7 @@ case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
-class RDDSpec extends SparkCassandraITFlatSpecBase {
+class RDDSpec extends SparkCassandraITFlatSpecBase{
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
@@ -44,7 +43,9 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
 
   conn.withSessionDo { session =>
     createKeyspace(session)
-    session.getCluster.getConfiguration.getPoolingOptions.setMaxQueueSize(20000)
+    session.getCluster.getConfiguration.getPoolingOptions.setMaxQueueSize(64000)
+    session.getCluster.getConfiguration.getPoolingOptions.setPoolTimeoutMillis(30000)
+    val startTime = System.currentTimeMillis()
     awaitAll(
       Future {
         session.execute(
@@ -103,7 +104,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
             s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""",
             value: Integer,
             (value * 100).toLong: JLong)
-          ).par.foreach(_.getUninterruptibly)
+          ).foreach(_.getUninterruptibly)
       },
 
       Future {
@@ -121,7 +122,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
             value: Integer,
             cconeValue.toLong: JLong,
             value.toString)
-          ).par.foreach(_.getUninterruptibly)
+          ).foreach(_.getUninterruptibly)
       },
 
       Future {
@@ -140,6 +141,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase {
              |)""".stripMargin)
       }
     )
+    println(s"Took ${(System.currentTimeMillis() - startTime) /1000.0} Seconds to setup Suite Data")
   }
 
   def checkLeftSide[T, S](leftSideSource: Array[T], result: Array[(T, S)]) = {
