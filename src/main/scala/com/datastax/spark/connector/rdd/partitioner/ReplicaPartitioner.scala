@@ -26,7 +26,7 @@ class ReplicaPartitioner[T](
   val connector: CassandraConnector)(
 implicit
   currentType: ClassTag[T],
-  @transient rwf: RowWriterFactory[T]) extends Partitioner {
+  @transient private val rwf: RowWriterFactory[T]) extends Partitioner {
 
   val tableDef = Schema.tableFromCassandra(connector, keyspace, table)
   val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(

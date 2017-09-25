@@ -1,10 +1,11 @@
 package org.apache.spark.metrics
 
 import java.io.File
+import java.nio.charset.{Charset, StandardCharsets}
 
 import com.datastax.spark.connector.embedded.SparkTemplate
 import org.apache.commons.io.FileUtils
-import org.apache.spark.{TaskContext, SparkEnv, SparkConf}
+import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
 import org.scalatest.{FlatSpec, Matchers}
 
 class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemplate {
@@ -20,7 +21,7 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
 
     val metricsPropertiesFile = File.createTempFile("spark-cassandra-connector", "metrics.properties")
     metricsPropertiesFile.deleteOnExit()
-    FileUtils.writeStringToFile(metricsPropertiesFile, metricsPropertiesContent)
+    FileUtils.writeStringToFile(metricsPropertiesFile, metricsPropertiesContent, StandardCharsets.UTF_8)
 
     val conf = prepareConf
     conf.set("spark.metrics.conf", metricsPropertiesFile.getAbsolutePath)
@@ -41,7 +42,7 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
 
     val metricsPropertiesFile = File.createTempFile("spark-cassandra-connector", "metrics.properties")
     metricsPropertiesFile.deleteOnExit()
-    FileUtils.writeStringToFile(metricsPropertiesFile, metricsPropertiesContent)
+    FileUtils.writeStringToFile(metricsPropertiesFile, metricsPropertiesContent, StandardCharsets.UTF_8)
 
     val conf = prepareConf
     conf.set("spark.metrics.conf", metricsPropertiesFile.getAbsolutePath)

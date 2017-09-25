@@ -49,7 +49,7 @@ private[connector] class CassandraPartitioner[Key : ClassTag, V, T <: Token[V]](
   val keyMapping: ColumnSelector = PartitionKeyColumns)(
 implicit
   @transient
-  rwf: RowWriterFactory[Key],
+  private val rwf: RowWriterFactory[Key],
   tokenFactory: TokenFactory[V, T]) extends Partitioner with Logging {
 
   /** Changes the tableDef target of this partitioner. Can only be done within a keyspace

@@ -92,7 +92,7 @@ object ReflectionUtil {
   def method(tpe: Type, methodName: String): Type = SparkReflectionLock.synchronized {
     require(methodName != null, "Method name must not be null")
     require(methodName.nonEmpty, "Method name must not be empty")
-    val member = tpe.member(newTermName(methodName))
+    val member = tpe.member(TermName(methodName))
     require(member != NoSymbol, s"Member $methodName not found in $tpe")
     require(member.isMethod, s"Member $methodName of type $tpe is not a method")
     member.asMethod.typeSignatureIn(tpe)
