@@ -125,16 +125,16 @@ class CassandraTableScanRDD[R] private[connector](
 
   /**
     * Internal method for assigning a partitioner to this RDD, this lacks type safety checks for
-    * the Partitioner of type [K]. End users will use the implicit provided in
+    * the Partitioner of type [K, V, T]. End users will use the implicit provided in
     * [[CassandraTableScanPairRDDFunctions]]
     */
   private[connector] def withPartitioner[K, V, T <: ConnectorToken[V]](
     partitioner: Option[Partitioner]): CassandraTableScanRDD[R] = {
 
     val cassPart = partitioner match {
-      case Some(newPartitioner: CassandraPartitioner[K, V, T]) => {
+      case Some(newPartitioner: CassandraPartitioner[_, _, _]) => {
         this.partitioner match {
-          case Some(currentPartitioner: CassandraPartitioner[K, V, T]) =>
+          case Some(currentPartitioner: CassandraPartitioner[_, _, _]) =>
             /** Preserve the mapping set by the current partitioner **/
             logDebug(
               s"""Preserving Partitioner: $currentPartitioner with mapping

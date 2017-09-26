@@ -54,6 +54,7 @@ class EmptyCassandraRDD[R : ClassTag](
       columnNames match {
         case AllColumns => Seq()
         case PartitionKeyColumns => Seq()
+        case PrimaryKeyColumns => Seq()
         case SomeColumns(cs@_*) => cs
       }
     providedColumnNames

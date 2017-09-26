@@ -81,6 +81,7 @@ trait CassandraTableRowReaderProvider[R] {
       columnNames match {
         case AllColumns => tableDef.columns.map(col => col.columnName: ColumnRef)
         case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: ColumnRef)
+        case PrimaryKeyColumns => tableDef.primaryKey.map(col => col.columnName: ColumnRef)
         case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
 
@@ -99,7 +100,7 @@ trait CassandraTableRowReaderProvider[R] {
       case SomeColumns(cs@_*) =>
         checkColumnsAvailable(columns, cs)
       case AllColumns =>
-      case PartitionKeyColumns =>
+      case PartitionKeyColumns | PrimaryKeyColumns =>
       // we do not check for column existence yet as it would require fetching schema and a call to C*
       // columns existence will be checked by C* once the RDD gets computed.
     }

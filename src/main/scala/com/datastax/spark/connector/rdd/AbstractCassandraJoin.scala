@@ -45,6 +45,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     )
     case PartitionKeyColumns =>
       tableDef.partitionKey.map(col => col.columnName: ColumnRef)
+    case PrimaryKeyColumns =>
+      tableDef.primaryKey.map(col => col.columnName: ColumnRef)
     case SomeColumns(cs @ _*) =>
       checkColumnsExistence(cs)
       cs.map {

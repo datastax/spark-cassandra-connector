@@ -408,6 +408,15 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
     checkLeftSide(leftSide, result)
   }
 
+  it should "be joinable on both partitioning key and csdfsdfsdflustering key using on" in {
+    val source = sc.parallelize(keys).map(x => (x, x * 100))
+    val someCass = source.joinWithCassandraTable(ks, wideTable).on(PrimaryKeyColumns)
+    val result = someCass.collect
+    val leftSide = source.collect
+    checkArrayCassandraRow(result)
+    checkLeftSide(leftSide, result)
+  }
+
   it should "be able to be limited" in {
     val source = sc.parallelize(keys).map(x => KVRow(x))
     val someCass = source.joinWithCassandraTable(ks, wideTable).on(SomeColumns("key")).limit(3)
@@ -509,10 +518,35 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
     checkArrayCassandraRow(result)
   }
 
+  it should "be readable by primary key selector" in {
+    val rdd = new CassandraTableScanRDD(
+      sc = sc,
+      connector = CassandraConnector(sc),
+      keyspaceName = ks,
+      tableName = tableName,
+      columnNames = PrimaryKeyColumns)
+
+    rdd.first().metaData.columnNames should contain allOf("key", "group")
+  }
+
+  "An empty CasssandraRDD" should "allow primary key selector as column names" in {
+    val source = new EmptyCassandraRDD(sc, ks, otherTable, columnNames = PrimaryKeyColumns)
+    source.selectedColumnRefs should be (empty)
+  }
+
   "A Joined CassandraRDD " should " support select clauses " in {
     val someCass = sc.cassandraTable(ks, otherTable).joinWithCassandraTable(ks, tableName).select("value")
     val results = someCass.collect.map(_._2).map(_.getInt("value")).sorted
     results should be(keys.toArray)
+  }
+
+  it should "support primary key selector as join columns" in {
+    val source = sc.cassandraTable(ks, otherTable)
+    val someCass = source.leftJoinWithCassandraTable(ks, tableName, joinColumns = PrimaryKeyColumns)
+    val result = someCass.collect
+    val leftSide = source.collect
+    checkArrayOptionCassandraRow(result)
+    checkLeftSide(leftSide, result)
   }
 
   it should " support where clauses" in {
