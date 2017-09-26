@@ -470,8 +470,11 @@ object TypeConverter {
 
     def convertPF = {
       case x: LocalDate => x
-      case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
-      case yearRegx(y) => LocalDate.fromYearMonthDay(y.toInt, 1, 1)
+      case x: String => x match {
+        case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
+        case yearRegx(y) => LocalDate.fromYearMonthDay(y.toInt, 1, 1)
+        case _ =>  throw new TypeConversionException(s"Cannot convert string $x to $targetTypeName.")
+      }
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
       case x: JodaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
       case x: JavaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthValue, x.getDayOfMonth)
