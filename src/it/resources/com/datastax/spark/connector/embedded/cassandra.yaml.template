@@ -353,25 +353,6 @@ seed_provider:
           # Ex: "<ip1>,<ip2>,<ip3>"
           - seeds: "127.0.0.1"
 
-# For workloads with more data than can fit in memory, Cassandra's
-# bottleneck will be reads that need to fetch data from
-# disk. "concurrent_reads" should be set to (16 * number_of_drives) in
-# order to allow the operations to enqueue low enough in the stack
-# that the OS and drives can reorder them. Same applies to
-# "concurrent_counter_writes", since counter writes read the current
-# values before incrementing and writing them back.
-#
-# On the other hand, since writes are almost never IO bound, the ideal
-# number of "concurrent_writes" is dependent on the number of cores in
-# your system; (8 * number_of_cores) is a good rule of thumb.
-concurrent_reads: 32
-concurrent_writes: 32
-concurrent_counter_writes: 32
-
-# For materialized view writes, as there is a read involved, so this should
-# be limited by the less of concurrent reads or concurrent writes.
-concurrent_materialized_view_writes: 32
-
 # Maximum memory to use for pooling sstable buffers. Defaults to the smaller
 # of 1/4 of heap or 512MB. This pool is allocated off-heap, so is in addition
 # to the memory allocated for heap. Memory is only allocated as needed.
@@ -667,13 +648,6 @@ request_timeout_in_ms: 10000
 # Warning: before enabling this property make sure to ntp is installed
 # and the times are synchronized between the nodes.
 cross_node_timeout: false
-
-# Enable socket timeout for streaming operation.
-# When a timeout occurs during streaming, streaming is retried from the start
-# of the current file. This _can_ involve re-streaming an important amount of
-# data, so you should avoid setting the value too low.
-# Default value is 3600000, which means streams timeout after an hour.
-# streaming_socket_timeout_in_ms: 3600000
 
 # phi value that must be reached for a host to be marked down.
 # most users should never need to adjust this.
