@@ -70,8 +70,9 @@ may also be used. ("127.0.0.1,192.168.0.1")
 </tr>
 <tr>
   <td><code>query.retry.count</code></td>
-  <td>10</td>
-  <td>Number of times to retry a timed-out query</td>
+  <td>60</td>
+  <td>Number of times to retry a timed-out query,
+Setting this to -1 means unlimited retries</td>
 </tr>
 <tr>
   <td><code>query.retry.delay</code></td>

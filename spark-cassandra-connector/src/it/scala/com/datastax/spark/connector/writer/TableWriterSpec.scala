@@ -900,4 +900,40 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     results should contain theSameElementsAs Seq((1, "new"), (2, "new"))
   }
 
+  "Idempotent Queries" should "not be used with list append" in {
+    val listAppend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" append), WriteConf.fromSparkConf(sc.getConf))
+    listAppend.isIdempotent should be (false)
+  }
+
+  it should "not be used with list prepend" in {
+    val listPrepend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" prepend), WriteConf.fromSparkConf(sc.getConf))
+    listPrepend.isIdempotent should be (false)
+  }
+
+  it should "not be used with counter modifications" in {
+    val counterUpdate = TableWriter(conn, ks, "counters", SomeColumns("pkey", "ckey", "c1", "c2"), WriteConf.fromSparkConf(sc.getConf))
+    counterUpdate.isIdempotent should be (false)
+  }
+
+  it should "be used with ifNotExists updates" in {
+    val ifNotExists = TableWriter(conn, ks, "write_if_not_exists_test", AllColumns, writeConf = WriteConf(ifNotExists = true))
+    ifNotExists.isIdempotent should be (true)
+  }
+
+  it should "be used with generic writes" in {
+    val genericWrite = TableWriter(conn, ks, "key_value", AllColumns, WriteConf.fromSparkConf(sc.getConf))
+    genericWrite.isIdempotent should be (true)
+  }
+
+  it should "be used with collections that aren't lists" in {
+    val listOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    listOverwrite.isIdempotent should be (true)
+    val setOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "scol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    setOverwrite.isIdempotent should be (true)
+    val mapOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "mcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    mapOverwrite.isIdempotent should be (true)
+  }
+
+
+
 }
