@@ -13,6 +13,8 @@ plugins {
 
 configurations {
     testCompile.extendsFrom compileOnly
+    provided
+    compile.extendsFrom provided
 }
 
 sourceSets {
@@ -72,47 +74,47 @@ dependencies {
 
     def sparkExcludes = commonExcludes << hadoopExcludes
 
-    compile("org.scala-lang:scala-compiler:${scalaVersion}") { force = true }
+    compileOnly("org.scala-lang:scala-compiler:${scalaVersion}") { force = true }
     compile("org.scala-lang:scala-library:${scalaVersion}") { force = true }
     compile("org.scala-lang:scala-reflect:${scalaVersion}") { force = true }
 
     compile "com.datastax.dse:dse-java-driver-core:${cassandraDseJavaDriverVersion}"
     compile "com.datastax.dse:dse-java-driver-mapping:${cassandraDseJavaDriverVersion}"
 
-    compile("org.apache.hadoop:hadoop-client:${hadoopVersion}", commonExcludes)
+    provided("org.apache.hadoop:hadoop-client:${hadoopVersion}", commonExcludes)
 
     compile "org.joda:joda-convert:${jodaConvertVersion}"
     compile "joda-time:joda-time:${jodaTimeVersion}"
 
     compile("com.google.guava:guava:${guavaVersion}")
-    compile("com.thoughtworks.paranamer:paranamer:${paranamerVersion}")
+    compileOnly("com.thoughtworks.paranamer:paranamer:${paranamerVersion}")
 
-    compileOnly("com.datastax.spark:spark-core_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-catalyst_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-hive_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-sql_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
-    compileOnly("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-core_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-catalyst_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-hive_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-sql_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
+    provided("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
 
-    compile "com.esotericsoftware:kryo:${kryoVersion}"
-    compile "com.typesafe:config:${typesafeConfigVersion}"
+    compileOnly "com.esotericsoftware:kryo:${kryoVersion}"
+    compileOnly "com.typesafe:config:${typesafeConfigVersion}"
 
-    compile "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}"
-    compile "commons-codec:commons-codec:${commonsCodecVersion}"
-    compile "commons-configuration:commons-configuration:${commonsConfigurationVersion}"
-    compile "commons-io:commons-io:${commonsIoVersion}"
+    compile ("commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}") {
+        exclude group: "commons-logging"
+    }
 
-    compile "org.eclipse.jetty.aggregate:jetty-all:${jettyVersion}"
+    compileOnly "commons-codec:commons-codec:${commonsCodecVersion}"
+    compileOnly "commons-configuration:commons-configuration:${commonsConfigurationVersion}"
+    compileOnly "commons-io:commons-io:${commonsIoVersion}"
 
-    compile "io.dropwizard.metrics:metrics-core:${codahaleMetricsVersion}"
-    compile "io.dropwizard.metrics:metrics-jvm:${codahaleMetricsVersion}"
-    compile "io.dropwizard.metrics:metrics-json:${codahaleMetricsVersion}"
+    compileOnly "org.eclipse.jetty.aggregate:jetty-all:${jettyVersion}"
+
+    compileOnly "io.dropwizard.metrics:metrics-json:${codahaleMetricsVersion}"
     compile "io.netty:netty-all:${nettyVersion}"
 
-    compile "org.scala-lang.modules:scala-parser-combinators_${scalaLibVersion}:${scalaParserCombinatorsVersion}"
+    compileOnly "org.scala-lang.modules:scala-parser-combinators_${scalaLibVersion}:${scalaParserCombinatorsVersion}"
 
-    compile("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${sparkFasterxmlJacksonVersion}") { force = true }
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${sparkFasterxmlJacksonVersion}") { force = true }
 
     testCompile(project(':dse-core'))
     testCompile(project(path: ':dse-core', configuration: 'testOutput'))
@@ -122,6 +124,7 @@ dependencies {
 
     testCompile(group: "com.datastax.spark", name: "spark-core_${scalaLibVersion}", version: "${sparkVersion}", classifier: 'tests', sparkExcludes)
     testCompile(group: "com.datastax.spark", name: "spark-streaming_${scalaLibVersion}", version: "${sparkVersion}", classifier: 'tests', sparkExcludes)
+    testCompile("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
 
     testRuntime 'log4j:log4j:1.2.17'
     testRuntime 'org.slf4j:jul-to-slf4j:1.7.16'
@@ -137,3 +140,50 @@ compileTestScala {
 }
 
 rootProject.test.tasks << test
+
+/**
+ *  This changes dependency scope to configuration name if the dependency is present in the configuration.
+ *  Ex. Configuration "provided" contains dependency spark-core. Spark-core scope is going to be changed to "provided".
+ */
+def overrideScope(Node dependency, Configuration configuration) {
+    def artifactId = dependency.artifactId.text()
+    if (configuration.allDependencies.find { it.name == artifactId } != null) {
+        dependency.scope*.value = configuration.getName()
+    }
+}
+
+def shortenVersion(Node dependency) {
+    dependency.version*.value = (dependency.version.text() =~ /(\d+\.\d+\.\d+(?:-\w+)?)/)[0][1]
+}
+
+publishing {
+    publications {
+        nebula(MavenPublication) {
+            pom.withXml {
+                Node node = asNode() as Node
+                node.dependencies.dependency.each { d ->
+                    Node dependency = d as Node
+                    def artifactId = dependency.artifactId.text()
+                    def groupId = dependency.groupId.text()
+
+                    overrideScope(dependency, project.configurations.getByName("provided"))
+                    /**
+                     *  Connector depends on internal version of netty, we need to migrate to public
+                     *  [major.minor.path.Final] version
+                     */
+                    if (artifactId == "netty-all") {
+                        shortenVersion(dependency)
+                        dependency.version*.value = dependency.version.text() + ".Final"
+                    }
+                    /**
+                     *  Move to OS version of spark
+                     */
+                    if (artifactId.startsWith("spark-") && groupId == "com.datastax.spark") {
+                        dependency.groupId*.value = "org.apache.spark"
+                        shortenVersion(dependency)
+                    }
+                }
+            }
+        }
+    }
+}
