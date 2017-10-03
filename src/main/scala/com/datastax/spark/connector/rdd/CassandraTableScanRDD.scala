@@ -306,7 +306,7 @@ class CassandraTableScanRDD[R] private[connector](
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
     try {
-      val stmt = session.prepare(cql)
+      val stmt = session.prepare(cql).setIdempotent(true)
       stmt.setConsistencyLevel(consistencyLevel)
       val converters = stmt.getVariables
         .map(v => ColumnType.converterToCassandra(v.getType))
