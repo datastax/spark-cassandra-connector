@@ -84,7 +84,7 @@ dependencies {
     provided("org.apache.hadoop:hadoop-client:${hadoopVersion}", commonExcludes)
 
     compile "org.joda:joda-convert:${jodaConvertVersion}"
-    compile "joda-time:joda-time:${jodaTimeVersion}"
+    compileOnly "joda-time:joda-time:${jodaTimeVersion}"
 
     compile("com.google.guava:guava:${guavaVersion}")
     compileOnly("com.thoughtworks.paranamer:paranamer:${paranamerVersion}")
@@ -110,7 +110,7 @@ dependencies {
     compileOnly "org.eclipse.jetty.aggregate:jetty-all:${jettyVersion}"
 
     compileOnly "io.dropwizard.metrics:metrics-json:${codahaleMetricsVersion}"
-    compile "io.netty:netty-all:${nettyVersion}"
+    compileOnly "io.netty:netty-all:${nettyVersion}"
 
     compileOnly "org.scala-lang.modules:scala-parser-combinators_${scalaLibVersion}:${scalaParserCombinatorsVersion}"
 
