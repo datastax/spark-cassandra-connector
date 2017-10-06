@@ -108,7 +108,7 @@ object YamlTransformations {
      sslStoragePort: Int = 7001,
      listenAddress: String = "127.0.0.1",
      nativeTransportPort: Int = 9042,
-     rpcAddress: String = "127.0.0.1",
+     nativeTransportAddress: String = "127.0.0.1",
      jmxPort: Int = CassandraRunner.DefaultJmxPort) extends YamlTransformations {
 
     addTransformation("cluster_name", clusterName)
@@ -124,7 +124,7 @@ object YamlTransformations {
     addTransformation("ssl_storage_port", sslStoragePort: JInteger)
     addTransformation("listen_address", listenAddress)
     addTransformation("native_transport_port", nativeTransportPort: JInteger)
-    addTransformation("rpc_address", rpcAddress)
+    addTransformation("native_transport_address", nativeTransportAddress)
 
     if (YamlTemplateVersion >= "3.0") {
       addTransformation("hints_directory", Paths.get(cassandraDir, "hints").toString)

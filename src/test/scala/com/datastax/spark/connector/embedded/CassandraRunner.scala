@@ -69,11 +69,11 @@ private[connector] class CassandraRunner(
 
   val startupTime = System.currentTimeMillis()
 
-  if (!waitForPortOpen(InetAddress.getByName(baseConfiguration.rpcAddress), baseConfiguration.nativeTransportPort, 100000, () => !process.isAlive)) {
+  if (!waitForPortOpen(InetAddress.getByName(baseConfiguration.nativeTransportAddress), baseConfiguration.nativeTransportPort, 100000, () => !process.isAlive)) {
     if (!process.isAlive) {
       System.err.println(s"!!! Cassandra at ${baseConfiguration.nativeTransportPort} is already stopped with exit code: ${process.exitValue()}")
     }
-    throw new IOException(s"Failed to start Cassandra at ${baseConfiguration.rpcAddress}:${baseConfiguration.nativeTransportPort}")
+    throw new IOException(s"Failed to start Cassandra at ${baseConfiguration.nativeTransportAddress}:${baseConfiguration.nativeTransportPort}")
   }
 
   def destroy() {

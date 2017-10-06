@@ -118,7 +118,7 @@ object EmbeddedCassandra {
       storagePort = cassandraPorts.getStoragePort(index),
       sslStoragePort = cassandraPorts.getSslStoragePort(index),
       nativeTransportPort = getPort(index),
-      rpcAddress = host,
+      nativeTransportAddress = host,
       listenAddress = host,
       jmxPort = cassandraPorts.getJmxPort(index)
     )
