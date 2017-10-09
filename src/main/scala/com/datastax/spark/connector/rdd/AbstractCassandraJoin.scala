@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{CodecRegistry, PreparedIdWorkaround, PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
@@ -11,6 +11,7 @@ import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
 
+import scala.collection.JavaConverters._
 /**
  * This trait contains shared methods from [[com.datastax.spark.connector.rdd.CassandraJoinRDD]] and
  * [[com.datastax.spark.connector.rdd.CassandraLeftJoinRDD]] to avoid code duplication.
@@ -30,6 +31,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
+    rowMetadata: CassandraRowMetadata,
     lastIt: Iterator[L],
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)]
@@ -134,9 +136,19 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     query
   }
 
+  private def getPreparedStatement(session: Session): PreparedStatement = {
+    session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel).setIdempotent(true)
+  }
+
+  private def getCassandraRowMetadata(session: Session) = {
+    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
+    val id = getPreparedStatement(session).getPreparedId
+    CassandraRowMetadata.fromPreparedId(columnNames, id)
+  }
+
   private[rdd] def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
     val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
-    val stmt = session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel).setIdempotent(true)
+    val stmt = getPreparedStatement(session)
     new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
   }
 
@@ -148,8 +160,9 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   override def compute(split: Partition, context: TaskContext): Iterator[(L, R)] = {
     val session = connector.openSession()
     val bsb = boundStatementBuilder(session)
+    val rowMetadata = getCassandraRowMetadata(session)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
-    val rowIterator = fetchIterator(session, bsb, left.iterator(split, context), metricsUpdater)
+    val rowIterator = fetchIterator(session, bsb, rowMetadata, left.iterator(split, context), metricsUpdater)
     val countingIterator = new CountingIterator(rowIterator, None)
 
     context.addTaskCompletionListener { (context) =>

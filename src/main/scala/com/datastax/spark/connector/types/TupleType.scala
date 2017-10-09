@@ -36,7 +36,7 @@ case class TupleType(componentTypes: TupleFieldDef*)
       throw new IllegalArgumentException(s"Invalid tuple component index: ${c.index}. Expected: $i")
   }
 
-  override def columns = componentTypes.toIndexedSeq
+  override val columns = componentTypes.toIndexedSeq
 
   override def scalaTypeTag = TupleValue.TypeTag
 
@@ -92,7 +92,7 @@ case class TupleType(componentTypes: TupleFieldDef*)
     s"frozen<tuple<${types.mkString(", ")}>>"
   }
 
-  override def name = cqlTypeName
+  override val name: String = cqlTypeName
 
 }
 
