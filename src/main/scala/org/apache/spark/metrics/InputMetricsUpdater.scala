@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.LongAdder
 
 import scala.concurrent.duration.{FiniteDuration, _}
 
+import com.codahale.metrics.Timer
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.util.ThreadUtils
@@ -100,7 +101,7 @@ object InputMetricsUpdater {
     private val schedule = scheduledExecutor
         .scheduleAtFixedRate(updateMetricsCmd, interval.toMillis, interval.toMillis, TimeUnit.MILLISECONDS)
     
-    def getRowBinarySize(row: Row) = {
+    def getRowBinarySize(row: Row): Int = {
       var size = 0
       for (i <- 0 until row.getColumnDefinitions.size() if !row.isNull(i))
         size += row.getBytesUnsafe(i).remaining()
@@ -114,10 +115,10 @@ object InputMetricsUpdater {
     }
 
     def finish(): Long = {
-      scheduledExecutor.shutdown()
-      updateMetricsCmd.run()
       val t = stopTimer()
+      scheduledExecutor.shutdown()
       scheduledExecutor.awaitTermination(interval.toMillis, TimeUnit.MILLISECONDS)
+      updateMetricsCmd.run()
       t
     }
   }
@@ -131,7 +132,7 @@ object InputMetricsUpdater {
       source.readRowMeter.mark(count)
     }
 
-    val timer = source.readTaskTimer.time()
+    val timer: Timer.Context = source.readTaskTimer.time()
   }
 
   private trait TaskMetricsSupport extends InputMetricsUpdater {

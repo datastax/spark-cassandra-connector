@@ -7,9 +7,11 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
 import org.apache.spark.rdd.RDD
-import com.datastax.spark.connector.util.maybeExecutingAs
 
+import com.datastax.spark.connector.util.maybeExecutingAs
 import scala.reflect.ClassTag
+
+import org.apache.spark.metrics.InputMetricsUpdater
 
 /**
  * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
@@ -116,13 +118,12 @@ class CassandraJoinRDD[L, R] private[connector](
   private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
-    leftIterator: Iterator[L]
+    leftIterator: Iterator[L],
+    metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)] = {
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
     val rateLimiter = new RateLimiter(
-      readConf.readsPerSec, readConf.readsPerSec
-    )
-
+      readConf.readsPerSec, readConf.readsPerSec)
     val queryExecutor = QueryExecutor(session, None, None)
 
     def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
@@ -134,7 +135,8 @@ class CassandraJoinRDD[L, R] private[connector](
         def onSuccess(rs: ResultSet) {
           val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
           val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs);
-          val rightSide = resultSet.map(rowReader.read(_, columnMetaData))
+          val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
+          val rightSide = iteratorWithMetrics.map(rowReader.read(_, columnMetaData))
           resultFuture.set(leftSide.zip(rightSide))
         }
         def onFailure(throwable: Throwable) {

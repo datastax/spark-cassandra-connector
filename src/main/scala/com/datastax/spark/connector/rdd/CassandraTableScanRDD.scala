@@ -340,7 +340,6 @@ class CassandraTableScanRDD[R] private[connector](
 
     try {
       val scanResult = scanner.scan(stmt)
-
       val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
