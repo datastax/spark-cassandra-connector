@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd
 
+import java.util.concurrent.Future
+
 import com.datastax.driver.core.{CodecRegistry, PreparedIdWorkaround, PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.rdd.CassandraLimit._
@@ -7,6 +9,7 @@ import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPred
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
+import com.google.common.util.concurrent.SettableFuture
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
@@ -197,5 +200,14 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       readConf = readConf
     )
 
+  /** Prefetches a batchSize of elements at a time **/
+  protected def slidingPrefetchIterator[T](it: Iterator[Future[T]], batchSize: Int): Iterator[T] = {
+    val (firstElements, lastElement) =  it
+      .grouped(batchSize)
+      .sliding(2)
+      .span(_ => it.hasNext)
+
+    (firstElements.map(_.head) ++ lastElement.flatten).flatten.map(_.get)
+    }
 }
 

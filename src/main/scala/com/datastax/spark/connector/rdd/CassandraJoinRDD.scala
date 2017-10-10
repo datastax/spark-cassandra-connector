@@ -123,8 +123,10 @@ class CassandraJoinRDD[L, R] private[connector](
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)] = {
     val rateLimiter = new RateLimiter(
-      readConf.readsPerSec, readConf.readsPerSec)
-    val queryExecutor = QueryExecutor(session, None, None)
+      readConf.readsPerSec, readConf.readsPerSec
+    )
+
+    val queryExecutor = QueryExecutor(session, readConf.parallelismLevel, None, None)
 
     def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
       val resultFuture = SettableFuture.create[Iterator[(L, R)]]
@@ -144,11 +146,15 @@ class CassandraJoinRDD[L, R] private[connector](
       })
       resultFuture
     }
+
+
+
     val queryFutures = leftIterator.map(left => {
       rateLimiter.maybeSleep(1)
       pairWithRight(left)
-    }).toList
-    queryFutures.iterator.flatMap(_.get)
+    })
+
+    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatMap(identity)
   }
 
   /**
