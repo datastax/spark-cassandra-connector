@@ -120,9 +120,9 @@ an `in` will also generate a single Spark Partition.
 * java.lang.NoClassDefFoundError: com/twitter/jsr166e/LongAdder
 * java.lang.ClassNotFoundException: com.datastax.spark.connector.rdd.partitioner.CassandraPartition
 
-These error is commonly thrown when the Spark Cassandra Connector or it's dependencies are not
+These errors are commonly thrown when the Spark Cassandra Connector or its dependencies are not
 on the runtime classpath of the Spark Application. This is usually caused by not using the
-prescribed `--packages` method of adding the Spark Cassandra Connector and it's dependencies
+prescribed `--packages` method of adding the Spark Cassandra Connector and its dependencies
 to the runtime classpath. Fix this by following the launch guidelines as shown in the 
 [quick start guide](0_quick_start.md). Not using this method means it is up to the user to manually 
 ensure that the SCC and all of its dependencies wind up on the execution classpath.
