@@ -37,19 +37,18 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestBa
     val row = new RowMock(Some(1), Some(2), Some(3), None, Some(4))
 
     updater.updateMetrics(row)
-    Eventually.eventually {
-      tc.taskMetrics().inputMetrics.bytesRead shouldBe 10L
-      tc.taskMetrics().inputMetrics.recordsRead shouldBe 1L
-    }
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 0L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 0L
 
     updater.updateMetrics(row)
     updater.updateMetrics(row)
     updater.updateMetrics(row)
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 0L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 0L
 
-    Eventually.eventually {
-      tc.taskMetrics().inputMetrics.bytesRead shouldBe 40L
-      tc.taskMetrics().inputMetrics.recordsRead shouldBe 4L
-    }
+    updater.finish()
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 40L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 4L
   }
 
   it should "be thread-safe when it uses task metrics" in {
@@ -62,10 +61,9 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestBa
     val range = (1 to 1000).par
     range.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
     for (i <- range) updater.updateMetrics(row)
-    Eventually.eventually {
-      tc.taskMetrics().inputMetrics.bytesRead shouldBe 10000L
-      tc.taskMetrics().inputMetrics.recordsRead shouldBe 1000L
-    }
+    updater.finish()
+    tc.taskMetrics().inputMetrics.bytesRead shouldBe 10000L
+    tc.taskMetrics().inputMetrics.recordsRead shouldBe 1000L
   }
 
   it should "create updater which does not use task metrics" in {

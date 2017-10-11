@@ -29,10 +29,10 @@ sealed trait InputMetricsUpdater extends MetricsUpdater {
   def updateMetrics(row: Row): Row = row
 
   /** For internal use only */
-  private[metrics] def updateTaskMetrics(count: Int, dataLength: Int): Unit = {}
+  private[metrics] def updateTaskMetrics(count: Long, dataLength: Long): Unit = {}
 
   /** For internal use only */
-  private[metrics] def updateCodahaleMetrics(count: Int, dataLength: Int): Unit = {}
+  private[metrics] def updateCodahaleMetrics(count: Long, dataLength: Long): Unit = {}
 }
 
 object InputMetricsUpdater {
@@ -89,12 +89,16 @@ object InputMetricsUpdater {
     private val scheduledExecutor = ThreadUtils.newDaemonSingleThreadScheduledExecutor("input-metrics-updater")
 
     private val updateMetricsCmd = new Runnable {
+      private var lastCnt: Long = 0
+      private var lastDataLength: Long = 0
+      
       override def run(): Unit = {
         // Codahale metrics introduce some overhead so in order to minimize it we can update them not
         // that often
-        val (_cnt, _dataLength) = (cnt.sumThenReset().toInt, dataLength.sumThenReset().toInt)
-        updateTaskMetrics(_cnt, _dataLength)
-        updateCodahaleMetrics(_cnt, _dataLength)
+        val (_cnt, _dataLength) = (cnt.sum(), dataLength.sum())
+        updateCodahaleMetrics(_cnt - lastCnt, _dataLength - lastDataLength)
+        lastCnt = _cnt
+        lastDataLength = _dataLength
       }
     }
     
@@ -119,6 +123,7 @@ object InputMetricsUpdater {
       scheduledExecutor.shutdown()
       scheduledExecutor.awaitTermination(interval.toMillis, TimeUnit.MILLISECONDS)
       updateMetricsCmd.run()
+      updateTaskMetrics(cnt.sum(), dataLength.sum())
       t
     }
   }
@@ -127,7 +132,7 @@ object InputMetricsUpdater {
     val source: CassandraConnectorSource
 
     @inline
-    override def updateCodahaleMetrics(count: Int, dataLength: Int): Unit = {
+    override def updateCodahaleMetrics(count: Long, dataLength: Long): Unit = {
       source.readByteMeter.mark(dataLength)
       source.readRowMeter.mark(count)
     }
@@ -139,7 +144,7 @@ object InputMetricsUpdater {
     val inputMetrics: InputMetrics
 
     @inline
-    override def updateTaskMetrics(count: Int, dataLength: Int): Unit = {
+    override def updateTaskMetrics(count: Long, dataLength: Long): Unit = {
       inputMetrics.incBytesRead(dataLength)
       inputMetrics.incRecordsRead(count)
     }
