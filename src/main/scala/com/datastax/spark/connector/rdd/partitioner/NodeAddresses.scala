@@ -17,15 +17,20 @@ class NodeAddresses(conn: CassandraConnector) extends Serializable {
   lazy val nativeTransportAddressToListenAddress: InetAddress => InetAddress = {
     conn.withSessionDo { session =>
       val table = "system.peers"
-      val nativeTransportAddressColumn = "native_transport_address"
-      val listenAddressColumn = "peer"
+      val listenAddressColumnName = "peer"
+
+      val transportAddressColumn = session.getCluster.getMetadata
+          .getKeyspace("system")
+          .getTable("peers")
+          .getColumn("native_transport_address")
+      val nativeTransportAddressColumnName = Option(transportAddressColumn).map(_.getName).getOrElse("rpc_address")
 
       // TODO: fetch information about the local node from system.local, when CASSANDRA-9436 is done
-      val rs = session.execute(s"SELECT $nativeTransportAddressColumn, $listenAddressColumn FROM $table")
+      val rs = session.execute(s"SELECT $nativeTransportAddressColumnName, $listenAddressColumnName FROM $table")
       for {
         row <- rs.all()
-        nativeTransportAddress <- Option(row.getInet(nativeTransportAddressColumn))
-        listenAddress = row.getInet(listenAddressColumn)
+        nativeTransportAddress <- Option(row.getInet(nativeTransportAddressColumnName))
+        listenAddress = row.getInet(listenAddressColumnName)
       } yield (nativeTransportAddress, listenAddress)
     }.toMap.withDefault(identity)
   }
