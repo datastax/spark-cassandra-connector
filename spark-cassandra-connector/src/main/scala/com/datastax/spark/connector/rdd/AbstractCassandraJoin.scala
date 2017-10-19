@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.rdd
 
+import java.util.concurrent.Future
+
 import com.datastax.driver.core.{PreparedStatement, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
@@ -195,6 +197,16 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       clusteringOrder = clusteringOrder,
       readConf = readConf
     )
+
+  /** Prefetches a batchSize of elements at a time **/
+  protected def slidingPrefetchIterator[T](it: Iterator[Future[T]], batchSize: Int): Iterator[T] = {
+    val (firstElements, lastElement) =  it
+      .grouped(batchSize)
+      .sliding(2)
+      .span(_ => it.hasNext)
+
+    (firstElements.map(_.head) ++ lastElement.flatten).flatten.map(_.get)
+  }
 
 }
 

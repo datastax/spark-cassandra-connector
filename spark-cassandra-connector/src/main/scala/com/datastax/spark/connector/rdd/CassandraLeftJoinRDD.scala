@@ -168,7 +168,7 @@ class CassandraLeftJoinRDD[L, R] private[connector](
     val queryFutures = leftIterator.map(left => {
       rateLimiter.maybeSleep(1)
       pairWithRight(left)
-    }).toList
-    queryFutures.iterator.flatMap(_.get)
+    })
+    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatMap(identity)
   }
 }

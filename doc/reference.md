@@ -207,6 +207,11 @@ OSS Cassandra this should never be used.</td>
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>concurrent.reads</code></td>
+  <td>512</td>
+  <td>Sets read parallelism for joinWithCassandra tables</td>
+</tr>
+<tr>
   <td><code>input.consistency.level</code></td>
   <td>LOCAL_ONE</td>
   <td>Consistency level to use when reading	</td>
