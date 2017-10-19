@@ -22,6 +22,7 @@ case class ReadConf(
   fetchSizeInRows: Int = ReadConf.FetchSizeInRowsParam.default,
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
+  parallelismLevel: Int = ReadConf.ParallelismLevelParam.default,
   readsPerSec: Int = ReadConf.ReadsPerSecParam.default
 )
 
@@ -64,6 +65,14 @@ object ReadConf extends Logging {
     description =
       "**Deprecated** Please use input.reads_per_sec. Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table")
 
+  val ParallelismLevelParam = ConfigParameter[Int] (
+    name = "spark.cassandra.concurrent.reads",
+    section = ReferenceSection,
+    default = 512,
+    description =
+       """Sets read parallelism for joinWithCassandra tables"""
+  )
+
 
   val ReadsPerSecParam = ConfigParameter[Int] (
     name = "spark.cassandra.input.reads_per_sec",
@@ -80,7 +89,8 @@ object ReadConf extends Logging {
     ReadsPerSecParam,
     SplitSizeInMBParam,
     TaskMetricParam,
-    ThroughputJoinQueryPerSecParam
+    ThroughputJoinQueryPerSecParam,
+    ParallelismLevelParam
   )
 
   def fromSparkConf(conf: SparkConf): ReadConf = {

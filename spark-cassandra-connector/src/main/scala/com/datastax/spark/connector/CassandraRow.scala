@@ -1,6 +1,7 @@
 package com.datastax.spark.connector
 
-import com.datastax.driver.core.{CodecRegistry, ResultSet, Row, TypeCodec}
+import com.datastax.driver.core.ColumnDefinitions.Definition
+import com.datastax.driver.core._
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -127,10 +128,18 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
 object CassandraRowMetadata {
 
   def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet) = {
+    fromColumnDefs(columnNames, rs.getColumnDefinitions.asList())
+  }
+
+  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId) = {
+    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList())
+  }
+
+  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: java.util.List[Definition]) = {
     import scala.collection.JavaConversions._
-    val columnDefs = rs.getColumnDefinitions.asList().toList
-    val rsColumnNames = columnDefs.map(_.getName)
-    val codecs = columnDefs.map(col => CodecRegistry.DEFAULT_INSTANCE.codecFor(col.getType))
+    val scalaColumnDefs = columnDefs.toList
+    val rsColumnNames = scalaColumnDefs.map(_.getName)
+    val codecs = scalaColumnDefs.map(col => CodecRegistry.DEFAULT_INSTANCE.codecFor(col.getType))
       .asInstanceOf[List[TypeCodec[AnyRef]]]
     CassandraRowMetadata(columnNames, Some(rsColumnNames.toIndexedSeq), codecs.toIndexedSeq)
   }
