@@ -138,9 +138,9 @@ class CassandraLeftJoinRDD[L, R] private[connector](
   private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
+    rowMetadata: CassandraRowMetadata,
     leftIterator: Iterator[L]
   ): Iterator[(L, Option[R])] = {
-    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
     val rateLimiter = new RateLimiter(
       readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
     )
@@ -153,10 +153,9 @@ class CassandraLeftJoinRDD[L, R] private[connector](
       Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
         def onSuccess(rs: ResultSet) {
           val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
-          val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
           val rightSide = resultSet.isEmpty match {
             case true => Iterator.single(None)
-            case false => resultSet.map(r => Some(rowReader.read(r, columnMetaData)))
+            case false => resultSet.map(r => Some(rowReader.read(r, rowMetadata)))
           }
           resultFuture.set(leftSide.zip(rightSide))
         }
