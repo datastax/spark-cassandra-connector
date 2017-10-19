@@ -30,7 +30,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   private[rdd] def fetchIterator(
     session: Session,
     bsb: BoundStatementBuilder[L],
-    lastIt: Iterator[L]
+    lastIt: Iterator[L],
+    metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)]
 
   lazy val rowWriter = manualRowWriter match {
@@ -148,7 +149,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val session = connector.openSession()
     val bsb = boundStatementBuilder(session)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
-    val rowIterator = fetchIterator(session, bsb, left.iterator(split, context))
+    val rowIterator = fetchIterator(session, bsb, left.iterator(split, context), metricsUpdater)
     val countingIterator = new CountingIterator(rowIterator, None)
 
     context.addTaskCompletionListener { (context) =>
