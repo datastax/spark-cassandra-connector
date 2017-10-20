@@ -137,7 +137,7 @@ object InputMetricsUpdater {
       source.readRowMeter.mark(count)
     }
 
-    val timer: Timer.Context = source.readTaskTimer.time()
+    val timer: com.codahale.metrics.Timer.Context = source.readTaskTimer.time()
   }
 
   private trait TaskMetricsSupport extends InputMetricsUpdater {
