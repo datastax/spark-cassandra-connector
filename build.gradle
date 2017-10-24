@@ -5,7 +5,7 @@
  */
 
 plugins {
-    id 'nebula.maven-publish' version '4.10.0'
+    id 'nebula.maven-publish' version '5.1.5'
     id 'nebula.source-jar' version '4.9.1'
     id 'nebula.javadoc-jar' version '4.9.1'
     id 'scala'
@@ -36,7 +36,7 @@ sourceSets {
 
 dependencies {
     compile project(':dse-core')
-    
+
     def commonExcludes = {
         exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
         exclude group: 'com.fasterxml.jackson.core'
