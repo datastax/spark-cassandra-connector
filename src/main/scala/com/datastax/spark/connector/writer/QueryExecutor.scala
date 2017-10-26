@@ -23,11 +23,11 @@ object QueryExecutor {
     */
   def apply(
     session: Session,
+    maxConcurrentQueries: Int,
     successHandler: Option[Handler[RichStatement]],
     failureHandler: Option[Handler[RichStatement]]): QueryExecutor = {
 
     val poolingOptions = session.getCluster.getConfiguration.getPoolingOptions
-    val maxConcurrentQueries = (poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL))
     new QueryExecutor(session, maxConcurrentQueries, successHandler, failureHandler)
   }
 }

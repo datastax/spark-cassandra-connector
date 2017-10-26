@@ -52,7 +52,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
         def onFailure(throwable: Throwable) {
           throwable match {
             case nHAE: NoHostAvailableException if nHAE.getErrors.asScala.values.exists(_.isInstanceOf[BusyPoolException]) =>
-              logWarning("BusyPoolException ... Retrying")
+              logTrace("BusyPoolException ... Retrying")
               tryFuture()
 
             case otherException =>
