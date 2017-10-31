@@ -186,8 +186,10 @@ object CassandraConnectorConf extends Logging {
   val QueryRetryParam = ConfigParameter[Int](
     name = "spark.cassandra.query.retry.count",
     section = ReferenceSection,
-    default = 10,
-    description = """Number of times to retry a timed-out query""")
+    default = 60,
+    description =
+      """Number of times to retry a timed-out query,
+        |Setting this to -1 means unlimited retries""".stripMargin)
 
   @deprecated("delayed retrying has been disabled; see SPARKC-360", "1.2.6, 1.3.2, 1.4.3, 1.5.1")
   val QueryRetryDelayParam = ConfigParameter[RetryDelayConf](

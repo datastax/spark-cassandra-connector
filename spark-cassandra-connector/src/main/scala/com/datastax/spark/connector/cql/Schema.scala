@@ -37,22 +37,22 @@ trait StructDef extends Serializable {
   /** Human-readable name for easy identification of this structure.
     * Used in the error message when the column is not found.
     * E.g. a table name or a type name. */
-  def name: String
+  val name: String
 
   /** Sequence of column definitions in this data structure.
     * The order of the columns is implementation-defined. */
-  def columns: IndexedSeq[Column]
+  val columns: IndexedSeq[Column]
 
   /** References to the columns */
   lazy val columnRefs: IndexedSeq[ColumnRef] =
     columns.map(_.ref)
 
   /** Names of the columns, in the same order as column definitions. */
-  def columnNames: IndexedSeq[String] =
+  lazy val columnNames: IndexedSeq[String] =
     columns.map(_.columnName)
 
   /** Types of the columns, in the same order as column names and column definitions. */
-  def columnTypes: IndexedSeq[ColumnType[_]] =
+  lazy val columnTypes: IndexedSeq[ColumnType[_]] =
     columns.map(_.columnType)
 
   /** For quickly finding a column definition by name.
@@ -174,7 +174,7 @@ case class TableDef(
 
   override type Column = ColumnDef
 
-  override def name: String = s"$keyspaceName.$tableName"
+  override val name: String = s"$keyspaceName.$tableName"
   
   lazy val primaryKey: IndexedSeq[ColumnDef] =
     (partitionKey ++ clusteringColumns).toIndexedSeq
@@ -198,9 +198,11 @@ case class TableDef(
   }
 
   type ValueRepr = CassandraRow
+
+  lazy val rowMetadata = CassandraRowMetadata.fromColumnNames(columnNames)
   
   def newInstance(columnValues: Any*): CassandraRow = {
-    new CassandraRow(CassandraRowMetadata.fromColumnNames(columnNames), columnValues.toIndexedSeq.map(_.asInstanceOf[AnyRef]))
+    new CassandraRow(rowMetadata, columnValues.asInstanceOf[IndexedSeq[AnyRef]])
   }
 }
 

@@ -162,7 +162,7 @@ object CassandraSparkBuild extends Build {
   lazy val refDoc = Project(
     id = s"$namespace-doc",
     base = file(s"$namespace-doc"),
-    settings = defaultSettings ++ Seq(libraryDependencies ++= Dependencies.spark)
+    settings = defaultSettings ++ Seq(libraryDependencies ++= (Dependencies.spark ++ Dependencies.cassandra))
   ) dependsOn connectorDistribution
 
   lazy val perf = Project(
