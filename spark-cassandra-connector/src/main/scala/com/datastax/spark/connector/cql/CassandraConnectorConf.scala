@@ -136,8 +136,10 @@ object CassandraConnectorConf extends Logging {
   val QueryRetryParam = ConfigParameter[Int](
     name = "spark.cassandra.query.retry.count",
     section = ReferenceSection,
-    default = 10,
-    description = """Number of times to retry a timed-out query""")
+    default = 60,
+    description =
+      """Number of times to retry a timed-out query,
+        |Setting this to -1 means unlimited retries""".stripMargin)
 
   val ReadTimeoutParam = ConfigParameter[Int](
     name = "spark.cassandra.read.timeout_ms",
