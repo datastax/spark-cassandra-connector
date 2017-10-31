@@ -13,6 +13,8 @@ import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 import org.apache.spark.SparkException
 
+import org.joda.time.DateTime
+
 case class Address(street: String, city: String, zip: Int)
 case class KV(key: Int, value: String)
 case class KeyValue(key: Int, group: Long, value: String)
@@ -879,6 +881,27 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
     e.getMessage should include("mcol")
     e.getMessage should include("scol")
+  }
+
+
+  it should "allow to write data with specific timestamp" in {
+
+    val setElements = sc.parallelize(Seq(
+      (6, Set("Four")),
+      (6, Set("Five")),
+      (6, Set("Six"))))
+    //Update data to year 1999
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append),
+      writeConf = WriteConf(timestamp = TimestampOption.constant(new DateTime(1999, 1, 1, 7, 8, 8, 10))))
+
+    // Try to delete rows older than year 2000.
+    sc.cassandraTable(ks, "collections_mod").where("key = 6")
+      .deleteFromCassandra(ks, "collections_mod",
+        writeConf = WriteConf(ttl = TTLOption.constant(1), timestamp = TimestampOption.constant(new DateTime(2000, 1, 1, 7, 8, 8, 10))))
+
+    val result = sc.cassandraTable(ks, "collections_mod").where("key = 6").collect()
+
+    result should have size 0
   }
 
   it should "insert and not overwrite existing keys when ifNotExists is true" in {
