@@ -48,6 +48,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     case AllColumns => throw new IllegalArgumentException(
       "Unable to join against all columns in a Cassandra Table. Only primary key columns allowed."
     )
+    case PrimaryKeyColumns =>
+      tableDef.primaryKey.map(col => col.columnName: ColumnRef)
     case PartitionKeyColumns =>
       tableDef.partitionKey.map(col => col.columnName: ColumnRef)
     case PrimaryKeyColumns =>

@@ -2,15 +2,20 @@ package com.datastax.spark.connector
 
 import com.datastax.spark.connector.cql._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{Dataset, Encoder}
+import org.apache.spark.sql.cassandra.{AlwaysOn, CassandraSourceRelation, DirectJoinSetting}
 
 /** Provides Cassandra-specific methods on [[org.apache.spark.sql.DataFrame]] */
-class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
+class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
 
-  val sparkContext: SparkContext = dataFrame.sqlContext.sparkContext
+  val sparkContext: SparkContext = (dataset.sqlContext.sparkContext)
+
+  def directJoin(directJoinSetting: DirectJoinSetting= AlwaysOn): Dataset[K] = {
+    CassandraSourceRelation.setDirectJoin(dataset, directJoinSetting)
+  }
 
   /**
-    *  Creates a C* table based on the DataFrame Struct provided. Optionally
+    *  Creates a C* table based on the Dataset Struct provided. Optionally
     *  takes in a list of partition columns or clustering columns names. When absent
     *  the first column will be used as the partition key and there will be no clustering
     *  keys.
@@ -26,7 +31,7 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
     val protocolVersion = connector.
       withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
 
-    val rawTable = TableDef.fromDataFrame(dataFrame, keyspaceName, tableName, protocolVersion)
+    val rawTable = TableDef.fromDataset(dataset, keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName
 
     val columnNames = columnMapping.keys.toSet

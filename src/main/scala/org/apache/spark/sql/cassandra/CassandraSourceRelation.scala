@@ -21,13 +21,19 @@ import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.cassandra.DataTypeConverter._
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, sources}
+import org.apache.spark.sql._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.unsafe.types.UTF8String
 
-sealed trait DseSearchOptimizationSetting { def enabled = false}
-case object On extends DseSearchOptimizationSetting { override def enabled = true}
+sealed trait DirectJoinSetting
+case object AlwaysOn extends DirectJoinSetting
+case object AlwaysOff extends DirectJoinSetting
+case object Automatic extends DirectJoinSetting
+
+sealed trait DseSearchOptimizationSetting { def enabled = false }
+case object On extends DseSearchOptimizationSetting { override def enabled = true }
 case object Off extends DseSearchOptimizationSetting
-case class Auto(ratio: Double) extends DseSearchOptimizationSetting { override def enabled = true}
+case class Auto(ratio: Double) extends DseSearchOptimizationSetting { override def enabled = true }
 
 import scala.collection.concurrent.TrieMap
 
@@ -37,7 +43,7 @@ import scala.collection.concurrent.TrieMap
  * some filters to CQL
  *
  */
-private[cassandra] class CassandraSourceRelation(
+class CassandraSourceRelation(
     val tableRef: TableRef,
     val userSpecifiedSchema: Option[StructType],
     val filterPushdown: Boolean,
@@ -47,13 +53,32 @@ private[cassandra] class CassandraSourceRelation(
     val readConf: ReadConf,
     val writeConf: WriteConf,
     val sparkConf: SparkConf,
-    override val sqlContext: SQLContext)
+    override val sqlContext: SQLContext,
+    val directJoinSetting: DirectJoinSetting = Automatic)
   extends BaseRelation
   with InsertableRelation
   with PrunedFilteredScan
   with Logging {
 
-  private[this] val tableDef = Schema.tableFromCassandra(
+  import CassandraSourceRelation._
+
+  def withDirectJoin(directJoinSetting: DirectJoinSetting) = {
+    new CassandraSourceRelation(
+      tableRef,
+      userSpecifiedSchema,
+      filterPushdown,
+      confirmTruncate,
+      tableSizeInBytes,
+      connector,
+      readConf,
+      writeConf,
+      sparkConf,
+      sqlContext,
+      directJoinSetting = directJoinSetting
+    )
+  }
+
+  val tableDef = Schema.tableFromCassandra(
     connector,
     tableRef.keyspace,
     tableRef.table)
@@ -133,7 +158,6 @@ private[cassandra] class CassandraSourceRelation(
   }
 
   lazy val additionalRules: Seq[CassandraPredicateRules] = {
-    import CassandraSourceRelation.AdditionalCassandraPushDownRulesParam
     val sc = sqlContext.sparkContext
 
     /* So we can set this in testing to different values without
@@ -305,7 +329,8 @@ private[cassandra] class CassandraSourceRelation(
           this.userSpecifiedSchema == that.userSpecifiedSchema &&
           this.filterPushdown == that.filterPushdown &&
           this.tableSizeInBytes == that.tableSizeInBytes &&
-          CassandraConnectorConf(this.sparkConf) == CassandraConnectorConf(that.sparkConf)
+          CassandraConnectorConf(this.sparkConf) == CassandraConnectorConf(that.sparkConf) &&
+          this.directJoinSetting == that.directJoinSetting
       case _ => false
     }
 
@@ -330,7 +355,7 @@ private[cassandra] class CassandraSourceRelation(
 object CassandraSourceRelation extends Logging {
   private lazy val hiveConf = new HiveConf()
 
-  val ReferenceSection = "Cassandra DataFrame Source Parameters"
+  val ReferenceSection = "Cassandra Datasource Parameters"
   val DseReferenceSection = "DSE Exclusive Datasource Parameters"
 
   val TableSizeInBytesParam = ConfigParameter[Option[Long]](
@@ -380,13 +405,38 @@ object CassandraSourceRelation extends Logging {
       s"Use $SearchPredicateOptimizationParam.name instead"
   )
 
+  val DirectJoinSizeRatioParam = ConfigParameter[Double] (
+    name = "direct_join_size_ratio",
+    section = DseReferenceSection,
+    default = 0.9d,
+    description =
+      s"""
+         | Sets the threshold on when to perform a DirectJoin in place of a full table scan. When
+         | the size of the (CassandraSource * thisParameter) > The other side of the join, A direct
+         | join will be performed if possible.
+      """.stripMargin
+  )
+
+  val DirectJoinSettingParam = ConfigParameter[String] (
+    name = "direct_join_setting",
+    section = DseReferenceSection,
+    default = "auto",
+    description =
+      s"""Acceptable values, "on", "off", "auto"
+        |"on" causes a direct join to happen if possible regardless of size ratio.
+        |"off" disables direct join even when possible
+        |"auto" only does a direct join when the size ratio is satisfied see ${DirectJoinSizeRatioParam.name}
+      """.stripMargin
+  )
 
   val Properties = Seq(
     AdditionalCassandraPushDownRulesParam,
     TableSizeInBytesParam,
     SearchPredicateOptimizationParam,
     SearchPredicateOptimizationRatio,
-    SolrPredciateOptimizationParam
+    SolrPredciateOptimizationParam,
+    DirectJoinSettingParam,
+    DirectJoinSizeRatioParam
   )
 
   val defaultClusterName = "default"
@@ -424,6 +474,20 @@ object CassandraSourceRelation extends Logging {
     val readConf = ReadConf.fromSparkConf(conf).copy(executeAs = proxyUser)
     val writeConf = WriteConf.fromSparkConf(conf).copy(executeAs = proxyUser)
 
+    val directJoinSetting =
+      conf
+        .get(DirectJoinSettingParam.name, DirectJoinSettingParam.default)
+        .toLowerCase() match {
+          case "auto" => Automatic
+          case "on" => AlwaysOn
+          case "off" => AlwaysOff
+          case invalid => throw new IllegalArgumentException(
+            s"""
+               |$invalid is not a valid ${DirectJoinSettingParam.name} value.
+               |${DirectJoinSettingParam.description}""".stripMargin)
+    }
+
+
     new CassandraSourceRelation(
       tableRef = tableRef,
       userSpecifiedSchema = schema,
@@ -434,15 +498,16 @@ object CassandraSourceRelation extends Logging {
       readConf = readConf,
       writeConf = writeConf,
       sparkConf = conf,
-      sqlContext = sqlContext)
+      sqlContext = sqlContext,
+      directJoinSetting = directJoinSetting)
   }
 
   /**
-   * Consolidate Cassandra conf settings in the order of
-   * table level -> keyspace level -> cluster level ->
-   * default. Use the first available setting. Default
-   * settings are stored in SparkConf.
-   */
+    * Consolidate Cassandra conf settings in the order of
+    * table level -> keyspace level -> cluster level ->
+    * default. Use the first available setting. Default
+    * settings are stored in SparkConf.
+    */
   def consolidateConfs(
     sparkConf: SparkConf,
     sqlConf: Map[String, String],
@@ -481,6 +546,16 @@ object CassandraSourceRelation extends Logging {
     } else {
       None
     }
+  }
+
+  def setDirectJoin[K: Encoder](ds: Dataset[K], directJoinSetting: DirectJoinSetting = AlwaysOn): Dataset[K] = {
+    val oldPlan = ds.queryExecution.logical
+    Dataset[K](ds.sparkSession,
+      oldPlan.transform{
+        case logical @ LogicalRelation(cassandraSourceRelation: CassandraSourceRelation, _, _) =>
+          logical.copy(cassandraSourceRelation.withDirectJoin(directJoinSetting))
+      }
+    )
   }
 }
 

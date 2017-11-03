@@ -53,6 +53,7 @@ class EmptyCassandraRDD[R : ClassTag](
     val providedColumnNames =
       columnNames match {
         case AllColumns => Seq()
+        case PrimaryKeyColumns => Seq()
         case PartitionKeyColumns => Seq()
         case PrimaryKeyColumns => Seq()
         case SomeColumns(cs@_*) => cs

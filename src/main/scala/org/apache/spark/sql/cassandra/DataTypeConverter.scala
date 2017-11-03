@@ -71,7 +71,13 @@ object DataTypeConverter extends Logging {
   }
 
   /** Create a Catalyst StructField from a Cassandra Column */
-  def toStructField(column: ColumnDef): StructField =
-    StructField(column.columnName, catalystDataType(column.columnType, nullable = true))
+  def toStructField(column: ColumnDef): StructField = {
+    val nullable = !column.isPrimaryKeyColumn
+    StructField(
+      column.columnName,
+      catalystDataType(column.columnType, nullable = true),
+      nullable
+    )
+  }
 
 }
