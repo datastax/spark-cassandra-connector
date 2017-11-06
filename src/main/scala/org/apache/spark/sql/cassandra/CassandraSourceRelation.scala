@@ -185,7 +185,7 @@ class CassandraSourceRelation(
 
   private def predicatePushDown(filters: Array[Filter]) = pushdownCache.getOrElseUpdate(filters.toSeq, {
 
-    logInfo(s"Input Predicates: [${filters.mkString(", ")}]")
+    logDebug(s"Input Predicates: [${filters.mkString(", ")}]")
 
     val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
 
@@ -223,7 +223,9 @@ class CassandraSourceRelation(
   override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val filteredRdd = {
       if (filterPushdown) {
-        val pushdownFilters = predicatePushDown(filters).handledByCassandra.toArray
+        val analyzedPredicates = predicatePushDown(filters)
+        logDebug(s"Building RDD with filters:\n$analyzedPredicates")
+        val pushdownFilters = analyzedPredicates.handledByCassandra.toArray
         maybePushdownFilters(baseRdd, pushdownFilters)
       } else {
         baseRdd
