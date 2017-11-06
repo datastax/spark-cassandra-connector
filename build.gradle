@@ -66,6 +66,8 @@ dependencies {
         exclude module: 'jackson-mapper-asl'
         exclude module: 'paranamer'
         exclude module: 'py4j'
+
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
     }
 
     def hadoopExcludes = {
@@ -96,6 +98,7 @@ dependencies {
     provided("com.datastax.spark:spark-streaming_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
     provided("com.datastax.spark:spark-unsafe_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
 
+    compile "org.bouncycastle:bcprov-jdk15on:${bouncyCastleVersion}"
     compileOnly "com.esotericsoftware:kryo:${kryoVersion}"
     compileOnly "com.typesafe:config:${typesafeConfigVersion}"
 
