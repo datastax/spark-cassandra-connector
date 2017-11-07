@@ -9,15 +9,15 @@ Connector works. The Java API is included in the standard
 
 ### Prerequisites 
 
-#### SCC < 2.0
+#### Spark Cassandra Connector < 2.0
 In order to use Java API, you need to add the spark-cassandra-connector to the list of dependencies:
 
 ```scala
 libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0" 
 ```
 
-#### SCC >= 2.0
-The Java api is now included in the standard Spark Cassandra Connector module, no additional dependencies are
+#### Spark Cassandra Connector >= 2.0
+The Java API is now included in the standard Spark Cassandra Connector module, no additional dependencies are
 required.
 
 
