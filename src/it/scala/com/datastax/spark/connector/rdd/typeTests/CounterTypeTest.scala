@@ -30,29 +30,22 @@ class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
     session.execute("use counter_ks")
 
     val create_table = "CREATE TABLE IF NOT EXISTS counter_norm ( key bigint PRIMARY KEY, expectedkeys counter )"
-    val create_table_cs = "CREATE TABLE IF NOT EXISTS counter_cs ( key bigint PRIMARY KEY, expectedkeys counter ) WITH COMPACT STORAGE"
     val create_table_write = "CREATE TABLE IF NOT EXISTS counter_write ( name text, key bigint , expectedkeys counter, PRIMARY KEY(name,key))"
     val create_table_multi_write = "CREATE TABLE IF NOT EXISTS counter_multi_write ( name text, key bigint , data1 counter, data2 counter, data3 counter, PRIMARY KEY(name,key))"
     awaitAll(
       Future(session.execute(create_table)),
-      Future(session.execute(create_table_cs)),
       Future(session.execute(create_table_write)),
       Future(session.execute(create_table_multi_write))
     )
     (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute("UPDATE counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?", x: java.lang.Long))}
-    (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute("UPDATE counter_cs SET expectedkeys = expectedKeys + 1 WHERE key = ?", x: java.lang.Long))}
   }
 
   "Counters" should "be updatable via the C* Connector" in conn.withSessionDo { session =>
     (1L to 10L).foreach( x => session.execute("SELECT * FROM counter_norm where key = ?",x: java.lang.Long).one().getLong("expectedkeys") should equal (10))
-    (1L to 10L).foreach( x => session.execute("SELECT * FROM counter_cs where key = ?",x: java.lang.Long).one().getLong("expectedkeys") should equal (10))
   }
 
   it should "be readable via cassandraTable" in {
     var rdd = sc.cassandraTable("counter_ks","counter_norm")
-    rdd.count() should equal (10)
-    rdd.collect().foreach(row => row.getLong("expectedkeys") should equal(10))
-    rdd = sc.cassandraTable("counter_ks","counter_cs")
     rdd.count() should equal (10)
     rdd.collect().foreach(row => row.getLong("expectedkeys") should equal(10))
   }
