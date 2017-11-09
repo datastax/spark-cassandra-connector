@@ -64,7 +64,7 @@ trait CassandraTableRowReaderProvider[R] {
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
         case WriteTime(columnName, _) =>
           if (!regularColumnNames.contains(columnName))
-            throw new IOException(s"TTL can be obtained only for regular columns, " +
+            throw new IOException(s"Write time can be obtained only for regular columns, " +
               s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
         case _ =>
       }
