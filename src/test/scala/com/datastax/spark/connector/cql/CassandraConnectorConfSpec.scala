@@ -38,7 +38,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.trustStorePassword shouldBe empty
     connConf.cassandraSSLConf.trustStoreType shouldBe "JKS"
     connConf.cassandraSSLConf.protocol shouldBe "TLS"
-    connConf.cassandraSSLConf.enabledAlgorithms should contain theSameElementsAs Seq("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
+    connConf.cassandraSSLConf.enabledAlgorithms should contain theSameElementsAs Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
     connConf.cassandraSSLConf.clientAuthEnabled shouldBe false
     connConf.cassandraSSLConf.keyStorePath shouldBe empty
     connConf.cassandraSSLConf.keyStorePassword shouldBe empty
@@ -47,16 +47,16 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
   it should "resolve provided SSL settings correctly" in {
     val sparkConf = new SparkConf(loadDefaults = false)
-    sparkConf.set("spark.cassandra.connection.ssl.enabled", "true")
-    sparkConf.set("spark.cassandra.connection.ssl.trustStore.path", "/etc/keys/.truststore")
-    sparkConf.set("spark.cassandra.connection.ssl.trustStore.password", "secret")
-    sparkConf.set("spark.cassandra.connection.ssl.trustStore.type", "JCEKS")
-    sparkConf.set("spark.cassandra.connection.ssl.protocol", "SSLv3")
-    sparkConf.set("spark.cassandra.connection.ssl.enabledAlgorithms", "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
-    sparkConf.set("spark.cassandra.connection.ssl.clientAuth.enabled", "true")
-    sparkConf.set("spark.cassandra.connection.ssl.keyStore.path", "/etc/keys/.keystore")
-    sparkConf.set("spark.cassandra.connection.ssl.keyStore.password", "secret")
-    sparkConf.set("spark.cassandra.connection.ssl.keyStore.type", "JCEKS")
+    sparkConf.set(CassandraConnectorConf.SSLEnabledParam.name, "true")
+    sparkConf.set(CassandraConnectorConf.SSLTrustStorePathParam.name, "/etc/keys/.truststore")
+    sparkConf.set(CassandraConnectorConf.SSLTrustStorePasswordParam.name, "secret")
+    sparkConf.set(CassandraConnectorConf.SSLTrustStoreTypeParam.name, "JCEKS")
+    sparkConf.set(CassandraConnectorConf.SSLProtocolParam.name, "SSLv3")
+    sparkConf.set(CassandraConnectorConf.SSLEnabledAlgorithmsParam.name, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256")
+    sparkConf.set(CassandraConnectorConf.SSLClientAuthEnabledParam.name, "true")
+    sparkConf.set(CassandraConnectorConf.SSLKeyStorePathParam.name, "/etc/keys/.keystore")
+    sparkConf.set(CassandraConnectorConf.SSLKeyStorePasswordParam.name, "secret")
+    sparkConf.set(CassandraConnectorConf.SSLKeyStoreTypeParam.name,  "JCEKS")
 
     val connConf = CassandraConnectorConf(sparkConf)
     connConf.cassandraSSLConf.enabled shouldBe true

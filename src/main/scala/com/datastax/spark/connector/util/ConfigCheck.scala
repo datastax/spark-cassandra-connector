@@ -3,46 +3,67 @@ package com.datastax.spark.connector.util
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.cassandra.{CassandraSQLContextParams, CassandraSourceRelation}
+import org.apache.spark.sql.cassandra.CassandraSourceRelation
 import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf, SessionProxy}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf
 
+import scala.collection.mutable
+
 /**
- * Helper class to throw exceptions if there are environment variables in the spark.cassandra
- * namespace which don't map to Spark Cassandra Connector known properties.
- */
+  * Helper class to throw exceptions if there are environment variables in the spark.cassandra
+  * namespace which don't map to Spark Cassandra Connector known properties.
+  */
 object ConfigCheck {
 
   val MatchThreshold = 0.85
   val Prefix = "spark.cassandra."
 
+  /** Force creation of all Parameters. Any New Parameter Holding Objects should be added here **/
+  val ConfObjects = (
+    WriteConf,
+    ReadConf,
+    ColumnTypeConf,
+    CassandraSourceRelation,
+    CassandraConnectorConf,
+    AuthConfFactory,
+    CassandraConnectionFactory)
+
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
-  val validStaticProperties: Set[ConfigParameter[_]] =
-    WriteConf.Properties ++
-    ReadConf.Properties ++
-    CassandraConnectorConf.Properties ++
-    AuthConfFactory.Properties ++
-    CassandraConnectionFactory.Properties ++
-    CassandraSQLContextParams.Properties ++
-    CassandraSourceRelation.Properties ++
-    ColumnTypeConf.Properties
+  val validStaticProperties: mutable.Set[ConfigParameter[_]] = ConfigParameter.staticParameters
 
   val validStaticPropertyNames = validStaticProperties.map(_.name)
 
+  val deprecatedProperties: mutable.Set[DeprecatedConfigParameter[_]] = DeprecatedConfigParameter.deprecatedParameters
 
-  /**
-   * Checks the SparkConf Object for any unknown spark.cassandra.* properties and throws an exception
-   * with suggestions if an unknown property is found.
-   *
-   * @param conf SparkConf object to check
-   */
+ /**
+    * Checks the SparkConf Object for any unknown spark.cassandra.* properties and throws an exception
+    * with suggestions if an unknown property is found.
+    *
+    * @param conf SparkConf object to check
+    */
   def checkConfig(conf: SparkConf): Unit = {
+    for (deprecatedProperty <- deprecatedProperties) {
+      deprecatedProperty.maybeReplace(conf)
+    }
+
     val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
     val authConfFactory = AuthConfFactory.fromSparkConf(conf)
     val extraProps = connectionFactory.properties ++ authConfFactory.properties
+
+    /** Any properties with Capitals will not work inside SparkSQL/DataFrame Options so
+      * we will be protecting against this by throwing an error if any of the properties
+      * have capitals
+      */
+    val invalidProperties =
+      (validStaticPropertyNames ++ extraProps)
+        .filter( property => property.toLowerCase != property)
+
+    if (invalidProperties.nonEmpty) throw new IllegalArgumentException(
+      s"Developer Error: These properties will not work in SparkSql/DataSets " +
+        s"because of capitals: ${invalidProperties.mkString(",")}")
 
     val unknownProps = unknownProperties(conf, extraProps)
     if (unknownProps.nonEmpty) {
@@ -59,16 +80,16 @@ object ConfigCheck {
   }
 
   /**
-   * For a given unknown property determine if we have any guesses as
-   * to what the property should be. Suggestions are found by 
-   * breaking the unknown property into fragments.
-   * spark.cassandra.foo.bar => [foo,bar]
-   * Any known property which has some fragments which fuzzy match
-   * all of the fragments of the unknown property are considered a
-   * suggestion.
-   *
-   * Fuzziness is determined by MatchThreshold
-   */
+    * For a given unknown property determine if we have any guesses as
+    * to what the property should be. Suggestions are found by
+    * breaking the unknown property into fragments.
+    * spark.cassandra.foo.bar => [foo,bar]
+    * Any known property which has some fragments which fuzzy match
+    * all of the fragments of the unknown property are considered a
+    * suggestion.
+    *
+    * Fuzziness is determined by MatchThreshold
+    */
   def suggestedProperties(unknownProp: String, extraProps: Set[String] = Set.empty): Seq[String] = {
     val validProps = validStaticPropertyNames ++ extraProps
     val unknownFragments = unknownProp.stripPrefix(Prefix).split("\\.")
@@ -84,31 +105,32 @@ object ConfigCheck {
   }
 
   /**
-   * Exception to be thrown when unknown properties are found in the SparkConf
- *
-   * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
-   * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
-   */
+    * Exception to be thrown when unknown properties are found in the SparkConf
+    *
+    * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
+    * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
+    */
   class ConnectorConfigurationException(
-      unknownProps: Seq[String],
-      suggestionMap: Map[String, Seq[String]]) extends ConfigurationException {
+                                         unknownProps: Seq[String],
+                                         suggestionMap: Map[String, Seq[String]]) extends ConfigurationException {
 
     override def getMessage: String = {
       val intro =
         "Invalid Config Variables\n" +
-        "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
+          "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
       val body = unknownProps.map { unknown =>
         suggestionMap.get(unknown) match {
           case Some(Seq()) | None =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |No likely matches found.""".stripMargin
+               |No likely matches found.""".stripMargin
           case Some(suggestions) =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |Possible matches:
-                          |${suggestions.mkString("\n")}""".stripMargin
+               |Possible matches:
+               |${suggestions.mkString("\n")}""".stripMargin
         }
       }.mkString("\n")
       intro + body
     }
   }
 }
+

@@ -5,14 +5,13 @@ import java.util.UUID
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.security.UserGroupInformation
-
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil, maybeExecutingAs}
+import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 import org.apache.spark.SparkConf
@@ -84,31 +83,20 @@ class CassandraSourceRelation(
     tableRef.table)
 
   val searchOptimization: DseSearchOptimizationSetting =
-    if (sparkConf.contains(CassandraSourceRelation.SolrPredciateOptimizationParam.name)){
-      logWarning(CassandraSourceRelation.SolrPredciateOptimizationParam.description)
-      if (sparkConf.getBoolean(
-        CassandraSourceRelation.SolrPredciateOptimizationParam.name,
-        CassandraSourceRelation.SolrPredciateOptimizationParam.default)) {
-          On
-      } else {
-        Off
-      }
-    } else {
-      sparkConf.get(
-        CassandraSourceRelation.SearchPredicateOptimizationParam.name,
-        CassandraSourceRelation.SearchPredicateOptimizationParam.default
-      ).toLowerCase match {
-        case "auto" => Auto(sparkConf.getDouble(
+    sparkConf.get(
+      CassandraSourceRelation.SearchPredicateOptimizationParam.name,
+      CassandraSourceRelation.SearchPredicateOptimizationParam.default
+    ).toLowerCase match {
+      case "auto" => Auto(sparkConf.getDouble(
           CassandraSourceRelation.SearchPredicateOptimizationRatio.name,
           CassandraSourceRelation.SearchPredicateOptimizationRatio.default))
-        case "on" | "true" => On
-        case "off" | "false" => Off
-        case unknown => throw new IllegalArgumentException(
-          s"""
-             |Attempted to set ${CassandraSourceRelation.SearchPredicateOptimizationParam.name} to
-             |$unknown which is invalid. Acceptable values are: auto, on, and off
+      case "on" | "true" => On
+      case "off" | "false" => Off
+      case unknown => throw new IllegalArgumentException(
+        s"""
+           |Attempted to set ${CassandraSourceRelation.SearchPredicateOptimizationParam.name} to
+           |$unknown which is invalid. Acceptable values are: auto, on, and off
            """.stripMargin)
-      }
     }
 
   override def schema: StructType = {
@@ -370,13 +358,19 @@ object CassandraSourceRelation extends Logging {
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
-    name = "spark.cassandra.sql.pushdown.additionalClasses",
+    name = "spark.cassandra.sql.pushdown.additional_classes",
     section = ReferenceSection,
     default = List.empty,
     description =
       """A comma separated list of classes to be used (in order) to apply additional
         | pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
       """.stripMargin
+  )
+
+  val deprecatedAdditionalCassandraPushDownRulesParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.sql.pushdown.additionalClasses",
+    replacementParameter = Some(AdditionalCassandraPushDownRulesParam),
+    deprecatedSince = "DSE 6.0.0"
   )
 
   val SearchPredicateOptimizationRatio = ConfigParameter[Double] (
@@ -399,12 +393,10 @@ object CassandraSourceRelation extends Logging {
         |total table record count""".stripMargin
   )
 
-  val SolrPredciateOptimizationParam = ConfigParameter[Boolean] (
+  val SolrPredciateOptimizationParam = DeprecatedConfigParameter (
     name = "spark.sql.dse.solr.enable_optimization",
-    section = DseReferenceSection,
-    default = false,
-    description = s"Deprecated parameter 'spark.sql.dse.solr.enable_optimization' found for turning on Solr Optimization. " +
-      s"Use $SearchPredicateOptimizationParam.name instead"
+    replacementParameter = Some(SearchPredicateOptimizationParam),
+    deprecatedSince = "DSE 6.0.0"
   )
 
   val DirectJoinSizeRatioParam = ConfigParameter[Double] (
@@ -429,16 +421,6 @@ object CassandraSourceRelation extends Logging {
         |"off" disables direct join even when possible
         |"auto" only does a direct join when the size ratio is satisfied see ${DirectJoinSizeRatioParam.name}
       """.stripMargin
-  )
-
-  val Properties = Seq(
-    AdditionalCassandraPushDownRulesParam,
-    TableSizeInBytesParam,
-    SearchPredicateOptimizationParam,
-    SearchPredicateOptimizationRatio,
-    SolrPredciateOptimizationParam,
-    DirectJoinSettingParam,
-    DirectJoinSizeRatioParam
   )
 
   val defaultClusterName = "default"
@@ -520,8 +502,9 @@ object CassandraSourceRelation extends Logging {
     val conf = sparkConf.clone()
     val cluster = tableRef.cluster.getOrElse(defaultClusterName)
     val ks = tableRef.keyspace
+    val AllSCCConfNames = (ConfigParameter.names ++ DeprecatedConfigParameter.names)
     //Keyspace/Cluster level settings
-    for (prop <- DefaultSource.confProperties) {
+    for (prop <- AllSCCConfNames) {
       val value = Seq(
         tableConf.get(prop),
         sqlConf.get(s"$cluster:$ks/$prop"),
@@ -531,7 +514,7 @@ object CassandraSourceRelation extends Logging {
       value.foreach(conf.set(prop, _))
     }
     //Set all user properties
-    conf.setAll(tableConf -- DefaultSource.confProperties)
+    conf.setAll(tableConf -- AllSCCConfNames)
     conf
   }
 

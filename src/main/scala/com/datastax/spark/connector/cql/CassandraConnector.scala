@@ -42,11 +42,11 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.query.retry.count`:                    how many times to reattempt a failed query (default 10)
   *   - `spark.cassandra.read.timeout_ms`:                      maximum period of time to wait for a read to return
   *   - `spark.cassandra.connection.ssl.enabled`:               enable secure connection to Cassandra cluster
-  *   - `spark.cassandra.connection.ssl.trustStore.path`:      path for the trust store being used
-  *   - `spark.cassandra.connection.ssl.trustStore.password`:  trust store password
-  *   - `spark.cassandra.connection.ssl.trustStore.type`:      trust store type (default JKS)
+  *   - `spark.cassandra.connection.ssl.trust_store.path`:      path for the trust store being used
+  *   - `spark.cassandra.connection.ssl.trust_store.password`:  trust store password
+  *   - `spark.cassandra.connection.ssl.trust_store.type`:      trust store type (default JKS)
   *   - `spark.cassandra.connection.ssl.protocol`:              SSL protocol (default TLS)
-  *   - `spark.cassandra.connection.ssl.enabledAlgorithms`:         SSL cipher suites (default TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)
+  *   - `spark.cassandra.connection.ssl.enabled_algorithms`:         SSL cipher suites (default TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)
   */
 class CassandraConnector(val conf: CassandraConnectorConf)
   extends Serializable with Logging {

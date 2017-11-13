@@ -146,13 +146,6 @@ object DefaultSource {
     (TableRef(tableName, keyspaceName, clusterName), CassandraSourceOptions(pushdown, confirmTruncate, cassandraConfs))
   }
 
-  val confProperties = ReadConf.Properties.map(_.name) ++
-    WriteConf.Properties.map(_.name) ++
-    CassandraConnectorConf.Properties.map(_.name) ++
-    CassandraSourceRelation.Properties.map(_.name) ++
-    AuthConfFactory.Properties.map(_.name) ++
-    DefaultAuthConfFactory.properties
-
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {
     provider == CassandraDataSourceProviderPackageName || provider == CassandraDataSourceProviderClassName

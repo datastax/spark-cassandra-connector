@@ -1,7 +1,7 @@
 package org.apache.spark.sql
 
 import scala.language.implicitConversions
-import com.datastax.spark.connector.util.ConfigParameter
+import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter}
 import org.apache.spark.sql.streaming.DataStreamWriter
 
 package object cassandra {
@@ -174,12 +174,11 @@ package object cassandra {
       default = "default",
       description = "Sets the default Cluster to inherit configuration from")
 
-    val Properties = Seq(SqlClusterParam)
-
     private[cassandra] def checkOptions(options: Map[String, String]): Unit = {
+      val AllValidOptions = DeprecatedConfigParameter.names ++ ConfigParameter.names
       options.keySet.foreach { name =>
-        require(DefaultSource.confProperties.contains(name),
-          s"Unrelated parameter. You can only set the following parameters: ${DefaultSource.confProperties.mkString(", ")}")
+        require(AllValidOptions.contains(name),
+          s"Unrelated parameter. You can only set the following parameters: ${AllValidOptions.mkString(", ")}")
       }
     }
   }
