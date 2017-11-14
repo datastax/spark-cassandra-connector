@@ -20,8 +20,8 @@ import org.apache.spark.sql.execution.{DataSourceScanExec, ProjectExec, SparkPla
   * Converts logical plans where the join target is a Cassandra derived branch with joinWithCassandraTable
   * style Join
   */
-case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy with Serializable {
-  import CassandraDirectJoinStrategy._
+case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Serializable {
+  import DSEDirectJoinStrategy._
 
   val conf = spark.sqlContext.conf
 
@@ -51,7 +51,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
         case PhysicalOperation(attributes, _, LogicalRelation(_: CassandraSourceRelation, _, _)) =>
 
           val directJoin =
-            CassandraDirectJoinExec(
+            DSEDirectJoinExec(
             leftKeys,
             rightKeys,
             joinType,
@@ -141,7 +141,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
 
 }
 
-object CassandraDirectJoinStrategy extends Logging {
+object DSEDirectJoinStrategy extends Logging {
 
   /**
     * Recursively search the dependencies of an RDD for a CassandraTableScanRDD
@@ -241,7 +241,7 @@ object CassandraDirectJoinStrategy extends Logging {
     *
     * This should only be called on optimized Physical Plans
     */
-  def reorderPlan(plan: SparkPlan, directJoin: CassandraDirectJoinExec): SparkPlan = {
+  def reorderPlan(plan: SparkPlan, directJoin: DSEDirectJoinExec): SparkPlan = {
     val reordered = plan match {
       //This may be the only node in the Plan
       case dataSourceScan: DataSourceScanExec

@@ -533,9 +533,9 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
     }
   }
 
-  def getDirectJoin(df: Dataset[_]): Option[CassandraDirectJoinExec] = {
+  def getDirectJoin(df: Dataset[_]): Option[DSEDirectJoinExec] = {
     val plan = df.queryExecution.sparkPlan
-    plan.collectFirst{ case x: CassandraDirectJoinExec => x }
+    plan.collectFirst{ case x: DSEDirectJoinExec => x }
   }
 
   def planDetails(df: Dataset[_]): String = {
