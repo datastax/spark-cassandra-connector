@@ -186,8 +186,7 @@ public class CassandraJavaUtilTest {
     @Test
     public void testJavaFunctions1() throws Exception {
         SparkContext sc = mock(SparkContext.class);
-        JavaSparkContext jsc = mock(JavaSparkContext.class);
-        when(jsc.sc()).thenReturn(sc);
+        JavaSparkContext jsc = new JavaSparkContext(sc);
         SparkContextJavaFunctions scjf = javaFunctions(jsc);
         assertThat(scjf.sparkContext, is(jsc.sc()));
     }
