@@ -6,12 +6,15 @@ import java.util.Date
 import com.datastax.driver.core.HostDistance
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.embedded.YamlTransformations
-import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, TableDef}
+import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.mapper.ClassWithUDTBean.AddressBean
+import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
-import com.datastax.spark.connector.writer.{TimestampOption, TTLOption, WriteConf}
+import com.datastax.spark.connector.writer.{TTLOption, TimestampOption, WriteConf}
 import org.joda.time.{DateTime, LocalDate}
 
 import scala.collection.JavaConversions._
@@ -46,8 +49,8 @@ class SubKeyValue extends SuperKeyValue {
   var group: Long = 0L
 }
 
-case class Address(street: String, city: String, zip: Int)
-case class ClassWithUDT(key: Int, name: String, addr: Address)
+case class Address(street: Option[String], city: Option[String], zip: Option[Int])
+case class ClassWithUDT(key: Int, name: String, addr: Option[Address])
 case class ClassWithTuple(key: Int, value: (Int, String))
 case class ClassWithSmallInt(key: Int, value: Short)
 
@@ -122,6 +125,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
         session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+        session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (2, 'name', {street: 'Some Street', city: null, zip: 11120})""")
+        session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (3, 'name', null)""")
       },
 
       Future {
@@ -608,16 +613,29 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to fetch columns from a table with user defined Cassandra type (UDT)" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.getInt(0), x)).toMap.get(1).get
     row.getInt(0) should be(1)
     row.getString(1) should be("name")
   }
 
+  it should "allow fetching columns into a JavaBean with nulls" in {
+    implicit val rrf = CassandraJavaUtil.mapRowTo(classOf[ClassWithUDTBean])
+    val rdd = sc.cassandraTable[ClassWithUDTBean](ks, "udts")
+    val result = rdd.collect
+    val expected = Array(
+      new ClassWithUDTBean(1, "name", new AddressBean("Some Street", "Paris", 11120)),
+      new ClassWithUDTBean(2, "name", new AddressBean("Some Street", null, 11120)),
+      new ClassWithUDTBean(3, "name", null)
+    )
+
+    result should contain theSameElementsAs expected
+  }
+
   it should "allow to fetch UDT columns as UDTValue objects" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name", "addr").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.getInt(0), x)).toMap.get(1).get
     row.getInt(0) should be(1)
     row.getString(1) should be("name")
 
@@ -676,15 +694,15 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to fetch UDT columns as objects of case classes" in {
     val result = sc.cassandraTable[ClassWithUDT](ks, "udts").select("key", "name", "addr").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.key, x)).toMap.get(1).get
     row.key should be(1)
     row.name should be("name")
 
-    val udtValue = row.addr
-    udtValue.street should be("Some Street")
-    udtValue.city should be("Paris")
-    udtValue.zip should be(11120)
+    val udtValue = row.addr.get
+    udtValue.street should be(Some("Some Street"))
+    udtValue.city should be(Some("Paris"))
+    udtValue.zip should be(Some(11120))
   }
 
   it should "allow to fetch tuple columns as TupleValue objects" in {
