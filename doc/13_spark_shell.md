@@ -2,7 +2,7 @@
 
 ## Using the Spark Cassandra Connector with the Spark Shell 
 
-These instructions were last confirmed with Cassandra 3.0.9, Spark 2.0.2 and Connector 2.0.1.
+These instructions were last confirmed with Cassandra 3.0.9, Spark 2.0.2 and Connector 2.0.6.
 
 For this guide, we assume an existing Cassandra deployment, running either locally or on a cluster, a local installation of Spark and an optional Spark cluster. For detail setup instructions see [setup spark-shell](13_1_setup_spark_shell.md)   
 
@@ -18,7 +18,7 @@ Find additional versions at [Spark Packages](http://spark-packages.org/package/d
 ```bash
 cd spark/install/dir
 #Include the --master if you want to run against a spark cluster and not local mode
-./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --packages datastax:spark-cassandra-connector:2.0.1-s_2.11 --conf spark.cassandra.connection.host=yourCassandraClusterIp
+./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --packages datastax:spark-cassandra-connector:2.0.6-s_2.11 --conf spark.cassandra.connection.host=yourCassandraClusterIp
 ```
 
 By default spark will log everything to the console and this may be a bit of an overload. To change this copy and modify the `log4j.properties` template file
