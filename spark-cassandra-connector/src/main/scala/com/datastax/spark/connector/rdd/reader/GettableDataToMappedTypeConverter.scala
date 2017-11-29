@@ -104,8 +104,25 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
         val valueConverter = converter(valueColumnType, valueScalaType)
         TypeConverter.forType[U](Seq(keyConverter, valueConverter))
 
-      case (_, _) =>
-        TypeConverter.forType[U]
+      case (_, _) => TypeConverter.forType[U]
+    }
+  }
+
+  /**
+    * Avoids getting a "Can not convert Null to X" on allowed nullable types.
+    *
+    * This is identical to the trait NullableTypeConverter but
+    * will end up throwing exceptions on null casting to scala types because of the lack of
+    * restrictions on T
+    *
+    * Since the below "tryConvert Method" will handle NPEs we don't have to worry about the
+    * fact that T ! <: AnyRef
+    */
+  override def convert(obj: Any): T = {
+    if (obj != null) {
+      super.convert(obj)
+    } else {
+      null.asInstanceOf[T]
     }
   }
 
