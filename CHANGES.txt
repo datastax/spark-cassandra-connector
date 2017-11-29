@@ -1,3 +1,9 @@
+1.6.10
+* Fix reading null UDTs into POJOs (SPARKC-426)
+* Improvements in JWCT Performance and Retry Behavior (SPARKC-507)
+* Fix TTL and WRITE time when used with Delete queries (SPARKC-505)
+* Error message for WriteTime exception typo corrected
+
 1.6.9
 * Fix Shuffling of a Set in Local Node FirstPolicy (SPARKC-496)
 
