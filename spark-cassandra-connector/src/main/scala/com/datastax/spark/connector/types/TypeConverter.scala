@@ -49,7 +49,7 @@ trait TypeConverter[T] extends Serializable {
 }
 
 /** Handles nullable types and converts any null to null. */
-trait NullableTypeConverter[T <: AnyRef] extends TypeConverter[T] {
+trait NullableTypeConverter[T] extends TypeConverter[T] {
   override def convert(obj: Any): T =
     if (obj != null)
       super.convert(obj)
@@ -59,7 +59,8 @@ trait NullableTypeConverter[T <: AnyRef] extends TypeConverter[T] {
 
 /** Chains together several converters converting to the same type.
   * This way you can extend functionality of any converter to support new input types. */
-class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends TypeConverter[T] {
+class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends NullableTypeConverter[T] {
+  def testAnyVal[T](x: T)(implicit evidence: T <:< AnyVal = null) = evidence != null
   def targetTypeTag = converters.head.targetTypeTag
   def convertPF = converters.map(_.convertPF).reduceLeft(_ orElse _)
 }
