@@ -182,23 +182,23 @@ object SolrPredicateRules extends Logging {
 
   def convertToSolrFilter(filter: Filter): SolrFilter = filter match {
     //Equivalence queries
-    case EqualTo(attr: String, value: Any) => SolrFilter(s"$attr:${toSolrString(value)}", filter.references)
-    case EqualNullSafe(attr: String, value: Any) => SolrFilter(s"$attr:${toSolrString(value)}", filter.references)
+    case EqualTo(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}", filter.references)
+    case EqualNullSafe(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}", filter.references)
     case In(attr: String, values: Array[Any]) =>
-      SolrFilter(s"$attr:(${values.map(toSolrString).mkString(" ")})", filter.references)
+      SolrFilter(s"${toSolrString(attr)}:(${values.map(toSolrString).mkString(" ")})", filter.references)
 
     //Range Queries
-    case GreaterThan(attr: String, value: Any) => SolrFilter(s"$attr:{${toSolrString(value)} TO *]", filter.references)
+    case GreaterThan(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:{${toSolrString(value)} TO *]", filter.references)
     case GreaterThanOrEqual(attr: String, value: Any) =>
-      SolrFilter(s"$attr:[${toSolrString(value)} TO *]", filter.references)
+      SolrFilter(s"${toSolrString(attr)}:[${toSolrString(value)} TO *]", filter.references)
 
-    case LessThan(attr: String, value: Any) => SolrFilter(s"$attr:[* TO ${toSolrString(value)}}", filter.references)
+    case LessThan(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:[* TO ${toSolrString(value)}}", filter.references)
     case LessThanOrEqual(attr: String, value: Any) =>
-      SolrFilter(s"$attr:[* TO ${toSolrString(value)}]", filter.references)
+      SolrFilter(s"${toSolrString(attr)}:[* TO ${toSolrString(value)}]", filter.references)
 
     //Null Checks
-    case IsNull(attr: String) => SolrFilter(s"-$attr:[* TO *]", filter.references)
-    case IsNotNull(attr: String) => SolrFilter(s"$attr:*", filter.references)
+    case IsNull(attr: String) => SolrFilter(s"-${toSolrString(attr)}:[* TO *]", filter.references)
+    case IsNotNull(attr: String) => SolrFilter(s"${toSolrString(attr)}:*", filter.references)
 
     //Conjunctions
     case And(left: Filter, right: Filter) =>
@@ -209,9 +209,9 @@ object SolrPredicateRules extends Logging {
       SolrFilter(s"""-(${convertToSolrFilter(child).solrQuery})""", filter.references)
 
     //StringMatching
-    case StringStartsWith(attr: String, value: String) => SolrFilter(s"$attr:${toSolrString(value)}*", filter.references)
-    case StringEndsWith(attr: String, value: String) => SolrFilter(s"$attr:*${toSolrString(value)}", filter.references)
-    case StringContains(attr: String, value: String) => SolrFilter(s"$attr:*${toSolrString(value)}*", filter.references)
+    case StringStartsWith(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}*", filter.references)
+    case StringEndsWith(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:*${toSolrString(value)}", filter.references)
+    case StringContains(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:*${toSolrString(value)}*", filter.references)
 
     //Unknown
     case unknown =>
