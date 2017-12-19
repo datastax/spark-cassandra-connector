@@ -225,7 +225,7 @@ OSS Cassandra this should never be used.</td>
 <tr>
   <td><code>input.metrics</code></td>
   <td>true</td>
-  <td>Sets whether to record connector specific metrics on write</td>
+  <td>Sets whether to record connector specific metrics on read</td>
 </tr>
 <tr>
   <td><code>input.reads_per_sec</code></td>
