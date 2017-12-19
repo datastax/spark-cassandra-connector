@@ -171,6 +171,31 @@ class TypeConverterTest {
   }
 
   @Test
+  def testParsableDate() {
+    val c = TypeConverter.forType[Date]
+
+    val validDates = List(
+      "1986-01-02 21:05",
+      "1986-01-02 21:05+1000",
+      "1986-01-02 21:05:07",
+      "1986-01-02 21:05:07+1000",
+      "1986-01-02 21:05:07.123",
+      "1986-01-02 21:05:07.123+1000",
+      "1986-01-02T21:05",
+      "1986-01-02T21:05+1000",
+      "1986-01-02T21:05:07",
+      "1986-01-02T21:05:07+1000",
+      "1986-01-02T21:05:07.123",
+      "1986-01-02T21:05:07.123+1000",
+      "1986-01-02",
+      "1986-01-02+1000",
+      "1986")
+
+    validDates.foreach(c.convert)
+  }
+
+
+  @Test
   def testSqlDate(): Unit = {
     val c = TypeConverter.forType[java.sql.Date]
 
