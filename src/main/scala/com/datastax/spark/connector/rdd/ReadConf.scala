@@ -87,12 +87,11 @@ object ReadConf extends Logging {
     ReadConf(
       fetchSizeInRows = conf.getInt(FetchSizeInRowsParam.name, FetchSizeInRowsParam.default),
       splitSizeInMB = conf.getInt(SplitSizeInMBParam.name, SplitSizeInMBParam.default),
-
       consistencyLevel = ConsistencyLevel.valueOf(
         conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
-
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
-      readsPerSec = conf.getInt(ReadsPerSecParam.name, ReadsPerSecParam.default)
+      readsPerSec = conf.getInt(ReadsPerSecParam.name, ReadsPerSecParam.default),
+      parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
     )
   }
 
