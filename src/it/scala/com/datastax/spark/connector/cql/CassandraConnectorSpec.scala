@@ -32,17 +32,22 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
 
   it should "have the default max hosts in pooling options" in {
     val poolingConf = conn.withClusterDo(_.getConfiguration.getPoolingOptions)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (1)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (1)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be >= 1
+    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be >= 1
   }
 
   it should "have larger max hosts if set" in {
     val maxCon = CassandraConnector(
-      defaultConf.set(CassandraConnectorConf.MaxConnectionsPerExecutorParam.name, "5"))
+      defaultConf
+          .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "5")
+          .set(CassandraConnectorConf.MinRemoteConnectionsPerExecutorParam.name, "3")
+          .set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "3"))
 
     val poolingConf = maxCon.withClusterDo(_.getConfiguration.getPoolingOptions)
     poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (5)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (5)
+    poolingConf.getCoreConnectionsPerHost(HostDistance.LOCAL) should be (5)
+    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (3)
+    poolingConf.getCoreConnectionsPerHost(HostDistance.REMOTE) should be (3)
   }
 
   it should "run queries" in {
@@ -129,7 +134,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
     sessionCache.contains(CassandraConnectorConf(sc.getConf)) should be(true)
     sessionCache.cache.size should be(1)
   }
-    
+
 
   it should "be configurable from SparkConf" in {
     val conf = sc.getConf

@@ -21,7 +21,9 @@ case class CassandraConnectorConf(
   keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
   minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
   maxReconnectionDelayMillis: Int = CassandraConnectorConf.MaxReconnectionDelayParam.default,
-  maxConnectionsPerExecutor: Option[Int] = CassandraConnectorConf.MaxConnectionsPerExecutorParam.default,
+  localConnectionsPerExecutor: Option[Int] = CassandraConnectorConf.LocalConnectionsPerExecutorParam.default,
+  minRemoteConnectionsPerExecutor: Option[Int] = CassandraConnectorConf.MinRemoteConnectionsPerExecutorParam.default,
+  maxRemoteConnectionsPerExecutor: Option[Int] = CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.default,
   compression: ProtocolOptions.Compression = CassandraConnectorConf.CompressionParam.default,
   queryRetryCount: Int = CassandraConnectorConf.QueryRetryParam.default,
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
@@ -35,8 +37,11 @@ case class CassandraConnectorConf(
     val baos = new ByteArrayOutputStream
     val oos = new ObjectOutputStream(baos)
     // Ignore maxConnectionsPerExecutor when comparing Connection Confs
-    oos.writeObject(this.copy(maxConnectionsPerExecutor = None));
-    oos.close;
+    oos.writeObject(this.copy(
+      localConnectionsPerExecutor = None,
+      minRemoteConnectionsPerExecutor = None,
+      maxRemoteConnectionsPerExecutor = None))
+    oos.close()
     Base64.encodeBase64String(baos.toByteArray)
   }
 
@@ -117,14 +122,37 @@ object CassandraConnectorConf extends Logging {
     default = 60000,
     description = """Maximum period of time to wait before reconnecting to a dead node""")
 
-  val MaxConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
-    name = "spark.cassandra.connection.connections_per_executor_max",
+  val LocalConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
+    name = "spark.cassandra.connection.local_connections_per_executor",
     section = ReferenceSection,
     default = None,
     description =
-      """Maximum number of connections per Host set on each Executor JVM. Will be
-        |updated to DefaultParallelism / Executors for Spark Commands. Defaults to 1
-        | if not specifying and not in a Spark Env""".stripMargin
+        """Number of local connections set on each Executor JVM. Defaults to the number
+          | of available CPU cores on the local node if not specified and not in a Spark Env""".stripMargin
+  )
+
+  val MinRemoteConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
+    name = "spark.cassandra.connection.remote_connections_per_executor_min",
+    section = ReferenceSection,
+    default = None,
+    description =
+        """Minimum number of remote connections per Host set on each Executor JVM. Default value is
+          | estimated automatically based on the total number of executors in the cluster""".stripMargin
+  )
+
+  val MaxRemoteConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
+    name = "spark.cassandra.connection.remote_connections_per_executor_max",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Maximum number of remote connections per Host set on each Executor JVM. Default value is
+        | estimated automatically based on the total number of executors in the cluster""".stripMargin
+  )
+
+  val MaxConnectionsPerExecutorParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.connections_per_executor_max",
+    replacementParameter = Some(MaxRemoteConnectionsPerExecutorParam),
+    deprecatedSince = "DSE 6.0.0"
   )
 
   val CompressionParam = ConfigParameter[ProtocolOptions.Compression](
@@ -279,7 +307,7 @@ object CassandraConnectorConf extends Logging {
       hostName <- hostsStr.split(",").toSet[String]
       hostAddress <- resolveHost(hostName.trim)
     } yield hostAddress
-    
+
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
 
     val authConf = AuthConf.fromSparkConf(conf)
@@ -288,7 +316,9 @@ object CassandraConnectorConf extends Logging {
     val localDC = conf.getOption(LocalDCParam.name)
     val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
     val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
-    val maxConnections = conf.getOption(MaxConnectionsPerExecutorParam.name).map(_.toInt)
+    val localConnections = conf.getOption(LocalConnectionsPerExecutorParam.name).map(_.toInt)
+    val minRemoteConnections = conf.getOption(MinRemoteConnectionsPerExecutorParam.name).map(_.toInt)
+    val maxRemoteConnections = conf.getOption(MaxRemoteConnectionsPerExecutorParam.name).map(_.toInt)
     val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
     val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
     val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
@@ -331,7 +361,9 @@ object CassandraConnectorConf extends Logging {
       keepAliveMillis = keepAlive,
       minReconnectionDelayMillis = minReconnectionDelay,
       maxReconnectionDelayMillis = maxReconnectionDelay,
-      maxConnectionsPerExecutor = maxConnections,
+      localConnectionsPerExecutor = localConnections,
+      minRemoteConnectionsPerExecutor = minRemoteConnections,
+      maxRemoteConnectionsPerExecutor = maxRemoteConnections,
       compression = compression,
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeout,
