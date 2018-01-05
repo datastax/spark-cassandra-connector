@@ -60,7 +60,7 @@ private[connector] class CassandraRunner(
 
   private[embedded] val process = new ProcessBuilder()
     .command(javaBin,
-      "-Xms512M", "-Xmx1G", "-Xmn384M", "-XX:+UseConcMarkSweepGC",
+      "-Xms512M", "-Xmx1G", "-Xmn384M", "-XX:+UseConcMarkSweepGC", "-XX:OnOutOfMemoryError=kill -9 %p",
       sizeEstimatesUpdateIntervalProperty,
       cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, jmxPortProperty,
       logConfigFileProperty, "-cp", classPath, cassandraMainClass, "-f")
