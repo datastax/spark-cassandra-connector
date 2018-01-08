@@ -3,6 +3,9 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.{Locale, UUID}
 
+import scala.collection.mutable.ListBuffer
+import scala.util.Try
+
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
@@ -10,22 +13,21 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
 import org.apache.spark.sql.cassandra.DataTypeConverter._
+import org.apache.spark.sql.catalyst.CatalystTypeConverters
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
+
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
-import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
+import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.{SqlRowWriter, TTLOption, TimestampOption, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
-import org.apache.spark.sql.catalyst.CatalystTypeConverters
-
-import scala.util.Try
 
 sealed trait DirectJoinSetting
 case object AlwaysOn extends DirectJoinSetting
@@ -212,14 +214,16 @@ case class CassandraSourceRelation(
     case false => filters
   }
 
-  lazy val additionalRules: Seq[CassandraPredicateRules] = {
+  /** Looks for a given key in SparkConf, if the key is not found, it looks in LocalProperties.
+    * Designed so we can set this in testing to different values without making a new context check local property
+    * as well */
+  private def getConfigParameter(key: String): Option[String] = {
     val sc = sqlContext.sparkContext
+    sc.getConf.getOption(key).orElse(Option(sc.getLocalProperty(key)))
+  }
 
-    /* So we can set this in testing to different values without
-     making a new context check local property as well */
-    val userClasses: Option[String] =
-      sc.getConf.getOption(AdditionalCassandraPushDownRulesParam.name)
-        .orElse(Option(sc.getLocalProperty(AdditionalCassandraPushDownRulesParam.name)))
+  lazy val additionalRules: Seq[CassandraPredicateRules] = {
+    val userClasses = getConfigParameter(AdditionalCassandraPushDownRulesParam.name)
 
     userClasses match {
       case Some(classes) =>
@@ -227,7 +231,6 @@ case class CassandraSourceRelation(
           .trim
           .split("""\s*,\s*""")
           .map(ReflectionUtil.findGlobalObject[CassandraPredicateRules])
-          .reverse
       case None => AdditionalCassandraPushDownRulesParam.default
     }
   }
@@ -238,7 +241,16 @@ case class CassandraSourceRelation(
   */
   val pushdownCache: TrieMap[Seq[Filter], AnalyzedPredicates] = TrieMap.empty
 
-  private def predicatePushDown(filters: Array[Filter]) = pushdownCache.getOrElseUpdate(filters.toSeq, {
+  private def solrPredicateRules: Option[CassandraPredicateRules] = {
+    if (searchOptimization.enabled) {
+      logDebug(s"Search Optimization Enabled - $searchOptimization")
+      Some(new SolrPredicateRules(searchOptimization))
+    } else {
+      None
+    }
+  }
+
+  private def predicatePushDown(filters: Array[Filter]): AnalyzedPredicates = pushdownCache.getOrElseUpdate(filters.toSeq, {
 
     logDebug(s"Input Predicates: [${filters.mkString(", ")}]")
 
@@ -247,24 +259,18 @@ case class CassandraSourceRelation(
     /** Apply built in rules **/
     val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
+
     logDebug(s"Basic Rules Applied:\n$basicPushdown")
 
-    logDebug(s"Applying DSE Only Predicate Rules")
-    /** Apply Dse Predicate Rules **/
-    val dsePredicates: AnalyzedPredicates = {
-      val dseBasicPredicates = DsePredicateRules.apply(basicPushdown, tableDef, sparkConf)
-      if (searchOptimization.enabled) {
-        logDebug(s"Search Optimization Enabled - $searchOptimization")
-        SolrPredicateRules.apply(dseBasicPredicates, tableDef, sparkConf, searchOptimization)
-      } else {
-          dseBasicPredicates
-      }
-    }
-    logDebug(s"Applied DSE Predicate Rules Pushdown Filters: \n$dsePredicates")
+    val predicatePushDownRules = Seq(
+      DsePredicateRules,
+      InClausePredicateRules) ++
+      solrPredicateRules ++
+      additionalRules
 
-    /** Apply any user defined rules **/
-    val finalPushdown =  additionalRules.foldRight(dsePredicates)(
-      (rules, pushdowns) => {
+    /** Apply non-basic rules **/
+    val finalPushdown = predicatePushDownRules.foldLeft(basicPushdown)(
+      (pushdowns, rules) => {
         val pd = rules(pushdowns, tableDef, sparkConf)
         logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
         pd
@@ -275,18 +281,92 @@ case class CassandraSourceRelation(
     finalPushdown
   })
 
-  override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
-    val filteredRdd = {
-      if (filterPushdown) {
-        val analyzedPredicates = predicatePushDown(filters)
-        logDebug(s"Building RDD with filters:\n$analyzedPredicates")
-        val pushdownFilters = analyzedPredicates.handledByCassandra.toArray
-        maybePushdownFilters(baseRdd, pushdownFilters)
-      } else {
-        baseRdd
+  /** Preserves `columns` order */
+  private def eqAndInColumnFilters(columns: Seq[ColumnDef], predicates: AnalyzedPredicates): Seq[Filter] = {
+    val predicatesByColumnName = predicates.handledByCassandra.collect {
+      case eq @ EqualTo(column, _) => (column, eq)
+      case in @ In(column, _) => (column, in)
+    }.toMap
+    columns.flatMap(column => predicatesByColumnName.get(column.columnName))
+  }
+
+  /** Is convertable to joinWithCassandraTable if query
+    * - uses all partition key columns
+    * - spans multiple partitions
+    * - contains IN key values and the cartesian set of those values is greater than threshold
+    */
+  private def isConvertableToJoinWithCassandra(predicates: AnalyzedPredicates): Boolean = {
+    val inClauseConversionThreshold = getConfigParameter(InClauseToJoinWithTableConversionThreshold.name).map(_.toLong)
+        .getOrElse(InClauseToJoinWithTableConversionThreshold.default)
+    if (inClauseConversionThreshold == 0L) {
+      false
+    } else {
+      val partitionFilters = eqAndInColumnFilters(tableDef.partitionKey, predicates)
+      val clusteringFilters = eqAndInColumnFilters(tableDef.clusteringColumns, predicates)
+      val inClauseValuesCartesianSize = (partitionFilters ++ clusteringFilters).foldLeft(1L) {
+        case (cartSize, In(_, values)) => cartSize * values.length
+        case (cartSize, _) => cartSize
       }
+      partitionFilters.exists(_.isInstanceOf[In]) &&
+        tableDef.partitionKey.length == partitionFilters.length &&
+        inClauseValuesCartesianSize >= inClauseConversionThreshold
     }
-    maybeSelect(filteredRdd, requiredColumns)
+  }
+
+  private def joinKeysRDD(columnNameAndValues: Seq[(String, Array[AnyRef])]) = {
+    val metadata = CassandraRowMetadata.fromColumnNames(columnNameAndValues.map(_._1))
+    val parallelism = sqlContext.sparkContext.defaultParallelism
+    val keysRDDs = for ((_, values) <- columnNameAndValues) yield sqlContext.sparkContext.parallelize(values, parallelism)
+    val headRDD = keysRDDs.head.map(ListBuffer(_))
+
+    keysRDDs.tail.foldLeft(headRDD) { (cartesian, nextRDD) =>
+      cartesian
+        .cartesian(nextRDD)
+        .map { case (inValues, nextValue) => inValues += nextValue }
+        .coalesce(parallelism, shuffle = false)
+    }.map(values => new CassandraRow(metadata, values.toIndexedSeq))
+  }
+
+  private def joinWithCassandraByPredicates(analyzedPredicates: AnalyzedPredicates, requiredColumns: Array[String]) = {
+    val primaryKeyFilters = eqAndInColumnFilters(tableDef.primaryKey, analyzedPredicates)
+    val columnNameAndValues = primaryKeyFilters.collect {
+      case eq@EqualTo(column, _) => (column, Array(eq.value.asInstanceOf[AnyRef]))
+      case in@In(column, _) => (column, in.values.asInstanceOf[Array[AnyRef]])
+    }
+    val joinColumns = tableDef.primaryKey
+      .takeWhile(c => columnNameAndValues.exists(cv => cv._1 == c.columnName))
+      .map(_.ref)
+    val selectColumns =
+      if (requiredColumns.isEmpty) AllColumns
+      else SomeColumns(requiredColumns.map(column => column: ColumnRef): _*)
+
+    val join = new CassandraJoinRDD[CassandraRow, CassandraSQLRow](
+      left = joinKeysRDD(columnNameAndValues),
+      keyspaceName = tableDef.keyspaceName,
+      tableName = tableDef.tableName,
+      joinColumns = SomeColumns(joinColumns: _*),
+      columnNames = selectColumns,
+      readConf = readconf,
+      connector = connector)
+    maybePushdownFilters(join, (analyzedPredicates.handledByCassandra -- primaryKeyFilters.toSet).toSeq).map(_._2)
+  }
+
+  override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
+    if (filterPushdown) {
+      val analyzedPredicates = predicatePushDown(filters)
+      logDebug(s"Building RDD with filters:\n$analyzedPredicates")
+
+      if (isConvertableToJoinWithCassandra(analyzedPredicates)) {
+        logInfo(s"Number of keys in 'IN' clauses exceeds ${InClauseToJoinWithTableConversionThreshold.name}, " +
+          s"converting to joinWithCassandraTable.")
+        joinWithCassandraByPredicates(analyzedPredicates, requiredColumns).asInstanceOf[RDD[Row]]
+      } else {
+        val filteredRdd = maybePushdownFilters(baseRdd, analyzedPredicates.handledByCassandra.toSeq)
+        maybeSelect(filteredRdd, requiredColumns)
+      }
+    } else {
+      maybeSelect(baseRdd, requiredColumns)
+    }
   }
 
   /** Define a type for CassandraRDD[CassandraSQLRow]. It's used by following methods */
@@ -318,7 +398,7 @@ case class CassandraSourceRelation(
             } else {
               CassandraTableScanRDD.countRDD(rdd)
             }
-            countRDD.mapPartitions(_.flatMap(count => Iterator.fill(count.toInt)(CassandraSQLRow.empty)))
+          countRDD.mapPartitions(_.flatMap(count => Iterator.fill(count.toInt)(CassandraSQLRow.empty)))
         case _ => rdd
       }
     }
@@ -326,7 +406,7 @@ case class CassandraSourceRelation(
   }
 
   /** Push down filters to CQL query */
-  private def maybePushdownFilters(rdd: RDDType, filters: Seq[Filter]) : RDDType = {
+  private def maybePushdownFilters[T](rdd: CassandraRDD[T], filters: Seq[Filter]) : CassandraRDD[T]= {
     whereClause(filters) match {
       case (cql, values) if values.nonEmpty => rdd.where(cql, values: _*)
       case _ => rdd
@@ -511,6 +591,32 @@ object CassandraSourceRelation extends Logging {
         |"off" disables direct join even when possible
         |"auto" only does a direct join when the size ratio is satisfied see ${DirectJoinSizeRatioParam.name}
       """.stripMargin
+  )
+
+  val InClauseToJoinWithTableConversionThreshold = ConfigParameter[Long](
+    name = "spark.sql.dse.inClauseToJoinConversionThreshold",
+    section = DseReferenceSection,
+    default = 2500L,
+    description =
+        s"""Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
+           |product of all `IN` value sets exceeds this value. To disable `IN` clause conversion, set this setting to 0.
+           |Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+           |Cross product of these values has size of 24.
+         """.stripMargin
+  )
+
+  val InClauseToFullTableScanConversionThreshold = ConfigParameter[Long](
+    name = "spark.sql.dse.inClauseToFullScanConversionThreshold",
+    section = DseReferenceSection,
+    default = 20000000L,
+    description =
+        s"""Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
+           |product of all `IN` value sets exceeds this value. It is meant to stop conversion for huge `IN` values sets
+           |that may cause memory problems. If this limit is exceeded full table scan is performed.
+           |This setting takes precedence over ${InClauseToJoinWithTableConversionThreshold.name}.
+           |Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+           |Cross product of these values has size of 24.
+         """.stripMargin
   )
 
   val defaultClusterName = "default"

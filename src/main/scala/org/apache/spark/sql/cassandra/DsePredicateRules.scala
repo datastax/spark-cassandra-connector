@@ -5,13 +5,13 @@
  */
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.sources.{EqualTo, Filter, IsNotNull}
+import org.apache.spark.sql.sources.{EqualTo, Filter, In, IsNotNull}
 
-object DsePredicateRules {
+object DsePredicateRules extends CassandraPredicateRules {
 
-  def apply(
+  override def apply(
     predicates: AnalyzedPredicates,
     tableDef: TableDef,
     sparkConf: SparkConf): AnalyzedPredicates = {

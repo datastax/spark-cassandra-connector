@@ -1,19 +1,22 @@
 package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
+
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 import org.scalatest.BeforeAndAfterEach
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.embedded.YamlTransformations
-import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD}
+import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraTableScanRDD}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSourceRelation.{InClauseToFullTableScanConversionThreshold, InClauseToJoinWithTableConversionThreshold}
 import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
@@ -85,15 +88,25 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
   beforeClass {
     createTempTable(ks, "test1", "tmpTable")
+    createTempTable(ks, "df_test2", "tmpDf_test2")
   }
 
   afterClass {
     sparkSession.sql("DROP VIEW tmpTable")
+    sparkSession.sql("DROP VIEW tmpDf_test2")
   }
 
-  override def afterEach(): Unit ={
-    sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
+  private def withConfig(params: (String, Any)*)(testFun: => Unit): Unit = {
+    val originalValues = params.map { case (k, _) => (k, sc.getLocalProperty(k)) }
+    params.foreach { case (k, v) => sc.setLocalProperty(k, v.toString) }
+    try {
+      testFun
+    } finally {
+      originalValues.foreach { case (k, v) => sc.setLocalProperty(k, v) }
+    }
   }
+
+  private def withConfig(key: String, value: Any)(testFun: => Unit): Unit = withConfig((key, value)){testFun}
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
     sparkSession.sql(
@@ -241,10 +254,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
   }
 
-  it should "apply user custom predicates which erase basic pushdowns" in {
-    sc.setLocalProperty(
+  it should "apply user custom predicates which erase basic pushdowns" in withConfig(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
-      "com.datastax.spark.connector.sql.PushdownNothing")
+      "com.datastax.spark.connector.sql.PushdownNothing") {
 
     val df = sparkSession
       .read
@@ -256,10 +268,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     qp should include ("Filter (") // Should have a Spark Filter Step
   }
 
-  it should "apply user custom predicate rules in the order they are specified" in {
-    sc.setLocalProperty(
+  it should "apply user custom predicate rules in the order they are specified" in withConfig(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
-      "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly")
+      "com.datastax.spark.connector.sql.PushdownNothing,com.datastax.spark.connector.sql.PushdownEverything,com.datastax.spark.connector.sql.PushdownEqualsOnly") {
 
     val df = sparkSession
       .read
@@ -293,11 +304,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       ("\"e\" = ?", 1))
   }
 
-  it should "pass through local conf properties" in {
-
-    sc.setLocalProperty(
+  it should "pass through local conf properties" in withConfig(
       CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name,
-      "com.datastax.spark.connector.sql.PushdownUsesConf")
+      "com.datastax.spark.connector.sql.PushdownUsesConf") {
 
     val df = sparkSession
       .read
@@ -316,8 +325,132 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     intercept[IllegalAccessException] {
       df2.explain() //
     }
+  }
 
+  private def joinConversionLowThreshold(testFun: => Unit): Unit =
+    withConfig(InClauseToJoinWithTableConversionThreshold.name, 1) { testFun }
 
+  private def flattenRddDependencies(rdds: Seq[RDD[_]], rdd: RDD[_]): Seq[RDD[_]] =
+    if (rdd.dependencies.isEmpty) rdds :+ rdd else rdd.dependencies.flatMap(d => flattenRddDependencies(rdds :+ rdd, d.rdd))
+
+  private def assertOnCassandraJoinRddPresence(rdd: RDD[_]): Unit = {
+    if (pushDown)
+      withClue("Given RDD does not contain CassandraJoinRDD in it's predecessors.") {
+        flattenRddDependencies(Seq[RDD[_]](), rdd).find(_.isInstanceOf[CassandraJoinRDD[_, _]]) shouldBe defined
+     }
+    else
+      assertOnAbsenceOfCassandraJoinRdd(rdd)
+  }
+
+  private def assertOnAbsenceOfCassandraJoinRdd(rdd: RDD[_]): Unit =
+    withClue("Given RDD contains CassandraJoinRDD in it's predecessors.") {
+      flattenRddDependencies(Seq[RDD[_]](), rdd).find(_.isInstanceOf[CassandraJoinRDD[_, _]]) should not be defined
+    }
+
+  it should "convert to joinWithCassandra for 'IN' clause spanned on simple partition key " in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpDf_test2 WHERE customer_id IN (1,2)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for composite partition key " in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT a,b FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect() should have size 8
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for some columns of composite partition key " in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b = 2 AND c IN (1,2,3)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect() should have size 4
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition key and some clustering columns" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2) AND d IN (1) AND e IN (1)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect() should have size 2
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition key and all clustering columns" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2) AND d IN (1) AND e IN (1) AND f IN (1,3)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect() should have size 1
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition and some clustering columns and range" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2) AND d IN (1) AND e IN (1) AND f < 2")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    val rows = df.collect()
+    rows should have size 1
+    rows.head.size should be(8)
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition columns and respect required columns" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT a,b,c FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect().head.size should be(3)
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition columns and retrieve all columns" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    df.collect().head.size should be(8)
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition key and clustering columns regardless the predicate order" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE e IN (2) AND b IN (1,2) AND a IN (1,2) AND d IN (2) AND f IN (2) AND c IN (1)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    val rows = df.collect()
+    rows should have size 1
+    rows.head.mkString(",") should be("1,2,1,2,2,2,2,2")
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition key and clustering columns with equal predicates" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE e = 2 AND b IN (1,2) AND a IN (1,2) AND d = 2 AND f IN (2) AND c = 1")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    val rows = df.collect()
+    rows should have size 1
+    rows.head.mkString(",") should be("1,2,1,2,2,2,2,2")
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition columns and respect required columns order" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT b,a FROM tmpTable WHERE a IN (1) AND b IN (2) AND c IN (1,9)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    val rows = df.collect()
+    rows should have size 4
+    rows.foreach(row => row.mkString(",") should be("2,1"))
+  }
+
+  it should "convert to joinWithCassandra for 'IN' clause for partition columns and allow count" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT count(1) FROM tmpTable WHERE a IN (1) AND b IN (2) AND c IN (1,9)")
+    assertOnCassandraJoinRddPresence(df.rdd)
+    val rows = df.collect()
+    rows should have size 1
+    rows.head.getLong(0) should be(4)
+  }
+
+  it should "not convert to joinWithCassandra when some partition columns have no predicate" in joinConversionLowThreshold {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1) AND b IN (2,3,4,5)")
+    assertOnAbsenceOfCassandraJoinRdd(df.rdd)
+  }
+
+  it should "not convert to joinWithCassandra if 'IN' value sets cumulative size does not exceed configurable threshold" in
+      withConfig(InClauseToJoinWithTableConversionThreshold.name, 9) {
+    val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (2,1) AND c IN (3,1)")
+    assertOnAbsenceOfCassandraJoinRdd(df.rdd)
+  }
+
+  it should "not convert to joinWithCassandra for 'IN' clause if threshold is 0" in
+      withConfig((InClauseToJoinWithTableConversionThreshold.name, 0)) {
+        val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1) AND b IN (2) AND c IN (1,9)")
+        assertOnAbsenceOfCassandraJoinRdd(df.rdd)
+  }
+
+  it should "keep default parallelism when converting IN clause to joinWithCassandra" in joinConversionLowThreshold {
+    if (pushDown) {
+      val df = sparkSession.sql(s"SELECT * FROM tmpTable WHERE a IN (1,2) AND b IN (1,2) AND c IN (1,2)")
+      assertOnCassandraJoinRddPresence(df.rdd)
+      df.rdd.partitions.length should be (df.sparkSession.sparkContext.defaultParallelism)
+    }
   }
 }
 

@@ -9,22 +9,23 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
-import com.datastax.driver.core.{HostDistance, SimpleStatement}
-import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
-import com.datastax.spark.connector.util.Logging
+import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
+
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.SolrConstants._
 import org.apache.spark.sql.sources._
-import org.apache.solr.client.solrj.util.ClientUtils.escapeQueryChars
-import org.apache.spark.sql.sources._
 
-import scala.util.{Failure, Success, Try}
-import scala.collection.JavaConverters._
-
+import com.datastax.driver.core.{HostDistance, SimpleStatement}
+import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.util.Logging
 
 
-object SolrPredicateRules extends Logging {
+
+class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting)
+  extends CassandraPredicateRules
+    with Logging {
 
   /**
   Constructor for testing, Takes solrIndexedFields as a function. This allows us
@@ -37,8 +38,7 @@ object SolrPredicateRules extends Logging {
     predicates: AnalyzedPredicates,
     tableDef: TableDef,
     sparkConf: SparkConf,
-    getSolrIndexedColumns: (TableDef, SparkConf) => Set[String],
-    searchOptimizationEnabled: DseSearchOptimizationSetting): AnalyzedPredicates = {
+    getSolrIndexedColumns: (TableDef, SparkConf) => Set[String]): AnalyzedPredicates = {
 
     //This could be done in the SCC as it's not Solr Specific
     val uselessIsNotNulls =
@@ -84,13 +84,11 @@ object SolrPredicateRules extends Logging {
     * Entry point for Spark Cassandra Connector. Reads SolrIndexedColumn information from
     * C*. See above Apply method for actual implementation.
     */
-  def apply(
+  override def apply(
     predicates: AnalyzedPredicates,
     tableDef: TableDef,
-    sparkConf: SparkConf,
-    searchOptimizationEnabled: DseSearchOptimizationSetting): AnalyzedPredicates = {
-
-    apply(predicates, tableDef, sparkConf, getSolrIndexedColumnsFromSolrXML, searchOptimizationEnabled)
+    sparkConf: SparkConf): AnalyzedPredicates = {
+    apply(predicates, tableDef, sparkConf, getSolrIndexedColumnsFromSolrXML)
   }
 
   /**
