@@ -84,17 +84,27 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
     timeUUIDCols.flatMap(col => rangePredicatesByName.get(col.columnName)).flatten
   }
 
-
+  /** Evaluates set of columns used in equality predicates and set of columns use in 'in' predicates.
+    * Evaluation is based on protocol version. */
+  private def partitionKeyPredicateColumns(pv: ProtocolVersion): (Seq[String], Seq[String]) = {
+    if (pv < ProtocolVersion.V4) {
+      val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
+      (eqColumns, otherColumns.headOption.toSeq.filter(inPredicatesByName.contains))
+    } else {
+      (partitionKeyColumns.intersect(eqPredicatesByName.keys.toSeq),
+          partitionKeyColumns.intersect(inPredicatesByName.keys.toSeq))
+    }
+  }
 
   /**
    * Selects partition key predicates for pushdown:
    * 1. Partition key predicates must be equality or IN predicates.
-   * 2. Only the last partition key column predicate can be an IN.
+   * 2. Up to V3 protocol version only the last partition key column predicate can be an IN.
+   *    For V4 protocol version and newer any partition key column predicate can be an IN.
    * 3. All partition key predicates must be used or none.
    */
   private val partitionKeyPredicatesToPushDown: Set[Predicate] = {
-    val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
-    val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
+    val (eqColumns, inColumns) = partitionKeyPredicateColumns(pv)
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
       (eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)).toSet
     else
@@ -102,15 +112,15 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   }
 
   /**
-   * Selects clustering key predicates for pushdown:
-   * 1. Clustering column predicates must be equality predicates, except the last one.
-   * 2. The last predicate is allowed to be an equality or a range predicate.
-   * 3. The last predicate is allowed to be an IN predicate only if it was preceded by
-   *    an equality predicate.
-   * 4. Consecutive clustering columns must be used, but, contrary to partition key,
-   *    the tail can be skipped.
-   */
-  private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
+    * Selects clustering key predicates for pushdown prior V4:
+    * 1. Clustering column predicates must be equality predicates, except the last one.
+    * 2. The last predicate is allowed to be an equality or a range predicate.
+    * 3. The last predicate is allowed to be an IN predicate only if it was preceded by
+    *    an equality predicate.
+    * 4. Consecutive clustering columns must be used, but, contrary to partition key,
+    *    the tail can be skipped.
+    */
+  private def clusteringColumnPredicatesToPushDownPriorV4() = {
     val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
     val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
     val optionalNonEqPredicate = for {
@@ -119,8 +129,31 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
         rangePredicatesByName(c),
         inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
     } yield p
-
     eqPredicates ++ optionalNonEqPredicate
+  }
+
+  /**
+    * Selects clustering key predicates for pushdown for V4 and later:
+    * 1. Clustering column predicates must be equality or 'in' predicates
+    * 2. The last predicate is allowed to be an equality, 'in' or a range predicate.
+    * 3. Consecutive clustering columns must be used, but, contrary to partition key,
+    *    the tail can be skipped.
+    */
+  private def clusteringColumnPredicatesToPushDownFromV4() = {
+    val (eqOrInColumns, otherColumns) = clusteringColumns.span(col =>
+      eqPredicatesByName.contains(col) || inPredicatesByName.contains(col))
+    val eqOrInPredicates = eqOrInColumns.flatMap(col => eqPredicatesByName.getOrElse(col, inPredicatesByName(col))).toSet
+    val optionalNonEqPredicate = otherColumns.headOption.map(col => rangePredicatesByName(col)).getOrElse(Set())
+    eqOrInPredicates ++ optionalNonEqPredicate
+  }
+
+  /** Selects clustering key predicates for pushdown based on protocol version */
+  private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
+    if (pv < ProtocolVersion.V4) {
+      clusteringColumnPredicatesToPushDownPriorV4()
+    } else {
+      clusteringColumnPredicatesToPushDownFromV4()
+    }
   }
 
   /**

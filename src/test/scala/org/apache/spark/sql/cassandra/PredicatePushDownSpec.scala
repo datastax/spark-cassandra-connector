@@ -132,10 +132,26 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     ppd.predicatesToPreserve shouldBe empty
   }
 
-  it should "not push down an IN partition key predicate on the non-last partition key column" in {
+  it should "push down an IN partition key predicate on the non-last partition key column" in {
     val f1 = InFilter("pk1")
     val f2 = EqFilter("pk2")
     val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
+    ppd.predicatesToPushDown should contain allOf(f1, f2)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should "push down an IN partition key predicate on all partition key columns" in {
+    val f1 = InFilter("pk1")
+    val f2 = InFilter("pk2")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
+    ppd.predicatesToPushDown should contain allOf(f1, f2)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should "not push down an IN partition key predicate on the non-last partition key column for V3 and older" in {
+    val f1 = InFilter("pk1")
+    val f2 = EqFilter("pk2")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table, ProtocolVersion.V3)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
@@ -158,7 +174,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "push down restrictions on only the initial clustering columns" in {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c3")
-    
+
     val ppd1 = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
     ppd1.predicatesToPushDown should contain only f1
     ppd1.predicatesToPreserve should contain only f2
@@ -203,13 +219,31 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     ppd.predicatesToPreserve should contain only f3
   }
 
-  it should "not push down IN restriction on non-last column" in {
+  it should "not push down IN restriction on non-last column for V3 and older" in {
+    val f1 = EqFilter("c1")
+    val f2 = InFilter("c2")
+    val f3 = EqFilter("c3")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table, ProtocolVersion.V3)
+    ppd.predicatesToPushDown should contain only f1
+    ppd.predicatesToPreserve should contain only (f2, f3)
+  }
+
+  it should "push down IN restriction on non-last clustering column" in {
     val f1 = EqFilter("c1")
     val f2 = InFilter("c2")
     val f3 = EqFilter("c3")
     val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only f1
-    ppd.predicatesToPreserve should contain only (f2, f3)
+    ppd.predicatesToPushDown should contain only (f1, f2, f3)
+    ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should "push down IN restriction on all clustering columns" in {
+    val f1 = InFilter("c1")
+    val f2 = InFilter("c2")
+    val f3 = InFilter("c3")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
+    ppd.predicatesToPushDown should contain only (f1, f2, f3)
+    ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "not push down any clustering column predicates, if the first clustering column is missing" in {
@@ -270,7 +304,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
-  
+
   it should "prefer to push down equality predicates over range predicates" in {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c2")
