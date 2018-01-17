@@ -61,7 +61,6 @@ trait NullableTypeConverter[T] extends TypeConverter[T] {
 /** Chains together several converters converting to the same type.
   * This way you can extend functionality of any converter to support new input types. */
 class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends NullableTypeConverter[T] {
-  def testAnyVal[T](x: T)(implicit evidence: T <:< AnyVal = null) = evidence != null
   def targetTypeTag = converters.head.targetTypeTag
   def convertPF = converters.map(_.convertPF).reduceLeft(_ orElse _)
 }
