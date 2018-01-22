@@ -103,14 +103,30 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
                                 // transient because codecs are not serializable and used only at Row parsing
                                 // not and option as deserialized fileld will be null not None
                                 @transient private[connector] val codecs: IndexedSeq[TypeCodec[AnyRef]] = null) {
+
   @transient
   lazy val namesToIndex: Map[String, Int] = columnNames.zipWithIndex.toMap.withDefaultValue(-1)
+
+  /**
+    * Performance Modification:
+    * We access this a lot when creating CassandraRow Objects. This ends up creating a Scala Some()
+    * object for every access if we use a Scala Immutable map.  To avoid this pressure we can just us
+    * a plain old Java Hashmap. In the future we amy just want to move the resultset-index information
+    * in the ColumnReference or MapReader to avoid any sort of map-lookup.
+    */
+  import scala.collection.JavaConverters._
   @transient
-  lazy val indexOfCqlColumnOrThrow = unaliasedColumnNames.zipWithIndex.toMap.withDefault { name =>
-    throw new ColumnNotFoundException(
-      s"Column not found: $name. " +
-        s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
-  }
+  lazy val unaliasedNamesToIndex: java.util.Map[String, Int] = new java.util.HashMap(unaliasedColumnNames.zipWithIndex.toMap.asJava)
+
+  def indexOfCqlColumnOrThrow(colName: String) =
+    try {
+      unaliasedNamesToIndex.get(colName)
+    } catch {
+      case notFound: java.util.NoSuchElementException =>
+        throw new ColumnNotFoundException(
+          s"Column not found: $colName. " +
+            s"Available columns are: ${columnNames.mkString("[", ", ", "]")}")
+    }
 
   @transient
   lazy val indexOfOrThrow = namesToIndex.withDefault { name =>

@@ -37,14 +37,26 @@ trait TypeConverter[T] extends Serializable {
   /** Returns a function converting an object into `T`. */
   def convertPF: PartialFunction[Any, T]
 
+  /**
+    * Performance Modification:
+    * To o prevent the Scala compiler from at any time thinking that this is mutable we need
+    * to force it to a val. This will prevent any creation of new PartialFunction objects which can
+    * cause GC pressure.
+    */
+  @transient lazy val _convertPF = convertPF
+
   /** Converts and object or throws TypeConversionException if the object can't be converted. */
   def convert(obj: Any): T = {
-    convertPF.applyOrElse(obj, (_: Any) =>
-      if (obj != null)
-        throw new TypeConversionException(s"Cannot convert object $obj of type ${obj.getClass} to $targetTypeName.")
-      else
-        throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName.")
-    )
+    try {
+      _convertPF.apply(obj)
+    } catch {
+      case e: scala.MatchError => {
+        if (obj != null)
+          throw new TypeConversionException(s"Cannot convert object $obj of type ${obj.getClass} to $targetTypeName.")
+        else
+          throw new TypeConversionException(s"Cannot convert object $obj to $targetTypeName.")
+      }
+    }
   }
 }
 
@@ -271,8 +283,8 @@ object TypeConverter {
 
     def convertPF = {
       case x: Date => TimestampFormatter.format(x)
-      case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
-      case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
+      case x: Array[Byte] => x.map("%02x".format(_)).mkString("0x","","")
+      case x: Map[_, _] => x.map(kv => s"${convert(kv._1)} : ${convert(kv._2)}").mkString("{", ",", "}")
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x: Any => x.toString

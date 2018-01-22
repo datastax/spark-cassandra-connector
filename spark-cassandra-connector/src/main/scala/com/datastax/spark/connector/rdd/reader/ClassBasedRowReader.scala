@@ -17,8 +17,7 @@ final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
     selectedColumns: IndexedSeq[ColumnRef])
   extends RowReader[R] {
 
-  private val converter =
-    new GettableDataToMappedTypeConverter[R](table, selectedColumns)
+  private val converter = new GettableDataToMappedTypeConverter[R](table, selectedColumns)
 
   private val isReadingTuples =
     SparkReflectionLock.synchronized(typeTag[R].tpe.typeSymbol.fullName startsWith "scala.Tuple")
