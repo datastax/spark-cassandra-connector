@@ -9,7 +9,7 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import org.apache.spark.{SparkConf, SparkContext}
 import com.datastax.driver.core.ProtocolOptions
-import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, Logging}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
@@ -158,22 +158,40 @@ object CassandraConnectorConf extends Logging {
     description = """Enable secure connection to Cassandra cluster""")
 
   val SSLTrustStorePathParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.trustStore.path",
+    name = "spark.cassandra.connection.ssl.truststore.path",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStorePath,
     description = """Path for the trust store being used""")
 
+  val deprecatedSSLTrustStorePathParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.trustStore.path",
+    replacementParameter = Some(SSLTrustStorePathParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLTrustStorePasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.trustStore.password",
+    name = "spark.cassandra.connection.ssl.truststore.password",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStorePassword,
     description = """Trust store password""")
 
+  val deprecatedSSLTrustStorePasswordParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.trustStore.password",
+    replacementParameter = Some(SSLTrustStorePasswordParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLTrustStoreTypeParam = ConfigParameter[String](
-    name = "spark.cassandra.connection.ssl.trustStore.type",
+    name = "spark.cassandra.connection.ssl.truststore.type",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStoreType,
     description = """Trust store type""")
+
+  val deprecatedSSLTrustStoreTypeParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.trustStore.type",
+    replacementParameter = Some(SSLTrustStoreTypeParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
 
   val SSLProtocolParam = ConfigParameter[String](
     name = "spark.cassandra.connection.ssl.protocol",
@@ -181,62 +199,64 @@ object CassandraConnectorConf extends Logging {
     default = DefaultCassandraSSLConf.protocol,
     description = """SSL protocol""")
 
-  val CassandraConnectionSSLEnabledAlgorithmsProperty = "spark.cassandra.connection.ssl.enabledAlgorithms"
-  val DefaultSSLEnabledAlgorithms = DefaultCassandraSSLConf.enabledAlgorithms
-  val CassandraConnectionSSLEnabledAlgorithmsDescription = """SSL cipher suites"""
   val SSLEnabledAlgorithmsParam = ConfigParameter[Set[String]](
-    name = "spark.cassandra.connection.ssl.enabledAlgorithms",
+    name = "spark.cassandra.connection.ssl.enabled_algorithms",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.enabledAlgorithms,
     description = """SSL cipher suites""")
 
+  val deprecatedSSLEnabledAlgorithmsParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.ssl.enabledAlgorithms",
+    replacementParameter = Some(SSLEnabledAlgorithmsParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLClientAuthEnabledParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.connection.ssl.clientAuth.enabled",
+    name = "spark.cassandra.connection.ssl.client_auth.enabled",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.clientAuthEnabled,
     description = """Enable 2-way secure connection to Cassandra cluster""")
 
+  val deprecatedSSLClientAuthEnabledParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.clientAuth.enabled",
+    replacementParameter = Some(SSLClientAuthEnabledParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLKeyStorePathParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.keyStore.path",
+    name = "spark.cassandra.connection.ssl.keystore.path",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStorePath,
     description = """Path for the key store being used""")
 
+  val deprecatedSSLKeyStorePathParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.keyStore.path",
+    replacementParameter = Some(SSLKeyStorePathParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLKeyStorePasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.keyStore.password",
+    name = "spark.cassandra.connection.ssl.keystore.password",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStorePassword,
     description = """Key store password""")
 
+  val deprecatedSSLKeyStorePasswordParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.keyStore.password",
+    replacementParameter = Some(SSLKeyStorePasswordParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val SSLKeyStoreTypeParam = ConfigParameter[String](
-    name = "spark.cassandra.connection.ssl.keyStore.type",
+    name = "spark.cassandra.connection.ssl.keystore.type",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStoreType,
     description = """Key store type""")
 
-  //Whitelist for allowed CassandraConnector environment variables
-  val Properties: Set[ConfigParameter[_]] = Set(
-    ConnectionHostParam,
-    ConnectionPortParam,
-    LocalDCParam,
-    ConnectionTimeoutParam,
-    KeepAliveMillisParam,
-    MinReconnectionDelayParam,
-    MaxReconnectionDelayParam,
-    MaxConnectionsPerExecutorParam,
-    CompressionParam,
-    QueryRetryParam,
-    ReadTimeoutParam,
-    SSLEnabledParam,
-    SSLTrustStoreTypeParam,
-    SSLTrustStorePathParam,
-    SSLTrustStorePasswordParam,
-    SSLProtocolParam,
-    SSLEnabledAlgorithmsParam,
-    SSLClientAuthEnabledParam,
-    SSLKeyStorePathParam,
-    SSLKeyStorePasswordParam,
-    SSLKeyStoreTypeParam
+  val deprecatedSSLKeyStoreTypeParam = DeprecatedConfigParameter(
+    name =  "spark.cassandra.connection.ssl.keyStore.type",
+    replacementParameter = Some(SSLKeyStoreTypeParam),
+    deprecatedSince = "DSE 6.0.0"
   )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {

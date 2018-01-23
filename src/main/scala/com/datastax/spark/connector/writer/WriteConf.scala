@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
@@ -23,18 +23,19 @@ import org.apache.spark.SparkConf
   * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+)
   */
 
-case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
-                     batchGroupingBufferSize: Int = WriteConf.BatchBufferSizeParam.default,
-                     batchGroupingKey: BatchGroupingKey = WriteConf.BatchLevelParam.default,
-                     consistencyLevel: ConsistencyLevel = WriteConf.ConsistencyLevelParam.default,
-                     ifNotExists: Boolean = WriteConf.IfNotExistsParam.default,
-                     ignoreNulls: Boolean = WriteConf.IgnoreNullsParam.default,
-                     parallelismLevel: Int = WriteConf.ParallelismLevelParam.default,
-                     throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
-                     ttl: TTLOption = TTLOption.defaultValue,
-                     timestamp: TimestampOption = TimestampOption.defaultValue,
-                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
-                     executeAs: Option[String] = None) {
+case class WriteConf(
+  batchSize: BatchSize = BatchSize.Automatic,
+  batchGroupingBufferSize: Int = WriteConf.BatchBufferSizeParam.default,
+  batchGroupingKey: BatchGroupingKey = WriteConf.BatchLevelParam.default,
+  consistencyLevel: ConsistencyLevel = WriteConf.ConsistencyLevelParam.default,
+  ifNotExists: Boolean = WriteConf.IfNotExistsParam.default,
+  ignoreNulls: Boolean = WriteConf.IgnoreNullsParam.default,
+  parallelismLevel: Int = WriteConf.ParallelismLevelParam.default,
+  throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
+  ttl: TTLOption = TTLOption.defaultValue,
+  timestamp: TimestampOption = TimestampOption.defaultValue,
+  taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
+  executeAs: Option[String] = None) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
@@ -102,21 +103,34 @@ object WriteConf {
     |""".stripMargin)
 
   val IfNotExistsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.ifNotExists",
+    name = "spark.cassandra.output.if_not_exists",
     section = ReferenceSection,
     default = false,
     description =
       """Determines that the INSERT operation is not performed if a row with the same primary
-				|key already exists. Using the feature incurs a performance hit.""".stripMargin)
+        				|key already exists. Using the feature incurs a performance hit.""".stripMargin)
+
+  val deprecatedIfNotExistsParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.output.ifNotExists",
+    replacementParameter = Some(IfNotExistsParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
 
   val IgnoreNullsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.ignoreNulls",
+    name = "spark.cassandra.output.ignore_nulls",
     section = ReferenceSection,
     default = false,
     description =
       """ In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
         |this to true will cause all null values to be left as unset rather than bound. For
         |finer control see the CassandraOption class""".stripMargin)
+
+  val deprecatedIgnoreNullsParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.output.ignoreNulls",
+    replacementParameter = Some(IgnoreNullsParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
 
   val ParallelismLevelParam = ConfigParameter[Int] (
     name = "spark.cassandra.output.concurrent.writes",
@@ -153,22 +167,6 @@ object WriteConf {
     section = ReferenceSection,
     default = true,
     description = """Sets whether to record connector specific metrics on write"""
-  )
-
-  // Whitelist for allowed Write environment variables
-  val Properties: Set[ConfigParameter[_]] = Set(
-    BatchSizeBytesParam,
-    ConsistencyLevelParam,
-    BatchSizeRowsParam,
-    BatchBufferSizeParam,
-    BatchLevelParam,
-    IfNotExistsParam,
-    IgnoreNullsParam,
-    ParallelismLevelParam,
-    ThroughputMiBPSParam,
-    TTLParam,
-    TimestampParam,
-    TaskMetricsParam
   )
 
   def fromSparkConf(conf: SparkConf): WriteConf = {

@@ -148,8 +148,6 @@ object CassandraConnectionFactory {
       """Name of a Scala module or class implementing
         |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)
 
-  val Properties = Set(FactoryParam)
-
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
     conf.getOption(FactoryParam.name)
       .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])

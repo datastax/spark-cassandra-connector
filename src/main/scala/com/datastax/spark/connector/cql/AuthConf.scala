@@ -31,7 +31,6 @@ trait AuthConfFactory {
 
   def authConf(conf: SparkConf): AuthConf
 
-  /** List of extra properties allowed in SparkConf passed to `authConf` method */
   def properties: Set[String] = Set.empty
 
 }
@@ -44,8 +43,6 @@ object AuthConfFactory {
     section = ReferenceSection,
     default = DefaultAuthConfFactory,
     description = "Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration"  )
-
-  val Properties = Set(FactoryParam)
 
   def fromSparkConf(conf: SparkConf): AuthConfFactory = {
     conf
