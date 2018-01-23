@@ -2,6 +2,7 @@ package com.datastax.spark.connector.types
 
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.sql.Timestamp
 import java.time.{ZoneId, LocalDate => JavaLocalDate}
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
@@ -202,6 +203,10 @@ object TypeConverter {
       case x: Date => x.getTime
       case x: DateTime => x.toDate.getTime
       case x: Calendar => x.getTimeInMillis
+      case x: java.time.Instant => x.toEpochMilli
+      case x: java.time.LocalTime => x.toNanoOfDay
+      case x: java.time.LocalDate => x.toEpochDay
+      case x: java.time.Duration => x.toMillis
       case x: String => x.toLong
     }
   }
@@ -376,6 +381,18 @@ object TypeConverter {
     }
     def targetTypeTag = GregorianCalendarTypeTag
     def convertPF = DateConverter.convertPF.andThen(calendar)
+  }
+
+  private val TimestampTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[Timestamp]]
+  }
+
+  implicit object TimestampConverter extends NullableTypeConverter[Timestamp] {
+    def targetTypeTag = TimestampTypeTag
+    override def convertPF = {
+      case x: Timestamp => x
+      case x => Timestamp.from(DateConverter.convert(x).toInstant())
+    }
   }
 
   private val BigIntTypeTag = SparkReflectionLock.synchronized {
@@ -929,6 +946,7 @@ object TypeConverter {
     JodaDateConverter,
     JodaLocalDateConverter,
     GregorianCalendarConverter,
+    TimestampConverter,
     InetAddressConverter,
     UUIDConverter,
     ByteBufferConverter,
