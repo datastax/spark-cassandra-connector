@@ -55,9 +55,14 @@ class TypeConverterTest {
   @Test
   def testLong() {
     val c = TypeConverter.forType[Long]
+    val instant = java.time.Instant.ofEpochMilli(12345L)
     assertEquals(12345L, c.convert("12345"))
     assertEquals(12345L, c.convert(12345))
     assertEquals(12345L, c.convert(12345L))
+    assertEquals(12345L, c.convert(instant))
+    assertEquals(12345L, c.convert(Date.from(instant)))
+    assertEquals(12345L, c.convert(java.time.LocalTime.ofNanoOfDay(12345L)))
+    assertEquals(12345L, c.convert(java.time.LocalDate.ofEpochDay(12345L)))
   }
 
   @Test
@@ -141,6 +146,23 @@ class TypeConverterTest {
 
     val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").parse(dateStr)
     val dateDayOnly = new SimpleDateFormat("yyyy-MM-dd").parse(dayOnlyStr)
+
+    assertEquals(dateDayOnly, c.convert(localDate))
+    assertEquals(dateDayOnly, c.convert(jodaLocalDate))
+    assertEquals(dateDayOnly, c.convert(javaLocalDate))
+    assertEquals(date, c.convert(dateStr))
+  }
+
+  @Test
+  def testTimestamp() {
+    val c = TypeConverter.forType[Timestamp]
+    val dateStr = "2014-04-23 11:21:32+0100"
+    val dayOnlyStr = "2014-04-23"
+    val localDate = LocalDate.fromYearMonthDay(2014, 4, 23)
+    val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
+    val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
+    val date = Timestamp.from(new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").parse(dateStr).toInstant)
+    val dateDayOnly = Timestamp.from(new SimpleDateFormat("yyyy-MM-dd").parse(dayOnlyStr).toInstant)
 
     assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(dateDayOnly, c.convert(jodaLocalDate))
