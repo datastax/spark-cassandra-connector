@@ -1,7 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import java.net.InetAddress
-import java.util.UUID
+import java.util.{Locale, UUID}
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.security.UserGroupInformation
@@ -506,7 +506,7 @@ object CassandraSourceRelation extends Logging {
     //Keyspace/Cluster level settings
     for (prop <- AllSCCConfNames) {
       val value = Seq(
-        tableConf.get(prop),
+        tableConf.get(prop.toLowerCase(Locale.ROOT)), //tableConf is actually a caseInsensitive map so lower case keys must be used
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
         sqlConf.get(s"default/$prop"),
