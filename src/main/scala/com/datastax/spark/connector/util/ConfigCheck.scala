@@ -53,13 +53,12 @@ object ConfigCheck {
     val authConfFactory = AuthConfFactory.fromSparkConf(conf)
     val extraProps = connectionFactory.properties ++ authConfFactory.properties
 
-    /** Any properties with Capitals will not work inside SparkSQL/DataFrame Options so
-      * we will be protecting against this by throwing an error if any of the properties
-      * have capitals
+    /** We no longer support snake_case properties, so we are going to fail
+      * all the tests if a snake case parameter is added back.
       */
     val invalidProperties =
       (validStaticPropertyNames ++ extraProps)
-        .filter( property => property.toLowerCase != property)
+        .filter( property => property.contains("_"))
 
     if (invalidProperties.nonEmpty) throw new IllegalArgumentException(
       s"Developer Error: These properties will not work in SparkSql/DataSets " +

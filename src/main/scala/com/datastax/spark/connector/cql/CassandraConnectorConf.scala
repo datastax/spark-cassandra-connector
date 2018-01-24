@@ -93,37 +93,61 @@ object CassandraConnectorConf extends Logging {
     description = """Cassandra native connection port""")
 
   val LocalDCParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.local_dc",
+    name = "spark.cassandra.connection.localDC",
     section = ReferenceSection,
     default = None,
     description = """The local DC to connect to (other nodes will be ignored)""")
 
+  val DeprecatedLocalDCParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.local_dc",
+    replacementParameter = Some(LocalDCParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val ConnectionTimeoutParam = ConfigParameter[Int](
-    name = "spark.cassandra.connection.timeout_ms",
+    name = "spark.cassandra.connection.timeoutMS",
     section = ReferenceSection,
     default = 5000,
     description = """Maximum period of time to attempt connecting to a node""")
 
+  val DeprecatedConnectionTimeoutParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.timeout_ms",
+    replacementParameter = Some(ConnectionTimeoutParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val KeepAliveMillisParam = ConfigParameter[Int](
-    name = "spark.cassandra.connection.keep_alive_ms",
+    name = "spark.cassandra.connection.keepAliveMS",
     section = ReferenceSection,
     default = 5000,
     description = """Period of time to keep unused connections open""")
 
+  val DeprecatedKeepAliveMillisParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.keep_alive_ms",
+    replacementParameter = Some(KeepAliveMillisParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val MinReconnectionDelayParam = ConfigParameter[Int](
-    name = "spark.cassandra.connection.reconnection_delay_ms.min",
+    name = "spark.cassandra.connection.reconnectionDelayMS.min",
     section = ReferenceSection,
     default = 1000,
     description = """Minimum period of time to wait before reconnecting to a dead node""")
 
+  val DeprecatedMinReconnectionDelayParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.reconnection_delay_ms.min",
+    replacementParameter = Some(MinReconnectionDelayParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val MaxReconnectionDelayParam = ConfigParameter[Int](
-    name = "spark.cassandra.connection.reconnection_delay_ms.max",
+    name = "spark.cassandra.connection.reconnectionDelayMS.max",
     section = ReferenceSection,
     default = 60000,
     description = """Maximum period of time to wait before reconnecting to a dead node""")
 
   val LocalConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
-    name = "spark.cassandra.connection.local_connections_per_executor",
+    name = "spark.cassandra.connection.localConnectionsPerExecutor",
     section = ReferenceSection,
     default = None,
     description =
@@ -131,8 +155,14 @@ object CassandraConnectorConf extends Logging {
           | of available CPU cores on the local node if not specified and not in a Spark Env""".stripMargin
   )
 
+  val DeprecatedMaxReconnectionDelayParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.connection.reconnection_delay_ms.max",
+    replacementParameter = Some(MaxReconnectionDelayParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val MinRemoteConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
-    name = "spark.cassandra.connection.remote_connections_per_executor_min",
+    name = "spark.cassandra.connection.remoteConnectionsPerExecutorMin",
     section = ReferenceSection,
     default = None,
     description =
@@ -141,7 +171,7 @@ object CassandraConnectorConf extends Logging {
   )
 
   val MaxRemoteConnectionsPerExecutorParam = ConfigParameter[Option[Int]](
-    name = "spark.cassandra.connection.remote_connections_per_executor_max",
+    name = "spark.cassandra.connection.remoteConnectionsPerExecutorMax",
     section = ReferenceSection,
     default = None,
     description =
@@ -171,10 +201,16 @@ object CassandraConnectorConf extends Logging {
       """.stripMargin)
 
   val ReadTimeoutParam = ConfigParameter[Int](
-    name = "spark.cassandra.read.timeout_ms",
+    name = "spark.cassandra.read.timeoutMS",
     section = ReferenceSection,
     default = 120000,
     description = """Maximum period of time to wait for a read to return """)
+
+  val DeprecatedReadTimeoutParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.read.timeout_ms",
+    replacementParameter = Some(ReadTimeoutParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
 
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
   val DefaultCassandraSSLConf = CassandraSSLConf()
@@ -186,40 +222,22 @@ object CassandraConnectorConf extends Logging {
     description = """Enable secure connection to Cassandra cluster""")
 
   val SSLTrustStorePathParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.truststore.path",
+    name = "spark.cassandra.connection.ssl.trustStore.path",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStorePath,
     description = """Path for the trust store being used""")
 
-  val deprecatedSSLTrustStorePathParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.trustStore.path",
-    replacementParameter = Some(SSLTrustStorePathParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLTrustStorePasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.truststore.password",
+    name = "spark.cassandra.connection.ssl.trustStore.password",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStorePassword,
     description = """Trust store password""")
 
-  val deprecatedSSLTrustStorePasswordParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.trustStore.password",
-    replacementParameter = Some(SSLTrustStorePasswordParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLTrustStoreTypeParam = ConfigParameter[String](
-    name = "spark.cassandra.connection.ssl.truststore.type",
+    name = "spark.cassandra.connection.ssl.trustStore.type",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.trustStoreType,
     description = """Trust store type""")
-
-  val deprecatedSSLTrustStoreTypeParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.trustStore.type",
-    replacementParameter = Some(SSLTrustStoreTypeParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
 
   val SSLProtocolParam = ConfigParameter[String](
     name = "spark.cassandra.connection.ssl.protocol",
@@ -228,64 +246,34 @@ object CassandraConnectorConf extends Logging {
     description = """SSL protocol""")
 
   val SSLEnabledAlgorithmsParam = ConfigParameter[Set[String]](
-    name = "spark.cassandra.connection.ssl.enabled_algorithms",
+    name = "spark.cassandra.connection.ssl.enabledAlgorithms",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.enabledAlgorithms,
     description = """SSL cipher suites""")
 
-  val deprecatedSSLEnabledAlgorithmsParam = DeprecatedConfigParameter(
-    name = "spark.cassandra.connection.ssl.enabledAlgorithms",
-    replacementParameter = Some(SSLEnabledAlgorithmsParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLClientAuthEnabledParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.connection.ssl.client_auth.enabled",
+    name = "spark.cassandra.connection.ssl.clientAuth.enabled",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.clientAuthEnabled,
     description = """Enable 2-way secure connection to Cassandra cluster""")
 
-  val deprecatedSSLClientAuthEnabledParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.clientAuth.enabled",
-    replacementParameter = Some(SSLClientAuthEnabledParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLKeyStorePathParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.keystore.path",
+    name = "spark.cassandra.connection.ssl.keyStore.path",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStorePath,
     description = """Path for the key store being used""")
 
-  val deprecatedSSLKeyStorePathParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.keyStore.path",
-    replacementParameter = Some(SSLKeyStorePathParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLKeyStorePasswordParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.connection.ssl.keystore.password",
+    name = "spark.cassandra.connection.ssl.keyStore.password",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStorePassword,
     description = """Key store password""")
 
-  val deprecatedSSLKeyStorePasswordParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.keyStore.password",
-    replacementParameter = Some(SSLKeyStorePasswordParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val SSLKeyStoreTypeParam = ConfigParameter[String](
-    name = "spark.cassandra.connection.ssl.keystore.type",
+    name = "spark.cassandra.connection.ssl.keyStore.type",
     section = ReferenceSectionSSL,
     default = DefaultCassandraSSLConf.keyStoreType,
     description = """Key store type""")
-
-  val deprecatedSSLKeyStoreTypeParam = DeprecatedConfigParameter(
-    name =  "spark.cassandra.connection.ssl.keyStore.type",
-    replacementParameter = Some(SSLKeyStoreTypeParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
 
   private def resolveHost(hostName: String): Option[InetAddress] = {
     try Some(InetAddress.getByName(hostName))

@@ -88,8 +88,8 @@ class CassandraSourceRelation(
       CassandraSourceRelation.SearchPredicateOptimizationParam.default
     ).toLowerCase match {
       case "auto" => Auto(sparkConf.getDouble(
-          CassandraSourceRelation.SearchPredicateOptimizationRatio.name,
-          CassandraSourceRelation.SearchPredicateOptimizationRatio.default))
+          CassandraSourceRelation.SearchPredicateOptimizationRatioParam.name,
+          CassandraSourceRelation.SearchPredicateOptimizationRatioParam.default))
       case "on" | "true" => On
       case "off" | "false" => Off
       case unknown => throw new IllegalArgumentException(
@@ -358,7 +358,7 @@ object CassandraSourceRelation extends Logging {
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
-    name = "spark.cassandra.sql.pushdown.additional_classes",
+    name = "spark.cassandra.sql.pushdown.additionalClasses",
     section = ReferenceSection,
     default = List.empty,
     description =
@@ -367,14 +367,8 @@ object CassandraSourceRelation extends Logging {
       """.stripMargin
   )
 
-  val deprecatedAdditionalCassandraPushDownRulesParam = DeprecatedConfigParameter(
-    name = "spark.cassandra.sql.pushdown.additionalClasses",
-    replacementParameter = Some(AdditionalCassandraPushDownRulesParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
-  val SearchPredicateOptimizationRatio = ConfigParameter[Double] (
-    name = "spark.sql.dse.search.auto_ratio",
+  val SearchPredicateOptimizationRatioParam = ConfigParameter[Double] (
+    name = "spark.sql.dse.search.autoRatio",
     section = DseReferenceSection,
     default = 0.03,
     description = "When Search Predicate Optimization is set to auto, Search optimizations will be " +
@@ -383,13 +377,13 @@ object CassandraSourceRelation extends Logging {
   )
 
   val SearchPredicateOptimizationParam = ConfigParameter[String] (
-    name = "spark.sql.dse.search.enable_optimization",
+    name = "spark.sql.dse.search.enableOptimization",
     section = DseReferenceSection,
     default = "auto",
     description =
       s"""Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
         |Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
-        |optimizations when the solr query will pull less than $SearchPredicateOptimizationRatio * the
+        |optimizations when the solr query will pull less than $SearchPredicateOptimizationRatioParam * the
         |total table record count""".stripMargin
   )
 
@@ -400,7 +394,7 @@ object CassandraSourceRelation extends Logging {
   )
 
   val DirectJoinSizeRatioParam = ConfigParameter[Double] (
-    name = "direct_join_size_ratio",
+    name = "directJoinSizeRatio",
     section = DseReferenceSection,
     default = 0.9d,
     description =
@@ -412,7 +406,7 @@ object CassandraSourceRelation extends Logging {
   )
 
   val DirectJoinSettingParam = ConfigParameter[String] (
-    name = "direct_join_setting",
+    name = "directJoinSetting",
     section = DseReferenceSection,
     default = "auto",
     description =

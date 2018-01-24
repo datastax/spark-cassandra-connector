@@ -31,7 +31,7 @@ object ReadConf extends Logging {
   val ReferenceSection = "Read Tuning Parameters"
 
   val SplitSizeInMBParam = ConfigParameter[Int](
-    name = "spark.cassandra.input.split.size_in_mb",
+    name = "spark.cassandra.input.split.sizeInMB",
     section = ReferenceSection,
     default = 64,
     description =
@@ -39,11 +39,23 @@ object ReadConf extends Logging {
         | partitions is <code>1 + 2 * SparkContext.defaultParallelism</code>
         |""".stripMargin.filter(_ >= ' '))
 
+  val DeprecatedSplitSizeInMBParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.input.split.size_in_mb",
+    replacementParameter = Some(SplitSizeInMBParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
+
   val FetchSizeInRowsParam = ConfigParameter[Int](
-    name = "spark.cassandra.input.fetch.size_in_rows",
+    name = "spark.cassandra.input.fetch.sizeInRows",
     section = ReferenceSection,
     default = 1000,
     description = """Number of CQL rows fetched per driver request""")
+
+  val DeprecatedFetchSizeInRowsParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.input.fetch.size_in_rows",
+    replacementParameter = Some(FetchSizeInRowsParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
 
   val ConsistencyLevelParam = ConfigParameter[ConsistencyLevel](
     name = "spark.cassandra.input.consistency.level",
@@ -59,11 +71,17 @@ object ReadConf extends Logging {
   )
 
   val ReadsPerSecParam = ConfigParameter[Int] (
-    name = "spark.cassandra.input.reads_per_sec",
+    name = "spark.cassandra.input.readsPerSec",
     section = ReferenceSection,
     default = Int.MaxValue,
     description =
       """Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations"""
+  )
+
+  val DeprecatedReadsPerSecParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.input.reads_per_sec",
+    replacementParameter = Some(ReadsPerSecParam),
+    deprecatedSince = "DSE 6.0.0"
   )
 
   val ThroughputJoinQueryPerSecParam = DeprecatedConfigParameter (

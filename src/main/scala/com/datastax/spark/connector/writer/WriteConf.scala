@@ -103,34 +103,21 @@ object WriteConf {
     |""".stripMargin)
 
   val IfNotExistsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.if_not_exists",
+    name = "spark.cassandra.output.ifNotExists",
     section = ReferenceSection,
     default = false,
     description =
       """Determines that the INSERT operation is not performed if a row with the same primary
         				|key already exists. Using the feature incurs a performance hit.""".stripMargin)
 
-  val deprecatedIfNotExistsParam = DeprecatedConfigParameter(
-    name = "spark.cassandra.output.ifNotExists",
-    replacementParameter = Some(IfNotExistsParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
   val IgnoreNullsParam = ConfigParameter[Boolean](
-    name = "spark.cassandra.output.ignore_nulls",
+    name = "spark.cassandra.output.ignoreNulls",
     section = ReferenceSection,
     default = false,
     description =
       """ In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
         |this to true will cause all null values to be left as unset rather than bound. For
         |finer control see the CassandraOption class""".stripMargin)
-
-  val deprecatedIgnoreNullsParam = DeprecatedConfigParameter(
-    name = "spark.cassandra.output.ignoreNulls",
-    replacementParameter = Some(IgnoreNullsParam),
-    deprecatedSince = "DSE 6.0.0"
-  )
-
 
   val ParallelismLevelParam = ConfigParameter[Int] (
     name = "spark.cassandra.output.concurrent.writes",
@@ -140,12 +127,18 @@ object WriteConf {
       | single Spark task""".stripMargin)
   
   val ThroughputMiBPSParam = ConfigParameter[Double] (
-    name = "spark.cassandra.output.throughput_mb_per_sec",
+    name = "spark.cassandra.output.throughputMBPerSec",
     section = ReferenceSection,
     default = Int.MaxValue,
     description = """*(Floating points allowed)* <br> Maximum write throughput allowed
       | per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
       | as seen on a smaller job for stability""".stripMargin)
+
+  val DeprecatedThroughputMiBPSParam = DeprecatedConfigParameter(
+    name = "spark.cassandra.output.throughput_mb_per_sec",
+    replacementParameter = Some(ThroughputMiBPSParam),
+    deprecatedSince = "DSE 6.0.0"
+  )
 
   val TTLParam = ConfigParameter[Int] (
     name = "spark.cassandra.output.ttl",
