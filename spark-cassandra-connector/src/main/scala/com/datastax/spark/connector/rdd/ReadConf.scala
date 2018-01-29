@@ -22,7 +22,7 @@ case class ReadConf(
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
   throughputJoinQueryPerSec: Long = ReadConf.ThroughputJoinQueryPerSecParam.default,
-   parallelismLevel: Int = ReadConf.ParallelismLevelParam.default
+  parallelismLevel: Int = ReadConf.ParallelismLevelParam.default
 )
 
 
@@ -89,7 +89,8 @@ object ReadConf {
       consistencyLevel = ConsistencyLevel.valueOf(conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
       throughputJoinQueryPerSec = conf.getLong(ThroughputJoinQueryPerSecParam.name,
-        ThroughputJoinQueryPerSecParam.default)
+        ThroughputJoinQueryPerSecParam.default),
+      parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
     )
   }
 
