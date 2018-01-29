@@ -122,7 +122,9 @@ object ReadConf extends Logging {
 
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
       readsPerSec = conf.getInt(ReadsPerSecParam.name,
-        throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default))
+        throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default)),
+      parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
+
     )
   }
 
