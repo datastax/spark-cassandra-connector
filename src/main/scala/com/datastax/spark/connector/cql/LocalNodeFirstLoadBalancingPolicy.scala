@@ -49,28 +49,46 @@ class LocalNodeFirstLoadBalancingPolicy(contactPoints: Set[InetAddress], localDC
       .filter(host => host.isUp && distance(host) != HostDistance.IGNORED)
   }
 
-  private def tokenAwareQueryPlan(keyspace: String, statement: Statement): JIterator[Host] = {
+  private def replicaAwareQueryPlan(keyspace: String, statement: Statement, replicas: Set[Host]): JIterator[Host] = {
+    val (localReplica, otherReplicas) = replicas.partition(isLocalHost)
+    lazy val maybeShuffledOtherReplicas = if (shuffleReplicas) random.shuffle(otherReplicas.toIndexedSeq) else otherReplicas
+
+    lazy val otherHosts = tokenUnawareQueryPlan(keyspace, statement).toIterator
+      .filter(host => !replicas.contains(host) && distance(host) != HostDistance.IGNORED)
+
+    (localReplica.iterator #:: maybeShuffledOtherReplicas.iterator #:: otherHosts #:: Stream.empty).flatten.iterator
+  }
+
+  private def replicaAwareStatementQueryPlan(keyspace: String, statement: ReplicaAwareStatement): JIterator[Host] = {
+    assert(keyspace != null)
+
+    val replicaAddresses = statement.replicas
+    val replicas = clusterMetadata.getAllHosts.toSet.filter(host => replicaAddresses.contains(host.getAddress))
+    replicaAwareQueryPlan(keyspace, statement, replicas)
+  }
+
+  private def routingKeyAwareQueryPlan(keyspace: String, statement: Statement): JIterator[Host] = {
     assert(keyspace != null)
     assert(statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) != null)
 
     val replicas = findReplicas(keyspace,
       statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE))
-    val (localReplica, otherReplicas) = replicas.partition(isLocalHost)
-    lazy val maybeShuffled = if (shuffleReplicas) random.shuffle(otherReplicas.toIndexedSeq) else otherReplicas
-
-    lazy val otherHosts = tokenUnawareQueryPlan(keyspace, statement).toIterator
-      .filter(host => !replicas.contains(host) && distance(host) != HostDistance.IGNORED)
-
-    (localReplica.iterator #:: maybeShuffled.iterator #:: otherHosts #:: Stream.empty).flatten.iterator
+    replicaAwareQueryPlan(keyspace, statement, replicas)
   }
 
   override def newQueryPlan(loggedKeyspace: String, statement: Statement): JIterator[Host] = {
     val keyspace = if (statement.getKeyspace == null) loggedKeyspace else statement.getKeyspace
 
-    if (statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) == null || keyspace == null)
-      tokenUnawareQueryPlan(keyspace, statement)
-    else
-      tokenAwareQueryPlan(keyspace, statement)
+    if (statement.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) != null && keyspace != null) {
+      routingKeyAwareQueryPlan(keyspace, statement)
+    } else {
+      statement match {
+        case awareStatement: ReplicaAwareStatement if keyspace != null =>
+          replicaAwareStatementQueryPlan(keyspace, awareStatement)
+        case _ =>
+          tokenUnawareQueryPlan(keyspace, statement)
+      }
+    }
   }
   
   override def onAdd(host: Host) {

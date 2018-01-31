@@ -337,9 +337,9 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-
+    val replicaAwareStmt = new ReplicaAwareStatement(stmt, range.range.replicas)
     try {
-      val scanResult = scanner.scan(stmt)
+      val scanResult = scanner.scan(replicaAwareStmt)
       val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")

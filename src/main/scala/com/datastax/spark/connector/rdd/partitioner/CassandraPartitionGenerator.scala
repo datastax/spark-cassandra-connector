@@ -27,7 +27,6 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
   private val keyspaceName = tableDef.keyspaceName
-  private val tableName = tableDef.tableName
 
   private def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
     val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
