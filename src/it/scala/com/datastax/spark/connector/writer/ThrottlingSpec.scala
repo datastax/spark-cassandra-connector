@@ -26,7 +26,7 @@ class ThrottlingSpec extends SparkCassandraITFlatSpecBase {
     conn.withClusterDo{cluster =>
       val poolingOptions = cluster.getConfiguration.getPoolingOptions
       poolingOptions.setMaxQueueSize(1)
-      poolingOptions.setMaxConnectionsPerHost(com.datastax.driver.core.HostDistance.LOCAL, 1)
+      poolingOptions.setConnectionsPerHost(com.datastax.driver.core.HostDistance.LOCAL, 1, 1)
     }
     val rows = (1 to 10000).map(x => (x, x.toLong, x.toString))
     sc.parallelize(rows).saveToCassandra(ks, "key_value")
@@ -37,7 +37,7 @@ class ThrottlingSpec extends SparkCassandraITFlatSpecBase {
     conn.withClusterDo{cluster =>
       val poolingOptions = cluster.getConfiguration.getPoolingOptions
       poolingOptions.setMaxQueueSize(1)
-      poolingOptions.setMaxConnectionsPerHost(com.datastax.driver.core.HostDistance.LOCAL, 1)
+      poolingOptions.setConnectionsPerHost(com.datastax.driver.core.HostDistance.LOCAL, 1, 1)
     }
 
     val rows = (1 to 100000).map(Tuple1(_))

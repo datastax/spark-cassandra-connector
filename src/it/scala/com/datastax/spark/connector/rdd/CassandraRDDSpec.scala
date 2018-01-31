@@ -1193,21 +1193,26 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     localDate should be(expected)
   }
 
-  it should "adjust maxConnections based on the runtime config" in {
-    val expected = math.max(sc.defaultParallelism/ sc.getExecutorMemoryStatus.size, 1)
+  it should "adjust local connections based on the runtime config" in {
+    val expected: Int = math.max(1, Runtime.getRuntime.availableProcessors() - 1)
     markup(s"Expected = $expected, 1 is default")
     val rdd = sc.cassandraTable(ks, "big_table")
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL) should be (expected)
     poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (expected)
-    poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (expected)
   }
 
   it should "allow forcing a larger maxConnection based on a runtime conf change" in {
     val expected = 10
-    val conf = sc.getConf.set(CassandraConnectorConf.MaxConnectionsPerExecutorParam.name, "10")
+    val conf = sc.getConf
+        .set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, expected.toString)
+        .set(CassandraConnectorConf.MinRemoteConnectionsPerExecutorParam.name, expected.toString)
+        .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, expected.toString)
     val rdd = sc.cassandraTable(ks, "big_table").withConnector(CassandraConnector(conf))
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
+    poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL) should be (expected)
     poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (expected)
+    poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE) should be (expected)
     poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (expected)
   }
 

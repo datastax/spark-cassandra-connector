@@ -63,7 +63,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
 
   /** Configured native port */
   def port = _config.port
-  
+
   /** Configured authentication options */
   def authConf = _config.authConf
 
@@ -83,10 +83,13 @@ class CassandraConnector(val conf: CassandraConnectorConf)
       val myNodes = allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
       _config = _config.copy(hosts = myNodes)
 
-      val connectionsPerHost = _config.maxConnectionsPerExecutor.getOrElse(1)
+      val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
+      val localConnectionsCount = _config.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)
+      val minRemoteConnectionsPerHost = _config.minRemoteConnectionsPerExecutor.getOrElse(0)
+      val maxRemoteConnectionsPerHost = _config.maxRemoteConnectionsPerExecutor.getOrElse(1)
       val poolingOptions = session.getCluster.getConfiguration.getPoolingOptions
-      poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, connectionsPerHost)
-      poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, connectionsPerHost)
+      poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, localConnectionsCount, localConnectionsCount)
+      poolingOptions.setConnectionsPerHost(HostDistance.REMOTE, minRemoteConnectionsPerHost, maxRemoteConnectionsPerHost)
 
       // We need a separate SessionProxy here to protect against double closing the session.
       // Closing SessionProxy is not really closing the session, because sessions are shared.
@@ -213,10 +216,12 @@ object CassandraConnector extends Logging {
     */
   def apply(sc: SparkContext): CassandraConnector = {
     val conf = CassandraConnectorConf(sc.getConf)
+    val numCassandraCoresPerNode = 64 // guessed typical number of CPUs in each C* node - the goal is not to be too low
     val numExecutors: Int = math.max(Option(sc.getExecutorMemoryStatus).getOrElse(Map.empty).size, 1)
-    val numCores: Int = sc.defaultParallelism
-    val coresPerExecutor: Int = math.max( numCores / numExecutors , 1)
-    val runtimeConf = conf.copy( maxConnectionsPerExecutor = conf.maxConnectionsPerExecutor orElse (Some(coresPerExecutor)))
+    val remoteConnections = Math.max(1, Math.round(Math.ceil(numCassandraCoresPerNode / numExecutors).toInt))
+    val runtimeConf = conf.copy(
+      minRemoteConnectionsPerExecutor = conf.minRemoteConnectionsPerExecutor orElse Some(remoteConnections),
+      maxRemoteConnectionsPerExecutor = conf.maxRemoteConnectionsPerExecutor orElse Some(remoteConnections))
     new CassandraConnector(runtimeConf)
   }
 
