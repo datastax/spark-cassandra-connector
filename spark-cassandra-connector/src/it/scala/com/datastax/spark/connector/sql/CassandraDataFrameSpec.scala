@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.cassandra._
 import org.joda.time.LocalDate
@@ -281,6 +282,17 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
 
     val firstRow = rows(0)
     firstRow should be((Byte.MinValue.toInt, Short.MinValue.toInt, "2016-08-03 00:00:00.0"))
+  }
+
+  it should "be able to set splitCount" in {
+    val df = sqlContext
+      .read
+      .cassandraFormat("kv", ks)
+      .option("splitCount", "120")
+      .load
+
+    val rdd = df.rdd.dependencies.head.rdd.dependencies.head.rdd.asInstanceOf[CassandraTableScanRDD[_]]
+    rdd.readConf.splitCount should be (Some(120))
   }
 
 

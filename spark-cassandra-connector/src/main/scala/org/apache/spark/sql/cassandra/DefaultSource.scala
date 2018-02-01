@@ -1,13 +1,13 @@
 package org.apache.spark.sql.cassandra
 
-import scala.collection.mutable
+import java.util.Locale
 
+import scala.collection.mutable
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.DefaultSource._
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
-
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf, DefaultAuthConfFactory}
 import com.datastax.spark.connector.rdd.ReadConf
@@ -138,10 +138,12 @@ object DefaultSource {
     DefaultAuthConfFactory.properties
 
   // Dot is not allowed in Options key for Spark SQL parsers, so convert . to _
-  // Map converted property to origin property name
+  // Map converted property to origin property name. Options are all going to
+  // lower case so we need to convert them as well.
   // TODO check SPARK 1.4 it may be fixed
   private val propertiesMap : Map[String, String] = {
-    confProperties.map(prop => (prop.replace(".", "_"), prop)).toMap
+    confProperties.map(prop =>
+      (prop.replace(".", "_").toLowerCase(Locale.ROOT), prop.toLowerCase(Locale.ROOT))).toMap
   }
 
   /** Construct a map stores Cassandra Conf settings from options */
