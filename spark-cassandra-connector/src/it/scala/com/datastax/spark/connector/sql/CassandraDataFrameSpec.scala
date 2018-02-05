@@ -8,10 +8,12 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD
 import com.datastax.driver.core.DataType
 import com.datastax.driver.core.ProtocolVersion._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{Dataset, SaveMode}
 import org.apache.spark.sql.functions._
 import org.joda.time.LocalDate
 import org.scalatest.concurrent.Eventually
@@ -293,10 +295,28 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
     firstRow should be((Byte.MinValue.toInt, Short.MinValue.toInt, "2016-08-03 00:00:00.0"))
   }
 
+
+  it should "be able to set splitCount" in {
+    val df = sparkSession
+      .read
+      .cassandraFormat("kv", ks)
+      .option("splitCount", "120")
+      .load
+
+    def findCassandraTableScanRDD(rdd: RDD[_]): CassandraTableScanRDD[_] = {
+      rdd match {
+        case c: CassandraTableScanRDD[_] => c
+        case parent: RDD[_] => findCassandraTableScanRDD(parent.dependencies.head.rdd)
+      }
+    }
+
+    val rdd = findCassandraTableScanRDD(df.rdd)
+    rdd.readConf.splitCount should be (Some(120))
+  }
+
   //Test whether Pruned Source Reused Exchange is Broken
   it should "aggregate and union correctly" in {
     val table = "sparkc429"
-
     val data = List(TestData("A", 1, 7))
     val frame = sparkSession
       .sqlContext
