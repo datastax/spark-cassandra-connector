@@ -236,6 +236,14 @@ OSS Cassandra this should never be used.</td>
   <td>64</td>
   <td>Approx amount of data to be fetched into a Spark partition</td>
 </tr>
+<tr>
+  <td><code>splitCount</code></td>
+  <td>None</td>
+  <td>Specify the number of Spark partitions to
+read the Cassandra table into. This parameter is
+used in SparkSql and DataFrame Options.
+      </td>
+</tr>
 </table>
 
 
