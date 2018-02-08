@@ -30,6 +30,17 @@ case class ReadConf(
 object ReadConf extends Logging {
   val ReferenceSection = "Read Tuning Parameters"
 
+  val SplitCountParam = ConfigParameter[Option[Int]](
+    name = "splitCount",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Specify the number of Spark partitions to
+        |read the Cassandra table into. This parameter is
+        |used in SparkSql and DataFrame Options.
+      """.stripMargin
+  )
+
   val SplitSizeInMBParam = ConfigParameter[Int](
     name = "spark.cassandra.input.split.size_in_mb",
     section = ReferenceSection,
@@ -84,6 +95,7 @@ object ReadConf extends Logging {
 
   // Whitelist for allowed Read environment variables
   val Properties = Set(
+    SplitCountParam,
     ConsistencyLevelParam,
     FetchSizeInRowsParam,
     ReadsPerSecParam,
@@ -123,8 +135,8 @@ object ReadConf extends Logging {
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
       readsPerSec = conf.getInt(ReadsPerSecParam.name,
         throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default)),
-      parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
-
+      parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default),
+      splitCount = conf.getOption(SplitCountParam.name).map(_.toInt)
     )
   }
 

@@ -1,7 +1,7 @@
 package org.apache.spark.sql.cassandra
 
 import java.net.InetAddress
-import java.util.UUID
+import java.util.{Locale, UUID}
 
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
@@ -316,7 +316,7 @@ object CassandraSourceRelation {
     //Keyspace/Cluster level settings
     for (prop <- DefaultSource.confProperties) {
       val value = Seq(
-        tableConf.get(prop),
+        tableConf.get(prop.toLowerCase(Locale.ROOT)),
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
         sqlConf.get(s"default/$prop")).flatten.headOption
