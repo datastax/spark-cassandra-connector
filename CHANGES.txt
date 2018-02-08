@@ -1,3 +1,11 @@
+2.0.7
+ * Adds Timestamp, Improve Conversion Perf (SPARKC-522)
+ * Allow setting spark.cassandra.concurrent.reads (SPARKC-520)
+ * Allow splitCount to be set for Dataframes (SPARKC-527)
+
+2.0.6
+ * Includes all patches up to 1.6.10
+
 2.0.5
  * Allow 'YYYY' format LocalDate
  * Add metrics for write batch Size (SPARKC-501)
