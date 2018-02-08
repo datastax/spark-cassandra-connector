@@ -245,6 +245,14 @@ read the Cassandra table into. This parameter is
 used in SparkSql and DataFrame Options.
       </td>
 </tr>
+<tr>
+  <td><code>splitCount</code></td>
+  <td>None</td>
+  <td>Specify the number of Spark partitions to
+read the Cassandra table into. This parameter is
+used in SparkSql and DataFrame Options.
+      </td>
+</tr>
 </table>
 
 
