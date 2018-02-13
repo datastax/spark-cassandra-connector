@@ -16,8 +16,8 @@ public class SparkContextJavaFunctionsTest
     @Test
     public void testReadConfPopulating() {
         SparkConf conf = new SparkConf();
-        conf.set("spark.cassandra.input.fetch.size_in_rows", "1234");
-        conf.set("spark.cassandra.input.split.size_in_mb", "4321");
+        conf.set("spark.cassandra.input.fetch.sizeInRows", "1234");
+        conf.set("spark.cassandra.input.split.sizeInMB", "4321");
         conf.set("spark.cassandra.input.consistency.level", "THREE");
 
         SparkContext sc = Mockito.mock(SparkContext.class);

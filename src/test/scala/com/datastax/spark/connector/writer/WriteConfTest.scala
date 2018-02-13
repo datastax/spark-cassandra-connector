@@ -18,7 +18,7 @@ class WriteConfTest extends FlatSpec with Matchers {
 
   it should "allow setting the rate limit as a decimal" in {
     val conf = new SparkConf(false)
-      .set("spark.cassandra.output.throughput_mb_per_sec", "0.5")
+      .set("spark.cassandra.output.throughputMBPerSec", "0.5")
     val writeConf = WriteConf.fromSparkConf(conf)
       writeConf.throughputMiBPS should equal ( 0.5 +- 0.02 )
   }

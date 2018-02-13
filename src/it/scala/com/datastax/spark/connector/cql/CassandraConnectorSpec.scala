@@ -76,7 +76,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
     val cluster = conn.withClusterDo { cluster => cluster }
     Thread.sleep(
       sc.getConf.getInt(
-        "spark.cassandra.connection.keep_alive_ms",
+        "spark.cassandra.connection.keepAliveMS",
         CassandraConnectorConf.KeepAliveMillisParam.default) * 2)
     assert(cluster.isClosed === true)
   }

@@ -33,7 +33,7 @@ object ReadConf extends Logging {
   val SplitSizeInMBParam = ConfigParameter[Int](
     name = "spark.cassandra.input.split.sizeInMB",
     section = ReferenceSection,
-    default = 64,
+    default = 512,
     description =
       """Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark
         | partitions is <code>1 + 2 * SparkContext.defaultParallelism</code>

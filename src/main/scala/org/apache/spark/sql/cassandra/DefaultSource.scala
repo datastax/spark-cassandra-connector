@@ -26,9 +26,9 @@ import org.apache.spark.sql.streaming.OutputMode
  *       keyspace "keyspace",
  *       cluster "test_cluster",
  *       pushdown "true",
- *       spark.cassandra.input.fetch.size_in_rows "10",
+ *       spark.cassandra.input.fetch.sizeInRows "10",
  *       spark.cassandra.output.consistency.level "ONE",
- *       spark.cassandra.connection.timeout_ms "1000"
+ *       spark.cassandra.connection.timeoutMS "1000"
  *      )
  */
 class DefaultSource
@@ -46,8 +46,8 @@ class DefaultSource
    *    keyspace     -- keyspace name, required
    *    cluster      -- cluster name, optional, default name is "default"
    *    pushdown     -- true/false, optional, default is true
-   *    Cassandra connection settings  -- optional, e.g. spark.cassandra.connection.timeout_ms
-   *    Cassandra Read Settings        -- optional, e.g. spark.cassandra.input.fetch.size_in_rows
+   *    Cassandra connection settings  -- optional, e.g. spark.cassandra.connection.timeoutMS
+   *    Cassandra Read Settings        -- optional, e.g. spark.cassandra.input.fetch.sizeInRows
    *    Cassandra Write settings       -- optional, e.g. spark.cassandra.output.consistency.level
    *
    * When push_down is true, some filters are pushed down to CQL.

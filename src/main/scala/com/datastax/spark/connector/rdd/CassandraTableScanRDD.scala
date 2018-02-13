@@ -41,9 +41,9 @@ import scala.reflect.ClassTag
   * To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.
   *
   * The following properties control the number of partitions and the fetch size:
-  * - spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
-  *   partition, default 64 MB
-  * - spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
+  * - spark.cassandra.input.split.sizeInMB: approx amount of data to be fetched into a single Spark
+  *   partition, default 512 MB
+  * - spark.cassandra.input.fetch.sizeInRows:  number of CQL rows fetched per roundtrip,
   *   default 1000
   *
   * A `CassandraRDD` object gets serialized and sent to every Spark Executor, which then

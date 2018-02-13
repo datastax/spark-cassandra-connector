@@ -24,7 +24,7 @@ import com.datastax.spark.connector.util.Logging
   * Cassandra cluster will share a single underlying `Cluster` object.
   * `CassandraConnector` will close the underlying `Cluster` object automatically
   * whenever it is not used i.e. no `Session` or `Cluster` is open for longer
-  * than `spark.cassandra.connection.keep_alive_ms` property value.
+  * than `spark.cassandra.connection.keepAliveMS` property value.
   *
   * A `CassandraConnector` object is configured from [[CassandraConnectorConf]] object which
   * can be either given explicitly or automatically configured from [[org.apache.spark.SparkConf SparkConf]].
@@ -32,21 +32,21 @@ import com.datastax.spark.connector.util.Logging
   *   - `spark.cassandra.connection.host`:               contact points to connect to the Cassandra cluster, defaults to spark master host
   *   - `spark.cassandra.connection.port`:               Cassandra native port, defaults to 9042
   *   - `spark.cassandra.connection.factory`:            name of a Scala module or class implementing [[CassandraConnectionFactory]] that allows to plugin custom code for connecting to Cassandra
-  *   - `spark.cassandra.connection.keep_alive_ms`:      how long to keep unused connection before closing it (default 250 ms)
-  *   - `spark.cassandra.connection.timeout_ms`:         how long to wait for connection to the Cassandra cluster (default 5 s)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
-  *   - `spark.cassandra.connection.reconnection_delay_ms.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
+  *   - `spark.cassandra.connection.keepAliveMS`:      how long to keep unused connection before closing it (default 250 ms)
+  *   - `spark.cassandra.connection.timeoutMS`:         how long to wait for connection to the Cassandra cluster (default 5 s)
+  *   - `spark.cassandra.connection.reconnectionDelayMS.min`: initial delay determining how often to try to reconnect to a dead node (default 1 s)
+  *   - `spark.cassandra.connection.reconnectionDelayMS.max`: final delay determining how often to try to reconnect to a dead node (default 60 s)
   *   - `spark.cassandra.auth.username`:                        login for password authentication
   *   - `spark.cassandra.auth.password`:                        password for password authentication
   *   - `spark.cassandra.auth.conf.factory`:                    name of a Scala module or class implementing [[AuthConfFactory]] that allows to plugin custom authentication configuration
   *   - `spark.cassandra.query.retry.count`:                    how many times to reattempt a failed query (default 10)
-  *   - `spark.cassandra.read.timeout_ms`:                      maximum period of time to wait for a read to return
+  *   - `spark.cassandra.read.timeoutMS`:                      maximum period of time to wait for a read to return
   *   - `spark.cassandra.connection.ssl.enabled`:               enable secure connection to Cassandra cluster
-  *   - `spark.cassandra.connection.ssl.trust_store.path`:      path for the trust store being used
-  *   - `spark.cassandra.connection.ssl.trust_store.password`:  trust store password
-  *   - `spark.cassandra.connection.ssl.trust_store.type`:      trust store type (default JKS)
+  *   - `spark.cassandra.connection.ssl.trustStore.path`:      path for the trust store being used
+  *   - `spark.cassandra.connection.ssl.trustStore.password`:  trust store password
+  *   - `spark.cassandra.connection.ssl.trustStore.type`:      trust store type (default JKS)
   *   - `spark.cassandra.connection.ssl.protocol`:              SSL protocol (default TLS)
-  *   - `spark.cassandra.connection.ssl.enabled_algorithms`:         SSL cipher suites (default TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)
+  *   - `spark.cassandra.connection.ssl.enabledAlgorithms`:         SSL cipher suites (default TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA)
   */
 class CassandraConnector(val conf: CassandraConnectorConf)
   extends Serializable with Logging {
