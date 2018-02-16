@@ -11,7 +11,7 @@ the `binary.version` thereof:
 
     sbt -Dscala-2.11=true
 
-For Spark see: [Building Spark for Scala 2.11](http://spark.apache.org/docs/latest/building-spark.html)
+For Spark see: [Building Spark for Scala 2.11](https://spark.apache.org/docs/latest/building-spark.html)
 
 For Scala 2.11 tasks:
 
@@ -81,6 +81,6 @@ This jar can be used with spark submit with `--jars`
 
 
 This driver is also compatible with Spark distribution provided in
-[DataStax Enterprise](http://datastax.com/docs/latest-dse/).
+[DataStax Enterprise](https://www.datastax.com/products/datastax-enterprise).
 
 [Next - The Spark Shell](13_spark_shell.md)    

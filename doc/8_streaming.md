@@ -48,7 +48,7 @@ Follow the directions for [creating a `SparkConf`](0_quick_start.md)
 #### Create A `StreamingContext`  
 The second required parameter is the `batchDuration` which sets the interval streaming data will be divided into batches:
 Note the Spark API provides a Milliseconds, Seconds, Minutes, all of which are accepted as this `Duration`.
-This `Duration` is not to be confused with the [scala.concurrent.duration.Duration](http://www.scala-lang.org/api/current/index.html#scala.concurrent.duration.Duration) 
+This `Duration` is not to be confused with the [scala.concurrent.duration.Duration](https://www.scala-lang.org/api/current/index.html#scala.concurrent.duration.Duration).
  
 ```scala
     val ssc = new StreamingContext(conf, Seconds(n))
@@ -105,6 +105,6 @@ Start the computation:
 For a more detailed description as well as tuning writes, see [Saving Data to Cassandra](5_saving.md).
 
 ### Find out more
-http://spark.apache.org/docs/latest/streaming-programming-guide.html
+https://spark.apache.org/docs/latest/streaming-programming-guide.html
 
 [Next - The spark-cassandra-connector-embedded Artifact](10_embedded.md)

@@ -2,8 +2,8 @@
 
 ## Setting up Cassandra
 
-The easiest way to get quickly started with Cassandra is to follow the instructions provided by 
-[DataStax](http://docs.datastax.com/en/cassandra/latest/cassandra/install/install_cassandraTOC.html)
+To install and set up open-source Cassandra, refer to the instructions provided by the
+[Apache Cassandra project](https://cassandra.apache.org/doc/latest/).
 
 ## Setting up spark
 

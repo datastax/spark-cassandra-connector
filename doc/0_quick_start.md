@@ -4,7 +4,7 @@
 
 In this tutorial, you'll learn how to setup a very simple Spark application for reading and writing data from/to Cassandra.
 Before you start, you need to have basic knowledge of Apache Cassandra and Apache Spark.
-Refer to [Datastax](http://docs.datastax.com/en/cassandra/latest/) and [Cassandra documentation](http://cassandra.apache.org/doc/latest/getting_started/index.html)
+Refer to [Datastax](https://docs.datastax.com/en/) and [Cassandra documentation](https://cassandra.apache.org/doc/latest/getting_started/index.html)
 and [Spark documentation](https://spark.apache.org/docs/latest/). 
 
 ### Prerequisites
@@ -30,7 +30,7 @@ For the list of available versions, see:
  
 This driver does not depend on the Cassandra server code.
 
- - For a detailed dependency list, see [project/CassandraSparkBuild.scala](../project/CassandraSparkBuild.scala)
+ - For a detailed dependency list, see [project/SparkCassandraConnectorBuild.scala](../project/SparkCassandraConnectorBuild.scala)
  - For dependency versions, see [project/Versions.scala](../project/Versions.scala)
 
 ### Building
