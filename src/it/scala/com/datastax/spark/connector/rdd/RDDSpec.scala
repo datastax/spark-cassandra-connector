@@ -43,6 +43,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
 
   conn.withSessionDo { session =>
     createKeyspace(session)
+    session.getCluster.getConfiguration.getQueryOptions.setDefaultIdempotence(true)
     session.getCluster.getConfiguration.getPoolingOptions.setMaxQueueSize(64000)
     session.getCluster.getConfiguration.getPoolingOptions.setPoolTimeoutMillis(30000)
     val startTime = System.currentTimeMillis()
@@ -56,15 +57,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
              |  value TEXT,
              |  PRIMARY KEY (key, group)
              |)""".stripMargin)
+        val ps = session
+          .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
         (for (value <- total) yield
-          session.executeAsync(
-            s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""",
-            value: Integer,
-            (value * 100).toLong: JLong,
-            value.toString)
-          ).foreach(_.getUninterruptibly)
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
+        ).foreach(_.getUninterruptibly())
       },
-
       Future {
         session.execute(
           s"""
@@ -74,13 +72,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
              |  value TEXT,
              |  PRIMARY KEY (key, group)
              |)""".stripMargin)
+        val ps = session
+          .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
         (for (value <- smallerTotal) yield
-          session.executeAsync(
-            s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""",
-            value: Integer,
-            (value * 100).toLong: JLong,
-            value.toString)
-          ).foreach(_.getUninterruptibly)
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
+        ).foreach(_.getUninterruptibly)
       },
 
       Future {
@@ -99,12 +95,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
           s"""
              |CREATE TABLE $ks.$otherTable (key INT, group BIGINT,  PRIMARY KEY (key))
              |""".stripMargin)
+        val ps = session
+          .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
         (for (value <- keys) yield
-          session.executeAsync(
-            s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""",
-            value: Integer,
-            (value * 100).toLong: JLong)
-          ).foreach(_.getUninterruptibly)
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong))
+        ).foreach(_.getUninterruptibly)
       },
 
       Future {
@@ -116,13 +111,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
              |  value TEXT,
              |  PRIMARY KEY (key, group)
              |)""".stripMargin)
+        val ps = session
+          .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
         (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
-          session.executeAsync(
-            s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""",
-            value: Integer,
-            cconeValue.toLong: JLong,
-            value.toString)
-          ).foreach(_.getUninterruptibly)
+          session.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
+        ).foreach(_.getUninterruptibly)
       },
 
       Future {
