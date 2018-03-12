@@ -87,7 +87,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
 
     // sort partitions and assign sequential numbers so that
     // partition index matches the order of partitions in the sequence
-    partitions
+    util.Random.shuffle(partitions.toSeq)
       .sortBy(p => (p.endpoints.size, -p.dataSize))
       .zipWithIndex
       .map { case (p, index) => p.copy(index = index) }
