@@ -110,6 +110,8 @@ object SolrPredicateRules extends Logging {
           .head
           .child
           .filter(x => x.label == "field")
+            //multiValued indexes are for graph internal use only
+          .filter(!_.attributes.asAttrMap.getOrElse("multiValued", "false").toBoolean)
           .filter(_.attributes.asAttrMap.getOrElse("indexed", "false").toBoolean)
           .map(_.attribute("name").get.toString)
           .toSet[String]
