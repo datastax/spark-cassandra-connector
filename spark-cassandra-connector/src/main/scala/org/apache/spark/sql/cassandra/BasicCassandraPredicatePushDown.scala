@@ -13,11 +13,11 @@ import com.datastax.spark.connector.types.TimeUUIDType
  *  3. If there are regular columns in the pushdown predicates, they should have
  *     at least one EQ expression on an indexed column and no IN predicates.
  *  4. All partition column predicates must be included in the predicates to be pushed down,
- *     only the last part of the partition key can be an IN predicate. For each partition column,
+ *     any part of the partition key can be an EQ or IN predicate. For each partition column,
  *     only one predicate is allowed.
- *  5. For cluster column predicates, only last predicate can be non-EQ predicate
- *     including IN predicate, and preceding column predicates must be EQ predicates.
- *     If there is only one cluster column predicate, the predicates could be any non-IN predicate.
+ *  5. For cluster column predicates, only last predicate can be RANGE predicate
+ *     and preceding column predicates must be EQ or IN predicates.
+ *     If there is only one cluster column predicate, the predicates could be EQ or IN or RANGE predicate.
  *  6. There is no pushdown predicates if there is any OR condition or NOT IN condition.
  *  7. We're not allowed to push down multiple predicates for the same column if any of them
  *     is equality or IN predicate.
@@ -89,12 +89,12 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   /**
    * Selects partition key predicates for pushdown:
    * 1. Partition key predicates must be equality or IN predicates.
-   * 2. Only the last partition key column predicate can be an IN.
+   * 2. Any part of the partition key column predicate can be an IN.
    * 3. All partition key predicates must be used or none.
    */
   private val partitionKeyPredicatesToPushDown: Set[Predicate] = {
-    val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
-    val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
+    val eqColumns = partitionKeyColumns.filter(eqPredicatesByName.contains)
+    val inColumns = partitionKeyColumns.filter(inPredicatesByName.contains)
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
       (eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)).toSet
     else
@@ -103,24 +103,19 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
 
   /**
    * Selects clustering key predicates for pushdown:
-   * 1. Clustering column predicates must be equality predicates, except the last one.
-   * 2. The last predicate is allowed to be an equality or a range predicate.
-   * 3. The last predicate is allowed to be an IN predicate only if it was preceded by
-   *    an equality predicate.
-   * 4. Consecutive clustering columns must be used, but, contrary to partition key,
+   * 1. Clustering column predicates must be equality or in predicates, except the last one.
+   * 2. The last predicate is allowed to be an equality or in or a range predicate.
+   * 3. Consecutive clustering columns must be used, but, contrary to partition key,
    *    the tail can be skipped.
    */
   private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
-    val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
-    val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
-    val optionalNonEqPredicate = for {
-      c <- otherColumns.headOption.toSeq
-      p <- firstNonEmptySet(
-        rangePredicatesByName(c),
-        inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
-    } yield p
+    val (eqInColumns, otherColumns) = clusteringColumns.span(x=>{eqPredicatesByName.contains(x) || inPredicatesByName.contains(x)})
 
-    eqPredicates ++ optionalNonEqPredicate
+    val eqPredicates = eqInColumns.filter(eqPredicatesByName.contains).flatMap(eqPredicatesByName).toSet
+    val inPredicates = eqInColumns.filter(inPredicatesByName.contains).flatMap(inPredicatesByName).toSet
+    val rangePredicates = otherColumns.headOption.toSeq.filter(rangePredicatesByName.contains).flatMap(rangePredicatesByName).toSet
+
+    eqPredicates ++ inPredicates ++ rangePredicates
   }
 
   /**
