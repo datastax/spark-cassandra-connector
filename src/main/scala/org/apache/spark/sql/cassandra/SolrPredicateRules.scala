@@ -8,6 +8,7 @@ package org.apache.spark.sql.cassandra
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
+import com.datastax.driver.core.SimpleStatement
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.Logging
 import org.apache.commons.lang3.StringEscapeUtils
@@ -342,8 +343,15 @@ object SolrPredicateRules extends Logging {
 
           logDebug(s"Checking total number of records")
           val (totalRecords:Long, queryRecords:Long) = conn.withSessionDo{ session =>
-            val totalFuture = session.executeAsync(request, s"""{"q":"*:*", $FaultTolerant}""")
-            val queryFuture = session.executeAsync(request, solrStringNoFailoverTolerant)
+            //Disable Paging for the count requests since we are fault tolerant and paging cannot
+            // be used during a fault tolerant request
+            // https://docs.datastax.com/en/drivers/java/2.2/com/datastax/driver/core/Statement.html#setFetchSize-int-
+            val totalRequest = new SimpleStatement(request, s"""{"q":"*:*", $FaultTolerant}""")
+              .setFetchSize(Integer.MAX_VALUE)
+            val queryRequest = new SimpleStatement(request, solrStringNoFailoverTolerant)
+              .setFetchSize(Integer.MAX_VALUE)
+            val totalFuture = session.executeAsync(totalRequest)
+            val queryFuture = session.executeAsync(queryRequest)
             (totalFuture.get(5, TimeUnit.SECONDS).one().getLong(0),
               queryFuture.get(5, TimeUnit.SECONDS).one().getLong(0))
           }
