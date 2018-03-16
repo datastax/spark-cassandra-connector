@@ -315,11 +315,13 @@ object CassandraSourceRelation {
     val ks = tableRef.keyspace
     //Keyspace/Cluster level settings
     for (prop <- DefaultSource.confProperties) {
+      val lowerCasedProp = prop.toLowerCase(Locale.ROOT)
       val value = Seq(
-        tableConf.get(prop.toLowerCase(Locale.ROOT)),
+        tableConf.get(lowerCasedProp),
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
-        sqlConf.get(s"default/$prop")).flatten.headOption
+        sqlConf.get(s"default/$prop"),
+        sqlConf.get(prop)).flatten.headOption
       value.foreach(conf.set(prop, _))
     }
     //Set all user properties
