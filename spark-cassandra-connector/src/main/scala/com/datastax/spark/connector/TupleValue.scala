@@ -2,8 +2,6 @@ package com.datastax.spark.connector
 
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
 import com.datastax.driver.core.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
@@ -26,8 +24,8 @@ object TupleValue {
     new TupleValue(values: _*)
   }
 
-  val TypeTag = SparkReflectionLock.synchronized(typeTag[TupleValue])
-  val Symbol = SparkReflectionLock.synchronized(typeOf[TupleValue].asInstanceOf[TypeRef].sym)
+  val TypeTag = typeTag[TupleValue]
+  val Symbol = typeOf[TupleValue].asInstanceOf[TypeRef].sym
 
   implicit object TupleValueConverter extends NullableTypeConverter[TupleValue] {
     def targetTypeTag = TypeTag

@@ -17,13 +17,8 @@ import scala.util.Properties
  */
 object Versions {
 
-  val crossScala = Seq("2.11.8", "2.10.6")
 
-  /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
-  lazy val scalaVersion = sys.props.get("scala-2.11") match {
-    case Some(is) if is.nonEmpty && is.toBoolean => crossScala.head
-    case crossBuildFor                           => crossScala.last
-  }
+  lazy val scalaVersion = "2.11.8"
 
   /* For `scalaBinaryVersion.value outside an sbt task. */
   lazy val scalaBinary = scalaVersion.dropRight(2)
@@ -64,11 +59,9 @@ object Versions {
 
   val doNotInstallSpark = true
 
-  val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
-
   val status = (versionInReapply: String, binaryInReapply: String) =>
     println(s"""
-        |  Scala: $versionInReapply ${hint(binaryInReapply)}
+        |  Scala: $versionInReapply
         |  Scala Binary: $binaryInReapply
         |  Java: target=$JDK user=${Properties.javaVersion}
         |  Cassandra version for testing: ${Testing.cassandraTestVersion} [can be overridden by specifying '-Dtest.cassandra.version=<version>']

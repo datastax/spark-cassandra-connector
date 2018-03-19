@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
 import org.apache.spark.SparkEnv
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil, Symbols}
@@ -28,8 +27,7 @@ trait ColumnType[T] extends Serializable {
   def scalaTypeTag: TypeTag[T]
 
   /** Name of the Scala type. Useful for source generation.*/
-  def scalaTypeName: String
-    = SparkReflectionLock.synchronized(scalaTypeTag.tpe.toString)
+  def scalaTypeName: String = scalaTypeTag.tpe.toString
 
   /** Name of the CQL type. Useful for CQL generation.*/
   def cqlTypeName: String

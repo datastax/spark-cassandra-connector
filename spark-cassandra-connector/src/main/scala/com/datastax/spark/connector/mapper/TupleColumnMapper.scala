@@ -3,7 +3,6 @@ package com.datastax.spark.connector.mapper
 import com.datastax.driver.core.ProtocolVersion
 
 import scala.reflect.runtime.universe._
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.{ColumnName, ColumnRef}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
@@ -11,7 +10,7 @@ import com.datastax.spark.connector.util.Reflect
 
 class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
-  val cls = SparkReflectionLock.synchronized { typeTag[T].mirror.runtimeClass(typeTag[T].tpe) }
+  val cls = typeTag[T].mirror.runtimeClass(typeTag[T].tpe)
   val ctorLength = cls.getConstructors()(0).getParameterTypes.length
   val methodNames = cls.getMethods.map(_.getName)
 
@@ -74,7 +73,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     tableName: String,
     protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = {
 
-    val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
+    val tpe = implicitly[TypeTag[T]].tpe
     val ctorSymbol = Reflect.constructor(tpe).asMethod
     val ctorMethod = ctorSymbol.typeSignatureIn(tpe).asInstanceOf[MethodType]
     val ctorParamTypes = ctorMethod.params.map(_.typeSignature)
