@@ -2,5 +2,7 @@ package org.apache.spark.sql.catalyst
 
 object ReflectionLock {
 
-  val SparkReflectionLock = ScalaReflectionLock
+  protected object ScalaReflectionLockFallback
+
+  val SparkReflectionLock = ScalaReflectionLockFallback
 }
