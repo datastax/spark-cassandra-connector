@@ -1,10 +1,12 @@
 package org.apache.spark.sql.cassandra
 
+import java.util.Locale
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.scalatest.{FlatSpec, Matchers}
-
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.writer.WriteConf
 
 class ConsolidateSettingsSpec extends FlatSpec with Matchers {
 
@@ -18,13 +20,14 @@ class ConsolidateSettingsSpec extends FlatSpec with Matchers {
       sqlContextConf: Map[String, String],
       tableConf: Map[String, String],
       value: Option[String],
-      valueForDefaultCluster: Option[String]): Unit = {
+      valueForDefaultCluster: Option[String],
+      checkParam: String = param.name): Unit = {
     val sc = this.sparkConf.clone().setAll(sparkConf)
 
     val consolidatedConf1 = consolidateConfs(sc, sqlContextConf, tableRef, tableConf)
     val consolidatedConf2 = consolidateConfs(sc, sqlContextConf, tableRefDefaultCluster, Map.empty)
-    consolidatedConf1.getOption(param.name) shouldBe value
-    consolidatedConf2.getOption(param.name) shouldBe valueForDefaultCluster
+    consolidatedConf1.getOption(checkParam) shouldBe value
+    consolidatedConf2.getOption(checkParam) shouldBe valueForDefaultCluster
   }
 
   it should "use SparkConf settings by default" in {
@@ -79,4 +82,14 @@ class ConsolidateSettingsSpec extends FlatSpec with Matchers {
       value = Some("50"),
       valueForDefaultCluster = Some("20"))
   }
+
+  it should "accept sqlConf settings without a cluster set" in {
+    verify(
+      sparkConf = Map.empty,
+      sqlContextConf = Map(param.name -> "20"),
+      tableConf = Map.empty,
+      value = Some("20"),
+      valueForDefaultCluster = Some("20"))
+  }
+
 }
