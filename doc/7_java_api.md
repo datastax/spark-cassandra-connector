@@ -322,6 +322,6 @@ Cassandra all the *RDDs* in that *DStream*.
 ### Further Examples
 
 A longer example (with source code) of the Connector Java API is on the DataStax tech blog:
-[Accessing Cassandra from Spark in Java](http://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java).
+[Accessing Cassandra from Spark in Java](https://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java).
 
 [Next - Spark Streaming with Cassandra](8_streaming.md)
