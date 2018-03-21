@@ -319,12 +319,12 @@ class CassandraSourceRelation(
           this.userSpecifiedSchema == that.userSpecifiedSchema &&
           this.filterPushdown == that.filterPushdown &&
           this.tableSizeInBytes == that.tableSizeInBytes &&
-          CassandraConnectorConf(this.sparkConf) == CassandraConnectorConf(that.sparkConf) &&
+          this.cassandraConnector.conf == that.cassandraConnector.conf &&
           this.directJoinSetting == that.directJoinSetting
       case _ => false
     }
 
-  override def hashCode: Int = {
+  override lazy val hashCode: Int = {
     val prime = 31
     var result = 1
     result = prime * result + tableRef.hashCode
@@ -334,9 +334,9 @@ class CassandraSourceRelation(
     result = prime * result + userSpecifiedSchema.hashCode
     result = prime * result + filterPushdown.hashCode
     result = prime * result + tableSizeInBytes.hashCode
-    result = prime * result + CassandraConnectorConf(sparkConf).hashCode
+    result = prime * result + this.cassandraConnector.conf.hashCode
 
-    return result
+    result
   }
 
   override def toString : String = this.getClass.getCanonicalName
