@@ -38,9 +38,11 @@ case class CassandraConnectorConf(
     val oos = new ObjectOutputStream(baos)
     // Ignore maxConnectionsPerExecutor when comparing Connection Confs
     oos.writeObject(this.copy(
+      hosts = Set(), // will add hosts later
       localConnectionsPerExecutor = None,
       minRemoteConnectionsPerExecutor = None,
       maxRemoteConnectionsPerExecutor = None))
+    oos.writeObject(this.hosts.map(_.getAddress))
     oos.close()
     Base64.encodeBase64String(baos.toByteArray)
   }
