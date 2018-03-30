@@ -1,13 +1,13 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-
-import org.apache.commons.codec.binary.Base64
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-import org.apache.spark.{SparkConf, SparkContext}
+
+import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder}
+import org.apache.spark.SparkConf
+
 import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
 
@@ -32,26 +32,24 @@ case class CassandraConnectorConf(
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
 ) {
 
-  @transient
-  lazy val serializedConfString: String = {
-    val baos = new ByteArrayOutputStream
-    val oos = new ObjectOutputStream(baos)
-    // Ignore maxConnectionsPerExecutor when comparing Connection Confs
-    oos.writeObject(this.copy(
-      hosts = Set(), // will add hosts later
-      localConnectionsPerExecutor = None,
-      minRemoteConnectionsPerExecutor = None,
-      maxRemoteConnectionsPerExecutor = None))
-    oos.writeObject(this.hosts.map(_.getAddress))
-    oos.close()
-    Base64.encodeBase64String(baos.toByteArray)
-  }
+  // For hashCode and equals we use a copy of CassandraConnectorConf with reset those properties which should be
+  // excluded from comparisons and hashCode. We could also explicitly mention those fields as excluded in calls to
+  // reflectionHashCode or reflectionEquals. However in this case we would have to mention those fields as strings
+  // and compiler would not notify us that they are missing if we change something in connector configuration
+  // and the errors could be difficult to figure out.
 
-  override def hashCode: Int = serializedConfString.hashCode
+  @transient
+  private lazy val comparableConf: CassandraConnectorConf = this.copy(
+    localConnectionsPerExecutor = None,
+    minRemoteConnectionsPerExecutor = None,
+    maxRemoteConnectionsPerExecutor = None)
+
+  override def hashCode: Int = HashCodeBuilder.reflectionHashCode(comparableConf, false)
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: CassandraConnectorConf => that.serializedConfString == serializedConfString
+      case that: CassandraConnectorConf if hashCode == that.hashCode =>
+        EqualsBuilder.reflectionEquals(this.comparableConf, that.comparableConf, false)
       case _ => false
     }
   }
