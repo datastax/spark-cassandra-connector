@@ -242,7 +242,7 @@ object Artifacts {
     val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt
     val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % Spark % "provided"    replExclusions    // ApacheV2
     val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7"
-    val snakeYaml         = "org.yaml"                % "snakeyaml"               % "1.16"
+    val snakeYaml         = "org.yaml"                % "snakeyaml"               % "1.20"
   }
 
   object Test {
