@@ -122,7 +122,7 @@ object WriteConf {
   val ParallelismLevelParam = ConfigParameter[Int] (
     name = "spark.cassandra.output.concurrent.writes",
     section = ReferenceSection,
-    default = 100,
+    default = 5,
     description = """Maximum number of batches executed in parallel by a
       | single Spark task""".stripMargin)
   
