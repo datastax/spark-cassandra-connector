@@ -33,6 +33,8 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   def scalaTypeTag = SparkReflectionLock.synchronized { implicitly[TypeTag[UDTValue]] }
   def cqlTypeName = name
 
+  val fieldConverters = columnTypes.map(_.converterToCassandra)
+
   def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
     override def convertPF = {
@@ -40,7 +42,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
         val columnValues =
           for (i <- columns.indices) yield {
             val columnName = columnNames(i)
-            val columnConverter = columnTypes(i).converterToCassandra
+            val columnConverter = fieldConverters(i)
             val columnValue = columnConverter.convert(udtValue.getRaw(columnName))
             columnValue
           }
@@ -49,7 +51,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
         val columnValues =
          for (i <- columns.indices) yield {
            val columnName = columnNames(i)
-           val columnConverter = columnTypes(i).converterToCassandra
+           val columnConverter = fieldConverters(i)
            val dfSchemaIndex = dfGenericRow.schema.fieldIndex(columnName)
            val columnValue = columnConverter.convert(dfGenericRow.get(dfSchemaIndex))
            columnValue
