@@ -1,10 +1,12 @@
 package com.datastax.spark.connector.cql
 
+import java.net.InetAddress
+
 import scala.language.postfixOps
 
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{FlatSpec, Matchers}
 
 class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
@@ -69,6 +71,16 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     connConf.cassandraSSLConf.keyStorePath shouldBe Some("/etc/keys/.keystore")
     connConf.cassandraSSLConf.keyStorePassword shouldBe Some("secret")
     connConf.cassandraSSLConf.keyStoreType shouldBe "JCEKS"
+  }
+
+  it should "produce serializedConfString that disregards names in hosts" in {
+    val addressAndHost = InetAddress.getLocalHost
+    val addressOnly = InetAddress.getByAddress(addressAndHost.getAddress)
+
+    val addressOnlyConf = CassandraConnectorConf(hosts = Set(addressOnly))
+    val addressAndHostConf = CassandraConnectorConf(hosts = Set(addressAndHost))
+
+    addressOnlyConf.serializedConfString should be (addressAndHostConf.serializedConfString)
   }
 
 }
