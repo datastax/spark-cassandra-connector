@@ -9,7 +9,6 @@ import scala.reflect._
 import scala.reflect.api.{Mirror, TypeCreator, _}
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import org.apache.spark.api.java.function.{Function => JFunction}
 
 import com.datastax.spark.connector.CassandraRow
@@ -25,7 +24,7 @@ object JavaApiHelper {
   def mirror = runtimeMirror(Thread.currentThread().getContextClassLoader)
 
   /** Returns a `TypeTag` for the given class. */
-  def getTypeTag[T](clazz: Class[T]): TypeTag[T] = SparkReflectionLock.synchronized {
+  def getTypeTag[T](clazz: Class[T]): TypeTag[T] = {
     TypeTag.apply(mirror, new TypeCreator {
       override def apply[U <: Universe with Singleton](m: Mirror[U]): U#Type = {
         m.staticClass(clazz.getName).toTypeConstructor
@@ -34,7 +33,7 @@ object JavaApiHelper {
   }
 
   /** Returns a `TypeTag` for the given class and type parameters. */
-  def getTypeTag[T](clazz: Class[_], typeParams: TypeTag[_]*): TypeTag[T] = SparkReflectionLock.synchronized {
+  def getTypeTag[T](clazz: Class[_], typeParams: TypeTag[_]*): TypeTag[T] = {
     TypeTag.apply(mirror, new TypeCreator {
       override def apply[U <: Universe with Singleton](m: Mirror[U]) = {
         val ct = m.staticClass(clazz.getName).toTypeConstructor.asInstanceOf[m.universe.Type]
@@ -64,8 +63,8 @@ object JavaApiHelper {
   }
 
   /** Returns a runtime class of a given `TypeTag`. */
-  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] = SparkReflectionLock.synchronized(
-    mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]])
+  def getRuntimeClass[T](typeTag: TypeTag[T]): Class[T] =
+    mirror.runtimeClass(typeTag.tpe).asInstanceOf[Class[T]]
 
   /** Returns a runtime class of a given `ClassTag`. */
   def getRuntimeClass[T](classTag: ClassTag[T]): Class[T] =

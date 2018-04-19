@@ -3,7 +3,6 @@ package com.datastax.spark.connector.writer
 import scala.language.existentials
 import scala.reflect.runtime.universe._
 import scala.util.control.NonFatal
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
 import com.datastax.spark.connector.{ColumnRef, GettableByIndexData, TupleValue, UDTValue}
 import com.datastax.spark.connector.cql.StructDef
@@ -45,7 +44,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         * [[com.datastax.spark.connector.mapper.DefaultColumnMapper DefaultColumnMapper]] */
       private def columnMapper[U: TypeTag]: ColumnMapper[U] = {
         logDebug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
-        val tpe = SparkReflectionLock.synchronized(typeTag[U].tpe)
+        val tpe = typeTag[U].tpe
         if (ReflectionUtil.isScalaTuple(tpe))
           new TupleColumnMapper[U]
         else if (isJavaBean)
@@ -62,7 +61,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
 
       /** Returns a converter for converting given column to appropriate type savable to Cassandra */
       private def converter[U : TypeTag](columnType: ColumnType[_]): TypeConverter[_ <: AnyRef] = {
-        SparkReflectionLock.synchronized {
+        {
           val scalaType = typeTag[U].tpe
 
           logDebug(s"Getting converter for $columnType to $scalaType")
@@ -137,9 +136,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       }
 
       @transient
-      private val tpe = SparkReflectionLock.synchronized {
-        typeTag[T].tpe
-      }
+      private val tpe = typeTag[T].tpe
 
       @transient
       private val mirror = forceClassLoader match {

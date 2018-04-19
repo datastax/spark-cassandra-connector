@@ -6,7 +6,6 @@ import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.reflect.ConstructorUtils
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.util.Logging
 import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
@@ -21,7 +20,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   import AnyObjectFactory._
 
   @transient
-  private val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
+  private val tpe = implicitly[TypeTag[T]].tpe
 
   @transient
   lazy val rm: RuntimeMirror =
@@ -46,7 +45,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   val argOffset: Int = oneIfMemberClass(javaClass)
 
   @transient
-  lazy val constructorParamTypes: Array[Type] = SparkReflectionLock.synchronized{
+  lazy val constructorParamTypes: Array[Type] = {
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 

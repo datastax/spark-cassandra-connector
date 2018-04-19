@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.driver.core.ProtocolVersion
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.{ColumnName, ColumnRef}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType
@@ -41,7 +40,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
   private def setterNameToPropertyName(str: String) =
     str.substring(0, str.length - SetterSuffix.length)
 
-  private val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
+  private val tpe = implicitly[TypeTag[T]].tpe
   private val constructorParams = ReflectionUtil.constructorParams(tpe)
   private val getters = ReflectionUtil.getters(tpe)
   private val setters = ReflectionUtil.setters(tpe)
