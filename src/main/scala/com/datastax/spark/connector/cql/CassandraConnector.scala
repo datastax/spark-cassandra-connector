@@ -202,7 +202,7 @@ object CassandraConnector extends Logging {
     hosts.map(h => conf.copy(hosts = Set(h.getAddress))) + conf.copy(hosts = hosts.map(_.getAddress))
   }
 
-  SerialShutdownHooks.add("Clearing session cache for C* connector")(() => {
+  SerialShutdownHooks.add("Clearing session cache for C* connector", 200)(() => {
     sessionCache.shutdown()
   })
 
