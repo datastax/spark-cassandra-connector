@@ -53,7 +53,7 @@ object CqlWhereParser extends RegexParsers with Logging {
     s => BooleanLiteral(s.toBoolean)
   }
 
-  private def str = "'" ~> """(''|[^'])*""".r <~ "'" ^^ {
+  private def str = "'" ~> """(''|[^'])*+""".r <~ "'" ^^ {
     def unEscapeQuotes(s: String) = s.replace("''", "'")
     s => StringLiteral(unEscapeQuotes(s))
   }
