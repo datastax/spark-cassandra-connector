@@ -313,7 +313,7 @@ versions (being inserted into Cassandra as is). When set to `true` all `null`s
 will be treated as `unset`. This can be used with DataFrames to skip 
 null records and avoid tombstones.
 
-####Example of using ignoreNulls to treat all nulls as Unset
+#### Example of using ignoreNulls to treat all nulls as Unset
 ```scala
 //Setup original data (1, 1, 1) --> (6, 6, 6)
 sc.parallelize(1 to 6).map(x => (x, x, x)).saveToCassandra(ks, "tab1")
