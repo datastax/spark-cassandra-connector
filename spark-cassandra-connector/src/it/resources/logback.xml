@@ -1,0 +1,53 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<!--
+In order to disable debug.log, comment-out the ASYNCDEBUGLOG
+appender reference in the root level section below.
+-->
+
+<configuration scan="true">
+    <jmxConfigurator />
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg %n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="WARN"/>
+
+    # Avoid "no host ID found" when starting a fresh node
+    <logger name="org.apache.cassandra.db.SystemKeyspace" level="ERROR"/>
+
+    # Avoid "address already in use" when starting multiple local Spark masters
+    <logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="ERROR"/>
+    <logger name="org.spark-project.jetty.util.component.AbstractLifeCycle" level="ERROR"/>
+
+    # Suppress some warnings
+    <logger name="com.datastax.driver.core.NettyUtil" level="ERROR"/>
+    <logger name="org.apache.hadoop.util.NativeCodeLoader" level="ERROR"/>
+    <logger name="org.apache.cassandra.utils.CLibrary" level="ERROR"/>
+    <logger name="org.apache.cassandra.service.StartupChecks" level="ERROR"/>
+    <logger name="org.spark-project.jetty.server.Server" level="ERROR"/>
+    <logger name="org.eclipse.jetty.server.Server" level="ERROR"/>
+
+</configuration>
