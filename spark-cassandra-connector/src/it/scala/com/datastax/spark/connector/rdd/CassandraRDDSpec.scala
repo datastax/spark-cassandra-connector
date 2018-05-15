@@ -1080,7 +1080,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MiXEDCase")
     message should include ("MixedSpace.MixedCASE")
   }
-
+  
   it should "suggest possible keyspace and table matches if the keyspace and table do not exist" in {
     val ioe = the [IOException] thrownBy sc.cassandraTable("MoxedSpace","mixdcase").collect()
     val message = ioe.getMessage

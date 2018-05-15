@@ -52,10 +52,10 @@ object NameTools {
     val keyspaceScores = clusterMetadata
       .getKeyspaces
       .map(ks =>
-      (ks, StringUtils.getJaroWinklerDistance(ks.getName, keyspace)))
+      (ks, StringUtils.getJaroWinklerDistance(ks.getName.toLowerCase, keyspace.toLowerCase)))
 
     val ktScores = for ((ks, ksScore) <- keyspaceScores; t <- (ks.getTables ++ ks.getMaterializedViews)) yield {
-      val tScore = StringUtils.getJaroWinklerDistance(t.getName, table)
+      val tScore = StringUtils.getJaroWinklerDistance(t.getName.toLowerCase, table.toLowerCase)
       (ks.getName, t.getName, ksScore, tScore)
     }
 
