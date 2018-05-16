@@ -8,26 +8,27 @@ import scala.collection.JavaConversions._
 
 object NameTools {
 
-  val MinJWScore = 0.85
+
+  val MinJWScore = 0.55
 
   /* Example JaroWinklerScores
   {{{
-  val wordpairs = Seq(
-  ("banana","bananastand"),
-  ("apple","bananastand"),
-  ("customer_id","customerid"),
-  ("custid","customerid"),
-  ("liberty","freedom"),
-  ("spark","spork"),
-  ("test","testt"))
-  wordpairs.foreach( p =>
-    println(s"${p._1} ~ ${p._2} = ${StringUtils.getJaroWinklerDistance(p._1,p._2)}"))
-  }}}
-  banana ~ bananastand = 0.91
+       |   val wordpairs = Seq(
+       |   ("banana","bananastand"),
+       |   ("apple","bananastand"),
+       |   ("customer_id","customerid"),
+       |   ("custid","customerid"),
+       |   ("liberty","freedom"),
+       |   ("spark","spork"),
+       |   ("test","testt"))
+       |   wordpairs.foreach( p =>
+       |     println(s"${p._1} ~ ${p._2} = ${StringUtils.getJaroWinklerDistance(p._1,p._2)}"))
+       |   }}}
+  banana ~ bananastand = 0.93
   apple ~ bananastand = 0.43
-  customer_id ~ customerid = 0.98
-  custid ~ customerid = 0.4
-  liberty ~ freedom = 0.36
+  customer_id ~ customerid = 0.99
+  custid ~ customerid = 0.92
+  liberty ~ freedom = 0.43
   spark ~ spork = 0.89
   test ~ testt = 0.96 */
 
@@ -52,10 +53,10 @@ object NameTools {
     val keyspaceScores = clusterMetadata
       .getKeyspaces
       .map(ks =>
-      (ks, StringUtils.getJaroWinklerDistance(ks.getName, keyspace)))
+      (ks, StringUtils.getJaroWinklerDistance(ks.getName.toLowerCase, keyspace.toLowerCase)))
 
     val ktScores = for ((ks, ksScore) <- keyspaceScores; t <- (ks.getTables ++ ks.getMaterializedViews)) yield {
-      val tScore = StringUtils.getJaroWinklerDistance(t.getName, table)
+      val tScore = StringUtils.getJaroWinklerDistance(t.getName.toLowerCase, table.toLowerCase)
       (ks.getName, t.getName, ksScore, tScore)
     }
 
