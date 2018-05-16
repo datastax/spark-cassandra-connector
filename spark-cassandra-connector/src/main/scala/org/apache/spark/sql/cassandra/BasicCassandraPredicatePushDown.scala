@@ -95,15 +95,13 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
    */
   private val partitionKeyPredicatesToPushDown: Set[Predicate] = {
     val (eqColumns, inColumns) = pv match {
-      case pv if pv >= V4 => {
+      case v if v >= V4 =>
         (partitionKeyColumns.filter(eqPredicatesByName.contains),
           partitionKeyColumns.filter(inPredicatesByName.contains))
-      }
-      case _ => {
+      case _ =>
         val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
         val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
         (eqColumns, inColumns)
-      }
     }
 
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
@@ -131,18 +129,16 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
    */
   private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
     val predicates: Set[Predicate] = pv match {
-      case pv if pv >= V4 => {
-        val (eqInColumns, otherColumns) = clusteringColumns.span(x => {
-          eqPredicatesByName.contains(x) || inPredicatesByName.contains(x)
-        })
-
+        case v if v >= V4 =>
+        val (eqInColumns, otherColumns) = clusteringColumns.span(cols =>
+          eqPredicatesByName.contains(cols) || inPredicatesByName.contains(cols)
+        )
         val eqPredicates = eqInColumns.filter(eqPredicatesByName.contains).flatMap(eqPredicatesByName).toSet
         val inPredicates = eqInColumns.filter(inPredicatesByName.contains).flatMap(inPredicatesByName).toSet
         val rangePredicates = otherColumns.headOption.toSeq.filter(rangePredicatesByName.contains).flatMap(rangePredicatesByName).toSet
+        eqPredicates ++ inPredicates ++ rangePredicates
 
-        (eqPredicates ++ inPredicates ++ rangePredicates)
-      }
-      case _ => {
+      case _ =>
         val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
         val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
         val optionalNonEqPredicate = for {
@@ -151,9 +147,8 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
             rangePredicatesByName(c),
             inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
         } yield p
-
         eqPredicates ++ optionalNonEqPredicate
-      }
+
     }
     predicates
   }
