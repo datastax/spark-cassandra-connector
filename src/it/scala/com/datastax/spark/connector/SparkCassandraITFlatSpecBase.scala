@@ -105,11 +105,4 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
 object SparkCassandraITSpecBase {
   val executor = Executors.newFixedThreadPool(100)
   val ec = ExecutionContext.fromExecutor(executor)
-
-  EmbeddedCassandra.removeShutdownHook
-  // now embedded C* won't shutdown itself, let's do it in serial fashion
-  SerialShutdownHooks.add("Shutting down all Cassandra runners")(() => {
-    EmbeddedCassandra.shutdown
-  })
-
 }

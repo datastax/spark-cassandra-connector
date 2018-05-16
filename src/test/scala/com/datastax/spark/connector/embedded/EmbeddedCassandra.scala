@@ -3,8 +3,9 @@ package com.datastax.spark.connector.embedded
 import java.net.InetAddress
 
 import com.datastax.spark.connector.embedded.YamlTransformations.CassandraConfiguration
-
 import scala.collection.mutable
+
+import com.datastax.spark.connector.util.SerialShutdownHooks
 
 /** A utility trait for integration testing.
   * Manages *one* single Cassandra server at a time and enables switching its configuration.
@@ -138,20 +139,12 @@ object EmbeddedCassandra {
     }
   }
 
-  private val shutdownThread: Thread = new Thread("Shutdown embedded C* hook thread") {
-    override def run() = {
-      shutdown()
-    }
-  }
-
-  Runtime.getRuntime.addShutdownHook(shutdownThread)
-
   private[connector] def shutdown(): Unit = {
     cassandraRunners.values.foreach(_.destroy())
     release()
   }
 
-  private[connector] def removeShutdownHook(): Boolean = {
-    Runtime.getRuntime.removeShutdownHook(shutdownThread)
-  }
+  SerialShutdownHooks.add("Shutting down all Cassandra runners", 100)(() => {
+    shutdown()
+  })
 }
