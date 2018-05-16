@@ -7,6 +7,7 @@
  * Includes all patches up to 1.6.10
 
 2.0.5
+ * Allow IN predicates for composite partition keys and clustering keys to be pushed down to Cassandra (SPARKC-490)
  * Allow 'YYYY' format LocalDate
  * Add metrics for write batch Size (SPARKC-501)
  * Type Converters for java.time.localdate (SPARKC-495)
