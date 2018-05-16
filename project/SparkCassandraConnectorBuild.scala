@@ -53,8 +53,8 @@ object CassandraSparkBuild extends Build {
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(
-      libraryDependencies
-      ++= Dependencies.embedded ++ Seq(
+      excludeDependencies ++= Seq(SbtExclusionRule("org.slf4j", "slf4j-log4j12")),
+      libraryDependencies ++= Dependencies.embedded ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value))
   ).disablePlugins(AssemblyPlugin, SparkPackagePlugin) configs IntegrationTest

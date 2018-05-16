@@ -157,7 +157,8 @@ object Settings extends Build {
     binaryIssueFilters ++= Seq.empty
   )
 
-  lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ Testing.testSettings
+  lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ Testing.testSettings ++ Seq(
+    excludeDependencies ++= Seq(SbtExclusionRule("org.slf4j", "slf4j-log4j12"))) // Keep slf4j-log4j12 off the classpath
 
   lazy val rootSettings = Seq(
     cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _),
