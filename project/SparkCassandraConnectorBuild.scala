@@ -53,7 +53,6 @@ object CassandraSparkBuild extends Build {
   lazy val embedded = CrossScalaVersionsProject(
     name = s"$namespace-embedded",
     conf = defaultSettings ++ Seq(
-      excludeDependencies ++= Seq(SbtExclusionRule("org.slf4j", "slf4j-log4j12")),
       libraryDependencies ++= Dependencies.embedded ++ Seq(
         "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value))
@@ -195,10 +194,6 @@ object Artifacts {
     def sparkExclusions(): ModuleID = module.sparkCoreExclusions()
       .exclude("org.apache.spark", s"spark-core_$scalaBinary")
 
-    def logbackExclude(): ModuleID = module
-      .exclude("ch.qos.logback", "logback-classic")
-      .exclude("ch.qos.logback", "logback-core")
-
     def replExclusions: ModuleID = module.guavaExclude()
       .exclude("org.apache.spark", s"spark-bagel_$scalaBinary")
       .exclude("org.apache.spark", s"spark-mllib_$scalaBinary")
@@ -258,6 +253,8 @@ object Artifacts {
     val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
     val powerMock         = "org.powermock"           % "powermock-module-junit4"       % "1.6.2"   % "test,it"       // ApacheV2
     val powerMockMockito  = "org.powermock"           % "powermock-api-mockito"         % "1.6.2"   % "test,it"       // ApacheV2
+    val logbackCore       = "ch.qos.logback"          % "logback-core"                  % "1.1.3"   % "test,it"
+    val logbackClassic    = "ch.qos.logback"          % "logback-classic"               % "1.1.3"   % "test,it"
   }
 }
 
@@ -286,7 +283,9 @@ object Dependencies {
     Test.sparkStreamingT,
     Test.mockito,
     Test.powerMock,
-    Test.powerMockMockito
+    Test.powerMockMockito,
+    Test.logbackClassic,
+    Test.logbackCore
   )
 
   val cassandra = Seq(cassandraDriver, cassandraDriverMapping)

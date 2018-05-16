@@ -50,7 +50,7 @@ private[connector] class CassandraRunner(
   private val jammAgentProperty = jammAgent.map("-javaagent:" + _).getOrElse("")
   private val cassandraMainClass = "org.apache.cassandra.service.CassandraDaemon"
   private val nodeToolMainClass = "org.apache.cassandra.tools.NodeTool"
-  private val logConfigFileProperty = s"-Dlog4j.configuration=${getClass.getResource("/log4j.properties").toString}"
+  private val logConfigFileProperty = s"-Dlogback.configurationFile=${getClass.getResource("/logback.xml").toString}"
 
   val location = Thread.currentThread().getStackTrace
     .filter(_.getClassName.startsWith("com.datastax")).lastOption
