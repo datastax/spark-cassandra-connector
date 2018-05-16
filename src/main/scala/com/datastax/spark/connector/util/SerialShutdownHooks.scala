@@ -4,14 +4,21 @@ import scala.collection.mutable
 
 private[connector] object SerialShutdownHooks extends Logging {
 
-  private val hooks = mutable.Map[String, () => Unit]()
-  @volatile private var isShuttingDown = false
+  private case class PriorityShutdownHook(
+      name: String,
+      priority: Int,
+      task: () => Unit
+  )
 
-  def add(name: String)(body: () => Unit): Unit = SerialShutdownHooks.synchronized {
+  private val hooks = mutable.ListBuffer[PriorityShutdownHook]()
+  private var isShuttingDown = false
+
+  /** Adds given hook with given priority. The higher the priority, the sooner the hook is executed. */
+  def add(name: String, priority: Int)(task: () => Unit): Unit = SerialShutdownHooks.synchronized {
     if (isShuttingDown) {
       logError(s"Adding shutdown hook ($name) during shutting down is not allowed.")
     } else {
-      hooks.put(name, body)
+      hooks.append(PriorityShutdownHook(name, priority, task))
     }
   }
 
@@ -20,14 +27,15 @@ private[connector] object SerialShutdownHooks extends Logging {
       SerialShutdownHooks.synchronized {
         isShuttingDown = true
       }
-      for ((name, task) <- hooks) {
+      val prioritizedHooks = hooks.sortBy(-_.priority)
+      for (hook <- prioritizedHooks) {
         try {
-          logDebug(s"Running shutdown hook: $name")
-          task()
-          logInfo(s"Successfully executed shutdown hook: $name")
+          logDebug(s"Running shutdown hook: ${hook.name}")
+          hook.task()
+          logInfo(s"Successfully executed shutdown hook: ${hook.name}")
         } catch {
           case exc: Throwable =>
-            logError(s"Shutdown hook ($name) failed", exc)
+            logError(s"Shutdown hook (${hook.name}) failed", exc)
         }
       }
     }
