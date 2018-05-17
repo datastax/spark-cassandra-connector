@@ -3,8 +3,6 @@ package com.datastax.spark.connector.types
 import scala.language.existentials
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
 trait CollectionColumnType[T] extends ColumnType[T] {
   def isCollection = true
 }
@@ -12,7 +10,7 @@ trait CollectionColumnType[T] extends ColumnType[T] {
 case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vector[T]] {
 
   @transient
-  lazy val scalaTypeTag = SparkReflectionLock.synchronized {
+  lazy val scalaTypeTag = {
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Vector[T]]]
   }
@@ -26,7 +24,7 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
 case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[T]] {
 
   @transient
-  lazy val scalaTypeTag = SparkReflectionLock.synchronized {
+  lazy val scalaTypeTag = {
     implicit val elemTypeTag = elemType.scalaTypeTag
     implicitly[TypeTag[Set[T]]]
   }
@@ -41,7 +39,7 @@ case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V])
   extends CollectionColumnType[Map[K, V]] {
 
   @transient
-  lazy val scalaTypeTag = SparkReflectionLock.synchronized {
+  lazy val scalaTypeTag = {
     implicit val keyTypeTag = keyType.scalaTypeTag
     implicit val valueTypeTag = valueType.scalaTypeTag
     implicitly[TypeTag[Map[K, V]]]

@@ -7,7 +7,6 @@ import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.tuple.{Triple, Pair}
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => DriverTupleType, DataType}
@@ -106,8 +105,7 @@ object TupleType {
     val fieldTypes = dataType.getComponentTypes
     val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
 
-    override def targetTypeTag =
-      SparkReflectionLock.synchronized { typeTag[DriverTupleValue] }
+    override def targetTypeTag = typeTag[DriverTupleValue]
 
     override def convertPF = {
       case tupleValue: TupleValue =>

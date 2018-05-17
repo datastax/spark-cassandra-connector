@@ -46,7 +46,6 @@ object Settings extends Build {
     organization         := "com.datastax.spark",
     version in ThisBuild := currentVersion,
     scalaVersion         := Versions.scalaVersion,
-    crossScalaVersions   := Versions.crossScala,
     crossVersion         := CrossVersion.binary,
     versionStatus        := Versions.status(scalaVersion.value, scalaBinaryVersion.value)
   )

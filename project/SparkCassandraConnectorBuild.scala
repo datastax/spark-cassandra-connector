@@ -248,7 +248,7 @@ object Artifacts {
   object Test {
     val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
-    val scalaMock         = "org.scalamock"           %% "scalamock-scalatest-support"  % ScalaMock % "test,it"       // BSD
+    val scalaMock         = "org.scalamock"           %% "scalamock"                    % ScalaMock % "test,it"       // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
     val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % Spark     % "test,it" classifier "tests"
@@ -330,7 +330,7 @@ object Dependencies {
   }
 
   val embedded = logging ++ spark ++ cassandra ++ Seq(
-    cassandraServer % "it,test",
+    cassandraServer % "it,test" exclude("net.jpountz.lz4", "lz4"),
     Embedded.jopt,
     Embedded.sparkRepl,
     Embedded.snappy,

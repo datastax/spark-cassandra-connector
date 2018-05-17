@@ -5,9 +5,9 @@ import java.text.SimpleDateFormat
 
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnNotFoundException}
 import org.junit.Assert._
-import org.scalatest.{FunSuite, ShouldMatchers}
+import org.scalatest.{FunSuite, Matchers}
 
-class CassandraRowTest extends FunSuite with ShouldMatchers {
+class CassandraRowTest extends FunSuite with Matchers {
 
   test("basicAccessTest") {
     val row = new CassandraRow(CassandraRowMetadata(Array("value")), Array("1"))

@@ -17,13 +17,8 @@ import scala.util.Properties
  */
 object Versions {
 
-  val crossScala = Seq("2.11.8", "2.10.6")
 
-  /* Leverages optional Spark 'scala-2.11' profile optionally set by the user via -Dscala-2.11=true if enabled */
-  lazy val scalaVersion = sys.props.get("scala-2.11") match {
-    case Some(is) if is.nonEmpty && is.toBoolean => crossScala.head
-    case crossBuildFor                           => crossScala.last
-  }
+  lazy val scalaVersion = "2.11.8"
 
   /* For `scalaBinaryVersion.value outside an sbt task. */
   lazy val scalaBinary = scalaVersion.dropRight(2)
@@ -40,13 +35,13 @@ object Versions {
   val JodaC           = "1.2"
   val JodaT           = "2.3"
   val JOpt            = "3.2"
-  val Lzf             = "0.8.4"
+  val Lzf             = "1.0.3"
   val Netty           = "4.0.33.Final"
   val CodaHaleMetrics = "3.0.2"
-  val ScalaCheck      = "1.12.5"
-  val ScalaMock       = "3.2"
-  val ScalaTest       = "2.2.6"
-  val Scalactic       = "2.2.6"
+  val ScalaCheck      = "1.14.0"
+  val ScalaMock       = "4.1.0"
+  val ScalaTest       = "3.0.3"
+  val Scalactic       = "3.0.3"
   val Slf4j           = "1.6.1"//1.7.7"
 
   // Spark version can be specified as:
@@ -57,18 +52,16 @@ object Versions {
   // and install in a local Maven repository. This is all done automatically, however it will work
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
-  val Spark           = "2.0.2"
+  val Spark           = "2.3.0"
   val SparkJetty      = "8.1.14.v20131031"
   val JSR166e         = "1.1.0"
   val Airlift         = "0.6"
 
   val doNotInstallSpark = true
 
-  val hint = (binary: String) => if (binary == "2.10") "[To build against Scala 2.11 use '-Dscala-2.11=true']" else ""
-
   val status = (versionInReapply: String, binaryInReapply: String) =>
     println(s"""
-        |  Scala: $versionInReapply ${hint(binaryInReapply)}
+        |  Scala: $versionInReapply
         |  Scala Binary: $binaryInReapply
         |  Java: target=$JDK user=${Properties.javaVersion}
         |  Cassandra version for testing: ${Testing.cassandraTestVersion} [can be overridden by specifying '-Dtest.cassandra.version=<version>']
