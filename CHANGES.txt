@@ -1,3 +1,9 @@
+2.0.8
+ * Allow non-cluster prefixed options in sqlConf (SPARKC-531)
+ * Change Str Literal Match to Be Greedy (SPARKC-532)
+ * Restore support for various timezone formats to TimestampParser (SPARKC-533)
+ * UDT converters optimization (SPARKC-536)
+
 2.0.7
  * Adds Timestamp, Improve Conversion Perf (SPARKC-522)
  * Allow setting spark.cassandra.concurrent.reads (SPARKC-520)
