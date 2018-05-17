@@ -1,3 +1,11 @@
+
+2.3.0
+ * Support for Spark 2.3.0 (SPARKC-530)
+ * Pushdown filter for composite partition keys doesn't work (SPARKC-490)
+ * Removal of Scala-2.10 support
+
+********************************************************************************
+
 2.0.8
  * Allow non-cluster prefixed options in sqlConf (SPARKC-531)
  * Change Str Literal Match to Be Greedy (SPARKC-532)
