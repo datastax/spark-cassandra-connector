@@ -1,0 +1,564 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>rdd - com.datastax.spark.connector.rdd</title>
+          <meta name="description" content="rdd - com.datastax.spark.connector.rdd" />
+          <meta name="keywords" content="rdd com.datastax.spark.connector.rdd" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.rdd.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>rdd</h1><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rdd</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Contains <a href="CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">com.datastax.spark.connector.rdd.CassandraTableScanRDD</a> class that is the main entry point for
+analyzing Cassandra data from Spark.</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.rdd"><span>rdd</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.rdd.CassandraJoinRDD" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CassandraJoinRDD[L,R]extendsCassandraRDD[(L,R)]withCassandraTableRowReaderProvider[R]withAbstractCassandraJoin[L,R]"></a>
+      <a id="CassandraJoinRDD[L,R]:CassandraJoinRDD[L,R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraJoinRDD.html"><span class="name">CassandraJoinRDD</span></a><span class="tparams">[<span name="L">L</span>, <span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[(<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.L">L</span>, <span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>)] with <a href="CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>] with <span class="extype" name="com.datastax.spark.connector.rdd.AbstractCassandraJoin">AbstractCassandraJoin</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.L">L</span>, <span class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD.R">R</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraJoinRDD[L,R]extendsCassandraRDD[(L,R)]withCassandraTableRowReaderProvider[R]withAbstractCassandraJoin[L,R]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
+advantage of RDDs that have been partitioned with the
+<a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
+</p><div class="fullcomment"><div class="comment cmt"><p>An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
+advantage of RDDs that have been partitioned with the
+<a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
+</p></div><dl class="paramcmts block"><dt class="tparam">L</dt><dd class="cmt"><p>item type on the left side of the join (any RDD)</p></dd><dt class="tparam">R</dt><dd class="cmt"><p>item type on the right side of the join (fetched from Cassandra)</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CassandraLeftJoinRDD[L,R]extendsCassandraRDD[(L,Option[R])]withCassandraTableRowReaderProvider[R]withAbstractCassandraJoin[L,Option[R]]"></a>
+      <a id="CassandraLeftJoinRDD[L,R]:CassandraLeftJoinRDD[L,R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraLeftJoinRDD.html"><span class="name">CassandraLeftJoinRDD</span></a><span class="tparams">[<span name="L">L</span>, <span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[(<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.L">L</span>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>])] with <a href="CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>] with <span class="extype" name="com.datastax.spark.connector.rdd.AbstractCassandraJoin">AbstractCassandraJoin</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.L">L</span>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraLeftJoinRDD.R">R</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraLeftJoinRDD[L,R]extendsCassandraRDD[(L,Option[R])]withCassandraTableRowReaderProvider[R]withAbstractCassandraJoin[L,Option[R]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
+advantage of RDDs that have been partitioned with the
+<a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
+</p><div class="fullcomment"><div class="comment cmt"><p>An <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a> that will do a selecting join between <code>left</code> RDD and the specified
+Cassandra Table This will perform individual selects to retrieve the rows from Cassandra and will take
+advantage of RDDs that have been partitioned with the
+<a href="partitioner/ReplicaPartitioner.html" class="extype" name="com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner">com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner</a>
+</p></div><dl class="paramcmts block"><dt class="tparam">L</dt><dd class="cmt"><p>item type on the left side of the join (any RDD)</p></dd><dt class="tparam">R</dt><dd class="cmt"><p>item type on the right side of the join (fetched from Cassandra)</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.rdd.CassandraLimit" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="CassandraLimitextendsAnyRef"></a>
+      <a id="CassandraLimit:CassandraLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraLimit.html"><span class="name">CassandraLimit</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraLimitextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraPartitionLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraPartitionLimitextendsCassandraLimitwithProductwithSerializable"></a>
+      <a id="CassandraPartitionLimit:CassandraPartitionLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraPartitionLimit.html"><span class="name">CassandraPartitionLimit</span></a><span class="params">(<span name="rowsNumber">rowsNumber: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result"> extends <a href="CassandraLimit.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraLimit">CassandraLimit</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraPartitionLimitextendsCassandraLimitwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraRDD" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="CassandraRDD[R]extendsRDD[R]"></a>
+      <a id="CassandraRDD[R]:CassandraRDD[R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRDD.html"><span class="name">CassandraRDD</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.rdd.RDD" class="extype" target="_top">RDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD.R">R</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraRDD[R]extendsRDD[R]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="CassandraTableRowReaderProvider[R]extendsAnyRef"></a>
+      <a id="CassandraTableRowReaderProvider[R]:CassandraTableRowReaderProvider[R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraTableRowReaderProvider.html"><span class="name">CassandraTableRowReaderProvider</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraTableRowReaderProvider[R]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Used to get a RowReader of type [R] for transforming the rows of a particular Cassandra table into
+scala objects.</p><div class="fullcomment"><div class="comment cmt"><p>Used to get a RowReader of type [R] for transforming the rows of a particular Cassandra table into
+scala objects. Performs necessary checking of the schema and output class to make sure they are
+compatible.</p></div><dl class="attributes block"> <dt>See also</dt><dd><span class="cmt"><p><a href="CassandraJoinRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraJoinRDD">CassandraJoinRDD</a></p></span><span class="cmt"><p><a href="CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a></p></span></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.rdd.CassandraTableScanRDD" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CassandraTableScanRDD[R]extendsCassandraRDD[R]withCassandraTableRowReaderProvider[R]withSplitSizeEstimator[R]"></a>
+      <a id="CassandraTableScanRDD[R]:CassandraTableScanRDD[R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraTableScanRDD.html"><span class="name">CassandraTableScanRDD</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD.R">R</span>] with <a href="CassandraTableRowReaderProvider.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableRowReaderProvider">CassandraTableRowReaderProvider</a>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD.R">R</span>] with <span class="extype" name="com.datastax.spark.connector.rdd.partitioner.SplitSizeEstimator">SplitSizeEstimator</span>[<span class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD.R">R</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraTableScanRDD[R]extendsCassandraRDD[R]withCassandraTableRowReaderProvider[R]withSplitSizeEstimator[R]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">RDD representing a Table Scan of A Cassandra table.</p><div class="fullcomment"><div class="comment cmt"><p>RDD representing a Table Scan of A Cassandra table.</p><p>This class is the main entry point for analyzing data in Cassandra database with Spark.
+Obtain objects of this class by calling
+<a href="../SparkContextFunctions.html#cassandraTable[T](keyspace:String,table:String)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitreadConf:com.datastax.spark.connector.rdd.ReadConf,implicitct:scala.reflect.ClassTag[T],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[T],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[T]):com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]" class="extmbr" name="com.datastax.spark.connector.SparkContextFunctions#cassandraTable">com.datastax.spark.connector.SparkContextFunctions.cassandraTable</a>.</p><p>Configuration properties should be passed in the <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>
+configuration of <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkContext" class="extype" target="_top">SparkContext</a>.
+<code>CassandraRDD</code> needs to open connection to Cassandra, therefore it requires appropriate
+connection property values to be present in <a href="http://spark.apache.org/docs/2.0.2/api/scala/index.html#org.apache.spark.SparkConf" class="extype" target="_top">SparkConf</a>.
+For the list of required and available properties, see
+<a href="../cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a>.</p><p><code>CassandraRDD</code> divides the data set into smaller partitions, processed locally on every
+cluster node. A data partition consists of one or more contiguous token ranges.
+To reduce the number of roundtrips to Cassandra, every partition is fetched in batches.</p><p>The following properties control the number of partitions and the fetch size:
+- spark.cassandra.input.split.size_in_mb: approx amount of data to be fetched into a single Spark
+  partition, default 64 MB
+- spark.cassandra.input.fetch.size_in_rows:  number of CQL rows fetched per roundtrip,
+  default 1000</p><p>A <code>CassandraRDD</code> object gets serialized and sent to every Spark Executor, which then
+calls the <code>compute</code> method to fetch the data on every node. The <code>getPreferredLocations</code>
+method tells Spark the preferred nodes to fetch a partition from, so that the data for
+the partition are at the same node the task was sent to. If Cassandra nodes are collocated
+with Spark nodes, the queries are always sent to the Cassandra process running on the same
+node as the Spark Executor process, hence data are not transferred between nodes.
+If a Cassandra node fails or gets overloaded during read, the queries are retried
+to a different node.</p><p>By default, reads are performed at ConsistencyLevel.LOCAL_ONE in order to leverage data-locality
+and minimize network traffic. This read consistency level is controlled by the
+spark.cassandra.input.consistency.level property.
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.rdd.ClusteringOrder" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ClusteringOrderextendsSerializable"></a>
+      <a id="ClusteringOrder:ClusteringOrder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ClusteringOrder.html"><span class="name">ClusteringOrder</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ClusteringOrderextendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CqlWhereClause" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CqlWhereClauseextendsProductwithSerializable"></a>
+      <a id="CqlWhereClause:CqlWhereClause"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CqlWhereClause.html"><span class="name">CqlWhereClause</span></a><span class="params">(<span name="predicates">predicates: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="values">values: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Any">Any</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CqlWhereClauseextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Represents a logical conjunction of CQL predicates.</p><div class="fullcomment"><div class="comment cmt"><p>Represents a logical conjunction of CQL predicates.
+Each predicate can have placeholders denoted by '?' which get substituted by values from the <code>values</code> array.
+The number of placeholders must match the size of the <code>values</code> array.</p></div></div>
+    </li><li name="com.datastax.spark.connector.rdd.EmptyCassandraRDD" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="EmptyCassandraRDD[R]extendsCassandraRDD[R]"></a>
+      <a id="EmptyCassandraRDD[R]:EmptyCassandraRDD[R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EmptyCassandraRDD.html"><span class="name">EmptyCassandraRDD</span></a><span class="tparams">[<span name="R">R</span>]</span><span class="result"> extends <a href="CassandraRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraRDD">CassandraRDD</a>[<span class="extype" name="com.datastax.spark.connector.rdd.EmptyCassandraRDD.R">R</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@EmptyCassandraRDD[R]extendsCassandraRDD[R]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Represents a CassandraRDD with no rows.</p><div class="fullcomment"><div class="comment cmt"><p>Represents a CassandraRDD with no rows.
+This RDD does not load any data from Cassandra and doesn't require for the table to exist.</p></div></div>
+    </li><li name="com.datastax.spark.connector.rdd.ReadConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ReadConfextendsProductwithSerializable"></a>
+      <a id="ReadConf:ReadConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadConf.html"><span class="name">ReadConf</span></a><span class="params">(<span name="splitCount">splitCount: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">None</span></span>, <span name="splitSizeInMB">splitSizeInMB: <span class="extype" name="scala.Int">Int</span> = <span class="symbol"><span class="name"><a href="ReadConf$.html">ReadConf.SplitSizeInMBParam.default</a></span></span></span>, <span name="fetchSizeInRows">fetchSizeInRows: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name='<span class="name"><a href="ReadConf$.html">ReadConf.FetchSizeInRowsParam.default</a></span>'>...</span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name='<span class="name"><a href="ReadConf$.html">ReadConf.ConsistencyLevelParam.default</a></span>'>...</span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol"><span class="name"><a href="ReadConf$.html">ReadConf.TaskMetricParam.default</a></span></span></span>, <span name="parallelismLevel">parallelismLevel: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name='<span class="name"><a href="ReadConf$.html">ReadConf.ParallelismLevelParam.default</a></span>'>...</span></span>, <span name="readsPerSec">readsPerSec: <span class="extype" name="scala.Int">Int</span> = <span class="symbol"><span class="name"><a href="ReadConf$.html">ReadConf.ReadsPerSecParam.default</a></span></span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ReadConfextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Read settings for RDD
+</p><div class="fullcomment"><div class="comment cmt"><p>Read settings for RDD
+</p></div><dl class="paramcmts block"><dt class="param">splitCount</dt><dd class="cmt"><p>number of partitions to divide the data into; unset by default</p></dd><dt class="param">splitSizeInMB</dt><dd class="cmt"><p>size of Cassandra data to be read in a single Spark task;
+                     determines the number of partitions, but ignored if <code>splitCount</code> is set</p></dd><dt class="param">fetchSizeInRows</dt><dd class="cmt"><p>number of CQL rows to fetch in a single round-trip to Cassandra</p></dd><dt class="param">consistencyLevel</dt><dd class="cmt"><p>consistency level for reads, default LOCAL_ONE;
+                        higher consistency level will disable data-locality</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd><dt class="param">readsPerSec</dt><dd class="cmt"><p>maximum read throughput allowed per single core in requests/s while
+                                 joining an RDD with C* table (joinWithCassandraTable operation)
+                                 also used by enterprise integrations</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.rdd.SparkPartitionLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SparkPartitionLimitextendsCassandraLimitwithProductwithSerializable"></a>
+      <a id="SparkPartitionLimit:SparkPartitionLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="SparkPartitionLimit.html"><span class="name">SparkPartitionLimit</span></a><span class="params">(<span name="rowsNumber">rowsNumber: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result"> extends <a href="CassandraLimit.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraLimit">CassandraLimit</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@SparkPartitionLimitextendsCassandraLimitwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.ValidRDDType" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="ValidRDDType[T]extendsAnyRef"></a>
+      <a id="ValidRDDType[T]:ValidRDDType[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ValidRDDType.html"><span class="name">ValidRDDType</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ValidRDDType[T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@implicitNotFound</span><span class="args">(<span>
+      
+      <span class="defval" name="&quot;Not a valid RDD type. There should exists either a type converter for the type or the type should implement Serializable&quot;">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.rdd.CassandraLimit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraLimit"></a>
+      <a id="CassandraLimit:CassandraLimit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraLimit$.html"><span class="name">CassandraLimit</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraLimit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraRDD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRDD"></a>
+      <a id="CassandraRDD:CassandraRDD"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRDD$.html"><span class="name">CassandraRDD</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraRDD" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CassandraTableScanRDD" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraTableScanRDD"></a>
+      <a id="CassandraTableScanRDD:CassandraTableScanRDD"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraTableScanRDD$.html"><span class="name">CassandraTableScanRDD</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CassandraTableScanRDD" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.ClusteringOrder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ClusteringOrder"></a>
+      <a id="ClusteringOrder:ClusteringOrder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ClusteringOrder$.html"><span class="name">ClusteringOrder</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ClusteringOrder" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.CqlWhereClause" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CqlWhereClause"></a>
+      <a id="CqlWhereClause:CqlWhereClause"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CqlWhereClause$.html"><span class="name">CqlWhereClause</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@CqlWhereClause" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.ReadConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReadConf"></a>
+      <a id="ReadConf:ReadConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadConf$.html"><span class="name">ReadConf</span></a><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ReadConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.ValidRDDType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ValidRDDType"></a>
+      <a id="ValidRDDType:ValidRDDType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ValidRDDType$.html"><span class="name">ValidRDDType</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@ValidRDDType" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.rdd.partitioner" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="partitioner"></a>
+      <a id="partitioner:partitioner"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="partitioner/package.html"><span class="name">partitioner</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@partitioner" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Provides components for partitioning a Cassandra table into smaller parts of appropriate size.</p><div class="fullcomment"><div class="comment cmt"><p>Provides components for partitioning a Cassandra table into smaller parts of appropriate size.
+Each partition can be processed locally on at least one cluster node.</p></div></div>
+    </li><li name="com.datastax.spark.connector.rdd.reader" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="reader"></a>
+      <a id="reader:reader"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="reader/package.html"><span class="name">reader</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.rdd.package@reader" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Provides components for reading data rows from Cassandra and converting them to objects of desired type.</p><div class="fullcomment"><div class="comment cmt"><p>Provides components for reading data rows from Cassandra and converting them to objects of desired type.
+Additionally provides a generic <a href="../CassandraRow.html" class="extype" name="com.datastax.spark.connector.CassandraRow">CassandraRow</a> class which can represent any row.</p></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
