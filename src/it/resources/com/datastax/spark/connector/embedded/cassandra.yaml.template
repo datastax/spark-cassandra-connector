@@ -774,7 +774,15 @@ server_encryption_options:
     # More advanced defaults below:
     # protocol: TLS
     # algorithm: SunX509
-    # store_type: JKS
+    #
+    # overrides store_type for keystore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
+    # for file based keystores prefer PKCS12
+    # keystore_type: JKS
+    #
+    # overrides store_type for truststore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
+    # for file based keystores prefer PKCS12
+    # truststore_type: JKS
+    #
     # cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA]
     # require_client_auth: false
 
