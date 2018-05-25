@@ -116,7 +116,7 @@ dependencies {
 
     compileOnly "org.scala-lang.modules:scala-parser-combinators_${scalaLibVersion}:${scalaParserCombinatorsVersion}"
 
-    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${sparkFasterxmlJacksonVersion}") { force = true }
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${scalaLibVersion}:${fasterxmlJacksonVersion}") { force = true }
 
     compile "org.apache.solr:solr-solrj:${solrVersion}"
 
@@ -130,9 +130,9 @@ dependencies {
     testCompile(group: "com.datastax.spark", name: "spark-streaming_${scalaLibVersion}", version: "${sparkVersion}", classifier: 'tests', sparkExcludes)
     testCompile("com.datastax.spark:spark-repl_${scalaLibVersion}:${sparkVersion}", sparkExcludes)
 
-    testRuntime 'log4j:log4j:1.2.17'
-    testRuntime 'org.slf4j:jul-to-slf4j:1.7.16'
-    testRuntime 'org.json4s:json4s-jackson_2.11:3.2.11'
+    testRuntime "log4j:log4j:${log4jVersion}"
+    testRuntime "org.slf4j:jul-to-slf4j:${slf4jVersion}"
+    testRuntime "org.json4s:json4s-jackson_2.11:${json4sJacksonVersion}"
 
 }
 
