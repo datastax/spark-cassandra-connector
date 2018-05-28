@@ -80,7 +80,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val addressOnlyConf = CassandraConnectorConf(hosts = Set(addressOnly))
     val addressAndHostConf = CassandraConnectorConf(hosts = Set(addressAndHost))
 
-    addressOnlyConf.serializedConfString should be (addressAndHostConf.serializedConfString)
+    addressOnlyConf should be (addressAndHostConf)
   }
 
 }
