@@ -39,7 +39,7 @@ class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with Logg
 
     val rdd = findCassandraTableScanRDD(df.queryExecution.sparkPlan).get
 
-    rdd.readConf.readsPerSec should be (9001)
+    rdd.readConf.readsPerSec.get should be (9001)
   }
 
   it should "be readable in SparkSQL case insensitive" in {
@@ -55,7 +55,7 @@ class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with Logg
 
     val rdd = findCassandraTableScanRDD(df.queryExecution.sparkPlan).get
 
-    rdd.readConf.readsPerSec should be (9001)
+    rdd.readConf.readsPerSec.get should be (9001)
     
 
 

@@ -82,7 +82,6 @@ trait CassandraTableRowReaderProvider[R] {
         case AllColumns => tableDef.columns.map(col => col.columnName: ColumnRef)
         case PrimaryKeyColumns => tableDef.primaryKey.map(col => col.columnName: ColumnRef)
         case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: ColumnRef)
-        case PrimaryKeyColumns => tableDef.primaryKey.map(col => col.columnName: ColumnRef)
         case SomeColumns(cs@_*) => checkColumnsExistence(cs)
       }
 

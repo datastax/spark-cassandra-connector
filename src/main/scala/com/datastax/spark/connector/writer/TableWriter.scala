@@ -212,13 +212,22 @@ class TableWriter[T] private (
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
-      val rateLimiter = new RateLimiter((writeConf.throughputMiBPS * 1024 * 1024).toLong, 1024 * 1024)
+
+      val maybeRateLimit: (RichStatement) => Unit = writeConf.throughputMiBPS match {
+        case Some(throughput) =>
+          val rateLimiter = new RateLimiter(
+              (throughput * 1024 * 1024).toLong,
+              1024 * 1024)
+          (stmt: RichStatement) => rateLimiter.maybeSleep(stmt.bytesCount)
+        case None =>
+          (stmt: RichStatement) => Unit
+      }
 
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
 
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(maybeExecutingAs(stmtToWrite, writeConf.executeAs))
-        rateLimiter.maybeSleep(stmtToWrite.bytesCount)
+        maybeRateLimit(stmtToWrite)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()

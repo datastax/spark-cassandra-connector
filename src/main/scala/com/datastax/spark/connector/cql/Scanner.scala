@@ -5,6 +5,7 @@ import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
 import com.datastax.spark.connector.util.maybeExecutingAs
+import com.datastax.spark.connector.writer.RateLimiter
 
 /**
   * Object which will be used in Table Scanning Operations.
@@ -34,8 +35,20 @@ class DefaultScanner (
   override def scan(statement: Statement): ScanResult = {
     val rs = session.execute(maybeExecutingAs(statement, readConf.executeAs))
     val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
-    val iterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
-    ScanResult(iterator, columnMetaData)
+    val prefetchingIterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
+    val rateLimitingIterator = readConf.throughputMiBPS match
+    {
+      case Some(throughput) =>
+        val rateLimiter = new RateLimiter((throughput * 1024 * 1024).toLong, 1024 * 1024)
+        prefetchingIterator.map{ row =>
+          rateLimiter.maybeSleep(getRowBinarySize(row))
+          row
+        }
+      case None =>
+        prefetchingIterator
+    }
+
+    ScanResult(rateLimitingIterator, columnMetaData)
   }
 
   override def getSession(): Session = session
