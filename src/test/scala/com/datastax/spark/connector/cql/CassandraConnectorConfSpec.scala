@@ -22,14 +22,28 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     conf_a should equal (conf_1)
   }
 
-  it should "match a conf with all the same settings but maxConnectionsPerHost" in {
-    val conf_a = CassandraConnectorConf(
-      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "20"))
-    val conf_b = CassandraConnectorConf(
-      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "13"))
+  it should "be equal to a conf with the same settings and different hosts if at least one host is common" in {
+    val addr1 = InetAddress.getByName("127.0.0.1")
+    val addr2 = InetAddress.getByName("127.0.0.2")
+    val addr3 = InetAddress.getByName("127.0.0.3")
 
-    conf_a should equal (conf_b)
+    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
+    val conf2 = CassandraConnectorConf(hosts = Set(addr2, addr3))
+
+    conf1 should equal (conf2)
   }
+
+  it should "not be equal to a conf with the same settings and different hosts if no host is common" in {
+    val addr1 = InetAddress.getByName("127.0.0.1")
+    val addr2 = InetAddress.getByName("127.0.0.2")
+    val addr3 = InetAddress.getByName("127.0.0.3")
+
+    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
+    val conf2 = CassandraConnectorConf(hosts = Set(addr3))
+
+    conf1 shouldNot equal (conf2)
+  }
+
 
   it should "resolve default SSL settings correctly" in {
     val sparkConf = new SparkConf(loadDefaults = false)
