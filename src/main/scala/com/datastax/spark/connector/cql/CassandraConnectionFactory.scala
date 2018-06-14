@@ -57,6 +57,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           .setRefreshNodeIntervalMillis(0)
           .setRefreshNodeListIntervalMillis(0)
           .setRefreshSchemaIntervalMillis(0))
+      .withoutJMXReporting()
+      .withoutMetrics()
 
     if (conf.cassandraSSLConf.enabled) {
       maybeCreateSSLOptions(conf.cassandraSSLConf) match {
