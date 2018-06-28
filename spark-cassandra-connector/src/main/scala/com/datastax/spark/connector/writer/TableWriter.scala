@@ -239,8 +239,16 @@ class TableWriter[T] private (
 
       queryExecutor.waitForCurrentlyExecutingTasks()
 
-      if (!queryExecutor.successful)
-        throw new IOException(s"Failed to write statements to $keyspaceName.$tableName.")
+      queryExecutor.getLatestException().map {
+        case exception =>
+        throw new IOException(
+          s"""Failed to write statements to $keyspaceName.$tableName. The
+             |latest exception was
+             |  ${exception.getMessage}
+             |
+             |Please check the executor logs for more exceptions and information
+          """.stripMargin)
+      }
 
       val duration = updater.finish() / 1000000000d
       logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")

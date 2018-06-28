@@ -122,11 +122,14 @@ class CassandraJoinRDD[L, R] private[connector](
       readConf.throughputJoinQueryPerSec, readConf.throughputJoinQueryPerSec
     )
 
+    val queryExecutor = QueryExecutor(session, None, None)
+    
+
     def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
       val resultFuture = SettableFuture.create[Iterator[(L, R)]]
       val leftSide = Iterator.continually(left)
 
-      val queryFuture = session.executeAsync(bsb.bind(left))
+      val queryFuture = queryExecutor.executeAsync(bsb.bind(left))
       Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
         def onSuccess(rs: ResultSet) {
           val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)

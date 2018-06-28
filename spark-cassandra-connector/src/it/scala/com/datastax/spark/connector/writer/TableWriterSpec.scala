@@ -14,6 +14,7 @@ import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 
 import org.joda.time.DateTime
+import org.apache.spark.SparkException
 
 case class Address(street: String, city: String, zip: Int)
 case class KV(key: Int, value: String)
@@ -196,6 +197,15 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     )
     sc.parallelize(col).saveToCassandra(ks, "key_value")
     verifyKeyValueTable("key_value")
+  }
+
+  it should "pass the exception back to the driver on a write failure" in {
+    val ioException = intercept[SparkException] {
+      sc.parallelize[(Int, Option[Long], String)](Seq((1, None, "Hello")))
+        .saveToCassandra(ks, "key_value")
+      }
+
+    ioException.getMessage should include ("Invalid null value")
   }
 
   it should "write to a table with only partition key and static columns without clustering" in {
