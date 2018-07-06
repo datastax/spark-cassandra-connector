@@ -25,14 +25,15 @@ URL=https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/${S
 JAR=sbt/sbt-launch-${SBT_VERSION}.jar
 
 # Download sbt launch jar if it hasn't been downloaded yet
+echo $URL
 if [ ! -f ${JAR} ]; then
   # Download
   printf "Attempting to fetch sbt\n"
   JAR_DL=${JAR}.part
   if hash curl 2>/dev/null; then
-    curl -f -L --silent ${URL} -o ${JAR_DL} && mv ${JAR_DL} ${JAR}
+    curl -f -L --verbose ${URL} 
   elif hash wget 2>/dev/null; then
-    wget --progress=bar ${URL} -O ${JAR_DL} && mv ${JAR_DL} ${JAR}
+    wget --progress=bar -v ${URL} 
   else
     printf "You do not have curl or wget installed, please install sbt manually from http://www.scala-sbt.org/\n"
     exit -1
