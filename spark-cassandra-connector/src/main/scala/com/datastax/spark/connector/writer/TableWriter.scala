@@ -368,6 +368,10 @@ object TableWriter {
     checkCollectionBehaviors(table, columnRefs)
   }
 
+  /** Columns that cannot actually be written to because they representt virtual endpoints
+    */
+  private val InternalColumns = Set("solr_query")
+
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
@@ -377,7 +381,9 @@ object TableWriter {
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
-    val selectedColumns = columnNames.selectFrom(tableDef)
+    val selectedColumns = columnNames
+      .selectFrom(tableDef)
+      .filter(col => !InternalColumns.contains(col.columnName))
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
