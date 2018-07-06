@@ -1,3 +1,9 @@
+1.6.12
+* Ignore Solr_query when setting up Writing (SPARKC-541)
+* Backport of SPARKC-503 - JWCT Query Throttling (SPARKC-542)
+* Allow Split Count to be passed to CassandraSourceRelation (SPARKC-527)
+* Allow setting spark.cassandra.concurrent.reads in SparkConf (SPARKC-520)
+
 1.6.11
 * SPARKC-318: Nested columns in an MBean cannot be null
 
