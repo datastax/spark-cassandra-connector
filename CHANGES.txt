@@ -1,3 +1,6 @@
+2.0.9
+ * Includes all patches up to 1.6.12
+
 2.0.8
  * Allow non-cluster prefixed options in sqlConf (SPARKC-531)
  * Change Str Literal Match to Be Greedy (SPARKC-532)
