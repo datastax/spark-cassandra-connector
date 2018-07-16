@@ -122,9 +122,7 @@ class CassandraJoinRDD[L, R] (
     leftIterator: Iterator[L],
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)] = {
-    val rateLimiter = new RateLimiter(
-      readConf.readsPerSec, readConf.readsPerSec
-    )
+
 
     val queryExecutor = QueryExecutor(session, readConf.parallelismLevel, None, None)
 
@@ -137,7 +135,10 @@ class CassandraJoinRDD[L, R] (
         def onSuccess(rs: ResultSet) {
           val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
-          val rightSide = iteratorWithMetrics.map(rowReader.read(_, rowMetadata))
+          /* This is a much less than ideal place to actually rate limit, we are buffering
+          these futures this means we will most likely exceed our threshold*/
+          val throttledIterator = iteratorWithMetrics.map(maybeRateLimit)
+          val rightSide = throttledIterator.map(rowReader.read(_, rowMetadata))
           resultFuture.set(leftSide.zip(rightSide))
         }
         def onFailure(throwable: Throwable) {
@@ -150,7 +151,7 @@ class CassandraJoinRDD[L, R] (
 
 
     val queryFutures = leftIterator.map(left => {
-      rateLimiter.maybeSleep(1)
+      requestsPerSecondRateLimiter.maybeSleep(1)
       pairWithRight(left)
     })
 

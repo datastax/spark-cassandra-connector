@@ -8,6 +8,7 @@ import com.datastax.spark.connector.writer.*;
 import org.apache.spark.SparkConf;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import scala.Some$;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -268,11 +269,11 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
          * @return this instance or copy to allow method invocation chaining
          */
         public WriterBuilder withThroughputMBPS(int throughputMBPS) {
-            if (writeConf.throughputMiBPS() != throughputMBPS)
+            if ((Long) writeConf.throughputMiBPS().get() != throughputMBPS)
                 return withWriteConf(
                     new WriteConf(writeConf.batchSize(), writeConf.batchGroupingBufferSize(), writeConf.batchGroupingKey(),
                         writeConf.consistencyLevel(), writeConf.ifNotExists(), writeConf.ignoreNulls(),
-                        writeConf.parallelismLevel(), throughputMBPS, writeConf.ttl(), writeConf.timestamp(),
+                        writeConf.parallelismLevel(), Some$.MODULE$.apply(throughputMBPS), writeConf.ttl(), writeConf.timestamp(),
                         writeConf.taskMetricsEnabled(), writeConf.executeAs()));
             else
               return this;

@@ -46,13 +46,13 @@ class DeprecationSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   it should "deprecate ReadConf" in {
     val readConf = ReadConf.fromSparkConf(conf)
     readConf.fetchSizeInRows should be (2500)
-    readConf.readsPerSec should be (2500)
+    readConf.readsPerSec.get should be (2500)
     readConf.splitSizeInMB should be (2500)
   }
 
   it should "deprecate WriteConf" in {
     val writeConf = WriteConf.fromSparkConf(conf)
-    writeConf.throughputMiBPS should be (2500)
+    writeConf.throughputMiBPS should be (Some(2500.0))
   }
 
   it should "deprecate SoureConf" in {

@@ -5,10 +5,11 @@ import java.util.concurrent.atomic.LongAdder
 
 import scala.concurrent.duration.{FiniteDuration, _}
 
-import com.codahale.metrics.Timer
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.util.ThreadUtils
+
+import com.datastax.spark.connector.cql._
 
 import com.datastax.driver.core.Row
 import com.datastax.spark.connector.rdd.ReadConf
@@ -104,13 +105,6 @@ object InputMetricsUpdater {
     
     private val schedule = scheduledExecutor
         .scheduleAtFixedRate(updateMetricsCmd, interval.toMillis, interval.toMillis, TimeUnit.MILLISECONDS)
-    
-    def getRowBinarySize(row: Row): Int = {
-      var size = 0
-      for (i <- 0 until row.getColumnDefinitions.size() if !row.isNull(i))
-        size += row.getBytesUnsafe(i).remaining()
-      size
-    }
 
     override def updateMetrics(row: Row): Row = {
       cnt.increment()

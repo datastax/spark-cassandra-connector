@@ -31,7 +31,7 @@ case class WriteConf(
   ifNotExists: Boolean = WriteConf.IfNotExistsParam.default,
   ignoreNulls: Boolean = WriteConf.IgnoreNullsParam.default,
   parallelismLevel: Int = WriteConf.ParallelismLevelParam.default,
-  throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
+  throughputMiBPS: Option[Double] = WriteConf.ThroughputMiBPSParam.default,
   ttl: TTLOption = TTLOption.defaultValue,
   timestamp: TimestampOption = TimestampOption.defaultValue,
   taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
@@ -51,7 +51,7 @@ case class WriteConf(
     Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
   }
 
-  val throttlingEnabled = throughputMiBPS < WriteConf.ThroughputMiBPSParam.default
+  val throttlingEnabled = throughputMiBPS.isDefined
 }
 
 
@@ -126,10 +126,10 @@ object WriteConf {
     description = """Maximum number of batches executed in parallel by a
       | single Spark task""".stripMargin)
   
-  val ThroughputMiBPSParam = ConfigParameter[Double] (
+  val ThroughputMiBPSParam = ConfigParameter[Option[Double]] (
     name = "spark.cassandra.output.throughputMBPerSec",
     section = ReferenceSection,
-    default = Int.MaxValue,
+    default = None,
     description = """*(Floating points allowed)* <br> Maximum write throughput allowed
       | per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
       | as seen on a smaller job for stability""".stripMargin)
@@ -196,7 +196,7 @@ object WriteConf {
 
     val parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
 
-    val throughputMiBPS = conf.getDouble(ThroughputMiBPSParam.name, ThroughputMiBPSParam.default)
+    val throughputMiBPS = conf.getOption(ThroughputMiBPSParam.name).map(_.toDouble)
 
     val metricsEnabled = conf.getBoolean(TaskMetricsParam.name, TaskMetricsParam.default)
 

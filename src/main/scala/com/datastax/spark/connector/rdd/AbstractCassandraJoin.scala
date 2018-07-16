@@ -2,14 +2,15 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.Future
 
-import com.datastax.driver.core.{CodecRegistry, PreparedIdWorkaround, PreparedStatement, Session}
+import com.datastax.driver.core._
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
-import com.google.common.util.concurrent.SettableFuture
+
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
@@ -39,6 +40,24 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)]
 
+  val requestsPerSecondRateLimiter = new RateLimiter(
+      readConf.readsPerSec.getOrElse(Integer.MAX_VALUE).toLong,
+      readConf.readsPerSec.getOrElse(Integer.MAX_VALUE).toLong
+    )
+
+  val maybeRateLimit: (Row => Row) = readConf.throughputMiBPS match {
+    case Some(throughput) =>
+      val bytesPerSecond: Long = (throughput * 1024 * 1024).toLong
+      val rateLimiter = new RateLimiter(bytesPerSecond, bytesPerSecond)
+      logDebug(s"Throttling join at $bytesPerSecond bytes per second")
+      (row: Row) => {
+        rateLimiter.maybeSleep(getRowBinarySize(row))
+        row
+      }
+    case None => identity[Row]
+  }
+
+
   lazy val rowWriter = manualRowWriter match {
     case Some(_rowWriter) => _rowWriter
     case None => implicitly[RowWriterFactory[L]].rowWriter(tableDef, joinColumnNames.toIndexedSeq)
@@ -52,8 +71,6 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       tableDef.primaryKey.map(col => col.columnName: ColumnRef)
     case PartitionKeyColumns =>
       tableDef.partitionKey.map(col => col.columnName: ColumnRef)
-    case PrimaryKeyColumns =>
-      tableDef.primaryKey.map(col => col.columnName: ColumnRef)
     case SomeColumns(cs @ _*) =>
       checkColumnsExistence(cs)
       cs.map {

@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
+import com.datastax.spark.connector.writer.WriteConf.{ReferenceSection, ThroughputMiBPSParam}
 import org.apache.spark.SparkConf
 
 /** Read settings for RDD
@@ -22,13 +23,22 @@ case class ReadConf(
   fetchSizeInRows: Int = ReadConf.FetchSizeInRowsParam.default,
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
-  readsPerSec: Int = ReadConf.ReadsPerSecParam.default,
+  throughputMiBPS: Option[Double] = None,
+  readsPerSec: Option[Int] = ReadConf.ReadsPerSecParam.default,
   parallelismLevel: Int = ReadConf.ParallelismLevelParam.default,
   executeAs: Option[String] = None)
 
 
 object ReadConf extends Logging {
   val ReferenceSection = "Read Tuning Parameters"
+
+  val ThroughputMiBPSParam = ConfigParameter[Option[Double]] (
+    name = "spark.cassandra.input.throughputMBPerSec",
+    section = ReferenceSection,
+    default = None,
+    description = """*(Floating points allowed)* <br> Maximum read throughput allowed
+                    | per single core in MB/s. Effects point lookups as well as full
+                    | scans.""".stripMargin)
 
   val SplitSizeInMBParam = ConfigParameter[Int](
     name = "spark.cassandra.input.split.sizeInMB",
@@ -70,12 +80,12 @@ object ReadConf extends Logging {
     description = """Sets whether to record connector specific metrics on write"""
   )
 
-  val ReadsPerSecParam = ConfigParameter[Int] (
+  val ReadsPerSecParam = ConfigParameter[Option[Int]] (
     name = "spark.cassandra.input.readsPerSec",
     section = ReferenceSection,
-    default = Int.MaxValue,
+    default = None,
     description =
-      """Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations"""
+      """Sets max requests or pages per core per second, unlimited by default."""
   )
 
   val DeprecatedReadsPerSecParam = DeprecatedConfigParameter(
@@ -108,7 +118,8 @@ object ReadConf extends Logging {
       consistencyLevel = ConsistencyLevel.valueOf(
         conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
-      readsPerSec = conf.getInt(ReadsPerSecParam.name, ReadsPerSecParam.default),
+      throughputMiBPS = conf.getOption(ThroughputMiBPSParam.name).map(_.toDouble),
+      readsPerSec = conf.getOption(ReadsPerSecParam.name).map(_.toInt),
       parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default)
     )
   }
