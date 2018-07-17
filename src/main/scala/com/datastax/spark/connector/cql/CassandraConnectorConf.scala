@@ -1,15 +1,13 @@
 package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
-import java.util.Arrays
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 
+import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder}
 import org.apache.spark.SparkConf
 
-import com.datastax.bdp.config.ClientConfiguration
-import com.datastax.bdp.transport.common.ServicePrincipal
 import com.datastax.driver.core.ProtocolOptions
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
 
@@ -34,155 +32,28 @@ case class CassandraConnectorConf(
   cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
 ) {
 
-  override def hashCode: Int = {
-    val prime = 31
-    var result = 1
-    result = prime * result + port;
-    result = prime * result + (if (localDC.isEmpty) 0 else localDC.get.hashCode)
-    result = prime * result + keepAliveMillis
-    result = prime * result + minReconnectionDelayMillis
-    result = prime * result + maxReconnectionDelayMillis
-    result = prime * result + queryRetryCount
-    result = prime * result + connectTimeoutMillis
-    result = prime * result + readTimeoutMillis
-    result = prime * result + connectionFactory.getClass.getCanonicalName.hashCode
-    result = prime * result + compression.ordinal()
-    result = prime * result + cassandraSSLConf.hashCode()
-    result = prime * result + authConfHashcode
-    return result
-  }
+  // For hashCode and equals we use a copy of CassandraConnectorConf with reset those properties which should be
+  // excluded from comparisons and hashCode. We could also explicitly mention those fields as excluded in calls to
+  // reflectionHashCode or reflectionEquals. However in this case we would have to mention those fields as strings
+  // and compiler would not notify us that they are missing if we change something in connector configuration
+  // and the errors could be difficult to figure out.
+
+  @transient
+  private lazy val comparableConf: CassandraConnectorConf = this.copy(
+    hosts = Set.empty,
+    localConnectionsPerExecutor = None,
+    minRemoteConnectionsPerExecutor = None,
+    maxRemoteConnectionsPerExecutor = None)
+
+  override def hashCode: Int = HashCodeBuilder.reflectionHashCode(comparableConf, false)
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: CassandraConnectorConf =>
-        that.hosts.map(_.getHostAddress).intersect(this.hosts.map(_.getHostAddress)).nonEmpty &&
-        that.port == this.port &&
-        equals(that.authConf, this.authConf) &&
-        that.localDC == this.localDC &&
-        that.keepAliveMillis == this.keepAliveMillis &&
-        that.minReconnectionDelayMillis == this.minReconnectionDelayMillis &&
-        that.maxReconnectionDelayMillis == this.maxReconnectionDelayMillis &&
-        that.queryRetryCount == this.queryRetryCount &&
-        that.connectTimeoutMillis == this.connectTimeoutMillis &&
-        that.readTimeoutMillis == this.readTimeoutMillis &&
-        that.cassandraSSLConf.enabled == this.cassandraSSLConf.enabled &&
-        that.cassandraSSLConf.keyStoreType == this.cassandraSSLConf.keyStoreType &&
-        that.cassandraSSLConf.keyStorePassword == this.cassandraSSLConf.keyStorePassword &&
-        that.cassandraSSLConf.keyStorePath == this.cassandraSSLConf.keyStorePath &&
-        that.cassandraSSLConf.trustStorePath == this.cassandraSSLConf.trustStorePath &&
-        that.cassandraSSLConf.trustStoreType == this.cassandraSSLConf.trustStoreType &&
-        that.cassandraSSLConf.trustStorePassword == this.cassandraSSLConf.trustStorePassword &&
-        that.cassandraSSLConf.clientAuthEnabled == this.cassandraSSLConf.clientAuthEnabled &&
-        that.cassandraSSLConf.protocol == this.cassandraSSLConf.protocol &&
-        that.cassandraSSLConf.enabledAlgorithms == this.cassandraSSLConf.enabledAlgorithms &&
-        that.connectionFactory.getClass.getCanonicalName == this.connectionFactory.getClass.getCanonicalName &&
-        that.compression.ordinal() == this.compression.ordinal()
+      case that: CassandraConnectorConf if hashCode == that.hashCode =>
+        EqualsBuilder.reflectionEquals(this.comparableConf, that.comparableConf, false) && 
+          (hosts == that.hosts || (hosts & that.hosts).nonEmpty)
       case _ => false
     }
-  }
-
-  private def equals(that: AuthConf, thisAuth: AuthConf): Boolean = {
-    that match {
-      case PasswordAuthConf(user, password) => thisAuth match {
-        case PasswordAuthConf(thisUser, thisPassword) => if (user == thisUser && password == thisPassword) true else false
-        case _ => false
-      }
-      case DsePasswordAuthConf(user, password) => thisAuth match {
-        case DsePasswordAuthConf(thisUser, thisPassword) => if (user == thisUser && password == thisPassword) true else false
-        case _ => false
-      }
-      case NoAuthConf => thisAuth match {
-        case NoAuthConf => true
-        case _ => false
-      }
-      case DseAnalyticsKerberosAuthConf => thisAuth match {
-        case DseAnalyticsKerberosAuthConf => true
-        case _ => false
-      }
-      case DseInClusterAuthConf(credentials) => thisAuth match {
-        case DseInClusterAuthConf(thisCredentials) =>
-          if (Arrays.equals(credentials.password, thisCredentials.password) &&
-              credentials.id.code == thisCredentials.id.code &&
-              credentials.id.username == thisCredentials.id.username) {
-            true
-          } else {
-            false
-          }
-        case _ => false
-      }
-      case ByosAuthConf(clientConfig, tokenStr, credentials) => thisAuth match {
-        case ByosAuthConf(thisClientConfig, thisTokenStr, thisCredentials) =>
-          if (tokenStr == thisTokenStr && credentials == thisCredentials && equals(clientConfig, thisClientConfig)) true else false
-        case _ => false
-      }
-      case _ => true
-    }
-  }
-
-  private def equals(that: ClientConfiguration, thisClientConf: ClientConfiguration): Boolean = {
-    that == null && thisClientConf == null || that != null && thisClientConf != null &&
-    that.isKerberosDefaultScheme == thisClientConf.isKerberosDefaultScheme &&
-    that.isKerberosEnabled == thisClientConf.isKerberosEnabled &&
-    that.isSslEnabled == thisClientConf.isSslEnabled &&
-    that.isSslOptional == thisClientConf.isSslOptional &&
-    that.getAdvancedReplicationDirectory == thisClientConf.getAdvancedReplicationDirectory &&
-    that.getCassandraHost.getHostAddress == thisClientConf.getCassandraHost.getHostAddress &&
-    that.getCdcRawDirectory == thisClientConf.getCdcRawDirectory &&
-    that.getCassandraHosts.toSet == thisClientConf.getCassandraHosts.toSet &&
-    (that.getCipherSuites != null && thisClientConf.getCipherSuites != null &&
-        that.getCipherSuites.toSet == thisClientConf.getCipherSuites.toSet ||
-        that.getCipherSuites == null && thisClientConf == null) &&
-    that.getDseFsPort == thisClientConf.getDseFsPort &&
-    equals(that.getDseServicePrincipal, thisClientConf.getDseServicePrincipal) &&
-    equals(that.getHttpServicePrincipal, thisClientConf.getHttpServicePrincipal) &&
-    that.getNativePort == thisClientConf.getNativePort &&
-    that.getPartitionerClassName == thisClientConf.getPartitionerClassName &&
-    that.getSaslProtocolName == thisClientConf.getSaslProtocolName &&
-    that.getSslAlgorithm == thisClientConf.getSslAlgorithm &&
-    that.getSaslQop == thisClientConf.getSaslQop &&
-    that.getSslKeystorePassword == thisClientConf.getSslKeystorePassword &&
-    that.getSslKeystorePath == thisClientConf.getSslKeystorePath &&
-    that.getSslKeystoreType == thisClientConf.getSslKeystoreType &&
-    that.getSslProtocol == thisClientConf.getSslProtocol &&
-    that.getSslTruststorePassword == thisClientConf.getSslTruststorePassword &&
-    that.getSslTruststorePath == thisClientConf.getSslTruststorePath &&
-    that.getSslTruststoreType == thisClientConf.getSslTruststoreType
-  }
-
-  private def equals(that: ServicePrincipal, thisPrincipal: ServicePrincipal): Boolean = {
-    that == null && thisPrincipal == null ||
-    that != null && thisPrincipal != null &&
-        that.host == thisPrincipal.host &&
-        that.realm == thisPrincipal.realm &&
-        that.service == thisPrincipal.service
-  }
-
-  private def authConfHashcode(): Int = {
-    val prime = 31
-    var result = 1
-    authConf match {
-      case PasswordAuthConf(user, password) =>
-        result = prime * result + "PasswordAuthConf".hashCode
-        result = prime * result + user.hashCode
-        result = prime * result + password.hashCode
-      case DsePasswordAuthConf(user, password) =>
-        result = prime * result + "DsePasswordAuthConf".hashCode
-        result = prime * result + user.hashCode
-        result = prime * result + password.hashCode
-      case NoAuthConf => result = prime * result + "NoAuthConf".hashCode
-      case DseAnalyticsKerberosAuthConf => result = prime * result + "DseAnalyticsKerberosAuthConf".hashCode
-      case DseInClusterAuthConf(credentials) =>
-        result = prime * result + "DseInClusterAuthConf".hashCode
-        result = prime * result + credentials.id.code.hashCode
-        result = prime * result + credentials.id.username.hashCode
-        result = prime * result + Arrays.hashCode(credentials.password)
-      case ByosAuthConf(clientConfig, tokenStr, credentials) =>
-        result = prime * result + "ByosAuthConf".hashCode
-        result = prime * result + (if (tokenStr.isEmpty) 0 else tokenStr.get.hashCode)
-        result = prime * result + (if (credentials.isEmpty) 0 else credentials.get._1.hashCode)
-        result = prime * result + (if (credentials.isEmpty) 0 else credentials.get._2.hashCode)
-    }
-    result
   }
 }
 

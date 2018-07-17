@@ -1,23 +1,15 @@
 package com.datastax.spark.connector.cql
 
-import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-
 import com.datastax.driver.core.{AuthProvider, PlainTextAuthProvider}
-import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
+import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 import org.apache.spark.SparkConf
-
-import com.datastax.bdp.cassandra.auth.InClusterAuthenticator.Credentials
-import com.datastax.bdp.cassandra.auth.{DseJavaDriverAuthProvider, InClusterAuthProvider}
-import com.datastax.bdp.config.{ClientConfiguration, ClientConfigurationFactory}
-import com.datastax.driver.dse.auth.DsePlainTextAuthProvider
 
 /** Stores credentials used to authenticate to a Cassandra cluster and uses them
   * to configure a Cassandra connection.
   * This driver provides implementations [[NoAuthConf]] for no authentication
   * and [[PasswordAuthConf]] for password authentication. Other authentication
   * configurators can be plugged in by setting `cassandra.authentication.conf.factory.class`
-  * option. See [[AuthConfFactory]].
-  * If you add new AuthConf, please also update [[CassandraConnectorConf]] compare auth method*/
+  * option. See [[AuthConfFactory]]. */
 trait AuthConf extends Serializable {
 
   /** Returns auth provider to be passed to the `Cluster.Builder` object. */
@@ -32,50 +24,6 @@ case object NoAuthConf extends AuthConf {
 /** Performs plain-text password authentication. Use with `PasswordAuthenticator` in Cassandra. */
 case class PasswordAuthConf(user: String, password: String) extends AuthConf {
   override def authProvider = new PlainTextAuthProvider(user, password)
-}
-
-case object DseAnalyticsKerberosAuthConf extends AuthConf {
-  override def authProvider: AuthProvider = {
-    new DseJavaDriverAuthProvider()
-  }
-}
-
-case class DsePasswordAuthConf(user: String, password: String) extends AuthConf {
-  override def authProvider = new DsePlainTextAuthProvider(user, password)
-}
-
-/** [[AuthConf]] implementation which uses [[InClusterAuthProvider]] to authenticate.
-  *
-  * @param credentials credentials to be used to authenticate
-  */
-case class DseInClusterAuthConf(credentials: Credentials) extends AuthConf with Logging {
-  logInfo(s"Creating DseInClusterAuthConf")
-
-  override def authProvider: AuthProvider = {
-    val clientConfiguration = ClientConfigurationFactory.getYamlClientConfiguration
-    new InClusterAuthProvider(credentials, clientConfiguration)
-  }
-}
-
-case class ByosAuthConf(
-    clientConfig: ClientConfiguration,
-    tokenStr: Option[String] = None,
-    credentials: Option[(String, String)] = None) extends AuthConf {
-
-  override def authProvider: AuthProvider = {
-    (credentials, tokenStr) match {
-      case (Some((username, password)), _) =>
-        new DsePlainTextAuthProvider(username, password)
-
-      case (_, Some(_tokenStr)) =>
-        val token = new Token[TokenIdentifier]()
-        token.decodeFromUrlString(_tokenStr)
-        new DseJavaDriverAuthProvider(clientConfig, token)
-
-      case _ =>
-        AuthProvider.NONE
-    }
-  }
 }
 
 /** Obtains authentication configuration by reading  [[org.apache.spark.SparkConf SparkConf]] object. */

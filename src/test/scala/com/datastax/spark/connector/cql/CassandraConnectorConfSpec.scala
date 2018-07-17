@@ -3,10 +3,15 @@ package com.datastax.spark.connector.cql
 import java.net.InetAddress
 
 import scala.language.postfixOps
+import scala.reflect.runtime.universe._
 
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
+
+import com.datastax.bdp.test.ng.{DataGenerator, ToString}
+import com.datastax.spark.connector.rdd.DummyFactory
+import com.datastax.spark.connector.util.CustomConnectionFactory
 
 class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
@@ -19,31 +24,17 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val conf_a = CassandraConnectorConf(new SparkConf)
     val conf_1 = CassandraConnectorConf(new SparkConf)
 
-    conf_a should equal (conf_1)
+    conf_a should equal(conf_1)
   }
 
-  it should "be equal to a conf with the same settings and different hosts if at least one host is common" in {
-    val addr1 = InetAddress.getByName("127.0.0.1")
-    val addr2 = InetAddress.getByName("127.0.0.2")
-    val addr3 = InetAddress.getByName("127.0.0.3")
+  it should "match a conf with all the same settings but maxConnectionsPerHost" in {
+    val conf_a = CassandraConnectorConf(
+      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "20"))
+    val conf_b = CassandraConnectorConf(
+      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "13"))
 
-    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
-    val conf2 = CassandraConnectorConf(hosts = Set(addr2, addr3))
-
-    conf1 should equal (conf2)
+    conf_a should equal(conf_b)
   }
-
-  it should "not be equal to a conf with the same settings and different hosts if no host is common" in {
-    val addr1 = InetAddress.getByName("127.0.0.1")
-    val addr2 = InetAddress.getByName("127.0.0.2")
-    val addr3 = InetAddress.getByName("127.0.0.3")
-
-    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
-    val conf2 = CassandraConnectorConf(hosts = Set(addr3))
-
-    conf1 shouldNot equal (conf2)
-  }
-
 
   it should "resolve default SSL settings correctly" in {
     val sparkConf = new SparkConf(loadDefaults = false)
@@ -72,7 +63,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     sparkConf.set(CassandraConnectorConf.SSLClientAuthEnabledParam.name, "true")
     sparkConf.set(CassandraConnectorConf.SSLKeyStorePathParam.name, "/etc/keys/.keystore")
     sparkConf.set(CassandraConnectorConf.SSLKeyStorePasswordParam.name, "secret")
-    sparkConf.set(CassandraConnectorConf.SSLKeyStoreTypeParam.name,  "JCEKS")
+    sparkConf.set(CassandraConnectorConf.SSLKeyStoreTypeParam.name, "JCEKS")
 
     val connConf = CassandraConnectorConf(sparkConf)
     connConf.cassandraSSLConf.enabled shouldBe true
@@ -94,7 +85,42 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val addressOnlyConf = CassandraConnectorConf(hosts = Set(addressOnly))
     val addressAndHostConf = CassandraConnectorConf(hosts = Set(addressAndHost))
 
-    addressOnlyConf should be (addressAndHostConf)
+    addressOnlyConf should be(addressAndHostConf)
   }
 
+  it should "be equal to a conf with the same settings and different hosts if at least one host is common" in {
+    val addr1 = InetAddress.getByName("127.0.0.1")
+    val addr2 = InetAddress.getByName("127.0.0.2")
+    val addr3 = InetAddress.getByName("127.0.0.3")
+
+    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
+    val conf2 = CassandraConnectorConf(hosts = Set(addr2, addr3))
+
+    conf1 should equal(conf2)
+  }
+
+  it should "not be equal to a conf with the same settings and different hosts if no host is common" in {
+    val addr1 = InetAddress.getByName("127.0.0.1")
+    val addr2 = InetAddress.getByName("127.0.0.2")
+    val addr3 = InetAddress.getByName("127.0.0.3")
+
+    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
+    val conf2 = CassandraConnectorConf(hosts = Set(addr3))
+
+    conf1 shouldNot equal(conf2)
+  }
+
+  it should "be equals for the same settings" in {
+    val gen = new DataGenerator().registerCustomCasesGeneators {
+      case (_, t) if t =:= typeOf[AuthConf] => gen => Iterator(NoAuthConf) ++ gen.generate[PasswordAuthConf]()
+      case (_, t) if t =:= typeOf[CassandraConnectionFactory] => gen => Iterator(CustomConnectionFactory, DefaultConnectionFactory, DummyFactory)
+    }
+    val cases = gen.generate[CassandraConnectorConf]()
+    for (c <- cases) {
+      withClue(s"Comparing ${ToString.toStringWithNames(c)} failed") {
+        val duplicate = SerializationUtils.roundtrip(c)
+        duplicate shouldBe c
+      }
+    }
+  }
 }
