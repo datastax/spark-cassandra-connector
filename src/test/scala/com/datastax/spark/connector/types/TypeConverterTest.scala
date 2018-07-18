@@ -9,13 +9,11 @@ import java.util.{Date, GregorianCalendar, UUID}
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
 import org.junit.Test
-
-import com.datastax.driver.core.LocalDate
+import com.datastax.driver.core.{Duration, LocalDate}
 import com.datastax.spark.connector.testkit._
 
 class TypeConverterTest {
@@ -653,6 +651,7 @@ class TypeConverterTest {
     assertEquals(TypeConverter.JavaLocalDateConverter, TypeConverter.forType(classOf[java.time.LocalDate]))
     assertEquals(TypeConverter.JavaLocalTimeConverter, TypeConverter.forType(classOf[java.time.LocalTime]))
     assertEquals(TypeConverter.JavaDurationConverter, TypeConverter.forType(classOf[java.time.Duration]))
+    assertEquals(TypeConverter.DurationConverter, TypeConverter.forType(classOf[Duration]))
     assertEquals(TypeConverter.JavaInstantConverter, TypeConverter.forType(classOf[java.time.Instant]))
     assertEquals(TypeConverter.StringConverter, TypeConverter.forType(classOf[java.lang.String]))
     assertEquals(TypeConverter.UUIDConverter, TypeConverter.forType(classOf[java.util.UUID]))
