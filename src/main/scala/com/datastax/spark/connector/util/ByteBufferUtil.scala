@@ -2,6 +2,7 @@ package com.datastax.spark.connector.util
 
 import java.nio.ByteBuffer
 
+// TODO: Remove, a duplicate of ByteBufferUtil in dse-commons
 object ByteBufferUtil {
 
   /** Copies the remaining bytes of the buffer into the given array, starting from offset zero.

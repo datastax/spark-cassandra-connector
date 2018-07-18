@@ -36,6 +36,11 @@ sourceSets {
 }
 
 dependencies {
+    compile project(':dse-hadoop2-client')
+    // Note that this dependency is required to compile BulkTableWriter
+    // We do not assume db-all is on classpath, but if someone wants to use BulkTableWriter,
+    // they have to explicitly add that dependency to Spark application
+    compileOnly (project(':dse-db')) { transitive = false }
 
     def commonExcludes = {
         exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
@@ -77,6 +82,7 @@ dependencies {
     compileOnly("org.scala-lang:scala-compiler:${scalaVersion}") { force = true }
     compile("org.scala-lang:scala-library:${scalaVersion}") { force = true }
     compile("org.scala-lang:scala-reflect:${scalaVersion}") { force = true }
+    compile("com.typesafe.scala-logging:scala-logging_${scalaLibVersion}:${scalaLoggingVersion}")
 
     compile "com.datastax.dse:dse-java-driver-core:${cassandraDseJavaDriverVersion}"
     compile "com.datastax.dse:dse-java-driver-mapping:${cassandraDseJavaDriverVersion}"
@@ -119,10 +125,8 @@ dependencies {
 
     compile "org.apache.solr:solr-solrj:${solrVersion}"
 
-    testCompile(project(':dse-core'))
-    testCompile(project(path: ':dse-core', configuration: 'testOutput'))
-
     testCompile(project(':dse-spark'))
+    testCompile(project(path: ':dse-core', configuration: 'testOutput'))
     testCompile(project(path: ':dse-spark', configuration: 'testOutput'))
 
     testCompile(project(':dse-analytics-core'))

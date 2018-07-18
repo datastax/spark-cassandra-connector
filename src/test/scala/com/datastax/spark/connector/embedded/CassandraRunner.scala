@@ -45,6 +45,7 @@ private[connector] class CassandraRunner(
   private val javaBin = System.getProperty("java.home") + "/bin/java"
   private val cassandraConfProperty = "-Dcassandra.config=file:" + confFile.toString
   private val superuserSetupDelayProperty = "-Dcassandra.superuser_setup_delay_ms=0"
+  private val stabilityAttemptsProperty = "-Ddse.stabilityAttempts=0"
   private val jmxPortProperty = s"-Dcassandra.jmx.local.port=${baseConfiguration.jmxPort}"
   private val sizeEstimatesUpdateIntervalProperty =
     s"-Dcassandra.size_recorder_interval=$SizeEstimatesUpdateIntervalInSeconds"
@@ -70,7 +71,7 @@ private[connector] class CassandraRunner(
   private val processArgs = List(javaBin,
     "-Xms512M", "-Xmx1G", "-Xmn384M", "-XX:OnOutOfMemoryError=kill -9 %p",
     javaLibraryPath,
-    sizeEstimatesUpdateIntervalProperty,
+    sizeEstimatesUpdateIntervalProperty, stabilityAttemptsProperty,
     cassandraConfProperty, jammAgentProperty, superuserSetupDelayProperty, jmxPortProperty,
     logConfigFileProperty, "-cp", classPath) ++ java11Args ++ List(cassandraMainClass, "-f")
 

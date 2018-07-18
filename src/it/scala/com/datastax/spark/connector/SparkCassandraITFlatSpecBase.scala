@@ -9,16 +9,23 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import org.apache.commons.lang3.StringUtils
 import org.scalatest._
 import org.scalatest.concurrent.Eventually._
-
-import com.datastax.driver.core.{ProtocolVersion, Session}
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.testkit.{AbstractSpec, SharedEmbeddedCassandra}
-import com.datastax.spark.connector.util.SerialShutdownHooks
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.time.{Seconds, Span}
 
 import com.datastax.bdp.test.ng.DseScalaTestBase
+import com.datastax.bdp.transport.client.HadoopBasedClientConfiguration
+import com.datastax.driver.core.{ProtocolVersion, Session}
+import com.datastax.spark.connector.DseConfiguration._
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.embedded.SparkTemplate
+import com.datastax.spark.connector.testkit.{AbstractSpec, SharedEmbeddedCassandra}
 
+trait DseITFlatSpecBase extends SparkCassandraITFlatSpecBase {
+  HadoopBasedClientConfiguration.setAsClientConfigurationImpl()
+  val numThreads: Int = 4
+  val sparkConf = defaultConf
+    .enableDseSupport()
+    .setMaster(s"local[$numThreads]")
+}
 
 trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase {
   override def report(message: String): Unit = info
@@ -34,31 +41,31 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
 
   def getKsName = {
     val className = this.getClass.getSimpleName
-    val suffix =  StringUtils.splitByCharacterTypeCamelCase(className.filter(_.isLetterOrDigit)).mkString("_")
+    val suffix = StringUtils.splitByCharacterTypeCamelCase(className.filter(_.isLetterOrDigit)).mkString("_")
     s"test_$suffix".toLowerCase()
   }
 
   def conn: CassandraConnector = ???
+
   def pv = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
 
-  def report(message:String): Unit = {}
+  def report(message: String): Unit = {}
 
   val ks = getKsName
 
   def skipIfProtocolVersionGTE(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
     if (!(pv.toInt >= protocolVersion.toInt)) f
-      else report (s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
+    else report(s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
   }
 
   def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
     if (!(pv.toInt < protocolVersion.toInt)) f
-      else report (s"Skipped Because ProtocolVersion $pv < $protocolVersion")
+    else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
   }
 
   implicit val ec = SparkCassandraITSpecBase.ec
 
   def awaitAll(units: Future[Unit]*): Unit = {
-    implicit val ec = scala.concurrent.ExecutionContext.global
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
@@ -79,8 +86,8 @@ trait SparkCassandraITSpecBase extends Suite with Matchers with SharedEmbeddedCa
     * an issue with some schema debouncing.
     */
   def awaitTables(tableNames: String*): Unit = {
-    eventually (timeout(Span(2, Seconds))) {
-      conn.withSessionDo( session =>
+    eventually(timeout(Span(2, Seconds))) {
+      conn.withSessionDo(session =>
         session
           .getCluster
           .getMetadata
