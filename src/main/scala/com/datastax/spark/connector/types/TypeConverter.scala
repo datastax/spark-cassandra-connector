@@ -70,7 +70,6 @@ class ChainedTypeConverter[T](converters: TypeConverter[T]*) extends NullableTyp
 object TypeConverter {
 
   lazy val defaultTimezone = TimeZone.getDefault
-  private lazy val millisecondsOfDay = 24 * 60 * 60 * 1000
 
   private val AnyTypeTag = implicitly[TypeTag[Any]]
 
@@ -503,9 +502,7 @@ object TypeConverter {
     override def convertPF = {
       case x: Duration => x
       case x: String => TypeCodec.duration().parse(x)
-      case x: Long => val days = x / millisecondsOfDay
-        val milliseconds = x - days * millisecondsOfDay
-        Duration.newInstance(0, days.toInt, 1000000 * milliseconds)
+      case x: Long => Duration.newInstance(0, 0, x)
     }
   }
 
