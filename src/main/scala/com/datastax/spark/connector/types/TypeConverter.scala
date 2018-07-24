@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.types
 
+import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
@@ -10,8 +11,10 @@ import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
+
 import org.apache.commons.lang3.tuple
 import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
+
 import com.datastax.driver.core.{DataType, Duration, LocalDate, TypeCodec}
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
@@ -241,13 +244,17 @@ object TypeConverter {
 
     def convertPF = {
       case x: Date => TimestampFormatter.format(x)
-      case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
+      case x: Array[Byte] => byteArrayToString(x)
+      case x: ByteBuffer => byteArrayToString(ByteBufferUtil.toArray(x))
       case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
       case x: Any => x.toString
     }
   }
+
+  private def byteArrayToString (x: Array[Byte])  = "0x" + x.map("%02x" format _).mkString
+  private def stringToByteArray (x: String)  = new BigInteger(x.substring(2), 16).toByteArray
 
   private val ByteBufferTypeTag = implicitly[TypeTag[ByteBuffer]]
 
@@ -257,6 +264,7 @@ object TypeConverter {
     def convertPF = {
       case x: ByteBuffer => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
+      case x: String => ByteBuffer.wrap(stringToByteArray(x))
     }
   }
 
@@ -268,6 +276,8 @@ object TypeConverter {
     def convertPF = {
       case x: Array[Byte] => x
       case x: ByteBuffer => ByteBufferUtil.toArray(x)
+      case x: String => stringToByteArray(x)
+
     }
   }
 
@@ -443,6 +453,7 @@ object TypeConverter {
     def convertPF = {
       case x: Date => TimeUnit.MILLISECONDS.toNanos(x.getTime)
       case x: Long => x.toLong
+      case x: String => x.toLong
     }
   }
 
