@@ -2,10 +2,13 @@ package com.datastax.spark.connector.embedded
 
 import java.io.File
 
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
+
+import scala.util.Try
 
 trait SparkTemplate {
   /** Obtains the active [[org.apache.spark.SparkContext SparkContext]] object. */
@@ -21,6 +24,26 @@ trait SparkTemplate {
     SparkTemplate.useSparkConf(conf, force)
 
   def defaultConf = SparkTemplate.defaultConf
+
+  /**
+    * Creates CassandraHiveMetastore and returns SparkConf to connect to it
+    */
+  def metastoreConf:SparkConf = {
+    CassandraConnector(defaultConf).withSessionDo { session =>
+      session.execute(
+        """
+          |CREATE KEYSPACE IF NOT EXISTS "HiveMetaStore" WITH REPLICATION =
+          |{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; """
+          .stripMargin)
+      session.execute(
+        """CREATE TABLE IF NOT EXISTS "HiveMetaStore"."sparkmetastore"
+          |(key text,
+          |entity text,
+          |value blob,
+          |PRIMARY KEY (key, entity))""".stripMargin)
+    }
+    defaultConf.setAll(SparkTemplate.HiveMetastoreConfig)
+  }
 }
 
 object SparkTemplate {
@@ -36,6 +59,14 @@ object SparkTemplate {
     .set("spark.cleaner.ttl", "3600")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[2]"))
     .setAppName("Test")
+
+  val HiveMetastoreConfig: Map[String, String] = Map (
+    "spark.hadoop.hive.metastore.rawstore.impl" -> "com.datastax.bdp.hadoop.hive.metastore.CassandraHiveMetaStore",
+    "spark.hadoop.cassandra.autoCreateHiveSchema" -> "true",
+    "spark.hadoop.spark.enable" -> "true",
+    "spark.hadoop.cassandra.connection.metaStoreColumnFamilyName" -> "sparkmetastore",
+    "spark.sql.catalogImplementation" -> "hive"
+  )
 
   def defaultConf = _defaultConf.clone()
 
