@@ -12,7 +12,7 @@ import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
 import org.apache.commons.lang3.tuple
 import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
-import com.datastax.driver.core.LocalDate
+import com.datastax.driver.core.{DataType, Duration, LocalDate, TypeCodec}
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
@@ -492,6 +492,20 @@ object TypeConverter {
     }
   }
 
+  private val DurationTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[Duration]]
+  }
+
+  implicit object DurationConverter extends NullableTypeConverter[Duration] {
+    def targetTypeTag = DurationTypeTag
+
+    override def convertPF = {
+      case x: Duration => x
+      case x: String => TypeCodec.duration().parse(x)
+      case x: Long => Duration.newInstance(0, 0, x)
+    }
+  }
+
   private val JavaInstantTypeTag = implicitly[TypeTag[java.time.Instant]]
 
   implicit object JavaInstantConverter extends NullableTypeConverter[java.time.Instant] {
@@ -514,7 +528,7 @@ object TypeConverter {
       implicit val vTag = vc.targetTypeTag
       implicitly[TypeTag[(K, V)]]
     }
-    
+
     def convertPF = {
       case TupleValue(k, v) => (kc.convert(k), vc.convert(v))
       case (k, v) => (kc.convert(k), vc.convert(v))
@@ -538,7 +552,7 @@ object TypeConverter {
 
     def convertPF = {
       case TupleValue(a1, a2, a3) => (c1.convert(a1), c2.convert(a2), c3.convert(a3))
-      case (a1, a2, a3) => (c1.convert(a1), c2.convert(a2), c3.convert(a3)) 
+      case (a1, a2, a3) => (c1.convert(a1), c2.convert(a2), c3.convert(a3))
     }
   }
 
@@ -887,6 +901,7 @@ object TypeConverter {
     JavaLocalDateConverter,
     JavaLocalTimeConverter,
     JavaDurationConverter,
+    DurationConverter,
     JavaInstantConverter
   )
 

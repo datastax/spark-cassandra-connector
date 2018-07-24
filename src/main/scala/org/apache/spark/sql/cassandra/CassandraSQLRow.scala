@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.sql.Timestamp
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.Row
+import com.datastax.driver.core.{Duration, Row, TypeCodec}
 import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
@@ -75,6 +75,7 @@ object CassandraSQLRow {
       case localDate: java.time.LocalDate => java.sql.Date.valueOf(localDate)
       case localTime: java.time.LocalTime => localTime.toNanoOfDay.asInstanceOf[AnyRef]
       case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
+      case duration: Duration => TypeCodec.duration().format(duration)
       case instant: java.time.Instant => new java.sql.Timestamp(instant.toEpochMilli)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
@@ -101,6 +102,7 @@ object CassandraSQLRow {
       case localDate: java.time.LocalDate => localDate.toEpochDay.asInstanceOf[AnyRef]
       case localTime: java.time.LocalTime => localTime.toNanoOfDay.asInstanceOf[AnyRef]
       case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
+      case duration: Duration => TypeCodec.duration().format(duration)
       case instant: java.time.Instant => instant.toEpochMilli.asInstanceOf[AnyRef]
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)

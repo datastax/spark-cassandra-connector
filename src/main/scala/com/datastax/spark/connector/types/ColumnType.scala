@@ -83,7 +83,8 @@ object ColumnType {
     DataType.blob() -> BlobType,
     DataType.counter() -> CounterType,
     DataType.date() -> DateType,
-    DataType.time() -> TimeType
+    DataType.time() -> TimeType,
+    DataType.duration() -> DurationType
   )
 
   lazy val customDriverConverter: Option[CustomDriverConverter] = {

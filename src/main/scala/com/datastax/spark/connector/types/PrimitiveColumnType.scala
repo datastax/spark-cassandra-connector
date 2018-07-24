@@ -2,13 +2,12 @@ package com.datastax.spark.connector.types
 
 
 import scala.reflect.runtime.universe.TypeTag
-
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.util.{UUID, Date}
+import java.util.{Date, UUID}
 
-
-import com.datastax.driver.core.LocalDate
+import com.datastax.driver.core.{Duration, LocalDate}
+import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
   def isCollection = false
@@ -157,4 +156,11 @@ case object TimeType extends PrimitiveColumnType[Long] {
   def cqlTypeName = "time"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
+}
+
+case object DurationType extends PrimitiveColumnType[Duration] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Duration]] }
+  def cqlTypeName = "DurationType"
+  def converterToCassandra =
+    new OptionToNullConverter(TypeConverter.forType[Duration])
 }
