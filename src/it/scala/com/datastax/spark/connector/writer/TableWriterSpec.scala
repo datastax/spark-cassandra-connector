@@ -46,6 +46,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
       },
       Future {
+        session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, solr_query TEXT, PRIMARY KEY (key))""")
+      },
+      Future {
         session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
       },
       Future {
@@ -108,9 +111,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       val result = session.execute(s"""SELECT * FROM $ks.""" + tableName).all()
       result should have size 3
       for (row <- result) {
-        Some(row.getInt(0)) should contain oneOf(1, 2, 3)
-        Some(row.getLong(1)) should contain oneOf(1, 2, 3)
-        Some(row.getString(2)) should contain oneOf("value1", "value2", "value3")
+        Some(row.getInt("key")) should contain oneOf(1, 2, 3)
+        Some(row.getLong("group")) should contain oneOf(1, 2, 3)
+        Some(row.getString("value")) should contain oneOf("value1", "value2", "value3")
       }
     }
   }
@@ -120,6 +123,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
     verifyKeyValueTable("key_value")
+  }
+
+  it should "write to a table with a solr_query containing table without requiring that column" in {
+    val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
+    sc.parallelize(col).saveToCassandra(ks, "solr_query")
+    verifyKeyValueTable("solr_query")
   }
 
   it should "write RDD of tuples to a new table" in {
