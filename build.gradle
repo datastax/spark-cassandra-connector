@@ -123,6 +123,12 @@ dependencies {
     testCompile(project(':dse-core'))
     testCompile(project(path: ':dse-core', configuration: 'testOutput'))
 
+    testCompile(project(':dse-spark'))
+    testCompile(project(path: ':dse-spark', configuration: 'testOutput'))
+
+    testCompile(project(':dse-analytics-core'))
+    testCompile(project(path: ':dse-analytics-core', configuration: 'testOutput'))
+
     testCompile "org.scalacheck:scalacheck_${scalaLibVersion}:${scalaCheckVersion}"
     testCompile "org.scalamock:scalamock-scalatest-support_${scalaLibVersion}:${scalaMockVersion}"
 
