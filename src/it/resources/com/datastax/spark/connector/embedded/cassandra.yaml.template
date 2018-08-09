@@ -775,11 +775,11 @@ server_encryption_options:
     # protocol: TLS
     # algorithm: SunX509
     #
-    # overrides store_type for keystore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
+    # replaces the deprecated store_type for keystore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
     # for file based keystores prefer PKCS12
     # keystore_type: JKS
     #
-    # overrides store_type for truststore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
+    # replaces the deprecated store_type for truststore, valid types can be JKS, JCEKS, PKCS12 or PKCS11
     # for file based keystores prefer PKCS12
     # truststore_type: JKS
     #
