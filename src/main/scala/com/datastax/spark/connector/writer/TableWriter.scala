@@ -140,20 +140,21 @@ class TableWriter[T] private (
   }
 
   def batchRoutingKey(session: Session, routingKeyGenerator: RoutingKeyGenerator)(bs: BoundStatement): Any = {
+    val codecRegistry = session.getCluster.getConfiguration.getCodecRegistry
     writeConf.batchGroupingKey match {
       case BatchGroupingKey.None => 0
 
       case BatchGroupingKey.ReplicaSet =>
-        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) == null)
+        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry) == null)
           bs.setRoutingKey(routingKeyGenerator(bs))
         session.getCluster.getMetadata.getReplicas(keyspaceName,
-          bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE)).hashCode() // hash code is enough
+          bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry)).hashCode() // hash code is enough
 
       case BatchGroupingKey.Partition =>
-        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE) == null) {
+        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry) == null) {
           bs.setRoutingKey(routingKeyGenerator(bs))
         }
-        bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, CodecRegistry.DEFAULT_INSTANCE).duplicate()
+        bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry).duplicate()
     }
   }
 

@@ -27,6 +27,7 @@ class DefaultScanner (
     columnNames: IndexedSeq[String]) extends Scanner {
 
   private val session = new CassandraConnector(connConf).openSession()
+  private val codecRegistry = session.getCluster.getConfiguration.getCodecRegistry
 
   override def close(): Unit = {
     session.close()
@@ -34,7 +35,7 @@ class DefaultScanner (
 
   override def scan(statement: Statement): ScanResult = {
     val rs = session.execute(maybeExecutingAs(statement, readConf.executeAs))
-    val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs)
+    val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, codecRegistry)
     val prefetchingIterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
     val rateLimitingIterator = readConf.throughputMiBPS match
     {

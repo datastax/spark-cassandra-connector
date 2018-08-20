@@ -167,7 +167,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   private def getCassandraRowMetadata(session: Session) = {
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
     val id = getPreparedStatement(session).getPreparedId
-    CassandraRowMetadata.fromPreparedId(columnNames, id)
+    CassandraRowMetadata.fromPreparedId(columnNames, id, session)
   }
 
   private[rdd] def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {

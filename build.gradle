@@ -81,6 +81,9 @@ dependencies {
 
     compile "com.datastax.dse:dse-java-driver-core:${cassandraDseJavaDriverVersion}"
     compile "com.datastax.dse:dse-java-driver-mapping:${cassandraDseJavaDriverVersion}"
+    compile("com.datastax.dse:dse-java-driver-extras:$cassandraDseJavaDriverVersion") {
+        transitive = false
+    }
 
     provided("org.apache.hadoop:hadoop-client:${hadoopVersion}", commonExcludes)
 

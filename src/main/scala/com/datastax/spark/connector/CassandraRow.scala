@@ -127,19 +127,29 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
 
 object CassandraRowMetadata {
 
-  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet) = {
-    fromColumnDefs(columnNames, rs.getColumnDefinitions.asList())
+
+  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session: Session) :CassandraRowMetadata = {
+    fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet,
+      session.getCluster.getConfiguration.getCodecRegistry)
+  }
+  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, registry: CodecRegistry) :CassandraRowMetadata = {
+    fromColumnDefs(columnNames, rs.getColumnDefinitions.asList(), registry)
   }
 
-  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId) = {
-    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList())
+  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId, session: Session) :CassandraRowMetadata = {
+    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList(),
+      session.getCluster.getConfiguration.getCodecRegistry)
   }
 
-  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: java.util.List[Definition]) = {
+  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId, registry: CodecRegistry) :CassandraRowMetadata = {
+    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList(), registry)
+  }
+
+  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: java.util.List[Definition], registry: CodecRegistry) = {
     import scala.collection.JavaConversions._
     val scalaColumnDefs = columnDefs.toList
     val rsColumnNames = scalaColumnDefs.map(_.getName)
-    val codecs = scalaColumnDefs.map(col => CodecRegistry.DEFAULT_INSTANCE.codecFor(col.getType))
+    val codecs = scalaColumnDefs.map(col => registry.codecFor(col.getType))
       .asInstanceOf[List[TypeCodec[AnyRef]]]
     CassandraRowMetadata(columnNames, Some(rsColumnNames.toIndexedSeq), codecs.toIndexedSeq)
   }
