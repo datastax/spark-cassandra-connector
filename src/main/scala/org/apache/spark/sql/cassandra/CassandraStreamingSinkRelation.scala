@@ -18,15 +18,7 @@ class CassandraStreamingSinkRelation(
     * contain multiple updates for the same key (and if it does we probably cannot handle this)
     */
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
-    data
-      .write
-      .cassandraFormat(
-        tableRef.keyspace,
-        tableRef.table,
-        tableRef.cluster.getOrElse(CassandraSourceRelation.defaultClusterName))
-      .options(options.cassandraConfs)
-      .mode(SaveMode.Append)
-      .save()
+    CassandraSourceRelation(tableRef,sqlContext,options).insert(data, false)
   }
 }
 
