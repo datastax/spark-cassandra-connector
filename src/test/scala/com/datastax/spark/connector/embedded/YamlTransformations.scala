@@ -114,6 +114,7 @@ object YamlTransformations {
     addTransformation("cluster_name", clusterName)
     addTransformation("data_file_directories", List(Paths.get(cassandraDir, "data").toString): JList[String])
     addTransformation("commitlog_directory", Paths.get(cassandraDir, "commitlog").toString)
+    addTransformation("metadata_directory", Paths.get(cassandraDir, "metadata").toString)
     addTransformation("saved_caches_directory", Paths.get(cassandraDir, "saved_caches").toString)
     addTransformation("cdc_raw_directory", Paths.get(cassandraDir, "cdc_raw").toString)
     addTransformation("seed_provider", List(Map(
