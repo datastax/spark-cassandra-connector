@@ -23,10 +23,15 @@ case class UDTFieldDef(columnName: String, columnType: ColumnType[_]) extends Fi
 
 /** A Cassandra user defined type metadata.
   * A UDT consists of a sequence of ordered fields, called `columns`. */
-case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
+case class UserDefinedType(
+  name: String,
+  columns: IndexedSeq[UDTFieldDef],
+  override val isFrozen: Boolean = false)
   extends StructDef with ColumnType[UDTValue] {
 
   override type Column = FieldDef
+
+  override def isMultiCell: Boolean = !isFrozen
 
   def isCollection = false
   def scalaTypeTag = implicitly[TypeTag[UDTValue]]

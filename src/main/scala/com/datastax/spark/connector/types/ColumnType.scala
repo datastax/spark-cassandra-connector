@@ -34,6 +34,10 @@ trait ColumnType[T] extends Serializable {
   def cqlTypeName: String
 
   def isCollection: Boolean
+
+  def isFrozen: Boolean = false
+
+  def isMultiCell: Boolean = isCollection && !isFrozen
 }
 
 object ColumnTypeConf {
@@ -116,10 +120,10 @@ object ColumnType {
   private def typeArg(dataType: DataType, idx: Int) = fromDriverType(dataType.getTypeArguments.get(idx))
 
   private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
-    case listType if listType.getName == DataType.Name.LIST => ListType(typeArg(listType, 0))
-    case setType if setType.getName == DataType.Name.SET => SetType(typeArg(setType, 0))
-    case mapType if mapType.getName == DataType.Name.MAP => MapType(typeArg(mapType, 0), typeArg(mapType, 1))
-    case userType: DriverUserType => UserDefinedType(userType.getTypeName, fields(userType))
+    case listType if listType.getName == DataType.Name.LIST => ListType(typeArg(listType, 0), listType.isFrozen)
+    case setType if setType.getName == DataType.Name.SET => SetType(typeArg(setType, 0), setType.isFrozen)
+    case mapType if mapType.getName == DataType.Name.MAP => MapType(typeArg(mapType, 0), typeArg(mapType, 1), mapType.isFrozen)
+    case userType: DriverUserType => UserDefinedType(userType.getTypeName, fields(userType), userType.isFrozen)
     case tupleType: DriverTupleType => TupleType(fields(tupleType): _*)
     case dataType => primitiveTypeMap(dataType)
   }
@@ -151,11 +155,11 @@ object ColumnType {
       case SparkSqlDecimalType() => DecimalType
       case ArrayType(sparkSqlElementType, containsNull) =>
         val argType = fromSparkSqlType(sparkSqlElementType)
-        ListType(argType)
+        ListType(argType, false)
       case SparkSqlMapType(sparkSqlKeyType, sparkSqlValueType, containsNull) =>
         val keyType = fromSparkSqlType(sparkSqlKeyType)
         val valueType = fromSparkSqlType(sparkSqlValueType)
-        MapType(keyType, valueType)
+        MapType(keyType, valueType, false)
       case _ =>
         unsupportedType()
     }
@@ -202,16 +206,16 @@ object ColumnType {
           if (symbol == Symbols.OptionSymbol)
             argType
           else if (Symbols.ListSymbols contains symbol)
-            ListType(argType)
+            ListType(argType, false)
           else if (Symbols.SetSymbols contains symbol)
-            SetType(argType)
+            SetType(argType, false)
           else
             unsupportedType()
         case TypeRef(_, symbol, List(k, v)) =>
           val keyType = fromScalaType(k)
           val valueType = fromScalaType(v)
           if (Symbols.MapSymbols contains symbol)
-            MapType(keyType, valueType)
+            MapType(keyType, valueType, false)
           else
             unsupportedType()
         case _ =>

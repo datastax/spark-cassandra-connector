@@ -58,6 +58,7 @@ object SparkTemplate {
     .set("spark.ui.showConsoleProgress", "false")
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
+    .set("spark.sql.extensions","com.datastax.spark.connector.DseSparkExtensions")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[2]"))
     .setAppName("Test")
 

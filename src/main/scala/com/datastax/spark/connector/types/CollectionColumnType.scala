@@ -8,7 +8,9 @@ trait CollectionColumnType[T] extends ColumnType[T] {
   def isCollection = true
 }
 
-case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vector[T]] {
+case class ListType[T](
+  elemType: ColumnType[T],
+  override val isFrozen: Boolean = false) extends CollectionColumnType[Vector[T]] {
 
   @transient
   lazy val scalaTypeTag = {
@@ -22,7 +24,9 @@ case class ListType[T](elemType: ColumnType[T]) extends CollectionColumnType[Vec
     new TypeConverter.OptionToNullConverter(TypeConverter.listConverter(elemType.converterToCassandra))
 }
 
-case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[T]] {
+case class SetType[T](
+  elemType: ColumnType[T],
+  override val isFrozen: Boolean = false) extends CollectionColumnType[Set[T]] {
 
   @transient
   lazy val scalaTypeTag = {
@@ -36,8 +40,10 @@ case class SetType[T](elemType: ColumnType[T]) extends CollectionColumnType[Set[
     new TypeConverter.OptionToNullConverter(TypeConverter.setConverter(elemType.converterToCassandra))
 }
 
-case class MapType[K, V](keyType: ColumnType[K], valueType: ColumnType[V])
-  extends CollectionColumnType[Map[K, V]] {
+case class MapType[K, V](
+  keyType: ColumnType[K],
+  valueType: ColumnType[V],
+  override val isFrozen: Boolean = false) extends CollectionColumnType[Map[K, V]] {
 
   @transient
   lazy val scalaTypeTag = {

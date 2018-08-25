@@ -90,15 +90,15 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
         implicit val cm: ColumnMapper[U] = columnMapper[U]
         new GettableDataToMappedTypeConverter[U](struct, struct.columnRefs)
 
-      case (ListType(argColumnType), TypeRef(_, _, List(argScalaType))) =>
+      case (ListType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
         val argConverter = converter(argColumnType, argScalaType)
         TypeConverter.forType[U](Seq(argConverter))
 
-      case (SetType(argColumnType), TypeRef(_, _, List(argScalaType))) =>
+      case (SetType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
         val argConverter = converter(argColumnType, argScalaType)
         TypeConverter.forType[U](Seq(argConverter))
 
-      case (MapType(keyColumnType, valueColumnType), TypeRef(_, _, List(keyScalaType, valueScalaType))) =>
+      case (MapType(keyColumnType, valueColumnType, _), TypeRef(_, _, List(keyScalaType, valueScalaType))) =>
         val keyConverter = converter(keyColumnType, keyScalaType)
         val valueConverter = converter(valueColumnType, valueScalaType)
         TypeConverter.forType[U](Seq(keyConverter, valueConverter))
