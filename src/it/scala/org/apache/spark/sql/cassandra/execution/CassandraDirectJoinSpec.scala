@@ -9,7 +9,10 @@ import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.execution.streaming.StreamingQueryWrapper
 import org.scalatest.concurrent.Eventually
+import scala.concurrent.duration._
+
 
 import scala.concurrent.Future
 
@@ -250,6 +253,37 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
     withClue(planDetails(join)) {
       getDirectJoin(join) shouldBe defined
     }
+  }
+
+  "Structured Streaming" should "allow a direct join" in {
+    val rateStream = sparkSession
+      .readStream
+      .format("rate")
+      .option("rowsPerSecond", "1000")
+      .load()
+      .withColumn("value", 'value.cast("Int"))
+
+    val cassandraTable = sparkSession
+      .read
+      .cassandraFormat("kv", ks)
+      .load
+      .directJoin(AlwaysOn)
+
+    val join = rateStream
+      .join(cassandraTable, rateStream("value") === cassandraTable("k"))
+
+    val stream = join
+      .writeStream
+      .format("console")
+      .start()
+      .asInstanceOf[StreamingQueryWrapper]
+
+
+    //Need to wait for a real batch to occur
+    eventually(timeout(scaled(10 seconds))) {
+      getDirectJoin(stream) shouldBe defined
+    }
+
   }
 
   "Cassandra Data Source Execution" should " do a simple left join" in {
@@ -536,6 +570,11 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
   def getDirectJoin(df: Dataset[_]): Option[DSEDirectJoinExec] = {
     val plan = df.queryExecution.sparkPlan
     plan.collectFirst{ case x: DSEDirectJoinExec => x }
+  }
+
+  def getDirectJoin(stream: StreamingQueryWrapper) = {
+    val plan = stream.streamingQuery.lastExecution.executedPlan
+    plan.collectFirst { case x: DSEDirectJoinExec => x }
   }
 
   def planDetails(df: Dataset[_]): String = {
