@@ -1,3 +1,6 @@
+2.3.2
+ * Includes all patches up to 2.0.10
+
 2.3.1
  * Includes all patches up to 2.0.9
 
@@ -7,6 +10,9 @@
  * Removal of Scala-2.10 support
 
 ********************************************************************************
+
+2.0.10
+ * Includes all patches up to 1.6.13
 
 2.0.9
  * Includes all patches up to 1.6.12
@@ -87,6 +93,9 @@
     - Update plugins and Scala version
 
 ********************************************************************************
+
+1.6.13
+* Fix Thread Safety issue in AnyObjectFactory (SPARKC-550)
 
 1.6.12
 * Ignore Solr_query when setting up Writing (SPARKC-541)
