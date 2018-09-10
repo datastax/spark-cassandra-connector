@@ -1,0 +1,494 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>util - com.datastax.spark.connector.util</title>
+          <meta name="description" content="util - com.datastax.spark.connector.util" />
+          <meta name="keywords" content="util com.datastax.spark.connector.util" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.util.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>util</h1><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">util</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Useful stuff that didn't fit elsewhere.</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.util"><span>util</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.util.BufferedIterator2" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BufferedIterator2[T]extendsIterator[T]"></a>
+      <a id="BufferedIterator2[T]:BufferedIterator2[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BufferedIterator2.html"><span class="name">BufferedIterator2</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.util.BufferedIterator2.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@BufferedIterator2[T]extendsIterator[T]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Serves the same purpose as <code>BufferedIterator</code> in Scala, but its <code>takeWhile</code> method
+properly doesn't consume the next element.</p>
+    </li><li name="com.datastax.spark.connector.util.ConfigParameter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConfigParameter[T]extendsDataFrameOptionwithProductwithSerializable"></a>
+      <a id="ConfigParameter[T]:ConfigParameter[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConfigParameter.html"><span class="name">ConfigParameter</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="section">section: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="default">default: <span class="extype" name="com.datastax.spark.connector.util.ConfigParameter.T">T</span></span>, <span name="description">description: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="DataFrameOption.html" class="extype" name="com.datastax.spark.connector.util.DataFrameOption">DataFrameOption</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@ConfigParameter[T]extendsDataFrameOptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.CountingIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CountingIterator[T]extendsIterator[T]"></a>
+      <a id="CountingIterator[T]:CountingIterator[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CountingIterator.html"><span class="name">CountingIterator</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="com.datastax.spark.connector.util.CountingIterator.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@CountingIterator[T]extendsIterator[T]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Counts elements fetched form the underlying iterator.</p><div class="fullcomment"><div class="comment cmt"><p>Counts elements fetched form the underlying iterator. Limit causes iterator to terminate early</p></div></div>
+    </li><li name="com.datastax.spark.connector.util.DataFrameOption" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DataFrameOptionextendsAnyRef"></a>
+      <a id="DataFrameOption:DataFrameOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DataFrameOption.html"><span class="name">DataFrameOption</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@DataFrameOptionextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.Logging" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="LoggingextendsAnyRef"></a>
+      <a id="Logging:Logging"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Logging.html"><span class="name">Logging</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@LoggingextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Utility trait for classes that want to log data.</p><div class="fullcomment"><div class="comment cmt"><p>Utility trait for classes that want to log data. Creates a SLF4J logger for the class and allows
+logging messages at different levels using methods that only evaluate parameters lazily if the
+log level is enabled.</p><p>This is a copy of what Spark Previously held in org.apache.spark.Logging. That class is
+now private so we will expose similar functionality here.
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.util.PriorityHashMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="PriorityHashMap[K,V]extendsAnyRef"></a>
+      <a id="PriorityHashMap[K,V]:PriorityHashMap[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PriorityHashMap.html"><span class="name">PriorityHashMap</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@PriorityHashMap[K,V]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A HashMap and a PriorityQueue hybrid.</p><div class="fullcomment"><div class="comment cmt"><p>A HashMap and a PriorityQueue hybrid.
+Works like a HashMap but offers additional O(1) access to the entry with
+the highest value. As in a standard HashMap, entries can be looked up by
+key in O(1) time. Adding, removing and updating items by key is handled
+in O(log n) time.</p><p>Keys must not be changed externally and must implement
+proper equals and hashCode. It is advised to use immutable classes for keys.</p><p>Values must be properly comparable.
+Values may be externally mutated as long as a proper immediate call to <code>put</code>
+is issued to notify the PriorityHashMap that the value associated with the given key
+has changed, after each value mutation.
+It is not allowed to externally mutate more than one value
+at a time or to mutate a value associated with multiple keys.
+Therefore, it is advised to use immutable classes for values, and updating
+values only by calls to <code>put</code>.</p><p>Contrary to standard Java HashMap implementation, PriorityHashMap does not
+allocate memory on adding / removing / updating items and stores
+all data in flat, non-resizable arrays instead. Therefore its
+capacity cannot be modified after construction. It is technically possible
+to remove this limitation in the future.</p><p>PriorityHashMap is mutable and not thread-safe.</p><p>Internally, PriorityHashMap is composed of the following data arrays:
+- an array storing references to keys, forming a heap-based priority queue;
+- an array storing corresponding references to values, always in the same order as keys;
+- an array storing indexes into the first two arrays, used as an inline hash-table allowing to
+  quickly locate keys in the heap in constant time;
+- an array for fast translating indexes in the heap into indexes into hash-table, so
+  after moving a key/value in the heap, the corresponding index in the hash-table can be
+  quickly updated, without hashing.</p><p>The indexes hash-table doesn't use overflow lists for dealing with hash collisions.
+The overflow entries are placed in the main hash-table array in the first not-taken
+entry to the right from the original position pointed by key hash. On search,
+if the key is not found immediately at a position pointed by key hash, it is searched
+to the right, until it is found or an empty array entry is found.
+</p></div><dl class="paramcmts block"><dt class="tparam">K</dt><dd class="cmt"><p>type of keys</p></dd><dt class="tparam">V</dt><dd class="cmt"><p>type of values; values must be comparable</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.SpanningIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="SpanningIterator[K,T]extendsIterator[(K,Seq[T])]"></a>
+      <a id="SpanningIterator[K,T]:SpanningIterator[K,T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SpanningIterator.html"><span class="name">SpanningIterator</span></a><span class="tparams">[<span name="K">K</span>, <span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[(<span class="extype" name="com.datastax.spark.connector.util.SpanningIterator.K">K</span>, <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="com.datastax.spark.connector.util.SpanningIterator.T">T</span>])]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@SpanningIterator[K,T]extendsIterator[(K,Seq[T])]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An iterator that groups items having the same value of the given function (key).</p><div class="fullcomment"><div class="comment cmt"><p>An iterator that groups items having the same value of the given function (key).
+To be included in the same group, items with the same key must be next to each other
+in the original collection.</p><p><code>SpanningIterator</code> buffers internally one group at a time and the wrapped iterator
+is consumed in a lazy way.</p><p>Example:</p><pre><span class="kw">val</span> collection = <span class="std">Seq</span>(<span class="num">1</span> -&gt; <span class="lit">"a"</span>, <span class="num">1</span> -&gt; <span class="lit">"b"</span>, <span class="num">1</span> -&gt; <span class="lit">"c"</span>, <span class="num">2</span> -&gt; <span class="lit">"d"</span>, <span class="num">2</span> -&gt; <span class="lit">"e"</span>)
+<span class="kw">val</span> iterator = <span class="kw">new</span> SpanningIterator(collection.iterator, (x: (<span class="std">Int</span>, <span class="std">String</span>)) <span class="kw">=&gt;</span> x._1)
+<span class="kw">val</span> result = iterator.toSeq  <span class="cmt">// Seq(1 -> Seq("a", "b", "c"), 2 -> Seq("d", "e"))</span></pre></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.util.ByteBufferUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ByteBufferUtil"></a>
+      <a id="ByteBufferUtil:ByteBufferUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ByteBufferUtil$.html"><span class="name">ByteBufferUtil</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@ByteBufferUtil" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.CodecRegistryUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CodecRegistryUtil"></a>
+      <a id="CodecRegistryUtil:CodecRegistryUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CodecRegistryUtil$.html"><span class="name">CodecRegistryUtil</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@CodecRegistryUtil" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.ConfigCheck" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConfigCheck"></a>
+      <a id="ConfigCheck:ConfigCheck"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ConfigCheck$.html"><span class="name">ConfigCheck</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@ConfigCheck" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Helper class to throw exceptions if there are environment variables in the spark.cassandra
+namespace which don't map to Spark Cassandra Connector known properties.</p>
+    </li><li name="com.datastax.spark.connector.util.CqlWhereParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CqlWhereParser"></a>
+      <a id="CqlWhereParser:CqlWhereParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CqlWhereParser$.html"><span class="name">CqlWhereParser</span></a><span class="result"> extends <span class="extype" name="scala.util.parsing.combinator.RegexParsers">RegexParsers</span> with <a href="Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@CqlWhereParser" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.JavaApiHelper" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="JavaApiHelper"></a>
+      <a id="JavaApiHelper:JavaApiHelper"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="JavaApiHelper$.html"><span class="name">JavaApiHelper</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@JavaApiHelper" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A helper class to make it possible to access components written in Scala from Java code.</p><div class="fullcomment"><div class="comment cmt"><p>A helper class to make it possible to access components written in Scala from Java code.
+INTERNAL API
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.util.MagicalTypeTricks" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MagicalTypeTricks"></a>
+      <a id="MagicalTypeTricks:MagicalTypeTricks"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MagicalTypeTricks$.html"><span class="name">MagicalTypeTricks</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@MagicalTypeTricks" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.NameTools" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NameTools"></a>
+      <a id="NameTools:NameTools"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NameTools$.html"><span class="name">NameTools</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@NameTools" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.PatitionKeyTools" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatitionKeyTools"></a>
+      <a id="PatitionKeyTools:PatitionKeyTools"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PatitionKeyTools$.html"><span class="name">PatitionKeyTools</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@PatitionKeyTools" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.Quote" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Quote"></a>
+      <a id="Quote:Quote"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Quote$.html"><span class="name">Quote</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@Quote" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.RefBuilder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RefBuilder"></a>
+      <a id="RefBuilder:RefBuilder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RefBuilder$.html"><span class="name">RefBuilder</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@RefBuilder" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.ReflectionUtil" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReflectionUtil"></a>
+      <a id="ReflectionUtil:ReflectionUtil"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReflectionUtil$.html"><span class="name">ReflectionUtil</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@ReflectionUtil" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.util.Symbols" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Symbols"></a>
+      <a id="Symbols:Symbols"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Symbols$.html"><span class="name">Symbols</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.util.package@Symbols" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

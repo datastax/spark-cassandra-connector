@@ -1,0 +1,2344 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>ScalaGettableData - com.datastax.spark.connector.ScalaGettableData</title>
+          <meta name="description" content="ScalaGettableData - com.datastax.spark.connector.ScalaGettableData" />
+          <meta name="keywords" content="ScalaGettableData com.datastax.spark.connector.ScalaGettableData" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'com.datastax.spark.connector.ScalaGettableData';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img alt="Trait" src="../../../../lib/trait_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>ScalaGettableData</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="com.datastax.spark.connector">package connector</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ScalaGettableData</span><span class="result"> extends <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a> with <a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a>, <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a>, <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a>, <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div><div class="toggleContainer block">
+            <span class="toggle">Known Subclasses</span>
+            <div class="subClasses hiddenContent"><a href="CassandraRow.html" class="extype" name="com.datastax.spark.connector.CassandraRow">CassandraRow</a>, <a href="UDTValue.html" class="extype" name="com.datastax.spark.connector.UDTValue">UDTValue</a></div>
+          </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.ScalaGettableData"><span>ScalaGettableData</span></li><li class="in" name="com.datastax.spark.connector.GettableData"><span>GettableData</span></li><li class="in" name="com.datastax.spark.connector.ScalaGettableByIndexData"><span>ScalaGettableByIndexData</span></li><li class="in" name="com.datastax.spark.connector.GettableByIndexData"><span>GettableByIndexData</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+                <span class="filtertype">Implicitly<br />
+                </span>
+                <ol id="implicits"> <li class="in" name="scala.Predef.any2stringadd" data-hidden="true"><span>by any2stringadd</span></li><li class="in" name="scala.Predef.StringFormat" data-hidden="true"><span>by StringFormat</span></li><li class="in" name="scala.Predef.Ensuring" data-hidden="true"><span>by Ensuring</span></li><li class="in" name="scala.Predef.ArrowAssoc" data-hidden="true"><span>by ArrowAssoc</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Abstract Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.GettableByIndexData#columnValues" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="columnValues:IndexedSeq[AnyRef]"></a>
+      <a id="columnValues:IndexedSeq[AnyRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">columnValues</span><span class="result">: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@columnValues:IndexedSeq[AnyRef]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#metaData" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="metaData:com.datastax.spark.connector.CassandraRowMetadata"></a>
+      <a id="metaData:CassandraRowMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">metaData</span><span class="result">: <a href="CassandraRowMetadata.html" class="extype" name="com.datastax.spark.connector.CassandraRowMetadata">CassandraRowMetadata</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@metaData:com.datastax.spark.connector.CassandraRowMetadata" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Concrete Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@##():Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Predef.any2stringadd#+" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="+(other:String):String"></a>
+      <a id="+(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $plus" class="implicit">+</span><span class="params">(<span name="other">other: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@+(other:String):String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.any2stringadd">any2stringadd</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method any2stringadd in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>any2stringadd</dd></dl></div>
+    </li><li name="scala.Predef.ArrowAssoc#-&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="-&gt;[B](y:B):(A,B)"></a>
+      <a id="-&gt;[B](B):(ScalaGettableData,B)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $minus$greater" class="implicit">-&gt;</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="y">y: <span class="extype" name="scala.Predef.ArrowAssoc.-&gt;.B">B</span></span>)</span><span class="result">: (<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>, <span class="extype" name="scala.Predef.ArrowAssoc.-&gt;.B">B</span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@-&gt;[B](y:B):(A,B)" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method ArrowAssoc in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>ArrowAssoc</dd><dt>Annotations</dt><dd>
+                <span class="name">@inline</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#contains" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="contains(name:String):Boolean"></a>
+      <a id="contains(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">contains</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@contains(name:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns true if column with given name is defined and has an
+entry in the underlying value array, i.e.</p><div class="fullcomment"><div class="comment cmt"><p>Returns true if column with given name is defined and has an
+entry in the underlying value array, i.e. was requested in the result set.
+For columns having null value, returns true.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#copy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="copy:com.datastax.spark.connector.ScalaGettableData"></a>
+      <a id="copy:ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">copy</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@copy:com.datastax.spark.connector.ScalaGettableData" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> → <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#dataAsString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dataAsString:String"></a>
+      <a id="dataAsString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">dataAsString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@dataAsString:String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Displays the content in human readable form, including the names and values of the columns</p><div class="fullcomment"><div class="comment cmt"><p>Displays the content in human readable form, including the names and values of the columns</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> → <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="scala.Predef.Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:A=&gt;Boolean,msg:=&gt;Any):A"></a>
+      <a id="ensuring((ScalaGettableData)⇒Boolean,⇒Any):ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: (<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="msg">msg: ⇒ <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@ensuring(cond:A=&gt;Boolean,msg:=&gt;Any):A" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:A=&gt;Boolean):A"></a>
+      <a id="ensuring((ScalaGettableData)⇒Boolean):ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: (<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@ensuring(cond:A=&gt;Boolean):A" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:Boolean,msg:=&gt;Any):A"></a>
+      <a id="ensuring(Boolean,⇒Any):ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="msg">msg: ⇒ <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@ensuring(cond:Boolean,msg:=&gt;Any):A" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.Predef.Ensuring#ensuring" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ensuring(cond:Boolean):A"></a>
+      <a id="ensuring(Boolean):ScalaGettableData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">ensuring</span><span class="params">(<span name="cond">cond: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@ensuring(cond:Boolean):A" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method Ensuring in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>Ensuring</dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(o:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="o">o: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@equals(o:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> → <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.Predef.StringFormat#formatted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="formatted(fmtstr:String):String"></a>
+      <a id="formatted(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="implicit">formatted</span><span class="params">(<span name="fmtstr">fmtstr: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@formatted(fmtstr:String):String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.StringFormat">StringFormat</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method StringFormat in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>StringFormat</dd><dt>Annotations</dt><dd>
+                <span class="name">@inline</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get[T](name:String)(implicitc:com.datastax.spark.connector.types.TypeConverter[T]):T"></a>
+      <a id="get[T](String)(TypeConverter[T]):T"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="c">c: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.get.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="com.datastax.spark.connector.ScalaGettableData.get.T">T</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@get[T](name:String)(implicitc:com.datastax.spark.connector.types.TypeConverter[T]):T" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Generic getter for getting columns of any type.</p><div class="fullcomment"><div class="comment cmt"><p>Generic getter for getting columns of any type.
+Looks the column up by column name. Column names are case-sensitive.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get[T](index:Int)(implicitc:com.datastax.spark.connector.types.TypeConverter[T]):T"></a>
+      <a id="get[T](Int)(TypeConverter[T]):T"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="c">c: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.get.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.get.T">T</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@get[T](index:Int)(implicitc:com.datastax.spark.connector.types.TypeConverter[T]):T" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Generic getter for getting columns of any type.</p><div class="fullcomment"><div class="comment cmt"><p>Generic getter for getting columns of any type.
+Looks the column up by its index. First column starts at index 0.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getBoolean" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBoolean(name:String):Boolean"></a>
+      <a id="getBoolean(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBoolean</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBoolean(name:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>bool</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>bool</code> column value. Besides working with <code>bool</code> Cassandra type, it can also read
+numbers and strings. Non-zero numbers are converted to <code>true</code>, zero is converted to <code>false</code>.
+Strings are converted using <code>String#toBoolean</code> method.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getBoolean" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBoolean(index:Int):Boolean"></a>
+      <a id="getBoolean(Int):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBoolean</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBoolean(index:Int):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>bool</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>bool</code> column value. Besides working with <code>bool</code> Cassandra type, it can also read
+numbers and strings. Non-zero numbers are converted to <code>true</code>, zero is converted to <code>false</code>.
+Strings are converted using <code>String#toBoolean</code> method.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getBooleanOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getBooleanOption(name:String):Option[Boolean]"></a>
+      <a id="getBooleanOption(String):Option[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBooleanOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBooleanOption(name:String):Option[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getBooleanOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBooleanOption(index:Int):Option[Boolean]"></a>
+      <a id="getBooleanOption(Int):Option[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBooleanOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBooleanOption(index:Int):Option[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getByte" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getByte(name:String):Byte"></a>
+      <a id="getByte(String):Byte"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getByte</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Byte">Byte</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getByte(name:String):Byte" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getByte" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getByte(index:Int):Byte"></a>
+      <a id="getByte(Int):Byte"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getByte</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Byte">Byte</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getByte(index:Int):Byte" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getByteOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getByteOption(name:String):Option[Byte]"></a>
+      <a id="getByteOption(String):Option[Byte]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getByteOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Byte">Byte</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getByteOption(name:String):Option[Byte]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getByteOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getByteOption(index:Int):Option[Byte]"></a>
+      <a id="getByteOption(Int):Option[Byte]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getByteOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Byte">Byte</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getByteOption(index:Int):Option[Byte]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getBytes" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBytes(name:String):java.nio.ByteBuffer"></a>
+      <a id="getBytes(String):ByteBuffer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBytes</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.nio.ByteBuffer">ByteBuffer</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBytes(name:String):java.nio.ByteBuffer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>blob</code> column value as ByteBuffer.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>blob</code> column value as ByteBuffer.
+This method is not suitable for reading other types of columns.
+Columns of type <code>blob</code> can be also read as Array[Byte] with the generic <code>get</code> method.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getBytes" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBytes(index:Int):java.nio.ByteBuffer"></a>
+      <a id="getBytes(Int):ByteBuffer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBytes</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.nio.ByteBuffer">ByteBuffer</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBytes(index:Int):java.nio.ByteBuffer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>blob</code> column value as ByteBuffer.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>blob</code> column value as ByteBuffer.
+This method is not suitable for reading other types of columns.
+Columns of type <code>blob</code> can be also read as Array[Byte] with the generic <code>get</code> method.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getBytesOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getBytesOption(name:String):Option[java.nio.ByteBuffer]"></a>
+      <a id="getBytesOption(String):Option[ByteBuffer]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBytesOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.nio.ByteBuffer">ByteBuffer</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBytesOption(name:String):Option[java.nio.ByteBuffer]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getBytesOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getBytesOption(index:Int):Option[java.nio.ByteBuffer]"></a>
+      <a id="getBytesOption(Int):Option[ByteBuffer]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBytesOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.nio.ByteBuffer">ByteBuffer</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getBytesOption(index:Int):Option[java.nio.ByteBuffer]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDate(name:String):java.util.Date"></a>
+      <a id="getDate(String):Date"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDate</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.util.Date">Date</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDate(name:String):java.util.Date" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>java.util.Date</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>java.util.Date</code>.
+To convert a timestamp to one of other supported date types, use the generic <code>get</code> method,
+for example:</p><pre>row.get[java.sql.Date](<span class="num">0</span>)</pre></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDate(index:Int):java.util.Date"></a>
+      <a id="getDate(Int):Date"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDate</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.util.Date">Date</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDate(index:Int):java.util.Date" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>java.util.Date</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>java.util.Date</code>.
+To convert a timestamp to one of other supported date types, use the generic <code>get</code> method,
+for example:</p><pre>row.get[java.sql.Date](<span class="num">0</span>)</pre></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDateOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDateOption(name:String):Option[java.util.Date]"></a>
+      <a id="getDateOption(String):Option[Date]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.util.Date">Date</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateOption(name:String):Option[java.util.Date]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDateOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDateOption(index:Int):Option[java.util.Date]"></a>
+      <a id="getDateOption(Int):Option[Date]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.util.Date">Date</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateOption(index:Int):Option[java.util.Date]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDateTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDateTime(name:String):org.joda.time.DateTime"></a>
+      <a id="getDateTime(String):DateTime"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateTime</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="org.joda.time.DateTime">DateTime</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateTime(name:String):org.joda.time.DateTime" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>org.joda.time.DateTime</code>.</p>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDateTime" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDateTime(index:Int):org.joda.time.DateTime"></a>
+      <a id="getDateTime(Int):DateTime"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateTime</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="org.joda.time.DateTime">DateTime</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateTime(index:Int):org.joda.time.DateTime" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>org.joda.time.DateTime</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>timestamp</code> or <code>timeuuid</code> column value as <code>org.joda.time.DateTime</code>.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDateTimeOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDateTimeOption(name:String):Option[org.joda.time.DateTime]"></a>
+      <a id="getDateTimeOption(String):Option[DateTime]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateTimeOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.joda.time.DateTime">DateTime</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateTimeOption(name:String):Option[org.joda.time.DateTime]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDateTimeOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDateTimeOption(index:Int):Option[org.joda.time.DateTime]"></a>
+      <a id="getDateTimeOption(Int):Option[DateTime]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDateTimeOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.joda.time.DateTime">DateTime</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDateTimeOption(index:Int):Option[org.joda.time.DateTime]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDecimal" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDecimal(name:String):BigDecimal"></a>
+      <a id="getDecimal(String):BigDecimal"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDecimal</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.BigDecimal">BigDecimal</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDecimal(name:String):BigDecimal" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>decimal</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>decimal</code> column value.
+Can be used with all other floating point types as well as
+with strings containing a valid floating point number of arbitrary precision.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDecimal" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDecimal(index:Int):BigDecimal"></a>
+      <a id="getDecimal(Int):BigDecimal"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDecimal</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.BigDecimal">BigDecimal</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDecimal(index:Int):BigDecimal" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>decimal</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>decimal</code> column value.
+Can be used with all other floating point types as well as
+with strings containing a valid floating point number of arbitrary precision.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDecimalOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDecimalOption(name:String):Option[BigDecimal]"></a>
+      <a id="getDecimalOption(String):Option[BigDecimal]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDecimalOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.BigDecimal">BigDecimal</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDecimalOption(name:String):Option[BigDecimal]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDecimalOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDecimalOption(index:Int):Option[BigDecimal]"></a>
+      <a id="getDecimalOption(Int):Option[BigDecimal]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDecimalOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.BigDecimal">BigDecimal</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDecimalOption(index:Int):Option[BigDecimal]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDouble" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDouble(name:String):Double"></a>
+      <a id="getDouble(String):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDouble</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDouble(name:String):Double" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as Double.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as Double.
+Recommended to use with <code>float</code> and <code>double</code> CQL types.
+This method can be also used to read a <code>decimal</code> column, with some loss of precision.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDouble" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDouble(index:Int):Double"></a>
+      <a id="getDouble(Int):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDouble</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDouble(index:Int):Double" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as Double.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as Double.
+Recommended to use with <code>float</code> and <code>double</code> CQL types.
+This method can be also used to read a <code>decimal</code> column, with some loss of precision.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getDoubleOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDoubleOption(name:String):Option[Double]"></a>
+      <a id="getDoubleOption(String):Option[Double]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDoubleOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Double">Double</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDoubleOption(name:String):Option[Double]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getDoubleOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDoubleOption(index:Int):Option[Double]"></a>
+      <a id="getDoubleOption(Int):Option[Double]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDoubleOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Double">Double</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getDoubleOption(index:Int):Option[Double]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getFloat" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFloat(name:String):Float"></a>
+      <a id="getFloat(String):Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFloat</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getFloat(name:String):Float" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as Float.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as Float.
+Recommended to use with <code>float</code> CQL type.
+This method can be also used to read a <code>double</code> or <code>decimal</code> column, with some loss of precision.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getFloat" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFloat(index:Int):Float"></a>
+      <a id="getFloat(Int):Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFloat</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getFloat(index:Int):Float" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as Float.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as Float.
+Recommended to use with <code>float</code> CQL type.
+This method can be also used to read a <code>double</code> or <code>decimal</code> column, with some loss of precision.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getFloatOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getFloatOption(name:String):Option[Float]"></a>
+      <a id="getFloatOption(String):Option[Float]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFloatOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getFloatOption(name:String):Option[Float]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getFloatOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFloatOption(index:Int):Option[Float]"></a>
+      <a id="getFloatOption(Int):Option[Float]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFloatOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getFloatOption(index:Int):Option[Float]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getInet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInet(name:String):java.net.InetAddress"></a>
+      <a id="getInet(String):InetAddress"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInet</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.net.InetAddress">InetAddress</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInet(name:String):java.net.InetAddress" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns an <code>inet</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns an <code>inet</code> column value.
+Can be used to read a string containing a valid
+Internet address, given either as a host name or IP address.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getInet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInet(index:Int):java.net.InetAddress"></a>
+      <a id="getInet(Int):InetAddress"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInet</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.net.InetAddress">InetAddress</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInet(index:Int):java.net.InetAddress" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns an <code>inet</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns an <code>inet</code> column value.
+Can be used to read a string containing a valid
+Internet address, given either as a host name or IP address.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getInetOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getInetOption(name:String):Option[java.net.InetAddress]"></a>
+      <a id="getInetOption(String):Option[InetAddress]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInetOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInetOption(name:String):Option[java.net.InetAddress]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getInetOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInetOption(index:Int):Option[java.net.InetAddress]"></a>
+      <a id="getInetOption(Int):Option[InetAddress]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInetOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.net.InetAddress">InetAddress</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInetOption(index:Int):Option[java.net.InetAddress]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getInt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInt(name:String):Int"></a>
+      <a id="getInt(String):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInt</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInt(name:String):Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as a 32-bit integer number.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as a 32-bit integer number.
+Besides working with <code>int</code> Cassandra type, it can also read
+other integer numbers as <code>bigint</code> or <code>varint</code> and strings.
+The string must represent a valid integer number.
+The number must be within 32-bit integer range or the <code>TypeConversionException</code> will be thrown.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getInt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInt(index:Int):Int"></a>
+      <a id="getInt(Int):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInt</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getInt(index:Int):Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as a 32-bit integer number.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as a 32-bit integer number.
+Besides working with <code>int</code> Cassandra type, it can also read
+other integer numbers as <code>bigint</code> or <code>varint</code> and strings.
+The string must represent a valid integer number.
+The number must be within 32-bit integer range or the <code>TypeConversionException</code> will be thrown.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getIntOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getIntOption(name:String):Option[Int]"></a>
+      <a id="getIntOption(String):Option[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getIntOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getIntOption(name:String):Option[Int]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getIntOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getIntOption(index:Int):Option[Int]"></a>
+      <a id="getIntOption(Int):Option[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getIntOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getIntOption(index:Int):Option[Int]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getList" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getList[T](name:String)(implicitevidence$1:com.datastax.spark.connector.types.TypeConverter[T]):Vector[T]"></a>
+      <a id="getList[T](String)(TypeConverter[T]):Vector[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getList</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getList.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Vector">Vector</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getList.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getList[T](name:String)(implicitevidence$1:com.datastax.spark.connector.types.TypeConverter[T]):Vector[T]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>list</code> column value and returns it as Scala <code>Vector</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>list</code> column value and returns it as Scala <code>Vector</code>.
+A null list is converted to an empty collection.
+Items of the list are converted to the given type.
+This method can be also used to read <code>set</code> and <code>map</code> column types.
+For <code>map</code>, the list items are converted to key-value pairs.</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>type of the list item, must be given explicitly.</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getList" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getList[T](index:Int)(implicitevidence$1:com.datastax.spark.connector.types.TypeConverter[T]):Vector[T]"></a>
+      <a id="getList[T](Int)(TypeConverter[T]):Vector[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getList</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getList.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Vector">Vector</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getList.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getList[T](index:Int)(implicitevidence$1:com.datastax.spark.connector.types.TypeConverter[T]):Vector[T]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>list</code> column value and returns it as Scala <code>Vector</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>list</code> column value and returns it as Scala <code>Vector</code>.
+A null list is converted to an empty collection.
+Items of the list are converted to the given type.
+This method can be also used to read <code>set</code> and <code>map</code> column types.
+For <code>map</code>, the list items are converted to key-value pairs.</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>type of the list item, must be given explicitly.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getLong" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getLong(name:String):Long"></a>
+      <a id="getLong(String):Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getLong</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getLong(name:String):Long" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as a 64-bit integer number.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as a 64-bit integer number.
+Recommended to use with <code>bigint</code> and <code>counter</code> CQL types
+It can also read other column types as <code>int</code>, <code>varint</code>, <code>timestamp</code> and <code>string</code>.
+The string must represent a valid integer number.
+The number must be within 64-bit integer range or <a href="types/TypeConversionException.html" class="extype" name="com.datastax.spark.connector.types.TypeConversionException">com.datastax.spark.connector.types.TypeConversionException</a>
+will be thrown. When used with timestamps, returns a number of milliseconds since epoch.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getLong" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getLong(index:Int):Long"></a>
+      <a id="getLong(Int):Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getLong</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getLong(index:Int):Long" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value as a 64-bit integer number.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value as a 64-bit integer number.
+Recommended to use with <code>bigint</code> and <code>counter</code> CQL types
+It can also read other column types as <code>int</code>, <code>varint</code>, <code>timestamp</code> and <code>string</code>.
+The string must represent a valid integer number.
+The number must be within 64-bit integer range or <a href="types/TypeConversionException.html" class="extype" name="com.datastax.spark.connector.types.TypeConversionException">com.datastax.spark.connector.types.TypeConversionException</a>
+will be thrown. When used with timestamps, returns a number of milliseconds since epoch.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getLongOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getLongOption(name:String):Option[Long]"></a>
+      <a id="getLongOption(String):Option[Long]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getLongOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Long">Long</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getLongOption(name:String):Option[Long]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getLongOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getLongOption(index:Int):Option[Long]"></a>
+      <a id="getLongOption(Int):Option[Long]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getLongOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Long">Long</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getLongOption(index:Int):Option[Long]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getMap[K,V](name:String)(implicitevidence$3:com.datastax.spark.connector.types.TypeConverter[K],implicitevidence$4:com.datastax.spark.connector.types.TypeConverter[V]):Map[K,V]"></a>
+      <a id="getMap[K,V](String)(TypeConverter[K],TypeConverter[V]):Map[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getMap.K">K</span>]</span>, <span name="arg1">arg1: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getMap.V">V</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getMap.K">K</span>, <span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getMap.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getMap[K,V](name:String)(implicitevidence$3:com.datastax.spark.connector.types.TypeConverter[K],implicitevidence$4:com.datastax.spark.connector.types.TypeConverter[V]):Map[K,V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>map</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>map</code> column value.
+A null map is converted to an empty collection.
+Keys and values of the map are converted to the given types.</p></div><dl class="paramcmts block"><dt class="tparam">K</dt><dd class="cmt"><p>type of keys, must be given explicitly.</p></dd><dt class="tparam">V</dt><dd class="cmt"><p>type of values, must be given explicitly.</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getMap[K,V](index:Int)(implicitevidence$3:com.datastax.spark.connector.types.TypeConverter[K],implicitevidence$4:com.datastax.spark.connector.types.TypeConverter[V]):Map[K,V]"></a>
+      <a id="getMap[K,V](Int)(TypeConverter[K],TypeConverter[V]):Map[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getMap.K">K</span>]</span>, <span name="arg1">arg1: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getMap.V">V</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getMap.K">K</span>, <span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getMap.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getMap[K,V](index:Int)(implicitevidence$3:com.datastax.spark.connector.types.TypeConverter[K],implicitevidence$4:com.datastax.spark.connector.types.TypeConverter[V]):Map[K,V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>map</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>map</code> column value.
+A null map is converted to an empty collection.
+Keys and values of the map are converted to the given types.</p></div><dl class="paramcmts block"><dt class="tparam">K</dt><dd class="cmt"><p>type of keys, must be given explicitly.</p></dd><dt class="tparam">V</dt><dd class="cmt"><p>type of values, must be given explicitly.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#getRaw" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getRaw(name:String):AnyRef"></a>
+      <a id="getRaw(String):AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getRaw</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getRaw(name:String):AnyRef" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value by aliased name without applying any conversion.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value by aliased name without applying any conversion.
+The underlying type is the same as the type returned by the low-level Cassandra driver,
+is implementation defined and may change in the future.
+Cassandra nulls are returned as Scala nulls.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableByIndexData#getRaw" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getRaw(index:Int):AnyRef"></a>
+      <a id="getRaw(Int):AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getRaw</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getRaw(index:Int):AnyRef" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value by index without applying any conversion.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value by index without applying any conversion.
+The underlying type is the same as the type returned by the low-level Cassandra driver,
+is implementation defined and may change in the future.
+Cassandra nulls are returned as Scala nulls.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#getRawCql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getRawCql(name:String):AnyRef"></a>
+      <a id="getRawCql(String):AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getRawCql</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getRawCql(name:String):AnyRef" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value by cql Name</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value by cql Name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getSet[T](name:String)(implicitevidence$2:com.datastax.spark.connector.types.TypeConverter[T]):Set[T]"></a>
+      <a id="getSet[T](String)(TypeConverter[T]):Set[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getSet</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getSet.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableData.getSet.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getSet[T](name:String)(implicitevidence$2:com.datastax.spark.connector.types.TypeConverter[T]):Set[T]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>set</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>set</code> column value.
+A null set is converted to an empty collection.
+Items of the set are converted to the given type.
+This method can be also used to read <code>list</code> and <code>map</code> column types.
+For <code>map</code>, the set items are converted to key-value pairs.</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>type of the set item, must be given explicitly.</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getSet[T](index:Int)(implicitevidence$2:com.datastax.spark.connector.types.TypeConverter[T]):Set[T]"></a>
+      <a id="getSet[T](Int)(TypeConverter[T]):Set[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getSet</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="types/TypeConverter.html" class="extype" name="com.datastax.spark.connector.types.TypeConverter">TypeConverter</a>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getSet.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData.getSet.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getSet[T](index:Int)(implicitevidence$2:com.datastax.spark.connector.types.TypeConverter[T]):Set[T]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Reads a <code>set</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Reads a <code>set</code> column value.
+A null set is converted to an empty collection.
+Items of the set are converted to the given type.
+This method can be also used to read <code>list</code> and <code>map</code> column types.
+For <code>map</code>, the set items are converted to key-value pairs.</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>type of the set item, must be given explicitly.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getShort" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getShort(name:String):Short"></a>
+      <a id="getShort(String):Short"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getShort</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Short">Short</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getShort(name:String):Short" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getShort" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getShort(index:Int):Short"></a>
+      <a id="getShort(Int):Short"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getShort</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Short">Short</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getShort(index:Int):Short" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getShortOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getShortOption(name:String):Option[Short]"></a>
+      <a id="getShortOption(String):Option[Short]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getShortOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Short">Short</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getShortOption(name:String):Option[Short]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getShortOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getShortOption(index:Int):Option[Short]"></a>
+      <a id="getShortOption(Int):Option[Short]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getShortOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Short">Short</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getShortOption(index:Int):Option[Short]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getString(name:String):String"></a>
+      <a id="getString(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getString</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getString(name:String):String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns the column value converted to a <code>String</code> acceptable by CQL.</p><div class="fullcomment"><div class="comment cmt"><p>Returns the column value converted to a <code>String</code> acceptable by CQL.
+All data types that have human readable text representations can be converted.
+Note, this is not the same as calling <code>getAny(index).toString</code> which works differently e.g. for dates.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getString(index:Int):String"></a>
+      <a id="getString(Int):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getString</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getString(index:Int):String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns the column value converted to a <code>String</code> acceptable by CQL.</p><div class="fullcomment"><div class="comment cmt"><p>Returns the column value converted to a <code>String</code> acceptable by CQL.
+All data types that have human readable text representations can be converted.
+Note, this is not the same as calling <code>getAny(index).toString</code> which works differently e.g. for dates.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getStringOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getStringOption(name:String):Option[String]"></a>
+      <a id="getStringOption(String):Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getStringOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getStringOption(name:String):Option[String]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getStringOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getStringOption(index:Int):Option[String]"></a>
+      <a id="getStringOption(Int):Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getStringOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getStringOption(index:Int):Option[String]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getTupleValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getTupleValue(name:String):com.datastax.spark.connector.TupleValue"></a>
+      <a id="getTupleValue(String):TupleValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTupleValue</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="TupleValue.html" class="extype" name="com.datastax.spark.connector.TupleValue">TupleValue</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getTupleValue(name:String):com.datastax.spark.connector.TupleValue" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value of cassandra tuple type</p>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getTupleValue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getTupleValue(index:Int):com.datastax.spark.connector.TupleValue"></a>
+      <a id="getTupleValue(Int):TupleValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTupleValue</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="TupleValue.html" class="extype" name="com.datastax.spark.connector.TupleValue">TupleValue</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getTupleValue(index:Int):com.datastax.spark.connector.TupleValue" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value of cassandra tuple type</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value of cassandra tuple type</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getTupleValueOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getTupleValueOption(name:String):Option[com.datastax.spark.connector.TupleValue]"></a>
+      <a id="getTupleValueOption(String):Option[TupleValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTupleValueOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="TupleValue.html" class="extype" name="com.datastax.spark.connector.TupleValue">TupleValue</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getTupleValueOption(name:String):Option[com.datastax.spark.connector.TupleValue]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getTupleValueOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getTupleValueOption(index:Int):Option[com.datastax.spark.connector.TupleValue]"></a>
+      <a id="getTupleValueOption(Int):Option[TupleValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTupleValueOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="TupleValue.html" class="extype" name="com.datastax.spark.connector.TupleValue">TupleValue</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getTupleValueOption(index:Int):Option[com.datastax.spark.connector.TupleValue]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getUDTValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getUDTValue(name:String):com.datastax.spark.connector.UDTValue"></a>
+      <a id="getUDTValue(String):UDTValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUDTValue</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="UDTValue.html" class="extype" name="com.datastax.spark.connector.UDTValue">UDTValue</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUDTValue(name:String):com.datastax.spark.connector.UDTValue" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value of User Defined Type</p>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getUDTValue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUDTValue(index:Int):com.datastax.spark.connector.UDTValue"></a>
+      <a id="getUDTValue(Int):UDTValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUDTValue</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="UDTValue.html" class="extype" name="com.datastax.spark.connector.UDTValue">UDTValue</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUDTValue(index:Int):com.datastax.spark.connector.UDTValue" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a column value of User Defined Type</p><div class="fullcomment"><div class="comment cmt"><p>Returns a column value of User Defined Type</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getUDTValueOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getUDTValueOption(name:String):Option[com.datastax.spark.connector.UDTValue]"></a>
+      <a id="getUDTValueOption(String):Option[UDTValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUDTValueOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="UDTValue.html" class="extype" name="com.datastax.spark.connector.UDTValue">UDTValue</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUDTValueOption(name:String):Option[com.datastax.spark.connector.UDTValue]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getUDTValueOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUDTValueOption(index:Int):Option[com.datastax.spark.connector.UDTValue]"></a>
+      <a id="getUDTValueOption(Int):Option[UDTValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUDTValueOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="UDTValue.html" class="extype" name="com.datastax.spark.connector.UDTValue">UDTValue</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUDTValueOption(index:Int):Option[com.datastax.spark.connector.UDTValue]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getUUID" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUUID(name:String):java.util.UUID"></a>
+      <a id="getUUID(String):UUID"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUUID</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.util.UUID">UUID</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUUID(name:String):java.util.UUID" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns an <code>uuid</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns an <code>uuid</code> column value.
+Can be used to read a string containing a valid UUID.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getUUID" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUUID(index:Int):java.util.UUID"></a>
+      <a id="getUUID(Int):UUID"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUUID</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.util.UUID">UUID</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUUID(index:Int):java.util.UUID" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns an <code>uuid</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns an <code>uuid</code> column value.
+Can be used to read a string containing a valid UUID.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getUUIDOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getUUIDOption(name:String):Option[java.util.UUID]"></a>
+      <a id="getUUIDOption(String):Option[UUID]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUUIDOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.util.UUID">UUID</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUUIDOption(name:String):Option[java.util.UUID]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getUUIDOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUUIDOption(index:Int):Option[java.util.UUID]"></a>
+      <a id="getUUIDOption(Int):Option[UUID]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUUIDOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.util.UUID">UUID</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getUUIDOption(index:Int):Option[java.util.UUID]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getVarInt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getVarInt(name:String):BigInt"></a>
+      <a id="getVarInt(String):BigInt"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVarInt</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.BigInt">BigInt</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getVarInt(name:String):BigInt" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>varint</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>varint</code> column value.
+Can be used with all other integer types as well as
+with strings containing a valid integer number of arbitrary size.</p></div></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getVarInt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getVarInt(index:Int):BigInt"></a>
+      <a id="getVarInt(Int):BigInt"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVarInt</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.BigInt">BigInt</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getVarInt(index:Int):BigInt" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns a <code>varint</code> column value.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a <code>varint</code> column value.
+Can be used with all other integer types as well as
+with strings containing a valid integer number of arbitrary size.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#getVarIntOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getVarIntOption(name:String):Option[BigInt]"></a>
+      <a id="getVarIntOption(String):Option[BigInt]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVarIntOption</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.BigInt">BigInt</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getVarIntOption(name:String):Option[BigInt]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#getVarIntOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getVarIntOption(index:Int):Option[BigInt]"></a>
+      <a id="getVarIntOption(Int):Option[BigInt]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVarIntOption</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.BigInt">BigInt</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@getVarIntOption(index:Int):Option[BigInt]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> → <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#indexOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="indexOf(name:String):Int"></a>
+      <a id="indexOf(String):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">indexOf</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@indexOf(name:String):Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns index of column with given name or -1 if column not found</p><div class="fullcomment"><div class="comment cmt"><p>Returns index of column with given name or -1 if column not found</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#isNullAt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isNullAt(name:String):Boolean"></a>
+      <a id="isNullAt(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isNullAt</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@isNullAt(name:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns true if column value is Cassandra null</p><div class="fullcomment"><div class="comment cmt"><p>Returns true if column value is Cassandra null</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableByIndexData#isNullAt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isNullAt(index:Int):Boolean"></a>
+      <a id="isNullAt(Int):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isNullAt</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@isNullAt(index:Int):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns true if column value is Cassandra null</p><div class="fullcomment"><div class="comment cmt"><p>Returns true if column value is Cassandra null</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableByIndexData#iterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="iterator:Iterator[AnyRef]"></a>
+      <a id="iterator:Iterator[AnyRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">iterator</span><span class="result">: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@iterator:Iterator[AnyRef]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableByIndexData#length" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="length:Int"></a>
+      <a id="length:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">length</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@length:Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Total number of columns in this row.</p><div class="fullcomment"><div class="comment cmt"><p>Total number of columns in this row. Includes columns with null values.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableData#nameOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="nameOf(index:Int):String"></a>
+      <a id="nameOf(Int):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">nameOf</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@nameOf(index:Int):String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Returns the name of the i-th column.</p><div class="fullcomment"><div class="comment cmt"><p>Returns the name of the i-th column.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.GettableByIndexData#size" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="size:Int"></a>
+      <a id="size:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">size</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@size:Int" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Total number of columns in this row.</p><div class="fullcomment"><div class="comment cmt"><p>Total number of columns in this row. Includes columns with null values.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.ScalaGettableData#toMap" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toMap:Map[String,Any]"></a>
+      <a id="toMap:Map[String,Any]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toMap</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Any">Any</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@toMap:Map[String,Any]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Converts this row to a Map</p>
+    </li><li name="com.datastax.spark.connector.GettableData#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@toString():String" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a> → <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.Predef.ArrowAssoc#→" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="→[B](y:B):(A,B)"></a>
+      <a id="→[B](B):(ScalaGettableData,B)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $u2192" class="implicit">→</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="y">y: <span class="extype" name="scala.Predef.ArrowAssoc.→.B">B</span></span>)</span><span class="result">: (<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>, <span class="extype" name="scala.Predef.ArrowAssoc.→.B">B</span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#com.datastax.spark.connector.ScalaGettableData@→[B](y:B):(A,B)" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt class="implicit">Implicit information</dt><dd>
+            This member is added by an implicit conversion from <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to
+            <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>] performed by method ArrowAssoc in scala.Predef.
+            
+          </dd><dt>Definition Classes</dt><dd>ArrowAssoc</dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="com.datastax.spark.connector.GettableData">
+              <h3>Inherited from <a href="GettableData.html" class="extype" name="com.datastax.spark.connector.GettableData">GettableData</a></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.ScalaGettableByIndexData">
+              <h3>Inherited from <a href="ScalaGettableByIndexData.html" class="extype" name="com.datastax.spark.connector.ScalaGettableByIndexData">ScalaGettableByIndexData</a></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.GettableByIndexData">
+              <h3>Inherited from <a href="GettableByIndexData.html" class="extype" name="com.datastax.spark.connector.GettableByIndexData">GettableByIndexData</a></h3>
+            </div><div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        <div class="conversion" name="scala.Predef.any2stringadd">
+              <h3>Inherited by implicit conversion any2stringadd from
+                <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to <span class="extype" name="scala.Predef.any2stringadd">any2stringadd</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>]
+              </h3>
+            </div><div class="conversion" name="scala.Predef.StringFormat">
+              <h3>Inherited by implicit conversion StringFormat from
+                <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to <span class="extype" name="scala.Predef.StringFormat">StringFormat</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>]
+              </h3>
+            </div><div class="conversion" name="scala.Predef.Ensuring">
+              <h3>Inherited by implicit conversion Ensuring from
+                <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to <span class="extype" name="scala.Predef.Ensuring">Ensuring</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>]
+              </h3>
+            </div><div class="conversion" name="scala.Predef.ArrowAssoc">
+              <h3>Inherited by implicit conversion ArrowAssoc from
+                <a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a> to <span class="extype" name="scala.Predef.ArrowAssoc">ArrowAssoc</span>[<a href="" class="extype" name="com.datastax.spark.connector.ScalaGettableData">ScalaGettableData</a>]
+              </h3>
+            </div>
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
