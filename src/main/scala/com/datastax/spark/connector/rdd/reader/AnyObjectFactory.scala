@@ -42,8 +42,6 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   // the right constructor exists or not, before the job is started
   val argCount: Int = constructorParamTypes.length
 
-  val argOffset: Int = oneIfMemberClass(javaClass)
-
   @transient
   lazy val constructorParamTypes: Array[Type] = {
     val requiredParamClasses = javaConstructor.getParameterTypes
@@ -74,12 +72,12 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   }
 
   @transient
-  private lazy val argBuffer = {
-    val buffer = Array.ofDim[AnyRef](argOffset + argCount)
+  private lazy val outerInstanceArg: Seq[AnyRef] = {
     if (isRealMemberClass(javaClass)) {
-      buffer(0) = resolveDirectOuterInstance()
+      Seq(resolveDirectOuterInstance)
+    } else {
+      Seq.empty
     }
-    buffer
   }
 
   private def resolveDirectOuterInstance() = {
@@ -103,11 +101,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
       ConstructorUtils.invokeExactConstructor(innerClass, outerInstance).asInstanceOf[AnyRef])
   }
 
-  def newInstance(args: AnyRef*): T = {
-    for (i <- 0 until argCount)
-      argBuffer(i + argOffset) = args(i)
-    javaConstructor.newInstance(argBuffer: _*)
-  }
+  def newInstance(args: AnyRef*): T = javaConstructor.newInstance(outerInstanceArg ++ args: _*)
 }
 
 object AnyObjectFactory extends Logging {
