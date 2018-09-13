@@ -11,6 +11,7 @@ import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.CassandraTableScanRDD
 import com.datastax.driver.core.DataType
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{Dataset, SaveMode}
@@ -20,6 +21,7 @@ import org.scalatest.concurrent.Eventually
 
 import scala.util.Random
 
+case class RowKVOption(k: Int, v: Option[String])
 case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
 case class TestData(id: String, col1: Int, col2: Int)
 
@@ -40,6 +42,13 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
           s"""
              |CREATE TABLE $ks.kv_copy (k INT, v TEXT, PRIMARY KEY (k))
              |""".stripMargin)
+      },
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.kv_null (k INT, v TEXT, PRIMARY KEY (k))
+             |""".stripMargin)
+        session.execute(s"INSERT INTO $ks.kv_null (k, v) VALUES (1, 'hello')")
       },
 
       Future {
@@ -246,6 +255,24 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
     }
   }
 
+  it should "abide by ignoreNull directives" in skipIfProtocolVersionLT(V4){
+    val ds = sparkSession.createDataFrame(Seq(RowKVOption(1, None)))
+    ds.write
+      .cassandraFormat("kv_null", ks)
+      .option(WriteConf.IgnoreNullsParam.name, "true")
+      .mode(SaveMode.Append)
+      .save()
+    val noChange = sparkSession.read.cassandraFormat("kv_null", ks).load().collect()
+    noChange.head.getString(1) should be ("hello")
+    ds.write
+      .cassandraFormat("kv_null", ks)
+      .option(WriteConf.IgnoreNullsParam.name, "false")
+      .mode(SaveMode.Append)
+      .save()
+    val nowNull = sparkSession.read.cassandraFormat("kv_null", ks).load().collect()
+    nowNull.head.getString(1) should be (null)
+  }
+
   it should "read and write C* LocalDate columns" in skipIfProtocolVersionLT(V4){
     val df = sparkSession
       .read
@@ -346,7 +373,6 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventuall
     val m1 = min1.union(min2).collect
     val m2 = min2.union(min1).collect
     m1 should contain theSameElementsAs m2
-
   }
 
 

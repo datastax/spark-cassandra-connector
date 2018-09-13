@@ -29,7 +29,7 @@ object Versions {
   lazy val scalaBinary = scalaVersion.dropRight(2)
 
   val Akka            = "2.3.4"
-  val Cassandra       = "3.6"
+  val Cassandra       = "3.11.3"
   val CassandraDriver = "3.1.4"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
