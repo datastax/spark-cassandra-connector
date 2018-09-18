@@ -5,24 +5,25 @@ import java.util.{Locale, UUID}
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._
+import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
+import org.apache.spark.sql.cassandra.DataTypeConverter._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
+
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
-import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
+import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
-import org.apache.spark.SparkConf
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
-import org.apache.spark.sql.cassandra.DataTypeConverter._
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.unsafe.types.UTF8String
 
 sealed trait DirectJoinSetting
 case object AlwaysOn extends DirectJoinSetting
@@ -419,6 +420,8 @@ object CassandraSourceRelation extends Logging {
 
   val defaultClusterName = "default"
 
+  private val proxyPerSourceRelationEnabled = sys.env.getOrElse("DSE_ENABLE_PROXY_PER_SRC_RELATION", "false").toBoolean
+
   def apply(
     tableRef: TableRef,
     sqlContext: SQLContext,
@@ -448,9 +451,15 @@ object CassandraSourceRelation extends Logging {
         }
     }
 
-    val proxyUser = getProxyUser(sqlContext)
-    val readConf = ReadConf.fromSparkConf(conf).copy(executeAs = proxyUser)
-    val writeConf = WriteConf.fromSparkConf(conf).copy(executeAs = proxyUser)
+    lazy val proxyUser = if (proxyPerSourceRelationEnabled) getProxyUser(sqlContext) else None
+    val readConf = {
+      val rc = ReadConf.fromSparkConf(conf)
+      rc.copy(executeAs = rc.executeAs.orElse(proxyUser))
+    }
+    val writeConf = {
+      val wc = WriteConf.fromSparkConf(conf)
+      wc.copy(executeAs = wc.executeAs.orElse(proxyUser))
+    }
 
     val directJoinSetting =
       conf
@@ -518,7 +527,7 @@ object CassandraSourceRelation extends Logging {
       case "NONE" => false
       case _ => true
     }
-    val user = UserGroupInformation.getCurrentUser
+    lazy val user = UserGroupInformation.getCurrentUser
 
     if (doAsEnabled && authenticationEnabled) {
       Some(user.getUserName)
