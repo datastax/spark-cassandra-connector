@@ -36,7 +36,6 @@ sourceSets {
 }
 
 dependencies {
-    compile project(':dse-core')
 
     def commonExcludes = {
         exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
