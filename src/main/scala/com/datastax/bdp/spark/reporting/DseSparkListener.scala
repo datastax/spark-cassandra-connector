@@ -17,7 +17,7 @@ class DseSparkListener(conf: SparkConf) extends SparkListener {
   DseSparkContextMetrics.reset()
 
   override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = synchronized {
-    activeStages.remove((stageCompleted.stageInfo.stageId, stageCompleted.stageInfo.attemptId))
+    activeStages.remove(stageCompleted.stageInfo.stageId, stageCompleted.stageInfo.attemptNumber)
     stageCompleted.stageInfo.failureReason match {
       case Some(failure) => failedStages += 1
       case None => succeededStages += 1
@@ -25,7 +25,7 @@ class DseSparkListener(conf: SparkConf) extends SparkListener {
   }
 
   override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted): Unit = synchronized {
-    activeStages.put((stageSubmitted.stageInfo.stageId, stageSubmitted.stageInfo.attemptId), stageSubmitted.stageInfo)
+    activeStages.put((stageSubmitted.stageInfo.stageId, stageSubmitted.stageInfo.attemptNumber), stageSubmitted.stageInfo)
   }
 
   override def onTaskStart(taskStart: SparkListenerTaskStart): Unit = synchronized {

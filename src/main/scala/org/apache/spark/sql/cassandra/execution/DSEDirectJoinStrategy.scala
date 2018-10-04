@@ -48,7 +48,7 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
       val cassandraRdd = getCassandraTableScanRDD(cassandraScanExec.execute()).get
 
       joinTargetBranch match {
-        case PhysicalOperation(attributes, _, LogicalRelation(_: CassandraSourceRelation, _, _)) =>
+        case PhysicalOperation(attributes, _, LogicalRelation(_: CassandraSourceRelation, _, _, _)) =>
 
           val directJoin =
             DSEDirectJoinExec(
@@ -104,8 +104,8 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
             .sqlContext
             .getConf(DirectJoinSizeRatioParam.name, DirectJoinSizeRatioParam.default.toString))
 
-        val cassandraSize = BigDecimal(cassandraPlan.stats(conf).sizeInBytes)
-        val keySize = BigDecimal(keyPlan.stats(conf).sizeInBytes.doubleValue())
+        val cassandraSize = BigDecimal(cassandraPlan.stats.sizeInBytes)
+        val keySize = BigDecimal(keyPlan.stats.sizeInBytes.doubleValue())
 
         logDebug(s"Checking if size ratio is good: $cassandraSize * $ratio > $keySize")
 
@@ -296,7 +296,7 @@ object DSEDirectJoinStrategy extends Logging {
     plan match {
       case PhysicalOperation(
         attributes, _,
-        LogicalRelation(cassandraSource: CassandraSourceRelation, _, _)) =>
+        LogicalRelation(cassandraSource: CassandraSourceRelation, _, _, _)) =>
 
         val joinKeyAliases =
           aliasMap(attributes)
@@ -326,7 +326,7 @@ object DSEDirectJoinStrategy extends Logging {
   */
   def containsSafePlans(plan: LogicalPlan): Boolean = {
     plan match {
-      case PhysicalOperation(_, _, LogicalRelation(relation: CassandraSourceRelation, _ , _))
+      case PhysicalOperation(_, _, LogicalRelation(relation: CassandraSourceRelation, _, _, _))
         if relation.directJoinSetting != AlwaysOff => true
       case _ => false
     }
