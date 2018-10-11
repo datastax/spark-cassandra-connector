@@ -1,9 +1,11 @@
-package com.datastax.spark.connector.test.monotonic
+package org.apache.spark.sql.datastax.test.monotonic
 
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.catalyst.plans.logical.LocalRelation
 import org.apache.spark.sql.execution.streaming.{LongOffset, Offset, SerializedOffset, Source}
 import org.apache.spark.sql.sources.StreamSourceProvider
 import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, SQLContext}
 
 import scala.util.Try
 
@@ -27,7 +29,6 @@ class DefaultSource extends StreamSourceProvider {
       }
 
       override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
-        import spark.implicits._
 
         val startValue = start match {
           case Some(ser: SerializedOffset) => FakeStreamSource.parseOffset(ser.json)
@@ -40,8 +41,9 @@ class DefaultSource extends StreamSourceProvider {
           case ser: SerializedOffset => FakeStreamSource.parseOffset(ser.json)
           case LongOffset(x) => x
         }
-
-        (startValue.toInt to endValue.toInt).toDS().toDF()
+        val rows = (startValue.toInt to endValue.toInt).map( value =>
+          new GenericInternalRow(values = Array(value)))
+        Dataset.ofRows(spark.sparkSession, LocalRelation(schema.toAttributes, rows, true))
       }
 
       override def stop() {}

@@ -43,7 +43,7 @@ class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with Loggi
 
     val source = sparkSession
       .readStream
-      .format("com.datastax.spark.connector.test.monotonic")
+      .format("org.apache.spark.sql.datastax.test.monotonic")
       .load()
       .withColumn("value", col("key") + 1)
       .withColumn("key", col("key")) // SparkStreaming seems to rename "key" if we don't do this
@@ -76,7 +76,7 @@ class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with Loggi
 
     val source = sparkSession
       .readStream
-      .format("com.datastax.spark.connector.test.empty")
+      .format("org.apache.spark.sql.datastax.test.empty")
       .load()
       .withColumn("value", col("key") + 1)
       .withColumn("key", col("key")) // SparkStreaming seems to rename "key" if we don't do this

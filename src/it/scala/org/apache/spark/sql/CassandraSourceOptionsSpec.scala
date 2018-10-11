@@ -56,11 +56,6 @@ class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with Logg
     val rdd = findCassandraTableScanRDD(df.queryExecution.sparkPlan).get
 
     rdd.readConf.readsPerSec.get should be (9001)
-    
-
-
-
   }
-
 
 }
