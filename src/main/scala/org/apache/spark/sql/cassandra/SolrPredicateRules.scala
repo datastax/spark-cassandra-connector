@@ -378,7 +378,7 @@ object SolrPredicateRules extends Logging {
   }
 
   /** the following code is a copy paste from com.datastax.bdp.search.solr.SolrQueries
-    * it is expected that after DSP-  is closed it will be possible to extract
+    * it is expected that after DSP-16706 is closed it will be possible to extract
     * this functionality to a common module and remove code duplication
     */
   private val escapableWordTokens = Array("AND", "OR", "NOT")
