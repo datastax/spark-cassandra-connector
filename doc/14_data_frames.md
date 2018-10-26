@@ -435,9 +435,9 @@ Cassandra Type | Spark Type
 `varint` | `DecimalType(38, 0)`
 `decimal` | `DecimalType(38, 18)`
 `timestamp` | `TimestampType`
-`inet` | `StringType`
-`uuid` | `StringType`
-`timeuuid` | `StringType`
+`inet` | `StringType` *
+`uuid` | `StringType` *
+`timeuuid` | `StringType` *
 `blob` | `BinaryType`
 `date` | `DateType`
 `time` | `LongType`
@@ -446,6 +446,8 @@ Cassandra Type | Spark Type
 `map<t,u>` | `MapType(t,u)`
 `tuple` | `StructType`
 user defined | `StructType`
+
+\* converted to/from strings using the same string representation as in CQL queries, like `"192.168.1.1"`, `"2001:0db8:85a3:0000:0000:8a2e:0370:7334"`, `"6ba7b810-9dad-11d1-80b4-00c04fd430c8"`.
 
 
 #### What Happened to DataFrames?
