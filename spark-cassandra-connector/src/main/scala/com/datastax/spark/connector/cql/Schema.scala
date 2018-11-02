@@ -14,6 +14,7 @@ import com.datastax.spark.connector.types.{ColumnType, CounterType}
 import com.datastax.spark.connector.util.NameTools
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.Logging
+import org.apache.spark.sql.types.StructType
 
 /** Abstract column / field definition.
   * Common to tables and user-defined types */
@@ -217,12 +218,12 @@ object TableDef {
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
   def fromDataFrame(
-    dataFrame: DataFrame,
+    schema: StructType,
     keyspaceName: String,
     tableName: String,
     protocolVersion: ProtocolVersion): TableDef =
 
-    new DataFrameColumnMapper(dataFrame.schema).newTable(keyspaceName, tableName, protocolVersion)
+    new DataFrameColumnMapper(schema).newTable(keyspaceName, tableName, protocolVersion)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */

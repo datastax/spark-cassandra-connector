@@ -3,6 +3,8 @@ package com.datastax.spark.connector
 import com.datastax.spark.connector.cql._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.types.{StructField, StructType}
 
 /** Provides Cassandra-specific methods on [[org.apache.spark.sql.DataFrame]] */
 class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
@@ -26,7 +28,15 @@ class DataFrameFunctions(dataFrame: DataFrame) extends Serializable {
     val protocolVersion = connector.
       withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
 
-    val rawTable = TableDef.fromDataFrame(dataFrame, keyspaceName, tableName, protocolVersion)
+    val caseSensitive = sparkContext.getConf.getBoolean(SQLConf.CASE_SENSITIVE.key, false)
+    val schema = if(!caseSensitive) {
+      new StructType(
+        dataFrame.schema.fields.map(
+          field => StructField(field.name.toLowerCase, field.dataType, field.nullable)))
+    } else
+      dataFrame.schema
+
+    val rawTable = TableDef.fromDataFrame(schema, keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName
 
     val columnNames = columnMapping.keys.toSet
