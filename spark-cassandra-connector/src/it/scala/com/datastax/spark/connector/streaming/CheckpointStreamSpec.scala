@@ -2,6 +2,7 @@ package com.datastax.spark.connector.streaming
 
 import scala.util.Random
 
+import org.apache.spark.SparkFunSuite
 import org.apache.spark.streaming.CheckpointSuite
 import org.apache.spark.streaming.dstream.DStream
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, Matchers}
@@ -14,7 +15,7 @@ import com.datastax.spark.connector.testkit._
 case class WordCountRow(word: String, count: Long)
 
 @DoNotDiscover
-class CheckpointSuiteConnectorConf extends CheckpointSuite {
+class CheckpointSuiteConnectorConf extends CheckpointSuite with SparkFunSuite {
   override val conf = SparkTemplate.defaultConf
     .set("spark.streaming.clock", "org.apache.spark.util.ManualClock")
 }

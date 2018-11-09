@@ -1213,7 +1213,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "adjust maxConnections based on the runtime config" in {
-    val expected = math.max(sc.defaultParallelism/ sc.getExecutorStorageStatus.length, 1)
+    val expected = math.max(sc.defaultParallelism/ sc.statusTracker.getExecutorInfos.length, 1)
     markup(s"Expected = $expected, 1 is default")
     val rdd = sc.cassandraTable(ks, "big_table")
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
