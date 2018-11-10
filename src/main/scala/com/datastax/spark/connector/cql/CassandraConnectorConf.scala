@@ -29,7 +29,9 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
+  quietPeriodBeforeCloseMillis: Int = CassandraConnectorConf.QuietPeriodBeforeCloseParam.default,
+  timeoutBeforeCloseMillis: Int = CassandraConnectorConf.TimeoutBeforeCloseParam.default
 ) {
 
   // For hashCode and equals we use a copy of CassandraConnectorConf with reset those properties which should be
@@ -74,8 +76,7 @@ object CassandraConnectorConf extends Logging {
     clientAuthEnabled: Boolean = false,
     keyStorePath: Option[String] = None,
     keyStorePassword: Option[String] = None,
-    keyStoreType: String = "JKS"
-  )
+    keyStoreType: String = "JKS")
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
@@ -192,6 +193,18 @@ object CassandraConnectorConf extends Logging {
     section = ReferenceSection,
     default = ProtocolOptions.Compression.NONE,
     description = """Compression to use (LZ4, SNAPPY or NONE)""")
+
+  val QuietPeriodBeforeCloseParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.quietPeriodBeforeCloseMS",
+    section = ReferenceSection,
+    default = 0,
+    description = "The time in seconds that must pass without any additional request after requesting connection close (see Netty quiet period)")
+
+  val TimeoutBeforeCloseParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.timeoutBeforeCloseMS",
+    section = ReferenceSection,
+    default = 15000,
+    description = "The time in seconds for all in-flight connections to finish after requesting connection close")
 
   val QueryRetryParam = ConfigParameter[Int](
     name = "spark.cassandra.query.retry.count",
@@ -312,6 +325,8 @@ object CassandraConnectorConf extends Logging {
     val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
     val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
     val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
+    val quietPeriodBeforeClose = conf.getInt(QuietPeriodBeforeCloseParam.name, QuietPeriodBeforeCloseParam.default)
+    val timeoutBeforeClose = conf.getInt(TimeoutBeforeCloseParam.name, TimeoutBeforeCloseParam.default)
 
     val compression = conf.getOption(CompressionParam.name)
       .map(ProtocolOptions.Compression.valueOf).getOrElse(CompressionParam.default)
@@ -359,7 +374,9 @@ object CassandraConnectorConf extends Logging {
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf
+      cassandraSSLConf = cassandraSSLConf,
+      quietPeriodBeforeCloseMillis = quietPeriodBeforeClose,
+      timeoutBeforeCloseMillis = timeoutBeforeClose
     )
   }
 }
