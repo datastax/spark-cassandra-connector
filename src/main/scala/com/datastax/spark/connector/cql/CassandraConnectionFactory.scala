@@ -2,12 +2,15 @@ package com.datastax.spark.connector.cql
 
 import java.nio.file.{Files, Path, Paths}
 import java.security.{KeyStore, SecureRandom}
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
+import io.netty.channel.EventLoopGroup
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+
 import com.datastax.driver.core._
+import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
@@ -59,6 +62,11 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           .setRefreshSchemaIntervalMillis(0))
       .withoutJMXReporting()
       .withoutMetrics()
+      .withNettyOptions(new NettyOptions() {
+        override def onClusterClose(eventLoopGroup: EventLoopGroup): Unit =
+          eventLoopGroup.shutdownGracefully(conf.quietPeriodBeforeCloseMillis, conf.timeoutBeforeCloseMillis, TimeUnit.MILLISECONDS)
+            .syncUninterruptibly()
+      })
 
     if (conf.cassandraSSLConf.enabled) {
       maybeCreateSSLOptions(conf.cassandraSSLConf) match {
@@ -156,6 +164,3 @@ object CassandraConnectionFactory {
       .getOrElse(FactoryParam.default)
   }
 }
-
-
-
