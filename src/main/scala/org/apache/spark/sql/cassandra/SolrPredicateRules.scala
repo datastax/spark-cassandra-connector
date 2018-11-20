@@ -7,6 +7,7 @@ package org.apache.spark.sql.cassandra
 
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 import com.datastax.driver.core.SimpleStatement
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
@@ -16,6 +17,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.SolrConstants._
 import org.apache.spark.sql.sources._
 import org.apache.solr.client.solrj.util.ClientUtils.escapeQueryChars
+import org.apache.spark.sql.sources._
 
 import scala.util.{Failure, Success, Try}
 
@@ -175,7 +177,7 @@ object SolrPredicateRules extends Logging {
     * for JSON so we can pass it through to Solr.
     */
   def toSolrString(value: Any): String  = StringEscapeUtils.escapeJson(
-    escapeQueryChars(
+    escapeSolrCondition(
       value match {
         case date: java.sql.Timestamp => DateTimeFormatter.ISO_INSTANT.format(date.toInstant)
         case default => default.toString
@@ -374,6 +376,32 @@ object SolrPredicateRules extends Logging {
 
     }
   }
+
+  /** the following code is a copy paste from com.datastax.bdp.search.solr.SolrQueries
+    * it is expected that after DSP-16706 is closed it will be possible to extract
+    * this functionality to a common module and remove code duplication
+    */
+  private val escapableWordTokens = Array("AND", "OR", "NOT")
+  private val escapableChars = "\\+-!():^[]\"{}~*?|&;/".split("").map(ch => Pattern.quote(ch))
+  private val escapableWhitespaces = Array("\\s")
+  private val escapables: Pattern = Pattern.compile(escapableEntities.mkString("|"))
+
+  private def escapableEntities: Array[String] = Array(escapableWordTokens, escapableChars, escapableWhitespaces).flatten
+
+  def escapeSolrCondition(condition: String): String = {
+    val matcher = escapables.matcher(condition)
+    val escaped = StringBuilder.newBuilder
+    var firstUnprocessedCharPosition = 0
+    while (matcher.find) {
+      escaped.append(condition.substring(firstUnprocessedCharPosition, matcher.start))
+      firstUnprocessedCharPosition = matcher.end
+      escaped.append("\\")
+      escaped.append(matcher.group)
+    }
+    escaped.append(condition.substring(firstUnprocessedCharPosition, condition.length))
+    escaped.toString
+  }
+
 }
 
 
