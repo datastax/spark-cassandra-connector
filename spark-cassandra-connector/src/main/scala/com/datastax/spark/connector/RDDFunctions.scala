@@ -31,7 +31,6 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext),
     rwf: RowWriterFactory[T]): Unit = {
-
     val writer = TableWriter(connector, keyspaceName, tableName, columns, writeConf)
     rdd.sparkContext.runJob(rdd, writer.write _)
   }

@@ -15,7 +15,9 @@ import org.apache.spark.SparkConf
   * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+)
   * @param readsPerSec maximum read throughput allowed per single core in requests/s while
   *                                  joining an RDD with C* table (joinWithCassandraTable operation)
-  *                                  also used by enterprise integrations*/
+  *                                  also used by enterprise integrations
+  * @param rateLimiterProvider fully qualified name to a custom rate limiter provider
+  */
 case class ReadConf(
   splitCount: Option[Int] = None,
   splitSizeInMB: Int = ReadConf.SplitSizeInMBParam.default,
@@ -23,7 +25,8 @@ case class ReadConf(
   consistencyLevel: ConsistencyLevel = ReadConf.ConsistencyLevelParam.default,
   taskMetricsEnabled: Boolean = ReadConf.TaskMetricParam.default,
   parallelismLevel: Int = ReadConf.ParallelismLevelParam.default,
-  readsPerSec: Int = ReadConf.ReadsPerSecParam.default
+  readsPerSec: Int = ReadConf.ReadsPerSecParam.default,
+  rateLimiterProvider: String = ReadConf.RateLimiterProviderParam.default
 )
 
 
@@ -93,6 +96,13 @@ object ReadConf extends Logging {
       """Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations"""
   )
 
+  val RateLimiterProviderParam = ConfigParameter[String] (
+    name = "spark.cassandra.read.ratelimiter.provider",
+    section = ReferenceSection,
+    default = "com.datastax.spark.connector.writer.LeakyBucketProvider",
+    description = """Determines which rate limiter provider to use in reads"""
+  )
+
   // Whitelist for allowed Read environment variables
   val Properties = Set(
     SplitCountParam,
@@ -102,7 +112,8 @@ object ReadConf extends Logging {
     SplitSizeInMBParam,
     TaskMetricParam,
     ThroughputJoinQueryPerSecParam,
-    ParallelismLevelParam
+    ParallelismLevelParam,
+    RateLimiterProviderParam
   )
 
   def fromSparkConf(conf: SparkConf): ReadConf = {
@@ -136,7 +147,8 @@ object ReadConf extends Logging {
       readsPerSec = conf.getInt(ReadsPerSecParam.name,
         throughtputJoinQueryPerSec.getOrElse(ReadsPerSecParam.default)),
       parallelismLevel = conf.getInt(ParallelismLevelParam.name, ParallelismLevelParam.default),
-      splitCount = conf.getOption(SplitCountParam.name).map(_.toInt)
+      splitCount = conf.getOption(SplitCountParam.name).map(_.toInt),
+      rateLimiterProvider = conf.get(RateLimiterProviderParam.name, RateLimiterProviderParam.default)
     )
   }
 

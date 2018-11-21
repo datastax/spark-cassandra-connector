@@ -8,7 +8,7 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{CollectionColumnType, ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, Logging}
+import com.datastax.spark.connector.util.{CountingIterator, Logging, RateLimiterUtil}
 import org.apache.spark.TaskContext
 import org.apache.spark.metrics.OutputMetricsUpdater
 
@@ -193,8 +193,9 @@ class TableWriter[T] private (
   /**
     * Write data with Cql INSERT statement
     */
-  def insert(taskContext: TaskContext, data: Iterator[T]):Unit =
+  def insert(taskContext: TaskContext, data: Iterator[T]):Unit = {
     writeInternal(queryTemplateUsingInsert, taskContext, data)
+  }
 
   /**
     * Cql DELETE statement
@@ -226,8 +227,11 @@ class TableWriter[T] private (
       val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
-      val rateLimiter = new RateLimiter((writeConf.throughputMiBPS * 1024 * 1024).toLong, 1024 * 1024)
-
+      val rateLimiter = RateLimiterUtil.getRateLimiter(
+        writeConf.rateLimiterProvider,
+        (writeConf.throughputMiBPS * 1024 * 1024).toLong,
+        1024 * 1024
+      )
       logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
 
       for (stmtToWrite <- batchBuilder) {

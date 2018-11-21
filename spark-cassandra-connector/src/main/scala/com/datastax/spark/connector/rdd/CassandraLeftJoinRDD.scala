@@ -4,6 +4,7 @@ import com.datastax.driver.core.{ResultSet, Session}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.reader._
+import com.datastax.spark.connector.util.RateLimiterUtil
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
 import org.apache.spark.rdd.RDD
@@ -141,8 +142,10 @@ class CassandraLeftJoinRDD[L, R] private[connector](
     rowMetadata: CassandraRowMetadata,
     leftIterator: Iterator[L]
   ): Iterator[(L, Option[R])] = {
-    val rateLimiter = new RateLimiter(
-      readConf.readsPerSec, readConf.readsPerSec
+    val rateLimiter = RateLimiterUtil.getRateLimiter(
+      readConf.rateLimiterProvider,
+      readConf.readsPerSec,
+      readConf.readsPerSec
     )
 
     val queryExecutor = QueryExecutor(session, readConf.parallelismLevel,None, None)

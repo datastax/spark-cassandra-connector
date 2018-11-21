@@ -2,8 +2,9 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
+import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
@@ -21,6 +22,7 @@ import org.apache.spark.SparkConf
   * @param ttl       the default TTL value which is used when it is defined (in seconds)
   * @param timestamp the default timestamp value which is used when it is defined (in microseconds)
   * @param taskMetricsEnabled whether or not enable task metrics updates (requires Spark 1.2+)
+  * @param rateLimiterProvider fully qualified name to a custom rate limiter provider
   */
 
 case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
@@ -33,7 +35,8 @@ case class WriteConf(batchSize: BatchSize = BatchSize.Automatic,
                      throughputMiBPS: Double = WriteConf.ThroughputMiBPSParam.default,
                      ttl: TTLOption = TTLOption.defaultValue,
                      timestamp: TimestampOption = TimestampOption.defaultValue,
-                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default) {
+                     taskMetricsEnabled: Boolean = WriteConf.TaskMetricsParam.default,
+                     rateLimiterProvider: String = WriteConf.RateLimiterProviderParam.default) {
 
   private[writer] val optionPlaceholders: Seq[String] = Seq(ttl, timestamp).collect {
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
@@ -123,7 +126,7 @@ object WriteConf {
     default = 5,
     description = """Maximum number of batches executed in parallel by a
       | single Spark task""".stripMargin)
-  
+
   val ThroughputMiBPSParam = ConfigParameter[Double] (
     name = "spark.cassandra.output.throughput_mb_per_sec",
     section = ReferenceSection,
@@ -154,6 +157,13 @@ object WriteConf {
     description = """Sets whether to record connector specific metrics on write"""
   )
 
+  val RateLimiterProviderParam = ConfigParameter[String](
+    name = "spark.cassandra.write.ratelimiter.provider",
+    section = ReferenceSection,
+    default = "com.datastax.spark.connector.writer.LeakyBucketProvider",
+    description = """Determines which rate limiter provider to use in writes"""
+  )
+
   // Whitelist for allowed Write environment variables
   val Properties: Set[ConfigParameter[_]] = Set(
     BatchSizeBytesParam,
@@ -167,7 +177,8 @@ object WriteConf {
     ThroughputMiBPSParam,
     TTLParam,
     TimestampParam,
-    TaskMetricsParam
+    TaskMetricsParam,
+    RateLimiterProviderParam
   )
 
   def fromSparkConf(conf: SparkConf): WriteConf = {
@@ -215,7 +226,7 @@ object WriteConf {
         TTLOption.defaultValue
       else
         TTLOption.constant(ttlSeconds)
-    
+
     val timestampMicros = conf.getLong(TimestampParam.name, TimestampParam.default)
 
     val timestampOption =
@@ -223,6 +234,8 @@ object WriteConf {
         TimestampOption.defaultValue
       else
         TimestampOption.constant(timestampMicros)
+
+    val rateLimiterProvider = conf.get(RateLimiterProviderParam.name, RateLimiterProviderParam.default)
 
     WriteConf(
       batchSize = batchSize,
@@ -235,7 +248,8 @@ object WriteConf {
       ttl = ttlOption,
       timestamp = timestampOption,
       ignoreNulls = ignoreNulls,
-      ifNotExists = ifNotExists)
+      ifNotExists = ifNotExists,
+      rateLimiterProvider = rateLimiterProvider)
   }
 
 }
