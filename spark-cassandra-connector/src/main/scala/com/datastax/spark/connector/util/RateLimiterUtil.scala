@@ -1,36 +1,32 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.spark.connector.writer.{BaseRateLimiter, LeakyBucketProvider, RateLimiterProvider}
+import com.datastax.spark.connector.writer.{BaseRateLimiter, RateLimiterProvider}
+import main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider
 
-object RateLimiterUtil {
+/**
+  * Exports a method to retrieve a custom rate limiter based on dynamic configuration.
+  */
+object RateLimiterUtil extends Logging {
   var provider:RateLimiterProvider = _
-  var providerClassName:String = "com.datastax.spark.connector.writer.LeakyBucketProvider"
 
-  // get rate limiter from provider specified by className
+  /**
+    * Instantiates a rate limiter provider based on its fully qualified classname and should that not be possible,
+    * fallbacks to the leaky bucket rate limiter provider in this project.
+    *
+    * @param className fully qualified classname of the rate limiter provider to instantiate
+    * @param args optional sequence of arguments passed on to the provider
+    * @return an instantiated rate limiter
+    */
   def getRateLimiter(className: String, args: Any*): BaseRateLimiter = {
-    setProviderClassName(className)
-    println("Getting rate limiter with specified conf from " + provider.getClass.getName)
-    provider.getWithConf(args:_*)
-  }
-
-  // get standard rate limiter
-//  def getRateLimiter(args: Any*): BaseRateLimiter = {
-//    println("Getting rate limiter from " + provider.getClass.getName)
-//    provider.getWithConf(args:_*)
-//  }
-
-//  def setProvider(customProvider: RateLimiterProvider): Unit = {
-//    println("Setting rate limiter provider to be " + customProvider.getClass.getName)
-//    provider = customProvider
-//  }
-
-  private def setProviderClassName(className: String): Unit = {
-    providerClassName = className
-
     try {
-      provider = Class.forName(providerClassName).newInstance.asInstanceOf[RateLimiterProvider]
+      provider = Class.forName(className).newInstance.asInstanceOf[RateLimiterProvider]
     } catch {
-      case e:Exception => println("ERROR: " + e)
+      case e:Exception => {
+        logError("Could not instantiate custom rate limiter provider. Error: " + e)
+        provider = LeakyBucketRateLimiterProvider
+      }
     }
+
+    provider.getRateLimiterWithConf(args:_*)
   }
 }

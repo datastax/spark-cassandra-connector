@@ -1,26 +1,14 @@
 package com.datastax.spark.connector.writer
 
+/**
+  * Represents a provider that creates and returns a rate limiter with possible configuration.
+  */
 trait RateLimiterProvider {
-  def getWithConf(args: Any*): BaseRateLimiter
-}
-
-class LeakyBucketProvider extends RateLimiterProvider {
-  override def getWithConf(args: Any*): BaseRateLimiter = {
-    require(args.length >= 2)
-
-    val rate= args(0) match {
-      case x:Int => x.intValue()
-      case x:Long => x.longValue()
-    }
-
-    val bucketSize = args(1) match {
-      case x:Int => x.intValue()
-      case x:Long => x.longValue()
-    }
-
-    val time:() => Long = if (args.length >= 3) args(2).asInstanceOf[() => Long] else System.currentTimeMillis
-    val sleep:Long => Any = if (args.length >= 4) args(3).asInstanceOf[Long => Any] else Thread.sleep
-
-    new LeakyBucketRateLimiter(rate, bucketSize, time, sleep)
-  }
+  /**
+    * Given a set of arguments, instantiates and returns a rate limiter.
+    *
+    * @param args sequence of arguments that can customize the returned rate limiter
+    * @return the created rate limiter
+    */
+  def getRateLimiterWithConf(args: Any*): BaseRateLimiter
 }
