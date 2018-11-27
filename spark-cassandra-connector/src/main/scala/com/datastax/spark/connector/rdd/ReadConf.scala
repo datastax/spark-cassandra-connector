@@ -1,7 +1,8 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.ConsistencyLevel
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck, Logging}
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, Logging}
+import main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider
 import org.apache.spark.SparkConf
 
 /** Read settings for RDD
@@ -97,9 +98,9 @@ object ReadConf extends Logging {
   )
 
   val RateLimiterProviderParam = ConfigParameter[String] (
-    name = "spark.cassandra.read.ratelimiter.provider",
+    name = "spark.cassandra.input.ratelimiterprovider",
     section = ReferenceSection,
-    default = "com.datastax.spark.connector.writer.LeakyBucketProvider",
+    default = new LeakyBucketRateLimiterProvider().getClass.getName,
     description = """Determines which rate limiter provider to use in reads"""
   )
 

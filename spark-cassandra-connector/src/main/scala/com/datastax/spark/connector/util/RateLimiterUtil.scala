@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.util
 
 import com.datastax.spark.connector.writer.{BaseRateLimiter, RateLimiterProvider}
-import main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider
 
 /**
   * Exports a method to retrieve a custom rate limiter based on dynamic configuration.
@@ -21,9 +20,17 @@ object RateLimiterUtil extends Logging {
     try {
       provider = Class.forName(className).newInstance.asInstanceOf[RateLimiterProvider]
     } catch {
-      case e:Exception => {
+      case e:ClassNotFoundException => {
+        logError("Could not find custom rate limiter provider. Error: " + e)
+        throw e
+      }
+      case e:InstantiationException => {
         logError("Could not instantiate custom rate limiter provider. Error: " + e)
-        provider = LeakyBucketRateLimiterProvider
+        throw e
+      }
+      case e:Throwable => {
+        logError("Error: " + e)
+        throw e
       }
     }
 

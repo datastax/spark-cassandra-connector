@@ -6,7 +6,9 @@ import com.datastax.spark.connector.writer.{BaseRateLimiter, LeakyBucketRateLimi
 /**
   * Instantiates a leaky bucket rate limiter based on the supplied configuration.
   */
-object LeakyBucketRateLimiterProvider extends RateLimiterProvider with Logging {
+class LeakyBucketRateLimiterProvider extends RateLimiterProvider with Logging {
+  {}
+
   override def getRateLimiterWithConf(args: Any*): BaseRateLimiter = {
     val rate = args(0).asInstanceOf[Number].longValue
     val bucketSize = args(1).asInstanceOf[Number].longValue

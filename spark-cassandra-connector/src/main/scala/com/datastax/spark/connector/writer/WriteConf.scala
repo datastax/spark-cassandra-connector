@@ -6,6 +6,7 @@ import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
+import main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider
 import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
@@ -158,9 +159,9 @@ object WriteConf {
   )
 
   val RateLimiterProviderParam = ConfigParameter[String](
-    name = "spark.cassandra.write.ratelimiter.provider",
+    name = "spark.cassandra.output.ratelimiterprovider",
     section = ReferenceSection,
-    default = "com.datastax.spark.connector.writer.LeakyBucketProvider",
+    default = new LeakyBucketRateLimiterProvider().getClass.getName,
     description = """Determines which rate limiter provider to use in writes"""
   )
 
