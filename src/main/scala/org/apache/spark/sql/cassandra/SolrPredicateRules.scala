@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
-import com.datastax.driver.core.SimpleStatement
+import com.datastax.driver.core.{HostDistance, SimpleStatement}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.Logging
 import org.apache.commons.lang3.StringEscapeUtils
@@ -20,6 +20,7 @@ import org.apache.solr.client.solrj.util.ClientUtils.escapeQueryChars
 import org.apache.spark.sql.sources._
 
 import scala.util.{Failure, Success, Try}
+import scala.collection.JavaConverters._
 
 
 
@@ -39,10 +40,6 @@ object SolrPredicateRules extends Logging {
     getSolrIndexedColumns: (TableDef, SparkConf) => Set[String],
     searchOptimizationEnabled: DseSearchOptimizationSetting): AnalyzedPredicates = {
 
-    if (!searchOptimizationEnabled.enabled) {
-      return predicates
-    }
-
     //This could be done in the SCC as it's not Solr Specific
     val uselessIsNotNulls =
       findUselessIsNotNulls(predicates.handledByCassandra ++ predicates.handledBySpark, tableDef)
@@ -56,11 +53,30 @@ object SolrPredicateRules extends Logging {
       pkRestriction.subsetOf(usefulPredicates.handledByCassandra) &&
       usefulPredicates.handledBySpark.isEmpty)
 
-    if (primaryKeyRestrictionExists || alreadyContainsSolrQuery(usefulPredicates) ){
-      logDebug("Not using Solr Optimizations")
-      usefulPredicates
-    } else {
-      convertToSolrQuery(usefulPredicates, tableDef, getSolrIndexedColumns(tableDef, sparkConf), searchOptimizationEnabled, sparkConf)
+    val solrEnabledOnTargetHosts = CassandraConnector(sparkConf)
+      .withSessionDo{ session =>
+        val hosts = session.getCluster.getMetadata.getAllHosts
+        val distance = session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy.distance(_)
+        val possibleHosts = hosts.asScala.filter( host => distance(host) != HostDistance.IGNORED)
+        possibleHosts.forall( _.getDseWorkloads.contains("Search"))
+      }
+    val failedRequirement = Seq[(Boolean, String)](
+      (!solrEnabledOnTargetHosts, "Search is not enabled on DSE Target nodes."),
+      (!searchOptimizationEnabled.enabled, "Automatic Search optimizations for Spark SQL are disabled."),
+      (primaryKeyRestrictionExists, "There is a primary key restriction present"),
+      (alreadyContainsSolrQuery(usefulPredicates), "Manual Solr query (solr_query = xxx) present.")
+    ).collectFirst{ case (true, reason) => reason}
+    failedRequirement match {
+      case Some(reasonForFailure) =>
+        logDebug(s"Not using Solr Optimizations. $reasonForFailure")
+        usefulPredicates
+      case None =>
+        convertToSolrQuery(
+          usefulPredicates,
+          tableDef,
+          getSolrIndexedColumns(tableDef, sparkConf),
+          searchOptimizationEnabled,
+          sparkConf)
     }
   }
 
