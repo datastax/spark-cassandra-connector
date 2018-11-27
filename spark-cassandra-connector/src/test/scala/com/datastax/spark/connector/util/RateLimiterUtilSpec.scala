@@ -20,7 +20,7 @@ class RateLimiterUtilSpec extends FlatSpec with Matchers {
     an [InstantiationException] should be thrownBy RateLimiterUtil.getRateLimiter(NonInstantiable.getClass.getName)
   }
 
-  // mock object that cannot be instantiable
+  // mock object that cannot be instantiated
   object NonInstantiable {}
 }
 
