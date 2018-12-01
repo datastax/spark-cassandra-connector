@@ -6,7 +6,6 @@ import com.datastax.driver.mapping.annotations.{Column, Field}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -49,7 +48,7 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
     }
   }
 
-  protected val cls = SparkReflectionLock.synchronized { implicitly[ClassTag[T]].runtimeClass }
+  protected val cls = implicitly[ClassTag[T]].runtimeClass
 
   override def columnMapForReading(
       struct: StructDef,

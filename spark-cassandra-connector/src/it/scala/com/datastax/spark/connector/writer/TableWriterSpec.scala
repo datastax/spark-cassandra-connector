@@ -13,6 +13,8 @@ import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 import org.apache.spark.SparkException
 
+import org.joda.time.DateTime
+
 case class Address(street: String, city: String, zip: Int)
 case class KV(key: Int, value: String)
 case class KeyValue(key: Int, group: Long, value: String)
@@ -44,6 +46,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     awaitAll(
       Future {
         session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+      },
+      Future {
+        session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, PRIMARY KEY (key))""")
       },
       Future {
         session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
@@ -120,6 +125,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
     verifyKeyValueTable("key_value")
+  }
+
+  it should "write to a table with a solr_query containing table without requiring that column" in {
+    val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
+    sc.parallelize(col).saveToCassandra(ks, "solr_query")
+    verifyKeyValueTable("solr_query")
   }
 
   it should "write RDD of tuples to a new table" in {
@@ -881,6 +892,27 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     e.getMessage should include("scol")
   }
 
+
+  it should "allow to write data with specific timestamp" in {
+
+    val setElements = sc.parallelize(Seq(
+      (6, Set("Four")),
+      (6, Set("Five")),
+      (6, Set("Six"))))
+    //Update data to year 1999
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append),
+      writeConf = WriteConf(timestamp = TimestampOption.constant(new DateTime(1999, 1, 1, 7, 8, 8, 10))))
+
+    // Try to delete rows older than year 2000.
+    sc.cassandraTable(ks, "collections_mod").where("key = 6")
+      .deleteFromCassandra(ks, "collections_mod",
+        writeConf = WriteConf(ttl = TTLOption.constant(1), timestamp = TimestampOption.constant(new DateTime(2000, 1, 1, 7, 8, 8, 10))))
+
+    val result = sc.cassandraTable(ks, "collections_mod").where("key = 6").collect()
+
+    result should have size 0
+  }
+
   it should "insert and not overwrite existing keys when ifNotExists is true" in {
     conn.withSessionDo { session =>
       session.execute(s"""TRUNCATE $ks.write_if_not_exists_test""")
@@ -907,5 +939,41 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
       .select("id", "value").collect()
     results should contain theSameElementsAs Seq((1, "new"), (2, "new"))
   }
+
+  "Idempotent Queries" should "not be used with list append" in {
+    val listAppend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" append), WriteConf.fromSparkConf(sc.getConf))
+    listAppend.isIdempotent should be (false)
+  }
+
+  it should "not be used with list prepend" in {
+    val listPrepend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" prepend), WriteConf.fromSparkConf(sc.getConf))
+    listPrepend.isIdempotent should be (false)
+  }
+
+  it should "not be used with counter modifications" in {
+    val counterUpdate = TableWriter(conn, ks, "counters", SomeColumns("pkey", "ckey", "c1", "c2"), WriteConf.fromSparkConf(sc.getConf))
+    counterUpdate.isIdempotent should be (false)
+  }
+
+  it should "be used with ifNotExists updates" in {
+    val ifNotExists = TableWriter(conn, ks, "write_if_not_exists_test", AllColumns, writeConf = WriteConf(ifNotExists = true))
+    ifNotExists.isIdempotent should be (true)
+  }
+
+  it should "be used with generic writes" in {
+    val genericWrite = TableWriter(conn, ks, "key_value", AllColumns, WriteConf.fromSparkConf(sc.getConf))
+    genericWrite.isIdempotent should be (true)
+  }
+
+  it should "be used with collections that aren't lists" in {
+    val listOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    listOverwrite.isIdempotent should be (true)
+    val setOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "scol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    setOverwrite.isIdempotent should be (true)
+    val mapOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "mcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    mapOverwrite.isIdempotent should be (true)
+  }
+
+
 
 }

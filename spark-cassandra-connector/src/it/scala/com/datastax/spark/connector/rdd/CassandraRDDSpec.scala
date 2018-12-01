@@ -6,11 +6,15 @@ import java.util.Date
 import com.datastax.driver.core.HostDistance
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.embedded.YamlTransformations
-import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, TableDef}
+import com.datastax.spark.connector.japi.CassandraJavaUtil
+import com.datastax.spark.connector.mapper.ClassWithUDTBean.AddressBean
+import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
+import com.datastax.spark.connector.writer.{TTLOption, TimestampOption, WriteConf}
 import org.joda.time.{DateTime, LocalDate}
 
 import scala.collection.JavaConversions._
@@ -45,8 +49,8 @@ class SubKeyValue extends SuperKeyValue {
   var group: Long = 0L
 }
 
-case class Address(street: String, city: String, zip: Int)
-case class ClassWithUDT(key: Int, name: String, addr: Address)
+case class Address(street: Option[String], city: Option[String], zip: Option[Int])
+case class ClassWithUDT(key: Int, name: String, addr: Option[Address])
 case class ClassWithTuple(key: Int, value: (Int, String))
 case class ClassWithSmallInt(key: Int, value: Short)
 
@@ -121,6 +125,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
         session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
         session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
         session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+        session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (2, 'name', {street: 'Some Street', city: null, zip: 11120})""")
+        session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (3, 'name', null)""")
       },
 
       Future {
@@ -607,16 +613,29 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to fetch columns from a table with user defined Cassandra type (UDT)" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.getInt(0), x)).toMap.get(1).get
     row.getInt(0) should be(1)
     row.getString(1) should be("name")
   }
 
+  it should "allow fetching columns into a JavaBean with nulls" in {
+    implicit val rrf = CassandraJavaUtil.mapRowTo(classOf[ClassWithUDTBean])
+    val rdd = sc.cassandraTable[ClassWithUDTBean](ks, "udts")
+    val result = rdd.collect
+    val expected = Array(
+      new ClassWithUDTBean(1, "name", new AddressBean("Some Street", "Paris", 11120)),
+      new ClassWithUDTBean(2, "name", new AddressBean("Some Street", null, 11120)),
+      new ClassWithUDTBean(3, "name", null)
+    )
+
+    result should contain theSameElementsAs expected
+  }
+
   it should "allow to fetch UDT columns as UDTValue objects" in {
     val result = sc.cassandraTable(ks, "udts").select("key", "name", "addr").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.getInt(0), x)).toMap.get(1).get
     row.getInt(0) should be(1)
     row.getString(1) should be("name")
 
@@ -675,15 +694,15 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
 
   it should "allow to fetch UDT columns as objects of case classes" in {
     val result = sc.cassandraTable[ClassWithUDT](ks, "udts").select("key", "name", "addr").collect()
-    result should have length 1
-    val row = result.head
+    result should have length 3
+    val row = result.map( x => (x.key, x)).toMap.get(1).get
     row.key should be(1)
     row.name should be("name")
 
-    val udtValue = row.addr
-    udtValue.street should be("Some Street")
-    udtValue.city should be("Paris")
-    udtValue.zip should be(11120)
+    val udtValue = row.addr.get
+    udtValue.street should be(Some("Some Street"))
+    udtValue.city should be(Some("Paris"))
+    udtValue.zip should be(Some(11120))
   }
 
   it should "allow to fetch tuple columns as TupleValue objects" in {
@@ -1061,7 +1080,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MiXEDCase")
     message should include ("MixedSpace.MixedCASE")
   }
-
+  
   it should "suggest possible keyspace and table matches if the keyspace and table do not exist" in {
     val ioe = the [IOException] thrownBy sc.cassandraTable("MoxedSpace","mixdcase").collect()
     val message = ioe.getMessage
@@ -1194,7 +1213,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "adjust maxConnections based on the runtime config" in {
-    val expected = math.max(sc.defaultParallelism/ sc.getExecutorStorageStatus.length, 1)
+    val expected = math.max(sc.defaultParallelism/ sc.statusTracker.getExecutorInfos.length, 1)
     markup(s"Expected = $expected, 1 is default")
     val rdd = sc.cassandraTable(ks, "big_table")
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)
@@ -1258,6 +1277,85 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
       (10, 10, "1010"),
       (10, 11, "1011"),
       (10, 12, "1012"))
+  }
+
+  it should "not delete rows older than year 2000" in {
+
+    conn.withSessionDo { session =>
+      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_old_rows""")
+      session.execute(s"""CREATE TABLE $ks.delete_old_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (10, 10, '1010')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (10, 11, '1011')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (10, 12, '1012')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (20, 20, '2020')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (20, 21, '2021')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows(key, group, value) VALUES (20, 22, '2022')""")
+    }
+
+    // Try to delete rows older than year 2000.
+    sc.cassandraTable(ks, "delete_old_rows").where("key = 10")
+      .deleteFromCassandra(ks, "delete_old_rows",
+        writeConf = WriteConf(ttl = TTLOption.constant(1), timestamp = TimestampOption.constant(new DateTime(2000, 1, 1, 7, 8, 8, 10))))
+
+    val results1 = sc
+      .cassandraTable[(Int, Int, String)](ks, "delete_old_rows")
+      .select("key", "group", "value")
+      .collect()
+
+    results1 should have size 6
+
+  }
+
+  it should "delete rows older than year 2100" in {
+
+    conn.withSessionDo { session =>
+      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_old_rows1""")
+      session.execute(s"""CREATE TABLE $ks.delete_old_rows1(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (10, 10, '1010')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (10, 11, '1011')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (10, 12, '1012')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (20, 20, '2020')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (20, 21, '2021')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows1(key, group, value) VALUES (20, 22, '2022')""")
+    }
+
+    // Try to delete rows older than year 2100.
+    sc.cassandraTable(ks, "delete_old_rows1").where("key = 10")
+      .deleteFromCassandra(ks, "delete_old_rows1",
+        writeConf = WriteConf(ttl = TTLOption.constant(1), timestamp = TimestampOption.constant(new DateTime(2100, 1, 1, 7, 8, 8, 10))))
+
+    val results1 = sc
+      .cassandraTable[(Int, Int, String)](ks, "delete_old_rows1")
+      .select("key", "group", "value")
+      .collect()
+
+    results1 should have size 3
+
+  }
+
+  it should "delete rows and ignore ttl setting" in {
+
+    conn.withSessionDo { session =>
+      session.execute(s"""DROP TABLE IF EXISTS $ks.delete_old_rows2""")
+      session.execute(s"""CREATE TABLE $ks.delete_old_rows2(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (10, 10, '1010')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (10, 11, '1011')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (10, 12, '1012')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (20, 20, '2020')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (20, 21, '2021')""")
+      session.execute(s"""INSERT INTO $ks.delete_old_rows2(key, group, value) VALUES (20, 22, '2022')""")
+    }
+
+    sc.cassandraTable(ks, "delete_old_rows2").where("key = 10")
+      .deleteFromCassandra(ks, "delete_old_rows2",
+        writeConf = WriteConf(ttl = TTLOption.constant(13456)))
+
+    val results1 = sc
+      .cassandraTable[(Int, Int, String)](ks, "delete_old_rows1")
+      .select("key", "group", "value")
+      .collect()
+
+    results1 should have size 3
 
   }
 

@@ -117,12 +117,15 @@ ensures a single Cassandra partition request will always create a single Spark t
 an `in` will also generate a single Spark Partition.
 
 ### Why can't the spark job find Spark Cassandra Connector Classes? (ClassNotFound Exceptions for SCC Classes)
+* java.lang.NoClassDefFoundError: com/twitter/jsr166e/LongAdder
+* java.lang.ClassNotFoundException: com.datastax.spark.connector.rdd.partitioner.CassandraPartition
 
-The most common cause for this is that the executor classpath does not contain the Spark Cassandra Connector
-jars. The simplest way to add these to the class path is to use SparkSubmit with the --jars option pointing
-to your Spark Cassandra Connector assembly jar. If this is impossible, the second best option
-is to manually distribute the jar to all of your executors and add the jar's location to `spark.executor.extraClassPath`
-in the SparkConf or spark-defaults.conf.
+These errors are commonly thrown when the Spark Cassandra Connector or its dependencies are not
+on the runtime classpath of the Spark Application. This is usually caused by not using the
+prescribed `--packages` method of adding the Spark Cassandra Connector and its dependencies
+to the runtime classpath. Fix this by following the launch guidelines as shown in the 
+[quick start guide](0_quick_start.md). Not using this method means it is up to the user to manually 
+ensure that the SCC and all of its dependencies wind up on the execution classpath.
 
 ### Where should I set configuration options for the connector?
 
@@ -203,13 +206,7 @@ Input.split.size_in_mb uses a internal system table in Cassandra ( >= 2.1.5) to 
 of the data in Cassandra. The table is called system.size_estimates is not meant to be absolutely accurate 
 so there will be some inaccuracy with smaller tables and split sizes.
 
-### java.lang.NoClassDefFoundError: com/twitter/jsr166e/LongAdder is getting thrown?
 
-This error is commonly thrown when the dependencies of the Spark Cassandra Connector are not
-on the runtime classpath of the Spark Application. This is usually caused by not using the
-prescribed `--packages` method of adding the Spark Cassandra Connector and it's dependencies
-to the runtime classpath. Fix this by following the launch guidelines as shown in the 
-[quick start guide](0_quick_start.md).
 
 
 ### Can I contribute to the Spark Cassandra Connector?

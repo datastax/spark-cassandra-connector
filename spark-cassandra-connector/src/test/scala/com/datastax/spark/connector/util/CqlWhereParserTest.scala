@@ -117,4 +117,11 @@ class CqlWhereParserTest extends FlatSpec with Matchers with Inside {
     )
   }
 
+  it should "handle long string requests" in {
+    val predval = "a" * 10000
+    parser.parse(s"""key = '$predval'""") should be (
+      List(EqPredicate("key", StringLiteral(predval)))
+    )
+  }
+
 }

@@ -6,7 +6,7 @@ import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.types.{ListType, MapType}
+import com.datastax.spark.connector.types.{CollectionColumnType, ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, Logging}
 import org.apache.spark.TaskContext
@@ -40,21 +40,6 @@ class TableWriter[T] private (
 
     val ifNotExistsSpec = if (writeConf.ifNotExists) "IF NOT EXISTS " else ""
 
-    val ttlSpec = writeConf.ttl match {
-      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
-      case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
-      case _ => None
-    }
-
-    val timestampSpec = writeConf.timestamp match {
-      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
-      case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
-      case _ => None
-    }
-
-    val options = List(ttlSpec, timestampSpec).flatten
-    val optionsSpec = if (options.nonEmpty) s"USING ${options.mkString(" AND ")}" else ""
-
     s"INSERT INTO ${quote(keyspaceName)}.${quote(tableName)} ($columnSpec) VALUES ($valueSpec) $ifNotExistsSpec$optionsSpec".trim
   }
 
@@ -71,9 +56,15 @@ class TableWriter[T] private (
     val deleteColumnsClause = deleteColumnNames.map(quote).mkString(", ")
     val whereClause = quotedColumnNames(primaryKey).map(c => s"$c = :$c").mkString(" AND ")
 
-    s"DELETE ${deleteColumnsClause} FROM ${quote(keyspaceName)}.${quote(tableName)} WHERE $whereClause"
+    val usingTimestampClause = if (timestampSpec.nonEmpty) s"USING ${timestampSpec.get}" else ""
+
+    if (ttlEnabled)
+      logWarning(s"${writeConf.ttl} is ignored for DELETE query")
+
+    s"DELETE ${deleteColumnsClause} FROM ${quote(keyspaceName)}.${quote(tableName)} $usingTimestampClause WHERE $whereClause"
   }
-  private lazy val queryTemplateUsingUpdate: String = {
+
+  private[connector] lazy val queryTemplateUsingUpdate: String = {
     val (primaryKey, regularColumns) = columns.partition(_.isPrimaryKeyColumn)
     val (counterColumns, nonCounterColumns) = regularColumns.partition(_.isCounterColumn)
 
@@ -98,7 +89,28 @@ class TableWriter[T] private (
     val setClause = (setNonCounterColumnsClause ++ setCounterColumnsClause).mkString(", ")
     val whereClause = quotedColumnNames(primaryKey).map(c => s"$c = :$c").mkString(" AND ")
 
-    s"UPDATE ${quote(keyspaceName)}.${quote(tableName)} SET $setClause WHERE $whereClause"
+    s"UPDATE ${quote(keyspaceName)}.${quote(tableName)} $optionsSpec SET $setClause WHERE $whereClause"
+  }
+
+  private lazy val timestampSpec: Option[String] = {
+    writeConf.timestamp match {
+      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
+      case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
+      case _ => None
+    }
+  }
+
+  private lazy val ttlEnabled: Boolean = writeConf.ttl != TTLOption.defaultValue
+
+  private lazy val optionsSpec: String = {
+    val ttlSpec = writeConf.ttl match {
+      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
+      case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
+      case _ => None
+    }
+
+    val options = List(ttlSpec, timestampSpec).flatten
+    if (options.nonEmpty) s"USING ${options.mkString(" AND ")}" else ""
   }
 
   private val isCounterUpdate =
@@ -107,10 +119,32 @@ class TableWriter[T] private (
   private val containsCollectionBehaviors =
     columnSelector.exists(_.isInstanceOf[CollectionColumnName])
 
+  private[connector] val isIdempotent: Boolean = {
+    //All counter operations are not Idempotent
+    if (columns.filter(_.isCounterColumn).nonEmpty) {
+        false
+    } else {
+      columnSelector.forall {
+        //Any appends or prepends to a list are non-idempotent
+        case cn: CollectionColumnName =>
+          val name = cn.columnName
+          val behavior = cn.collectionBehavior
+          val isNotList = !tableDef.columnByName(name).columnType.isInstanceOf[ListType[_]]
+          behavior match {
+            case CollectionPrepend => isNotList
+            case CollectionAppend => isNotList
+            case _ => true
+          }
+        //All other operations on regular columns are idempotent
+        case regularColumn: ColumnRef => true
+      }
+    }
+  }
+
 
   private def prepareStatement(queryTemplate:String, session: Session): PreparedStatement = {
     try {
-      session.prepare(queryTemplate)
+      session.prepare(queryTemplate).setIdempotent(isIdempotent)
     }
     catch {
       case t: Throwable =>
@@ -155,6 +189,7 @@ class TableWriter[T] private (
     */
   def update(taskContext: TaskContext, data: Iterator[T]): Unit =
     writeInternal(queryTemplateUsingUpdate, taskContext, data)
+
   /**
     * Write data with Cql INSERT statement
     */
@@ -163,7 +198,7 @@ class TableWriter[T] private (
 
   /**
     * Cql DELETE statement
-    * @param columns columns to delete, the row will be deleted comletely if the list is empty
+    * @param columns columns to delete, the row will be deleted completely if the list is empty
     * @param taskContext
     * @param data primary key values to select delete rows
     */
@@ -333,6 +368,10 @@ object TableWriter {
     checkCollectionBehaviors(table, columnRefs)
   }
 
+  /** Columns that cannot actually be written to because they representt virtual endpoints
+    */
+  private val InternalColumns = Set("solr_query")
+
   def apply[T : RowWriterFactory](
       connector: CassandraConnector,
       keyspaceName: String,
@@ -342,7 +381,9 @@ object TableWriter {
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
-    val selectedColumns = columnNames.selectFrom(tableDef)
+    val selectedColumns = columnNames
+      .selectFrom(tableDef)
+      .filter(col => !InternalColumns.contains(col.columnName))
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),

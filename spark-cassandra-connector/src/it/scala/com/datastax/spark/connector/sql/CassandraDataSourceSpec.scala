@@ -13,6 +13,9 @@ import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
+import com.datastax.spark.connector.rdd.CassandraTableScanRDD
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging with BeforeAndAfterEach {
   useCassandraConfig(Seq(YamlTransformations.Default))
@@ -266,11 +269,31 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1"))
       .load().filter("a=1 and b=2 and c=1 and e=1")
 
-    val qp = df.queryExecution
-      .executedPlan
-      .children(0)
-      .children(0)
-    qp.toString should include ("EqualTo(a,1), EqualTo(b,2), EqualTo(c,1)")
+    def getSourceRDD(rdd: RDD[_]): RDD[_] = {
+      if (rdd.dependencies.nonEmpty)
+        getSourceRDD(rdd.dependencies.head.rdd)
+      else
+        rdd
+    }
+
+    val cassandraTableScanRDD = getSourceRDD(
+      df.queryExecution
+        .executedPlan
+        .collectLeaves().head // Get Source
+        .asInstanceOf[RowDataSourceScanExec]
+        .rdd
+    ).asInstanceOf[CassandraTableScanRDD[_]]
+
+    val pushedWhere = cassandraTableScanRDD.where
+    val predicates = pushedWhere.predicates.head.split("AND").map(_.trim)
+    val values = pushedWhere.values
+    val pushedPredicates = predicates.zip(values)
+    pushedPredicates should contain allOf(
+      ("\"a\" = ?", 1),
+      ("\"b\" = ?", 2),
+      ("\"c\" = ?", 1),
+      ("\"e\" = ?", 1)
+    )
   }
 
   it should "pass through local conf properties" in {
@@ -284,8 +307,8 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .options(Map("keyspace" -> ks, "table" -> "test1", PushdownUsesConf.testKey -> "Don't Remove"))
       .load().filter("g=1 and h=1")
 
+    // Will throw an exception if local key is not set
     val qp = df.queryExecution.executedPlan
-    qp.constraints should not be empty
 
     val df2 = sparkSession
       .read
@@ -294,8 +317,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
       .load().filter("g=1 and h=1")
 
 
-    val qp2 = df2.queryExecution.executedPlan
-    qp2.constraints shouldBe empty
+    intercept[IllegalAccessException] {
+      df2.explain()
+    }
   }
 }
 
@@ -345,10 +369,10 @@ object PushdownUsesConf extends CassandraPredicateRules {
     predicates: AnalyzedPredicates,
     tableDef: TableDef,
     conf: SparkConf): AnalyzedPredicates = {
-      if (conf.get(testKey, notSet) == notSet){
-        AnalyzedPredicates(Set.empty, Set.empty)
-      } else {
+      if (conf.contains(testKey)) {
         predicates
+      } else {
+        throw new IllegalAccessException(s"Conf did not contain $testKey")
       }
   }
 }

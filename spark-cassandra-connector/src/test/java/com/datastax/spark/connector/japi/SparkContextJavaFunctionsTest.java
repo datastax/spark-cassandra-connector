@@ -2,6 +2,7 @@ package com.datastax.spark.connector.japi;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.apache.spark.SparkStatusTracker;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -22,6 +23,9 @@ public class SparkContextJavaFunctionsTest
 
         SparkContext sc = Mockito.mock(SparkContext.class);
         when(sc.getConf()).thenReturn(conf);
+
+        SparkStatusTracker st = Mockito.mock(SparkStatusTracker.class);
+        when(sc.statusTracker()).thenReturn(st);
 
         ReadConf readConf = CassandraJavaUtil.javaFunctions(sc).cassandraTable("a", "b").rdd().readConf();
 

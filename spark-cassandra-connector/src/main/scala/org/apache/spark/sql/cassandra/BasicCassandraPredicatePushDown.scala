@@ -13,11 +13,11 @@ import com.datastax.spark.connector.types.TimeUUIDType
  *  3. If there are regular columns in the pushdown predicates, they should have
  *     at least one EQ expression on an indexed column and no IN predicates.
  *  4. All partition column predicates must be included in the predicates to be pushed down,
- *     only the last part of the partition key can be an IN predicate. For each partition column,
+ *     any part of the partition key can be an EQ or IN predicate. For each partition column,
  *     only one predicate is allowed.
- *  5. For cluster column predicates, only last predicate can be non-EQ predicate
- *     including IN predicate, and preceding column predicates must be EQ predicates.
- *     If there is only one cluster column predicate, the predicates could be any non-IN predicate.
+ *  5. For cluster column predicates, only last predicate can be RANGE predicate
+ *     and preceding column predicates must be EQ or IN predicates.
+ *     If there is only one cluster column predicate, the predicates could be EQ or IN or RANGE predicate.
  *  6. There is no pushdown predicates if there is any OR condition or NOT IN condition.
  *  7. We're not allowed to push down multiple predicates for the same column if any of them
  *     is equality or IN predicate.
@@ -87,14 +87,23 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
 
 
   /**
-   * Selects partition key predicates for pushdown:
-   * 1. Partition key predicates must be equality or IN predicates.
-   * 2. Only the last partition key column predicate can be an IN.
-   * 3. All partition key predicates must be used or none.
+    * Selects partition key predicates for pushdown:
+    * 1. Partition key predicates must be equality or IN predicates.
+    * 2. Prior to Cassandra Version 2.2 (ProtocolVersion V4), only the last partition key column predicate can be an IN.
+    * In 2.2 you can use the IN operator on any partition key column
+    * 3. All partition key predicates must be used or none.
    */
   private val partitionKeyPredicatesToPushDown: Set[Predicate] = {
-    val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
-    val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
+    val (eqColumns, inColumns) = pv match {
+      case v if v >= V4 =>
+        (partitionKeyColumns.filter(eqPredicatesByName.contains),
+          partitionKeyColumns.filter(inPredicatesByName.contains))
+      case _ =>
+        val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
+        val inColumns = otherColumns.headOption.toSeq.filter(inPredicatesByName.contains)
+        (eqColumns, inColumns)
+    }
+
     if (eqColumns.size + inColumns.size == partitionKeyColumns.size)
       (eqColumns.flatMap(eqPredicatesByName) ++ inColumns.flatMap(inPredicatesByName)).toSet
     else
@@ -102,25 +111,46 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   }
 
   /**
-   * Selects clustering key predicates for pushdown:
-   * 1. Clustering column predicates must be equality predicates, except the last one.
-   * 2. The last predicate is allowed to be an equality or a range predicate.
-   * 3. The last predicate is allowed to be an IN predicate only if it was preceded by
-   *    an equality predicate.
-   * 4. Consecutive clustering columns must be used, but, contrary to partition key,
-   *    the tail can be skipped.
+    * Selects clustering key predicates for pushdown:
+    *
+    * Prior to Cassandra Verison 2.2 (ProtocolVersion V4)
+    * 1. Clustering column predicates must be equality predicates, except the last one.
+    * 2. The last predicate is allowed to be an equality or a range predicate.
+    * 3. The last predicate is allowed to be an IN predicate only if it was preceded by
+    * an equality predicate.
+    * 4. Consecutive clustering columns must be used, but, contrary to partition key,
+    * the tail can be skipped.
+    *
+    * Starting Cassandra Verison 2.2
+    * 1. Clustering column predicates must be equality or in predicates, except the last one.
+    * 2. The last predicate is allowed to be an equality or in or a range predicate.
+    * 3. Consecutive clustering columns must be used, but, contrary to partition key,
+    *
    */
   private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
-    val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
-    val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
-    val optionalNonEqPredicate = for {
-      c <- otherColumns.headOption.toSeq
-      p <- firstNonEmptySet(
-        rangePredicatesByName(c),
-        inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
-    } yield p
+    val predicates: Set[Predicate] = pv match {
+        case v if v >= V4 =>
+        val (eqInColumns, otherColumns) = clusteringColumns.span(cols =>
+          eqPredicatesByName.contains(cols) || inPredicatesByName.contains(cols)
+        )
+        val eqPredicates = eqInColumns.filter(eqPredicatesByName.contains).flatMap(eqPredicatesByName).toSet
+        val inPredicates = eqInColumns.filter(inPredicatesByName.contains).flatMap(inPredicatesByName).toSet
+        val rangePredicates = otherColumns.headOption.toSeq.filter(rangePredicatesByName.contains).flatMap(rangePredicatesByName).toSet
+        eqPredicates ++ inPredicates ++ rangePredicates
 
-    eqPredicates ++ optionalNonEqPredicate
+      case _ =>
+        val (eqColumns, otherColumns) = clusteringColumns.span(eqPredicatesByName.contains)
+        val eqPredicates = eqColumns.flatMap(eqPredicatesByName).toSet
+        val optionalNonEqPredicate = for {
+          c <- otherColumns.headOption.toSeq
+          p <- firstNonEmptySet(
+            rangePredicatesByName(c),
+            inPredicatesByName(c).filter(_ => c == clusteringColumns.last))
+        } yield p
+        eqPredicates ++ optionalNonEqPredicate
+
+    }
+    predicates
   }
 
   /**

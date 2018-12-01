@@ -211,7 +211,7 @@ object CassandraConnector extends Logging {
   def apply(sc: SparkContext): CassandraConnector = {
     val conf = CassandraConnectorConf(sc.getConf)
     val numExecutors: Int =
-      math.max(Option(sc.getExecutorStorageStatus).getOrElse(Array.empty).length, 1)
+      math.max(Option(sc.statusTracker.getExecutorInfos).getOrElse(Array.empty).length, 1)
     val numCores: Int = sc.defaultParallelism
     val coresPerExecutor: Int = math.max( numCores / numExecutors , 1)
     val runtimeConf = conf.copy( maxConnectionsPerExecutor = conf.maxConnectionsPerExecutor orElse (Some(coresPerExecutor)))

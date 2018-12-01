@@ -5,8 +5,6 @@ import java.io.ObjectOutputStream
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import com.datastax.driver.core.{UDTValue => DriverUDTValue, UserType, DataType}
@@ -30,8 +28,10 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   override type Column = FieldDef
 
   def isCollection = false
-  def scalaTypeTag = SparkReflectionLock.synchronized { implicitly[TypeTag[UDTValue]] }
+  def scalaTypeTag = implicitly[TypeTag[UDTValue]]
   def cqlTypeName = name
+
+  val fieldConverters = columnTypes.map(_.converterToCassandra)
 
   def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
@@ -40,7 +40,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
         val columnValues =
           for (i <- columns.indices) yield {
             val columnName = columnNames(i)
-            val columnConverter = columnTypes(i).converterToCassandra
+            val columnConverter = fieldConverters(i)
             val columnValue = columnConverter.convert(udtValue.getRaw(columnName))
             columnValue
           }
@@ -49,7 +49,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
         val columnValues =
          for (i <- columns.indices) yield {
            val columnName = columnNames(i)
-           val columnConverter = columnTypes(i).converterToCassandra
+           val columnConverter = fieldConverters(i)
            val dfSchemaIndex = dfGenericRow.schema.fieldIndex(columnName)
            val columnValue = columnConverter.convert(dfGenericRow.get(dfSchemaIndex))
            columnValue
@@ -76,7 +76,7 @@ object UserDefinedType {
     val fieldTypes = fieldNames.map(dataType.getFieldType)
     val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
 
-    override def targetTypeTag = SparkReflectionLock.synchronized { implicitly[TypeTag[DriverUDTValue]] }
+    override def targetTypeTag = implicitly[TypeTag[DriverUDTValue]]
 
     override def convertPF = {
       case udtValue: UDTValue =>

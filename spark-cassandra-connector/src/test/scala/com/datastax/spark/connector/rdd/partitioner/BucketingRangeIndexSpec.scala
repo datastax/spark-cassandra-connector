@@ -4,12 +4,12 @@ import scala.util.Random
 
 import org.scalacheck.Gen
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, ShouldMatchers}
+import org.scalatest.{FlatSpec, Matchers}
 
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.{Murmur3TokenFactory, RandomPartitionerTokenFactory}
 import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, LongToken, TokenRange}
 
-class BucketingRangeIndexSpec extends FlatSpec with PropertyChecks with ShouldMatchers {
+class BucketingRangeIndexSpec extends FlatSpec with PropertyChecks with Matchers {
 
   private val clusterSize = 1000 * 16
 
