@@ -104,6 +104,8 @@ object EmbeddedCassandra {
     }
   }
 
+  def runner(id: Int): CassandraRunner = cassandraRunners(id)
+  
   private[connector] var cassandraRunners = mutable.HashMap[Int, CassandraRunner]()
 
   private[connector] var currentConfigTemplates = mutable.HashMap[Int, YamlTransformations]()
