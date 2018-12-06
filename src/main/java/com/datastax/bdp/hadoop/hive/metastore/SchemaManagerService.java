@@ -168,7 +168,7 @@ public class SchemaManagerService
             // list all available graphs and check that graph is enabled
             try
             {
-                GraphResultSet rs = session.executeGraph("system.list()");
+                GraphResultSet rs = session.executeGraph("system.graphs()");
                 graphNames = Optional.of(StreamSupport.stream(rs.spliterator(), false)
                         .map(r -> r.asString())
                         .collect(Collectors.toSet()));
