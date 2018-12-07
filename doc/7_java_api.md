@@ -290,7 +290,7 @@ of parameters which are provided to the mentioned method.
 #### Example Saving a JavaRDD of Tuples to a Cassandra Table
 ```java
 CassandraJavaRDD<Tuple3<String, Integer, Double>> rdd = javaFunctions(sc)
-        .cassandraTable("ks", tuples", mapRowToTuple(String.class, Integer.class, Double.class))
+        .cassandraTable("ks", "tuples", mapRowToTuple(String.class, Integer.class, Double.class))
         .select("stringCol", "intCol", "doubleCol")
 ```
 
