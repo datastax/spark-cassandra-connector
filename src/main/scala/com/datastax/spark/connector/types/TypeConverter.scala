@@ -296,6 +296,7 @@ object TypeConverter {
       case x: String => TimestampParser.parse(x)
       case x: JodaLocalDate => x.toDateTimeAtStartOfDay.toDate
       case x: JavaLocalDate => Date.from(x.atStartOfDay(ZoneId.systemDefault()).toInstant)
+      case x: java.time.Instant => Date.from(x)
     }
   }
 
@@ -417,9 +418,15 @@ object TypeConverter {
 
   implicit object InetAddressConverter extends NullableTypeConverter[InetAddress] {
     def targetTypeTag = InetAddressTypeTag
+    val ipRegex = """.*?(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3}).*""".r
     def convertPF = {
       case x: InetAddress => x
-      case x: String => InetAddress.getByName(x)
+      case x: String => {
+        x match {
+          case ipRegex(ip1, ip2, ip3, ip4) => InetAddress.getByName(s"${ip1}.${ip2}.${ip3}.${ip4}")
+          case _ => InetAddress.getByName(x)
+        }
+      }
     }
   }
 
