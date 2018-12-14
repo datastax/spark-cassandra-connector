@@ -10,7 +10,6 @@ import com.datastax.driver.core.*;
 
 import io.netty.util.internal.StringUtil;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -31,7 +30,7 @@ public class HiveMetastoreMigrateTool
     private final static int EXIT_SUCCESS = 0;
     private final static int EXIT_FAILURE = 1;
 
-    public void migrate(String from, String to, Session session, PrintStream out) throws MetaException, InvalidObjectException
+    public void migrate(String from, String to, Session session, PrintStream out, Configuration conf) throws MetaException, InvalidObjectException
     {
         String currentRelease = HiveMetaStoreVersionUtil.getDSEVersion(session.getCluster()).toString();
 
@@ -81,7 +80,7 @@ public class HiveMetastoreMigrateTool
             out.println("Wrong to version number: " + to);
             System.exit(EXIT_FAILURE);
         }
-        Configuration conf = new HiveConf();
+
         if (HiveMetaStoreVersionUtil.getHiveMetastoreVersion(to) == 2)
         {
             CassandraHiveMetaStore metastore = new CassandraHiveMetaStore();
