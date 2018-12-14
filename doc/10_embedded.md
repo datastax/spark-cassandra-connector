@@ -24,6 +24,6 @@ Simply add this to your SBT build, or in the appropriate format for a Maven buil
     "com.datastax.spark"  %% "spark-cassandra-connector-embedded" % {latest.version}
     
 ## Examples
-https://github.com/datastax/SparkBuildExamples
+[Spark Build Examples](https://github.com/datastax/SparkBuildExamples)
 
 [Next - Performance Monitoring](11_metrics.md)

@@ -2,15 +2,21 @@
 
 ## Frequently Asked Questions
 
-### What does this mean "`NoClassDefFoundError: scala/collection/GenTraversableOnce$class?`"
+### Why am I seeing (Scala Version Mismatch Error)
+
+#### Non Exclusive List of Scala Version Mismatch Errors
+* `NoClassDefFoundError: scala/collection/GenTraversableOnce$class?`
+* `NoSuchMethodError: scala.reflect.api.JavaUniverse.runtimeMirror(Ljava/lang/ClassLoader;)`
+* `missing or invalid dependency detected while loading class file 'ScalaGettableByIndexData.class'`
+* `java.lang.NoClassDefFoundError: scala/runtime/AbstractPartialFunction`
 
 This means that there is a mix of Scala versions in the libraries used in your
-code. The collection api is different between Scala 2.10 and 2.11 and this the 
-most common error which occurs if a scala 2.10 library is attempted to be loaded
+code. The collection API is different between Scala 2.10 and 2.11 and this the 
+most common error which occurs if a Scala 2.10 library is attempted to be loaded
 in a Scala 2.11 runtime. To fix this make sure that the name has the correct
 Scala version suffix to match your Scala version. 
 
-##### Spark Cassandra Connector built against Scala 2.10
+##### Spark Cassandra Connector built Against Scala 2.10
 ```xml
 <artifactId>spark-cassandra-connector_2.10</artifactId>
 ```
@@ -39,7 +45,7 @@ For reference the defaults of Spark as downloaded from the Apache Website are
 ### How do I Fix Guava Classpath Errors
 
 Guava errors come from a conflict between Guava brought in by some 
-dependency (like Hadoop 2.7) and the Cassandra java Driver. 
+dependency (like Hadoop 2.7) and the Cassandra Java Driver. 
 The Cassandra Java Driver is unable to function correctly if an 
 earlier version of Guava is preempting the required version. The 
 Java Driver will throw errors if it determines 
@@ -90,7 +96,7 @@ determine how many tasks have been generated. To check this look at the UI for y
 job and see how many tasks are being run. In the current Shell a small progress bar is shown
 when running stages, the numbers represent (Completed Tasks + Running Tasks) / Total Tasks 
 
-    [Stage 2:=============================================>  (121 + 1) / 200]0
+    [Stage 2:=============================================>  (121 + 1) / 200]
 
 If you see that only a single task has been created this means that the Cassandra Token range has
 not been split into a enough tasks to be well parallelized on your cluster. The number of 
@@ -111,12 +117,15 @@ ensures a single Cassandra partition request will always create a single Spark t
 an `in` will also generate a single Spark Partition.
 
 ### Why can't the spark job find Spark Cassandra Connector Classes? (ClassNotFound Exceptions for SCC Classes)
+* java.lang.NoClassDefFoundError: com/twitter/jsr166e/LongAdder
+* java.lang.ClassNotFoundException: com.datastax.spark.connector.rdd.partitioner.CassandraPartition
 
-The most common cause for this is that the executor classpath does not contain the Spark Cassandra Connector
-jars. The simplest way to add these to the class path is to use SparkSubmit with the --jars option pointing
-to your Spark Cassandra Connector assembly jar. If this is impossible, the second best option
-is to manually distribute the jar to all of your executors and add the jar's location to `spark.executor.extraClassPath`
-in the SparkConf or spark-defaults.conf.
+These errors are commonly thrown when the Spark Cassandra Connector or its dependencies are not
+on the runtime classpath of the Spark Application. This is usually caused by not using the
+prescribed `--packages` method of adding the Spark Cassandra Connector and its dependencies
+to the runtime classpath. Fix this by following the launch guidelines as shown in the 
+[quick start guide](0_quick_start.md). Not using this method means it is up to the user to manually 
+ensure that the SCC and all of its dependencies wind up on the execution classpath.
 
 ### Where should I set configuration options for the connector?
 
@@ -197,13 +206,21 @@ Input.split.size_in_mb uses a internal system table in Cassandra ( >= 2.1.5) to 
 of the data in Cassandra. The table is called system.size_estimates is not meant to be absolutely accurate 
 so there will be some inaccuracy with smaller tables and split sizes.
 
+
+
+
 ### Can I contribute to the Spark Cassandra Connector?
 
-YES! Feel free to start a Jira and detail the changes you would like to make or the feature you
+YES! Feel free to start a JIRA and detail the changes you would like to make or the feature you
 would like to add. We would be happy to discuss it with you and see your work. Feel free to create
- a Jira before you have started any work if you would like feedback on an idea. When you have a branch
+a JIRA before you have started any work if you would like feedback on an idea. When you have a branch
 that you are satisfied with and passes all the tests (`/dev/run_tests.sh`) make a GitHub PR against
-your target Connector Version and set your Jira to Reviewing.
+your target Connector Version and set your JIRA to Reviewing.
+
+### Is there a CassandraRDDMock I can use in my tests?
+
+Yes. Please see CassandraRDDMock.scala for the class and CassandraRDDMockSpec.scala for example
+usage.
 
 ### What should I do if I find a bug? 
 

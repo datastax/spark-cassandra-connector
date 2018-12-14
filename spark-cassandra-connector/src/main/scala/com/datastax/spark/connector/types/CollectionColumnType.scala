@@ -6,8 +6,6 @@ import scala.reflect.ClassTag
 import com.datastax.spark.connector.types.TypeConverter.{MapConverter, VectorConverter, SetConverter}
 
 
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
 trait CollectionColumnType[T] extends ColumnType[T] {
   def isCollection = true
 }

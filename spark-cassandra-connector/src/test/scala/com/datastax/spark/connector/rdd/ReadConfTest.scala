@@ -1,9 +1,9 @@
 package com.datastax.spark.connector.rdd
 
 import org.apache.spark.SparkConf
-import org.scalatest.{FlatSpec, ShouldMatchers}
+import org.scalatest.{FlatSpec, Matchers}
 
-class ReadConfTest extends FlatSpec with ShouldMatchers {
+class ReadConfTest extends FlatSpec with Matchers {
 
   "A ReadConf" should "ignore JoinWithCassandraTable Parameters if readsPerSec is set" in {
     val expected = 50

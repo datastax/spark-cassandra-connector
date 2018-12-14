@@ -5,13 +5,11 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.util.{Try, Success, Failure}
 
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
-
 object ReflectionUtil {
   private val rm = runtimeMirror(getClass.getClassLoader)
   private val singletonCache = TrieMap[String, Any]()
 
-  private def findScalaObject[T : TypeTag](objectName: String): Try[T] = SparkReflectionLock.synchronized {
+  private def findScalaObject[T : TypeTag](objectName: String): Try[T] =
     Try {
       val targetType = implicitly[TypeTag[T]].tpe
       val module = rm.staticModule(objectName)
@@ -21,9 +19,8 @@ object ReflectionUtil {
       val moduleMirror = rm.reflectModule(module)
       moduleMirror.instance.asInstanceOf[T]
     }
-  }
 
-  private def findSingletonClassInstance[T : TypeTag](className: String): Try[T] = SparkReflectionLock.synchronized {
+  private def findSingletonClassInstance[T : TypeTag](className: String): Try[T] =
     Try {
       val targetType = implicitly[TypeTag[T]].tpe
       val targetClass = rm.runtimeClass(targetType.typeSymbol.asClass)
@@ -42,7 +39,6 @@ object ReflectionUtil {
         throw new IllegalArgumentException(s"Class $className is not $targetType")
       instance.asInstanceOf[T]
     }
-  }
 
   /** Returns either a global Scala object by its fully qualified name or a singleton
     * instance of a Java class identified by its fully qualified class name.
@@ -59,7 +55,7 @@ object ReflectionUtil {
   /** Returns a list of parameter names and types of the main constructor.
     * The main constructor is assumed to be the one that has the highest number of parameters.
     * In case on ambiguity, this method throws IllegalArgumentException.*/
-  def constructorParams(tpe: Type): Seq[(String, Type)] = SparkReflectionLock.synchronized {
+  def constructorParams(tpe: Type): Seq[(String, Type)] = {
     val ctorSymbol = Reflect.methodSymbol(tpe)
     // the reason we're using typeSignatureIn is because the constructor might be a generic type
     // and we don't really want to get generic type parameters here, but concrete ones:
@@ -68,12 +64,10 @@ object ReflectionUtil {
       (param.name.toString, param.typeSignature)
   }
 
-  def constructorParams[T : TypeTag]: Seq[(String, Type)] = SparkReflectionLock.synchronized {
-    constructorParams(implicitly[TypeTag[T]].tpe)
-  }
+  def constructorParams[T : TypeTag]: Seq[(String, Type)] = constructorParams(implicitly[TypeTag[T]].tpe)
 
   /** Returns a list of names and return types of 0-argument public methods of a Scala type */
-  def getters(tpe: Type): Seq[(String, Type)] = SparkReflectionLock.synchronized {
+  def getters(tpe: Type): Seq[(String, Type)] = {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod
     for (g <- methods if g.isGetter) yield {
       // the reason we're using typeSignatureIn is because the getter might be a generic type
@@ -83,13 +77,11 @@ object ReflectionUtil {
     }
   }
 
-  def getters[T : TypeTag]: Seq[(String, Type)] = SparkReflectionLock.synchronized {
-    getters(implicitly[TypeTag[T]].tpe)
-  }
+  def getters[T : TypeTag]: Seq[(String, Type)] = getters(implicitly[TypeTag[T]].tpe)
 
   /** Looks up a method by name in a type.
     * The method must exist, otherwise `IllegalArgumentException` is thrown. */
-  def method(tpe: Type, methodName: String): Type = SparkReflectionLock.synchronized {
+  def method(tpe: Type, methodName: String): Type = {
     require(methodName != null, "Method name must not be null")
     require(methodName.nonEmpty, "Method name must not be empty")
     val member = tpe.member(newTermName(methodName))
@@ -100,25 +92,23 @@ object ReflectionUtil {
 
   /** Returns the type of the parameters of the given method.
     * The method must exist, otherwise `IllegalArgumentException` is thrown. */
-  def methodParamTypes(tpe: Type, methodName: String): Seq[Type] = SparkReflectionLock.synchronized {
+  def methodParamTypes(tpe: Type, methodName: String): Seq[Type] =
     method(tpe, methodName) match {
       case m: MethodType => m.params.map(_.typeSignature)
       case m: NullaryMethodType => Seq.empty
     }
-  }
 
   /** Returns the return type of the method.
     * The method must exist, otherwise `IllegalArgumentException` is thrown. */
-  def returnType(tpe: Type, methodName: String): Type = SparkReflectionLock.synchronized {
+  def returnType(tpe: Type, methodName: String): Type =
     method(tpe, methodName) match {
       case m: MethodType => m.resultType
       case m: NullaryMethodType => m.resultType
     }
-  }
 
   /** Returns a list of names and parameter types of 1-argument public methods of a Scala type,
     * returning no result (Unit) */
-  def setters(tpe: Type): Seq[(String, Type)] = SparkReflectionLock.synchronized {
+  def setters(tpe: Type): Seq[(String, Type)] = {
     val methods = for (d <- tpe.members.toSeq if d.isMethod && d.isPublic) yield d.asMethod
     for (s <- methods if s.isSetter) yield {
       // need a concrete type, not a generic one:
@@ -127,13 +117,11 @@ object ReflectionUtil {
     }
   }
 
-  def setters[T : TypeTag]: Seq[(String, Type)] = SparkReflectionLock.synchronized {
-    setters(implicitly[TypeTag[T]].tpe)
-  }
+  def setters[T : TypeTag]: Seq[(String, Type)] = setters(implicitly[TypeTag[T]].tpe)
 
   /** Creates a corresponding `TypeTag` for the given `Type`.
     * Allows to use reflection-created objects in APIs expecting `TypeTag`. */
-  def typeToTypeTag[T](tpe: Type): TypeTag[T] = SparkReflectionLock.synchronized {
+  def typeToTypeTag[T](tpe: Type): TypeTag[T] = {
     val mirror = scala.reflect.runtime.currentMirror
     TypeTag(mirror, new reflect.api.TypeCreator {
       def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
@@ -144,9 +132,8 @@ object ReflectionUtil {
   }
 
   /** Creates a corresponding `ClassTag` for the given `TypeTag` */
-  def classTag[T : TypeTag]: ClassTag[T] = SparkReflectionLock.synchronized {
+  def classTag[T : TypeTag]: ClassTag[T] =
     ClassTag[T](typeTag[T].mirror.runtimeClass(typeTag[T].tpe))
-  }
 
   /** Returns true if the type is scala tuple of any arity */
   def isScalaTuple(symbol: Symbol): Boolean =

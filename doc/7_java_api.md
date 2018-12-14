@@ -8,11 +8,20 @@ Connector works. The Java API is included in the standard
 `spark-cassandra-connector` artifact.
 
 ### Prerequisites 
+
+#### Spark Cassandra Connector < 2.0
 In order to use Java API, you need to add the spark-cassandra-connector to the list of dependencies:
 
 ```scala
 libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0" 
 ```
+
+#### Spark Cassandra Connector >= 2.0
+The Java API is now included in the standard Spark Cassandra Connector module, no additional dependencies are
+required.
+
+
+### Basic Usage
 
 The best way to use Connector Java API is to import statically all the methods in `CassandraJavaUtil`. 
 This utility class is the main entry point for Connector Java API.
@@ -253,6 +262,23 @@ of *RDD* elements and uses a default `JavaBeanColumnMapper` to map those element
 to attribute translations can be specified in order to override the default logic. If `JavaBeanColumnMapper` is not an
 option, a custom column mapper can be specified as well.
 
+#### Example of Saving and RDD of Person object with Differently Named Fields
+Say we have a table `people2` with columns `id INT`, `last_name TEXT`, `date_of_birth TIMESTAMP` and
+we want to save RDD of `Person` class objects to this table. To do it we need to use overloaded `mapToRow(Class, Map<String, String>)` method.
+```java
+Map<String, String> fieldToColumnMapping = new HashMap<>();
+fieldToColumnMapping.put("name", "last_name");
+fieldToColumnMapping.put("birthDate", "date_of_birth");
+javaFunctions(rdd).writerBuilder("ks", "people2", mapToRow(Person.class, fieldToColumnMapping)).saveToCassandra();
+```
+Another version of method `mapToRow(Class, Pair[])` can be considered much more handy for inline invocations.
+```java
+javaFunctions(rdd).writerBuilder("ks", "people2", mapToRow(
+                Person.class,
+                Pair.of("name", "last_name"),
+                Pair.of("birthDate", "date_of_birth")))
+        .saveToCassandra();
+```
 ### Working with tuples
 
 Since 1.3 there new methods to work with Scala tuples. 
@@ -264,7 +290,7 @@ of parameters which are provided to the mentioned method.
 #### Example Saving a JavaRDD of Tuples to a Cassandra Table
 ```java
 CassandraJavaRDD<Tuple3<String, Integer, Double>> rdd = javaFunctions(sc)
-        .cassandraTable("ks", tuples", mapRowToTuple(String.class, Integer.class, Double.class))
+        .cassandraTable("ks", "tuples", mapRowToTuple(String.class, Integer.class, Double.class))
         .select("stringCol", "intCol", "doubleCol")
 ```
 

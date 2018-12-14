@@ -1088,7 +1088,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
     message should include ("MixedSpace.MiXEDCase")
     message should include ("MixedSpace.MixedCASE")
   }
-
+  
   it should "suggest possible keyspace and table matches if the keyspace and table do not exist" in {
     val ioe = the [IOException] thrownBy sc.cassandraTable("MoxedSpace","mixdcase").collect()
     val message = ioe.getMessage
@@ -1221,7 +1221,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
   }
 
   it should "adjust maxConnections based on the runtime config" in {
-    val expected = math.max(sc.defaultParallelism/ sc.getExecutorStorageStatus.length, 1)
+    val expected = math.max(sc.defaultParallelism/ sc.statusTracker.getExecutorInfos.length, 1)
     markup(s"Expected = $expected, 1 is default")
     val rdd = sc.cassandraTable(ks, "big_table")
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)

@@ -16,14 +16,14 @@ Configure a new Scala project with the Apache Spark and dependency.
 The dependencies are easily retrieved via the spark-packages.org website. For example, if you're using `sbt`, your build.sbt should include something like this:
 
     resolvers += "Spark Packages Repo" at "https://dl.bintray.com/spark-packages/maven"
-    libraryDependencies += "datastax" % "spark-cassandra-connector" % "2.0.0-s_2.11"
+    libraryDependencies += "datastax" % "spark-cassandra-connector" % "2.4.0-s_2.11"
  
 The spark-packages libraries can also be used with spark-submit and spark shell, these
 commands will place the connector and all of its dependencies on the path of the
 Spark Driver and all Spark Executors.
    
-    $SPARK_HOME/bin/spark-shell --packages datastax:spark-cassandra-connector:2.0.0-s_2.11
-    $SPARK_HOME/bin/spark-submit --packages datastax:spark-cassandra-connector:2.0.0-s_2.11
+    $SPARK_HOME/bin/spark-shell --packages datastax:spark-cassandra-connector:2.4.0-s_2.11
+    $SPARK_HOME/bin/spark-submit --packages datastax:spark-cassandra-connector:2.4.0-s_2.11
    
 For the list of available versions, see:
 - https://spark-packages.org/package/datastax/spark-cassandra-connector
@@ -59,16 +59,17 @@ Run the `spark-shell` with the packages line for your version. To configure
 the default Spark Configuration pass key value pairs with `--conf`
 
     $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
-                                --packages datastax:spark-cassandra-connector:2.0.0-s_2.11
+                                --packages datastax:spark-cassandra-connector:2.4.0-s_2.11
 
 This command would set the Spark Cassandra Connector parameter 
 `spark.cassandra.connection.host` to `127.0.0.1`. Change this
 to the address of one of the nodes in your Cassandra cluster.
  
-Enable Cassandra-specific functions on the `SparkContext`, `RDD`, and `DataFrame`:
+Enable Cassandra-specific functions on the `SparkContext`, `SparkSession`, `RDD`, and `DataFrame`:
 
 ```scala
 import com.datastax.spark.connector._
+import org.apache.spark.sql.cassandra._
 ```
 
 ### Loading and analyzing data from Cassandra

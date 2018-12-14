@@ -6,8 +6,7 @@ sudo: required
 
 dist: trusty
 scala:
-  - 2.10.6
-  - 2.11.8
+  - 2.11.12
 
 env:
  - CASSANDRA_VERSION=2.1.15

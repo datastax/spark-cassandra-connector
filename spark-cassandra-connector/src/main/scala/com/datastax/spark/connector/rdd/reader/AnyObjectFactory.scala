@@ -6,7 +6,6 @@ import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.reflect.ConstructorUtils
-import org.apache.spark.sql.catalyst.ReflectionLock.SparkReflectionLock
 import com.datastax.spark.connector.util.Logging
 import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
@@ -21,7 +20,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   import AnyObjectFactory._
 
   @transient
-  private val tpe = SparkReflectionLock.synchronized(implicitly[TypeTag[T]].tpe)
+  private val tpe = implicitly[TypeTag[T]].tpe
 
   @transient
   lazy val rm: RuntimeMirror =
@@ -43,10 +42,8 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   // the right constructor exists or not, before the job is started
   val argCount: Int = constructorParamTypes.length
 
-  val argOffset: Int = oneIfMemberClass(javaClass)
-
   @transient
-  lazy val constructorParamTypes: Array[Type] = SparkReflectionLock.synchronized{
+  lazy val constructorParamTypes: Array[Type] = {
     val requiredParamClasses = javaConstructor.getParameterTypes
       .drop(AnyObjectFactory.oneIfMemberClass(javaClass))
 
@@ -75,12 +72,12 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   }
 
   @transient
-  private lazy val argBuffer = {
-    val buffer = Array.ofDim[AnyRef](argOffset + argCount)
+  private lazy val outerInstanceArg: Seq[AnyRef] = {
     if (isRealMemberClass(javaClass)) {
-      buffer(0) = resolveDirectOuterInstance()
+      Seq(resolveDirectOuterInstance)
+    } else {
+      Seq.empty
     }
-    buffer
   }
 
   private def resolveDirectOuterInstance() = {
@@ -104,11 +101,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
       ConstructorUtils.invokeExactConstructor(innerClass, outerInstance).asInstanceOf[AnyRef])
   }
 
-  def newInstance(args: AnyRef*): T = {
-    for (i <- 0 until argCount)
-      argBuffer(i + argOffset) = args(i)
-    javaConstructor.newInstance(argBuffer: _*)
-  }
+  def newInstance(args: AnyRef*): T = javaConstructor.newInstance(outerInstanceArg ++ args: _*)
 }
 
 object AnyObjectFactory extends Logging {
