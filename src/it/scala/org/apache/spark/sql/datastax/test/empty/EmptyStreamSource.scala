@@ -1,11 +1,10 @@
-package com.datastax.spark.connector.test.empty
+package org.apache.spark.sql.datastax.test.empty
 
-import com.datastax.spark.connector.test.monotonic.FakeStreamSource
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
-import org.apache.spark.sql.execution.streaming.{LongOffset, Offset, SerializedOffset, Source}
+import org.apache.spark.sql.catalyst.plans.logical.LocalRelation
+import org.apache.spark.sql.execution.streaming.{LongOffset, Offset, Source}
 import org.apache.spark.sql.sources.StreamSourceProvider
 import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 
 
 /**
@@ -34,7 +33,7 @@ class DefaultSource extends StreamSourceProvider {
     }
 
     override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
-      sqlContext.sparkSession.createDataFrame(sqlContext.sparkContext.emptyRDD[Row], schema)
+      Dataset.ofRows(sqlContext.sparkSession, LocalRelation(schema.toAttributes, isStreaming = true))
     }
 
     override def stop() {}

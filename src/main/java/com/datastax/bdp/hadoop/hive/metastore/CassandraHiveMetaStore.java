@@ -1002,7 +1002,7 @@ public class CassandraHiveMetaStore implements RawStore
     	if (value == null)
     		return false;
 
-    	return compare(value, pair[1].trim(), opr);
+    	return compare(value, pair[1].trim().replaceAll("^\"|\"$", ""), opr);
     }
 
     private Operator getOpr(String filter)
@@ -1308,25 +1308,54 @@ public class CassandraHiveMetaStore implements RawStore
 
     }
 
+    /**
+     * Copied from CachedStore from Apache Hive
+     */
+    private String getPartNameMatcher(Table table, List<String> partSpecs) throws MetaException {
+        List<FieldSchema> partCols = table.getPartitionKeys();
+        int numPartKeys = partCols.size();
+        if (partSpecs.size() > numPartKeys) {
+            throw new MetaException(
+                    "Incorrect number of partition values." + " numPartKeys=" + numPartKeys + ", partSpecs=" + partSpecs.size());
+        }
+        partCols = partCols.subList(0, partSpecs.size());
+        // Construct a pattern of the form: partKey=partVal/partKey2=partVal2/...
+        // where partVal is either the escaped partition value given as input,
+        // or a regex of the form ".*"
+        // This works because the "=" and "/" separating key names and partition key/values
+        // are not escaped.
+        String partNameMatcher = Warehouse.makePartName(partCols, partSpecs, ".*");
+        // add ".*" to the regex to match anything else afterwards the partial spec.
+        if (partSpecs.size() < numPartKeys) {
+            partNameMatcher += ".*";
+        }
+        return partNameMatcher;
+    }
+
     @Override
-    public List<Partition> listPartitionsPsWithAuth(String databaseName, String tableName, List<String> maxParts,
+    public List<Partition> listPartitionsPsWithAuth(String databaseName, String tableName, List<String> part_vals,
             short limit,
             String userName, List<String> groupNames) throws MetaException, InvalidObjectException
     {
         try
         {
             List<Partition> partitions = getPartitionsWithAuth(databaseName, tableName, limit, userName, groupNames);
-            if (maxParts == null || maxParts.size() == 0)
+            if (part_vals == null || part_vals.size() == 0 )
             	return partitions;
+
+            short count = 0;
+
+            Table table = getTable(databaseName, tableName);
+            String nameMatcher = getPartNameMatcher(table, part_vals);
 
             List<Partition> filteredPartitions = new LinkedList<>();
 
-            for (Partition partition : partitions) {
-            	String partitionName = partition.getValues() != null && partition.getValues().size() > 0 ?
-            		partition.getValues().get(0): "";
-
-            	if (maxParts.contains(partitionName))
-            		filteredPartitions.add(partition);
+            for (Partition part: partitions) {
+                String partName = Warehouse.makePartName(table.getPartitionKeys(), part.getValues());
+                if (partName.matches(nameMatcher) && (limit == -1 || count < limit))
+                {
+                    filteredPartitions.add(part);
+                }
             }
             return filteredPartitions;
         }

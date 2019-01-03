@@ -544,7 +544,7 @@ object CassandraSourceRelation extends Logging {
     val oldPlan = ds.queryExecution.logical
     Dataset[K](ds.sparkSession,
       oldPlan.transform{
-        case logical @ LogicalRelation(cassandraSourceRelation: CassandraSourceRelation, _, _) =>
+        case logical @ LogicalRelation(cassandraSourceRelation: CassandraSourceRelation, _, _, _) =>
           logical.copy(cassandraSourceRelation.withDirectJoin(directJoinSetting))
       }
     )

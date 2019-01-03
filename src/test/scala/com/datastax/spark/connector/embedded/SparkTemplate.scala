@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.embedded
 
 import java.io.File
+import java.nio.file.Files
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
@@ -65,7 +66,8 @@ object SparkTemplate {
     "spark.hadoop.cassandra.autoCreateHiveSchema" -> "true",
     "spark.hadoop.spark.enable" -> "true",
     "spark.hadoop.cassandra.connection.metaStoreColumnFamilyName" -> "sparkmetastore",
-    "spark.sql.catalogImplementation" -> "hive"
+    "spark.sql.catalogImplementation" -> "hive",
+    "spark.sql.warehouse.dir" -> Files.createTempDirectory("tempWarehouse").toString
   )
 
   def defaultConf = _defaultConf.clone()
