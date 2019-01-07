@@ -148,7 +148,9 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
       case _ => try {
         Some(DetachedClientConfigurationFactory.getClientConfiguration())
       } catch {
-        case _: Throwable => None
+        case t: Throwable =>
+          logger.error("Failed to obtain client configuration factory", t)
+          None
       }
     }
 
