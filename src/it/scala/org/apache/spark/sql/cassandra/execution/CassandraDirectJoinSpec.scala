@@ -18,6 +18,8 @@ import scala.concurrent.Future
 
 
 case class DirectJoinRow (k: Int, v: Int)
+case class IdRow (id: String)
+case class TimestampRow (ts: java.sql.Timestamp)
 
 class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventually {
 
@@ -68,6 +70,27 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
           session.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC))
         }
         futures.map(_.get)
+      },
+      Future {
+        session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
+        val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
+        val futures = for (id <- 1 to 100) yield {
+          val jT: java.sql.Timestamp = new Timestamp(id.toLong)
+          val jV: java.lang.Integer = id.toInt
+          session.executeAsync(ps.bind(jT, jV))
+        }
+        futures.map(_.get)
+      },
+      Future {
+        session.execute(s"CREATE TYPE $ks.address (street text, city text, residents set<frozen<tuple<text, text>>>) ")
+        session.execute(s"CREATE TABLE $ks.location (id text, address frozen <address>, PRIMARY KEY (id))")
+        session.execute(
+          s"""INSERT INTO $ks.location (id, address) VALUES ('test',
+             |{
+             |  street: 'Laurel',
+             |  city: 'New Orleans',
+             |  residents:{('sundance', 'dog'), ('cara', 'dog')}
+             |})""".stripMargin)
       },
       Future {
         report("Making table with all PV4 Datatypes")
@@ -280,10 +303,15 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
 
 
     //Need to wait for a real batch to occur
-    eventually(timeout(scaled(10 seconds))) {
-      getDirectJoin(stream) shouldBe defined
+    try {
+      eventually(timeout(scaled(10 seconds))) {
+        getDirectJoin(stream) shouldBe defined
+      }
+    } catch {
+      case ex: Throwable => throw(ex)
+    } finally {
+      stream.stop
     }
-
   }
 
   "Cassandra Data Source Execution" should " do a simple left join" in {
@@ -549,6 +577,20 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
         && left("kb") === right("kb")
         && left("kc") === right("kc"))
       .withColumn("funnewcol", left("ka") + left("kb") + left("kc"))
+  }
+
+  it should "work with UDT's and Tuples in the Table definition" in compareDirectOnDirectOff{ spark =>
+    val left = spark.createDataset(Seq(IdRow("test")))
+    val right = spark.read.cassandraFormat("location", ks).load()
+    left.join(right, left("id") === right("id"))
+  }
+
+  it should "work on a timestamp PK join" in compareDirectOnDirectOff { spark =>
+    val left = spark.createDataset(
+      (1 to 100).map(value => TimestampRow(new Timestamp(value.toLong)))
+    )
+    val right = spark.read.cassandraFormat("tstest", ks).load()
+    left.join(right, left("ts") === right("t"))
   }
 
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {

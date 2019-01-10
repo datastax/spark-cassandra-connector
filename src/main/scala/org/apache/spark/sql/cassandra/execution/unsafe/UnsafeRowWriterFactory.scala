@@ -3,7 +3,9 @@ package org.apache.spark.sql.cassandra.execution.unsafe
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.writer.{RowWriter, RowWriterFactory}
+import org.apache.spark.sql.catalyst.CatalystTypeConverters
 import org.apache.spark.sql.catalyst.expressions.{Expression, UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.types.StructType
 
 class UnsafeRowWriterFactory(expressions: Seq[Expression]) extends RowWriterFactory[UnsafeRow] {
   /** Creates a new `RowWriter` instance.
@@ -28,7 +30,13 @@ class UnsafeRowWriter(
   override val columnNames = selectedColumns.map(_.columnName)
   private val columns = columnNames.map(table.columnByName)
   private val columnTypes = columns.map(_.columnType)
-  private val converters = columns.map(_.columnType.converterToCassandra)
+  private val convertersToScala = expressions.map(expression =>
+    CatalystTypeConverters.createToScalaConverter(expression.dataType)
+  )
+  private val convertersToCassandra = columns.map(_.columnType.converterToCassandra)
+  private val converters = convertersToScala.zip(convertersToCassandra).map ( converterPair =>
+    converterPair._1.andThen(converterPair._2.convert(_))
+  )
   private val dataTypes = expressions.map(_.dataType)
   private val size = expressions.size
 
@@ -40,7 +48,7 @@ class UnsafeRowWriter(
     val myRow = keyExtractProj(row)
     for (i <- 0 until size) {
       val colValue = myRow.get(i, dataTypes(i))
-      buffer(i) = converters(i).convert(colValue)
+      buffer(i) = converters(i).apply(colValue)
     }
   }
 }
