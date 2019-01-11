@@ -46,9 +46,12 @@ class UnsafeRowWriter(
     * in the same order as they are listed in the columnNames sequence. */
   override def readColumnValues(row: UnsafeRow, buffer: Array[Any]) = {
     val myRow = keyExtractProj(row)
-    for (i <- 0 until size) {
+    var i = 0;
+    // Using while loop to avoid allocations in for each
+    while (i < size){
       val colValue = myRow.get(i, dataTypes(i))
       buffer(i) = converters(i).apply(colValue)
+      i += 1
     }
   }
 }

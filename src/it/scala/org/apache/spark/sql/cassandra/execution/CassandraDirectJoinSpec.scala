@@ -307,8 +307,6 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
       eventually(timeout(scaled(10 seconds))) {
         getDirectJoin(stream) shouldBe defined
       }
-    } catch {
-      case ex: Throwable => throw(ex)
     } finally {
       stream.stop
     }
