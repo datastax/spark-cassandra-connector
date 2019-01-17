@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{HostDistance, ProtocolOptions}
+import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.datastax.driver.core.{HostDistance, ProtocolOptions, RegularStatement, SimpleStatement}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.embedded._
 import org.scalatest.BeforeAndAfterEach
@@ -56,14 +57,30 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
     }
   }
 
-  it should "cache PreparedStatements" in {
+  it should "cache String PreparedStatements" in {
     conn.withSessionDo { session =>
+      PreparedStatementCache.remove(session.getCluster)
       session.execute(createKeyspaceCql)
       session.execute(s"DROP TABLE IF EXISTS $ks.pstmt")
       session.execute(s"CREATE TABLE $ks.pstmt (key INT PRIMARY KEY, value TEXT)")
-      val stmt1 = session.prepare(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
-      val stmt2 = session.prepare(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
-      assert(stmt1 eq stmt2)
+      for (_ <- 1 to 10) {
+        session.prepare(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
+      }
+      assert(PreparedStatementCache.getSize(session.getCluster()) == 1)
+    }
+  }
+
+  it should "cache RegularStatement Prepared Statements" in {
+    conn.withSessionDo { session =>
+      PreparedStatementCache.remove(session.getCluster)
+      session.execute(createKeyspaceCql)
+      session.execute(s"DROP TABLE IF EXISTS $ks.pstmt")
+      session.execute(s"CREATE TABLE $ks.pstmt (key INT PRIMARY KEY, value TEXT)")
+      val statement = new SimpleStatement(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
+      for (_ <- 1 to 10) {
+        session.prepare(statement)
+      }
+      assert(PreparedStatementCache.getSize(session.getCluster()) == 1)
     }
   }
 
