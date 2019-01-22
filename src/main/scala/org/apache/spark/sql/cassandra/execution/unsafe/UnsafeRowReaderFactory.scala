@@ -5,8 +5,9 @@ import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnR
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}
 import org.apache.spark.sql.cassandra.CassandraSQLRow.toUnsafeSqlType
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.expressions.{UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.{Row => SparkRow}
 import org.apache.spark.sql.types.StructType
 
 class UnsafeRowReaderFactory(schema: StructType) extends RowReaderFactory[UnsafeRow] {
@@ -21,6 +22,7 @@ class UnsafeRowReader(schema: StructType)
   extends RowReader[UnsafeRow]{
 
   @transient lazy val projection = UnsafeProjection.create(schema)
+  val converter = CatalystTypeConverters.createToCatalystConverter(schema)
 
   /** Reads column values from low-level `Row` and turns them into higher level representation.
     *
@@ -28,7 +30,11 @@ class UnsafeRowReader(schema: StructType)
     * @param rowMetaData column names and codec available in the `row`*/
   override def read(row: Row, rowMetaData: CassandraRowMetadata): UnsafeRow = {
     val data = CassandraRow.dataFromJavaDriverRow(row, rowMetaData)
-    projection.apply(InternalRow(data.map(toUnsafeSqlType): _*))
+    val converterOutput = converter
+      .apply(SparkRow(data.map(toUnsafeSqlType): _*))
+      .asInstanceOf[InternalRow]
+
+    projection.apply(converterOutput)
   }
 
   /** List of columns this `RowReader` is going to read.
