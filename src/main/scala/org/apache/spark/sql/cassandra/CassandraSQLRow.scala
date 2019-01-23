@@ -94,26 +94,18 @@ object CassandraSQLRow {
 
   def toUnsafeSqlType(value: Any): AnyRef = {
     val sparkSqlType: PartialFunction[Any, AnyRef] = customCatalystDataTypeConverter orElse {
-      case timestamp: java.sql.Timestamp => timestamp.toInstant.toEpochMilli.asInstanceOf[AnyRef]
-      case date: java.util.Date => (date.getTime * 1000).asInstanceOf[AnyRef]
+      case duration: Duration => TypeCodec.duration().format(duration)
+      case javaDate: java.util.Date => java.sql.Timestamp.from(javaDate.toInstant)
       case localDate: org.joda.time.LocalDate =>
         java.time.LocalDate.of(localDate.getYear,localDate.getMonthOfYear, localDate.getDayOfMonth)
           .toEpochDay.asInstanceOf[AnyRef]
-      case localDate: java.time.LocalDate => localDate.toEpochDay.asInstanceOf[AnyRef]
-      case localTime: java.time.LocalTime => localTime.toNanoOfDay.asInstanceOf[AnyRef]
-      case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
-      case duration: Duration => TypeCodec.duration().format(duration)
-      case instant: java.time.Instant => instant.toEpochMilli.asInstanceOf[AnyRef]
-      case str: String => UTF8String.fromString(str)
-      case bigInteger: BigInteger => Decimal(bigInteger.toString)
-      case bigDecimal: java.math.BigDecimal => Decimal(bigDecimal)
       case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
       case uuid: UUID => UTF8String.fromString(uuid.toString)
-      case set: Set[_] => set.map(toSparkSqlType).toSeq
-      case list: List[_] => list.map(toSparkSqlType)
-      case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
-      case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType): _*)
+      case set: Set[_] => set.map(toUnsafeSqlType).toSeq
+      case list: List[_] => list.map(toUnsafeSqlType)
+      case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
+      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
+      case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
       case _ => value.asInstanceOf[AnyRef]
     }
     sparkSqlType(value)
