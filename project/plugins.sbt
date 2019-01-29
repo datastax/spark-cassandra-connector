@@ -1,5 +1,6 @@
 // pulls in: sbt-pgp, sbt-release, sbt-mima-plugin, sbt-dependency-graph, sbt-buildinfo, sbt-sonatype
 // TODO use sbt-release plugin
+resolvers += "typesafe" at "https://dl.bintray.com/typesafe/ivy-releases/"
 resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
 resolvers += Classpaths.sbtPluginReleases
