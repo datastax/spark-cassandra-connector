@@ -328,6 +328,7 @@ object TypeConverter {
       case x: String => TimestampParser.parse(x)
       case x: JodaLocalDate => x.toDateTimeAtStartOfDay.toDate
       case x: JavaLocalDate => Date.from(x.atStartOfDay(ZoneId.systemDefault()).toInstant)
+      case x: java.time.Instant => Date.from(x)
     }
   }
 
