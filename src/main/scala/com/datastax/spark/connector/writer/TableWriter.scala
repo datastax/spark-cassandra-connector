@@ -41,13 +41,13 @@ class TableWriter[T] private (
     val ifNotExistsSpec = if (writeConf.ifNotExists) "IF NOT EXISTS " else ""
 
     val ttlSpec = writeConf.ttl match {
-      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"TTL :$placeholder")
+      case TTLOption(PerRowWriteOptionValue(placeholder)) => Some(s"""TTL :$placeholder""")
       case TTLOption(StaticWriteOptionValue(value)) => Some(s"TTL $value")
       case _ => None
     }
 
     val timestampSpec = writeConf.timestamp match {
-      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"TIMESTAMP :$placeholder")
+      case TimestampOption(PerRowWriteOptionValue(placeholder)) => Some(s"""TIMESTAMP :$placeholder""")
       case TimestampOption(StaticWriteOptionValue(value)) => Some(s"TIMESTAMP $value")
       case _ => None
     }

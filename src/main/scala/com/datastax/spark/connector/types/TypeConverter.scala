@@ -249,6 +249,7 @@ object TypeConverter {
       case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
       case x: Set[_] => x.map(convert).mkString("{", ",", "}")
       case x: Seq[_] => x.map(convert).mkString("[", ",", "]")
+      case inetAddress: InetAddress => inetAddress.getHostAddress
       case x: Any => x.toString
     }
   }

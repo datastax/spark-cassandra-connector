@@ -58,7 +58,7 @@ class DefaultSource
     parameters: Map[String, String]): BaseRelation = {
 
     val (tableRef, options) = TableRefAndOptions(parameters)
-    CassandraSourceRelation(tableRef, sqlContext, options)
+    CassandraSourceRelation(tableRef, sqlContext, options, None)
   }
 
   /**
@@ -71,7 +71,7 @@ class DefaultSource
     schema: StructType): BaseRelation = {
 
     val (tableRef, options) = TableRefAndOptions(parameters)
-    CassandraSourceRelation(tableRef, sqlContext, options, Option(schema))
+    CassandraSourceRelation(tableRef, sqlContext, options, Some(schema))
   }
 
   /**
@@ -85,7 +85,7 @@ class DefaultSource
     data: DataFrame): BaseRelation = {
 
     val (tableRef, options) = TableRefAndOptions(parameters)
-    val table = CassandraSourceRelation(tableRef, sqlContext, options)
+    val table = CassandraSourceRelation(tableRef, sqlContext, options, None)
 
     mode match {
       case Append => table.insert(data, overwrite = false)
@@ -106,7 +106,7 @@ class DefaultSource
         }
     }
 
-    CassandraSourceRelation(tableRef, sqlContext, options)
+    CassandraSourceRelation(tableRef, sqlContext, options, None)
   }
 
   override def createSink(

@@ -109,6 +109,10 @@ case class ColumnDef(
 
   def isCollection = columnType.isCollection
 
+  def isFrozen = columnType.isFrozen
+
+  def isMultiCell = columnType.isMultiCell
+
   def isPartitionKeyColumn = columnRole == PartitionKeyColumn
 
   def isClusteringColumn = columnRole.isInstanceOf[ClusteringColumn]

@@ -14,16 +14,18 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
-import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
+import com.datastax.spark.connector.writer.{SqlRowWriter, TTLOption, TimestampOption, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 import org.apache.spark.sql.catalyst.CatalystTypeConverters
+
+import scala.util.Try
 
 sealed trait DirectJoinSetting
 case object AlwaysOn extends DirectJoinSetting
@@ -43,18 +45,18 @@ import scala.collection.concurrent.TrieMap
  * some filters to CQL
  *
  */
-class CassandraSourceRelation(
-    val tableRef: TableRef,
-    val userSpecifiedSchema: Option[StructType],
-    val filterPushdown: Boolean,
-    val confirmTruncate: Boolean,
-    val tableSizeInBytes: Option[Long],
-    val connector: CassandraConnector,
-    val readConf: ReadConf,
-    val writeConf: WriteConf,
-    val sparkConf: SparkConf,
+case class CassandraSourceRelation(
+    tableRef: TableRef,
+    userSpecifiedSchema: Option[StructType],
+    filterPushdown: Boolean,
+    confirmTruncate: Boolean,
+    tableSizeInBytes: Option[Long],
+    connector: CassandraConnector,
+    readConf: ReadConf,
+    writeConf: WriteConf,
+    sparkConf: SparkConf,
     override val sqlContext: SQLContext,
-    val directJoinSetting: DirectJoinSetting = Automatic)
+    directJoinSetting: DirectJoinSetting = Automatic)
   extends BaseRelation
   with InsertableRelation
   with PrunedFilteredScan
@@ -63,19 +65,7 @@ class CassandraSourceRelation(
   import CassandraSourceRelation._
 
   def withDirectJoin(directJoinSetting: DirectJoinSetting) = {
-    new CassandraSourceRelation(
-      tableRef,
-      userSpecifiedSchema,
-      filterPushdown,
-      confirmTruncate,
-      tableSizeInBytes,
-      connector,
-      readConf,
-      writeConf,
-      sparkConf,
-      sqlContext,
-      directJoinSetting = directJoinSetting
-    )
+    this.copy(directJoinSetting = directJoinSetting)
   }
 
   val tableDef = Schema.tableFromCassandra(
@@ -100,8 +90,74 @@ class CassandraSourceRelation(
            """.stripMargin)
     }
 
+  //Metadata Read Write Fields
+  val allColumnNames = tableDef.columns.map(_.columnName)
+  val regularColumnNames = tableDef.regularColumns.map(_.columnName)
+
+  def checkMetadataColumn(columnName: String, function: String) = {
+    val error = columnName match {
+      case missingColumn if (!allColumnNames.contains(columnName)) => Some("non-existent")
+      case nonRegularColumn if (!regularColumnNames.contains(columnName)) => Some("non-regular")
+      case _ => None
+    }
+    for (errorType <- error){
+      throw new IllegalArgumentException(s"Cannot lookup $function on $errorType column $columnName")
+    }
+  }
+
+  private val writeTimeFields =
+    sparkConf
+      .getAllWithPrefix(WriteTimeParam.name + ".")
+      .map{ case (columnName: String, writeTimeName: String) =>
+        checkMetadataColumn(columnName, "writetime")
+        val colDef = tableDef.columnByName(columnName)
+        val colType = if (colDef.isMultiCell)
+          ArrayType(LongType) else LongType
+        (columnName, StructField(writeTimeName, colType, false))}
+
+  private val ttlFields =
+    sparkConf
+      .getAllWithPrefix(TTLParam.name + ".")
+      .map{ case (columnName: String, ttlName: String) =>
+        checkMetadataColumn(columnName, "ttl")
+        val colDef = tableDef.columnByName(columnName)
+        val colType = if (colDef.isMultiCell)
+          ArrayType(IntegerType) else IntegerType
+        (columnName, StructField(ttlName, colType, true))}
+
+  private val ttlWriteOption =
+    sparkConf.getOption(TTLParam.name)
+      .map( value =>
+        Try(value.toInt)
+          .map(TTLOption.constant)
+          .getOrElse(TTLOption.perRow(value)))
+      .getOrElse(writeConf.ttl)
+
+  private val timestampWriteOption =
+    sparkConf.getOption(WriteTimeParam.name)
+      .map( value =>
+        Try(value.toLong)
+          .map(TimestampOption.constant)
+          .getOrElse(TimestampOption.perRow(value)))
+      .getOrElse(writeConf.timestamp)
+
+  private val metadataReadColumnsMap =
+    (ttlFields.map(field => (field._2.name, TTL(field._1, Some(field._2.name)))) ++
+      writeTimeFields.map(field => (field._2.name, WriteTime(field._1, Some(field._2.name))))).toMap
+
+  private val metadataColumnNames =
+    ttlFields.map(field => field._2.name) ++
+      writeTimeFields.map(field => field._2.name) ++
+      sparkConf.getOption(WriteTimeParam.name).toSeq ++
+      sparkConf.getOption(TTLParam.name).toSeq
+  //End Metadata Fields
+
   override def schema: StructType = {
-    userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
+    userSpecifiedSchema.getOrElse(
+      StructType(tableDef.columns.map(toStructField)
+        ++ writeTimeFields.map(_._2)
+        ++ ttlFields.map(_._2)
+      ))
   }
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
@@ -125,12 +181,18 @@ class CassandraSourceRelation(
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
+    val requiredCassandraColumns = data.columns.filterNot(metadataColumnNames.contains)
+
+    val metadataEnrichedWriteConf = writeConf.copy(
+      ttl = ttlWriteOption,
+      timestamp = timestampWriteOption)
+
+    val columns = SomeColumns(requiredCassandraColumns.map(x => x: ColumnRef): _*)
     val converter = CatalystTypeConverters.createToScalaConverter(data.schema)
     data
       .queryExecution.toRdd
       .map(converter(_).asInstanceOf[Row])
-      .saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
+      .saveToCassandra(tableRef.keyspace, tableRef.table, columns, metadataEnrichedWriteConf)
   }
 
   override def sizeInBytes: Long = {
@@ -232,9 +294,16 @@ class CassandraSourceRelation(
 
   /** Transfer selection to limit to columns specified */
   private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDD[Row] = {
-    val prunedRdd = if (requiredColumns.nonEmpty) {
-      rdd.select(requiredColumns.map(column => column: ColumnRef): _*)
+
+    //Get all required ColumnRefs, MetaDataRefs should be picked out of the ReadColumnsMap
+    val requiredCassandraColumns = requiredColumns.map(columnName =>
+      metadataReadColumnsMap.getOrElse(columnName, columnName: ColumnRef)
+    )
+
+    val prunedRdd = if (requiredCassandraColumns.nonEmpty) {
+      rdd.select(requiredCassandraColumns: _*)
     } else {
+      //No Columns Selected - Count Optimizations
       rdd match {
         case rdd: CassandraTableScanRDD[_] =>
           val tableIsSolrIndexed =
@@ -362,6 +431,28 @@ object CassandraSourceRelation extends Logging {
         |retrieve size from Cassandra. Can be set manually now""".stripMargin
   )
 
+  val WriteTimeParam = ConfigParameter[Option[String]](
+    name = "writetime",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Surfaces the Cassandra Row Writetime as a Column
+        |with the named specified. When reading use writetime.columnName=aliasForWritetime. This
+        |can be done for every column with a writetime. When Writing use writetime=columnName and the
+        |columname will be used to set the writetime for that row.""".stripMargin
+  )
+
+  val TTLParam = ConfigParameter[Option[String]](
+    name = "ttl",
+    section = ReferenceSection,
+    default = None,
+    description =
+      """Surfaces the Cassandra Row TTL as a Column
+        |with the named specified. When reading use ttl.columnName=aliasForTTL. This
+        |can be done for every column with a TTL. When writing use writetime=columnName and the
+        |columname will be used to set the writetime for that row.""".stripMargin
+  )
+
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
     name = "spark.cassandra.sql.pushdown.additionalClasses",
     section = ReferenceSection,
@@ -429,8 +520,8 @@ object CassandraSourceRelation extends Logging {
   def apply(
     tableRef: TableRef,
     sqlContext: SQLContext,
-    options: CassandraSourceOptions = CassandraSourceOptions(),
-    schema : Option[StructType] = None) : CassandraSourceRelation = {
+    options: CassandraSourceOptions,
+    schema : Option[StructType]) : CassandraSourceRelation = {
 
     val sparkConf = sqlContext.sparkContext.getConf
     val sqlConf = sqlContext.getAllConfs

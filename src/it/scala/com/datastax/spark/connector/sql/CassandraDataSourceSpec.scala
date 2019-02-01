@@ -2,7 +2,7 @@ package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.BeforeAndAfterEach
@@ -109,7 +109,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   def cassandraTable(tableRef: TableRef) : DataFrame = {
-    sparkSession.baseRelationToDataFrame(CassandraSourceRelation(tableRef, sparkSession.sqlContext))
+    sparkSession.baseRelationToDataFrame(CassandraSourceRelation(tableRef, sparkSession.sqlContext, new CassandraSourceOptions(), None))
   }
 
   "Cassandra Source Relation" should "allow to select all rows" in {

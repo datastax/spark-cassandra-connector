@@ -69,15 +69,15 @@ private[connector] object MappedToGettableDataConverter extends Logging{
           (columnType, scalaType) match {
             // Collections need recursive call to get the converter for the collection elements
             // to handle nested UDT values and tuples properly.
-            case (ListType(argColumnType), TypeRef(_, _, List(argScalaType))) =>
+            case (ListType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
               val argConverter = converter(argColumnType, argScalaType)
               TypeConverter.javaArrayListConverter(argConverter)
 
-            case (SetType(argColumnType), TypeRef(_, _, List(argScalaType))) =>
+            case (SetType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
               val argConverter = converter(argColumnType, argScalaType)
               TypeConverter.javaHashSetConverter(argConverter)
 
-            case (MapType(keyColumnType, valueColumnType),
+            case (MapType(keyColumnType, valueColumnType, _),
                   TypeRef(_, _, List(keyScalaType, valueScalaType))) =>
               val keyConverter = converter(keyColumnType, keyScalaType)
               val valueConverter = converter(valueColumnType, valueScalaType)

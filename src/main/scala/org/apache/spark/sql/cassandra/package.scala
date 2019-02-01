@@ -54,6 +54,35 @@ package object cassandra {
 
       cassandraFormat.options(cassandraOptions(table, keyspace, cluster, pushdownEnable))
     }
+
+    private def getSource(): String ={
+      val dfSourceField = classOf[DataFrameWriter[_]].getDeclaredField("source")
+      dfSourceField.setAccessible(true)
+      dfSourceField.get(dfWriter).asInstanceOf[String]
+    }
+
+    def withTTL(constant: Int): DataFrameWriter[T] = {
+      withTTL(constant.toString)
+    }
+
+    def withTTL(column: String): DataFrameWriter[T] = {
+      val source: String = getSource()
+      if (source != CassandraFormat) throw new IllegalArgumentException(
+          s"Write destination must be $CassandraFormat for setting TTL. Destination was $source")
+      dfWriter.option(CassandraSourceRelation.TTLParam.name, column)
+    }
+
+    def withWriteTime(constant: Long): DataFrameWriter[T] = {
+      withWriteTime(constant.toString)
+    }
+
+    def withWriteTime(column: String): DataFrameWriter[T] = {
+      val source: String = getSource()
+      if (source != CassandraFormat) throw new IllegalArgumentException(
+        s"Write destination must be $CassandraFormat for setting WriteTime. Destination was $source")
+      dfWriter.option(CassandraSourceRelation.WriteTimeParam.name, column)
+    }
+
   }
 
   implicit class DataStreamWriterWrapper[T](val dsWriter: DataStreamWriter[T]) extends AnyVal {
@@ -70,6 +99,34 @@ package object cassandra {
       pushdownEnable: Boolean = true): DataStreamWriter[T] = {
 
       cassandraFormat.options(cassandraOptions(table, keyspace, cluster, pushdownEnable))
+    }
+
+    private def getSource(): String ={
+      val dfSourceField = classOf[DataStreamWriter[_]].getDeclaredField("source")
+      dfSourceField.setAccessible(true)
+      dfSourceField.get(dsWriter).asInstanceOf[String]
+    }
+
+    def withTTL(constant: Int): DataStreamWriter[T] = {
+      withTTL(constant.toString)
+    }
+
+    def withTTL(column: String): DataStreamWriter[T] = {
+      val source = getSource()
+      if (source != CassandraFormat) throw new IllegalArgumentException(
+        s"Write destination must be $CassandraFormat for setting TTL. Destination was $source")
+      dsWriter.option(CassandraSourceRelation.TTLParam.name, column)
+    }
+
+    def withWriteTime(constant: Long): DataStreamWriter[T] = {
+      withWriteTime(constant.toString)
+    }
+
+    def withWriteTime(column: String): DataStreamWriter[T] = {
+      val source = getSource()
+      if (source != CassandraFormat) throw new IllegalArgumentException(
+        s"Write destination must be $CassandraFormat for setting WriteTime. Destination was $source")
+      dsWriter.option(CassandraSourceRelation.WriteTimeParam.name, column)
     }
   }
 
@@ -118,6 +175,22 @@ package object cassandra {
       for ((k, v) <- options) sqlContext.setConf(s"$cluster:$keyspace/$k", v)
       sqlContext
     }
+  }
+
+  def ttl(column: Column): Column = {
+      Column(CassandraTTL(column.expr))
+  }
+
+  def ttl(column: String): Column = {
+      ttl(Column(column))
+  }
+
+  def writeTime(column: Column): Column = {
+      Column(CassandraWriteTime(column.expr))
+  }
+
+  def writeTime(column: String): Column = {
+      writeTime(Column(column))
   }
 
   implicit class CassandraSparkSessionFunctions(val sparkSession: SparkSession) extends AnyVal {
