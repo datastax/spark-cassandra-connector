@@ -1,5 +1,13 @@
+2.4.1
+ * Includes all up to 2.3.3
+
 2.4.0
  * Support for Spark 2.4
+
+********************************************************************************
+
+2.3.3
+ * Includes all patches up to 2.0.11
 
 2.3.2
  * Includes all patches up to 2.0.10
@@ -13,6 +21,12 @@
  * Removal of Scala-2.10 support
 
 ********************************************************************************
+
+2.0.11
+ * Added case in StringConverter to properly output InetAddress (SPARKC-559)
+ * Added java.time.Instant -> java.util.Data conversion (SPARKC-560)
+ * RegularStatements not Cached by SessionProxy (SPARKC-558)
+ * Fix CassandraSourceRelation Option Parsing in Spark 2.0 (SPARKC-551)
 
 2.0.10
  * Includes all patches up to 1.6.13
