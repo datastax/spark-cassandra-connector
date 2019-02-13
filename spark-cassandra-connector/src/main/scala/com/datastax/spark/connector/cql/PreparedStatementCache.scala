@@ -24,6 +24,10 @@ object PreparedStatementCache extends Logging {
     statement
   }
 
+  private[datastax] def getSize(cluster: Cluster): Int = {
+    clusterCache.get(cluster).size
+  }
+
   /** Removes all statements associated with the `Cluster` from the cache. */
   def remove(cluster: Cluster) {
     synchronized {
