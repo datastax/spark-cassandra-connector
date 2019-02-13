@@ -388,8 +388,8 @@ seed_provider:
 # flush activity which can make it difficult to keep your disks fed
 # under heavy write load.
 #
-# memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1)
-# memtable_cleanup_threshold: 0.11
+# memtable_cleanup_threshold defaults to max(0.15, 1 / (memtable_flush_writers + 1))
+# memtable_cleanup_threshold: 0.15
 
 # Specify the way Cassandra allocates and manages memtable memory.
 # Options are:
@@ -408,15 +408,28 @@ memtable_allocation_type: heap_buffers
 #
 # commitlog_total_space_in_mb: 8192
 
-# This sets the amount of memtable flush writer threads.  These will
-# be blocked by disk io, and each one will hold a memtable in memory
-# while blocked.
+# The number of memtable flush writer threads per disk and
+# the total number of memtables that can be flushed concurrently.
+# These are generally a combination of compute and IO bound.
 #
-# memtable_flush_writers defaults to one per data_file_directory.
+# Memtable flushing is more CPU efficient than memtable ingest and a single thread
+# can keep up with the ingest rate of a whole server on a single fast disk
+# until it temporarily becomes IO bound under contention typically with compaction.
+# At that point you need multiple flush threads. At some point in the future
+# it may become CPU bound all the time.
 #
-# If your data directories are backed by SSD, you can increase this, but
-# avoid having memtable_flush_writers * data_file_directories > number of cores
-#memtable_flush_writers: 1
+# You can tell if flushing is falling behind using the MemtablePool.BlockedOnAllocation
+# metric, which should be 0. A non-zero metric occurs if threads are blocked waiting on flushing
+# to free memory.
+#
+# memtable_flush_writers defaults to 8, and this means 8 Memtables can be flushed concurrently
+# to a single data directory.
+#
+# There is a direct tradeoff between number of memtables that can be flushed concurrently
+# and flush size and frequency. More is not better you just need enough flush writers
+# to never stall waiting for flushing to free memory.
+#
+# memtable_flush_writers: 8
 
 # Whether to, when doing sequential writing, fsync() at intervals in
 # order to force the operating system to flush the dirty
