@@ -31,6 +31,10 @@ object PreparedStatementCache extends Logging {
     }
   }
 
+  private[datastax] def getSize(cluster: Cluster): Int = {
+    clusterCache.get(cluster).size
+  }
+
   /** Retrieves a `PreparedStatement` from cache or
     * creates a new one if not found and updates the cache. */
   def prepareStatement(session: Session, query: RegularStatement): PreparedStatement = {
