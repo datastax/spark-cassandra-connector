@@ -18,7 +18,7 @@ class SessionProxy(session: Session, afterClose: Session => Any) extends Invocat
   override def invoke(proxy: Any, method: Method, args: Array[AnyRef]) = {
     try {
       val StringClass = classOf[String]
-      val RegularStatementClass = classOf[String]
+      val RegularStatementClass = classOf[RegularStatement]
 
       (method.getName, method.getParameterTypes) match {
         case ("close", Array()) =>
