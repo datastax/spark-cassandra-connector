@@ -212,6 +212,8 @@ class BulkTableWriter[T](connector: CassandraConnector,
   private def createTableLoader(taskOutputDir: File): SSTableLoader = {
     new SSTableLoader(taskOutputDir, new ExternalClient, new NullOutputHandler) {
       override def onSuccess(finalState: StreamState) {
+        // we have to call super.onSuccess because it releases the references to sstables
+        super.onSuccess(finalState)
         if (deleteSource)
           FileUtils.deleteRecursive(taskOutputDir)
       }
