@@ -6,11 +6,13 @@
 
 package com.datastax.bdp.spark
 
+import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable
 
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.spark.SparkConf
@@ -59,10 +61,7 @@ object DseByosAuthConfFactory extends AuthConfFactory with Logging {
 
       override def load(key: SparkConfCacheKey): AuthConf = {
         val conf = key.sparkConf
-        val hadoopConfig = SparkHadoopUtil.get.newConfiguration(conf)
-        // make it serializable
-        val config = new MapBasedClientConfiguration(AbstractPropertyBasedClientConfiguration.configAsMap(
-          new HadoopBasedClientConfiguration(hadoopConfig)), "")
+        val config = new DseByosClientConfiguration(conf)
 
         //set kerberos protocol system property
         val credentials = for (username <- conf.getOption(CassandraUserNameProperty);
@@ -178,4 +177,39 @@ object DseByosAuthConfFactory extends AuthConfFactory with Logging {
     }
   }
 
+  class DseByosClientConfiguration(sparkConf: SparkConf)
+    extends AbstractPropertyBasedClientConfiguration with ClientConfiguration with Serializable{
+
+    // make it serializable
+    val clientConf = new MapBasedClientConfiguration(AbstractPropertyBasedClientConfiguration.configAsMap(
+      new HadoopBasedClientConfiguration(SparkHadoopUtil.get.newConfiguration(sparkConf))), "")
+
+    override def get(key: String) = {
+      val value = clientConf.get(key)
+      if (value != null) value else sparkConf.get(key, null)
+    }
+
+    override def getCassandraHosts = {
+      val hostString = get("spark.cassandra.connection.host")
+      if (StringUtils.isBlank(hostString)) {
+        val cassandraHost = getCassandraHost
+        if (cassandraHost != null) Array[InetAddress](cassandraHost) else Array.empty
+      } else {
+        hostString.split(",").map(_.trim).map(InetAddress.getByName(_))
+      }
+    }
+
+    override def hashCode: Int = clientConf.hashCode()
+
+    override def equals(o: Any): Boolean = {
+      if (o == null || (getClass != o.getClass)) return false
+      val that = o.asInstanceOf[DseByosClientConfiguration]
+      that.clientConf.equals(this.clientConf)
+    }
+  }
+
+  // for test use
+  def getDseByosClientConfiguration(conf: SparkConf): DseByosClientConfiguration = {
+    new DseByosClientConfiguration(conf)
+  }
 }
