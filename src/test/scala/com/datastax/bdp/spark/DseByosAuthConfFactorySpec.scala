@@ -42,4 +42,12 @@ class DseByosAuthConfFactorySpec extends FlatSpec with Matchers with DseScalaTes
       }
     }
   }
+
+  it should "obtain cassandra hosts from spark.cassandra.connection.host" in {
+    val conf = new SparkConf()
+    conf.set("spark.cassandra.connection.host", "127.0.0.1,127.0.0.2")
+    val dseByosClientConfiguration = DseByosAuthConfFactory.getDseByosClientConfiguration(conf)
+    dseByosClientConfiguration.get("spark.cassandra.connection.host") shouldBe "127.0.0.1,127.0.0.2"
+    dseByosClientConfiguration.getCassandraHosts.size shouldBe 2
+  }
 }
