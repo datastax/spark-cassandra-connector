@@ -201,6 +201,8 @@ private[connector] object MappedToGettableDataConverter extends Logging{
           for (i <- columnValues.indices)
             columnValues(i) = converters(i).convert(columnValues(i))
           struct.newInstance(columnValues: _*)
+        case obj if obj == null =>
+          null.asInstanceOf[struct.ValueRepr]
         case Some(obj) if cls.isInstance(obj) =>
           val columnValues = extractor.extract(obj.asInstanceOf[T])
           for (i <- columnValues.indices)
