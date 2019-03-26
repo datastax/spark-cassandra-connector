@@ -258,7 +258,7 @@ renamed.write
 
 ### Automatic  Predicate Pushdown and Column Pruning
 The Dataset API will automatically pushdown valid "where" clauses to Cassandra as long as the
-pushdown option is enabled (default is enabled).
+pushdown option is enabled (default is enabled). The [full list of predicate pushdown restrictions](#Full-List-of-Predicate-Pushdown-Restrictions) is enumerated after the examples.
 
 Example Table
 ```sql
@@ -420,5 +420,22 @@ In Spark 2.0 DataFrames are now just a specific case of the Dataset API. In part
 a DataFrame is just an alias for Dataset\[Row\]. This means everything you know about
 DataFrames is also applicable to Datasets. A DataFrame is just a special Dataset that is
 made up of Row objects. Many texts and resources still use the two terms interchangeably.
+
+#### Full List of Predicate Pushdown Restrictions
+```
+  1. Only push down no-partition key column predicates with =, >, <, >=, <= predicate
+  2. Only push down primary key column predicates with = or IN predicate.
+  3. If there are regular columns in the pushdown predicates, they should have
+     at least one EQ expression on an indexed column and no IN predicates.
+  4. All partition column predicates must be included in the predicates to be pushed down,
+     any part of the partition key can be an EQ or IN predicate. For each partition column,
+     only one predicate is allowed.
+  5. For cluster column predicates, only last predicate can be RANGE predicate
+     and preceding column predicates must be EQ or IN predicates.
+     If there is only one cluster column predicate, the predicates could be EQ or IN or RANGE predicate.
+  6. There is no pushdown predicates if there is any OR condition or NOT IN condition.
+  7. We're not allowed to push down multiple predicates for the same column if any of them
+     is equality or IN predicate.
+```
 
 [Next - Python DataFrames](15_python.md)
