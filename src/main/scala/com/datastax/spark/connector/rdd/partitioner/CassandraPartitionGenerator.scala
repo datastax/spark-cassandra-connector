@@ -1,8 +1,6 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import scala.collection.JavaConversions._
-import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -35,7 +33,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }
 
-  private def describeRing: Seq[TokenRange] = {
+  private[partitioner] def describeRing: Seq[TokenRange] = {
     val ranges = connector.withClusterDo { cluster =>
       val metadata = cluster.getMetadata
       for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
@@ -87,10 +85,23 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
 
     // sort partitions and assign sequential numbers so that
     // partition index matches the order of partitions in the sequence
-    util.Random.shuffle(partitions.toSeq)
-      .sortBy(p => (p.endpoints.size, -p.dataSize))
+
+    // group partitions with the same endpoints.
+    // Less endpoints partition has -- harder to find local executor for it
+    // sort by endpoints size to  distribute partition with less endpoints first.
+    // sort partition by size inside each group to start proccessing with big partitions
+    val partitionsGroupedByEndpoints = partitions.groupBy(_.endpoints).toSeq.sortBy(_._1.size).map(_._2.sortBy(-_.dataSize))
+    // merge all groups to distribute load eventually for all endpoints.
+    // Loop over groups and get next element of each
+    // emmit them in order. So we get one partition for different endpoints.
+    val groupIterators = partitionsGroupedByEndpoints.map(_.iterator)
+    val roundRobinSelectedPartitions = Iterator.continually { groupIterators.filter(_.hasNext).map(_.next) }
+      .takeWhile(_.nonEmpty).flatten.toSeq
+
+    val indexedPartitions = roundRobinSelectedPartitions
       .zipWithIndex
       .map { case (p, index) => p.copy(index = index) }
+    indexedPartitions
   }
 
   /**
