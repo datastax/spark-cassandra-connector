@@ -243,14 +243,7 @@ public class SchemaManagerService
      */
     public boolean isKeyspaceMapped(String keyspaceName, CassandraHiveMetaStore cassandraHiveMetaStore)
     {
-        try
-        {
-            return cassandraHiveMetaStore.hasDatabase(keyspaceName);
-        }
-        catch (NoSuchObjectException e)
-        {
-            return false;
-        }
+        return cassandraHiveMetaStore.hasDatabase(keyspaceName);
     }
 
     /**
@@ -263,19 +256,7 @@ public class SchemaManagerService
         if (isInternalKeyspace(ks))
             return;
 
-        try
-        {
-            cassandraHiveMetaStore.createDatabase(buildDatabase(ks));
-        }
-        catch (InvalidObjectException ioe)
-        {
-            throw new CassandraHiveMetaStoreException("Could not create keyspace schema.", ioe);
-        }
-        catch (MetaException me)
-        {
-            throw new CassandraHiveMetaStoreException("Problem persisting table", me);
-        }
-
+        cassandraHiveMetaStore.createDatabase(buildDatabase(ks));
     }
 
     public boolean createKeyspaceSchemaIfNeeded(String databaseName, CassandraHiveMetaStore cassandraHiveMetaStore)
