@@ -1,17 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.driver.core.Row
-import org.apache.cassandra.tools.NodeProbe
-import org.scalatest.{FlatSpec, Inspectors, Matchers}
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, SparkTemplate}
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.{Murmur3TokenFactory, RandomPartitionerTokenFactory}
-import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.rdd.{CqlWhereClause, ReadConf}
-import com.datastax.spark.connector.testkit.SharedEmbeddedCassandra
-import com.datastax.spark.connector.embedded.YamlTransformations
+import java.net.InetAddress
 
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase {
@@ -36,6 +30,35 @@ class CassandraPartitionGeneratorSpec
     partitions.length should be <= max
   }
 
+
+  class MockCassandraPartitionGenerator(
+      connector: CassandraConnector,
+      tableDef: TableDef,
+      splitCount: Int) extends CassandraPartitionGenerator(connector, tableDef, splitCount) {
+
+
+    //emulate 12 node cluster
+    val endPoints = (1 to 12).map("127.0.0." + _).map(InetAddress.getByName)
+
+    // with 36 RF3 ranges
+    override private[partitioner] def describeRing: Seq[TokenRange] = {
+      (endPoints ++ endPoints.slice(0, 2)).sliding(3, 1).toSeq.zipWithIndex
+        .flatMap { case (endpoints, i) =>
+          Seq(
+            tokenRange(i * 1000, (i + 1) * 1000, endpoints),
+            tokenRange(i * 1000, (i + 1) * 1000, endpoints),
+            tokenRange(i * 1000, (i + 1) * 1000, endpoints)
+          )
+        }
+    }
+
+    private def tokenRange(start: Long, end: Long, replicas: Seq[InetAddress]): TokenRange = {
+      val startToken = tokenFactory.tokenFromString(start.toString)
+      val endToken = tokenFactory.tokenFromString(end.toString)
+      new TokenRange(startToken, endToken, replicas.toSet, tokenFactory)
+    }
+  }
+
   "CassandraPartitionGenerator" should "create 1 partition if splitCount == 1" in {
     testPartitionCount(1, 1, 1)
   }
@@ -43,5 +66,19 @@ class CassandraPartitionGeneratorSpec
   // we won't run it on a 10000 node cluster, so we don't need to check node count
   it should "create about 10000 partitions when splitCount == 10000" in {
     testPartitionCount(10000, 9000, 11000)
+  }
+
+  it should "round robing partition with different endpoints" in {
+    val table = Schema.fromCassandra(conn, Some(ks), Some("empty")).tables.head
+    val partitioner = new MockCassandraPartitionGenerator(conn, table, 12)
+    val partitions = partitioner.partitions
+    print(s"Partitions: $partitions")
+    partitions.length should be(12)
+    // endpoint are distributed by round robin algorithm and there is no equals endpoints near by.
+    partitions.sliding(3, 1).foreach(group => {
+      group(0).endpoints should not be group(1).endpoints
+      group(1).endpoints should not be group(2).endpoints
+      group(2).endpoints should not be group(0).endpoints
+    })
   }
 }
