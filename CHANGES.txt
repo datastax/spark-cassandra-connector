@@ -24,7 +24,7 @@
 
 2.0.11
  * Added case in StringConverter to properly output InetAddress (SPARKC-559)
- * Added java.time.Instant -> java.util.Data conversion (SPARKC-560)
+ * Added java.time.Instant -> java.util.Date conversion (SPARKC-560)
  * RegularStatements not Cached by SessionProxy (SPARKC-558)
  * Fix CassandraSourceRelation Option Parsing in Spark 2.0 (SPARKC-551)
 
