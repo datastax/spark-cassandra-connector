@@ -301,7 +301,7 @@ repartitionRDD.collect.foreach(println)
 //(CustomerID(3),CassandraRow{cust_id: 3, address: Poland, name: Jacek})
 ```
 
-###Compatibility of joinWithCassandraTable and other CassandraRDD APIs
+### Compatibility of joinWithCassandraTable and other CassandraRDD APIs
 The result of a joinWithCassandraRDD is compatible with all of the 
 standard CassandraRDD api options with one additional function, `.on`. 
 Use `.on(ColumnSelector)` for specifying which columns to join on. 
