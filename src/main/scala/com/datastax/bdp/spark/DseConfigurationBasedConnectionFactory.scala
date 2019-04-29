@@ -40,6 +40,9 @@ private[bdp] object DseConfigurationBasedConnectionFactory extends CassandraConn
   override def createCluster(conf: CassandraConnectorConf): Cluster =
     Option(connectionFactoryConfig.get())
       .map(config =>
-        DseConnectionUtil.createCluster(config.clientConfiguration, config.username, config.password, config.token))
+        DseConnectionUtil
+          .createClusterBuilder(config.clientConfiguration, config.username, config.password, config.token)
+          .withThreadingOptions(new DseCassandraConnectionFactory.DaemonThreadingOptions())
+          .build())
       .getOrElse(throw new IllegalStateException("Building config hasn't been set."))
 }

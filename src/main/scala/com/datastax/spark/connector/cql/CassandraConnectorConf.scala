@@ -122,7 +122,7 @@ object CassandraConnectorConf extends Logging {
   val KeepAliveMillisParam = ConfigParameter[Int](
     name = "spark.cassandra.connection.keepAliveMS",
     section = ReferenceSection,
-    default = 5000,
+    default = 3600000,
     description = """Period of time to keep unused connections open""")
 
   val DeprecatedKeepAliveMillisParam = DeprecatedConfigParameter(
