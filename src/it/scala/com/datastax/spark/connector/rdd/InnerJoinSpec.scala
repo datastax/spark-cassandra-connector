@@ -15,7 +15,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 
-@RunWith(classOf[JUnitRunner])
 class InnerJoinSpec extends DseITFlatSpecBase {
 
   YamlClientConfiguration.setAsClientConfigurationImpl()

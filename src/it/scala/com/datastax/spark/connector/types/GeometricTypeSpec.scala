@@ -8,8 +8,6 @@ package com.datastax.spark.connector.types
 
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 
 import com.datastax.driver.core.Session
 import com.datastax.driver.dse.geometry._
@@ -18,7 +16,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 
-@RunWith(classOf[JUnitRunner])
 class GeometricTypeSpec extends DseITFlatSpecBase {
 
   useCassandraConfig(Seq(YamlTransformations.Default))

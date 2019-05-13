@@ -10,8 +10,6 @@ import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe._
 
 import org.apache.spark.SparkConf
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 import com.datastax.bdp.config.ClientConfiguration
@@ -19,7 +17,6 @@ import com.datastax.bdp.spark.DseByosAuthConfFactory.ByosAuthConf
 import com.datastax.bdp.test.ng.{DataGenerator, DseScalaTestBase, ToString}
 import com.datastax.bdp.transport.client.MapBasedClientConfiguration
 
-@RunWith(classOf[JUnitRunner])
 class DseByosAuthConfFactorySpec extends FlatSpec with Matchers with DseScalaTestBase {
 
   "DseByosAuthConfFactory" should "provide same result instance for identical input" in {

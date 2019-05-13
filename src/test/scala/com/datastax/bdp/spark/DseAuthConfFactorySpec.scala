@@ -8,15 +8,12 @@ package com.datastax.bdp.spark
 
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 import com.datastax.bdp.config.{ClientConfigurationFactory, YamlClientConfiguration}
 import com.datastax.bdp.spark.DseAuthConfFactory.DsePasswordAuthConf
 import com.datastax.bdp.test.ng.{DataGenerator, DseScalaTestBase, ToString, YamlProvider}
 
-@RunWith(classOf[JUnitRunner])
 class DseAuthConfFactorySpec extends FlatSpec with Matchers with DseScalaTestBase {
   
   beforeClass {

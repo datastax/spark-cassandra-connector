@@ -6,13 +6,10 @@
 
 package com.datastax.spark.connector.util
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 import com.datastax.bdp.test.ng.DseScalaTestBase
 
-@RunWith(classOf[JUnitRunner])
 class MergeJoinIteratorSpec  extends FlatSpec with Matchers with DseScalaTestBase {
 
   "MergeJoinIterator" should "group an empty collection" in {

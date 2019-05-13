@@ -8,25 +8,20 @@ package com.datastax.spark.connector.cql
 
 import scala.concurrent.Future
 
-import org.junit.runner.RunWith
 import org.scalatest.concurrent.Eventually
-import org.scalatest.junit.JUnitRunner
 
 import com.datastax.bdp.spark.{ContinuousPagingScanner, DseCassandraConnectionFactory}
-import com.datastax.bdp.transport.client.HadoopBasedClientConfiguration
-import com.datastax.spark.connector.DseConfiguration._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ReadConf
 
-@RunWith(classOf[JUnitRunner])
 class ContinuousPagingScannerSpec extends DseITFlatSpecBase with Eventually {
 
   sparkConf.set(DseCassandraConnectionFactory.continuousPagingParam.name, "true")
 
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(sparkConf)
- 
+
   override lazy val conn = CassandraConnector(sparkConf)
 
   override val ks = "dsecassconnfact"

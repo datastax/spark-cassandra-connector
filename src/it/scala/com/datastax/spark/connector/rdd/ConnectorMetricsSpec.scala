@@ -11,9 +11,7 @@ import java.util.concurrent.LinkedTransferQueue
 import org.apache.spark.SparkConf
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
-import org.junit.runner.RunWith
 import org.scalatest.concurrent.Eventually
-import org.scalatest.junit.JUnitRunner
 
 import com.datastax.bdp.config.YamlClientConfiguration
 import com.datastax.driver.core.Session
@@ -22,7 +20,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ConnectorMetricsListener.stagesMetrics
 
-@RunWith(classOf[JUnitRunner])
 class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._

@@ -14,8 +14,6 @@ import scala.language.existentials
 import scala.util.Random
 
 import org.apache.spark.DseTestUtil
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.driver.core.Session
@@ -23,7 +21,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 
-@RunWith(classOf[JUnitRunner])
 class DseGraphUnionRDDSpec extends DseITFlatSpecBase {
   sparkConf.set(DseCassandraConnectionFactory.continuousPagingParam.name, "true")
 

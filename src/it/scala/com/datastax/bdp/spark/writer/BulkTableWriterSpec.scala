@@ -11,17 +11,14 @@ import java.nio.file.Paths
 import scala.collection.JavaConversions._
 
 import org.apache.spark.rdd.RDD
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 
 import com.datastax.bdp.config.YamlClientConfiguration
 import com.datastax.bdp.spark.writer.BulkTableWriter._
 import com.datastax.bdp.test.ng.YamlProvider
 import com.datastax.spark.connector.DseITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
+import com.datastax.spark.connector.embedded.{EmbeddedCassandra, YamlTransformations}
 
-@RunWith(classOf[JUnitRunner])
 class BulkTableWriterSpec extends DseITFlatSpecBase {
 
   YamlClientConfiguration.setAsClientConfigurationImpl()

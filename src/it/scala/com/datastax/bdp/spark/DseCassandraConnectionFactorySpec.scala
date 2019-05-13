@@ -5,19 +5,14 @@
  */
 package com.datastax.bdp.spark
 
-import org.junit.runner.RunWith
 import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
 
-import com.datastax.bdp.transport.client.HadoopBasedClientConfiguration
 import com.datastax.driver.dse.DseSession
-import com.datastax.spark.connector.DseConfiguration._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ReadConf
 
-@RunWith(classOf[JUnitRunner])
 class DseCassandraConnectionFactorySpec extends DseITFlatSpecBase with Matchers {
   useCassandraConfig(Seq(YamlTransformations.Default))
   useSparkConf(sparkConf)
