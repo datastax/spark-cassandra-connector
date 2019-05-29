@@ -66,7 +66,9 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
           val newPlan = reorderPlan(dataSourceOpitimzedPlan, directJoin) :: Nil
           val newOutput = (newPlan.head.outputSet, newPlan.head.output.map(_.name))
           val oldOutput = (plan.outputSet, plan.output.map(_.name))
-          require(oldOutput == newOutput, s"Reordering broke ${oldOutput} was not ${newOutput}")
+          val noMissingOutput = oldOutput._1.subsetOf(newPlan.head.outputSet)
+          require(noMissingOutput, s"DSE DirectJoin Optimization produced invalid output. Original plan output: " +
+            s"${oldOutput} was not part of ${newOutput} \nOld Plan\n${plan}\nNew Plan\n${newPlan}")
 
           newPlan
         case _ => Nil //Unable to do optimization on target branch
@@ -335,6 +337,3 @@ object DSEDirectJoinStrategy extends Logging {
 
 
 }
-
-
-
