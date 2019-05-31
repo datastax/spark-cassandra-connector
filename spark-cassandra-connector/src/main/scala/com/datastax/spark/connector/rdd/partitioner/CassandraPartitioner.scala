@@ -11,6 +11,7 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, To
 import com.datastax.spark.connector.writer.RowWriterFactory
 import com.datastax.spark.connector.{ColumnSelector, PartitionKeyColumns}
 import com.datastax.spark.connector.util.Logging
+import scala.reflect.runtime.universe._
 
 /** Holds a token range together with the index of a partition this token range belongs to */
 case class TokenRangeWithPartitionIndex[V, T <: Token[V]](range: TokenRange[V, T], partitionIndex: Int)
@@ -42,7 +43,7 @@ object TokenRangeWithPartitionIndex {
   * used the driver's internal token factories to determine the token for the
   * routing key.
   */
-private[connector] class CassandraPartitioner[Key : ClassTag, V, T <: Token[V]](
+private[connector] class CassandraPartitioner[Key : TypeTag, V, T <: Token[V]](
   private val connector: CassandraConnector,
   private val tableDef: TableDef,
   val partitions: Seq[CassandraPartition[V, T]],

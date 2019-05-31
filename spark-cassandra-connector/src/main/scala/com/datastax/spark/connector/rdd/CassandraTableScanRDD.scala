@@ -21,7 +21,7 @@ import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
-
+import scala.reflect.runtime.universe._
 
 /** RDD representing a Table Scan of A Cassandra table.
   *
@@ -191,7 +191,7 @@ class CassandraTableScanRDD[R] private[connector](
     val partitionKeyColumnNames = PartitionKeyColumns.selectFrom(tableDef).map(_.columnName).toSet
 
     if (selectedColumnNames.containsAll(partitionKeyColumnNames)) {
-      val partitioner = partitionGenerator.partitioner[K](columns)
+      val partitioner = partitionGenerator.partitioner(columns)
       logDebug(
         s"""Made partitioner ${partitioner} for $this""".stripMargin)
       convertTo[(K, R)].withPartitioner(partitioner)
@@ -221,10 +221,18 @@ class CassandraTableScanRDD[R] private[connector](
 
   @transient lazy val partitionGenerator = {
     if (containsPartitionKey(where)) {
-      CassandraPartitionGenerator(connector, tableDef, 1)
+      val keys = determinePartitionsToScan(where)
+
+      implicit val keyTypeTag = createTypeTag(keys.head.productArity)
+
+      CassandraPartitionGenerator(connector, tableDef, keys.length, keys)
     } else {
+
+      implicit val keyTypeTag = createTypeTag(tableDef.partitionKey.size)
+
       val reevaluatedSplitCount = splitCount.getOrElse(estimateSplitCount(splitSize))
-      CassandraPartitionGenerator(connector, tableDef, reevaluatedSplitCount)
+
+      CassandraPartitionGenerator(connector, tableDef, reevaluatedSplitCount, Seq.empty)
     }
   }
 
@@ -268,13 +276,34 @@ class CassandraTableScanRDD[R] private[connector](
       case Some(other: Partitioner) =>
         throw new IllegalArgumentException(s"Invalid partitioner $other")
 
-      case None => partitionGenerator.partitions.toArray[Partition]
+      case None => {
+        if (containsPartitionKey(where)) {
+
+          val pkColumnDef: Seq[ColumnDef] = tableDef.partitionKey
+          val pkDataType = pkColumnDef.map(_.columnType.converterToScala)
+
+          val pkColumnName: Seq[String] = pkColumnDef.map(_.columnName)
+
+          val keyMapping = seqToSomeColumns(pkColumnName)
+
+          val partitioner = partitionGenerator.partitioner(keyMapping)
+
+          partitioner.get.partitions.toArray[Partition]
+
+        } else {
+          partitionGenerator.partitions.toArray[Partition]
+
+        }
+      }
     }
 
     logDebug(s"Created total ${partitions.length} partitions for $keyspaceName.$tableName.")
     logTrace("Partitions: \n" + partitions.mkString("\n"))
     partitions
   }
+
+  def seqToSomeColumns(columns: Seq[String]): SomeColumns =
+    SomeColumns(columns.map(x => x: ColumnRef): _*)
 
   private lazy val nodeAddresses = new NodeAddresses(connector)
 
@@ -291,18 +320,33 @@ class CassandraTableScanRDD[R] private[connector](
     } else {
       range.cql(partitionKeyStr)
     }
-    val filter = (cql +: where.predicates).filter(_.nonEmpty).mkString(" AND ")
+
+    val whereClause = (cql +: where.predicates).filter(_.nonEmpty).mkString(" AND ")
+
     val limitClause = limitToClause(limit)
     val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val quotedKeyspaceName = quote(keyspaceName)
     val quotedTableName = quote(tableName)
+
+    val partitionKeyNames = PartitionKeyColumns.selectFrom(tableDef).map(_.columnName).mkString(",")
+
+    val (filter, queryParamValues): (String, Seq[Any]) = {
+      if (containsPartitionKey(where)) {
+        (s"token(${partitionKeyNames})=? AND ${whereClause}", (Array(range.range.start.toString) ++ where.values))
+      } else {
+        (whereClause, (values ++ where.values))
+      }
+
+    }
+
     val queryTemplate =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
         s"WHERE $filter $orderBy $limitClause ALLOW FILTERING"
-    val queryParamValues = values ++ where.values
+
     (queryTemplate, queryParamValues)
   }
+
 
   private def createStatement(session: Session, cql: String, values: Any*): Statement = {
     try {
@@ -426,6 +470,198 @@ class CassandraTableScanRDD[R] private[connector](
     }
     primaryKeyComplete
   }
+
+  /**
+    * Determines the number of partitions to scan based on query
+    * For example for query where all predicates are pushed(pk = (c1,c2,c3)) and clause = where c1 in ('val1','val2') and c2='val1'
+    * and c3 in ('val1','val2','val3','val4','val5') , the number of cassandra partitions to scan 3*1*5 = 15
+    *
+    * @param clause
+    * @return Tuple Representing partitions to scan
+    */
+  private def determinePartitionsToScan(clause: CqlWhereClause): Seq[Product] = {
+
+    // Data Structure holding all values in where clause
+    val queueValues = scala.collection.mutable.Queue(clause.values: _*)
+    // Construct a Tuple of Partition Key and corresponding value
+    val tuplePartKeyVal = clause.predicates.map({
+      x => {
+        val part = x.split("AND")
+        val pv = part.map({
+          p => {
+            val c = {
+              val s = p.split("EQ")
+              if (s.length > 1) {
+                s
+              } else {
+                p.split("IN")
+              }
+            }
+            //c(0)-> name , c(1) -> value
+            val values: Array[String] = c(1).replaceAll("\\(", "").replaceAll("\\)", "").split(",")
+
+            val partKeyValues = values.foldLeft(scala.collection.mutable.Queue.empty[String])((set, f) => {
+
+              set += queueValues.dequeue.toString
+
+            })
+            (c(0).replaceAll("\"", "").trim, partKeyValues)
+          }
+        })
+        pv
+      }
+    })
+
+    val pkValues = tuplePartKeyVal.get(0)
+
+    // create Mutable List containing map per combination of keys
+    // For eg for the above example
+    // 0-> (c1->val1)
+    //     (c2->val2)
+    //     (c3->val1)
+    // 1-> (c1->val2)
+    //     (c2->val2)
+    //     (c3->val1)
+    // 2-> (c1->val2)
+    //     (c2->val2)
+    //     (c3->val2)
+    //
+    val seqPK = scala.collection.mutable.ListBuffer[scala.collection.mutable.Map[String, String]]()
+    pkValues.foreach({
+      m => {
+        val pkName = m._1
+        val vq: scala.collection.mutable.Queue[String] = m._2
+        vq.zipWithIndex.foreach({
+          case (v, i) => {
+            if (seqPK.length == 0) {
+              val m1 = scala.collection.mutable.Map.empty[String, String]
+              m1 += (m._1 -> v)
+              seqPK += m1
+            }
+            else if (i > 0) {
+              // creates a new map for new combination
+              val newSeqPk = seqPK.map({
+                x => {
+                  x.filter(!_._1.equalsIgnoreCase(pkName))
+                }
+              }).toSet
+
+              newSeqPk.map({
+                m2 => m2 += (m._1 -> v)
+              })
+              seqPK ++= newSeqPk
+            }
+            else {
+              // add the values to the existing combination
+              seqPK.map({
+                m2 => m2 += (m._1 -> v)
+              })
+            }
+
+          }
+        })
+
+      }
+    })
+
+
+    val pkeys = tableDef.partitionKey.map(_.columnName)
+
+    val sPkTuple = seqPK.map(x => {
+      val sPk = pkeys.map(p => {
+        x.get(p).get
+      })
+      sPk
+    })
+
+    // convert each element of List to Tuple as key type for Cassandra Partitioner is a Tuple
+    val keys = sPkTuple.map(m => {
+      val tuple = toTuple(m.toList)
+      tuple
+    }).toSet
+
+    keys.toSeq
+  }
+
+  private def toTuple[A <: Object](as: List[A]): Product = {
+    val tupleClass = Class.forName("scala.Tuple" + as.size)
+    tupleClass.getConstructors.apply(0).newInstance(as: _*).asInstanceOf[Product with Serializable]
+  }
+
+  // TODO Construct dynamically type tag based on tuple class name. What if key length is more than 21 ?
+  private def createTypeTag(size: Int) = {
+
+    val tt: reflect.runtime.universe.TypeTag[_] = {
+      if (size == 1) {
+        typeTag[Tuple1[Any]]
+      }
+      else if (size == 2) {
+        typeTag[Tuple2[Any, Any]]
+      }
+      else if (size == 3) {
+        typeTag[Tuple3[Any, Any, Any]]
+      }
+      else if (size == 4) {
+        typeTag[Tuple4[Any, Any, Any, Any]]
+      }
+      else if (size == 5) {
+        typeTag[Tuple5[Any, Any, Any, Any, Any]]
+      }
+      else if (size == 6) {
+        typeTag[Tuple6[Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 7) {
+        typeTag[Tuple7[Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 8) {
+        typeTag[Tuple8[Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 9) {
+        typeTag[Tuple9[Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 10) {
+        typeTag[Tuple10[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 11) {
+        typeTag[Tuple11[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 12) {
+        typeTag[Tuple12[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 13) {
+        typeTag[Tuple13[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 14) {
+        typeTag[Tuple14[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 15) {
+        typeTag[Tuple15[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 16) {
+        typeTag[Tuple16[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size== 17) {
+        typeTag[Tuple17[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 18) {
+        typeTag[Tuple18[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 19) {
+        typeTag[Tuple19[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 20) {
+        typeTag[Tuple20[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else if (size == 21) {
+        typeTag[Tuple21[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+      else {
+        typeTag[Tuple21[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]
+      }
+    }
+
+    tt
+  }
 }
 
 object CassandraTableScanRDD {
@@ -463,7 +699,7 @@ object CassandraTableScanRDD {
       readConf = ReadConf.fromSparkConf(sc.getConf),
       columnNames = AllColumns,
       where = CqlWhereClause.empty)
-    rdd.withPartitioner(rdd.partitionGenerator.partitioner[K](PartitionKeyColumns))
+    rdd.withPartitioner(rdd.partitionGenerator.partitioner(PartitionKeyColumns))
   }
 
   /**
