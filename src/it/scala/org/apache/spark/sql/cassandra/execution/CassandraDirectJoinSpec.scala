@@ -132,6 +132,19 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
                              | 4
                              |)""".
             stripMargin)}
+      },
+      Future {
+        session.execute(s"""CREATE TABLE IF NOT EXISTS $ks.module_by_coverage (
+          date text,
+          hour text,
+          xmlid text,
+          moduleid text,
+          coverageid text,
+          description text,
+          PRIMARY KEY ((date, hour), xmlid, moduleid)) WITH CLUSTERING ORDER BY (xmlid ASC, moduleid ASC);""")
+        session.execute(s"INSERT INTO $ks.module_by_coverage " +
+          s"(date,hour,  xmlid,moduleid,coverageid, description) VALUES " +
+          s"('2018-07-03','0301','Q_1','mod1', 'cov1', 'desc1')")
       }
     )
   }
@@ -589,6 +602,26 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventual
     )
     val right = spark.read.cassandraFormat("tstest", ks).load()
     left.join(right, left("ts") === right("t"))
+  }
+
+  it should "handle a joins whose projected output columns differ after remodeling" in {
+    val moduleByCoverage = sparkSession.read.cassandraFormat(keyspace = ks, table = "module_by_coverage").load
+
+    def getKeys() : List[(String,String)] = {
+      for {
+        d <- List("2018-07-03")
+        h <- (0 to 23)
+        m <- (0 to 3)
+      } yield (d, f"${h}%02d${m}%02d")
+    }
+
+    val joinKeyDF = getKeys.toDF("date","hour")
+
+    val joined = joinKeyDF.join(moduleByCoverage, Seq("date","hour"))
+
+    val quotes = joined.where($"xmlid" rlike "^.*?Q_.*$")
+
+    quotes.count should be (1)
   }
 
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {
