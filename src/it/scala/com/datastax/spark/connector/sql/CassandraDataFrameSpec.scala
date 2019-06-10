@@ -7,7 +7,6 @@ import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.driver.core.DataType
 import com.datastax.driver.core.ProtocolVersion._
 import org.apache.spark.sql.cassandra._
@@ -22,8 +21,6 @@ case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
 case class TestData(id: String, col1: Int, col2: Int)
 
 class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventually{
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

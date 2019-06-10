@@ -16,7 +16,6 @@ import com.google.common.util.concurrent.{FutureCallback, Futures}
 import org.apache.spark.metrics.sink.Sink
 import org.apache.spark.{SecurityManager, SparkConf, SparkEnv}
 
-import com.datastax.bdp.constants.DseSchemaConstants
 import com.datastax.driver.core.ResultSet
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
@@ -113,6 +112,7 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
 
 object CassandraSink {
   val TableName = "spark_apps_snapshot"
+  val DSE_PERF_KEYSPACE = "dse_perf"
 
   object Fields extends Enumeration {
     val APPLICATION_ID = Value("application_id")
@@ -141,7 +141,7 @@ object CassandraSink {
 
     val insertStatement =
       s"""
-         |INSERT INTO "${DseSchemaConstants.DSE_PERF_KEYSPACE}"."$TableName" (${Fields.values.mkString(", ")})
+         |INSERT INTO "$DSE_PERF_KEYSPACE"."$TableName" (${Fields.values.mkString(", ")})
          |VALUES (${(1 to Fields.values.size).map(_ => "?").mkString(", ")})
          |USING TTL $ttl
          |""".stripMargin

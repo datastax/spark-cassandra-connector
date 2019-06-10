@@ -10,8 +10,6 @@ case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
 class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAndAfterEach{
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 
@@ -162,7 +160,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
   }
 
   it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
-    val goodHost = EmbeddedCassandra.getHost(0).getHostAddress
+    val goodHost = getConnectionHost
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = sc.getConf

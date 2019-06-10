@@ -6,7 +6,6 @@ import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.driver.core.ProtocolVersion._
 
@@ -27,8 +26,6 @@ case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
 class RDDSpec extends SparkCassandraITFlatSpecBase{
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
   override val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
@@ -379,7 +376,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase{
   it should "use the ReadConf from the SparkContext by default" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
-    someCass.readConf.consistencyLevel should be (com.datastax.driver.core.ConsistencyLevel.ONE)
+    someCass.readConf.consistencyLevel should be (com.datastax.driver.core.ConsistencyLevel.LOCAL_ONE)
   }
 
 

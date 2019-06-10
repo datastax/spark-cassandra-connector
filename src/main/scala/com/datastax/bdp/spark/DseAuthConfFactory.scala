@@ -6,6 +6,9 @@
 
 package com.datastax.bdp.spark
 
+//Commented out to fix later
+/*
+
 import org.apache.spark.SparkConf
 
 import com.datastax.bdp.cassandra.auth.DseJavaDriverAuthProvider
@@ -16,7 +19,6 @@ import com.datastax.spark.connector.cql.{AuthConf, AuthConfFactory, NoAuthConf}
 import com.datastax.spark.connector.util.Logging
 
 object DseAuthConfFactory extends AuthConfFactory with Logging {
-
   val CassandraUserNameProperty = "spark.cassandra.auth.username"
   val CassandraPasswordProperty = "spark.cassandra.auth.password"
 
@@ -55,5 +57,6 @@ object DseAuthConfFactory extends AuthConfFactory with Logging {
     case DseAnalyticsKerberosAuthConf => true
     case _ => false
   }
-
 }
+
+ */

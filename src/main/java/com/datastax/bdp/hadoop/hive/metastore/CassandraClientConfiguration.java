@@ -7,7 +7,6 @@ package com.datastax.bdp.hadoop.hive.metastore;
 
 import java.util.HashMap;
 
-import com.datastax.bdp.constants.DseSchemaConstants;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -23,6 +22,7 @@ public class CassandraClientConfiguration extends HashMap
     public static final String META_DB_ROW_KEY = "__meta__";
     public static final String DATABASES_ROW_KEY = "__databases__";
     public static final String DEF_META_STORE_CF = "MetaStore";
+    public static final String HIVE_DEF_META_STORE_KEYSPACE = "HiveMetaStore";
 
     public static final String CONF_PARAM_PREFIX = "cassandra.connection.";
 
@@ -140,8 +140,7 @@ public class CassandraClientConfiguration extends HashMap
         }
 
         hadoopConfiguration = conf;
-        this.keyspaceName = conf.get(CONF_PARAM_KEYSPACE_NAME,
-                DseSchemaConstants.HIVE_DEF_META_STORE_KEYSPACE);
+        this.keyspaceName = conf.get(CONF_PARAM_KEYSPACE_NAME, HIVE_DEF_META_STORE_KEYSPACE);
         this.columnFamily = conf.get(CONF_PARAM_CF_NAME, DEF_META_STORE_CF);
         this.username = conf.get(CASSANDRA_USERNAME);
         this.password = conf.get(CASSANDRA_PASSWORD);

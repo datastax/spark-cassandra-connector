@@ -2,7 +2,6 @@ package org.apache.spark.sql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.CatalystUtil._
@@ -11,12 +10,10 @@ import org.apache.spark.sql.cassandra._
 import scala.concurrent.Future
 
 class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with Logging  {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { session =>
       createKeyspace(session)
 

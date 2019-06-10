@@ -3,18 +3,14 @@ package com.datastax.spark.connector.sql
 import scala.concurrent.Future
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.datastax.spark.connector.embedded.YamlTransformations
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.cassandra._
-import CassandraMetadataFunction._
+import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
 
 class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with Eventually with Matchers {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(metastoreConf)
-
   override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -82,6 +78,10 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with E
       }
     )
   }
+
+  //Register Functions for TTL (Required for Spark < 3.0 or non DSE Spark 2.4)
+  sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
+  sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
 
   val columnsToCheck = Schema
     .fromCassandra(conn, Some(ks), Some("test_reading_types"))

@@ -4,16 +4,15 @@ import java.sql.Timestamp
 
 import com.datastax.driver.core.ProtocolVersion.V4
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import org.apache.spark.SparkConf
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.execution.streaming.StreamingQueryWrapper
 import org.scalatest.concurrent.Eventually
+
 import scala.concurrent.duration._
-
-
 import scala.concurrent.Future
 
 
@@ -24,11 +23,6 @@ case class TimestampRow (ts: java.sql.Timestamp)
 class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventually {
 
   override val conn = CassandraConnector(defaultConf)
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-
-  useSparkConf(defaultConf.set("spark.sql.extensions", "com.datastax.spark.connector.DseSparkExtensions"))
-
 
   sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
 

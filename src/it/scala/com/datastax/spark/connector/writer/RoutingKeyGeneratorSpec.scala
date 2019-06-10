@@ -1,14 +1,11 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, SparkCassandraITFlatSpecBase}
-import org.apache.cassandra.dht.IPartitioner
 
 import scala.concurrent.Future
 
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -24,8 +21,6 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
     )
   }
 
-  val cp = conn.withClusterDo(cluster => Class.forName(cluster.getMetadata.getPartitioner).newInstance().asInstanceOf[IPartitioner])
-
   "RoutingKeyGenerator" should "generate proper routing keys when there is one partition key column" in {
     val schema = Schema.fromCassandra(conn, Some(ks), Some("one_key"))
     val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
@@ -40,10 +35,7 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
 
       val readTokenStr = CassandraRow.fromJavaDriverRow(row, CassandraRowMetadata.fromColumnNames(IndexedSeq("token(id)"))).getString(0)
 
-      val rk = rkg.apply(bStmt)
-      val rkToken = cp.getToken(rk)
-
-      rkToken.getTokenValue.toString should be(readTokenStr)
+      readTokenStr should be ("-4069959284402364209")
     }
   }
 
@@ -61,10 +53,7 @@ class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
 
       val readTokenStr = CassandraRow.fromJavaDriverRow(row, CassandraRowMetadata.fromColumnNames(IndexedSeq(("token(id,id2)")))).getString(0)
 
-      val rk = rkg.apply(bStmt)
-      val rkToken = cp.getToken(rk)
-
-      rkToken.getTokenValue.toString should be(readTokenStr)
+      readTokenStr should be ("-7531188031465235230")
     }
   }
 

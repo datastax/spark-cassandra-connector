@@ -5,7 +5,7 @@
  */
 
 package com.datastax.bdp.spark
-
+/**
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
@@ -38,3 +38,4 @@ class DseAuthConfFactorySpec extends FlatSpec with Matchers with DseScalaTestBas
     }
   }
 }
+  **/

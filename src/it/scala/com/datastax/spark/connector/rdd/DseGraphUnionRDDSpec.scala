@@ -12,20 +12,13 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.language.existentials
 import scala.util.Random
-
-import org.apache.spark.DseTestUtil
-
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
+import org.apache.spark.{DseTestUtil, SparkConf}
 
-class DseGraphUnionRDDSpec extends DseITFlatSpecBase {
-  sparkConf.set(DseCassandraConnectionFactory.continuousPagingParam.name, "true")
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(sparkConf)
+class DseGraphUnionRDDSpec extends SparkCassandraITFlatSpecBase {
 
   override lazy val conn = CassandraConnector(sparkConf)
 
@@ -35,7 +28,7 @@ class DseGraphUnionRDDSpec extends DseITFlatSpecBase {
 
   override val ks = "graphunion"
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { case session =>
       session.execute(
         s"""CREATE KEYSPACE IF NOT EXISTS $ks

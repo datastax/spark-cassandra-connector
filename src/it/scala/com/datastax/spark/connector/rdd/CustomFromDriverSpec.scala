@@ -1,25 +1,37 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.DataType
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.types.{ColumnType, ColumnTypeConf, CustomDriverConverter, IntType}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, types}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.cassandra.DataTypeConverter
 import org.apache.spark.sql.{types => catalystTypes}
 
 class CustomFromDriverSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf
-    .set(ColumnTypeConf.CustomDriverTypeParam.name, "com.datastax.spark.connector.rdd.DumbConverter"))
 
-  "Custom fromDrivers converters " should "be loadable" in {
+  val ourSc = {
+    new SparkContext(
+      defaultConf.clone()
+        .set(ColumnTypeConf.CustomDriverTypeParam.name, "com.datastax.spark.connector.rdd.DumbConverter")
+    )
+  }
+
+  override def afterClass(): Unit = {
+    super.afterClass()
+    ourSc.stop()
+  }
+
+  //TODO remove this
+
+
+  ignore should "be loadable" in {
     ColumnType.fromDriverType(DataType.custom("Dummy")) should be(types.IntType)
     for ((driverType, expectedType) <- ColumnType.primitiveTypeMap) {
       ColumnType.fromDriverType(driverType) should be(expectedType)
     }
   }
 
-  it should "support SparkSQL" in {
+  ignore should "support SparkSQL" in {
     DataTypeConverter.catalystDataType(types.IntType, true) should be(catalystTypes.StringType)
   }
 }

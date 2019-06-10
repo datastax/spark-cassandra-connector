@@ -5,15 +5,11 @@
  */
 package com.datastax.bdp.spark
 
-import javax.net.ssl.SSLContext
-
-import scala.collection.JavaConverters._
+import java.util.concurrent.ThreadFactory
 
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 
-import com.datastax.bdp.config.{ClientConfiguration, DetachedClientConfigurationFactory}
-import com.datastax.bdp.util.SSLUtil
 import com.datastax.driver.core._
 import com.datastax.driver.dse.DseCluster
 import com.datastax.driver.dse.graph.{GraphOptions, GraphProtocol}
@@ -22,16 +18,15 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter}
 
-
 object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   @transient
   lazy private val logger = LoggerFactory.getLogger("com.datastax.bdp.spark.DseCassandraConnectionFactory")
 
   def customCodecRegistry: CodecRegistry = {
     new CodecRegistry()
-    .register(LocalDateCodec.instance)
-    .register(LocalTimeCodec.instance)
-    .register(InstantCodec.instance)
+      .register(LocalDateCodec.instance)
+      .register(LocalTimeCodec.instance)
+      .register(InstantCodec.instance)
   }
 
   def dseClusterBuilder(conf: CassandraConnectorConf) = {
@@ -69,7 +64,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   def getClusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
     val builder = dseClusterBuilder(conf)
     Option(conf.authConf.authProvider).foreach(builder.withAuthProvider)
-    sslOptions(conf).foreach(builder.withSSL)
+    //sslOptions(conf).foreach(builder.withSSL)
     builder
   }
 
@@ -99,9 +94,9 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   }
 
   override def getScanner(
-    readConf: ReadConf,
-    connConf: CassandraConnectorConf,
-    columnNames: scala.IndexedSeq[String]): Scanner = {
+                           readConf: ReadConf,
+                           connConf: CassandraConnectorConf,
+                           columnNames: scala.IndexedSeq[String]): Scanner = {
 
     val isContinuousPagingEnabled =
       new CassandraConnector(connConf)
@@ -116,6 +111,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
+  /*
   def sslOptions(conf: CassandraConnectorConf): Option[SSLOptions] = {
     def buildSSLOptions(clientConf: ClientConfiguration): Option[SSLOptions] = {
       getSSLContext(clientConf).map {
@@ -123,11 +119,10 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
           logger.info("SSL enabled")
           JdkSSLOptions.builder()
               .withSSLContext(sslContext)
-              .withCipherSuites(getCipherSuites(clientConf).toArray)
+              .withCipherSuites(getCipherSuites(clientConf))
               .build()
       }
     }
-
     val clientConf: Option[ClientConfiguration] = conf.authConf match {
       case byosSslConfig: DseByosAuthConfFactory.ByosAuthConf  => Some(byosSslConfig.clientConfig)
       case _ => try {
@@ -138,10 +133,8 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
           None
       }
     }
-
     clientConf.flatMap(buildSSLOptions)
   }
-
   private def getSSLContext(clientConf: ClientConfiguration): Option[SSLContext] = {
     if (clientConf.isSslEnabled) {
       val tmf = SSLUtil.initTrustManagerFactory(
@@ -160,11 +153,11 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
       None
     }
   }
-
-  private def getCipherSuites(clientConf: ClientConfiguration): Seq[String] = {
-    if (clientConf.getCipherSuites != null && !clientConf.getCipherSuites.isEmpty)
-      clientConf.getCipherSuites.asScala
+  private def getCipherSuites(clientConf: ClientConfiguration): Array[String] = {
+    if (clientConf.getCipherSuites != null && clientConf.getCipherSuites.nonEmpty)
+      clientConf.getCipherSuites
     else
-      CassandraConnectorConf.SSLEnabledAlgorithmsParam.default.toSeq
+      CassandraConnectorConf.SSLEnabledAlgorithmsParam.default.toArray
   }
+   */
 }

@@ -7,8 +7,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import java.lang.{Integer => JInt}
 
-import com.datastax.spark.connector.embedded.YamlTransformations
-
 import scala.collection.JavaConversions._
 import org.apache.spark.rdd.RDD
 
@@ -23,8 +21,6 @@ case class X(x: Int)
 case class WeirdMapping(weirdkey: Int, weirdcol: Int)
 
 class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf.set("spark.cassandra.input.consistency.level", "ONE"))
 
   override val conn = CassandraConnector(defaultConf)
   val rowCount = 100

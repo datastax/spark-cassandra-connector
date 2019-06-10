@@ -3,13 +3,10 @@ package com.datastax.spark.connector.writer
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.{SomeColumns, SparkCassandraITFlatSpecBase}
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
 import scala.concurrent.Future
 
 class ThrottlingSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

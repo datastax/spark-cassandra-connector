@@ -5,8 +5,6 @@ import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
 
 class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 
@@ -17,7 +15,7 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
     session.execute(s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
   }
 
-  beforeTest {
+  override def beforeClass {
     conn.withSessionDo { session =>
       session.execute(s"""TRUNCATE $ks.key_value""")
     }

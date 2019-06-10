@@ -22,13 +22,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.datastax.bdp.util.DriverUtil;
 import com.datastax.driver.core.exceptions.SyntaxError;
 import com.datastax.driver.dse.DseSession;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.cql.CassandraConnectorConf;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -39,7 +39,6 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.bdp.constants.DseSchemaConstants;
 import com.datastax.bdp.spark.DseCassandraConnectionFactory;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
@@ -48,7 +47,6 @@ import com.datastax.driver.core.MaterializedViewMetadata;
 import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.TableMetadata;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
-import com.datastax.driver.core.exceptions.SyntaxError;
 import com.datastax.driver.core.schemabuilder.Create;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.datastax.driver.dse.DseCluster;
@@ -59,7 +57,6 @@ import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
@@ -80,7 +77,7 @@ public class SchemaManagerService
     private String wareHouseRoot;
     private DseCluster externalCluster;
     private Metadata metadata;
-    private Set<String> systemKeyspaces = DriverUtil.getSystemKeyspaces(null);
+    private Set<String> systemKeyspaces = Sets.newHashSet();//TODO FIX THIS DriverUtil.getSystemKeyspaces(null);
 
     /*
      * there are three states of dse_graph DB.
@@ -164,7 +161,7 @@ public class SchemaManagerService
         try
         {
             metadata = session.getCluster().getMetadata();
-            systemKeyspaces = DriverUtil.getSystemKeyspaces(session);
+            systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
             // list all available graphs and check that graph is enabled
             try
             {

@@ -7,17 +7,14 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
 import scala.concurrent.Future
 
 class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 
-  beforeClass {
+  override def beforeClass {
     //Create Cql3 Keypsace and Data
     counterCreateData()
   }

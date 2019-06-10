@@ -11,13 +11,10 @@ import com.datastax.driver.core.LocalDate
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
 trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   this: FlatSpec =>
 
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

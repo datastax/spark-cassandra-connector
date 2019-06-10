@@ -5,13 +5,11 @@ import java.nio.file.{Files, Paths}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
+import org.apache.spark.SparkConf
 
 import scala.concurrent.Future
 
 class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(metastoreConf)
 
   override val conn = CassandraConnector(defaultConf)
 
@@ -27,7 +25,7 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase {
       |9\u0001purple
       |10\u0001white""".stripMargin
 
-  beforeClass {
+  override def beforeClass {
 
     conn.withSessionDo { session =>
       createKeyspace(session, ks)
@@ -60,7 +58,8 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase {
     sparkSession.sql(s"SELECT * FROM $ks.manycolumns").schema.length should be (1001)
   }
 
-  it should "be able to read from a hive loaded table" in {
+  //TODO renable this when we upgrade the driver (needs shaded guava)
+  ignore should "be able to read from a hive loaded table" in {
     sparkSession.sql("SELECT * FROM test_hive").count() should be (10)
   }
 

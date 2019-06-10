@@ -7,6 +7,7 @@ import java.util.{Date, UUID}
 import org.apache.spark.{SparkConf, SparkEnv}
 import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.cql.CassandraConnectorConf
 import com.datastax.spark.connector.util._
 
 import scala.collection.JavaConversions._
@@ -44,10 +45,11 @@ object ColumnTypeConf {
 
   val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
 
+  //TODO Remove This
   val CustomDriverTypeParam = ConfigParameter[Option[String]](
     name = "spark.cassandra.dev.customFromDriver",
     section = ReferenceSection,
-    default = None,
+    default = Some("com.datastax.spark.connector.types.DseTypeConverter"),
     description = """Provides an additional class implementing CustomDriverConverter for those
                     |clients that need to read non-standard primitive Cassandra types. If your Cassandra implementation
                     |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
@@ -91,9 +93,9 @@ object ColumnType {
     DataType.duration() -> DurationType
   )
 
+  //Hardwiring this to be DSE // TODO remove this completely
   lazy val customDriverConverter: Option[CustomDriverConverter] = {
-    Option(SparkEnv.get)
-      .flatMap(env => env.conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
+      ColumnTypeConf.CustomDriverTypeParam.default
       .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
   }
 

@@ -1,22 +1,19 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.embedded.YamlTransformations
+import com.datastax.spark.connector.CCMTraits.{Auth, CCMTrait}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import org.apache.spark.sql.SparkSession
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.PasswordAuth))
-  useSparkConf(defaultConf)
+
+  override lazy val traits: Set[CCMTrait] = Set(Auth())
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)
 
-  val conf = defaultConf
-  conf.set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
-  conf.set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
+  val authConf = defaultConf
 
   "A CassandraConnector" should "authenticate with username and password when using native protocol" in {
-    val conn2 = CassandraConnector(conf)
+    val conn2 = CassandraConnector(authConf)
     conn2.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
@@ -24,24 +21,12 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
-  it should "pick up user and password from SparkConf" in {
-    val conf = defaultConf
-        .set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
-        .set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
-
-    // would throw exception if connection unsuccessful
-    val conn2 = CassandraConnector(conf)
-    conn2.withSessionDo { session => }
-  }
-
   "A DataFrame" should "read and write data with valid auth" in {
-    val sparkSession = SparkSession.builder().getOrCreate()
 
-    val conf = defaultConf
-        .set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
-        .set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
+    sparkSession.conf.set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
+    sparkSession.conf.set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
 
-    val conn = CassandraConnector(conf)
+    val conn = CassandraConnector(authConf)
 
     val personDF1 = sparkSession.createDataFrame(Seq(
       ("Andy", 28, "America"),

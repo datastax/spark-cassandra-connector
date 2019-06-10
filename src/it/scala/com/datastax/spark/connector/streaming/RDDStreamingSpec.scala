@@ -2,7 +2,6 @@ package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.testkit._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
@@ -14,16 +13,14 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.Random
 
+case class WordCount(word: String, count: Int)
+case class Key(word: String)
+
 class RDDStreamingSpec
   extends SparkCassandraITFlatSpecBase
   with Eventually
   with BeforeAndAfterEach
   with BeforeAndAfterAll {
-
-  import com.datastax.spark.connector.testkit.TestEvent._
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   import org.scalatest.time.SpanSugar._
 

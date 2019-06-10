@@ -1,13 +1,11 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.embedded.{EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.types._
 import org.scalatest.Inspectors._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>

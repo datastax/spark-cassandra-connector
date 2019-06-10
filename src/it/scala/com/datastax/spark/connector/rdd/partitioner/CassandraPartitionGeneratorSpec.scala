@@ -5,12 +5,10 @@ import java.net.InetAddress
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import com.datastax.spark.connector.embedded.YamlTransformations
 
 class CassandraPartitionGeneratorSpec
   extends SparkCassandraITFlatSpecBase {
 
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
   implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
 

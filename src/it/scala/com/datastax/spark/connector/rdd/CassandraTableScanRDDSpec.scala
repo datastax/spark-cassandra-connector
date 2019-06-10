@@ -1,16 +1,12 @@
 package com.datastax.spark.connector.rdd
 
-import org.apache.cassandra.tools.NodeProbe
 import org.scalatest.Inspectors
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 
 class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspectors {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
@@ -75,7 +71,7 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspec
     forAll(partitions.zipWithIndex) { case (part, index) => part.index should be(index) }
   }
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { session =>
 
       session.execute(s"CREATE KEYSPACE IF NOT EXISTS $ks " +
@@ -90,14 +86,12 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspec
         session.execute(st.bind(key, value))
       }
     }
-    for (host <- conn.hosts) {
-      val nodeProbe = new NodeProbe(host.getHostAddress,
-        EmbeddedCassandra.cassandraRunners.get(0).map(_.baseConfiguration.jmxPort)
-          .getOrElse(CassandraRunner.DefaultJmxPort))
-      nodeProbe.forceKeyspaceFlush(ks, tableName)
-    }
 
-    val timeout = CassandraRunner.SizeEstimatesUpdateIntervalInSeconds * 1000 * 5
+    //Force a flush by restarting the node
+    ccmBridge.stop(1)
+    ccmBridge.start(1)
+
+    val timeout = 1000 * 30
     assert(DataSizeEstimates.waitForDataSizeEstimates(conn, ks, tableName, timeout),
       s"Data size estimates not present after $timeout ms. Test cannot be finished.")
   }

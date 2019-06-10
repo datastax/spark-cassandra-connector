@@ -5,7 +5,7 @@
  */
 
 package com.datastax.bdp.spark
-
+/*
 import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe._
 
@@ -48,3 +48,5 @@ class DseByosAuthConfFactorySpec extends FlatSpec with Matchers with DseScalaTes
     dseByosClientConfiguration.getCassandraHosts.size shouldBe 2
   }
 }
+
+ */

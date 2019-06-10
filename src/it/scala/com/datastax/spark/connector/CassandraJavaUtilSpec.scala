@@ -5,15 +5,11 @@ import scala.concurrent.Future
 
 import org.apache.spark.rdd.RDD
 
-import com.datastax.bdp.test.ng.DseScalaTestBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 
 class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

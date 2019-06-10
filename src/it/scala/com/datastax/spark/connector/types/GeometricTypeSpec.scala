@@ -14,12 +14,8 @@ import com.datastax.driver.dse.geometry._
 import com.datastax.driver.dse.geometry.codecs.{LineStringCodec, PointCodec, PolygonCodec}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
-class GeometricTypeSpec extends DseITFlatSpecBase {
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(sparkConf)
+class GeometricTypeSpec extends SparkCassandraITFlatSpecBase {
 
   override lazy val conn = CassandraConnector(sparkConf)
 
@@ -42,16 +38,7 @@ class GeometricTypeSpec extends DseITFlatSpecBase {
     )
   }
 
-  var spark: SparkSession = _
-
-  beforeClass {
-
-    println(sparkConf.toDebugString)
-    spark = SparkSession
-      .builder()
-      .config(sparkConf)
-      .config("spark.sql.warehouse.dir", "file:///tmp/")
-      .getOrCreate()
+  override def beforeClass {
 
     conn.withSessionDo { session =>
       session.execute(

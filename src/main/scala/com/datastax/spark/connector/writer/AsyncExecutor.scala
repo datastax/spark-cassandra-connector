@@ -10,7 +10,6 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import AsyncExecutor.Handler
 import com.datastax.driver.core.exceptions.{BusyPoolException, NoHostAvailableException, OverloadedException}
-import org.apache.cassandra.concurrent.TPCBackpressureController
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
 class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
@@ -18,6 +17,8 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
 
   private val semaphore = new Semaphore(maxConcurrentTasks)
   private val pendingFutures = new TrieMap[ListenableFuture[R], Boolean]
+  private val BackpressureOverload = "Request dropped due to backpressure overload"
+
   @volatile private var latestException: Option[Throwable] = None
 
   /** Returns an exception if any of the futures had an exception.
@@ -56,7 +57,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
               logTrace("BusyPoolException ... Retrying")
               tryFuture()
 
-            case oE: OverloadedException if oE.getMessage.contains(TPCBackpressureController.BACKPRESSURE_REJECTION_MSG) =>
+            case oE: OverloadedException if oE.getMessage.contains(BackpressureOverload) =>
               logTrace("Backpressure rejection ... Retrying")
               tryFuture()
 

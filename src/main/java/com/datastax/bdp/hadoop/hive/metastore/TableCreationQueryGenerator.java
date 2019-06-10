@@ -6,8 +6,6 @@
 package com.datastax.bdp.hadoop.hive.metastore;
 
 import com.datastax.driver.core.Cluster;
-import com.datastax.bdp.constants.DseSchemaConstants;
-import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.hadoop.hive.conf.HiveConf;

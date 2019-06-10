@@ -10,19 +10,16 @@ import org.scalatest.Matchers
 import com.datastax.driver.dse.DseSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ReadConf
 
-class DseCassandraConnectionFactorySpec extends DseITFlatSpecBase with Matchers {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(sparkConf)
+class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with Matchers {
 
   override lazy val conn = CassandraConnector(sparkConf)
 
   override val ks = "dsecassconnfact"
   val table = "atab"
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { case session =>
       session.execute(
         s"""CREATE KEYSPACE IF NOT EXISTS $ks

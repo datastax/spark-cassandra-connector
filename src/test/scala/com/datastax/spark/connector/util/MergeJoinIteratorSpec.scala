@@ -8,9 +8,7 @@ package com.datastax.spark.connector.util
 
 import org.scalatest.{FlatSpec, Matchers}
 
-import com.datastax.bdp.test.ng.DseScalaTestBase
-
-class MergeJoinIteratorSpec  extends FlatSpec with Matchers with DseScalaTestBase {
+class MergeJoinIteratorSpec  extends FlatSpec with Matchers {
 
   "MergeJoinIterator" should "group an empty collection" in {
     new MergeJoinIterator[Int, Int, Int](Iterator.empty, Iterator.empty, identity, identity)

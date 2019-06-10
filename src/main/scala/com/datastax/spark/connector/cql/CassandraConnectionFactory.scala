@@ -2,22 +2,21 @@ package com.datastax.spark.connector.cql
 
 import java.nio.file.{Files, Path, Paths}
 import java.security.{KeyStore, SecureRandom}
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.ThreadFactory
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
+import java.util.concurrent.{ThreadFactory, TimeUnit}
 
+import com.datastax.bdp.spark.DseCassandraConnectionFactory
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import io.netty.channel.EventLoopGroup
-import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
-
 import com.datastax.driver.core._
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.spark.connector.cql.CassandraConnectionFactory.DaemonThreadingOptions
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
+import com.google.common.util.concurrent.ThreadFactoryBuilder
+import io.netty.util.concurrent.DefaultThreadFactory
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -31,10 +30,10 @@ trait CassandraConnectionFactory extends Serializable {
   def properties: Set[String] = Set.empty
 
   def getScanner(
-    readConf: ReadConf,
-    connConf: CassandraConnectorConf,
-    columnNames: IndexedSeq[String]): Scanner =
-      new DefaultScanner(readConf, connConf, columnNames)
+                  readConf: ReadConf,
+                  connConf: CassandraConnectorConf,
+                  columnNames: IndexedSeq[String]): Scanner =
+    new DefaultScanner(readConf, connConf, columnNames)
 
 }
 
@@ -84,9 +83,9 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   }
 
   private def getKeyStore(
-     ksType: String,
-     ksPassword: Option[String],
-     ksPath: Option[Path]): Option[KeyStore] = {
+                           ksType: String,
+                           ksPassword: Option[String],
+                           ksPath: Option[Path]): Option[KeyStore] = {
 
     ksPath match {
       case Some(path) =>
@@ -173,7 +172,7 @@ object CassandraConnectionFactory {
   val FactoryParam = ConfigParameter[CassandraConnectionFactory](
     name = "spark.cassandra.connection.factory",
     section = ReferenceSection,
-    default = DefaultConnectionFactory,
+    default = DseCassandraConnectionFactory,
     description =
       """Name of a Scala module or class implementing
         |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin)

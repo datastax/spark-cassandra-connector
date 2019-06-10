@@ -3,12 +3,12 @@ package org.apache.spark.metrics
 import java.io.File
 import java.nio.charset.{Charset, StandardCharsets}
 
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.embedded.SparkTemplate
 import org.apache.commons.io.FileUtils
-import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
-import org.scalatest.{FlatSpec, Matchers}
+import org.apache.spark.{SparkContext, TaskContext}
 
-class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemplate {
+class CassandraConnectorSourceSpec extends SparkCassandraITFlatSpecBase {
 
   private def prepareConf = SparkTemplate.defaultConf.setMaster("local[*]")
 
@@ -25,13 +25,13 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
 
     val conf = prepareConf
     conf.set("spark.metrics.conf", metricsPropertiesFile.getAbsolutePath)
-    useSparkConf(conf)
+    val metricsSc = new SparkContext(conf)
     try {
-      sc.runJob(sc.makeRDD(1 to 1), (tc: TaskContext, it: Iterator[Int]) => {
+      metricsSc.runJob(metricsSc.makeRDD(1 to 1), (tc: TaskContext, it: Iterator[Int]) => {
         MetricsUpdater.getSource(tc).toArray.length
       }).head shouldBe 1
     } finally {
-      sc.stop()
+      metricsSc.stop()
     }
   }
 
@@ -45,15 +45,13 @@ class CassandraConnectorSourceSpec extends FlatSpec with Matchers with SparkTemp
     FileUtils.writeStringToFile(metricsPropertiesFile, metricsPropertiesContent, StandardCharsets.UTF_8)
 
     val conf = prepareConf
-    conf.set("spark.metrics.conf", metricsPropertiesFile.getAbsolutePath)
-
-    useSparkConf(conf)
+    val metricsSc = new SparkContext(conf)
     try {
-      sc.runJob(sc.makeRDD(1 to 1), (tc: TaskContext, it: Iterator[Int]) => {
+      metricsSc.runJob(metricsSc.makeRDD(1 to 1), (tc: TaskContext, it: Iterator[Int]) => {
         MetricsUpdater.getSource(tc).toArray.length
       }).head shouldBe 0
     } finally {
-      sc.stop()
+      metricsSc.stop()
     }
   }
 

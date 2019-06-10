@@ -8,7 +8,6 @@ import com.datastax.driver.core.ProtocolVersion
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
 import com.datastax.spark.connector.types._
 import org.apache.spark.SparkException
@@ -33,8 +32,6 @@ object CustomerIdConverter extends TypeConverter[String] {
 }
 
 class TableWriterSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

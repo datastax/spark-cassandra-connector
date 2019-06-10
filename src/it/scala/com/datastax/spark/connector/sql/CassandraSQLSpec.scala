@@ -4,20 +4,17 @@ import scala.concurrent.Future
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
 import com.datastax.driver.core.ProtocolVersion._
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 
   val ks1 = ks + "_1"
   val ks2 = ks + "_2"
 
-  beforeClass {
+  override def beforeClass {
 
     conn.withSessionDo { session =>
       createKeyspace(session, ks1)

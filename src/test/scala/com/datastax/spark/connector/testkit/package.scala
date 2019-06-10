@@ -1,6 +1,11 @@
 package com.datastax.spark.connector
 
+import org.scalatest.{Matchers, WordSpecLike}
+
 package object testkit {
+
+  /** Basic unit test abstraction. */
+  trait AbstractSpec extends WordSpecLike with Matchers
 
   final val DefaultHost = "127.0.0.1"
 

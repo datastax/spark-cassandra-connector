@@ -4,25 +4,26 @@ import com.datastax.driver.core.{Cluster, Row, Session, Statement}
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import org.apache.spark.SparkException
+import org.apache.spark.{SparkConf, SparkContext, SparkException}
 import org.scalatest.Inspectors
 
 class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Inspectors {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(
-    defaultConf
+
+  val ourSc = {
+    new SparkContext(
+      defaultConf
+      .clone
       .set(CassandraConnectionFactory.FactoryParam.name,
-       "com.datastax.spark.connector.rdd.DummyFactory"
-      ))
+        "com.datastax.spark.connector.rdd.DummyFactory"))
+  }
 
   override val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
   val tableName = "data"
   val noMinimalThreshold = Int.MinValue
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { session =>
 
       session.execute(s"CREATE KEYSPACE IF NOT EXISTS $ks " +
@@ -42,7 +43,7 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Inspec
   "CassandraTableScanRDD" should "be able to use a custom scan method" in withoutLogging{
     //The dummy method set in the SparkConf only throws a NIE
     val se = intercept[SparkException] {
-      sc.cassandraTable[CassandraRow](ks, tableName).collect
+      ourSc.cassandraTable[CassandraRow](ks, tableName).collect
     }
     se.getCause.getMessage should be (DummyFactory.nie.getMessage)
   }

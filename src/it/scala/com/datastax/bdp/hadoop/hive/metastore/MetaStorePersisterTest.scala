@@ -13,7 +13,8 @@ import org.apache.hadoop.hive.metastore.api.{Database, Table}
 class MetaStorePersisterTest extends MetaStoreTestBase {
     private var metaStorePersister: MetaStorePersister = _
 
-    beforeClass {
+    override def beforeClass {
+        super.beforeClass()
         metaStorePersister = MetaStorePersister.getInstance(new CassandraClientConfiguration(configuration), null)
     }
 

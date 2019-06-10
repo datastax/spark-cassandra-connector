@@ -6,7 +6,7 @@
 package com.datastax.bdp.spark
 
 import java.util.concurrent.atomic.AtomicReference
-
+/**
 import com.datastax.bdp.config.ClientConfiguration
 import com.datastax.bdp.util.DseConnectionUtil
 import com.datastax.driver.core._
@@ -46,3 +46,4 @@ private[bdp] object DseConfigurationBasedConnectionFactory extends CassandraConn
           .build())
       .getOrElse(throw new IllegalStateException("Building config hasn't been set."))
 }
+  **/

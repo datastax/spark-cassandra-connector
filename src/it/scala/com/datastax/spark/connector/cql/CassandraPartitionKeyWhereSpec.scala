@@ -6,8 +6,6 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.embedded._
 
 class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
 

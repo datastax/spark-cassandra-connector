@@ -7,7 +7,6 @@ import com.datastax.driver.core.HostDistance
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
@@ -56,8 +55,6 @@ case class TypeWithTupleSetter(id: Int) {
 }
 
 class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   override val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000

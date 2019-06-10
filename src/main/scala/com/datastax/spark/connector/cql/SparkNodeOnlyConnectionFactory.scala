@@ -9,12 +9,10 @@ import java.net.InetAddress
 import java.util
 
 import scala.collection.JavaConverters._
-
-import com.typesafe.scalalogging.StrictLogging
-
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.driver.core.policies.LoadBalancingPolicy
 import com.datastax.driver.core.{Cluster, Host, HostDistance, Statement}
+import com.datastax.spark.connector.util.Logging
 
 /**
   * A Custom Connection Factory for using the Dse Resource Manager
@@ -35,7 +33,7 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   */
 class SparkNodeOnlyLoadBalancingPolicy(
     contactPoints: Set[InetAddress],
-    localDC: Option[String] = None) extends LoadBalancingPolicy with StrictLogging {
+    localDC: Option[String] = None) extends LoadBalancingPolicy with Logging {
 
   import SparkNodeOnlyConnectionFactory.AnalyticsWorkload
 
@@ -45,7 +43,7 @@ class SparkNodeOnlyLoadBalancingPolicy(
 
   override def newQueryPlan(loggedKeyspace: String, statement: Statement): util.Iterator[Host] = {
     if (sparkNodes.isEmpty) {
-      logger.error(
+      logError(
         s"""Unable to route DSE Resource Manager request.
            |None of the currently known nodes in the DC $dcToUse are running an $AnalyticsWorkload workload.
            |Please set the connection.local_dc parameter in your dse:// master URI or

@@ -6,8 +6,6 @@ import com.datastax.spark.connector.embedded._
 import org.scalatest.Matchers
 
 class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with Matchers {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(null)
 
   override val conn = CassandraConnector(defaultConf)
 
@@ -20,10 +18,16 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with Matchers {
     session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')")
   }
 
+  val connectorString = s"""implicit val cassandraConnector = CassandraConnector(Set(InetAddress.getByName("$getConnectionHost")), $getConnectionPort)"""
+
   it should "allow to read a Cassandra table as Array of Scala class objects in REPL" in {
     val output = SparkRepl.runInterpreter(
       s"""
         |import com.datastax.spark.connector._
+        |import com.datastax.spark.connector.cql.CassandraConnector
+        |import java.net.InetAddress
+        |
+        |$connectorString
         |
         |case class SampleScalaCaseClass(key: Int, value: String)
         |val cnt1 = sc.cassandraTable[SampleScalaCaseClass]("$ks", "simple_kv").collect.length

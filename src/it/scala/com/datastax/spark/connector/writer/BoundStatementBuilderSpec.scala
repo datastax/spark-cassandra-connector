@@ -3,11 +3,9 @@ package com.datastax.spark.connector.writer
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.driver.core.ProtocolVersion
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.types.{CassandraOption, Unset}
 
 class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>

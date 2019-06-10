@@ -2,20 +2,17 @@ package org.apache.spark.metrics
 
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.duration._
-
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FlatSpec, Matchers}
-
-import com.datastax.bdp.test.ng.DseScalaTestBase
 import com.datastax.driver.core.RowMock
 import com.datastax.spark.connector.rdd.ReadConf
+import org.scalatest.mockito.MockitoSugar
 
-class InputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestBase with MockitoSugar {
+class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
 
   implicit val defaultPatienceConfig = Eventually.PatienceConfig(
     Eventually.scaled(15.seconds), Eventually.scaled(500.milliseconds))

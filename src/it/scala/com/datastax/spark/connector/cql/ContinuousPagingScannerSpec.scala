@@ -12,15 +12,11 @@ import org.scalatest.concurrent.Eventually
 
 import com.datastax.bdp.spark.{ContinuousPagingScanner, DseCassandraConnectionFactory}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ReadConf
 
-class ContinuousPagingScannerSpec extends DseITFlatSpecBase with Eventually {
+class ContinuousPagingScannerSpec extends SparkCassandraITFlatSpecBase with Eventually {
 
   sparkConf.set(DseCassandraConnectionFactory.continuousPagingParam.name, "true")
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(sparkConf)
 
   override lazy val conn = CassandraConnector(sparkConf)
 
@@ -42,7 +38,8 @@ class ContinuousPagingScannerSpec extends DseITFlatSpecBase with Eventually {
       }
     )
   }
-  beforeClass {
+
+  override def beforeClass {
     conn.withSessionDo { case session =>
       session.execute(
         s"""CREATE KEYSPACE IF NOT EXISTS $ks

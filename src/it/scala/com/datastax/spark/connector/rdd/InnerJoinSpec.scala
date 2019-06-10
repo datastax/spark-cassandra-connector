@@ -6,25 +6,15 @@
 
 package com.datastax.spark.connector.rdd
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-
-import com.datastax.bdp.config.YamlClientConfiguration
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 
-class InnerJoinSpec extends DseITFlatSpecBase {
-
-  YamlClientConfiguration.setAsClientConfigurationImpl()
-
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(sparkConf)
+class InnerJoinSpec extends SparkCassandraITFlatSpecBase {
 
   override lazy val conn = CassandraConnector(sparkConf)
 
-  beforeClass {
+  override def beforeClass {
     conn.withSessionDo { session =>
       session.execute(
         s"""CREATE KEYSPACE IF NOT EXISTS $ks

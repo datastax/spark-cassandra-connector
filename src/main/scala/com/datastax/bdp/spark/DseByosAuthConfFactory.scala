@@ -4,6 +4,7 @@
  * Please see the included license file for details.
  */
 
+/*
 package com.datastax.bdp.spark
 
 import java.net.InetAddress
@@ -213,3 +214,5 @@ object DseByosAuthConfFactory extends AuthConfFactory with Logging {
     new DseByosClientConfiguration(conf)
   }
 }
+
+ */

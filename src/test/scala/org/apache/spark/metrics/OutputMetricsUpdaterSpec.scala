@@ -2,16 +2,15 @@ package org.apache.spark.metrics
 
 import java.util.concurrent.CountDownLatch
 
-import com.datastax.bdp.test.ng.DseScalaTestBase
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
+import org.scalatest.mockito.MockitoSugar
 
-class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with DseScalaTestBase with MockitoSugar {
+class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
 
   val ts = System.currentTimeMillis()
 

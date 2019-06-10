@@ -6,7 +6,6 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.CassandraOption
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.writer.WriteConf
 
 import com.datastax.driver.core.ProtocolVersion._
@@ -19,8 +18,6 @@ case class RandomListSelector[T](list: Seq[T]) {
 }
 
 class DocExamples extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
 
   val numrows: Long = 1000
 
@@ -65,7 +62,7 @@ class DocExamples extends SparkCassandraITFlatSpecBase {
        })
   }
 
-  beforeClass {
+  override def beforeClass {
     val numrows = 1000// We can't be linked to the scope of flatspec which isn't serializable
     val ks = "doc_example"
     val r = new Random(100)

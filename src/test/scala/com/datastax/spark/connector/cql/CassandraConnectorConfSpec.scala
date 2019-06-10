@@ -9,8 +9,8 @@ import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
 
-import com.datastax.bdp.test.ng.{DataGenerator, ToString}
-import com.datastax.spark.connector.rdd.DummyFactory
+//import com.datastax.bdp.test.ng.{DataGenerator, ToString}
+//import com.datastax.spark.connector.rdd.DummyFactory
 import com.datastax.spark.connector.util.CustomConnectionFactory
 
 class CassandraConnectorConfSpec extends FlatSpec with Matchers {
@@ -110,6 +110,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     conf1 shouldNot equal(conf2)
   }
 
+  /*
   it should "be equals for the same settings" in {
     val gen = new DataGenerator().registerCustomCasesGeneators {
       case (_, t) if t =:= typeOf[AuthConf] => gen => Iterator(NoAuthConf) ++ gen.generate[PasswordAuthConf]()
@@ -123,4 +124,5 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
       }
     }
   }
+  */
 }

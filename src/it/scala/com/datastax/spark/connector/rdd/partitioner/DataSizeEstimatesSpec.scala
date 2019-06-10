@@ -3,19 +3,18 @@ package com.datastax.spark.connector.rdd.partitioner
 import scala.language.postfixOps
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.{CassandraRunner, EmbeddedCassandra, YamlTransformations}
 import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
 
 class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-  }
+  val tableName = "table1"
 
-  "DataSizeEstimates" should "fetch data size estimates for a known table" in {
-    val tableName = "table1"
+
+  override def beforeClass(): Unit = {
+    conn.withSessionDo { session => createKeyspace(session) }
+
+
     conn.withSessionDo { session =>
       session.execute(s"CREATE TABLE $ks.$tableName(key int PRIMARY KEY, value VARCHAR)")
       val futures = for (i <- 1 to 1000) yield
@@ -25,15 +24,13 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
       futures.par.foreach(_.getUninterruptibly)
     }
 
-    import scala.concurrent.duration._
-    for (runner <- EmbeddedCassandra.cassandraRunners.get(0)) {
-      runner.nodeToolCmd("flush")
-      val initialDelay =
-        Math.max(runner.startupTime + (45 seconds).toMillis - System.currentTimeMillis(), 0L)
-      Thread.sleep(
-        initialDelay + 2L * (CassandraRunner.SizeEstimatesUpdateIntervalInSeconds seconds).toMillis)
-    }
+    //Force a flush by restarting the node
+    ccmBridge.stop(1)
+    ccmBridge.start(1)
+    ccmBridge.waitForUp(1)
+  }
 
+  "DataSizeEstimates" should "fetch data size estimates for a known table" in {
     val estimates = new DataSizeEstimates[Long, LongToken](conn, ks, tableName)
     estimates.partitionCount should be > 500L
     estimates.partitionCount should be < 2000L

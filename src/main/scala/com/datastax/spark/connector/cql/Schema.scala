@@ -8,7 +8,7 @@ import scala.util.{Properties, Try}
 
 import org.apache.spark.sql.Dataset
 
-import com.datastax.bdp.util.DriverUtil
+//import com.datastax.bdp.util.DriverUtil
 import com.datastax.driver.core._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
@@ -349,8 +349,8 @@ object Schema extends Logging {
       val cluster = session.getCluster
       val clusterName = cluster.getMetadata.getClusterName
       logDebug(s"Retrieving database schema from cluster $clusterName...")
-      val systemKeyspaceNames = DriverUtil.getSystemKeyspaces(session)
-      val keyspaces = fetchKeyspaces(cluster.getMetadata, systemKeyspaceNames.asScala.toSet)
+      val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
+      val keyspaces = fetchKeyspaces(cluster.getMetadata, systemKeyspaceNames)
       logDebug(s"${keyspaces.size} keyspaces fetched from cluster $clusterName: " +
         s"${keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
       Schema(clusterName, keyspaces)

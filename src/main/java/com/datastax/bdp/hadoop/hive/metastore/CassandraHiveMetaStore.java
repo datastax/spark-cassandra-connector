@@ -5,7 +5,6 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.bdp.constants.DseSchemaConstants;
 import com.datastax.driver.core.Cluster;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;

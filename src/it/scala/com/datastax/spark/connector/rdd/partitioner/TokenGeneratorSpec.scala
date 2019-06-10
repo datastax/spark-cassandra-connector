@@ -4,7 +4,6 @@ import com.datastax.spark.connector.{PartitionKeyColumns, SparkCassandraITFlatSp
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.cql.Schema
 import com.datastax.driver.core.Token
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.writer.RowWriterFactory
 
 import scala.collection.JavaConversions._
@@ -15,7 +14,6 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase {
   case class SimpleKey(key: Int)
   case class ComplexKey(key1: Int, key2: Int, key3: String)
 
-  useCassandraConfig(Seq(YamlTransformations.Default))
   override val conn = CassandraConnector(defaultConf)
 
   val simpleKeys = Seq(1, -500, 2801, 4000000, -95500).map(SimpleKey(_))

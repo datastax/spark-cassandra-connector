@@ -8,7 +8,6 @@ import scala.reflect._
 import org.apache.spark.sql.SparkSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -80,9 +79,6 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    */
   def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): TestType
 
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(defaultConf)
-
   override val conn = CassandraConnector(defaultConf)
 
   s"This type" should "be insertable via the CassandraConnector" in skipIfProtocolVersionLT(minPV){
@@ -119,7 +115,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     dataframeReadWrite
   }
 
-  beforeClass {
+  override def beforeClass {
     skipIfProtocolVersionLT(minPV) {
       generateKsTable()
       truncateTables()

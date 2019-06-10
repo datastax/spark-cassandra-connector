@@ -8,34 +8,39 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.LinkedTransferQueue
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
 import org.scalatest.concurrent.Eventually
-
-import com.datastax.bdp.config.YamlClientConfiguration
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded.YamlTransformations
 import com.datastax.spark.connector.rdd.ConnectorMetricsListener.stagesMetrics
 
-class ConnectorMetricsSpec extends DseITFlatSpecBase {
+class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase {
 
-  import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._
+  //import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._
 
-  YamlClientConfiguration.setAsClientConfigurationImpl()
+  //YamlClientConfiguration.setAsClientConfigurationImpl()
 
-  useCassandraConfig(Seq(YamlTransformations.Default))
-  useSparkConf(
-    sparkConf
+  /* This test Requires a Custom Spark Context */
+  val ourSc = new SparkContext(
+    super.defaultConf
+      .clone()
       .set("spark.extraListeners", classOf[ConnectorMetricsListener].getName)
       .setMaster("local[16]")
-      .setAppName(getClass.getSimpleName))
+      .setAppName(getClass.getSimpleName)
+  )
 
-  override lazy val conn = CassandraConnector(sparkConf)
+  override def afterClass(): Unit = {
+    super.afterClass()
+    ourSc.stop()
+  }
 
-  beforeClass {
+
+  override lazy val conn = CassandraConnector(defaultConf)
+
+  override def beforeClass {
     conn.withSessionDo { session =>
       session.execute(
         s"""
@@ -76,7 +81,7 @@ class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   "InputMetricsUpdater" should "properly measure amount of data retrieved with CassandraTableScanRDD" in {
     stagesMetrics.clear()
-    val rdd = sc.cassandraTable(ks, "leftjoin")
+    val rdd = ourSc.cassandraTable(ks, "leftjoin")
     rdd.withReadConf(rdd.readConf.copy(splitCount = Some(16))).collect()
     Eventually.eventually {
       stagesMetrics.size() should be(1)
@@ -88,7 +93,7 @@ class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   it should "properly measure amount of data retrieved with CassandraJoinRDD" in {
     stagesMetrics.clear()
-    val rdd = sc.cassandraTable(ks, "leftjoin")
+    val rdd = ourSc.cassandraTable(ks, "leftjoin")
     val joined = rdd.withReadConf(rdd.readConf.copy(splitCount = Some(16)))
       .joinWithCassandraTable(ks, "rightjoin", joinColumns = PartitionKeyColumns)
     joined.withReadConf(joined.readConf.copy(splitCount = Some(16))).collect()
@@ -102,7 +107,7 @@ class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   it should "properly measure amount of data retrieved with CassandraLeftJoinRDD" in {
     stagesMetrics.clear()
-    val rdd = sc.cassandraTable(ks, "leftjoin")
+    val rdd = ourSc.cassandraTable(ks, "leftjoin")
     val joined = rdd.withReadConf(rdd.readConf.copy(splitCount = Some(16)))
       .leftJoinWithCassandraTable(ks, "rightjoin", joinColumns = PartitionKeyColumns)
     joined.withReadConf(joined.readConf.copy(splitCount = Some(16))).collect()
@@ -116,10 +121,10 @@ class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   it should "properly measure amount of data retrieved with CassandraMergeJoinRDD" in {
     stagesMetrics.clear()
-    val left = sc.cassandraTable(ks, "leftjoin")
-    val right = sc.cassandraTable(ks, "rightjoin")
+    val left = ourSc.cassandraTable(ks, "leftjoin")
+    val right = ourSc.cassandraTable(ks, "rightjoin")
     val joined = new CassandraMergeJoinRDD(
-      sc,
+      ourSc,
       left.withReadConf(left.readConf.copy(splitCount = Some(16))),
       right.withReadConf(right.readConf.copy(splitCount = Some(16))))
     joined.collect()
@@ -133,7 +138,7 @@ class ConnectorMetricsSpec extends DseITFlatSpecBase {
 
   it should "properly measure amount of data written to Cassandra" in {
     stagesMetrics.clear()
-    val rdd = sc.makeRDD(1 to 200, 16).map(x => (x, x))
+    val rdd = ourSc.makeRDD(1 to 200, 16).map(x => (x, x))
     rdd.saveToCassandra(ks, "leftjoin")
     Eventually.eventually {
       stagesMetrics.size() should be(1)

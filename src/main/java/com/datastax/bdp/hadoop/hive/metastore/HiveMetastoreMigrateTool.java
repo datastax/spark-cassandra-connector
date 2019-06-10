@@ -5,7 +5,6 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.bdp.constants.DseSchemaConstants;
 import com.datastax.driver.core.*;
 
 import io.netty.util.internal.StringUtil;
@@ -91,7 +90,7 @@ public class HiveMetastoreMigrateTool
         }
 
         String metastoreTable = conf.get(CassandraClientConfiguration.CONF_PARAM_CF_NAME, CassandraClientConfiguration.DEF_META_STORE_CF);
-        String keyspace = conf.get(CassandraClientConfiguration.CONF_PARAM_KEYSPACE_NAME, DseSchemaConstants.HIVE_DEF_META_STORE_KEYSPACE);
+        String keyspace = conf.get(CassandraClientConfiguration.CONF_PARAM_KEYSPACE_NAME, CassandraClientConfiguration.HIVE_DEF_META_STORE_KEYSPACE);
         session.execute("USE \"" + keyspace + "\"");
         migrate(from, to, session, metastoreTable);
         CassandraHiveMetaStore metastore = new CassandraHiveMetaStore();
