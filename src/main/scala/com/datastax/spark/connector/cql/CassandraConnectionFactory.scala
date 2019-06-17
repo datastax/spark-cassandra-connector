@@ -2,12 +2,17 @@ package com.datastax.spark.connector.cql
 
 import java.nio.file.{Files, Path, Paths}
 import java.security.{KeyStore, SecureRandom}
+import java.util.concurrent.ThreadFactory
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
+import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
+
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.datastax.driver.core._
+import com.datastax.spark.connector.cql.CassandraConnectionFactory.DaemonThreadingOptions
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
@@ -59,6 +64,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           .setRefreshSchemaIntervalMillis(0))
       .withoutJMXReporting()
       .withoutMetrics()
+      .withThreadingOptions(new DaemonThreadingOptions)
 
     if (conf.cassandraSSLConf.enabled) {
       maybeCreateSSLOptions(conf.cassandraSSLConf) match {
@@ -138,6 +144,21 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
+  class DaemonThreadingOptions extends ThreadingOptions {
+    override def createThreadFactory(clusterName: String, executorName: String): ThreadFactory =
+    {
+      return new ThreadFactoryBuilder()
+        .setNameFormat(clusterName + "-" + executorName + "-%d")
+        // Back with Netty's thread factory in order to create FastThreadLocalThread instances. This allows
+        // an optimization around ThreadLocals (we could use DefaultThreadFactory directly but it creates
+        // slightly different thread names, so keep we keep a ThreadFactoryBuilder wrapper for backward
+        // compatibility).
+        .setThreadFactory(new DefaultThreadFactory("ignored name"))
+        .setDaemon(true)
+        .build();
+    }
+  }
+
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
   """Name of a Scala module or class implementing
     |CassandraConnectionFactory providing connections to the Cassandra cluster""".stripMargin
