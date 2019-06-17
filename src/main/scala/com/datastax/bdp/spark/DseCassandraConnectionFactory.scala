@@ -5,11 +5,8 @@
  */
 package com.datastax.bdp.spark
 
-import java.util.concurrent.ThreadFactory
 import javax.net.ssl.SSLContext
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 
@@ -26,21 +23,6 @@ import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParam
 object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   @transient
   lazy private val logger = LoggerFactory.getLogger("com.datastax.bdp.spark.DseCassandraConnectionFactory")
-
-  class DaemonThreadingOptions extends ThreadingOptions {
-    override def createThreadFactory(clusterName: String, executorName: String): ThreadFactory =
-      {
-        return new ThreadFactoryBuilder()
-          .setNameFormat(clusterName + "-" + executorName + "-%d")
-          // Back with Netty's thread factory in order to create FastThreadLocalThread instances. This allows
-          // an optimization around ThreadLocals (we could use DefaultThreadFactory directly but it creates
-          // slightly different thread names, so keep we keep a ThreadFactoryBuilder wrapper for backward
-          // compatibility).
-          .setThreadFactory(new DefaultThreadFactory("ignored name"))
-          .setDaemon(true)
-          .build();
-      }
-  }
 
   def customCodecRegistry: CodecRegistry = {
     new CodecRegistry()
@@ -64,7 +46,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
       .withCompression(defConf.getProtocolOptions.getCompression)
       .withQueryOptions(defConf.getQueryOptions)
       .withGraphOptions(new GraphOptions().setGraphSubProtocol(GraphProtocol.GRAPHSON_2_0))
-      .withThreadingOptions(new DaemonThreadingOptions)
+      .withThreadingOptions(defConf.getThreadingOptions)
       .withoutJMXReporting()
       .withoutMetrics()
       .withNettyOptions(defConf.getNettyOptions)
