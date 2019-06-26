@@ -7,11 +7,13 @@ package com.datastax.bdp.spark
 
 import javax.net.ssl.SSLContext
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 
 import com.datastax.bdp.config.{ClientConfiguration, DetachedClientConfigurationFactory}
-import com.datastax.bdp.util.{DseConnectionUtil, SSLUtil}
+import com.datastax.bdp.util.SSLUtil
 import com.datastax.driver.core._
 import com.datastax.driver.dse.DseCluster
 import com.datastax.driver.dse.graph.{GraphOptions, GraphProtocol}
@@ -19,6 +21,7 @@ import com.datastax.driver.extras.codecs.jdk8.{InstantCodec, LocalDateCodec, Loc
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter}
+
 
 object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   @transient
@@ -120,7 +123,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
           logger.info("SSL enabled")
           JdkSSLOptions.builder()
               .withSSLContext(sslContext)
-              .withCipherSuites(getCipherSuites(clientConf))
+              .withCipherSuites(getCipherSuites(clientConf).toArray)
               .build()
       }
     }
@@ -158,10 +161,10 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
-  private def getCipherSuites(clientConf: ClientConfiguration): Array[String] = {
-    if (clientConf.getCipherSuites != null && clientConf.getCipherSuites.nonEmpty)
-      clientConf.getCipherSuites
+  private def getCipherSuites(clientConf: ClientConfiguration): Seq[String] = {
+    if (clientConf.getCipherSuites != null && !clientConf.getCipherSuites.isEmpty)
+      clientConf.getCipherSuites.asScala
     else
-      CassandraConnectorConf.SSLEnabledAlgorithmsParam.default.toArray
+      CassandraConnectorConf.SSLEnabledAlgorithmsParam.default.toSeq
   }
 }
