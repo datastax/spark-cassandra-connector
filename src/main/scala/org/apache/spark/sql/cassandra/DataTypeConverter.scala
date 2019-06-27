@@ -2,9 +2,8 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
-import com.datastax.spark.connector.types.{ColumnType, TupleFieldDef, UDTFieldDef}
+import com.datastax.spark.connector.types.{TupleFieldDef, UDTFieldDef}
 import com.datastax.spark.connector.util.Logging
-import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
 
 /** Convert Cassandra data type to Catalyst data type */
@@ -14,6 +13,9 @@ object DataTypeConverter extends Logging {
     connector.types.TextType       -> catalystTypes.StringType,
     connector.types.AsciiType      -> catalystTypes.StringType,
     connector.types.VarCharType    -> catalystTypes.StringType,
+    connector.types.LineStringType -> catalystTypes.StringType,
+    connector.types.PolygonType    -> catalystTypes.StringType,
+    connector.types.PointType      -> catalystTypes.StringType,
 
     connector.types.BooleanType    -> catalystTypes.BooleanType,
 
@@ -41,11 +43,17 @@ object DataTypeConverter extends Logging {
   /** Convert Cassandra data type to Catalyst data type */
   def catalystDataType(cassandraType: connector.types.ColumnType[_], nullable: Boolean): catalystTypes.DataType = {
 
-    def catalystStructField(field: UDTFieldDef): StructField =
-      StructField(field.columnName, catalystDataType(field.columnType, nullable = true), nullable = true)
+    def catalystStructField(field: UDTFieldDef): catalystTypes.StructField =
+      catalystTypes.StructField(
+        field.columnName,
+        catalystDataType(field.columnType, nullable = true),
+        nullable = true)
 
-    def catalystStructFieldFromTuple(field: TupleFieldDef): StructField =
-      StructField(field.index.toString, catalystDataType(field.columnType, nullable = true), nullable = true)
+    def catalystStructFieldFromTuple(field: TupleFieldDef): catalystTypes.StructField =
+      catalystTypes.StructField(
+        field.index.toString,
+        catalystDataType(field.columnType, nullable = true),
+        nullable = true)
 
     cassandraType match {
       case connector.types.SetType(et, _)                => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
@@ -61,20 +69,13 @@ object DataTypeConverter extends Logging {
   }
 
   def primitiveCatalystDataType(cassandraType: connector.types.ColumnType[_]): catalystTypes.DataType = {
-    val getColumnType: PartialFunction[ColumnType[_], catalystTypes.DataType] = customCatalystDataType orElse { primitiveTypeMap }
-    getColumnType(cassandraType)
-  }
-
-  private lazy val customCatalystDataType: PartialFunction[ColumnType[_], catalystTypes.DataType] = {
-    ColumnType.customDriverConverter
-      .flatMap(clazz => Some(clazz.catalystDataType))
-      .getOrElse(PartialFunction.empty)
+    primitiveTypeMap(cassandraType)
   }
 
   /** Create a Catalyst StructField from a Cassandra Column */
-  def toStructField(column: ColumnDef): StructField = {
+  def toStructField(column: ColumnDef): catalystTypes.StructField = {
     val nullable = !column.isPrimaryKeyColumn
-    StructField(
+    catalystTypes.StructField(
       column.columnName,
       catalystDataType(column.columnType, nullable = true),
       nullable

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
 import com.datastax.driver.core.{Duration, LocalDate}
+import com.datastax.driver.dse.geometry.{LineString, Point, Polygon}
 import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
@@ -164,3 +165,25 @@ case object DurationType extends PrimitiveColumnType[Duration] {
   def converterToCassandra =
     new OptionToNullConverter(TypeConverter.forType[Duration])
 }
+
+case object PointType extends PrimitiveColumnType[Point] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Point]] }
+  def cqlTypeName = "PointType"
+  def converterToCassandra =
+    new OptionToNullConverter(TypeConverter.forType[Point])
+}
+
+case object PolygonType extends PrimitiveColumnType[Polygon] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Polygon]] }
+  def cqlTypeName = "PolygonType"
+  def converterToCassandra =
+    new OptionToNullConverter(TypeConverter.forType[Polygon])
+}
+
+case object LineStringType extends PrimitiveColumnType[LineString] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[LineString]] }
+  def cqlTypeName = "LineStringType"
+  def converterToCassandra =
+    new OptionToNullConverter(TypeConverter.forType[LineString])
+}
+

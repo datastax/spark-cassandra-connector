@@ -11,15 +11,14 @@ import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.tuple
 import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
-
 import com.datastax.driver.core.{DataType, Duration, LocalDate, TypeCodec}
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
 import Symbols._
+import com.datastax.driver.dse.geometry.{LineString, Point, Polygon}
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
@@ -538,6 +537,42 @@ object TypeConverter {
     }
   }
 
+  private val PointTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[Point]]
+  }
+
+  implicit object PointConverter extends NullableTypeConverter[Point] {
+    def targetTypeTag = PointTypeTag
+    override def convertPF = {
+      case x: Point => x
+      case x: String => Point.fromWellKnownText(x)
+    }
+  }
+
+  private val PolygonTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[Polygon]]
+  }
+
+  implicit object PolygonConverter extends NullableTypeConverter[Polygon] {
+    def targetTypeTag = PolygonTypeTag
+    override def convertPF = {
+      case x: Polygon => x
+      case x: String => Polygon.fromWellKnownText(x)
+    }
+  }
+
+  private val LineStringTypeTag = TypeTag.synchronized {
+    implicitly[TypeTag[LineString]]
+  }
+
+  implicit object LineStringConverter extends NullableTypeConverter[LineString] {
+    def targetTypeTag = LineStringTypeTag
+    override def convertPF = {
+      case x: LineString => x
+      case x: String => LineString.fromWellKnownText(x)
+    }
+  }
+
   class Tuple2Converter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
@@ -921,7 +956,10 @@ object TypeConverter {
     JavaLocalTimeConverter,
     JavaDurationConverter,
     DurationConverter,
-    JavaInstantConverter
+    JavaInstantConverter,
+    PointConverter,
+    LineStringConverter,
+    PolygonConverter
   )
 
   private val originalConverters = converters.toSet

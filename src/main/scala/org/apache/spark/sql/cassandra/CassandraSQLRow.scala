@@ -6,6 +6,7 @@ import java.sql.Timestamp
 import java.util.{Date, UUID}
 
 import com.datastax.driver.core.{Duration, Row, TypeCodec}
+import com.datastax.driver.dse.geometry.Geometry
 import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
 import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
@@ -61,14 +62,9 @@ object CassandraSQLRow {
     override def targetClass = classOf[CassandraSQLRow]
   }
 
-  private lazy val customCatalystDataTypeConverter: PartialFunction[Any, AnyRef] = {
-    ColumnType.customDriverConverter
-      .flatMap(clazz => Some(clazz.catalystDataTypeConverter))
-      .getOrElse(PartialFunction.empty)
-  }
-
   def toSparkSqlType(value: Any): AnyRef = {
-    val sparkSqlType: PartialFunction[Any, AnyRef] = customCatalystDataTypeConverter orElse {
+    val sparkSqlType: PartialFunction[Any, AnyRef] = {
+      case geo: Geometry => UTF8String.fromString(geo.asWellKnownText())
       case date: Date => new Timestamp(date.getTime)
       case localDate: org.joda.time.LocalDate =>
         new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis)
@@ -93,7 +89,8 @@ object CassandraSQLRow {
   }
 
   def toUnsafeSqlType(value: Any): AnyRef = {
-    val sparkSqlType: PartialFunction[Any, AnyRef] = customCatalystDataTypeConverter orElse {
+    val sparkSqlType: PartialFunction[Any, AnyRef] = {
+      case geom: Geometry => UTF8String.fromString(geom.asWellKnownText())
       case duration: Duration => TypeCodec.duration().format(duration)
       case javaDate: java.util.Date => java.sql.Timestamp.from(javaDate.toInstant)
       case localDate: org.joda.time.LocalDate =>

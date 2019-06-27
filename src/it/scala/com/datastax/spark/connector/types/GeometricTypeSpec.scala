@@ -61,8 +61,6 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase {
     ColumnType.fromDriverType(LineStringCodec.DATA_TYPE) should be(LineStringType)
   }
 
-  import com.datastax.spark.connector.types.DseTypeConverter.{LineStringConverter, PointConverter, PolygonConverter}
-
   it should "read point types" in {
     val result = sc.cassandraTable(ks, "geom").select("pnt").collect
     val resultCC = sc.cassandraTable[(Point)](ks, "geom").select("pnt").collect

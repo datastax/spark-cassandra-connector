@@ -7,6 +7,7 @@ import java.util.{Date, UUID}
 import org.apache.spark.{SparkConf, SparkEnv}
 import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.driver.dse.geometry.codecs.{LineStringCodec, PointCodec, PolygonCodec}
 import com.datastax.spark.connector.cql.CassandraConnectorConf
 import com.datastax.spark.connector.util._
 
@@ -45,21 +46,13 @@ object ColumnTypeConf {
 
   val ReferenceSection = "Custom Cassandra Type Parameters (Expert Use Only)"
 
-  //TODO Remove This
-  val CustomDriverTypeParam = ConfigParameter[Option[String]](
-    name = "spark.cassandra.dev.customFromDriver",
-    section = ReferenceSection,
-    default = Some("com.datastax.spark.connector.types.DseTypeConverter"),
-    description = """Provides an additional class implementing CustomDriverConverter for those
-                    |clients that need to read non-standard primitive Cassandra types. If your Cassandra implementation
-                    |uses a Java Driver which can read DataType.custom() you may need it this. If you are using
-                    |OSS Cassandra this should never be used.""".stripMargin('|')
+  val deprecatedCustomDriverTypeParam = DeprecatedConfigParameter(
+    "spark.cassandra.dev.customFromDriver",
+    None,
+    deprecatedSince = "Analytics Connector 1.0",
+    rational = "The ability to load new driver type converters at runtime has been removed"
   )
 
-  def fromSparkConf(conf: SparkConf): ColumnTypeConf = {
-    ConfigCheck.checkConfig(conf)
-    ColumnTypeConf(conf.getOption(ColumnTypeConf.CustomDriverTypeParam.name))
-  }
 }
 
 case class ColumnTypeConf(customFromDriver: Option[String])
@@ -90,20 +83,11 @@ object ColumnType {
     DataType.counter() -> CounterType,
     DataType.date() -> DateType,
     DataType.time() -> TimeType,
-    DataType.duration() -> DurationType
+    DataType.duration() -> DurationType,
+    PointCodec.DATA_TYPE -> PointType,
+    PolygonCodec.DATA_TYPE -> PolygonType,
+    LineStringCodec.DATA_TYPE -> LineStringType
   )
-
-  //Hardwiring this to be DSE // TODO remove this completely
-  lazy val customDriverConverter: Option[CustomDriverConverter] = {
-      ColumnTypeConf.CustomDriverTypeParam.default
-      .flatMap(className => Some(ReflectionUtil.findGlobalObject[CustomDriverConverter](className)))
-  }
-
-  private lazy val customFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
-    customDriverConverter
-      .flatMap(clazz => Some(clazz.fromDriverRowExtension))
-      .getOrElse(PartialFunction.empty)
-  }
 
   /** Makes sure the sequence does not contain any lazy transformations.
     * This guarantees that if T is Serializable, the collection is Serializable. */
@@ -131,8 +115,7 @@ object ColumnType {
   }
 
   def fromDriverType(dataType: DataType): ColumnType[_] = {
-    val getColumnType: PartialFunction[DataType, ColumnType[_]] = customFromDriverRow orElse standardFromDriverRow
-    getColumnType(dataType)
+    standardFromDriverRow(dataType)
   }
 
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */
