@@ -1,10 +1,20 @@
 package com.datastax.spark.connector.sql
 
+import org.apache.spark.sql.SaveMode._
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.sources.{EqualTo, Filter}
+import org.apache.spark.sql.DataFrame
+import org.scalatest.BeforeAndAfterEach
+
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraTableScanRDD}
 import com.datastax.spark.connector.util.Logging
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.InClauseToJoinWithTableConversionThreshold
-import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 import scala.concurrent.Future
 
@@ -194,6 +204,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     val test_df = Test(1400820884, "http://foobar", "Firefox", 123242)
 
     val ss = sparkSession
+    import ss.implicits._
     val df = sc.parallelize(Seq(test_df)).toDF
 
     df.write
@@ -208,6 +219,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
 
     val ss = sparkSession
+    import ss.implicits._
     val df = sc.parallelize(Seq(test_df)).toDF
 
     df.write
@@ -221,6 +233,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   it should "throws exception during overwriting a table when confirm.truncate is false" in {
     val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
     val ss = sparkSession
+    import ss.implicits._
 
     val df = sc.parallelize(Seq(test_df)).toDF
 

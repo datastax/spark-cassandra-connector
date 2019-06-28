@@ -6,13 +6,12 @@
 
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
+import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.InClauseToFullTableScanConversionThreshold
 import org.apache.spark.sql.cassandra.PredicateOps.FilterOps.{columnName, isInPredicate}
 import org.apache.spark.sql.sources.{Filter, In}
-
-import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
-import com.datastax.spark.connector.util.Logging
 
 object InClausePredicateRules extends CassandraPredicateRules with Logging {
 

@@ -11,7 +11,7 @@ ThisBuild / version      := "0.1.0-SNAPSHOT"
 
 lazy val IntegrationTest = config("it") extend Test
 
-lazy val root = (project in file("."))
+lazy val root = (project in file("connector"))
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*) //This and above enables the "it" suite
   .settings(
@@ -45,7 +45,9 @@ lazy val root = (project in file("."))
         ++ Dependencies.Jetty.jetty
         ++ Dependencies.Embedded.embedded
   )
+  .dependsOn(ccm % "test")
 
+lazy val ccm = (project in file ("ccm"))
 
 
 

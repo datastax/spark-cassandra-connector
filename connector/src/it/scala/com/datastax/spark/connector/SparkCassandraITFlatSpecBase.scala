@@ -45,7 +45,8 @@ trait SparkCassandraITSpecBase
   System.setProperty("dse", "true")
   System.setProperty("cassandra.branch", "master")
   System.setProperty("cassandra.version", "6.8.0")
-  System.setProperty("cassandra.directory", "/Users/russellspitzer/repos/bdp")
+  System.setProperty("cassandra.directory",sys.env.getOrElse("DSE_HOME",
+    throw new IllegalStateException("DSE_HOME env variable is not set, CCM based test require DSE_HOME variable")))
 
   final val ccmBridgeBuilder: CCMBridge.Builder = CCMBridge.builder()
 
