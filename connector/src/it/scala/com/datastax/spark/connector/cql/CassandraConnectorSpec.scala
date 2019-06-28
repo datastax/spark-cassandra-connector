@@ -1,17 +1,16 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{HostDistance, ProtocolOptions, SimpleStatement}
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import com.datastax.spark.connector.embedded._
 import org.scalatest.BeforeAndAfterEach
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
-class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAndAfterEach{
+class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach{
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val createKeyspaceCql = keyspaceCql(ks)
 
@@ -160,7 +159,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with BeforeAnd
   }
 
   it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
-    val goodHost = getConnectionHost
+    val goodHost = testCluster.getConnectionHost
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = sc.getConf

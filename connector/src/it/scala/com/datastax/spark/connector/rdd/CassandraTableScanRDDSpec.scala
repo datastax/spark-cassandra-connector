@@ -2,13 +2,14 @@ package com.datastax.spark.connector.rdd
 
 import org.scalatest.Inspectors
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 
-class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspectors {
+class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Inspectors {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
   val tableName = "data"
   val noMinimalThreshold = Int.MinValue
@@ -87,9 +88,7 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Inspec
       }
     }
 
-    //Force a flush by restarting the node
-    ccmBridge.stop(1)
-    ccmBridge.start(1)
+    testCluster.refreshSizeEstimates()
 
     val timeout = 1000 * 30
     assert(DataSizeEstimates.waitForDataSizeEstimates(conn, ks, tableName, timeout),

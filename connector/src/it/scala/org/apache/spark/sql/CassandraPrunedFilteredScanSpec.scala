@@ -1,6 +1,7 @@
 package org.apache.spark.sql
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.CqlWhereClause
 import com.datastax.spark.connector.util.CatalystUtil._
@@ -8,9 +9,9 @@ import com.datastax.spark.connector.util.Logging
 
 import scala.concurrent.Future
 
-class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with Logging  {
+class CassandraPrunedFilteredScanSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Logging  {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val cassandraFormat = "org.apache.spark.sql.cassandra"
 

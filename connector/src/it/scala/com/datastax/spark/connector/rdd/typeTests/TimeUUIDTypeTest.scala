@@ -2,7 +2,11 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.util.UUID
 
-class TimeUUIDTypeTest extends AbstractTypeTest[UUID, UUID] { override val typeName = "timeuuid"
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class TimeUUIDTypeTest extends AbstractTypeTest[UUID, UUID] with DefaultCluster {
+
+  override val typeName = "timeuuid"
 
   override val typeData: Seq[UUID] = Seq(UUID.fromString("61129590-FBE4-11E3-A3AC-0800200C9A66"), UUID.fromString("61129591-FBE4-11E3-A3AC-0800200C9A66"),
     UUID.fromString("61129592-FBE4-11E3-A3AC-0800200C9A66"), UUID.fromString("61129593-FBE4-11E3-A3AC-0800200C9A66"), UUID.fromString("61129594-FBE4-11E3-A3AC-0800200C9A66"))

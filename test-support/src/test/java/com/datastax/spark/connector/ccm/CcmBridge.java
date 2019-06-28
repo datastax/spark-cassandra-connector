@@ -15,9 +15,8 @@
  */
 package com.datastax.spark.connector.ccm;
 
-import com.datastax.oss.driver.api.core.Version;
-import com.datastax.oss.driver.shaded.guava.common.base.Joiner;
-import com.datastax.oss.driver.shaded.guava.common.io.Resources;
+import com.google.common.base.Joiner;
+import com.google.common.io.Resources;
 import org.apache.commons.exec.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +25,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -33,13 +34,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static io.netty.util.internal.PlatformDependent.isWindows;
-
 public class CcmBridge implements AutoCloseable {
 
   private static final Logger logger = LoggerFactory.getLogger(CcmBridge.class);
 
   private final int[] nodes;
+
+  private final int jmxPortOffset;
 
   private final Path configDirectory;
 
@@ -111,6 +112,9 @@ public class CcmBridge implements AutoCloseable {
   private static final Version V3_0_15 = Version.parse("3.0.15");
   private static final Version V2_1_19 = Version.parse("2.1.19");
 
+  // artificial estimation of maximum number of nodes for this cluster, may be bumped anytime.
+  public static final Integer MAX_NUMBER_OF_NODES = 4;
+
   private CcmBridge(
       Path configDirectory,
       int[] nodes,
@@ -120,19 +124,10 @@ public class CcmBridge implements AutoCloseable {
       List<String> dseConfigurationRawYaml,
       List<String> createOptions,
       Collection<String> jvmArgs,
-      List<String> dseWorkloads) {
+      List<String> dseWorkloads,
+      Integer jmxPortOffset) {
     this.configDirectory = configDirectory;
-    if (nodes.length == 1) {
-      // Hack to ensure that the default DC is always called 'dc1': pass a list ('-nX:0') even if
-      // there is only one DC (with '-nX', CCM configures `SimpleSnitch`, which hard-codes the name
-      // to 'datacenter1')
-      int[] tmp = new int[2];
-      tmp[0] = nodes[0];
-      tmp[1] = 0;
-      this.nodes = tmp;
-    } else {
-      this.nodes = nodes;
-    }
+    this.nodes = nodes;
     this.ipPrefix = ipPrefix;
     this.cassandraConfiguration = cassandraConfiguration;
     this.dseConfiguration = dseConfiguration;
@@ -140,17 +135,14 @@ public class CcmBridge implements AutoCloseable {
     this.createOptions = createOptions;
 
     StringBuilder allJvmArgs = new StringBuilder("");
-    String quote = isWindows() ? "\"" : "";
     for (String jvmArg : jvmArgs) {
-      // Windows requires jvm arguments to be quoted, while *nix requires unquoted.
       allJvmArgs.append(" ");
-      allJvmArgs.append(quote);
       allJvmArgs.append("--jvm_arg=");
       allJvmArgs.append(jvmArg);
-      allJvmArgs.append(quote);
     }
     this.jvmArgs = allJvmArgs.toString();
     this.dseWorkloads = dseWorkloads;
+    this.jmxPortOffset = jmxPortOffset;
   }
 
   public Optional<Version> getDseVersion() {
@@ -174,7 +166,7 @@ public class CcmBridge implements AutoCloseable {
     }
   }
 
-  public void create() {
+  public void create(String clusterName) {
     if (created.compareAndSet(false, true)) {
       if (INSTALL_DIRECTORY != null) {
         createOptions.add("--install-dir=" + new File(INSTALL_DIRECTORY).getAbsolutePath());
@@ -189,12 +181,20 @@ public class CcmBridge implements AutoCloseable {
       }
       execute(
           "create",
-          "ccm_1",
+          clusterName,
           "-i",
           ipPrefix,
-          "-n",
-          Arrays.stream(nodes).mapToObj(n -> "" + n).collect(Collectors.joining(":")),
           createOptions.stream().collect(Collectors.joining(" ")));
+
+      for (int i: nodes) {
+        execute("add",
+                "-s",
+                "-j", jmxPort(i).toString(),
+                "--dse",
+                "-i", ipOfNode(i),
+                "--remote-debug-port=0",
+                "node" + i);
+      }
 
       for (Map.Entry<String, Object> conf : cassandraConfiguration.entrySet()) {
         execute("updateconf", String.format("%s:%s", conf.getKey(), conf.getValue()));
@@ -226,7 +226,9 @@ public class CcmBridge implements AutoCloseable {
 
   public void start() {
     if (started.compareAndSet(false, true)) {
-      execute("start", jvmArgs, "--wait-for-binary-proto");
+      for (int i: nodes) {
+        start(i);
+      }
     }
   }
 
@@ -249,7 +251,39 @@ public class CcmBridge implements AutoCloseable {
   }
 
   public void start(int n) {
-    execute("node" + n, "start");
+    execute("node" + n, "start", jvmArgs + "--wait-for-binary-proto");
+  }
+
+  public void nodetool(int n, String... args) {
+      execute(String.format("node%d nodetool %s", n, Joiner.on(" ").join(args)));
+  }
+
+  public void refreshSizeEstimates(int n) {
+    nodetool(n, "refreshsizeestimates");
+  }
+
+  public void flush(int n) {
+    execute("node" + n, "flush");
+  }
+
+  public String ipOfNode(int n) {
+    return ipPrefix + n;
+  }
+
+  public Integer jmxPort(int n) {
+    return 7108 + jmxPortOffset + n;
+  }
+
+  public int[] getNodes() {
+    return nodes;
+  }
+
+  public InetSocketAddress addressOfNode(int n) {
+    return new InetSocketAddress(ipOfNode(n), 9042);
+  }
+
+  public List<InetSocketAddress> nodeAddresses() {
+    return Arrays.stream(nodes).mapToObj(this::addressOfNode).collect(Collectors.toList());
   }
 
   public void stop(int n) {
@@ -332,7 +366,12 @@ public class CcmBridge implements AutoCloseable {
     File f = null;
     try (OutputStream os = new FileOutputStream(f = File.createTempFile("server", ".store"))) {
       f.deleteOnExit();
-      Resources.copy(CcmBridge.class.getResource(storePath), os);
+      URL resource = CcmBridge.class.getResource(storePath);
+      if (resource != null) {
+        Resources.copy(resource, os);
+      } else {
+        throw new IllegalStateException("Store path not found: " + storePath);
+      }
     } catch (IOException e) {
       logger.warn("Failure to write keystore, SSL-enabled servers may fail to start.", e);
     }
@@ -352,6 +391,7 @@ public class CcmBridge implements AutoCloseable {
     private String ipPrefix = "127.0.0.";
     private final List<String> createOptions = new ArrayList<>();
     private final List<String> dseWorkloads = new ArrayList<>();
+    private int jmxPortOffset = 0;
 
     private final Path configDirectory;
 
@@ -359,7 +399,7 @@ public class CcmBridge implements AutoCloseable {
       try {
         this.configDirectory = Files.createTempDirectory("ccm");
         // mark the ccm temp directories for deletion when the JVM exits
-        this.configDirectory.toFile().deleteOnExit();
+//        this.configDirectory.toFile().deleteOnExit();
       } catch (IOException e) {
         // change to unchecked for now.
         throw new RuntimeException(e);
@@ -440,6 +480,12 @@ public class CcmBridge implements AutoCloseable {
       return this;
     }
 
+    /** Sets JMX port for nodes to default JMX port + offset + node id number */
+    public Builder withJMXPortOffset(Integer offset) {
+      this.jmxPortOffset = offset;
+      return this;
+    }
+
     public CcmBridge build() {
       return new CcmBridge(
           configDirectory,
@@ -450,7 +496,8 @@ public class CcmBridge implements AutoCloseable {
           dseRawYaml,
           createOptions,
           jvmArgs,
-          dseWorkloads);
+          dseWorkloads,
+          jmxPortOffset);
     }
   }
 }

@@ -4,12 +4,12 @@ import scala.concurrent.Future
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
-class CassandraSQLSpec extends SparkCassandraITFlatSpecBase {
+class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val ks1 = ks + "_1"
   val ks2 = ks + "_2"

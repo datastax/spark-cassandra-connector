@@ -4,11 +4,12 @@ import java.io.File
 import java.nio.charset.{Charset, StandardCharsets}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.embedded.SparkTemplate
 import org.apache.commons.io.FileUtils
 import org.apache.spark.{SparkContext, TaskContext}
 
-class CassandraConnectorSourceSpec extends SparkCassandraITFlatSpecBase {
+class CassandraConnectorSourceSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM {
 
   private def prepareConf = SparkTemplate.defaultConf.setMaster("local[*]")
 

@@ -17,13 +17,6 @@ object Versions {
   val DseJavaDriver = "1.8.1"
   //val DseJavaDriver   = "2.0.1" //TODO MAJOR CHANGE HERE
 
-  val DseJavaDriverInfra = "4.0.1"
-  val Guava           = "16.0.1"
-  val JDK             = "1.7"
-  val JodaC           = "1.2"
-  val JodaT           = "2.3"
-  val JOpt            = "3.2"
-  val Lzf             = "1.0.3"
   val Netty           = "4.0.33.Final"
   val CodaHaleMetrics = "3.0.2"
   val ScalaCheck      = "1.14.0"

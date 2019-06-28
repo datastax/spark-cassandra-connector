@@ -2,10 +2,12 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.util.UUID
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.SaveMode
 
 case class UUIDStringRow(pkey: String, ckey1: String, ckey2: String, data1: String)
-class UUIDTypeTest extends AbstractTypeTest[UUID, UUID] {
+
+class UUIDTypeTest extends AbstractTypeTest[UUID, UUID] with DefaultCluster {
   override val typeName = "uuid"
   override val typeData: Seq[UUID] = Seq(UUID.fromString("05FC7B82-758B-4FC6-91D1-0BD56911DFE8"), UUID.fromString("D27DEEBB-2573-4D2B-AB83-6CBB0708A688"),
     UUID.fromString("0B045E30-9BB4-4932-B11A-3B06FE1658C6"), UUID.fromString("0719091A-429D-4761-AB3D-3728E531718C"), UUID.fromString("DAE83E3D-C67E-4353-9D30-178A8CCBD7C9"))

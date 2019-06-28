@@ -3,6 +3,7 @@ package org.apache.spark.sql.cassandra.execution
 import java.sql.Timestamp
 
 import com.datastax.driver.core.ProtocolVersion.V4
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.apache.spark.SparkConf
@@ -20,9 +21,9 @@ case class DirectJoinRow (k: Int, v: Int)
 case class IdRow (id: String)
 case class TimestampRow (ts: java.sql.Timestamp)
 
-class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with Eventually {
+class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
 

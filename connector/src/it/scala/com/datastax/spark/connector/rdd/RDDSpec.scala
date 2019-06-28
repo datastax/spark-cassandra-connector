@@ -8,6 +8,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
 case class KVRow(key: Int)
 
@@ -25,9 +26,9 @@ case class MissingClustering3(pk1: Int, pk2: Int, pk3: Int, cc1: Int, cc3: Int)
 
 case class DataCol(pk1: Int, pk2: Int, pk3: Int, d1: Int)
 
-class RDDSpec extends SparkCassandraITFlatSpecBase{
+class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val tableName = "key_value"
   val otherTable = "other_table"
   val smallerTable = "smaller_table"

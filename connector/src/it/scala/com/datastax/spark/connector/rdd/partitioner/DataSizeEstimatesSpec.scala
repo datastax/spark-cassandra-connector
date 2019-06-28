@@ -1,15 +1,16 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import scala.language.postfixOps
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.LongToken
 
-class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
-  override val conn = CassandraConnector(defaultConf)
+import scala.language.postfixOps
+
+class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val tableName = "table1"
-
 
   override def beforeClass(): Unit = {
     conn.withSessionDo { session => createKeyspace(session) }
@@ -24,10 +25,7 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase {
       futures.par.foreach(_.getUninterruptibly)
     }
 
-    //Force a flush by restarting the node
-    ccmBridge.stop(1)
-    ccmBridge.start(1)
-    ccmBridge.waitForUp(1)
+    testCluster.refreshSizeEstimates()
   }
 
   "DataSizeEstimates" should "fetch data size estimates for a known table" in {

@@ -1,21 +1,20 @@
 package com.datastax.spark.connector.sql
 
-import scala.concurrent.Future
-import org.apache.spark.sql.{SQLContext, SparkSession}
-import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.TwoClustersWithOneNode
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.cql.CassandraConnectorConf.{ConnectionHostParam, ConnectionPortParam}
+import org.apache.spark.sql.cassandra._
 
-import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
-class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
+class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase with TwoClustersWithOneNode {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val conf2 = defaultConf
-    .set(ConnectionHostParam.name, getConnectionHost)
-    .set(ConnectionPortParam.name, getConnectionPort)
+    .set(ConnectionHostParam.name, testCluster(1).addresses.head.getAddress.getHostAddress)
+    .set(ConnectionPortParam.name, testCluster(1).addresses.head.getPort.toString)
   val conn2 = CassandraConnector(conf2)
 
   awaitAll(
@@ -58,14 +57,10 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   private val cluster2 = "cluster2"
 
   override def beforeClass {
-    /*
     sparkSession.setCassandraConf(cluster1,
-      ConnectionHostParam.option(getHost(0).getHostAddress) ++ ConnectionPortParam.option(getPort(0)))
+      ConnectionHostParam.option(testCluster(0).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(testCluster(0).addresses.head.getPort))
     sparkSession.setCassandraConf(cluster2,
-      ConnectionHostParam.option(getHost(1).getHostAddress) ++ ConnectionPortParam.option(getPort(1)))
-
-     */
-    //TODO Fix this
+      ConnectionHostParam.option(testCluster(1).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(testCluster(1).addresses.head.getPort))
   }
 
   "SqlSession" should "allow to join tables from different clusters" in {

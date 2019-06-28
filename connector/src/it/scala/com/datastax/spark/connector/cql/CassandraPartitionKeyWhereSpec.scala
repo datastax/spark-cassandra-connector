@@ -1,13 +1,12 @@
 package com.datastax.spark.connector.cql
 
 import scala.concurrent.Future
-
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.embedded._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
-class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase {
+class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

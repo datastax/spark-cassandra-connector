@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-class IntTypeTest extends AbstractTypeTest[Integer, Integer] {
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class IntTypeTest extends AbstractTypeTest[Integer, Integer] with DefaultCluster {
   override val typeName = "int"
 
   override val typeData: Seq[Integer] = Seq(new Integer(1), new Integer(2), new Integer(3), new Integer(4), new Integer(5))

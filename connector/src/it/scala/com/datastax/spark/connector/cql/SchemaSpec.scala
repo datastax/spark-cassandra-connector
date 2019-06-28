@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.embedded.SparkTemplate._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
 import org.scalatest.Inspectors._
 
-class SchemaSpec extends SparkCassandraITWordSpecBase {
-  override val conn = CassandraConnector(defaultConf)
+class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
@@ -83,7 +83,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase {
       table.primaryKey.map(_.columnName).toSeq shouldBe Seq(
         "k1", "k2", "k3", "c1", "c2", "c3")
       table.primaryKey.map(_.columnType).toSeq shouldBe Seq(
-        IntType, VarCharType, TimestampType,  BigIntType, VarCharType, UUIDType)
+        IntType, VarCharType, TimestampType, BigIntType, VarCharType, UUIDType)
       forAll(table.primaryKey) { c => c.isPrimaryKeyColumn shouldBe true }
     }
 

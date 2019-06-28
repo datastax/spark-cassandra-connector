@@ -8,9 +8,10 @@ package com.datastax.bdp.hadoop.hive.metastore
 
 import java.util
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.hadoop.hive.metastore.api.{Database, Table}
 
-class MetaStorePersisterTest extends MetaStoreTestBase {
+class MetaStorePersisterTest extends MetaStoreTestBase with DefaultCluster {
     private var metaStorePersister: MetaStorePersister = _
 
     override def beforeClass {

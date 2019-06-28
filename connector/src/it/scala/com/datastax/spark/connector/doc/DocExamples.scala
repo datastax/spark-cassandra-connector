@@ -7,8 +7,8 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.CassandraOption
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.writer.WriteConf
-
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
 import scala.concurrent.Future
 
@@ -17,11 +17,11 @@ case class RandomListSelector[T](list: Seq[T]) {
   def next(): T = list(r.nextInt(list.length))
 }
 
-class DocExamples extends SparkCassandraITFlatSpecBase {
+class DocExamples extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   val numrows: Long = 1000
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   override val ks = "doc_example"
 
   conn.withSessionDo { session =>

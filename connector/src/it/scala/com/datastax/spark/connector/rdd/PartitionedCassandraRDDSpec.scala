@@ -7,6 +7,8 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import java.lang.{Integer => JInt}
 
+import com.datastax.spark.connector.cluster.DefaultCluster
+
 import scala.collection.JavaConversions._
 import org.apache.spark.rdd.RDD
 
@@ -20,9 +22,9 @@ case class X(x: Int)
 
 case class WeirdMapping(weirdkey: Int, weirdcol: Int)
 
-class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase {
+class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val rowCount = 100
 
   conn.withSessionDo { session =>

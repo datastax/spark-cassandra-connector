@@ -6,6 +6,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import com.datastax.driver.core.ProtocolVersion
 import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.DefaultColumnMapper
@@ -31,9 +32,9 @@ object CustomerIdConverter extends TypeConverter[String] {
   def convertPF = { case CustomerId(id) => id }
 }
 
-class TableWriterSpec extends SparkCassandraITFlatSpecBase {
+class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

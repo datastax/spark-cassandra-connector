@@ -1,8 +1,3 @@
-import scala.concurrent.duration._
-
-import Tests._
-
-
 // factor out common settings
 ThisBuild / organization := "com.datastax"
 ThisBuild / scalaVersion := "2.11.12"
@@ -10,6 +5,9 @@ ThisBuild / scalaVersion := "2.11.12"
 ThisBuild / version      := "0.1.0-SNAPSHOT"
 
 lazy val IntegrationTest = config("it") extend Test
+
+lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]]("Evaluates names of all " +
+  "Fixtures sub-traits for each test. Sets of fixture sub-traits names are used to form group tests.")
 
 lazy val root = (project in file("connector"))
   .configs(IntegrationTest)
@@ -24,16 +22,19 @@ lazy val root = (project in file("connector"))
     // append -deprecation to the options passed to the Scala compiler
     scalacOptions += "-deprecation",
 
-   // fork a new JVM for 'run' and 'test:run'
+    // fork a new JVM for 'run' and 'test:run'
     fork := true,
-    fork in Test := true,
-    fork in IntegrationTest := true,
-
     parallelExecution := true,
+    testForkedParallel := false,
 
-    testGrouping in IntegrationTest := Testing.makeTestGroups( (definedTests in IntegrationTest).value),
+    // test grouping and parallel execution restrictions
+    integrationTestsWithFixtures := {
+      Testing.testsWithFixtures((testLoader in IntegrationTest).value, (definedTests in IntegrationTest).value)
+    },
 
-    concurrentRestrictions in Global += Tags.limit(Tags.Test, Testing.parallelTasks),
+    IntegrationTest / testGrouping := Testing.makeTestGroups(integrationTestsWithFixtures.value),
+
+    Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++=
       Dependencies.Spark.spark
@@ -41,11 +42,16 @@ lazy val root = (project in file("connector"))
         ++ Dependencies.Test.testDeps
         ++ Dependencies.Solr.solr
         ++ Dependencies.Jetty.jetty
-        ++ Dependencies.Embedded.embedded
   )
-  .dependsOn(ccm % "test")
+  .dependsOn(testSupport % "test->test")
 
-lazy val ccm = (project in file ("ccm"))
+lazy val testSupport = (project in file ("test-support"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.commons" % "commons-exec" % "1.3" % Test,
+      Dependencies.DataStax.driverCore % Test)
+  )
+
 
 
 

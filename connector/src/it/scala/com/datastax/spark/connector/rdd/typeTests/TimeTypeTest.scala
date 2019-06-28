@@ -5,7 +5,9 @@ import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
 import java.util.Date
 
-class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] {
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] with DefaultCluster {
 
   override val minPV = ProtocolVersion.V4
 

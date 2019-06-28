@@ -1,75 +1,46 @@
 import java.lang.management.ManagementFactory
 
 import com.sun.management.OperatingSystemMXBean
-import sbt.{ForkOptions, StdoutOutput, TestDefinition}
 import sbt.Tests._
+import sbt.{ForkOptions, TestDefinition}
 
 object Testing {
 
-  def makeTestGroups(tests: Seq[TestDefinition]): Seq[Group] = {
-    // if we have many C* instances and we can run multiple tests in parallel, then group by package name
-    // additional groups for auth and ssl is just an optimisation
-    def multiCInstanceGroupingFunction(test: TestDefinition): String = {
-      if (test.name.toLowerCase.contains("auth")) "auth"
-      else if (test.name.toLowerCase.contains("ssl")) "ssl"
-      else if (test.name.contains("CustomTableScanMethodSpec")) "customTableScanMethodSpec"
-      else if (test.name.contains("CassandraConnectorSourceSpec")) "metricspec"
-      else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
-      else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
-      else if (test.name.contains("Connector")) "connector"
-      else test.name.reverse.dropWhile(_ != '.').reverse
-    }
+  private def interfacesImplementingFixture(c: Class[_], fixture: Class[_]): Seq[Class[_]] = {
+    c.getInterfaces.toSeq.filter(i => i != fixture && fixture.isAssignableFrom(i)) ++
+      c.getInterfaces.flatMap(interfacesImplementingFixture(_, fixture)) ++
+      Option(c.getSuperclass).map(x => interfacesImplementingFixture(x, fixture)).getOrElse(Seq())
+  }
 
-    // if we have a single C* create as little groups as possible to avoid restarting C*
-    // the minimum - we need to run REPL and streaming tests in separate processes
-    // additional groups for auth and ssl is just an optimisation
-    // A new group is made for CustomFromDriverSpec because the ColumnType needs to be
-    // Initilized afresh
-    def singleCInstanceGroupingFunction(test: TestDefinition): String = {
-      val pkgName = test.name.reverse.dropWhile(_ != '.').reverse
-      if (test.name.toLowerCase.contains("authenticate")) "auth"
-      else if (test.name.toLowerCase.contains("ssl")) "ssl"
-      else if (pkgName.contains(".repl")) "repl"
-      else if (pkgName.contains(".streaming")) "streaming"
-      else if (test.name.contains("CustomTableScanMethodSpec")) "customTableScanMethodSpec"
-      else if (test.name.contains("CassandraConnectorSourceSpec")) "metricspec"
-      else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
-      else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
-      else if (test.name.contains("Connector")) "connector"
-      else "other"
-    }
+  def testsWithFixtures(cl: ClassLoader, tests: Seq[TestDefinition]): Map[TestDefinition, Seq[String]] = {
+    val fixture = cl.loadClass("com.datastax.spark.connector.cluster.Fixture")
+    tests.map { testDefinition =>
+      val c = cl.loadClass(testDefinition.name)
+      (testDefinition, interfacesImplementingFixture(c, fixture).map(_.getSimpleName).distinct.sorted)
+    }.toMap
+  }
 
-    val groupingFunction = if (false /*parallelTasks == 1*/)
-      singleCInstanceGroupingFunction _ else multiCInstanceGroupingFunction _
+  def makeTestGroups(testsWithFixtures: Map[TestDefinition, Seq[String]]): Seq[Group] = {
+    val (separateJVMTests, groupedTests) = testsWithFixtures
+      .partition { case (_, fixtures) => fixtures.contains("SeparateJVM") }
 
-    val groups = tests.groupBy(groupingFunction).map { case (pkg, testsSeq) =>
-      new Group(
-        name = pkg,
-        testsSeq,
-        SubProcess(
+    val testsByGroupName = groupedTests.groupBy(_._2).map { case (fixtures, tests) => (fixtures.mkString("-"), tests.keys) } ++
+      separateJVMTests.zipWithIndex.map { case ((test, fixtures), i) => ((fixtures ++ i.toString).mkString("-"), Seq(test)) }
+
+    println(s"All existing tests divided into ${testsByGroupName.size} groups:")
+    testsByGroupName.toSeq
+      .sortBy(-_._2.size) // biggest groups are executed first
+      .zipWithIndex
+      .map { case ((groupName, tests), i) =>
+        println(s"[T$i] $groupName: ${tests.size} test(s)")
+        val envVars = Map("CCM_IP_PREFIX" -> s"127.$i.", "TEST_GROUP_NO" -> i.toString) ++ sys.env
+        Group(groupName, tests.toSeq, SubProcess(
           ForkOptions()
-            .withRunJVMOptions(getCCMJvmOptions.flatten.toVector)
-        )
-      )
-    }.toSeq
-
-    println(s"Tests divided into ${groups.length} groups")
-
-    groups
+            .withEnvVars(envVars)
+            .withRunJVMOptions(getCCMJvmOptions.flatten.toVector)))
+      }
   }
 
-  lazy val parallelTasks: Int = {
-    // Travis has limited quota, so we cannot use many C* instances simultaneously
-    val isTravis = sys.props.getOrElse("travis", "false").toBoolean
-
-    val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
-    val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
-    val singleRunRequiredMem = 3 * 1024 + 512
-    val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
-    parallelTasks
-  }
-
-  //TODO cleanup with forked CCM
   def getCCMJvmOptions = {
     val ccmCassVersion = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dccm.version=$version")
     val ccmCassVersion2 = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dcassandra.version=$version")
@@ -78,9 +49,23 @@ object Testing {
     val cassandraDirectory = sys.env.get("CCM_INSTALL_DIR").map(dir => s"-Dcassandra.directory=$dir")
     val ccmJava = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.java.home=$dir")
     val ccmPath = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.path=$dir/bin")
-
     val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, ccmDse2, cassandraDirectory, ccmJava, ccmPath)
     options
+  }
+
+  val MaxParallel = 4
+
+
+  lazy val parallelTasks: Int = {
+    val parallelTasks = sys.env.get("TEST_PARALLEL_TASKS").map(_.toInt).getOrElse {
+      val osmxBean = ManagementFactory.getOperatingSystemMXBean.asInstanceOf[OperatingSystemMXBean]
+      val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
+      val singleRunRequiredMem = 1024 + 1536 // ForkMain + DseModule
+      val sbt = 1550
+      Math.min(Math.max(1, ((sysMemoryInMB - sbt) / singleRunRequiredMem).toInt), MaxParallel)
+    }
+    println(s"Running $parallelTasks Parallel Tasks")
+    parallelTasks
   }
 
 }

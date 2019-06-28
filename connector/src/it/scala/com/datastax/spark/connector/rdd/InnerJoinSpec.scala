@@ -8,9 +8,10 @@ package com.datastax.spark.connector.rdd
 
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 
-class InnerJoinSpec extends SparkCassandraITFlatSpecBase {
+class InnerJoinSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(sparkConf)
 

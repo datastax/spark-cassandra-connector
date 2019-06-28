@@ -2,7 +2,9 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.lang.Boolean
 
-class BooleanTypeTest extends AbstractTypeTest[Boolean, Boolean] {
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class BooleanTypeTest extends AbstractTypeTest[Boolean, Boolean] with DefaultCluster {
   override val typeName = "boolean"
 
   override val typeData: Seq[Boolean] = Seq(new Boolean(true))

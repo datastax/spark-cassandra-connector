@@ -57,7 +57,6 @@ object Dependencies
     val assertJ           = "org.assertj"             % "assertj-core"                  % AssertJ % "test, it"
     val commonsExec       = "org.apache.commons"      % "commons-exec"                  % CommonsExec % "test, it"
     val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
-    val dseJavaDriverInfra = "com.datastax.oss" % "java-driver-test-infra" % DseJavaDriverInfra
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
     val scalaMock         = "org.scalamock"           %% "scalamock"                    % ScalaMock % "test,it"       // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
@@ -73,8 +72,6 @@ object Dependencies
       assertJ,
       commonsExec,
       commonsIO,
-      DataStax.driverCore classifier "tests",
-  //    dseJavaDriverInfra,
       scalaCheck,
       scalaMock,
       scalaTest,
@@ -92,14 +89,5 @@ object Dependencies
     val jettyServer       = "org.eclipse.jetty"       % "jetty-server"            % SparkJetty % "provided"
     val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
     val jetty = Seq(jettyServer, jettyServlet)
-  }
-
-
-  object Embedded {
-    val jopt              = "net.sf.jopt-simple"      % "jopt-simple"             % JOpt % "it, test"
-    val sparkRepl         = "org.apache.spark"        %% "spark-repl"             % ApacheSpark % "it, test"
-    val snappy            = "org.xerial.snappy"       % "snappy-java"             % "1.1.1.7" %  "it, test"
-    val snakeYaml         = "org.yaml"                % "snakeyaml"               % "1.16" % "it, test"
-    val embedded = Seq(jopt, sparkRepl, snappy, snakeYaml)
   }
 }

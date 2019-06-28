@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.rdd.typeTests
 
 import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.spark.connector.cluster.DefaultCluster
 
-class SmallIntTypeTest extends AbstractTypeTest[Short, java.lang.Short]{
+class SmallIntTypeTest extends AbstractTypeTest[Short, java.lang.Short] with DefaultCluster {
   override val minPV = ProtocolVersion.V4
   override protected val typeName: String = "smallint"
 

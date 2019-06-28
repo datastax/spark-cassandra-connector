@@ -2,18 +2,20 @@ package com.datastax.spark.connector.rdd
 
 import java.util
 
-import scala.collection.JavaConversions._
-import scala.concurrent.Future
-import org.apache.spark.api.java.function.{Function2, Function => JFunction}
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
+import org.apache.spark.api.java.function.{Function2, Function => JFunction}
+
+import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 case class SimpleClass(value: Integer)
 
-class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase {
+class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     try {

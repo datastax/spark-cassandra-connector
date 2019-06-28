@@ -3,7 +3,9 @@ package com.datastax.spark.connector.rdd.typeTests
 import java.text.SimpleDateFormat
 import java.util.Date
 
-class TimestampTypeTest extends AbstractTypeTest[Date, Date] {
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class TimestampTypeTest extends AbstractTypeTest[Date, Date] with DefaultCluster {
   override val typeName = "timestamp"
   val sdf = new SimpleDateFormat("dd/MM/yyyy")
 

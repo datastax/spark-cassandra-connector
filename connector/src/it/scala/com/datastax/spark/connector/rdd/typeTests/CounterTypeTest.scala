@@ -6,13 +6,14 @@ package com.datastax.spark.connector.rdd.typeTests
  */
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 
 import scala.concurrent.Future
 
-class CounterTypeTest  extends SparkCassandraITFlatSpecBase  {
+class CounterTypeTest  extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   override def beforeClass {
     //Create Cql3 Keypsace and Data

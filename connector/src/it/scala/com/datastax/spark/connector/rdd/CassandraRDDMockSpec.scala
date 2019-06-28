@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.rdd
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{CassandraRow, SparkCassandraITFlatSpecBase}
 import com.datastax.spark.connector.cql.CassandraConnector
 
-class CassandraRDDMockSpec extends SparkCassandraITFlatSpecBase {
+class CassandraRDDMockSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   "A CassandraRDDMock" should "behave like a CassandraRDD without needing Cassandra" in {
     val columns = Seq("key", "value")

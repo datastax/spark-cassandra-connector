@@ -2,27 +2,26 @@ package com.datastax.spark.connector.sql
 
 import java.io.IOException
 
-import scala.collection.JavaConversions._
-import scala.concurrent.Future
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.driver.core.DataType
 import com.datastax.driver.core.ProtocolVersion._
-import org.apache.spark.sql.cassandra._
+import com.datastax.spark.connector.cluster.DefaultCluster
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
 import org.joda.time.LocalDate
 import org.scalatest.concurrent.Eventually
 
-import scala.util.Random
+import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
 case class TestData(id: String, col1: Int, col2: Int)
 
-class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with Eventually{
+class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually{
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   def pushDown: Boolean = true
 
