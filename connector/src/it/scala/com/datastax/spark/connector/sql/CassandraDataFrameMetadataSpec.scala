@@ -3,6 +3,7 @@ package com.datastax.spark.connector.sql
 import scala.concurrent.Future
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.types.UserDefinedType
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.cassandra._
@@ -88,6 +89,13 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with E
     .tables
     .head
     .regularColumns
+    .filter( columnDef =>
+      if (ccmBridge.getDSEVersion.getMajor >= 6 && ccmBridge.getDSEVersion.getMinor >= 7) {
+        true
+      }
+      else {
+        (!(columnDef.isCollection || columnDef.columnType.isInstanceOf[UserDefinedType]))
+      })
 
   "A DataFrame" should "be able to read TTL" in {
     val df = sparkSession

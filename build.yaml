@@ -1,0 +1,28 @@
+schedules:
+  commit:
+    schedule: per_commit
+    notify:
+      slack: dse-analytics-team
+  nightly:
+    schedule: nightly
+    branches:
+      include: [build_yaml, /master/]
+    disable_commit_status: true
+    disable_pull_requests: true
+
+cassandra:
+  - 'dse-6.0'
+  - 'dse-6.7'
+  - 'dse-6.8'
+
+java:
+  - openjdk8
+
+os:
+  - ubuntu/bionic64/java-driver
+
+build:
+  - script: |
+      ./sbt/sbt test it:test
+
+  - xunit: true

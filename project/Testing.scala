@@ -13,7 +13,7 @@ object Testing {
       if (test.name.toLowerCase.contains("auth")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
       else if (test.name.contains("CustomTableScanMethodSpec")) "customTableScanMethodSpec"
-      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
+      else if (test.name.contains("CassandraConnectorSourceSpec")) "metricspec"
       else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
       else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
       else if (test.name.contains("Connector")) "connector"
@@ -32,7 +32,7 @@ object Testing {
       else if (pkgName.contains(".repl")) "repl"
       else if (pkgName.contains(".streaming")) "streaming"
       else if (test.name.contains("CustomTableScanMethodSpec")) "customTableScanMethodSpec"
-      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
+      else if (test.name.contains("CassandraConnectorSourceSpec")) "metricspec"
       else if (test.name.contains("CETSpec") || test.name.contains("CETTest")) "cetspec"
       else if (test.name.contains("PSTSpec") || test.name.contains("PSTTest")) "pstspec"
       else if (test.name.contains("Connector")) "connector"
@@ -43,7 +43,14 @@ object Testing {
       singleCInstanceGroupingFunction _ else multiCInstanceGroupingFunction _
 
     val groups = tests.groupBy(groupingFunction).map { case (pkg, testsSeq) =>
-      new Group(name = pkg, testsSeq, SubProcess(ForkOptions()))
+      new Group(
+        name = pkg,
+        testsSeq,
+        SubProcess(
+          ForkOptions()
+            .withRunJVMOptions(getCCMJvmOptions.flatten.toVector)
+        )
+      )
     }.toSeq
 
     println(s"Tests divided into ${groups.length} groups")
@@ -59,8 +66,21 @@ object Testing {
     val sysMemoryInMB = osmxBean.getTotalPhysicalMemorySize >> 20
     val singleRunRequiredMem = 3 * 1024 + 512
     val parallelTasks = if (isTravis) 1 else Math.max(1, ((sysMemoryInMB - 1550) / singleRunRequiredMem).toInt)
-    println(s"Running $parallelTasks Parallel Tasks")
     parallelTasks
+  }
+
+  //TODO cleanup with forked CCM
+  def getCCMJvmOptions = {
+    val ccmCassVersion = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dccm.version=$version")
+    val ccmCassVersion2 = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dcassandra.version=$version")
+    val ccmDse = sys.env.get("CCM_IS_DSE").map(isDSE => s"-Dccm.dse=$isDSE")
+    val ccmDse2 = sys.env.get("CCM_IS_DSE").map(isDSE => s"-Ddse=$isDSE")
+    val cassandraDirectory = sys.env.get("CCM_INSTALL_DIR").map(dir => s"-Dcassandra.directory=$dir")
+    val ccmJava = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.java.home=$dir")
+    val ccmPath = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.path=$dir/bin")
+
+    val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, ccmDse2, cassandraDirectory, ccmJava, ccmPath)
+    options
   }
 
 }
