@@ -16,6 +16,7 @@ import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, Refl
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.{PartitionCoalescer, RDD}
+import org.apache.spark.util.TaskCompletionListener
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 
 import scala.collection.JavaConversions._
@@ -367,12 +368,14 @@ class CassandraTableScanRDD[R] private[connector](
       fetchTokenRange(scanner, _: CqlTokenRange[_, _], metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
-    context.addTaskCompletionListener { (context) =>
+    val listener : TaskCompletionListener = { _ =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
         f"for partition ${partition.index} in $duration%.3f s.")
       scanner.close()
     }
+
+    context.addTaskCompletionListener(listener)
     countingIterator
   }
 

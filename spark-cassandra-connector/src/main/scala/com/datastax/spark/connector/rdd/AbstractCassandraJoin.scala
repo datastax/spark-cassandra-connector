@@ -11,6 +11,7 @@ import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
+import org.apache.spark.util.TaskCompletionListener
 import org.apache.spark.{Partition, TaskContext}
 
 import scala.collection.JavaConverters._
@@ -167,7 +168,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val rowIterator = fetchIterator(session, bsb, rowMetadata, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, None)
 
-    context.addTaskCompletionListener { (context) =>
+    val listener : TaskCompletionListener = { _ =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(
         f"Fetched ${countingIterator.count} rows " +
@@ -176,6 +177,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       )
       session.close()
     }
+
+    context.addTaskCompletionListener(listener)
     countingIterator
   }
 
