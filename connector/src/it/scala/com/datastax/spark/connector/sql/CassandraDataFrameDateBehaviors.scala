@@ -1,10 +1,10 @@
 package com.datastax.spark.connector.sql
 
 import java.sql.Date
+import java.time.LocalDate
 import java.util.TimeZone
 
-import com.datastax.driver.core.LocalDate
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.Row
@@ -17,7 +17,7 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(V4){
+  def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
 
     TimeZone.setDefault(timeZone)
     DateTimeZone.setDefault(DateTimeZone.forTimeZone(timeZone))
@@ -72,8 +72,8 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
         val count = session.execute(s"select count(1) from $ks.$writeTable").one().getLong(0)
         count should be(2)
 
-        val date = session.execute(s"select d0 from $ks.$writeTable where key = 0").one().getDate(0)
-        date should be(LocalDate.fromYearMonthDay(1986, 1, 2))
+        val date = session.execute(s"select d0 from $ks.$writeTable where key = 0").one().getLocalDate(0)
+        date should be(new LocalDate(1986, 1, 2))
       }
     }
   }

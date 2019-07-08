@@ -1,11 +1,10 @@
 package com.datastax.spark.connector
 
-import scala.util.Random
+import java.time.LocalDate
 
+import scala.util.Random
 import org.joda.time.{DateTimeZone, LocalDate => JodaLocalDate}
 import org.scalatest.{FlatSpec, Matchers}
-
-import com.datastax.driver.core.LocalDate
 
 class GettableDataSpec extends FlatSpec with Matchers {
 
@@ -14,7 +13,7 @@ class GettableDataSpec extends FlatSpec with Matchers {
     val year = Random.nextInt(2000)
     val month = Random.nextInt(12) + 1
     val day = Random.nextInt(28) + 1
-    LocalDate.fromYearMonthDay(year, month, day)
+    new LocalDate(year, month, day)
   }
 
   "GettableData" should "convert Driver LocalDates to Joda LocalDate" in {
@@ -33,7 +32,7 @@ class GettableDataSpec extends FlatSpec with Matchers {
            date <- dates) {
         DateTimeZone.setDefault(zone)
         val jodaLocalDate = GettableData.convert(date).asInstanceOf[JodaLocalDate]
-        val ld = (date.getYear, date.getMonth, date.getDay)
+        val ld = (date.getYear, date.getMonth, date.getDayOfMonth)
         val jd = (jodaLocalDate.getYear, jodaLocalDate.getMonthOfYear, jodaLocalDate.getDayOfMonth)
 
         withClue(s"LocalDate conversion failed for $zone, $date") {ld should be(jd)}

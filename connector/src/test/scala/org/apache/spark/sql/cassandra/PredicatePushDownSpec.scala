@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{IntType, TimeUUIDType}

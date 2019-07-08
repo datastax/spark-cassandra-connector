@@ -1,7 +1,14 @@
 package com.datastax.spark.connector
 
-import com.datastax.driver.core.ColumnDefinitions.Definition
+import java.nio.ByteBuffer
+
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
+import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
+import com.datastax.oss.driver.api.core.cql.{ColumnDefinitions, PreparedStatement, ResultSet, Row}
+import com.datastax.oss.driver.api.core.CqlSession
+
+import scala.tools.nsc.interpreter.session
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.
@@ -128,27 +135,23 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
 object CassandraRowMetadata {
 
 
-  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session: Session) :CassandraRowMetadata = {
-    fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet,
-      session.getCluster.getConfiguration.getCodecRegistry)
+  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session: CqlSession) :CassandraRowMetadata = {
+    fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session.getContext.getCodecRegistry)
   }
+
   def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, registry: CodecRegistry) :CassandraRowMetadata = {
     fromColumnDefs(columnNames, rs.getColumnDefinitions.asList(), registry)
   }
 
-  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId, session: Session) :CassandraRowMetadata = {
-    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList(),
-      session.getCluster.getConfiguration.getCodecRegistry)
+  def fromPreparedStatement(columnNames: IndexedSeq[String], statement: PreparedStatement, registry: CodecRegistry) :CassandraRowMetadata = {
+    fromColumnDefs(columnNames, statement.getResultSetDefinitions, registry)
   }
 
-  def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId, registry: CodecRegistry) :CassandraRowMetadata = {
-    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList(), registry)
-  }
-
-  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: java.util.List[Definition], registry: CodecRegistry) = {
+  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: ColumnDefinitions, registry: CodecRegistry) = {
     import scala.collection.JavaConversions._
     val scalaColumnDefs = columnDefs.toList
-    val rsColumnNames = scalaColumnDefs.map(_.getName)
+    //TODO use CqlIdentifier instead? Use internal or leave as is (asCql)
+    val rsColumnNames = scalaColumnDefs.map(_.getName.asCql(false))
     val codecs = scalaColumnDefs.map(col => registry.codecFor(col.getType))
       .asInstanceOf[List[TypeCodec[AnyRef]]]
     CassandraRowMetadata(columnNames, Some(rsColumnNames.toIndexedSeq), codecs.toIndexedSeq)

@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.{ColumnName, ColumnRef}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
 import com.datastax.spark.connector.types.ColumnType

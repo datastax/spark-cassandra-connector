@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 import scala.reflect.runtime.universe._

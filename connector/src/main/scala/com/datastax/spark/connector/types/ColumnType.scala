@@ -4,16 +4,15 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import org.apache.spark.{SparkConf, SparkEnv}
-import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
-import com.datastax.driver.core.ProtocolVersion._
-import com.datastax.driver.dse.geometry.codecs.{LineStringCodec, PointCodec, PolygonCodec}
-import com.datastax.spark.connector.cql.CassandraConnectorConf
+import com.datastax.dse.driver.internal.core.`type`.codec.geometry.{LineStringCodec, PointCodec, PolygonCodec}
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion.V4
+import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTupleType}
 import com.datastax.spark.connector.util._
+import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DataType => SparkSqlDataType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
-import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DataType => SparkSqlDataType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {

@@ -90,7 +90,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     rwf: RowWriterFactory[T],
     columnMapper: ColumnMapper[T]): Unit = {
 
-    val protocolVersion = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+    val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     val table = TableDef.fromType[T](keyspaceName, tableName, protocolVersion)
     saveAsCassandraTableEx(table, columns, writeConf)

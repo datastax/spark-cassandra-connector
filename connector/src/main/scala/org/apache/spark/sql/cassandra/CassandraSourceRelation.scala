@@ -254,7 +254,7 @@ case class CassandraSourceRelation(
 
     logDebug(s"Input Predicates: [${filters.mkString(", ")}]")
 
-    val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+    val pv = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     /** Apply built in rules **/
     val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)

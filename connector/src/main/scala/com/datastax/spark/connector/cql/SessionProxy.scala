@@ -3,7 +3,8 @@ package com.datastax.spark.connector.cql
 import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, Proxy}
 
 import com.datastax.spark.connector.util.Logging
-import com.datastax.driver.core.{RegularStatement, Session, SimpleStatement}
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import org.apache.commons.lang3.ClassUtils
 
 import collection.JavaConverters._
@@ -11,7 +12,7 @@ import collection.JavaConverters._
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
   *  - `prepare` methods to cache `PreparedStatement` objects. */
-class SessionProxy(session: Session, afterClose: Session => Any) extends InvocationHandler {
+class SessionProxy(session: CqlSession, afterClose: CqlSession => Any) extends InvocationHandler {
 
   private var closed = false
 
@@ -55,18 +56,18 @@ object SessionProxy extends Logging {
 
   /** Creates a new `SessionProxy` delegating to the given `Session`.
     * The proxy adds prepared statement caching functionality. */
-  def wrap(session: Session): Session =
+  def wrap(session: CqlSession): CqlSession =
     wrapWithCloseAction(session)(_ => ())
 
   /** Creates a new `SessionProxy` delegating to the given `Session`.
     * Additionally registers a callback on `Session#close` method.
     * @param afterClose code to be invoked after the session has been closed */
-  def wrapWithCloseAction(session: Session)(afterClose: Session => Any): Session = {
+  def wrapWithCloseAction(session: CqlSession)(afterClose: CqlSession => Any): CqlSession = {
     val listInterfaces = ClassUtils.getAllInterfaces(session.getClass)
     val availableInterfaces = listInterfaces.toArray[Class[_]](new Array[Class[_]](listInterfaces.size))
     Proxy.newProxyInstance(
       session.getClass.getClassLoader,
       availableInterfaces,
-      new SessionProxy(session, afterClose)).asInstanceOf[Session]
+      new SessionProxy(session, afterClose)).asInstanceOf[CqlSession]
   }
 }

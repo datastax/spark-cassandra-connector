@@ -1,7 +1,7 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.driver.core.ProtocolVersion
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.ProtocolVersion._
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TimeUUIDType
 

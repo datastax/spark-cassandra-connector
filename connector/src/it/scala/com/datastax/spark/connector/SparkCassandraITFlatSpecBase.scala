@@ -117,7 +117,7 @@ trait SparkCassandraITSpecBase
        |AND durable_writes = false
        |""".stripMargin
 
-  def createKeyspace(session: Session, name: String = ks): Unit = {
+  def createKeyspace(session: CqlSession, name: String = ks): Unit = {
     session.execute(s"DROP KEYSPACE IF EXISTS $name")
     session.execute(keyspaceCql(name))
   }

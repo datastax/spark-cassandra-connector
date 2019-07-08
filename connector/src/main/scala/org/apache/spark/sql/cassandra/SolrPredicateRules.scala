@@ -11,13 +11,13 @@ import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
-
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.SolrConstants._
 import org.apache.spark.sql.sources._
-
-import com.datastax.driver.core.{HostDistance, SimpleStatement}
+import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.oss.driver.api.core.loadbalancing.NodeDistance
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.Logging
 
@@ -48,17 +48,19 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
 
     val pkRestriction = getPartitionKeyRestriction(usefulPredicates, tableDef).asInstanceOf[Set[Filter]]
 
-    val primaryKeyRestrictionExists = (
+    val primaryKeyRestrictionExists =
       pkRestriction.nonEmpty &&
       pkRestriction.subsetOf(usefulPredicates.handledByCassandra) &&
-      usefulPredicates.handledBySpark.isEmpty)
+      usefulPredicates.handledBySpark.isEmpty
 
     val solrEnabledOnTargetHosts = CassandraConnector(sparkConf)
       .withSessionDo{ session =>
-        val hosts = session.getCluster.getMetadata.getAllHosts
-        val distance = session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy.distance(_)
-        val possibleHosts = hosts.asScala.filter( host => distance(host) != HostDistance.IGNORED)
-        possibleHosts.forall( _.getDseWorkloads.contains("Search"))
+        val hosts = session.getMetadata.getNodes.values().asScala
+        val possibleHosts = hosts.filter( host => hosts.head.getDistance != NodeDistance.IGNORED)
+        possibleHosts.forall { host =>
+          val workloads = Option(host.getExtras.get(DseNodeProperties.DSE_WORKLOADS))
+          workloads.exists(_.asInstanceOf[java.util.Set[String]].contains("Search"))
+        }
       }
     val failedRequirement = Seq[(Boolean, String)](
       (!solrEnabledOnTargetHosts, "Search is not enabled on DSE Target nodes."),
@@ -362,10 +364,10 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
             //Disable Paging for the count requests since we are fault tolerant and paging cannot
             // be used during a fault tolerant request
             // https://docs.datastax.com/en/drivers/java/2.2/com/datastax/driver/core/Statement.html#setFetchSize-int-
-            val totalRequest = new SimpleStatement(request, s"""{"q":"*:*", $FaultTolerant}""")
-              .setFetchSize(Integer.MAX_VALUE)
-            val queryRequest = new SimpleStatement(request, solrStringNoFailoverTolerant)
-              .setFetchSize(Integer.MAX_VALUE)
+            val totalRequest = SimpleStatement.newInstance(request, s"""{"q":"*:*", $FaultTolerant}""")
+              .setPageSize(Integer.MAX_VALUE)
+            val queryRequest = SimpleStatement.newInstance(request, solrStringNoFailoverTolerant)
+              .setPageSize(Integer.MAX_VALUE)
             val totalFuture = session.executeAsync(totalRequest)
             val queryFuture = session.executeAsync(queryRequest)
             (totalFuture.get(5, TimeUnit.SECONDS).one().getLong(0),

@@ -2,10 +2,11 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
+import com.datastax.oss.driver.api.core.ProtocolVersion
+
 import scala.collection.JavaConverters._
 import scala.language.existentials
 import scala.util.{Properties, Try}
-
 import org.apache.spark.sql.Dataset
 
 //import com.datastax.bdp.util.DriverUtil

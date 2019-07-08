@@ -8,17 +8,18 @@ import java.time.{ZoneId, LocalDate => JavaLocalDate}
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
+import com.datastax.dse.driver.api.core.data.geometry.{LineString, Point, Polygon}
+import com.datastax.oss.driver.api.core.data.CqlDuration
+import com.datastax.spark.connector.TupleValue
+import com.datastax.spark.connector.UDTValue.UDTValueConverter
+import com.datastax.spark.connector.util.Symbols._
+import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
+import org.apache.commons.lang3.tuple
+import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
+
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
-import org.apache.commons.lang3.tuple
-import org.joda.time.{DateTime, LocalDate => JodaLocalDate}
-import com.datastax.driver.core.{DataType, Duration, LocalDate, TypeCodec}
-import com.datastax.spark.connector.TupleValue
-import com.datastax.spark.connector.UDTValue.UDTValueConverter
-import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
-import Symbols._
-import com.datastax.driver.dse.geometry.{LineString, Point, Polygon}
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
@@ -292,7 +293,6 @@ object TypeConverter {
       case x: Calendar => x.getTime
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
-      case x: LocalDate => DateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: String => TimestampParser.parse(x)
       case x: JodaLocalDate => x.toDateTimeAtStartOfDay.toDate
       case x: JavaLocalDate => Date.from(x.atStartOfDay(ZoneId.systemDefault()).toInstant)
@@ -308,7 +308,6 @@ object TypeConverter {
     def convertPF = {
       case x: String => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: Date => new java.sql.Date(x.getTime)
-      case x: LocalDate => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
       case x: JodaLocalDate => new java.sql.Date(x.toDateTimeAtStartOfDay.getMillis)
       case x: JavaLocalDate => new java.sql.Date(x.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli)
     }
@@ -328,7 +327,7 @@ object TypeConverter {
     def convertPF = {
       case x: String => JodaLocalDate.fromDateFields(TimestampParser.parse(x))
       case x: JodaLocalDate => x
-      case x: LocalDate => new JodaLocalDate(x.getYear, x.getMonth, x.getDay)
+      case x: JavaLocalDate => new JodaLocalDate(x.getYear, x.getMonthValue, x.getDayOfMonth)
       case x: java.util.Date => JodaLocalDate.fromDateFields(x)
     }
   }
@@ -430,31 +429,6 @@ object TypeConverter {
     }
   }
 
-  private val LocalDateTypeTag = implicitly[TypeTag[LocalDate]]
-
-  implicit object LocalDateConverter extends NullableTypeConverter[LocalDate] {
-    def targetTypeTag = LocalDateTypeTag
-    val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
-    val yearRegx = """(\d\d\d\d)""".r
-
-    def convertPF = {
-      case x: LocalDate => x
-      case x: String => x match {
-        case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
-        case yearRegx(y) => LocalDate.fromYearMonthDay(y.toInt, 1, 1)
-        case _ =>  throw new TypeConversionException(s"Cannot convert string $x to $targetTypeName.")
-      }
-      case x: Int => LocalDate.fromDaysSinceEpoch(x)
-      case x: JodaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
-      case x: JavaLocalDate => LocalDate.fromYearMonthDay(x.getYear, x.getMonthValue, x.getDayOfMonth)
-      case x: DateTime => {
-        val ld = x.toLocalDate
-        LocalDate.fromYearMonthDay(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
-      }
-      case x: Date => convert(JodaLocalDate.fromDateFields(x))
-    }
-  }
-
   object TimeTypeConverter extends NullableTypeConverter[java.lang.Long] {
     def targetTypeTag = JavaLongTypeTag
     def convertPF = {
@@ -511,16 +485,16 @@ object TypeConverter {
   }
 
   private val DurationTypeTag = TypeTag.synchronized {
-    implicitly[TypeTag[Duration]]
+    implicitly[TypeTag[CqlDuration]]
   }
 
-  implicit object DurationConverter extends NullableTypeConverter[Duration] {
+  implicit object DurationConverter extends NullableTypeConverter[CqlDuration] {
     def targetTypeTag = DurationTypeTag
 
     override def convertPF = {
-      case x: Duration => x
-      case x: String => TypeCodec.duration().parse(x)
-      case x: Long => Duration.newInstance(0, 0, x)
+      case x: CqlDuration => x
+      case x: String => CqlDuration.from(x)
+      case x: Long => CqlDuration.newInstance(0, 0, x)
     }
   }
 
@@ -950,7 +924,6 @@ object TypeConverter {
     ByteBufferConverter,
     ByteArrayConverter,
     UDTValueConverter,
-    LocalDateConverter,
     TimeTypeConverter,
     JavaLocalDateConverter,
     JavaLocalTimeConverter,

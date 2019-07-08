@@ -2,6 +2,10 @@ package com.datastax.driver.core
 
 import java.nio.ByteBuffer
 
+import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
+import com.datastax.oss.driver.api.core.cql.Row
+
 class RowMock(columnSizes: Option[Int]*)
   extends AbstractGettableData(ProtocolVersion.NEWEST_SUPPORTED) with Row {
 
@@ -18,11 +22,11 @@ class RowMock(columnSizes: Option[Int]*)
 
   override def getBytesUnsafe(i: Int): ByteBuffer = bufs(i)
 
-  override def getBytesUnsafe(s: String): ByteBuffer = getBytesUnsafe(defs.getIndexOf(s))
+  override def getBytesUnsafe(s: String): ByteBuffer = getBytesUnsafe(defs.firstIndexOf(s))
 
   override def isNull(i: Int): Boolean = bufs(i) == null
 
-  override def isNull(s: String): Boolean = isNull(defs.getIndexOf(s))
+  override def isNull(s: String): Boolean = isNull(defs.firstIndexOf(s))
 
   override def getIndexOf(name: String): Int = ???
 

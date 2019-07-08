@@ -7,6 +7,7 @@ import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
 import org.apache.spark.{SparkConf, SparkContext}
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.SerialShutdownHooks
 import com.datastax.spark.connector.util.Logging
@@ -110,7 +111,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
     * is a proxy to a shared, single `Session` associated with the cluster.
     * Internally, the shared underlying `Session` will be closed shortly after all the proxies
     * are closed. */
-  def withSessionDo[T](code: Session => T): T = {
+  def withSessionDo[T](code: CqlSession => T): T = {
     closeResourceAfterUse(openSession()) { session =>
       code(SessionProxy.wrap(session))
     }
@@ -122,7 +123,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
     *
     * We should not need this in scala 2.12
     */
-  def jWithSessionDo[T](code: java.util.function.Function[Session, T]): T = {
+  def jWithSessionDo[T](code: java.util.function.Function[CqlSession, T]): T = {
     withSessionDo(session => code.apply(session))
   }
 
