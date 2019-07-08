@@ -2,7 +2,7 @@ package com.datastax.spark.connector.embedded
 
 import java.net.InetAddress
 
-import org.apache.commons.configuration.ConfigurationException
+import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 
 object UserDefinedProperty {
 
@@ -62,5 +62,5 @@ object UserDefinedProperty {
 
   def getPropertyOrThrowIfNotFound(nodeProperty: NodeProperty): String =
     getProperty(nodeProperty).getOrElse(
-      throw new ConfigurationException(s"Missing ${nodeProperty.propertyName} in system environment"))
+      throw new ConnectorConfigurationException(s"Missing ${nodeProperty.propertyName} in system environment"))
 }
