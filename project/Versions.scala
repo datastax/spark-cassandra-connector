@@ -1,5 +1,3 @@
-import scala.util.Properties
-
 object Versions {
   lazy val scalaVersion = "2.11.12"
 
@@ -10,8 +8,7 @@ object Versions {
   val CommonsIO       = "2.6"
   val CommonsLang3    = "3.3.2"
 
-  val DseJavaDriver = "1.8.2"
-  //val DseJavaDriver   = "2.0.1" //TODO MAJOR CHANGE HERE
+  val DseJavaDriver = "2.1.0"
 
   val Netty           = "4.0.33.Final"
   val ScalaCheck      = "1.14.0"
