@@ -18,7 +18,7 @@ import scala.util.Properties
 object Versions {
 
 
-  lazy val scalaVersion = "2.11.12"
+  lazy val scalaVersion = "2.12.8"
 
   /* For `scalaBinaryVersion.value outside an sbt task. */
   lazy val scalaBinary = scalaVersion.dropRight(2)
