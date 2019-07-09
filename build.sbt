@@ -30,8 +30,6 @@ lazy val root = (project in file("connector"))
     fork in IntegrationTest := true,
 
     parallelExecution := true,
-    parallelExecution in Test := true,
-    parallelExecution in IntegrationTest := true,
 
     testGrouping in IntegrationTest := Testing.makeTestGroups( (definedTests in IntegrationTest).value),
 
