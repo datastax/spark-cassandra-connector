@@ -36,20 +36,16 @@ lazy val root = (project in file("connector"))
 
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
-    libraryDependencies ++=
-      Dependencies.Spark.spark
-        ++ Dependencies.DataStax.dataStax
-        ++ Dependencies.Test.testDeps
-        ++ Dependencies.Solr.solr
-        ++ Dependencies.Jetty.jetty
+    libraryDependencies ++= Dependencies.Spark.dependencies
+        ++ Dependencies.DataStax.dependencies
+        ++ Dependencies.Test.dependencies
+        ++ Dependencies.Jetty.dependencies
   )
   .dependsOn(testSupport % "test->test")
 
 lazy val testSupport = (project in file ("test-support"))
   .settings(
-    libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-exec" % "1.3" % Test,
-      Dependencies.DataStax.driverCore % Test)
+    libraryDependencies ++= Dependencies.TestSupport.dependencies 
   )
 
 

@@ -6,26 +6,17 @@ object Versions {
   /* For `scalaBinaryVersion.value outside an sbt task. */
   lazy val scalaBinary = scalaVersion.dropRight(2)
 
-  val AssertJ         = "1.7.0"
-  val Cassandra       = "3.11.3" // Only need for partition
   val CommonsExec     = "1.3"
   val CommonsIO       = "2.4"
   val CommonsLang3    = "3.3.2"
-  val CommonsBeanUtils= "1.9.3"
-  val Config          = "1.2.1"
 
   val DseJavaDriver = "1.8.1"
   //val DseJavaDriver   = "2.0.1" //TODO MAJOR CHANGE HERE
 
   val Netty           = "4.0.33.Final"
-  val CodaHaleMetrics = "3.0.2"
   val ScalaCheck      = "1.14.0"
-  val ScalaMock       = "4.1.0"
   val ScalaTest       = "3.0.3"
-  val Scalactic       = "3.0.3"
-  val SolrJ           = "6.0.1"
   val Slf4j           = "1.6.1"//1.7.7"
-  val TestNG          = "6.8.8"
 
   // Spark version can be specified as:
   // - regular version which is present in some public Maven repository

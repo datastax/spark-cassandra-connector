@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.cluster
 
-import com.datastax.spark.connector.util.SerialShutdownHooks
+import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.commons.lang3.ClassUtils
-import org.apache.log4j.Logger
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -13,9 +12,7 @@ import scala.collection.mutable
   * this cache should never have more than one element. Retrieving a different element from the one that is already
   * present in this cache results in extra time (teardown and bootstrap) wasted. Warning is logged when
   * this kind of situation is detected. */
-object ClusterHolder {
-
-  private val log = Logger.getLogger(this.getClass)
+object ClusterHolder extends Logging {
 
   SerialShutdownHooks.add("Connector test cluster cache shutdown hook", 100)(() => {
     close()
@@ -39,7 +36,7 @@ object ClusterHolder {
     synchronized {
       clusters.getOrElseUpdate(key, {
         if (clusters.nonEmpty) {
-          log.warn("Test group should contain only tests with the same cluster fixture. Verify your test group setup. " +
+          logWarning("Test group should contain only tests with the same cluster fixture. Verify your test group setup. " +
             s"Stopping previous clusters and bootstrapping the new one for ${config.getClass.getCanonicalName}")
           for (testClusters <- clusters.values; cluster <- testClusters) {
             cluster.ccmBridge.close()

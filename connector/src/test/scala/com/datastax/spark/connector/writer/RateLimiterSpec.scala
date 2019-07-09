@@ -1,21 +1,19 @@
 package com.datastax.spark.connector.writer
 
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 
 
-class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Eventually{
+class RateLimiterSpec extends FlatSpec with Matchers with Eventually {
 
  val TestRates = Seq(1L, 2L, 4L, 6L, 8L, 16L, 32L)
 
   "RateLimiter" should "not cause delays if rate is not exceeded" in {
     var now: Long = 0
-    val sleep = mockFunction[Long, Any]("sleep")
-    sleep.expects(*).never()
+    val sleep: Long => Any = _ => fail("Sleep method should have never been called")
 
     val limiter = new RateLimiter(Long.MaxValue, 1000, () => now, sleep)
-    for (i <- 1 to 1000000) {
+    for (_ <- 1 to 1000000) {
       now += 1
       limiter.maybeSleep(1000)
     }
@@ -36,7 +34,7 @@ class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Event
     val limiter = new RateLimiter(rate, bucketSize, () => now, sleep)
 
     val iterations = 25
-    for (i <- 1 to iterations)
+    for (_ <- 1 to iterations)
       limiter.maybeSleep(1)
 
     sleepTime should be((iterations - bucketSize) * 1000L / rate)
@@ -54,7 +52,7 @@ class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Event
       }
 
       val limiter = new RateLimiter(rate, rate * 2, () => now, sleep)
-      for (leakNum <- 1 to 1000) {
+      for (_ <- 1 to 1000) {
         assert(
           limiter.bucketFill.get() >= 0,
           "bucketFill has been overflowed, or has had a large negative number added to it")

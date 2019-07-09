@@ -4,7 +4,6 @@ object Dependencies
 {
   import Versions._
 
-
   object Spark {
     val sparkCore = "org.apache.spark" %% "spark-core" % ApacheSpark % "provided" // ApacheV2
     val sparkRepl = "org.apache.spark" %% "spark-repl" % ApacheSpark % "provided" // ApacheV2
@@ -14,8 +13,7 @@ object Dependencies
     val sparkCatalyst = "org.apache.spark" %% "spark-catalyst" % ApacheSpark % "provided" // ApacheV2
     val sparkHive = "org.apache.spark" %% "spark-hive" % ApacheSpark % "provided" // ApacheV2
 
-
-    val spark = Seq(
+    val dependencies = Seq(
       sparkCore,
       sparkRepl,
       sparkUnsafe,
@@ -29,14 +27,9 @@ object Dependencies
     val driverCore = "com.datastax.dse" % "dse-java-driver-core" % DseJavaDriver nettyExclude()
     val driverMapping = "com.datastax.dse" % "dse-java-driver-mapping" % DseJavaDriver nettyExclude()
     val driverExtras = "com.datastax.dse" % "dse-java-driver-extras" % DseJavaDriver nettyExclude()
-    val dataStax = Seq(driverCore, driverMapping, driverExtras)
-  }
 
-  object Solr {
-    val solrJ = "org.apache.solr" % "solr-solrj" % SolrJ
-    val solr = Seq(solrJ)
+    val dependencies = Seq(driverCore, driverMapping, driverExtras)
   }
-
 
   implicit class Exclude(module: ModuleID) {
     def logbackExclude(): ModuleID = module
@@ -54,40 +47,37 @@ object Dependencies
   }
 
   object Test {
-    val assertJ           = "org.assertj"             % "assertj-core"                  % AssertJ % "test, it"
-    val commonsExec       = "org.apache.commons"      % "commons-exec"                  % CommonsExec % "test, it"
-    val commonsIO         = "commons-io"              % "commons-io"                    % CommonsIO % "test,it"       // ApacheV2
-    val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck % "test,it"      // BSD
-    val scalaMock         = "org.scalamock"           %% "scalamock"                    % ScalaMock % "test,it"       // BSD
-    val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest % "test,it"       // ApacheV2
-    val scalactic         = "org.scalactic"           %% "scalactic"                    % Scalactic % "test,it"       // ApacheV2
-    val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark     % "test,it" classifier "tests"
-    val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark     % "test,it" classifier "tests"
-    val testNG            = "org.testng"              % "testng"                        % TestNG % "test, it"
-    val mockito           = "org.mockito"             % "mockito-all"                   % "1.10.19" % "test,it"       // MIT
-    val junit             = "junit"                   % "junit"                         % "4.11"    % "test,it"
-    val junitInterface    = "com.novocode"            % "junit-interface"               % "0.10"    % "test,it"
+    val commonsIO         = "commons-io"              %  "commons-io"                   % CommonsIO    % "test,it"       // ApacheV2
+    val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
+    val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest    % "test,it"       // ApacheV2
+    val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
+    val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
+    val mockito           = "org.mockito"             %  "mockito-all"                  % "1.10.19"    % "test,it"       // MIT
+    val junit             = "junit"                   %  "junit"                        % "4.11"       % "test,it"
 
-    val testDeps = Seq(
-      assertJ,
-      commonsExec,
+    val dependencies = Seq(
       commonsIO,
       scalaCheck,
-      scalaMock,
       scalaTest,
-      scalactic,
       sparkCoreT,
       sparkStreamingT,
-      testNG,
       mockito,
-      junit,
-      junitInterface).map(_.logbackExclude)
+      junit).map(_.logbackExclude())
   }
 
   // Required for metrics
   object Jetty {
     val jettyServer       = "org.eclipse.jetty"       % "jetty-server"            % SparkJetty % "provided"
     val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
-    val jetty = Seq(jettyServer, jettyServlet)
+    
+    val dependencies = Seq(jettyServer, jettyServlet)
+  }
+
+  object TestSupport {
+    val commonsExec = "org.apache.commons" % "commons-exec" % CommonsExec % "test"
+
+    val dependencies = Seq(
+      commonsExec,
+      Dependencies.DataStax.driverCore % "test")
   }
 }

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.ColumnRef
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 object ColumnMapperConvention {
 
