@@ -168,14 +168,16 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val rowIterator = fetchIterator(session, bsb, rowMetadata, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, None)
 
-    val listener : TaskCompletionListener = { _ =>
-      val duration = metricsUpdater.finish() / 1000000000d
-      logDebug(
-        f"Fetched ${countingIterator.count} rows " +
-          f"from $keyspaceName.$tableName " +
-          f"for partition ${split.index} in $duration%.3f s."
-      )
-      session.close()
+    val listener : TaskCompletionListener = new TaskCompletionListener {
+      override def onTaskCompletion(context: TaskContext): Unit = {
+        val duration = metricsUpdater.finish() / 1000000000d
+        logDebug(
+          f"Fetched ${countingIterator.count} rows " +
+            f"from $keyspaceName.$tableName " +
+            f"for partition ${split.index} in $duration%.3f s."
+        )
+        session.close()
+      }
     }
 
     context.addTaskCompletionListener(listener)

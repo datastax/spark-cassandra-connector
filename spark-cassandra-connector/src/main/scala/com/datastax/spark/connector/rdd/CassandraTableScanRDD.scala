@@ -368,11 +368,13 @@ class CassandraTableScanRDD[R] private[connector](
       fetchTokenRange(scanner, _: CqlTokenRange[_, _], metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
-    val listener : TaskCompletionListener = { _ =>
-      val duration = metricsUpdater.finish() / 1000000000d
-      logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
-        f"for partition ${partition.index} in $duration%.3f s.")
-      scanner.close()
+    val listener : TaskCompletionListener = new TaskCompletionListener {
+      override def onTaskCompletion(context: TaskContext): Unit = {
+        val duration = metricsUpdater.finish() / 1000000000d
+        logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
+          f"for partition ${partition.index} in $duration%.3f s.")
+        scanner.close()
+      }
     }
 
     context.addTaskCompletionListener(listener)
