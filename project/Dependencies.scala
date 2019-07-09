@@ -52,8 +52,8 @@ object Dependencies
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest    % "test,it"       // ApacheV2
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
-    val mockito           = "org.mockito"             %  "mockito-all"                  % "1.10.19"    % "test,it"       // MIT
-    val junit             = "junit"                   %  "junit"                        % "4.11"       % "test,it"
+    val mockito           = "org.mockito"             %  "mockito-all"                  % Mockito      % "test,it"       // MIT
+    val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
       commonsIO,
@@ -69,7 +69,7 @@ object Dependencies
   object Jetty {
     val jettyServer       = "org.eclipse.jetty"       % "jetty-server"            % SparkJetty % "provided"
     val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
-    
+
     val dependencies = Seq(jettyServer, jettyServlet)
   }
 

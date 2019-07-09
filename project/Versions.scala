@@ -7,15 +7,17 @@ object Versions {
   lazy val scalaBinary = scalaVersion.dropRight(2)
 
   val CommonsExec     = "1.3"
-  val CommonsIO       = "2.4"
+  val CommonsIO       = "2.6"
   val CommonsLang3    = "3.3.2"
 
-  val DseJavaDriver = "1.8.1"
+  val DseJavaDriver = "1.8.2"
   //val DseJavaDriver   = "2.0.1" //TODO MAJOR CHANGE HERE
 
   val Netty           = "4.0.33.Final"
   val ScalaCheck      = "1.14.0"
-  val ScalaTest       = "3.0.3"
+  val ScalaTest       = "3.0.8"
+  val JUnit           = "4.12"
+  val Mockito         = "1.10.19"
   val Slf4j           = "1.6.1"//1.7.7"
 
   // Spark version can be specified as:
@@ -27,9 +29,7 @@ object Versions {
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
   val ApacheSpark           = "2.4.3"
-  val SparkJetty      = "8.1.14.v20131031"
-
-  val doNotInstallSpark = true
+  val SparkJetty      = "9.3.24.v20180605"
 
   /*
   val status = (versionInReapply: String, binaryInReapply: String) =>
