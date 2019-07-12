@@ -1,13 +1,14 @@
 package com.datastax.spark.connector.rdd
 
 import java.lang.{Long => JLong}
+import java.util.concurrent.CompletableFuture
 
 import scala.concurrent.Future
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DefaultProtocolVersion}
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 case class KVRow(key: Int)
@@ -41,9 +42,6 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   conn.withSessionDo { session =>
     createKeyspace(session)
-    session.getCluster.getConfiguration.getQueryOptions.setDefaultIdempotence(true)
-    session.getCluster.getConfiguration.getPoolingOptions.setMaxQueueSize(64000)
-    session.getCluster.getConfiguration.getPoolingOptions.setPoolTimeoutMillis(30000)
     val startTime = System.currentTimeMillis()
     awaitAll(
       Future {
@@ -57,9 +55,10 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
              |)""".stripMargin)
         val ps = session
           .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
-        (for (value <- total) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
-        ).foreach(_.getUninterruptibly())
+        val results = (for (value <- total) yield
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
+        )
+        CompletableFuture.allOf(results:_*).get
       },
       Future {
         session.execute(
@@ -72,9 +71,10 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
              |)""".stripMargin)
         val ps = session
           .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
-        (for (value <- smallerTotal) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
-        ).foreach(_.getUninterruptibly)
+        val results = (for (value <- smallerTotal) yield
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
+        )
+        CompletableFuture.allOf(results: _*).get
       },
 
       Future {
@@ -95,9 +95,10 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
              |""".stripMargin)
         val ps = session
           .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
-        (for (value <- keys) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong))
-        ).foreach(_.getUninterruptibly)
+        val results = (for (value <- keys) yield
+          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong)).toCompletableFuture
+        )
+        CompletableFuture.allOf(results:_*)
       },
 
       Future {
@@ -111,9 +112,11 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
              |)""".stripMargin)
         val ps = session
           .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
-        (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
+        val results = (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
           session.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
-        ).foreach(_.getUninterruptibly)
+            .toCompletableFuture
+        )
+        CompletableFuture.allOf(results:_*)
       },
 
       Future {
@@ -377,7 +380,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   it should "use the ReadConf from the SparkContext by default" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100: Long))
     val someCass = source.joinWithCassandraTable[FullRow](ks, tableName)
-    someCass.readConf.consistencyLevel should be (com.datastax.driver.core.ConsistencyLevel.LOCAL_ONE)
+    someCass.readConf.consistencyLevel should be (DefaultConsistencyLevel.LOCAL_ONE)
   }
 
 
@@ -422,7 +425,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   }
 
-  it should "should be joinable with a PER PARTITION LIMIT limit" in skipIfProtocolVersionLT(V4){
+  it should "should be joinable with a PER PARTITION LIMIT limit" in skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source
       .joinWithCassandraTable(ks, wideTable, joinColumns = SomeColumns("key", "group"))

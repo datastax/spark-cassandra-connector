@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.ConsistencyLevel
+import com.datastax.oss.driver.api.core.ConsistencyLevel
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
 import com.datastax.spark.connector.writer.WriteConf.{ReferenceSection, ThroughputMiBPSParam}
 import org.apache.spark.SparkConf

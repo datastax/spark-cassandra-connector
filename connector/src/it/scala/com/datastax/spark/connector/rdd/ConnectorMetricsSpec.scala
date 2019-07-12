@@ -8,7 +8,7 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.LinkedTransferQueue
 
-import com.datastax.driver.core.Session
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -51,7 +51,7 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     }
   }
 
-  def makeTables(session: Session): Unit = {
+  def makeTables(session: CqlSession): Unit = {
     session.execute(
       s"""
          |CREATE TABLE IF NOT EXISTS $ks.leftjoin (

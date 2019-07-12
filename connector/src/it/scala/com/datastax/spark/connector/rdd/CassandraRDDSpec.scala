@@ -3,8 +3,7 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.util.Date
 
-import com.datastax.driver.core.HostDistance
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
@@ -65,7 +64,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
 
     awaitAll(
       Future {
-        skipIfProtocolVersionLT(V4) {
+        skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
           markup(s"Making PV4 Types")
           session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
           session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
