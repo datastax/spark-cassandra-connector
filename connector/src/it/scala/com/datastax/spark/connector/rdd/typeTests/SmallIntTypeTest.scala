@@ -1,10 +1,11 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 class SmallIntTypeTest extends AbstractTypeTest[Short, java.lang.Short] with DefaultCluster {
-  override val minPV = ProtocolVersion.V4
+  override val minPV = DefaultProtocolVersion.V4
   override protected val typeName: String = "smallint"
 
   override protected val typeData: Seq[Short] = (1 to 10).map(_.toShort)

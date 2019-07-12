@@ -1,15 +1,15 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
 import java.util.Date
 
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] with DefaultCluster {
 
-  override val minPV = ProtocolVersion.V4
+  override val minPV = DefaultProtocolVersion.V4
 
   override def getDriverColumn(row: Row, colName: String): Long = row.getTime(colName)
 
@@ -18,7 +18,7 @@ class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] with DefaultCl
   override protected val typeData: Seq[Long] = 1L to 5L
   override protected val addData: Seq[Long] = 6L to 10L
 
-  "Time Types" should "be writable as dates" in skipIfProtocolVersionLT(V4) {
+  "Time Types" should "be writable as dates" in skipIfProtocolVersionLT(minPV) {
     val dates = (100 to 500 by 100).map(new Date(_))
     val times = dates.map(_.getTime)
     sc.parallelize(

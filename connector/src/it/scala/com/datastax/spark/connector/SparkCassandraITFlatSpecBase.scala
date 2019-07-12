@@ -2,7 +2,7 @@ package com.datastax.spark.connector
 
 import java.util.concurrent.Executors
 
-import com.datastax.driver.core.{ProtocolVersion, Session}
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
 import com.datastax.spark.connector.cluster.ConnectionProvider
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate
@@ -88,19 +88,19 @@ trait SparkCassandraITSpecBase
     }
   }
 
-  def pv = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+  def pv = conn.withSessionDo(_.getContext.getProtocolVersion)
 
   def report(message: String): Unit = {}
 
   val ks = getKsName
 
   def skipIfProtocolVersionGTE(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
-    if (!(pv.toInt >= protocolVersion.toInt)) f
+    if (!(pv.getCode >= protocolVersion.getCode)) f
     else report(s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
   }
 
   def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
-    if (!(pv.toInt < protocolVersion.toInt)) f
+    if (!(pv.getCode < protocolVersion.getCode)) f
     else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
   }
 
@@ -130,10 +130,9 @@ trait SparkCassandraITSpecBase
     eventually(timeout(Span(2, Seconds))) {
       conn.withSessionDo(session =>
         session
-          .getCluster
           .getMetadata
-          .getKeyspace(ks)
-          .getTables()
+          .getKeyspace(ks).get()
+          .getTables().keySet()
           .containsAll(tableNames.asJava)
       )
     }

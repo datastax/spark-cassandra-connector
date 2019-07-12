@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.util.UUID
 
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.SaveMode
 
@@ -14,8 +15,8 @@ class UUIDTypeTest extends AbstractTypeTest[UUID, UUID] with DefaultCluster {
 
   override val addData: Seq[UUID] = Seq(UUID.fromString("48830B99-F860-46A9-8187-31EC3F4F614A"), UUID.fromString("C8EF503C-EF97-479E-8E2E-FA363F7CEFD7"), UUID.fromString("77A07FDB-3ACC-4EEB-BEE4-DAE9388A3347"), UUID.fromString("89A6EC10-11F8-408A-A2AD-1A875A6D2E2B"), UUID.fromString("3B20E502-2993-42AE-A993-9425DBAB9EB1"))
 
-  override def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): UUID = {
-    row.getUUID(colName)
+  override def getDriverColumn(row: Row, colName: String): UUID = {
+    row.getUuid(colName)
   }
 
   "A String DataFrame" should "write to C* UUIDs" in {
@@ -32,7 +33,7 @@ class UUIDTypeTest extends AbstractTypeTest[UUID, UUID] with DefaultCluster {
 
     val row = conn.withSessionDo(session =>
       session.execute(s"SELECT * FROM $keyspaceName.$typeNormalTable WHERE pkey = $UUIDString and ckey1 = $UUIDString").one)
-    row.getUUID("data1").toString should be (UUIDString)
+    row.getUuid("data1").toString should be (UUIDString)
   }
 }
 

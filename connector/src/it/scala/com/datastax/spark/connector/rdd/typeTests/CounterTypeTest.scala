@@ -5,6 +5,7 @@ package com.datastax.spark.connector.rdd.typeTests
  * we need to test them differently.
  */
 
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -35,11 +36,15 @@ class CounterTypeTest  extends SparkCassandraITFlatSpecBase with DefaultCluster 
       Future(session.execute(create_table_write)),
       Future(session.execute(create_table_multi_write))
     )
-    (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute("UPDATE counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?", x: java.lang.Long))}
+    val ps = session.prepare("UPDATE counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?")
+    (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute(ps.bind(x: java.lang.Long)))}
   }
 
   "Counters" should "be updatable via the C* Connector" in conn.withSessionDo { session =>
-    (1L to 10L).foreach( x => session.execute("SELECT * FROM counter_norm where key = ?",x: java.lang.Long).one().getLong("expectedkeys") should equal (10))
+    val ps = session.prepare("SELECT * FROM counter_norm where key = ?")
+    (1L to 10L).foreach( x => session.execute(ps.bind(x: java.lang.Long))
+      .one()
+      .getLong("expectedkeys") should equal (10))
   }
 
   it should "be readable via cassandraTable" in {

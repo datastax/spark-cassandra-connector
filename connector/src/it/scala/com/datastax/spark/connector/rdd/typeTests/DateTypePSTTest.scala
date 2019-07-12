@@ -7,10 +7,6 @@ import org.scalatest.Ignore
 
 // FIXME: remove @Ignore after driver upgrade
 @Ignore
-class DateTimeTypePSTTest extends DateTimeTypeTest(TimeZone.getTimeZone("PST")) with PSTCluster {
-}
-
-@Ignore
 class DateTypePSTTest extends DateTypeTest(TimeZone.getTimeZone("PST")) with PSTCluster {
 }
 
