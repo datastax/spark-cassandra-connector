@@ -118,7 +118,7 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
     // verify token actually hashes to Integer.MIN_VALUE
     conn.withSessionDo { session =>
       val row = session.execute(s"SELECT token(key) FROM $ks.table3 where key=$keyForMinValueHash").one
-      row.getToken("key").hashCode() shouldBe Integer.MIN_VALUE
+      row.getToken("token(key)").hashCode() shouldBe Integer.MIN_VALUE
     }
   }
 
