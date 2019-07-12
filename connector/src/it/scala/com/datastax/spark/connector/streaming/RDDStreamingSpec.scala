@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.streaming
 
+import java.util.concurrent.CompletableFuture
+
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -36,9 +38,10 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
       },
       Future {
         session.execute(s"CREATE TABLE $ks.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
-        (for (d <- dataSeq; word <- d) yield
-          session.executeAsync(s"UPDATE $ks.streaming_join set count = count + 10 where word = ?", word.trim))
-          .par.foreach(_.getUninterruptibly)
+        val ps = session.prepare(s"UPDATE $ks.streaming_join set count = count + 10 where word = ?")
+        val results = (for (d <- dataSeq; word <- d) yield
+          session.executeAsync(ps.bind(word.trim)).toCompletableFuture)
+        CompletableFuture.allOf(results: _*).get
       },
       Future {
         session.execute(s"CREATE TABLE $ks.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
