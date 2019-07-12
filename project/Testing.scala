@@ -53,8 +53,7 @@ object Testing {
     options
   }
 
-  val MaxParallel = 4
-
+  val MaxParallel = 10
 
   lazy val parallelTasks: Int = {
     val parallelTasks = sys.env.get("TEST_PARALLEL_TASKS").map(_.toInt).getOrElse {
