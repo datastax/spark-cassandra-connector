@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.sql
 
+import java.util.concurrent.CompletableFuture
+
 import scala.concurrent.Future
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.ccm.Version
@@ -30,15 +32,16 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
           s"""INSERT INTO $ks.basic (k, c, v, v2) VALUES (?, ?, ?, ?)
              |USING TTL ? AND TIMESTAMP ?""".stripMargin)
 
-        (for (x <- 1 to 100) yield {
+        val results = (for (x <- 1 to 100) yield {
           session.executeAsync(prepared.bind(
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             ((x * 10000): java.lang.Integer),
-            x.toLong: java.lang.Long))
-        }).par.foreach(_.getUninterruptibly)
+            x.toLong: java.lang.Long)).toCompletableFuture
+        })
+        CompletableFuture.allOf(results: _*).get
       },
      Future {
         session.execute(

@@ -1,9 +1,10 @@
 package com.datastax.spark.connector.sql
 
 import java.io.IOException
+import java.util.concurrent.CompletableFuture
 
-import com.datastax.driver.core.DataType
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+import com.datastax.oss.driver.api.core.`type`.DataTypes
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -51,9 +52,10 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
         val prepared = session.prepare( s"""INSERT INTO $ks.kv (k, v) VALUES (?, ?)""")
 
-        (for (x <- 1 to 1000) yield {
-          session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString))
-        }).par.foreach(_.getUninterruptibly)
+        val results = (for (x <- 1 to 1000) yield {
+          session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString)).toCompletableFuture
+        })
+        CompletableFuture.allOf(results: _*).get
       },
 
       Future {
@@ -64,7 +66,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
       Future {
         info ("Setting up Date Tables")
-        skipIfProtocolVersionLT(V4) {
+        skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
         session.execute(s"create table $ks.date_test (key int primary key, dd date)")
         session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
         session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
@@ -155,10 +157,10 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
     df.createCassandraTable(ks, "kv_auto", Some(Seq("v")), Some(Seq("k")))
 
-    val meta = conn.withClusterDo(_.getMetadata)
-    val autoTableMeta = meta.getKeyspace(ks).getTable("kv_auto")
+    val meta = conn.withSessionDo(_.getMetadata)
+    val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto").get()
     autoTableMeta.getPartitionKey.map(_.getName) should contain ("v")
-    autoTableMeta.getClusteringColumns.map(_.getName) should contain ("k")
+    autoTableMeta.getClusteringColumns.map(_._1.getName) should contain ("k")
 
   }
 
@@ -240,7 +242,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     }
   }
 
-  it should "read and write C* LocalDate columns" in skipIfProtocolVersionLT(V4){
+  it should "read and write C* LocalDate columns" in skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
     val df = sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
@@ -260,7 +262,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     }
   }
 
-  it should "be able to write to ProtocolVersion 3 Tables correctly with V4 Types" in skipIfProtocolVersionGTE(V4){
+  it should "be able to write to ProtocolVersion 3 Tables correctly with V4 Types" in skipIfProtocolVersionGTE(DefaultProtocolVersion.V4){
 
     val table = "newtypetable"
 
@@ -271,10 +273,11 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     df.createCassandraTable(ks, table)
 
     val tableColumns = eventually(
-      conn.withClusterDo(_.getMetadata.getKeyspace(ks).getTable(table)).getColumns.map(_.getType))
+      conn.withSessionDo(_.getMetadata.getKeyspace(ks).get().getTable(table)).get().getColumns.map(_._2.getType))
 
     tableColumns should contain theSameElementsInOrderAs(
-      Seq(DataType.cint(), DataType.cint(), DataType.cint(), DataType.timestamp()))
+      Seq(DataTypes.INT, DataTypes.INT, DataTypes.INT, DataTypes.TIMESTAMP)
+      )
 
     df.write.cassandraFormat(table, ks).save()
 
