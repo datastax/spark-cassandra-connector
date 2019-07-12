@@ -1,12 +1,13 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.driver.core.ProtocolVersion
-import com.datastax.spark.connector.types.{CassandraOption, Unset}
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.types.CassandraOption
 
-class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase {
-  override val conn = CassandraConnector(defaultConf)
+class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session, ks)

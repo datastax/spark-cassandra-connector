@@ -1,17 +1,18 @@
 package com.datastax.spark.connector
 
+import com.datastax.spark.connector.ccm.CcmBridge
+import com.datastax.spark.connector.cluster.DefaultCluster
+
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
-
 import org.apache.spark.rdd.RDD
-
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.japi.CassandraJavaUtil
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 
-class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase {
+class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

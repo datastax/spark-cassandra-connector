@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.streaming
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.testkit._
 import org.apache.spark.rdd.RDD
@@ -16,8 +17,7 @@ import scala.util.Random
 case class WordCount(word: String, count: Int)
 case class Key(word: String)
 
-class RDDStreamingSpec
-  extends SparkCassandraITFlatSpecBase
+class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
   with Eventually
   with BeforeAndAfterEach
   with BeforeAndAfterAll {

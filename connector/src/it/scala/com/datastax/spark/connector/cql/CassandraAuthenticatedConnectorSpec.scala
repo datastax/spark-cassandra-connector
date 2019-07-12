@@ -1,11 +1,9 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.CCMTraits.{Auth, CCMTrait}
+import com.datastax.spark.connector.cluster.AuthCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase {
-
-  override lazy val traits: Set[CCMTrait] = Set(Auth())
+class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase with AuthCluster {
 
   // Wait for the default user to be created in Cassandra.
   Thread.sleep(1000)

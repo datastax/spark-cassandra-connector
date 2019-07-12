@@ -1,13 +1,15 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.cluster.DefaultCluster
+
 import scala.language.postfixOps
 import org.scalatest.concurrent.AsyncAssertions
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with AsyncAssertions {
+class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with AsyncAssertions {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val count = 1000
 
   val tab = "mt_test"

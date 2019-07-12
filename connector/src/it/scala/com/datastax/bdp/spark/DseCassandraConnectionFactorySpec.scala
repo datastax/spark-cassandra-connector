@@ -6,13 +6,13 @@
 package com.datastax.bdp.spark
 
 import org.scalatest.Matchers
-
 import com.datastax.driver.dse.DseSession
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ReadConf
 
-class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with Matchers {
+class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Matchers {
 
   override lazy val conn = CassandraConnector(sparkConf)
 

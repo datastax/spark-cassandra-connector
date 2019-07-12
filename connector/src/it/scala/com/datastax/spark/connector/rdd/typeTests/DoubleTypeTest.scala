@@ -2,7 +2,9 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.lang.Double
 
-class DoubleTypeTest extends AbstractTypeTest[Double, Double] {
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class DoubleTypeTest extends AbstractTypeTest[Double, Double] with DefaultCluster {
   override val typeName = "double"
 
   override val typeData: Seq[Double] = Seq(new Double(100.1), new Double(200.2),new Double(300.3), new Double(400.4), new Double(500.5))

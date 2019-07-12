@@ -2,6 +2,8 @@ package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.ccm.Version
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.types.UserDefinedType
 import org.apache.spark.sql.AnalysisException
@@ -11,8 +13,8 @@ import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
 
-class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with Eventually with Matchers {
-  override val conn = CassandraConnector(defaultConf)
+class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually with Matchers {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
@@ -84,13 +86,15 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with E
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
 
+  val dseVersion = testCluster.getDseVersion.orElse(Version.parse("6.0.0"))
+
   val columnsToCheck = Schema
     .fromCassandra(conn, Some(ks), Some("test_reading_types"))
     .tables
     .head
     .regularColumns
     .filter( columnDef =>
-      if (ccmBridge.getDSEVersion.getMajor >= 6 && ccmBridge.getDSEVersion.getMinor >= 7) {
+      if (dseVersion.getMajor >= 6 && dseVersion.getMinor >= 7) {
         true
       }
       else {

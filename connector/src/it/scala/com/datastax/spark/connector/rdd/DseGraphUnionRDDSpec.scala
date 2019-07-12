@@ -15,10 +15,11 @@ import scala.util.Random
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.{DseTestUtil, SparkConf}
 
-class DseGraphUnionRDDSpec extends SparkCassandraITFlatSpecBase {
+class DseGraphUnionRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(sparkConf)
 

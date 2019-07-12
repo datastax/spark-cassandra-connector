@@ -3,13 +3,13 @@ package com.datastax.spark.connector.rdd.partitioner
 import java.net.InetAddress
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 
-class CassandraPartitionGeneratorSpec
-  extends SparkCassandraITFlatSpecBase {
+class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
 
   conn.withSessionDo { session =>

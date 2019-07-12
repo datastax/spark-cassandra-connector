@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
-class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase {
+class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   case class KeyValue(key: Int, group: Long)
 

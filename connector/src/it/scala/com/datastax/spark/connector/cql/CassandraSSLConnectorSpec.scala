@@ -1,10 +1,9 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.CCMTraits.{CCMTrait, SSL}
-import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase}
+import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.SSLCluster
 
-class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
-  override lazy val traits: Set[CCMTrait] = Set(SSL())
+class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase with SSLCluster {
 
   override def conn = CassandraConnector(defaultConf)
 
@@ -12,7 +11,7 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase {
     conn.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
-      assert(session.getCluster.getMetadata.getClusterName === ccmBridge.getClusterName)
+      assert(session.getCluster.getMetadata.getClusterName === testCluster.name)
     }
   }
 

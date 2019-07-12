@@ -8,12 +8,13 @@ package com.datastax.bdp.hadoop.hive.metastore
 
 import java.util.Collections
 
-import scala.collection.JavaConverters._
+import com.datastax.spark.connector.cluster.DefaultCluster
 
+import scala.collection.JavaConverters._
 import org.apache.hadoop.hive.metastore.TableType
 import org.apache.hadoop.hive.metastore.api.Table
 
-class SchemaManagerServiceTest extends MetaStoreTestBase {
+class SchemaManagerServiceTest extends MetaStoreTestBase with DefaultCluster {
 
     it should "pass DiscoverUnmappedKeyspaces test" in {
         conn.withSessionDo(createKeyspace(_, """"OtherKeyspace""""))

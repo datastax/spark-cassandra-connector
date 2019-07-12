@@ -1,16 +1,15 @@
 package com.datastax.spark.connector.rdd.typeTests
 
 import com.datastax.driver.core.ProtocolVersion
-
-import scala.concurrent.Future
-import scala.collection.JavaConverters._
-import scala.reflect._
-import org.apache.spark.sql.SparkSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
+
+import scala.collection.JavaConverters._
+import scala.concurrent.Future
+import scala.reflect._
 
 
 /**
@@ -79,7 +78,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    */
   def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): TestType
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   s"This type" should "be insertable via the CassandraConnector" in skipIfProtocolVersionLT(minPV){
     checkJDriverInsertsNormal

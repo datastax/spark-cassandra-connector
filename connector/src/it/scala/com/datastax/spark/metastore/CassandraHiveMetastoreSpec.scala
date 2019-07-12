@@ -4,14 +4,15 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 
 import scala.concurrent.Future
 
-class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase {
+class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val COLORS_TXT =
     """1\u0001red

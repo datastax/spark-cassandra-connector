@@ -3,22 +3,21 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.net.InetAddress
 
-import scala.concurrent.Future
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.embedded._
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.types.TypeConverter
-import com.datastax.driver.core.ProtocolVersion._
 import org.apache.commons.lang3.tuple
 import org.apache.spark.api.java.function.{Function => JFunction}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
-class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
+class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
@@ -342,7 +341,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase {
     javaFunctions(sc).cassandraTable(ks, "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(InetAddress.getByName(getConnectionHost)), port = 9999)
+    val invalidConnector = CassandraConnector(Set(InetAddress.getByName(testCluster.getConnectionHost)), port = 9999)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable(ks, "test_table").withConnector(invalidConnector).collect()
     }

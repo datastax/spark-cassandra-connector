@@ -8,22 +8,22 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.LinkedTransferQueue
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.executor.TaskMetrics
-import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
-import org.scalatest.concurrent.Eventually
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ConnectorMetricsListener.stagesMetrics
+import org.apache.spark.executor.TaskMetrics
+import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
+import org.apache.spark.{SparkConf, SparkContext}
+import org.scalatest.concurrent.Eventually
 
-class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase {
+class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM {
 
   //import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._
 
   //YamlClientConfiguration.setAsClientConfigurationImpl()
 
-  /* This test Requires a Custom Spark Context */
   val ourSc = new SparkContext(
     super.defaultConf
       .clone()

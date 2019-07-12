@@ -1,7 +1,9 @@
 package com.datastax.spark.connector.rdd.typeTests
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 
-class DecimalTypeTest extends AbstractTypeTest[BigDecimal, java.math.BigDecimal] {
+
+class DecimalTypeTest extends AbstractTypeTest[BigDecimal, java.math.BigDecimal] with DefaultCluster {
 
   implicit def toBigDecimal(str: String) = BigDecimal(str)
 

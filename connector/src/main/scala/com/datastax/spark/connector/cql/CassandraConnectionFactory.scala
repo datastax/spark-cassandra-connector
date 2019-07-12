@@ -7,7 +7,6 @@ import java.util.concurrent.{ThreadFactory, TimeUnit}
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import io.netty.channel.EventLoopGroup
-import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkConf
 import com.datastax.driver.core._
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
@@ -17,6 +16,8 @@ import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.netty.util.concurrent.DefaultThreadFactory
+
+import scala.util.Try
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.
@@ -95,7 +96,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           keyStore.load(ksIn, ksPassword.map(_.toCharArray).orNull)
           Some(keyStore)
         } finally {
-          IOUtils.closeQuietly(ksIn)
+          Try(ksIn.close())
         }
       case None => None
     }

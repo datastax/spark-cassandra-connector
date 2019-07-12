@@ -3,20 +3,19 @@ package com.datastax.spark.connector.sql
 import java.sql.Date
 import java.util.TimeZone
 
-import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.apache.spark.sql.{Row, SQLContext, SparkSession}
-import org.joda.time.DateTimeZone
-import org.scalatest.FlatSpec
 import com.datastax.driver.core.LocalDate
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
+import org.joda.time.DateTimeZone
+import org.scalatest.FlatSpec
 
 trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   this: FlatSpec =>
 
-
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(V4){
 

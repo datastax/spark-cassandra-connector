@@ -1,12 +1,14 @@
 package com.datastax.spark.connector.rdd.typeTests
 
 import java.net.InetAddress
+
+import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.SaveMode
 
 import scala.collection.JavaConverters._
 
 case class InetStringRow(pkey: String, ckey1: String, ckey2: String, data1: String)
-class InetTypeTest extends AbstractTypeTest[InetAddress, InetAddress] {
+class InetTypeTest extends AbstractTypeTest[InetAddress, InetAddress] with DefaultCluster {
   override val typeName = "inet"
 
   override val typeData: Seq[InetAddress] = Seq(InetAddress.getByName("192.168.2.1"), InetAddress.getByName("192.168.2.2"),InetAddress.getByName("192.168.2.3"),InetAddress.getByName("192.168.2.4"),InetAddress.getByName("192.168.2.5"))

@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.doc
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.util.{RefBuilder, ConfigCheck}
+import com.datastax.spark.connector.util.{ConfigCheck, RefBuilder}
 import java.io.File
-import scala.collection.JavaConversions._
 
-class DocCheck extends SparkCassandraITFlatSpecBase{
+import com.datastax.spark.connector.cluster.DefaultCluster
+
+class DocCheck extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   val subprojectRoot = System.getenv("PWD") + "/spark-connector"
 

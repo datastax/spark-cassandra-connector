@@ -4,10 +4,11 @@ import java.nio.ByteBuffer
 
 import com.datastax.driver.core.utils.Bytes
 import com.datastax.spark.connector.CassandraRow
+import com.datastax.spark.connector.cluster.DefaultCluster
 
 import scala.collection.JavaConverters._
 
-class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] {
+class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with DefaultCluster {
 
   private def getByteArray(x: String): Array[Byte] = {
     Bytes.getArray(Bytes.fromHexString(x))

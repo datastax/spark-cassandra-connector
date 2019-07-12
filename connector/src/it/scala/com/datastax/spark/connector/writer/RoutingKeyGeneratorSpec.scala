@@ -1,12 +1,13 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, SparkCassandraITFlatSpecBase}
 
 import scala.concurrent.Future
 
-class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase {
-  override val conn = CassandraConnector(defaultConf)
+class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

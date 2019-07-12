@@ -3,6 +3,7 @@ package org.apache.spark.sql
 import java.nio.file.Files
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.cassandra._
@@ -13,9 +14,9 @@ import org.scalatest.time.{Seconds, Span}
 
 import scala.concurrent.Future
 
-class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with Logging with Eventually{
+class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Logging with Eventually{
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

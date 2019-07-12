@@ -6,6 +6,7 @@ import java.util.Date
 import com.datastax.driver.core.HostDistance
 import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
@@ -54,9 +55,9 @@ case class TypeWithTupleSetter(id: Int) {
   var t: (Int, (String, Double)) = null
 }
 
-class CassandraRDDSpec extends SparkCassandraITFlatSpecBase {
+class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val bigTableRowCount = 100000
 
   conn.withSessionDo { session =>

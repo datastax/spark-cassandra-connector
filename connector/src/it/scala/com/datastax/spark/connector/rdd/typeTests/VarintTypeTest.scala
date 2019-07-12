@@ -3,13 +3,14 @@ package com.datastax.spark.connector.rdd.typeTests
 import java.math.BigDecimal
 import java.math.BigInteger
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.SaveMode
 
 case class LongRow(pkey: Long, ckey1: Long, ckey2: Long, data1: Long)
 case class BigDecimalRow(pkey: BigDecimal, ckey1: BigDecimal, ckey2: BigDecimal, data1: BigDecimal)
 
-class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] {
+class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with DefaultCluster {
   override val typeName = "varint"
 
   override val typeData: Seq[BigInteger] = Seq(new BigInteger("1001"), new BigInteger("2002"),new BigInteger("3003"), new BigInteger("4004"), new BigInteger("5005"))

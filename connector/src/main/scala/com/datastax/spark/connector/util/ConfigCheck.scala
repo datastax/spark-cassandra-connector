@@ -1,10 +1,9 @@
 package com.datastax.spark.connector.util
 
-import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf, SessionProxy}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf
@@ -103,17 +102,14 @@ object ConfigCheck {
     }
   }
 
-  /**
-    * Exception to be thrown when unknown properties are found in the SparkConf
-    *
-    * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
-    * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
-    */
-  class ConnectorConfigurationException(
-                                         unknownProps: Seq[String],
-                                         suggestionMap: Map[String, Seq[String]]) extends ConfigurationException {
-
-    override def getMessage: String = {
+  class ConnectorConfigurationException(message: String) extends Exception(message) {
+    /**
+      * Exception to be thrown when unknown properties are found in the SparkConf
+      *
+      * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
+      * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
+      */
+    def this(unknownProps: Seq[String], suggestionMap: Map[String, Seq[String]]) = this({
       val intro =
         "Invalid Config Variables\n" +
           "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
@@ -129,7 +125,8 @@ object ConfigCheck {
         }
       }.mkString("\n")
       intro + body
-    }
+    })
   }
+
 }
 

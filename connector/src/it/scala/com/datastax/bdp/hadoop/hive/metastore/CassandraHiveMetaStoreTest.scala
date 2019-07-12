@@ -8,12 +8,13 @@ package com.datastax.bdp.hadoop.hive.metastore
 
 import java.util
 
+import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.hadoop.hive.metastore.api.{Database, NoSuchObjectException, Partition, Table}
 import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.SpanSugar._
 
-class CassandraHiveMetaStoreTest extends MetaStoreTestBase {
+class CassandraHiveMetaStoreTest extends MetaStoreTestBase with DefaultCluster {
 
   implicit val patience: Eventually.PatienceConfig =
     Eventually.patienceConfig.copy(timeout = 30.seconds, interval = 1.second)

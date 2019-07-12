@@ -21,12 +21,12 @@ class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
     val conductor = new Conductor
     import conductor._
 
-    thread("ThreadA") {
+    threadNamed("ThreadA") {
       val obj = ReflectionUtil.findGlobalObject[ReflectionUtilSpecDummyTrait](
         "com.datastax.spark.connector.util.ReflectionUtilSpecDummyObject")
       obj should be(ReflectionUtilSpecDummyObject)
     }
-    thread("ThreadB") {
+    threadNamed("ThreadB") {
       val obj = ReflectionUtil.findGlobalObject[ReflectionUtilSpecDummyTrait](
         "com.datastax.spark.connector.util.ReflectionUtilSpecDummyObject")
       obj should be(ReflectionUtilSpecDummyObject)

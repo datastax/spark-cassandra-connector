@@ -1,20 +1,20 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.spark.connector.{PartitionKeyColumns, SparkCassandraITFlatSpecBase}
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.cql.Schema
 import com.datastax.driver.core.Token
+import com.datastax.spark.connector.cluster.DefaultCluster
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.writer.RowWriterFactory
+import com.datastax.spark.connector.{PartitionKeyColumns, SparkCassandraITFlatSpecBase}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
-class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase {
+class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   case class SimpleKey(key: Int)
   case class ComplexKey(key1: Int, key2: Int, key3: String)
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   val simpleKeys = Seq(1, -500, 2801, 4000000, -95500).map(SimpleKey(_))
   val complexKey = simpleKeys.map{ case SimpleKey(x) => ComplexKey(x, x, x.toString)}

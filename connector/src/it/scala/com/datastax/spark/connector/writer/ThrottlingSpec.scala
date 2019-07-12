@@ -1,14 +1,15 @@
 package com.datastax.spark.connector.writer
 
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, SparkCassandraITFlatSpecBase}
 import com.datastax.spark.connector.cql.CassandraConnector
 
 import scala.concurrent.Future
 
-class ThrottlingSpec extends SparkCassandraITFlatSpecBase {
+class ThrottlingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)

@@ -1,14 +1,15 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.{Cluster, Row, Session, Statement}
-import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import com.datastax.driver.core.Cluster
+import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
-import org.apache.spark.{SparkConf, SparkContext, SparkException}
+import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+import org.apache.spark.{SparkContext, SparkException}
 import org.scalatest.Inspectors
 
-class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Inspectors {
+class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM with Inspectors {
 
   val ourSc = {
     new SparkContext(
@@ -18,7 +19,7 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Inspec
         "com.datastax.spark.connector.rdd.DummyFactory"))
   }
 
-  override val conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
   val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
   val tableName = "data"
   val noMinimalThreshold = Int.MinValue

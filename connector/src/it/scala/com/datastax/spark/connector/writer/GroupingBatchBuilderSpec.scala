@@ -6,11 +6,12 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core.{BatchStatement, BoundStatement, ConsistencyLevel, Session}
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, SparkCassandraITFlatSpecBase}
 
-class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase {
-  override val conn = CassandraConnector(defaultConf)
+class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
+  override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
     createKeyspace(session)
