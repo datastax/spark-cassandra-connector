@@ -146,9 +146,8 @@ object CassandraConnector extends Logging {
   private def createSession(conf: CassandraConnectorConf): CqlSession = {
     lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.port
     logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
-    val builder = conf.connectionFactory.createSessionBuilder(conf)
     try {
-      val session = builder.build()
+      val session = conf.connectionFactory.createSession(conf)
       logInfo(s"Connected to Cassandra cluster: ${clusterName(session)}")
       session
     }

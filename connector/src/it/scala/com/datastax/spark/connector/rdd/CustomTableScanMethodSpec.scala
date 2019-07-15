@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.Cluster
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -59,6 +59,6 @@ object DummyFactory extends CassandraConnectionFactory {
     columnNames: IndexedSeq[String]): Scanner = throw nie
 
   /** Creates and configures native Cassandra connection */
-  override def createSessionBuilder(conf: CassandraConnectorConf): Cluster =
-    DefaultConnectionFactory.createSessionBuilder(conf)
+  override def createSession(conf: CassandraConnectorConf): CqlSession =
+    DefaultConnectionFactory.createSession(conf)
 }
