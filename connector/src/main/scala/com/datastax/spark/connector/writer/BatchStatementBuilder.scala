@@ -1,12 +1,13 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.ConsistencyLevel
+import com.datastax.oss.driver.api.core.cql.BatchType
 import com.datastax.spark.connector.util.Logging
 
 private[connector] class BatchStatementBuilder(
-    val batchType: BatchStatement.Type,
-    val routingKeyGenerator: RoutingKeyGenerator,
-    val consistencyLevel: ConsistencyLevel) extends Logging {
+  val batchType: BatchType,
+  val routingKeyGenerator: RoutingKeyGenerator,
+  val consistencyLevel: ConsistencyLevel) extends Logging {
 
   /** Converts a sequence of statements into a batch if its size is greater than 1.
     * Sets the routing key and consistency level. */

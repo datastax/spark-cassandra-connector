@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.spark.connector.BatchSize
 import com.datastax.spark.connector.util.PriorityHashMap
-import com.google.common.collect.AbstractIterator
 
 import scala.annotation.tailrec
 import scala.collection.Iterator

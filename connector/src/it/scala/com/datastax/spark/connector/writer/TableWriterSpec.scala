@@ -2,10 +2,10 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
-import com.datastax.driver.core.ProtocolVersion
-import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
@@ -101,8 +101,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     )
   }
 
-  def protocolVersion = conn.withClusterDo(cluster =>
-    cluster.getConfiguration.getProtocolOptions.getProtocolVersion)
+  def protocolVersion = conn.withSessionDo(_.getContext.getProtocolVersion)
 
   private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
@@ -139,7 +138,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("new_kv_table")
   }
 
-  it should "write an RDD of PV4 Tuples to PV3 without breaking" in skipIfProtocolVersionGTE(V4){
+  it should "write an RDD of PV4 Tuples to PV3 without breaking" in skipIfProtocolVersionGTE(DefaultProtocolVersion.V4){
     val rows = Seq((Byte.MinValue, Short.MinValue, java.sql.Date.valueOf("2016-08-03")))
     sc.parallelize(rows).saveAsCassandraTable(ks, "pv3")
 

@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.{ConsistencyLevel, DataType}
+import com.datastax.oss.driver.api.core.{ConsistencyLevel, DefaultConsistencyLevel}
+import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
@@ -48,7 +49,7 @@ case class WriteConf(
       case _ => None
     }
 
-    Seq(toRegularColDef(ttl, DataType.cint()), toRegularColDef(timestamp, DataType.bigint())).flatten
+    Seq(toRegularColDef(ttl, DataTypes.INT), toRegularColDef(timestamp, DataTypes.BIGINT)).flatten
   }
 
   val throttlingEnabled = throughputMiBPS.isDefined
@@ -62,7 +63,7 @@ object WriteConf {
   val ConsistencyLevelParam = ConfigParameter[ConsistencyLevel](
     name = "spark.cassandra.output.consistency.level",
     section = ReferenceSection,
-    default = ConsistencyLevel.LOCAL_QUORUM,
+    default = DefaultConsistencyLevel.LOCAL_QUORUM,
     description = """Consistency level for writing""")
 
   val BatchSizeRowsParam = ConfigParameter[Option[Int]](
@@ -168,7 +169,7 @@ object WriteConf {
 
     val batchSizeInBytes = conf.getInt(BatchSizeBytesParam.name, BatchSizeBytesParam.default)
 
-    val consistencyLevel = ConsistencyLevel.valueOf(
+    val consistencyLevel = DefaultConsistencyLevel.valueOf(
       conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name()))
 
     val batchSizeInRowsStr = conf.get(BatchSizeRowsParam.name, "auto")
