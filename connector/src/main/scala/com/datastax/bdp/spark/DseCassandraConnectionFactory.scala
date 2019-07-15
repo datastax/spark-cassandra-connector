@@ -57,7 +57,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   }
 
 
-  override def createCluster(conf: CassandraConnectorConf): Cluster = {
+  override def createSessionBuilder(conf: CassandraConnectorConf): Cluster = {
     getClusterBuilder(conf).build
   }
 
@@ -111,7 +111,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
-  /*
+  /* TODO:
   def sslOptions(conf: CassandraConnectorConf): Option[SSLOptions] = {
     def buildSSLOptions(clientConf: ClientConfiguration): Option[SSLOptions] = {
       getSSLContext(clientConf).map {

@@ -38,8 +38,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val maxCon = CassandraConnector(
       defaultConf
           .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "5")
-          .set(CassandraConnectorConf.MinRemoteConnectionsPerExecutorParam.name, "3")
-          .set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "3"))
+          .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "3"))
 
     val poolingConf = maxCon.withClusterDo(_.getConfiguration.getPoolingOptions)
     poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (5)

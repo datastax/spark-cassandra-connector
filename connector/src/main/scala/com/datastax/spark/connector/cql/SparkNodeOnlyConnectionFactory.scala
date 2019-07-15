@@ -21,7 +21,7 @@ import com.datastax.spark.connector.util.Logging
 case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   val AnalyticsWorkload: String = "Analytics"
 
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
+  override def createSessionBuilder(conf: CassandraConnectorConf): Cluster =
     DseCassandraConnectionFactory
       .getClusterBuilder(conf)
       .withLoadBalancingPolicy(new SparkNodeOnlyLoadBalancingPolicy(conf.hosts, conf.localDC))

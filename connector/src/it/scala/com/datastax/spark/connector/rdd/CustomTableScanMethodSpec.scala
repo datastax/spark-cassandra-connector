@@ -59,6 +59,6 @@ object DummyFactory extends CassandraConnectionFactory {
     columnNames: IndexedSeq[String]): Scanner = throw nie
 
   /** Creates and configures native Cassandra connection */
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
-    DefaultConnectionFactory.createCluster(conf)
+  override def createSessionBuilder(conf: CassandraConnectorConf): Cluster =
+    DefaultConnectionFactory.createSessionBuilder(conf)
 }

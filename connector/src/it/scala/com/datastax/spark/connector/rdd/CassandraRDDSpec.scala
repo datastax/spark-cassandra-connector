@@ -1202,8 +1202,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   it should "allow forcing a larger maxConnection based on a runtime conf change" in {
     val expected = 10
     val conf = sc.getConf
-        .set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, expected.toString)
-        .set(CassandraConnectorConf.MinRemoteConnectionsPerExecutorParam.name, expected.toString)
+        .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, expected.toString)
         .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, expected.toString)
     val rdd = sc.cassandraTable(ks, "big_table").withConnector(CassandraConnector(conf))
     val poolingOptions = rdd.connector.withClusterDo(_.getConfiguration.getPoolingOptions)

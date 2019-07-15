@@ -6,6 +6,7 @@ import java.util.{Collection => JCollection, Iterator => JIterator}
 
 import com.datastax.driver.core._
 import com.datastax.driver.core.policies.LoadBalancingPolicy
+import com.datastax.oss.driver.api.core.metadata.Node
 import com.datastax.spark.connector.util.Logging
 
 import scala.collection.JavaConversions._
@@ -152,13 +153,14 @@ object LocalNodeFirstLoadBalancingPolicy {
 
   /** Returns a common data center name of the given contact points.
     *
-    * For each contact point there must be a [[Host]] in `allHosts` collection in order to determine its data center
+    * For each contact point there must be a [[Node]] in `allNodes` collection in order to determine its data center
     * name. If contact points belong to more than a single data center, an [[IllegalArgumentException]] is thrown.
     */
-  def determineDataCenter(contactPoints: Set[InetAddress], allHosts: Set[Host]): String = {
-    val dcs = allHosts
-      .filter(host => contactPoints.contains(host.getAddress))
-      .flatMap(host => Option(host.getDatacenter))
+  def determineDataCenter(contactPoints: Set[InetAddress], allNodes: Set[Node]): String = {
+    // TODO: consider using datastax-java-driver.basic.load-balancing-policy.local-datacenter if default load balancing policy is used.
+    val dcs = allNodes
+      .filter(node => contactPoints.contains(node.getBroadcastAddress))
+      .flatMap(node => Option(node.getDatacenter))
     assert(dcs.nonEmpty, "There are no contact points in the given set of hosts")
     require(dcs.size == 1, s"Contact points contain multiple data centers: ${dcs.mkString(", ")}")
     dcs.head

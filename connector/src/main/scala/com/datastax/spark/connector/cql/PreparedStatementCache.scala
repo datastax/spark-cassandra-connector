@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{RegularStatement, Session, Cluster, PreparedStatement}
+import com.datastax.driver.core.{Cluster, PreparedStatement, RegularStatement, Session}
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.util.Logging
 
 import scala.collection.concurrent.TrieMap
@@ -10,7 +11,7 @@ import scala.collection.concurrent.TrieMap
 object PreparedStatementCache extends Logging {
 
   private val clusterCache = 
-    TrieMap[Cluster, TrieMap[String, PreparedStatement]]()
+    TrieMap[CqlSession, TrieMap[String, PreparedStatement]]()
 
   private def get(cluster: Cluster, query: String): Option[PreparedStatement] =
     for (statementCache <- clusterCache.get(cluster);
@@ -25,7 +26,7 @@ object PreparedStatementCache extends Logging {
   }
 
   /** Removes all statements associated with the `Cluster` from the cache. */
-  def remove(cluster: Cluster) {
+  def remove(cluster: CqlSession) {
     synchronized {
       clusterCache.remove(cluster)
     }
