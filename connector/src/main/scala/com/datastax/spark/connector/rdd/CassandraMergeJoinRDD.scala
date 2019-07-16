@@ -10,13 +10,15 @@ import java.io.IOException
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
-
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row, Statement}
+import com.datastax.oss.driver.api.core.metadata.Metadata
+import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, Schema}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CqlTokenRange, NodeAddresses}
@@ -45,7 +47,7 @@ class CassandraMergeJoinRDD[L,R](
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(table) => table.partitionKey
       case None => {
-        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
+        val metadata: Metadata = connector.withSessionDo(_.getMetadata)
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
         val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
         throw new IOException(errorMessage)
@@ -102,22 +104,23 @@ class CassandraMergeJoinRDD[L,R](
   }
 
   private def createStatement(
-    session: Session,
+    session: CqlSession,
     readConf: ReadConf,
     cql: String,
-    values: Any*): Statement = {
+    values: Any*): BoundStatement = {
 
     try {
       val stmt = session.prepare(cql)
-      stmt.setConsistencyLevel(readConf.consistencyLevel)
-      val converters = stmt.getVariables
+      //TODO FIX CONFIGURATION
+      //stmt.setConsistencyLevel(readConf.consistencyLevel)
+      val converters = stmt.getVariableDefinitions
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
           yield converter.convert(value)
       val bstm = stmt.bind(convertedValues: _*)
-      bstm.setFetchSize(readConf.fetchSizeInRows)
+      //bstm.setFetchSize(readConf.fetchSizeInRows)
       bstm
     }
     catch {
@@ -137,7 +140,7 @@ class CassandraMergeJoinRDD[L,R](
   }
 
   private def fetchTokenRange[T](
-    session: Session,
+    session: CqlSession,
     fromRDD: CassandraTableScanRDD[T],
     range: CqlTokenRange[_, _],
     inputMetricsUpdater: InputMetricsUpdater): (CassandraRowMetadata, Iterator[Row]) = {
@@ -168,7 +171,7 @@ class CassandraMergeJoinRDD[L,R](
   override def compute(split: Partition, context: TaskContext): Iterator[(Seq[L], Seq[R])] = {
 
     /** Open two sessions if Cluster Configurations are different **/
-    def openSessions(): (Session, Session) = {
+    def openSessions(): (CqlSession, CqlSession) = {
       if (leftScanRDD.connector == rightScanRDD.connector) {
         val session = leftScanRDD.connector.openSession()
         (session, session)
@@ -177,7 +180,7 @@ class CassandraMergeJoinRDD[L,R](
       }
     }
 
-    def closeSessions(leftSession: Session, rightSession : Session): Unit = {
+    def closeSessions(leftSession: CqlSession, rightSession : CqlSession): Unit = {
       if (leftSession != rightSession) rightSession.close()
       leftSession.close()
     }
