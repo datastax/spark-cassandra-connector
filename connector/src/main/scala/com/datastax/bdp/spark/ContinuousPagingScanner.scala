@@ -6,8 +6,11 @@
 package com.datastax.bdp.spark
 
 import scala.collection.JavaConverters._
-
-import com.datastax.driver.core._
+import com.datastax.dse.driver.api.core.DseSession
+import com.datastax.dse.driver.api.core.cql.continuous.ContinuousResultSet
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, Statement}
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, _}
 import com.datastax.spark.connector.rdd.ReadConf
@@ -21,6 +24,10 @@ case class ContinuousPagingScanner(
   val TARGET_PAGE_SIZE_IN_BYTES: Int = 5000 * 50 // 5000 rows * 50 bytes per row
   val MIN_PAGES_PER_SECOND = 1000
 
+  //TODO This must be moved to session initilization? We can no longer pass options at execution time without deriving a new profile
+  // I think the right thing to do, to support old configurations as well as new is to create a new profile based on options as
+  // Set using derivied profiles, but this probably can't happen here
+  /**
   private val cpOptions =  readConf.throughputMiBPS match {
     case Some(throughput) =>
       val bytesPerSecond = (throughput * 1024 * 1024).toInt
@@ -55,25 +62,26 @@ case class ContinuousPagingScanner(
         .withMaxPagesPerSecond(readConf.readsPerSec.getOrElse(Integer.MAX_VALUE))
         .build()
   }
+    **/
 
   /**
     * Attempts to get or create a session for this execution thread.
     */
   private val cpSession = new CassandraConnector(connConf)
     .openSession()
-    .asInstanceOf[ContinuousPagingSession]
+    .asInstanceOf[DseSession]
 
-  private val codecRegistry = cpSession.getCluster.getConfiguration.getCodecRegistry
+  private val codecRegistry = cpSession.getContext.getCodecRegistry
 
-  private def asBoundStatement(statement: Statement): Option[BoundStatement] = {
+  private def asBoundStatement(statement: Statement[_]): Option[BoundStatement] = {
     statement match {
       case s: BoundStatement => Some(s)
       case _ => None
     }
   }
 
-  def isSolr(statement: Statement): Boolean = {
-    asBoundStatement(statement).exists(_.preparedStatement().getQueryString.contains("solr_query"))
+  def isSolr(statement: Statement[_]): Boolean = {
+    asBoundStatement(statement).exists(_.getPreparedStatement.getQuery.contains("solr_query"))
   }
 
   /**
@@ -82,9 +90,9 @@ case class ContinuousPagingScanner(
     */
   override def close(): Unit = cpSession.close
 
-  override def getSession(): Session = cpSession
+  override def getSession(): CqlSession = cpSession
 
-  override def scan(statement: Statement): ScanResult = {
+  override def scan[StatementT <: Statement[StatementT]](statement: StatementT): ScanResult = {
      maybeExecutingAs(statement, readConf.executeAs)
 
     if (isSolr(statement)) {
@@ -94,16 +102,16 @@ case class ContinuousPagingScanner(
       ScanResult(regularIterator, CassandraRowMetadata.fromResultSet(columnNames, regularResult, codecRegistry))
 
     } else {
-      val cpResult = cpSession.executeContinuously(statement, cpOptions)
+      val cpResult = cpSession.executeContinuously(statement)
       val cpIterator = cpResult.iterator().asScala
       ScanResult(cpIterator, getMetaData(cpResult))
     }
   }
 
-  private def getMetaData(result: ContinuousPagingResult) = {
+  private def getMetaData(result: ContinuousResultSet) = {
     import scala.collection.JavaConverters._
-    val columnDefs = result.getColumnDefinitions.asList().asScala
-    val rsColumnNames = columnDefs.map(_.getName)
+    val columnDefs = result.getColumnDefinitions.asScala
+    val rsColumnNames = columnDefs.map(_.getName.asInternal())
     val codecs = columnDefs
       .map(col => codecRegistry.codecFor(col.getType))
       .asInstanceOf[Seq[TypeCodec[AnyRef]]]
