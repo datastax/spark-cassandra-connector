@@ -6,8 +6,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.{Duration, LocalDate}
-import com.datastax.driver.dse.geometry.{LineString, Point, Polygon}
+import com.datastax.dse.driver.api.core.data.geometry._
+import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
@@ -144,7 +144,7 @@ case object DateType extends PrimitiveColumnType[Int] {
   def scalaTypeTag = implicitly[TypeTag[Int]]
   def cqlTypeName = "date"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[LocalDate])
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.LocalDate])
 }
 
 /* The implicit conversions we usually do between types will not work as expected here, Since the
@@ -159,11 +159,11 @@ case object TimeType extends PrimitiveColumnType[Long] {
     new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
 }
 
-case object DurationType extends PrimitiveColumnType[Duration] {
-  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Duration]] }
+case object DurationType extends PrimitiveColumnType[CqlDuration] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[CqlDuration]] }
   def cqlTypeName = "DurationType"
   def converterToCassandra =
-    new OptionToNullConverter(TypeConverter.forType[Duration])
+    new OptionToNullConverter(TypeConverter.forType[CqlDuration])
 }
 
 case object PointType extends PrimitiveColumnType[Point] {
