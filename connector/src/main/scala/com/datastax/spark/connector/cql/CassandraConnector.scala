@@ -131,24 +131,12 @@ object CassandraConnector extends Logging {
   private[cql] val sessionCache = new RefCountedCache[CassandraConnectorConf, CqlSession](
     createSession, destroySession, alternativeConnectionConfigs)
 
-  // TODO: is there no better way to retrieve this?
-  private def clusterName(session: CqlSession): String = {
-    (session match {
-      case defaultSession: DefaultSession =>
-        defaultSession.getPools.asScala.values
-          .toStream
-          .flatMap(pool => Option(pool.next()).map(channel => channel.getClusterName))
-          .headOption
-      case _ => None
-    }).getOrElse("<couldn't retrieve cluster name>")
-  }
-
   private def createSession(conf: CassandraConnectorConf): CqlSession = {
     lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.port
     logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
     try {
       val session = conf.connectionFactory.createSession(conf)
-      logInfo(s"Connected to Cassandra cluster: ${clusterName(session)}")
+      logInfo(s"Connected to Cassandra cluster.")
       session
     }
     catch {
@@ -158,9 +146,8 @@ object CassandraConnector extends Logging {
   }
 
   private def destroySession(session: CqlSession) {
-    val clusterName = clusterName(session)
     session.close()
-    logInfo(s"Disconnected from Cassandra cluster: $clusterName")
+    logInfo(s"Disconnected from Cassandra cluster.")
   }
 
   private def dataCenterNodes(conf: CassandraConnectorConf, session: CqlSession): Set[InetAddress] = {
