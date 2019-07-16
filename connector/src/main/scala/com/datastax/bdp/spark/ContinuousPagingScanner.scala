@@ -68,7 +68,6 @@ case class ContinuousPagingScanner(
   private def asBoundStatement(statement: Statement): Option[BoundStatement] = {
     statement match {
       case s: BoundStatement => Some(s)
-      case s: ReplicaAwareStatement => asBoundStatement(s.wrapped)
       case _ => None
     }
   }

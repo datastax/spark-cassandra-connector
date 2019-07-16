@@ -3,6 +3,8 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.CassandraLimit._
@@ -304,19 +306,19 @@ class CassandraTableScanRDD[R] private[connector](
     (queryTemplate, queryParamValues)
   }
 
-  private def createStatement(session: Session, cql: String, values: Any*): Statement = {
+  private def createStatement(session: CqlSession, cql: String, values: Any*): BoundStatement = {
     try {
-      val stmt = session.prepare(cql).setIdempotent(true)
-      stmt.setConsistencyLevel(consistencyLevel)
-      val converters = stmt.getVariables
+      val stmt = session.prepare(cql)
+      val converters = stmt.getVariableDefinitions
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
         yield converter.convert(value)
-      val bstm = stmt.bind(convertedValues: _*)
-      bstm.setFetchSize(fetchSize)
-      bstm
+      stmt.bind(convertedValues)
+        .setIdempotent(true)
+        .setConsistencyLevel(consistencyLevel)
+        .setPageSize(fetchSize)
     }
     catch {
       case t: Throwable =>
@@ -326,7 +328,7 @@ class CassandraTableScanRDD[R] private[connector](
 
   private def fetchTokenRange(
     scanner: Scanner,
-    range: CqlTokenRange[_, _],
+    range: CqlTokenRange[_, _ <: ConnectorToken[_]],
     inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
 
     val session = scanner.getSession()
@@ -337,9 +339,10 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val replicaAwareStmt = new ReplicaAwareStatement(stmt, range.range.replicas)
+      .setRoutingToken(range.range.start.nativeToken)
+
     try {
-      val scanResult = scanner.scan(replicaAwareStmt)
+      val scanResult = scanner.scan(stmt)
       val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")

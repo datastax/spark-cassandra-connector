@@ -4,14 +4,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.LongAdder
 
 import scala.concurrent.duration.{FiniteDuration, _}
-
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.util.ThreadUtils
-
 import com.datastax.spark.connector.cql._
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.rdd.ReadConf
 
 /** A trait that provides a method to update read metrics which are collected for connector related tasks.
