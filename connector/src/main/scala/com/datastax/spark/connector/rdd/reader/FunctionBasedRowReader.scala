@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.{CassandraRowMetadata, GettableData}
 import com.datastax.spark.connector.types.TypeConverter
 
