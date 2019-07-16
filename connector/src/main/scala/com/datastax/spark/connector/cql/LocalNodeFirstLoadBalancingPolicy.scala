@@ -53,7 +53,7 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
     this.distanceReporter = distanceReporter
 
     this.nodes.foreach { node =>
-      distanceReporter.setDistance(node, distanceReporter(node))
+      distanceReporter.setDistance(node, distance(node))
     }
   }
 
@@ -114,7 +114,7 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
     // Therefore we want to really replace the object now, to get full information on DC:
     nodes -= node
     nodes += node
-    distanceReporter.setDistance(node, distanceReporter(node))
+    distanceReporter.setDistance(node, distance(node))
     logInfo(s"Added node ${toAddress(node)} (${node.getDatacenter})")
   }
 
@@ -126,7 +126,7 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
   override def close(): Unit = {}
 
   override def onUp(node: Node): Unit = {
-    distanceReporter.setDistance(node, distanceReporter(node))
+    distanceReporter.setDistance(node, distance(node))
   }
 
   override def onDown(node: Node): Unit = {}
