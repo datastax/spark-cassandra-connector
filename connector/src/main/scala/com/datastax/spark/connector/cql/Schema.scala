@@ -1,22 +1,21 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import java.util.Optional
 
 import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.oss.driver.api.core.metadata.Metadata
-import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, KeyspaceMetadata, RelationMetadata, TableMetadata, ViewMetadata}
+import com.datastax.oss.driver.api.core.metadata.schema._
+import com.datastax.spark.connector._
+import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
+import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
+import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.util.{Logging, NameTools}
+import org.apache.spark.sql.Dataset
 
 import scala.collection.JavaConverters._
 import scala.language.existentials
 import scala.util.{Properties, Try}
-import org.apache.spark.sql.Dataset
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
-import com.datastax.spark.connector.types.{ColumnType, CounterType}
-import com.datastax.spark.connector.util.NameTools.toName
-import com.datastax.spark.connector.util.{Logging, NameTools}
-import com.datastax.spark.connector.util.Quote._
 
 /** Abstract column / field definition.
   * Common to tables and user-defined types */
@@ -331,9 +330,6 @@ object Schema extends Logging {
     def fetchKeyspaces(metadata: Metadata, systemKeyspaces: Set[String]): Set[KeyspaceDef] =
       for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
         KeyspaceDef(toName(keyspace.getName), fetchTables(keyspace), systemKeyspaces.contains(toName(keyspace.getName)))
-
-    def toOption[T](optional: Optional[T]): Option[T] =
-      if (optional.isPresent) Some(optional.get()) else None
 
     def handleId(table: TableMetadata, columnName: String): String =
       Option(table.getColumn(columnName)).flatMap(toOption).map(c => toName(c.getName)).getOrElse(columnName)

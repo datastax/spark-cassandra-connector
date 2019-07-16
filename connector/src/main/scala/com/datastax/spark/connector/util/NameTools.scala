@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.metadata.Metadata
+import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConversions._
@@ -90,7 +90,4 @@ object NameTools {
     case Some(KeyspaceSuggestions(keyspaces)) => s"Couldn't find table $table in $keyspace - Found similar keyspaces with that table:\n${keyspaces.map(k => s"$k.$table").mkString("\n")}"
     case Some(KeyspaceAndTableSuggestions(kt)) => s"Couldn't find table $table or keyspace $keyspace - Found similar keyspaces and tables:\n${kt.map { case (k, t) => s"$k.$t"}.mkString("\n")}"
   }
-
-  //TODO use CqlIdentifier instead? Use implicit conversion to String? To internal string?
-  def toName(id: CqlIdentifier): String = id.asInternal()
 }

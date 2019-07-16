@@ -2,7 +2,7 @@ package com.datastax.spark.connector
 
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
-import com.datastax.spark.connector.util.NameTools.toName
+import com.datastax.spark.connector.util.DriverUtil.toName
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._

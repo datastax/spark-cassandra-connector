@@ -4,9 +4,9 @@ import java.io.IOException
 import java.net.InetAddress
 
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.internal.core.session.DefaultSession
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
+import com.datastax.spark.connector.util.DriverUtil.toAddress
 import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -154,10 +154,10 @@ object CassandraConnector extends Logging {
     val allNodes = session.getMetadata.getNodes.asScala.values.toSet
     val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(conf.hosts, allNodes))
     val nodes = allNodes
-      .collect { case v if v.getDatacenter == dcToUse && v.getBroadcastAddress.isPresent => v.getBroadcastAddress.get().getAddress }
+      .collect { case n if n.getDatacenter == dcToUse && toAddress(n).isDefined => toAddress(n) }
     if (nodes.isEmpty) {
       throw new ConnectorConfigurationException(s"Could not determine suitable nodes for DC: $dcToUse and known nodes: " +
-        s"${allNodes.map(n => (n.getHostId, n.getBroadcastAddress)).mkString(", ")}")
+        s"${allNodes.map(n => (n.getHostId, toAddress(n))).mkString(", ")}")
     }
     nodes
   }

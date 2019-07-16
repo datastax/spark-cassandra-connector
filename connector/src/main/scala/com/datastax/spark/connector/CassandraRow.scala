@@ -1,16 +1,10 @@
 package com.datastax.spark.connector
 
-import java.nio.ByteBuffer
-
-import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.cql.{ColumnDefinitions, PreparedStatement, ResultSet, Row}
-import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.spark.connector.util.NameTools
-import com.datastax.spark.connector.util.NameTools.toName
-
-import scala.tools.nsc.interpreter.session
+import com.datastax.spark.connector.util.DriverUtil.toName
 
 /** Represents a single row fetched from Cassandra.
   * Offers getters to read individual fields by column name or column index.

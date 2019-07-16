@@ -24,6 +24,7 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
     val loader = DefaultConnectionFactory.connectorLoader(conf)
+       // FIXME: this works only for DefaultLoadBalancingPolicy
       .withString(DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[SparkNodeOnlyFilter].getCanonicalName)
       .build()
 
