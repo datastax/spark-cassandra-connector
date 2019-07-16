@@ -2,12 +2,9 @@ package com.datastax.spark.connector.cql
 
 import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, Proxy}
 
-import com.datastax.spark.connector.util.Logging
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.spark.connector.util.Logging
 import org.apache.commons.lang3.ClassUtils
-
-import collection.JavaConverters._
 
 /** Wraps a `Session` and intercepts:
   *  - `close` method to invoke `afterClose` handler
@@ -18,9 +15,6 @@ class SessionProxy(session: CqlSession, afterClose: CqlSession => Any) extends I
 
   override def invoke(proxy: Any, method: Method, args: Array[AnyRef]) = {
     try {
-      val StringClass = classOf[String]
-      val RegularStatementClass = classOf[RegularStatement]
-
       (method.getName, method.getParameterTypes) match {
         case ("close", Array()) =>
           null
@@ -29,10 +23,6 @@ class SessionProxy(session: CqlSession, afterClose: CqlSession => Any) extends I
           null
         case ("isClosed", Array()) =>
           closed.asInstanceOf[AnyRef]
-        case ("prepare", Array(StringClass)) =>
-          PreparedStatementCache.prepareStatement(session, new SimpleStatement(args(0).asInstanceOf[String]))
-        case ("prepare", Array(RegularStatementClass)) =>
-          PreparedStatementCache.prepareStatement(session, args(0).asInstanceOf[RegularStatement])
         case _ =>
           try {
             method.invoke(session, args: _*)

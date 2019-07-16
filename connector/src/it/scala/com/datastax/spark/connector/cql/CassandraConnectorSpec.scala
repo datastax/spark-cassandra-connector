@@ -58,33 +58,6 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     }
   }
 
-  it should "cache String PreparedStatements" in {
-    conn.withSessionDo { session =>
-      session.execute(createKeyspaceCql)
-      session.execute(s"DROP TABLE IF EXISTS $ks.pstmt")
-      session.execute(s"CREATE TABLE $ks.pstmt (key INT PRIMARY KEY, value TEXT)")
-      for (_ <- 1 to 10) {
-        session.prepare(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
-      }
-      assert(PreparedStatementCache.getSize(session.getCluster()) == 1)
-    }
-  }
-
-  it should "cache RegularStatement Prepared Statements" in {
-    conn.withSessionDo { session =>
-      PreparedStatementCache.remove(session.getCluster)
-      session.execute(createKeyspaceCql)
-      session.execute(s"DROP TABLE IF EXISTS $ks.pstmt")
-      session.execute(s"CREATE TABLE $ks.pstmt (key INT PRIMARY KEY, value TEXT)")
-      val statement = new SimpleStatement(s"INSERT INTO $ks.pstmt (key, value) VALUES (?, ?)")
-      assert(PreparedStatementCache.getSize(session.getCluster()) == 0)
-      for (_ <- 1 to 10) {
-        session.prepare(statement)
-      }
-      assert(PreparedStatementCache.getSize(session.getCluster()) == 1)
-    }
-  }
-
   it should "disconnect from the cluster after use" in {
     val cluster = conn.withClusterDo { cluster => cluster }
     Thread.sleep(

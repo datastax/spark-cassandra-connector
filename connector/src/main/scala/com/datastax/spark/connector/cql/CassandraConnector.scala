@@ -160,7 +160,6 @@ object CassandraConnector extends Logging {
   private def destroySession(session: CqlSession) {
     val clusterName = clusterName(session)
     session.close()
-    PreparedStatementCache.remove(session)
     logInfo(s"Disconnected from Cassandra cluster: $clusterName")
   }
 
