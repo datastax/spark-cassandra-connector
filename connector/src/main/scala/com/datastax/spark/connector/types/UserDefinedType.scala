@@ -4,13 +4,12 @@ import java.io.ObjectOutputStream
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
-
-
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-
-import com.datastax.driver.core.{UDTValue => DriverUDTValue, UserType, DataType}
+import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
+import com.datastax.oss.driver.api.core.`type`.DataType
+import com.datastax.oss.driver.api.core.`type`.{UserDefinedType => DriverUserDefinedType}
 import com.datastax.spark.connector.{ColumnName, UDTValue}
-import com.datastax.spark.connector.cql.{StructDef, FieldDef}
+import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.util.CodecRegistryUtil
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
@@ -75,11 +74,11 @@ object UserDefinedType {
 
   /** Converts connector's UDTValue to Cassandra Java Driver UDTValue.
     * Used when saving data to Cassandra.  */
-  class DriverUDTValueConverter(dataType: UserType)
+  class DriverUDTValueConverter(dataType: DriverUserDefinedType)
     extends TypeConverter[DriverUDTValue] {
 
     val fieldNames = dataType.getFieldNames.toIndexedSeq
-    val fieldTypes = fieldNames.map(dataType.getFieldType)
+    val fieldTypes = dataType.getFieldTypes.toIndexedSeq
     val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
 
     override def targetTypeTag = implicitly[TypeTag[DriverUDTValue]]
@@ -90,7 +89,7 @@ object UserDefinedType {
         for (i <- fieldNames.indices) {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
-          val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName))
+          val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName.asInternal()))
           toSave.set(i, fieldValue, CodecRegistryUtil.codecFor(fieldTypes(i), fieldValue))
         }
         toSave
@@ -104,12 +103,5 @@ object UserDefinedType {
         "required underlying " + classOf[DataType].getName + " is not Serializable.")
 
   }
-
-  def driverUDTValueConverter(dataType: DataType) =
-    dataType match {
-      case dt: UserType => new DriverUDTValueConverter(dt)
-      case _            => throw new IllegalArgumentException("UserType expected.")
-    }
-
 }
 
