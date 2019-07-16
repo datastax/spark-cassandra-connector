@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
+import com.datastax.spark.connector.util.NameTools.toName
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -17,8 +18,7 @@ final case class UDTValue(columnNames: IndexedSeq[String], columnValues: Indexed
 object UDTValue {
 
   def fromJavaDriverUDTValue(value: DriverUDTValue): UDTValue = {
-    //TODO use CqlIdentifier instead? Use internal or leave as is (asCql)
-    val fields = value.getType.getFieldNames.map(_.asCql(false)).toIndexedSeq
+    val fields = value.getType.getFieldNames.map(f => toName(f)).toIndexedSeq
     val values = fields.map(GettableData.get(value, _))
     UDTValue(fields, values)
   }

@@ -7,6 +7,8 @@ import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.cql.{ColumnDefinitions, PreparedStatement, ResultSet, Row}
 import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.spark.connector.util.NameTools
+import com.datastax.spark.connector.util.NameTools.toName
 
 import scala.tools.nsc.interpreter.session
 
@@ -140,7 +142,7 @@ object CassandraRowMetadata {
   }
 
   def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, registry: CodecRegistry) :CassandraRowMetadata = {
-    fromColumnDefs(columnNames, rs.getColumnDefinitions.asList(), registry)
+    fromColumnDefs(columnNames, rs.getColumnDefinitions, registry)
   }
 
   def fromPreparedStatement(columnNames: IndexedSeq[String], statement: PreparedStatement, registry: CodecRegistry) :CassandraRowMetadata = {
@@ -150,8 +152,7 @@ object CassandraRowMetadata {
   private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: ColumnDefinitions, registry: CodecRegistry) = {
     import scala.collection.JavaConversions._
     val scalaColumnDefs = columnDefs.toList
-    //TODO use CqlIdentifier instead? Use internal or leave as is (asCql)
-    val rsColumnNames = scalaColumnDefs.map(_.getName.asCql(false))
+    val rsColumnNames = scalaColumnDefs.map(c => toName(c.getName))
     val codecs = scalaColumnDefs.map(col => registry.codecFor(col.getType))
       .asInstanceOf[List[TypeCodec[AnyRef]]]
     CassandraRowMetadata(columnNames, Some(rsColumnNames.toIndexedSeq), codecs.toIndexedSeq)
