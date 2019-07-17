@@ -369,9 +369,9 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
             val queryRequest = SimpleStatement.newInstance(request, solrStringNoFailoverTolerant)
               .setPageSize(Integer.MAX_VALUE)
             val totalFuture = session.executeAsync(totalRequest)
-            val queryFuture = session.executeAsync(queryRequest)
-            (totalFuture.get(5, TimeUnit.SECONDS).one().getLong(0),
-              queryFuture.get(5, TimeUnit.SECONDS).one().getLong(0))
+            val queryFuture = session.executeAsync(queryRequest)//TODO THIS can be done in a more reactive way I believe
+            (totalFuture.toCompletableFuture.get(5, TimeUnit.SECONDS).one().getLong(0),
+              queryFuture.toCompletableFuture.get(5, TimeUnit.SECONDS).one().getLong(0))
           }
 
           val queryRatio = if (totalRecords == 0) 0 else queryRecords.toDouble / totalRecords.toDouble
