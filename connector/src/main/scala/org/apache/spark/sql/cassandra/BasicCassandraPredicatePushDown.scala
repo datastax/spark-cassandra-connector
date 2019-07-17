@@ -32,7 +32,7 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   table: TableDef,
   pv: ProtocolVersion = ProtocolVersion.DEFAULT) {
 
-  val pvOrdering = implicitly[Ordering[ProtocolVersion]]
+  val pvOrdering = Ordering.fromLessThan[ProtocolVersion]((a,b) => a.getCode < b.getCode)
   import pvOrdering._
 
   private val Predicates = implicitly[PredicateOps[Predicate]]

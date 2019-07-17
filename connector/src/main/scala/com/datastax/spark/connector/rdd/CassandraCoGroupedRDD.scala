@@ -7,16 +7,18 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row}
+
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
-
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-
-import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.metadata.Metadata
+import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, Schema}
 import com.datastax.spark.connector.rdd.CassandraCoGroupedRDD._
@@ -45,7 +47,7 @@ class CassandraCoGroupedRDD[T](
     Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(table) => table.partitionKey
       case None => {
-        val metadata: Metadata = connector.withClusterDo(_.getMetadata)
+        val metadata: Metadata = connector.withSessionDo(_.getMetadata)
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
         val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
         throw new IOException(errorMessage)
@@ -113,23 +115,23 @@ class CassandraCoGroupedRDD[T](
   }
 
   private def createStatement(
-    session: Session,
+    session: CqlSession,
     readConf: ReadConf,
     cql: String,
-    values: Any*): Statement = {
+    values: Any*): BoundStatement = {
 
     try {
       val stmt = session.prepare(cql)
-      stmt.setConsistencyLevel(readConf.consistencyLevel)
-      val converters = stmt.getVariables
+      val converters = stmt.getVariableDefinitions
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
           yield converter.convert(value)
-      val bstm = stmt.bind(convertedValues: _*)
-      bstm.setFetchSize(readConf.fetchSizeInRows)
-      bstm
+      stmt.bind(convertedValues)
+        .setIdempotent(true)
+        .setConsistencyLevel(readConf.consistencyLevel)
+        .setPageSize(readConf.fetchSizeInRows)
     }
     catch {
       case t: Throwable =>
@@ -145,7 +147,7 @@ class CassandraCoGroupedRDD[T](
   }
 
   private def fetchTokenRange[T](
-    session: Session,
+    session: CqlSession,
     fromRDD: CassandraTableScanRDD[T],
     range: CqlTokenRange[_, _],
     inputMetricsUpdater: InputMetricsUpdater): (CassandraRowMetadata, Iterator[Row]) = {
@@ -174,7 +176,7 @@ class CassandraCoGroupedRDD[T](
   @DeveloperApi
   override def compute(split: Partition, context: TaskContext): Iterator[Seq[Seq[T]]] = {
     /** Open two sessions if Cluster Configurations are different **/
-    def openSession(rdd: CassandraTableScanRDD[T]): Session = {
+    def openSession(rdd: CassandraTableScanRDD[T]): CqlSession = {
          if (connector == rdd.connector) {
            connector.openSession()
         } else {
@@ -182,13 +184,13 @@ class CassandraCoGroupedRDD[T](
         }
     }
 
-    def closeSessions(sessions: Seq[Session]): Unit = {
+    def closeSessions(sessions: Seq[CqlSession]): Unit = {
       for (s<-sessions) {
         if (!s.isClosed) s.close()
       }
     }
 
-    val rddWithSessions: Seq[(CassandraTableScanRDD[T], Session)] = scanRDDs.map (rdd => (rdd, openSession(rdd)))
+    val rddWithSessions: Seq[(CassandraTableScanRDD[T], CqlSession)] = scanRDDs.map (rdd => (rdd, openSession(rdd)))
 
     type V = t forSome { type t }
     type K = t forSome { type t <: com.datastax.spark.connector.rdd.partitioner.dht.Token[V] }

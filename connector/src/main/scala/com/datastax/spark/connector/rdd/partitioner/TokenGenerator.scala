@@ -1,10 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.driver.core.{Token, MetadataHook}
+import com.datastax.driver.core.MetadataHook
+import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
 import com.datastax.spark.connector.writer.{BoundStatementBuilder, RoutingKeyGenerator, RowWriter}
-import com.datastax.spark.connector.util.Logging
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine
@@ -16,12 +17,12 @@ private[connector] class TokenGenerator[T] (
   rowWriter: RowWriter[T]) extends Serializable with Logging {
 
   val protocolVersion = connector.withSessionDo { session =>
-    session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+    session.getContext.getProtocolVersion
   }
 
   //Makes a PreparedStatement which we use only to generate routing keys on the client
   val stmt = connector.withSessionDo { session => prepareDummyStatement(session, tableDef) }
-  val metadata = connector.withClusterDo(_.getMetadata)
+  val metadata = connector.withSessionDo(_.getMetadata)
 
   val routingKeyGenerator = new RoutingKeyGenerator(
     tableDef,

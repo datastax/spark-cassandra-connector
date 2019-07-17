@@ -2,7 +2,8 @@ package com.datastax.spark.connector.util
 
 import java.io.IOException
 
-import com.datastax.driver.core.{PreparedStatement, Session}
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.PreparedStatement
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 import com.datastax.spark.connector.util.Quote._
 
@@ -21,7 +22,7 @@ object PatitionKeyTools {
     s"SELECT * FROM ${quote(tableDef.keyspaceName)}.${quote(tableDef.tableName)} WHERE $whereClause"
   }
 
-  private[connector] def prepareDummyStatement(session: Session, tableDef: TableDef): PreparedStatement = {
+  private[connector] def prepareDummyStatement(session: CqlSession, tableDef: TableDef): PreparedStatement = {
     try {
       session.prepare(querySelectUsingOnlyPartitionKeys(tableDef))
     }

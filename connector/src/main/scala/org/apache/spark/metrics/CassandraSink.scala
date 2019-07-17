@@ -10,13 +10,11 @@ import java.util.Properties
 import java.util.concurrent.{Executors, TimeUnit}
 
 import scala.collection.JavaConversions._
-
 import com.codahale.metrics.{Counting, Gauge, Metered, Metric, MetricRegistry, Sampling}
 import com.google.common.util.concurrent.{FutureCallback, Futures}
 import org.apache.spark.metrics.sink.Sink
 import org.apache.spark.{SecurityManager, SparkConf, SparkEnv}
-
-import com.datastax.driver.core.ResultSet
+import com.datastax.oss.driver.api.core.cql.ResultSet
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
 
