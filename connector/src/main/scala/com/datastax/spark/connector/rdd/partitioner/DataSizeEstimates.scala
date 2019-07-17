@@ -1,12 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import scala.collection.JavaConversions._
-
 import com.datastax.spark.connector.util.Logging
-
-import com.datastax.driver.core.exceptions.InvalidQueryException
+import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder
+import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.partitioner.dht.{TokenFactory, Token}
+import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 
 
 /** Estimates amount of data in the Cassandra table.
@@ -37,10 +36,10 @@ class DataSizeEstimates[V, T <: Token[V]](
   private lazy val tokenRanges: Seq[TokenRangeSizeEstimate] =
     conn.withSessionDo { session =>
       try {
-        val rs = session.execute(
+        val rs = session.execute(new SimpleStatementBuilder(
           "SELECT range_start, range_end, partitions_count, mean_partition_size " +
             "FROM system.size_estimates " +
-            "WHERE keyspace_name = ? AND table_name = ?", keyspaceName, tableName)
+            "WHERE keyspace_name = ? AND table_name = ?").addPositionalValues(keyspaceName, tableName).build())
 
         for (row <- rs.all()) yield TokenRangeSizeEstimate(
           rangeStart = tokenFactory.tokenFromString(row.getString("range_start")),
