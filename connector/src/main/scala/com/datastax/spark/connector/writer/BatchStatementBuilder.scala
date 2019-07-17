@@ -15,7 +15,7 @@ private[connector] class BatchStatementBuilder(
     require(stmts.nonEmpty, "Statements list cannot be empty")
     val stmt = stmts.head
     // for batch statements, it is enough to set routing key for the first statement
-    stmt.setRoutingKey(routingKeyGenerator.apply(stmt))
+    stmt.setRoutingKey(routingKeyGenerator.apply(stmt.stmt))
 
     if (stmts.size == 1) {
       stmt.setConsistencyLevel(consistencyLevel)
