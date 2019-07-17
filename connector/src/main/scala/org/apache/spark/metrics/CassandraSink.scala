@@ -6,7 +6,7 @@
 
 package org.apache.spark.metrics
 
-import java.util.Properties
+import java.util.{Properties, function}
 import java.util.concurrent.{Executors, TimeUnit}
 
 import scala.collection.JavaConversions._
@@ -43,12 +43,8 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
     report()
   }
 
-  val insertCallback = new FutureCallback[ResultSet] {
-    override def onSuccess(ignored: ResultSet): Unit = {}
-
-    override def onFailure(t: Throwable): Unit = {
-      logWarning(s"Metrics write failed. The exception was: ${t.getMessage}")
-    }
+  val warnOnError = new function.Function[Throwable] {
+    override def apply(t: Throwable): Unit = logWarning(s"Metrics write failed. The exception was: ${t.getMessage}")
   }
 
   override def report(): Unit = {
@@ -60,7 +56,7 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
 
         for ((MetricName(appId, componentId, metricId), metric) <- registry.getMetrics.iterator) {
           val bndStmt = stmt.bind(writer.build(componentId, metricId, metric): _*)
-          Futures.addCallback(session.executeAsync(bndStmt), insertCallback)
+          session.executeAsync(bndStmt).exceptionally(warnOnError)
         }
       }
     }

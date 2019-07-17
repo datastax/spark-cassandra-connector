@@ -156,7 +156,7 @@ class CassandraLeftJoinRDD[L, R] (
       val resultFuture = SettableFuture.create[Iterator[(L, Option[R])]]
       val leftSide = Iterator.continually(left)
 
-      queryExecutor.executeAsync(maybeExecutingAs(bsb.bind(left), readConf.executeAs)).onComplete {
+      queryExecutor.executeAsync(bsb.bind(left).executeAs(readConf.executeAs)).onComplete {
         case Success(rs) =>
           val resultSet = new PrefetchingResultSetIterator(ResultSets.newInstance(rs), fetchSize)
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
