@@ -40,7 +40,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
   def connectorLoader(conf: CassandraConnectorConf) = {
     val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
-    DriverConfigLoader.programmaticBuilder()
+    val builder = DriverConfigLoader.programmaticBuilder()
       .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)) // moved from CassandraConnector
       .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
       .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
@@ -51,10 +51,13 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
       .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
       .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
-      //TODO .withString(AUTH_PROVIDER_CLASS, "") // conf.authConf.authProvider
       .withString(PROTOCOL_COMPRESSION, conf.compression)
       .withBoolean(METRICS_NODE_ENABLED, false)
       .withBoolean(METRICS_SESSION_ENABLED, false)
+
+    //Add Auth Conf if set
+    conf.authConf.authProperites.foldLeft(builder){ case (builder, (driverOption, value)) =>
+      builder.withString(driverOption, value)}
   }
 
   /** Creates and configures native Cassandra connection */
