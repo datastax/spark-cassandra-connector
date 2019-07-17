@@ -41,7 +41,7 @@ class DefaultScanner (
     val rateLimitingIterator = readConf.throughputMiBPS match {
       case Some(throughput) =>
         val rateLimiter = new RateLimiter((throughput * 1024 * 1024).toLong, 1024 * 1024)
-        prefetchingIterator.map{ row =>
+        prefetchingIterator.map { row =>
           rateLimiter.maybeSleep(getRowBinarySize(row))
           row
         }

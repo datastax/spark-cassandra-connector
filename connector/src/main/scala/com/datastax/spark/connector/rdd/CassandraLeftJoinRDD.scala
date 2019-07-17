@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.{ResultSet, Session}
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet
+import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.util.maybeExecutingAs
 import com.datastax.spark.connector.cql._
@@ -8,9 +10,12 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
 import org.apache.spark.rdd.RDD
-import scala.reflect.ClassTag
 
+import scala.reflect.ClassTag
 import org.apache.spark.metrics.InputMetricsUpdater
+
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
 
 /**
  * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
@@ -138,7 +143,7 @@ class CassandraLeftJoinRDD[L, R] (
   }
 
   private[rdd] def fetchIterator(
-    session: Session,
+    session: CqlSession,
     bsb: BoundStatementBuilder[L],
     rowMetadata: CassandraRowMetadata,
     leftIterator: Iterator[L],
@@ -151,10 +156,9 @@ class CassandraLeftJoinRDD[L, R] (
       val resultFuture = SettableFuture.create[Iterator[(L, Option[R])]]
       val leftSide = Iterator.continually(left)
 
-      val queryFuture = queryExecutor.executeAsync(maybeExecutingAs(bsb.bind(left), readConf.executeAs))
-      Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
-        def onSuccess(rs: ResultSet) {
-          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
+      queryExecutor.executeAsync(maybeExecutingAs(bsb.bind(left), readConf.executeAs)).onComplete {
+        case Success(rs) =>
+          val resultSet = new PrefetchingResultSetIterator(ResultSets.newInstance(rs), fetchSize)
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
           /* This is a much less than ideal place to actually rate limit, we are buffering
           these futures this means we will most likely exceed our threshold*/
@@ -164,11 +168,10 @@ class CassandraLeftJoinRDD[L, R] (
             case false => throttledIterator.map(r => Some(rowReader.read(r, rowMetadata)))
           }
           resultFuture.set(leftSide.zip(rightSide))
-        }
-        def onFailure(throwable: Throwable) {
+        case Failure(throwable) =>
           resultFuture.setException(throwable)
-        }
-      })
+      }(ExecutionContext.Implicits.global) // TODO: use dedicated context, use Future instead of SettableFuture
+
       resultFuture
     }
     val queryFutures = leftIterator.map(left => {
