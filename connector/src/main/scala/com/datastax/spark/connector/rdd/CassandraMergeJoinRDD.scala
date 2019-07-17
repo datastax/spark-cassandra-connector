@@ -156,7 +156,7 @@ class CassandraMergeJoinRDD[L,R](
       val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, session)
       val iterator = new PrefetchingResultSetIterator(rs, fromRDD.readConf.fetchSizeInRows)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
-      logDebug(s"Row iterator for range ${range} obtained successfully.")
+      logDebug(s"Row iterator for range $range obtained successfully.")
       (columnMetaData, iteratorWithMetrics)
     } catch {
       case t: Throwable =>

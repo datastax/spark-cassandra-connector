@@ -3,7 +3,6 @@ package com.datastax.spark.connector.writer
 
 import java.net.InetAddress
 
-import com.datastax.driver.core._
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.Logging
@@ -33,11 +32,11 @@ class ReplicaLocator[T] private(
    */
   def keyByReplicas(data: Iterator[T]): Iterator[(scala.collection.immutable.Set[InetAddress], T)] = {
       connector.withSessionDo { session =>
-        val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+        val protocolVersion = session.getContext.getProtocolVersion
         val stmt = prepareDummyStatement(session, tableDef)
         val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
         val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion = protocolVersion)
-        val clusterMetadata = session.getCluster.getMetadata
+        val clusterMetadata = session.getMetadata
         data.map { row =>
           val hosts = clusterMetadata
             .getReplicas(Metadata.quote(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
