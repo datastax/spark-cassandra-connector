@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
+import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -28,6 +29,8 @@ implicit
   currentType: ClassTag[T],
   @transient private val rwf: RowWriterFactory[T]) extends Partitioner {
 
+  val _keyspace = CqlIdentifier.fromCql(keyspace) // TODO Fix this
+
   val tableDef = Schema.tableFromCassandra(connector, keyspace, table)
   val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
     tableDef,
@@ -35,9 +38,8 @@ implicit
   )
 
   @transient lazy private val tokenGenerator = new TokenGenerator[T](connector, tableDef, rowWriter)
-  @transient lazy private val metadata = connector.withClusterDo(_.getMetadata)
-  @transient lazy private val protocolVersion = connector
-    .withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+  @transient lazy private val tokenMap = connector.withSessionDo(_.getMetadata.getTokenMap.get)//TODO Handle missing
+  @transient lazy private val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
   @transient lazy private val clazz = implicitly[ClassTag[T]].runtimeClass
 
   private val hosts = connector.hosts.toVector
@@ -69,9 +71,9 @@ implicit
         //Only use ReplicaEndpoints in the connected DC
         val token = tokenGenerator.getTokenFor(key)
         val tokenHash = Math.abs(token.hashCode())
-        val replicas = metadata
-          .getReplicas(keyspace, token.serialize(protocolVersion))
-          .map(_.getBroadcastAddress)
+        val replicas = tokenMap
+          .getReplicas(_keyspace, token)
+          .map(_.getBroadcastAddress.get.getAddress)
 
         val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {
