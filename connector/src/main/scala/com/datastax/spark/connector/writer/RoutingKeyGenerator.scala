@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import java.nio.ByteBuffer
 
-import com.datastax.driver.core.BoundStatement
+import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.spark.connector.cql.TableDef
 
 /** This class computes the routing key of a bound statement. */

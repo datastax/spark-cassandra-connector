@@ -3,6 +3,7 @@ package com.datastax.spark.connector.writer
 
 import java.net.InetAddress
 
+import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.Logging
@@ -24,6 +25,7 @@ class ReplicaLocator[T] private(
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
+  val tokenMap = connector.withSessionDo(_.getMetadata.getTokenMap).get //TODO Fix get
 
   /**
    * Pairs each piece of data with the Cassandra Replicas which that data would be found on
@@ -38,9 +40,9 @@ class ReplicaLocator[T] private(
         val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion = protocolVersion)
         val clusterMetadata = session.getMetadata
         data.map { row =>
-          val hosts = clusterMetadata
-            .getReplicas(Metadata.quote(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
-            .map(_.getAddress)
+          val hosts = tokenMap
+            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row).stmt))
+            .map(_.getBroadcastAddress.get().getAddress)// TODO Fix Get
             .toSet[InetAddress]
           (hosts, row)
         }
