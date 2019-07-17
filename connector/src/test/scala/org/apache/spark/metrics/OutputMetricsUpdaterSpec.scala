@@ -2,6 +2,7 @@ package org.apache.spark.metrics
 
 import java.util.concurrent.CountDownLatch
 
+import com.datastax.spark.connector.writer.RichBatchStatementWrapper.DriverStatement
 import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
@@ -27,6 +28,8 @@ class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar 
     new RichStatement() {
       override val bytesCount = 100
       override val rowsCount = 10
+      override def stmt: DriverStatement = ???
+      override def executeAs(executeAs: Option[String]): RichStatement = ???
     }
   }
 

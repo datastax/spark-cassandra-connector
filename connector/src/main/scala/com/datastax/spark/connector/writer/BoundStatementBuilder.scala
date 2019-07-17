@@ -1,15 +1,10 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.dse.driver.internal.core.DseProtocolVersionRegistry
-import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.oss.driver.api.core.`type`.DataType
-import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, PreparedStatement}
-import com.datastax.oss.driver.internal.core.CassandraProtocolVersionRegistry
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector.types.{ColumnType, Unset}
 import com.datastax.spark.connector.util.{CodecRegistryUtil, Logging}
-
-import scala.collection.JavaConverters._
 
 /**
  * Class for binding row-like objects into prepared statements. prefixVals
@@ -100,9 +95,9 @@ private[connector] class BoundStatementBuilder[T](
   } yield prefixConverter.convert(prefixVal)
 
   /** Creates `BoundStatement` from the given data item */
-  def bind(row: T): RichBoundStatement = {
+  def bind(row: T): RichBoundStatementWrapper = {
 
-    val boundStatement = new RichBoundStatement(preparedStmt.bind(prefixConverted: _*))
+    val boundStatement = new RichBoundStatementWrapper(preparedStmt.bind(prefixConverted: _*))
 
     rowWriter.readColumnValues(row, buffer)
     var bytesCount = 0
@@ -111,8 +106,8 @@ private[connector] class BoundStatementBuilder[T](
       val columnName = columnNames(i)
       val columnType = columnTypes(i)
       val columnValue = converter.convert(buffer(i))
-      bindColumn(boundStatement, columnName, columnType, columnValue)
-      val serializedValue = boundStatement.getBytesUnsafe(i)
+      bindColumn(boundStatement.stmt, columnName, columnType, columnValue)
+      val serializedValue = boundStatement.stmt.getBytesUnsafe(i)
       if (serializedValue != null) bytesCount += serializedValue.remaining()
     }
     boundStatement.bytesCount = bytesCount

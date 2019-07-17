@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import java.util.concurrent.Semaphore
+import java.util.concurrent.{CompletionStage, Semaphore}
 
 import com.datastax.spark.connector.util.Logging
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
@@ -9,10 +9,9 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
 import scala.util.Try
 import AsyncExecutor.Handler
-import com.datastax.driver.core.exceptions.{BusyPoolException, NoHostAvailableException, OverloadedException}
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
-class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
+class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTasks: Int,
                           successHandler: Option[Handler[T]] = None, failureHandler: Option[Handler[T]]) extends Logging {
 
   private val semaphore = new Semaphore(maxConcurrentTasks)

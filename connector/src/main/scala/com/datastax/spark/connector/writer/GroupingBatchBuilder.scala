@@ -43,7 +43,7 @@ private[connector] class GroupingBatchBuilder[T](
     * If adding the statement would not fit into an existing batch or the new batch would not fit into
     * the buffer, the batch statement is created from the batch and it is returned and the given
     * bound statement is added to a fresh batch. */
-  private def processStatement(batchKey: Any, boundStatement: RichBoundStatement): Option[RichStatement] = {
+  private def processStatement(batchKey: Any, boundStatement: RichBoundStatementWrapper): Option[RichStatement] = {
     batchMap.get(batchKey) match {
       case Some(batch) =>
         updateBatchInMap(batchKey, batch, boundStatement)
@@ -55,7 +55,7 @@ private[connector] class GroupingBatchBuilder[T](
   /** Adds the given statement to the batch if possible; If there is no enough capacity in the batch,
     * a batch statement is created and returned; the batch is cleaned and the given statement is added
     * to it. */
-  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: RichBoundStatement): Option[RichStatement] = {
+  private def updateBatchInMap(batchKey: Any, batch: Batch, newStatement: RichBoundStatementWrapper): Option[RichStatement] = {
     if (batch.add(newStatement, force = false)) {
       batchMap.put(batchKey, batch)
       None
@@ -66,7 +66,7 @@ private[connector] class GroupingBatchBuilder[T](
 
   /** Adds a new batch to the buffer and adds the given statement to it. Returns a statement which had
     * to be dequeued. */
-  private def addBatchToMap(batchKey: Any, newStatement: RichBoundStatement): Option[RichStatement] = {
+  private def addBatchToMap(batchKey: Any, newStatement: RichBoundStatementWrapper): Option[RichStatement] = {
     if (batchMap.size == maxBatches) {
       Some(replaceBatch(batchMap.dequeue(), newStatement, batchKey))
 
@@ -89,7 +89,7 @@ private[connector] class GroupingBatchBuilder[T](
   /** Creates a statement from the given batch; cleans the batch and adds a given statement to it;
     * updates the entry in the buffer. */
   @inline
-  private def replaceBatch(batch: Batch, newStatement: RichBoundStatement, newBatchKey: Any): RichStatement = {
+  private def replaceBatch(batch: Batch, newStatement: RichBoundStatementWrapper, newBatchKey: Any): RichStatement = {
     val stmt = createStmtAndReleaseBatch(batch)
     batch.add(newStatement, force = true)
     batchMap.put(newBatchKey, batch)
@@ -103,7 +103,7 @@ private[connector] class GroupingBatchBuilder[T](
   final override def next(): RichStatement = {
     if (data.hasNext) {
       val stmt = boundStatementBuilder.bind(data.next())
-      val key = batchKeyGenerator(stmt)
+      val key = batchKeyGenerator(stmt.stmt)
 
       processStatement(key, stmt) match {
         case Some(batchStmt) => batchStmt

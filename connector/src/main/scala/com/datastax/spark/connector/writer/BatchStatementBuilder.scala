@@ -11,19 +11,16 @@ private[connector] class BatchStatementBuilder(
 
   /** Converts a sequence of statements into a batch if its size is greater than 1.
     * Sets the routing key and consistency level. */
-  def maybeCreateBatch(stmts: Seq[RichBoundStatement]): RichStatement = {
-    require(stmts.size > 0, "Statements list cannot be empty")
+  def maybeCreateBatch(stmts: Seq[RichBoundStatementWrapper]): RichStatement = {
+    require(stmts.nonEmpty, "Statements list cannot be empty")
     val stmt = stmts.head
     // for batch statements, it is enough to set routing key for the first statement
     stmt.setRoutingKey(routingKeyGenerator.apply(stmt))
 
     if (stmts.size == 1) {
       stmt.setConsistencyLevel(consistencyLevel)
-      stmt
     } else {
-      val batch = new RichBatchStatement(batchType, stmts)
-      batch.setConsistencyLevel(consistencyLevel)
-      batch
+      new RichBatchStatementWrapper(batchType, consistencyLevel, stmts)
     }
   }
 
