@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel
-import com.datastax.oss.driver.api.core.cql.Statement
+import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.retry.{RetryDecision, RetryPolicy}
 import com.datastax.oss.driver.api.core.servererrors.{CoordinatorException, WriteType}
 import com.datastax.oss.driver.api.core.session.Request
@@ -11,8 +11,10 @@ import com.datastax.oss.driver.api.core.session.Request
   *
   *  Retries indefinitely if maxRetryCount is -1
   */
-class MultipleRetryPolicy(maxRetryCount: Int)
-  extends RetryPolicy{
+class MultipleRetryPolicy(context: DriverContext, profileName: String)
+  extends RetryPolicy {
+
+  private val maxRetryCount: Int = 5 // TODO: take this from conf
 
   private def retryManyTimesOrThrow(nbRetry: Int): RetryDecision = maxRetryCount match {
     case -1 => RetryDecision.RETRY_SAME

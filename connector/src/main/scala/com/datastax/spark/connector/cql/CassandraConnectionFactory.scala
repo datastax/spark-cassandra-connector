@@ -46,11 +46,11 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
       .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
       .withStringList(CONTACT_POINTS, conf.hosts.map(h => s"${h.getHostAddress}:${conf.port}").toList.asJava)
-      //TODO: .withString(RETRY_POLICY_CLASS, "") // new MultipleRetryPolicy(queryRetryCount)
+      .withString(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy].getCanonicalName)
       .withString(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy].getCanonicalName)
       .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
       .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
-      //TODO .withString(LOAD_BALANCING_POLICY_CLASS, "") // new LocalNodeFirstLoadBalancingPolicy(conf.hosts, conf.localDC))
+      .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
       //TODO .withString(AUTH_PROVIDER_CLASS, "") // conf.authConf.authProvider
       .withString(PROTOCOL_COMPRESSION, conf.compression)
       .withBoolean(METRICS_NODE_ENABLED, false)
