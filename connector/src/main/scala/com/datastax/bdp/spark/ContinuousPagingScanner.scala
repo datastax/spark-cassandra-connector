@@ -14,6 +14,7 @@ import com.datastax.oss.driver.api.core.cql.{BoundStatement, Statement}
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, _}
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util._
 
 case class ContinuousPagingScanner(
@@ -111,7 +112,7 @@ case class ContinuousPagingScanner(
   private def getMetaData(result: ContinuousResultSet) = {
     import scala.collection.JavaConverters._
     val columnDefs = result.getColumnDefinitions.asScala
-    val rsColumnNames = columnDefs.map(_.getName.asInternal())
+    val rsColumnNames = columnDefs.map(c => toName(c.getName))
     val codecs = columnDefs
       .map(col => codecRegistry.codecFor(col.getType))
       .asInstanceOf[Seq[TypeCodec[AnyRef]]]

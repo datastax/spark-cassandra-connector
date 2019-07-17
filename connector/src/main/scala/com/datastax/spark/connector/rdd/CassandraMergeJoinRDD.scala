@@ -111,17 +111,15 @@ class CassandraMergeJoinRDD[L,R](
 
     try {
       val stmt = session.prepare(cql)
-      //TODO FIX CONFIGURATION
-      //stmt.setConsistencyLevel(readConf.consistencyLevel)
       val converters = stmt.getVariableDefinitions
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
           yield converter.convert(value)
-      val bstm = stmt.bind(convertedValues: _*)
-      //bstm.setFetchSize(readConf.fetchSizeInRows)
-      bstm
+      stmt.bind(convertedValues: _*)
+        .setPageSize(readConf.fetchSizeInRows)
+        .setConsistencyLevel(readConf.consistencyLevel)
     }
     catch {
       case t: Throwable =>
