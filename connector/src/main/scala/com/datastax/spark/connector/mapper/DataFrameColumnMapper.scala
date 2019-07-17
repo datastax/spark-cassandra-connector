@@ -16,7 +16,7 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
 
     val columns = structType.zipWithIndex.map { case (field, i) => {
       val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn

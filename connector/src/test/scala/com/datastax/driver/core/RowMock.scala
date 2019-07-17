@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.cql.Row
 
 class RowMock(columnSizes: Option[Int]*)
-  extends AbstractGettableData(ProtocolVersion.NEWEST_SUPPORTED) with Row {
+  extends AbstractGettableData(ProtocolVersion.DEFAULT) with Row {
 
   val bufs = columnSizes.map {
     case Some(size) => ByteBuffer.allocate(size)

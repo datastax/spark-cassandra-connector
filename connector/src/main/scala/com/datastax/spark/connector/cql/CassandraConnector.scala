@@ -154,7 +154,8 @@ object CassandraConnector extends Logging {
     val allNodes = session.getMetadata.getNodes.asScala.values.toSet
     val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(conf.hosts, allNodes))
     val nodes = allNodes
-      .collect { case n if n.getDatacenter == dcToUse && toAddress(n).isDefined => toAddress(n) }
+      .collect { case n if n.getDatacenter == dcToUse => toAddress(n) }
+      .flatten
     if (nodes.isEmpty) {
       throw new ConnectorConfigurationException(s"Could not determine suitable nodes for DC: $dcToUse and known nodes: " +
         s"${allNodes.map(n => (n.getHostId, toAddress(n))).mkString(", ")}")

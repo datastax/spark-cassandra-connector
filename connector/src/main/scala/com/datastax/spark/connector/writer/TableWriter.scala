@@ -4,6 +4,8 @@ import java.io.IOException
 
 import com.datastax.driver.core.BatchStatement.Type
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{ListType, MapType}
@@ -129,7 +131,7 @@ class TableWriter[T] private (
     }
   }
 
-  private def prepareStatement(queryTemplate:String, session: Session): PreparedStatement = {
+  private def prepareStatement(queryTemplate:String, session: CqlSession): PreparedStatement = {
     try {
       session.prepare(queryTemplate).setIdempotent(isIdempotent)
     }
@@ -145,16 +147,16 @@ class TableWriter[T] private (
       case BatchGroupingKey.None => 0
 
       case BatchGroupingKey.ReplicaSet =>
-        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry) == null)
+        if (bs.getRoutingKey(ProtocolVersion.DEFAULT, codecRegistry) == null)
           bs.setRoutingKey(routingKeyGenerator(bs))
         session.getCluster.getMetadata.getReplicas(keyspaceName,
-          bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry)).hashCode() // hash code is enough
+          bs.getRoutingKey(ProtocolVersion.DEFAULT, codecRegistry)).hashCode() // hash code is enough
 
       case BatchGroupingKey.Partition =>
-        if (bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry) == null) {
+        if (bs.getRoutingKey(ProtocolVersion.DEFAULT, codecRegistry) == null) {
           bs.setRoutingKey(routingKeyGenerator(bs))
         }
-        bs.getRoutingKey(ProtocolVersion.NEWEST_SUPPORTED, codecRegistry).duplicate()
+        bs.getRoutingKey(ProtocolVersion.DEFAULT, codecRegistry).duplicate()
     }
   }
 
