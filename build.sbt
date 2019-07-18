@@ -5,6 +5,7 @@ ThisBuild / organization := "com.datastax"
 ThisBuild / scalaVersion := "2.11.12"
 // set the Scala version used for the project
 ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / scalacOptions += "-target:jvm-1.8"
 
 lazy val IntegrationTest = config("it") extend Test
 

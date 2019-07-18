@@ -328,7 +328,7 @@ class CassandraTableScanRDD[R] private[connector](
 
   private def fetchTokenRange(
     scanner: Scanner,
-    range: CqlTokenRange[_, _ <: ConnectorToken[_]],
+    range: CqlTokenRange[_, _],
     inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
 
     val session = scanner.getSession()
@@ -339,7 +339,7 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-      .setRoutingToken(range.range.start.nativeToken)
+      .setRoutingToken(range.range.startNativeToken())
 
     try {
       val scanResult = scanner.scan(stmt)
@@ -354,7 +354,7 @@ class CassandraTableScanRDD[R] private[connector](
   }
 
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
-    val partition = split.asInstanceOf[CassandraPartition[_, _]]
+    val partition = split.asInstanceOf[CassandraPartition[Any, _ <: ConnectorToken[Any]]]
     val tokenRanges = partition.tokenRanges
     val metricsUpdater = InputMetricsUpdater(context, readConf)
 
@@ -365,11 +365,10 @@ class CassandraTableScanRDD[R] private[connector](
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    val rowIterator = tokenRanges.iterator.flatMap(
-      fetchTokenRange(scanner, _: CqlTokenRange[_, _], metricsUpdater))
+    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(scanner, _, metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
-    context.addTaskCompletionListener { (context) =>
+    context.addTaskCompletionListener { _ =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
         f"for partition ${partition.index} in $duration%.3f s.")

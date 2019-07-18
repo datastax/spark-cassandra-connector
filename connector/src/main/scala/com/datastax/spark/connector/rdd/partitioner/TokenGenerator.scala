@@ -36,4 +36,8 @@ private[connector] class TokenGenerator[T] (
   def getTokenFor(key: T): Token = {
     MetadataHook.newToken(metadata, routingKeyGenerator.apply(boundStmtBuilder.bind(key).stmt))
   }
+
+  def getStringTokenFor(key: T): String = {
+    MetadataHook.newTokenAsString(metadata, routingKeyGenerator.apply(boundStmtBuilder.bind(key).stmt))
+  }
 }

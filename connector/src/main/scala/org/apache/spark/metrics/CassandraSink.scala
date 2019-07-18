@@ -6,15 +6,15 @@
 
 package org.apache.spark.metrics
 
-import java.util.{Properties, function}
+import java.util.Properties
 import java.util.concurrent.{Executors, TimeUnit}
+import java.util.function.BiConsumer
 
 import scala.collection.JavaConversions._
 import com.codahale.metrics.{Counting, Gauge, Metered, Metric, MetricRegistry, Sampling}
-import com.google.common.util.concurrent.{FutureCallback, Futures}
 import org.apache.spark.metrics.sink.Sink
 import org.apache.spark.{SecurityManager, SparkConf, SparkEnv}
-import com.datastax.oss.driver.api.core.cql.ResultSet
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ResultSet}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
 
@@ -43,8 +43,9 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
     report()
   }
 
-  val warnOnError = new function.Function[Throwable] {
-    override def apply(t: Throwable): Unit = logWarning(s"Metrics write failed. The exception was: ${t.getMessage}")
+  val warnOnError = new BiConsumer[AsyncResultSet, Throwable] {
+    override def accept(s: AsyncResultSet, t: Throwable): Unit =
+      Option(t).foreach(_ => logWarning(s"Metrics write failed. The exception was: ${t.getMessage}"))
   }
 
   override def report(): Unit = {
@@ -56,7 +57,7 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
 
         for ((MetricName(appId, componentId, metricId), metric) <- registry.getMetrics.iterator) {
           val bndStmt = stmt.bind(writer.build(componentId, metricId, metric): _*)
-          session.executeAsync(bndStmt).exceptionally(warnOnError)
+          session.executeAsync(bndStmt).whenComplete(warnOnError)
         }
       }
     }

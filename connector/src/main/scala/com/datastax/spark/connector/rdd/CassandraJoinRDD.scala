@@ -1,20 +1,17 @@
 package com.datastax.spark.connector.rdd
 
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ResultSet}
 import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
-import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
-import org.apache.spark.rdd.RDD
-import com.datastax.spark.connector.util.maybeExecutingAs
-
-import scala.reflect.ClassTag
+import com.google.common.util.concurrent.SettableFuture
 import org.apache.spark.metrics.InputMetricsUpdater
+import org.apache.spark.rdd.RDD
 
 import scala.concurrent.ExecutionContext
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
 /**
