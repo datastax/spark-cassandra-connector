@@ -7,8 +7,9 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.CassandraOption
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.writer.WriteConf
-import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
+
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 
 import scala.concurrent.Future
 

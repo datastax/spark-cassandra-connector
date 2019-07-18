@@ -6,12 +6,12 @@ import java.util.Date
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
-
+//TODO Change this toe java LocalTime
 class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] with DefaultCluster {
 
   override val minPV = DefaultProtocolVersion.V4
 
-  override def getDriverColumn(row: Row, colName: String): Long = row.getTime(colName)
+  override def getDriverColumn(row: Row, colName: String): Long = row.getLocalTime(colName).toNanoOfDay
 
   override protected val typeName: String = "time"
 

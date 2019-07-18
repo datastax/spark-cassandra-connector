@@ -2,7 +2,6 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.util.concurrent.CompletableFuture
 
-import com.datastax.driver.core.Token
 import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}

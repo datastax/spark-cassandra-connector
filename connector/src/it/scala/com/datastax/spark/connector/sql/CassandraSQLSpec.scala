@@ -4,7 +4,6 @@ import scala.concurrent.Future
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 import com.datastax.spark.connector.cluster.DefaultCluster
 

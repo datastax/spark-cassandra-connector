@@ -11,7 +11,6 @@ class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase with SSLClu
     conn.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
-      assert(session.getCluster.getMetadata.getClusterName === testCluster.name)
     }
   }
 

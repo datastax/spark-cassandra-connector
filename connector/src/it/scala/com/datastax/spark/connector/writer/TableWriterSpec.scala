@@ -237,7 +237,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(Seq(("Original", Unset, "New"))).saveToCassandra(ks, "unset_test")
     val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
       .collect
-    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+    if (protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode) {
       result(0) should be(("Original", Some("Original"), Some("New")))
     } else {
       result(0) should be(("Original", None, Some("New")))
@@ -254,7 +254,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       .saveToCassandra(ks, "unset_test")
     val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
       .collect
-    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+    if (protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode) {
       result(0) should be(("Original", Some("Original"), Some("New")))
     } else {
       result(0) should be(("Original", None, Some("New")))
@@ -375,7 +375,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
       val row1 = rows(2)
-      row0.getBytes("b").remaining shouldEqual 4
+      row0.getByteBuffer("b").remaining shouldEqual 4
       row1.isNull("b") shouldEqual true
     }
   }
@@ -433,8 +433,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Oakland"
-        row.getUDTValue(2).getInt("zip") shouldEqual 90210
+        row.getUdtValue(2).getString("city") shouldEqual "Oakland"
+        row.getUdtValue(2).getInt("zip") shouldEqual 90210
       }
     }
   }
@@ -458,8 +458,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
-        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+        row.getUdtValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUdtValue(2).getInt("zip") shouldEqual 10000
       }
     }
   }
@@ -475,7 +475,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2) should be (null)
+        row.getUdtValue(2) should be (null)
       }
     }
   }
@@ -491,9 +491,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
-        row.getUDTValue(2).getString("street") should be (null)
-        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+        row.getUdtValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUdtValue(2).getString("street") should be (null)
+        row.getUdtValue(2).getInt("zip") shouldEqual 10000
       }
     }
   }
@@ -544,9 +544,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
-        row.getUDTValue(1).getString(0) shouldEqual "foo"
-        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
-        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+        row.getUdtValue(1).getString(0) shouldEqual "foo"
+        row.getUdtValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUdtValue(1).getTupleValue(1).getInt(1) shouldEqual 2
       }
     }
   }
@@ -560,8 +560,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     conn.withSessionDo { session =>
       val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
       for (row <- result) {
-        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
-        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+        row.getUdtValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUdtValue(1).getTupleValue(1).getInt(1) shouldEqual 2
       }
     }
   }

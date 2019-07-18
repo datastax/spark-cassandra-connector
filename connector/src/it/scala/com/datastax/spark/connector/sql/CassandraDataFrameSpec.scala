@@ -275,7 +275,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val tableColumns = eventually(
       conn.withSessionDo(_.getMetadata.getKeyspace(ks).get().getTable(table)).get().getColumns.map(_._2.getType))
 
-    tableColumns should contain theSameElementsInOrderAs(
+    tableColumns should contain theSameElementsAs (
       Seq(DataTypes.INT, DataTypes.INT, DataTypes.INT, DataTypes.TIMESTAMP)
       )
 

@@ -9,7 +9,6 @@ import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.joda.time.DateTimeZone
 import org.scalatest.FlatSpec
 
 trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
@@ -20,7 +19,6 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
   def dataFrame(timeZone: TimeZone): Unit = skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
 
     TimeZone.setDefault(timeZone)
-    DateTimeZone.setDefault(DateTimeZone.forTimeZone(timeZone))
 
     val readTable = s"date_test_${timeZone.getID.toLowerCase}_read"
     val writeTable = s"date_test_${timeZone.getID.toLowerCase}_write"
@@ -73,7 +71,7 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
         count should be(2)
 
         val date = session.execute(s"select d0 from $ks.$writeTable where key = 0").one().getLocalDate(0)
-        date should be(new LocalDate(1986, 1, 2))
+        date should be(LocalDate.of(1986, 1, 2))
       }
     }
   }

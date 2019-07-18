@@ -29,7 +29,7 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase with Defaul
     for (testProtocol <- PVGt4) {
       val bsb = new BoundStatementBuilder(rowWriter, ps, protocolVersion = testProtocol)
       val x = bsb.bind((1, CassandraOption.Unset))
-      withClue(s"$testProtocol should ignore unset values :")(x.isSet("value") should be(false))
+      withClue(s"$testProtocol should ignore unset values :")(x.stmt.isSet("value") should be(false))
     }
   }
 
@@ -37,7 +37,7 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase with Defaul
     for (testProtocol <- PVLte3) {
       val bsb = new BoundStatementBuilder(rowWriter, ps, protocolVersion = testProtocol)
       val x = bsb.bind((1, CassandraOption.Unset))
-      withClue(s"$testProtocol should set to null :")(x.isNull("value") should be(true))
+      withClue(s"$testProtocol should set to null :")(x.stmt.isNull("value") should be(true))
     }
   }
 
@@ -51,7 +51,7 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase with Defaul
         ignoreNulls = true)
 
       val x = bsb.bind((1, null))
-      withClue(s"$testProtocol should ignore unset values :")(x.isSet("value") should be(false))
+      withClue(s"$testProtocol should ignore unset values :")(x.stmt.isSet("value") should be(false))
     }
   }
 

@@ -1,9 +1,12 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.driver.core.{HostDistance, ProtocolOptions, SimpleStatement}
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.scalatest.BeforeAndAfterEach
+
+import scala.collection.JavaConverters._
 
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
@@ -22,16 +25,15 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   }
 
   it should "give access to cluster metadata" in {
-    conn.withClusterDo { cluster =>
-      assert(cluster.getMetadata.getClusterName != null)
-      assert(cluster.getMetadata.getAllHosts.size > 0)
+    conn.withSessionDo { session =>
+      assert(session.getMetadata.getNodes.size > 0)
     }
   }
 
   it should "have the default max hosts in pooling options" in {
-    val poolingConf = conn.withClusterDo(_.getConfiguration.getPoolingOptions)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be >= 1
-    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be >= 1
+    val conf = conn.withSessionDo(_.getContext.getConfig.getDefaultProfile)
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be >= 1
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be >= 1
   }
 
   it should "have larger max hosts if set" in {
@@ -40,11 +42,9 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
           .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "5")
           .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "3"))
 
-    val poolingConf = maxCon.withClusterDo(_.getConfiguration.getPoolingOptions)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.LOCAL) should be (5)
-    poolingConf.getCoreConnectionsPerHost(HostDistance.LOCAL) should be (5)
-    poolingConf.getMaxConnectionsPerHost(HostDistance.REMOTE) should be (3)
-    poolingConf.getCoreConnectionsPerHost(HostDistance.REMOTE) should be (3)
+    val conf = conn.withSessionDo(_.getContext.getConfig.getDefaultProfile)
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (5)
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be (3)
   }
 
   it should "run queries" in {
@@ -53,18 +53,20 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       session.execute(s"DROP TABLE IF EXISTS $ks.simple_query")
       session.execute(s"CREATE TABLE $ks.simple_query (key INT PRIMARY KEY, value TEXT)")
       session.execute(s"INSERT INTO $ks.simple_query(key, value) VALUES (1, 'value')")
-      val result = session.execute(s"SELECT * FROM $ks.simple_query WHERE key = ?", 1.asInstanceOf[AnyRef])
+      val result = session.execute(
+        SimpleStatement.newInstance(s"SELECT * FROM $ks.simple_query WHERE key = 1"))
+
       assert(result.one().getString("value") === "value")
     }
   }
 
-  it should "disconnect from the cluster after use" in {
-    val cluster = conn.withClusterDo { cluster => cluster }
+  it should "disconnect from the session after use" in {
+    val session = conn.withSessionDo{ session => session }
     Thread.sleep(
       sc.getConf.getInt(
         "spark.cassandra.connection.keepAliveMS",
         CassandraConnectorConf.KeepAliveMillisParam.default) * 2)
-    assert(cluster.isClosed === true)
+    assert(session.isClosed === true)
   }
 
   it should "share internal Cluster and Session object between multiple logical sessions" in {
@@ -72,7 +74,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val threadCount1 = Thread.activeCount()
     val session2 = conn.openSession()
     val threadCount2 = Thread.activeCount()
-    session1.getCluster should be theSameInstanceAs session2.getCluster
+
     // Unfortunately we don't have a way to obtain an internal Session object; all we got here are proxies.
     // Instead, we try to figure out whether a new Session was opened by counting active threads.
     // Opening internal Session creates new threads, so if none was created, the thread count would not change.
@@ -90,7 +92,6 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val threadCount1 = Thread.activeCount()
     val session2 = conn2.openSession()
     val threadCount2 = Thread.activeCount()
-    session1.getCluster should be theSameInstanceAs session2.getCluster
     threadCount1 shouldEqual threadCount2
     session1.close()
     session1.isClosed shouldEqual true
@@ -148,8 +149,10 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
     val conn = CassandraConnector(conf)
     conn.withSessionDo { session ⇒
-      session.getCluster.getConfiguration
-          .getProtocolOptions.getCompression shouldBe ProtocolOptions.Compression.SNAPPY
+      session
+        .getContext
+        .getConfig
+        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe ("SNAPPY")
     }
   }
 }
