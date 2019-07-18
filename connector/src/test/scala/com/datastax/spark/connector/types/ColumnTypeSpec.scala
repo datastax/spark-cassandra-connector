@@ -86,9 +86,6 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
       "given a java.sql.Date and a pre V4 Protcol version should return a TimestampType" in {
         assert (ColumnType.fromScalaType(typeOf[java.sql.Date], DefaultProtocolVersion.V3) === TimestampType)
       }
-      "given a org.joda.time.DateTime should return TimestampType" in {
-        assert (ColumnType.fromScalaType(typeOf[org.joda.time.DateTime]) === TimestampType)
-      }
       "given a ByteBuffer should return BlobType" in {
         assert (ColumnType.fromScalaType(typeOf[ByteBuffer]) === BlobType)
       }
