@@ -1,11 +1,13 @@
 package com.datastax.spark.connector.writer
 
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Callable, Executors}
+import java.util.concurrent.{Callable, CompletableFuture, CompletionStage}
 
-import com.google.common.util.concurrent.MoreExecutors
 import org.junit.Assert._
 import org.junit.Test
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class AsyncExecutorTest {
 
@@ -31,8 +33,17 @@ class AsyncExecutorTest {
       }
     }
 
-    val underlyingExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
-    val asyncExecutor = new AsyncExecutor[Callable[String], String](underlyingExecutor.submit(_: Callable[String]), maxParallel, None, None)
+    def execute(callable: Callable[String]): CompletionStage[String] = {
+      import ExecutionContext.Implicits.global
+      val completableFuture = new CompletableFuture[String]()
+      Future { callable.call() }.onComplete {
+        case Success(str) => completableFuture.complete(str)
+        case Failure(exception) => completableFuture.completeExceptionally(exception)
+      }
+      completableFuture
+    }
+
+    val asyncExecutor = new AsyncExecutor[Callable[String], String](execute, maxParallel, None, None)
 
     for (i <- 1 to taskCount)
       asyncExecutor.executeAsync(task)
@@ -42,8 +53,4 @@ class AsyncExecutorTest {
     assertEquals(taskCount, totalFinishedExecutionsCounter.get())
     assertEquals(None, asyncExecutor.getLatestException())
   }
-
-
-
-
 }

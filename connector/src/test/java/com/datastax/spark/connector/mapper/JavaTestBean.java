@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.mapper;
 
-import com.datastax.driver.mapping.annotations.Column;
-
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import java.io.Serializable;
 
 /**
@@ -10,9 +9,9 @@ import java.io.Serializable;
  */
 public class JavaTestBean implements Serializable {
 
-    @Column(name = "cassandra_property_1")
+    @CqlName(value = "cassandra_property_1")
     public Integer property1;
-    @Column(name = "cassandra_camel_case_property")
+    @CqlName(value = "cassandra_camel_case_property")
     public Integer camelCaseProperty;
     public JavaTestUDTBean nested;
 

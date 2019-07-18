@@ -8,7 +8,7 @@ import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{FlatSpec, Matchers}
 
 class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {

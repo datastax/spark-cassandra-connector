@@ -10,7 +10,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.driver.core.RowMock
 import com.datastax.spark.connector.rdd.ReadConf
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 
 class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
 

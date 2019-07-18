@@ -1,13 +1,14 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.oss.driver.api.core.metadata.Node
 import com.datastax.oss.driver.api.core.retry.RetryDecision
 import com.datastax.oss.driver.api.core.servererrors._
 import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DriverException}
-import com.datastax.oss.driver.internal.core.metadata.DefaultNode
 import org.scalatest.{FlatSpec, Matchers}
+import org.scalatestplus.mockito.MockitoSugar
 
-class MultipleRetrySpec extends FlatSpec with Matchers {
+class MultipleRetrySpec extends FlatSpec with Matchers with MockitoSugar {
 
   private val statement = SimpleStatement.newInstance("foobuzz")
   private val cl = DefaultConsistencyLevel.THREE
@@ -49,7 +50,7 @@ class MultipleRetrySpec extends FlatSpec with Matchers {
     }
   }
 
-  val node = new DefaultNode(null, null)
+  val node = mock[Node]
   val writeTimeout =  new WriteTimeoutException(node, cl, 3, 1, DefaultWriteType.SIMPLE)
   val readTimeout = new ReadTimeoutException(node, cl, 3, 1, false)
   val unavailableException = new UnavailableException(node, cl, 3, 1)
