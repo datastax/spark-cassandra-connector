@@ -76,7 +76,7 @@ public class SchemaManagerService
     private static final Logger log = LoggerFactory.getLogger(SchemaManagerService.class);
     private CassandraClientConfiguration configuration;
     private String wareHouseRoot;
-    private CqlSession externalSession;
+    private CassandraConnector connector;
     private Metadata metadata;
     private Set<String> systemKeyspaces = Sets.newHashSet();//TODO FIX THIS DriverUtil.getSystemKeyspaces(null);
 
@@ -105,14 +105,14 @@ public class SchemaManagerService
 
     private static WeakHashMap<CassandraClientConfiguration, SchemaManagerService> SchemaManagerServiceCache = new WeakHashMap<>();
 
-    public static synchronized SchemaManagerService getInstance(CassandraHiveMetaStore metaStore,
+    public static synchronized SchemaManagerService getInstance(
             CassandraClientConfiguration clientConfiguration,
-            CqlSession externalSession)
+            CassandraConnector connector)
     {
         SchemaManagerService schemaManagerService = SchemaManagerServiceCache.get(clientConfiguration);
         if (schemaManagerService == null)
         {
-            schemaManagerService = new SchemaManagerService(clientConfiguration, externalSession);
+            schemaManagerService = new SchemaManagerService(clientConfiguration, connector);
             SchemaManagerServiceCache.put(clientConfiguration, schemaManagerService);
         } else {
             // update config with latest hadoop related changes
@@ -121,11 +121,11 @@ public class SchemaManagerService
         return schemaManagerService;
     }
 
-    private SchemaManagerService(CassandraClientConfiguration clientConfiguration, CqlSession externalSession)
+    private SchemaManagerService(CassandraClientConfiguration clientConfiguration, CassandraConnector connector)
     {
         this.configuration = clientConfiguration;
         this.wareHouseRoot = HiveConf.getVar(configuration.getHadoopConfiguration(), HiveConf.ConfVars.METASTOREWAREHOUSE);
-        this.externalSession = externalSession;
+        this.connector = connector;
     }
 
     public Set<String> getSystemKeyspaces()
@@ -157,32 +157,22 @@ public class SchemaManagerService
     public void refreshMetadata()
     {
         log.info("Refresh cluster meta data");
-        DseSession session = (DseSession) (externalSession != null ? externalSession : getCassandraConnector(configuration).openSession());
-
-        try
-        {
-            metadata = session.getMetadata();
-            systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
-            // list all available graphs and check that graph is enabled
+        connector.jWithSessionDo(session -> {
             try
             {
-                GraphResultSet rs = session.execute(ScriptGraphStatement.builder("system.graphs()").build())
-                        ;
+                metadata = session.refreshSchema();
+                systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
+                // list all available graphs and check that graph is enabled
+                GraphResultSet rs = ((DseSession)session).execute(ScriptGraphStatement.builder("system.graphs()").build());
                 graphNames = Optional.of(StreamSupport.stream(rs.spliterator(), false)
                         .map(r -> r.asString())
                         .collect(Collectors.toSet()));
-            } catch (InvalidQueryException | SyntaxError e)
-            {
+            } catch (InvalidQueryException | SyntaxError e) {
                 //graph is not enabled or connected to OSS Cassandra so empty set
                 graphNames = Optional.empty();
             }
-        }
-        finally
-        {
-            if(session != externalSession)
-                session.close();
-        }
-
+            return graphNames;
+        });
     }
 
     public boolean isGraphEnabled() {

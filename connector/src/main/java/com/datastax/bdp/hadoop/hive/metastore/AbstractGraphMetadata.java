@@ -7,10 +7,6 @@
 package com.datastax.bdp.hadoop.hive.metastore;
 
 
-import com.datastax.driver.core.AbstractTableMetadata;
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.MaterializedViewMetadata;
-import com.datastax.driver.core.TableMetadata;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 
 

@@ -5,7 +5,7 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.spark.connector.cql.CassandraConnector;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -49,9 +49,6 @@ public class CassandraHiveMetaStore implements RawStore
     private MetaStorePersister metaStorePersister;
     private SchemaManagerService schemaManagerService;
 
-    //optional client
-    private Cluster externalCluster = null;
-
     public CassandraHiveMetaStore()
     {
         log.debug("Creating CassandraHiveMetaStore");
@@ -65,24 +62,15 @@ public class CassandraHiveMetaStore implements RawStore
     {
         configuration = new CassandraClientConfiguration(conf);
         // load meta store
-        metaStorePersister = MetaStorePersister.getInstance(configuration, externalCluster);
-        schemaManagerService = SchemaManagerService.getInstance(this, configuration, externalCluster);
+        CassandraConnector connector = SchemaManagerService.getCassandraConnector(configuration);
+        metaStorePersister = MetaStorePersister.getInstance(configuration, connector);
+        schemaManagerService = SchemaManagerService.getInstance(configuration, connector);
 
     }
 
     public Configuration getConf()
     {
         return configuration.getHadoopConfiguration();
-    }
-
-    public Cluster getExternalCluster()
-    {
-        return externalCluster;
-    }
-
-    public void setExternalCluster(Cluster externalCluster)
-    {
-        this.externalCluster = externalCluster;
     }
 
     // convenience method for testing

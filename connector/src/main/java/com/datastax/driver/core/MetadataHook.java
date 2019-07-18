@@ -25,4 +25,10 @@ public class MetadataHook {
             .map(tokenMap -> tokenMap.newToken(routingKey))
             .orElseThrow(()-> new IllegalStateException("Token map was not found"));
     }
+
+    public static String newTokenAsString(Metadata metadata, ByteBuffer routingKey) {
+        return metadata.getTokenMap()
+                .map(tokenMap -> tokenMap.format(tokenMap.newToken(routingKey)))
+                .orElseThrow(()-> new IllegalStateException("Token map was not found"));
+    }
 }
