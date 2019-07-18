@@ -2,21 +2,31 @@ package com.datastax.driver.core
 
 import java.nio.ByteBuffer
 
-import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
-import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes}
+import com.datastax.oss.driver.api.core.cql.{ColumnDefinition, ColumnDefinitions, Row}
+import com.datastax.oss.driver.api.core.detach.AttachmentPoint
+import com.datastax.oss.driver.api.core.metadata.token.Token
+import com.datastax.oss.driver.api.core.{CqlIdentifier, ProtocolVersion}
+import com.datastax.oss.driver.internal.core.cql.{DefaultColumnDefinition, DefaultColumnDefinitions}
+import com.datastax.oss.protocol.internal.ProtocolConstants
+import com.datastax.oss.protocol.internal.response.result.{ColumnSpec, RawType}
 
-class RowMock(columnSizes: Option[Int]*)
-  extends AbstractGettableData(ProtocolVersion.DEFAULT) with Row {
+import scala.collection.JavaConverters._
+
+class RowMock(columnSizes: Option[Int]*) extends Row {
 
   val bufs = columnSizes.map {
     case Some(size) => ByteBuffer.allocate(size)
     case _ => null
   }.toArray
 
-  val defs = new ColumnDefinitions(
-    columnSizes.map(i => new ColumnDefinitions.Definition("ks", "tab", s"c$i", DataType.text())).toArray,
-    getCodecRegistry)
+  val defs = DefaultColumnDefinitions.valueOf(
+    columnSizes.zipWithIndex.map { case (i, id) =>
+      val columnSepc = new ColumnSpec("ks", "tab", s"c$i", id, RawType.PRIMITIVES.get(ProtocolConstants.DataType.VARCHAR))
+      new DefaultColumnDefinition(columnSepc, null).asInstanceOf[ColumnDefinition]
+    }.toList.asJava
+  )
 
   override def getColumnDefinitions: ColumnDefinitions = defs
 
@@ -28,19 +38,27 @@ class RowMock(columnSizes: Option[Int]*)
 
   override def isNull(s: String): Boolean = isNull(defs.firstIndexOf(s))
 
-  override def getIndexOf(name: String): Int = ???
-
   override def getToken(i: Int): Token = ???
 
   override def getToken(name: String): Token = ???
 
-  override def getPartitionKeyToken: Token = ???
-
   override def getType(i: Int): DataType = ???
 
-  override def getValue(i: Int): ByteBuffer = ???
+  override def isDetached: Boolean = ???
 
-  override def getName(i: Int): String = ???
+  override def attach(attachmentPoint: AttachmentPoint): Unit = ???
 
-  override def getCodecRegistry = CodecRegistry.DEFAULT_INSTANCE
+  override def firstIndexOf(name: String): Int = ???
+
+  override def getType(name: String): DataType = ???
+
+  override def firstIndexOf(id: CqlIdentifier): Int = ???
+
+  override def getType(id: CqlIdentifier): DataType = ???
+
+  override def size(): Int = ???
+
+  override def codecRegistry(): CodecRegistry = CodecRegistry.DEFAULT
+
+  override def protocolVersion(): ProtocolVersion = ProtocolVersion.DEFAULT
 }

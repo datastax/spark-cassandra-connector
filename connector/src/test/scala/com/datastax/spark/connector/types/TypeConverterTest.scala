@@ -5,7 +5,10 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.{Date, GregorianCalendar, UUID}
+
+import com.datastax.oss.driver.api.core.data.CqlDuration
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
@@ -13,7 +16,6 @@ import org.apache.commons.lang3.SerializationUtils
 import org.joda.time.DateTime
 import org.junit.Assert._
 import org.junit.Test
-import com.datastax.driver.core.{Duration, LocalDate}
 import com.datastax.spark.connector.testkit._
 
 class TypeConverterTest {
@@ -138,7 +140,7 @@ class TypeConverterTest {
     val c = TypeConverter.forType[Date]
     val dateStr = "2014-04-23 11:21:32+0100"
     val dayOnlyStr = "2014-04-23"
-    val localDate = LocalDate.fromYearMonthDay(2014, 4, 23)
+    val localDate = LocalDate.of(2014, 4, 23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
     val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
 
@@ -156,7 +158,7 @@ class TypeConverterTest {
     val c = TypeConverter.forType[Timestamp]
     val dateStr = "2014-04-23 11:21:32+0100"
     val dayOnlyStr = "2014-04-23"
-    val localDate = LocalDate.fromYearMonthDay(2014, 4, 23)
+    val localDate = LocalDate.of(2014, 4, 23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
     val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
     val date = Timestamp.from(new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").parse(dateStr).toInstant)
@@ -211,7 +213,7 @@ class TypeConverterTest {
 
     val targetDate = java.sql.Date.valueOf("2014-04-23")
 
-    val localDate = LocalDate.fromYearMonthDay(2014,4,23)
+    val localDate = LocalDate.of(2014,4,23)
     val jodaLocalDate = new org.joda.time.LocalDate(2014, 4, 23)
     val javaLocalDate = java.time.LocalDate.of(2014, 4, 23)
 
@@ -285,7 +287,7 @@ class TypeConverterTest {
   @Test
   def testLocalDate(): Unit = {
     val c = TypeConverter.forType[LocalDate]
-    val testDate = LocalDate.fromYearMonthDay(1985, 8, 3)
+    val testDate = LocalDate.of(1985, 8, 3)
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     val date = dateFormat.parse("1985-08-03")
     assertEquals(testDate, c.convert("1985-08-03"))
@@ -300,7 +302,7 @@ class TypeConverterTest {
   @Test
   def testYearLocalDate(): Unit = {
     val c = TypeConverter.forType[LocalDate]
-    val testDate = LocalDate.fromYearMonthDay(1985, 1, 1)
+    val testDate = LocalDate.of(1985, 1, 1)
     assertEquals(testDate, c.convert("1985"))
   }
 
@@ -651,7 +653,7 @@ class TypeConverterTest {
     assertEquals(TypeConverter.JavaLocalDateConverter, TypeConverter.forType(classOf[java.time.LocalDate]))
     assertEquals(TypeConverter.JavaLocalTimeConverter, TypeConverter.forType(classOf[java.time.LocalTime]))
     assertEquals(TypeConverter.JavaDurationConverter, TypeConverter.forType(classOf[java.time.Duration]))
-    assertEquals(TypeConverter.DurationConverter, TypeConverter.forType(classOf[Duration]))
+    assertEquals(TypeConverter.DurationConverter, TypeConverter.forType(classOf[CqlDuration]))
     assertEquals(TypeConverter.JavaInstantConverter, TypeConverter.forType(classOf[java.time.Instant]))
     assertEquals(TypeConverter.StringConverter, TypeConverter.forType(classOf[java.lang.String]))
     assertEquals(TypeConverter.UUIDConverter, TypeConverter.forType(classOf[java.util.UUID]))

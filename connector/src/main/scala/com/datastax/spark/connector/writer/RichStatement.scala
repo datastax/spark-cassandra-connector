@@ -6,14 +6,17 @@ import java.util
 import com.datastax.oss.driver.api.core.ConsistencyLevel
 import com.datastax.oss.driver.api.core.cql.{BatchStatement, BatchType, BoundStatement, Statement}
 import com.datastax.spark.connector.util.maybeExecutingAs
-import com.datastax.spark.connector.writer.RichBatchStatementWrapper.DriverStatement
-
+import com.datastax.spark.connector.writer.RichStatement.DriverStatement
 
 trait RichStatement {
   def bytesCount: Int
   def rowsCount: Int
   def stmt: DriverStatement
   def executeAs(executeAs: Option[String]): RichStatement
+}
+
+object RichStatement {
+  type DriverStatement = Statement[_ <: Statement[_]]
 }
 
 private[connector] class RichBoundStatementWrapper(initStatement: BoundStatement)
@@ -68,9 +71,6 @@ private[connector] class RichBatchStatementWrapper(
 }
 
 private[connector] object RichBatchStatementWrapper {
-
-  type DriverStatement = Statement[_ <: Statement[_]]
-
   private val statementsField = classOf[BatchStatement].getDeclaredField("statements")
   def ensureCapacity(batchStatement: RichBatchStatementWrapper, expectedCapacity: Int): Unit = {
     // TODO remove this workaround when https://datastax-oss.atlassian.net/browse/JAVA-649 is fixed

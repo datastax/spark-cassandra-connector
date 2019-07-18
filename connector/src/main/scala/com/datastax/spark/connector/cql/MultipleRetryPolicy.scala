@@ -11,10 +11,12 @@ import com.datastax.oss.driver.api.core.session.Request
   *
   *  Retries indefinitely if maxRetryCount is -1
   */
-class MultipleRetryPolicy(context: DriverContext, profileName: String)
+// TODO: remove this 3-arg construction and take maxRetryCount from conf. Adjust test
+class MultipleRetryPolicy(context: DriverContext, profileName: String, maxRetryCount: Int)
   extends RetryPolicy {
 
-  private val maxRetryCount: Int = 5 // TODO: take this from conf
+  def this(context: DriverContext, profileName: String) =
+    this(context, profileName, 5)
 
   private def retryManyTimesOrThrow(nbRetry: Int): RetryDecision = maxRetryCount match {
     case -1 => RetryDecision.RETRY_SAME

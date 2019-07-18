@@ -13,7 +13,7 @@ class GettableDataSpec extends FlatSpec with Matchers {
     val year = Random.nextInt(2000)
     val month = Random.nextInt(12) + 1
     val day = Random.nextInt(28) + 1
-    new LocalDate(year, month, day)
+    LocalDate.of(year, month, day)
   }
 
   "GettableData" should "convert Driver LocalDates to Joda LocalDate" in {

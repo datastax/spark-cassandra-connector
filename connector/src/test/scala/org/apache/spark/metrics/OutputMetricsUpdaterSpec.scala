@@ -2,14 +2,14 @@ package org.apache.spark.metrics
 
 import java.util.concurrent.CountDownLatch
 
-import com.datastax.spark.connector.writer.RichBatchStatementWrapper.DriverStatement
-import org.apache.spark.executor.{DataWriteMethod, OutputMetrics, TaskMetrics}
+import com.datastax.spark.connector.writer.RichStatement.DriverStatement
+import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
+import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
 import org.apache.spark.{SparkConf, TaskContext}
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.{FlatSpec, Matchers}
 
 class OutputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
 

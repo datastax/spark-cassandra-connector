@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 import scala.reflect.runtime.universe._
@@ -66,16 +66,16 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
         assert (ColumnType.fromScalaType(typeOf[java.lang.Byte]) === TinyIntType)
       }
       "given a java.lang.Short and PV3 should return a IntType" in {
-        assert (ColumnType.fromScalaType(typeOf[java.lang.Short], ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromScalaType(typeOf[java.lang.Short], DefaultProtocolVersion.V3) === IntType)
       }
       "given a Short and PV3 should return a IntType" in {
-        assert (ColumnType.fromScalaType(typeOf[Short], ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromScalaType(typeOf[Short], DefaultProtocolVersion.V3) === IntType)
       }
       "given a Byte and PV3 should return a IntType" in {
-        assert (ColumnType.fromScalaType(typeOf[Byte], ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromScalaType(typeOf[Byte], DefaultProtocolVersion.V3) === IntType)
       }
       "given a java.lang.Byte and PV3 should return a IntType" in {
-        assert (ColumnType.fromScalaType(typeOf[java.lang.Byte], ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromScalaType(typeOf[java.lang.Byte], DefaultProtocolVersion.V3) === IntType)
       }
       "given a java.util.Date should return TimestampType" in {
         assert (ColumnType.fromScalaType(typeOf[java.util.Date]) === TimestampType)
@@ -84,7 +84,7 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
         assert (ColumnType.fromScalaType(typeOf[java.sql.Date]) === DateType)
       }
       "given a java.sql.Date and a pre V4 Protcol version should return a TimestampType" in {
-        assert (ColumnType.fromScalaType(typeOf[java.sql.Date], ProtocolVersion.V3) === TimestampType)
+        assert (ColumnType.fromScalaType(typeOf[java.sql.Date], DefaultProtocolVersion.V3) === TimestampType)
       }
       "given a org.joda.time.DateTime should return TimestampType" in {
         assert (ColumnType.fromScalaType(typeOf[org.joda.time.DateTime]) === TimestampType)
@@ -124,10 +124,10 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
         assert (ColumnType.fromSparkSqlType(ShortType) === SmallIntType)
       }
       "given a ByteType and PV3 should return IntType" in {
-        assert (ColumnType.fromSparkSqlType(ByteType, ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromSparkSqlType(ByteType, DefaultProtocolVersion.V3) === IntType)
       }
       "given a ShortType and PV3 should return IntType" in {
-        assert (ColumnType.fromSparkSqlType(ShortType, ProtocolVersion.V3) === IntType)
+        assert (ColumnType.fromSparkSqlType(ShortType, DefaultProtocolVersion.V3) === IntType)
       }
       "given a BooleanType should return BooleanType" in {
         assert (ColumnType.fromSparkSqlType(SparkSqlBooleanType) === BooleanType)
@@ -157,7 +157,7 @@ class ColumnTypeSpec extends WordSpec with Matchers with GivenWhenThen {
         assert (ColumnType.fromSparkSqlType(SparkSqlDateType) === DateType)
       }
       "given a SparkSqlDateType and PV3 should return TimestampType" in {
-        assert (ColumnType.fromSparkSqlType(SparkSqlDateType, ProtocolVersion.V3) === TimestampType)
+        assert (ColumnType.fromSparkSqlType(SparkSqlDateType, DefaultProtocolVersion.V3) === TimestampType)
       }
       "given a BinaryType should return BlobType" in {
         assert (ColumnType.fromSparkSqlType(BinaryType) === BlobType)

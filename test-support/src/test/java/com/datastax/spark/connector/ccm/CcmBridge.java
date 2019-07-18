@@ -15,20 +15,17 @@
  */
 package com.datastax.spark.connector.ccm;
 
-import com.google.common.base.Joiner;
-import com.google.common.io.Resources;
 import org.apache.commons.exec.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -217,7 +214,7 @@ public class CcmBridge implements AutoCloseable {
   }
 
   public void dsetool(int node, String... args) {
-    execute(String.format("node%d dsetool %s", node, Joiner.on(" ").join(args)));
+    execute(String.format("node%d dsetool %s", node, String.join(" ", args)));
   }
 
   public void reloadCore(int node, String keyspace, String table, boolean reindex) {
@@ -255,7 +252,7 @@ public class CcmBridge implements AutoCloseable {
   }
 
   public void nodetool(int n, String... args) {
-      execute(String.format("node%d nodetool %s", n, Joiner.on(" ").join(args)));
+    execute(String.format("node%d nodetool %s", n, String.join(" < ", args)));
   }
 
   public void refreshSizeEstimates(int n) {
@@ -363,19 +360,20 @@ public class CcmBridge implements AutoCloseable {
    * @return The generated File.
    */
   private static File createTempStore(String storePath) {
-    File f = null;
-    try (OutputStream os = new FileOutputStream(f = File.createTempFile("server", ".store"))) {
-      f.deleteOnExit();
-      URL resource = CcmBridge.class.getResource(storePath);
+    File file = null;
+    try {
+      file = File.createTempFile("server", ".store");
+      file.deleteOnExit();
+      InputStream resource = CcmBridge.class.getResourceAsStream(storePath);
       if (resource != null) {
-        Resources.copy(resource, os);
+        Files.copy(resource, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } else {
         throw new IllegalStateException("Store path not found: " + storePath);
       }
     } catch (IOException e) {
       logger.warn("Failure to write keystore, SSL-enabled servers may fail to start.", e);
     }
-    return f;
+    return file;
   }
 
   public static Builder builder() {

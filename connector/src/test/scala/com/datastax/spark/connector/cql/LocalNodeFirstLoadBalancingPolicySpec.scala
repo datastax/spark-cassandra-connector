@@ -8,12 +8,8 @@ package com.datastax.spark.connector.cql
 
 import java.net.InetAddress
 
-import scala.collection.JavaConversions._
-
-import org.mockito.Mockito._
 import org.scalatest.{FlatSpec, Matchers}
 
-import com.datastax.driver.core.{Cluster, Host, Metadata, Statement}
 
 class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers {
 
@@ -23,7 +19,7 @@ class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers {
   private val remoteNode3 = InetAddress.getByName("192.168.123.3")
   private val remoteNode4 = InetAddress.getByName("192.168.123.4")
   private val dc = "superDC"
-
+  /* TODO: ReplicaAwareStatement was removed, `setRoutingToken` is used instead - rework following test:
   private def policyForClusterOf(nodes: InetAddress*) = {
     val policy = new LocalNodeFirstLoadBalancingPolicy(null, Some(dc))
 
@@ -44,7 +40,7 @@ class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers {
     policy.init(cluster, hosts)
     policy
   }
-/* TODO: ReplicaAwareStatement was removed, `setRoutingToken` is used instead - rework following test:
+
   private def replicateAwareStatementFor(replicas: InetAddress*) = {
     val stmt = mock(classOf[Statement])
     when(stmt.getKeyspace).thenReturn(dc)
