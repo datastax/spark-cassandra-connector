@@ -144,20 +144,21 @@ class TableWriter[T] private (
   }
 
   // TODO: this method looks highly suspicious, minimal fix includes changing return type to something less generic and removing hashcode used below
-  def batchRoutingKey(session: CqlSession, routingKeyGenerator: RoutingKeyGenerator)(bs: BoundStatement): Any = {
+  // TODO: this relies on the fact that [[RichBoundStatementWrapper]] is mutable (setRoutingKey)
+  def batchRoutingKey(session: CqlSession, routingKeyGenerator: RoutingKeyGenerator)(bs: RichBoundStatementWrapper): Any = {
     writeConf.batchGroupingKey match {
       case BatchGroupingKey.None => 0
 
       case BatchGroupingKey.ReplicaSet =>
-        if (bs.getRoutingKey == null)
-          bs.setRoutingKey(routingKeyGenerator(bs))
-        toOption(session.getMetadata.getTokenMap).map(_.getReplicas(keyspaceName, bs.getRoutingKey)).hashCode() // hash code is enough
+        if (bs.stmt.getRoutingKey == null)
+          bs.setRoutingKey(routingKeyGenerator(bs.stmt))
+        toOption(session.getMetadata.getTokenMap).map(_.getReplicas(keyspaceName, bs.stmt.getRoutingKey)).hashCode() // hash code is enough
 
       case BatchGroupingKey.Partition =>
-        if (bs.getRoutingKey == null) {
-          bs.setRoutingKey(routingKeyGenerator(bs))
+        if (bs.stmt.getRoutingKey == null) {
+          bs.setRoutingKey(routingKeyGenerator(bs.stmt))
         }
-        bs.getRoutingKey.duplicate()
+        bs.stmt.getRoutingKey.duplicate()
     }
   }
 

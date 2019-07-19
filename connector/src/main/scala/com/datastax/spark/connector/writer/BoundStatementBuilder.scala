@@ -49,22 +49,22 @@ private[connector] class BoundStatementBuilder[T](
   }
 
   private def bindColumnNull(
-    boundStatement: BoundStatement,
+    boundStatement: RichBoundStatementWrapper,
     columnName: String,
     columnType: DataType,
     columnValue: AnyRef): Unit = {
 
     if (columnValue == Unset || (ignoreNulls && columnValue == null)) {
-      boundStatement.setToNull(columnName)
+      boundStatement.update(s => s.setToNull(columnName))
       logUnsetToNullWarning = true
     } else {
       val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
-      boundStatement.set(columnName, columnValue, codec)
+      boundStatement.update(s => s.set(columnName, columnValue, codec))
     }
   }
 
   private def bindColumnUnset(
-    boundStatement: BoundStatement,
+    boundStatement: RichBoundStatementWrapper,
     columnName: String,
     columnType: DataType,
     columnValue: AnyRef): Unit = {
@@ -73,7 +73,7 @@ private[connector] class BoundStatementBuilder[T](
       //Do not bind
     } else {
       val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
-      boundStatement.set(columnName, columnValue, codec)
+      boundStatement.update(s => s.set(columnName, columnValue, codec))
     }
   }
 
@@ -82,7 +82,7 @@ private[connector] class BoundStatementBuilder[T](
   * we can leave values in the prepared statement unset. If the version is
   * less than V3 then we need to place a `null` in the bound statement.
   */
-  val bindColumn: (BoundStatement, String, DataType, AnyRef) => Unit = protocolVersion match {
+  val bindColumn: (RichBoundStatementWrapper, String, DataType, AnyRef) => Unit = protocolVersion match {
     case pv if pv.getCode() <= DefaultProtocolVersion.V3.getCode => bindColumnNull
     case _ => bindColumnUnset
   }
@@ -106,7 +106,7 @@ private[connector] class BoundStatementBuilder[T](
       val columnName = columnNames(i)
       val columnType = columnTypes(i)
       val columnValue = converter.convert(buffer(i))
-      bindColumn(boundStatement.stmt, columnName, columnType, columnValue)
+      bindColumn(boundStatement, columnName, columnType, columnValue)
       val serializedValue = boundStatement.stmt.getBytesUnsafe(i)
       if (serializedValue != null) bytesCount += serializedValue.remaining()
     }

@@ -30,7 +30,7 @@ import scala.collection.Iterator
 private[connector] class GroupingBatchBuilder[T](
     boundStatementBuilder: BoundStatementBuilder[T],
     batchStatementBuilder: BatchStatementBuilder,
-    batchKeyGenerator: BoundStatement => Any,
+    batchKeyGenerator: RichBoundStatementWrapper => Any,
     batchSize: BatchSize,
     maxBatches: Int,
     data: Iterator[T]) extends Iterator[RichStatement] {
@@ -102,10 +102,10 @@ private[connector] class GroupingBatchBuilder[T](
   @tailrec
   final override def next(): RichStatement = {
     if (data.hasNext) {
-      val stmt = boundStatementBuilder.bind(data.next())
-      val key = batchKeyGenerator(stmt.stmt)
+      val wrapper = boundStatementBuilder.bind(data.next())
+      val key = batchKeyGenerator(wrapper)
 
-      processStatement(key, stmt) match {
+      processStatement(key, wrapper) match {
         case Some(batchStmt) => batchStmt
         case _ => next()
       }

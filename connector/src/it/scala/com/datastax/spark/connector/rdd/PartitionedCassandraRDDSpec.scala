@@ -1,18 +1,14 @@
 package com.datastax.spark.connector.rdd
 
-import java.lang.{Long => JLong}
-
-import scala.concurrent.Future
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
 import java.lang.{Integer => JInt}
 import java.util.concurrent.CompletableFuture
 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
-
-import scala.collection.JavaConversions._
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.rdd.RDD
 
+import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 case class PKey(key: Int)
@@ -117,8 +113,8 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
 
     // verify token actually hashes to Integer.MIN_VALUE
     conn.withSessionDo { session =>
-      val row = session.execute(s"SELECT token(key) FROM $ks.table3 where key=$keyForMinValueHash").one
-      row.getToken("token(key)").hashCode() shouldBe Integer.MIN_VALUE
+      val row = session.execute(s"SELECT token(key) as tt FROM $ks.table3 where key=$keyForMinValueHash").one
+      row.getToken("tt").hashCode() shouldBe Integer.MIN_VALUE
     }
   }
 
