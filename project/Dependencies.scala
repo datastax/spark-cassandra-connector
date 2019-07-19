@@ -24,10 +24,11 @@ object Dependencies
   }
 
   object DataStax {
-    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver nettyExclude()
-    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver nettyExclude() driverCoreExclude()
-
-    val dependencies = Seq(driverCore, driverMapper)
+    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
+    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
+    val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
+    
+    val dependencies = Seq(driverCore, driverMapper, reactiveStream)
   }
 
   implicit class Exclude(module: ModuleID) {
@@ -36,16 +37,9 @@ object Dependencies
       .exclude("ch.qos.logback", "logback-core")
       .exclude("org.slf4j", "log4j-over-slf4j")
 
-    def nettyExclude(): ModuleID = module
-      .exclude("io.netty", "netty")
-      .exclude("io.netty", "netty-buffer")
-      .exclude("io.netty", "netty-codec")
-      .exclude("io.netty", "netty-common")
-      .exclude("io.netty", "netty-handler")
-      .exclude("io.netty", "netty-transport")
-
     def driverCoreExclude(): ModuleID = module
-      .exclude("com.datastax.dse", "dse-java-driver-coree") // doesn't shade guava
+      .exclude("com.datastax.dse", "dse-java-driver-core") // doesn't shade guava
+      .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
   }
 
   object Test {
@@ -58,7 +52,7 @@ object Dependencies
     val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
-      commonsIO,
+      commonsIO, // TODO: used in one place, remove
       scalaCheck,
       scalaTest,
       sparkCoreT,

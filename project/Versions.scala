@@ -8,9 +8,9 @@ object Versions {
   val CommonsIO       = "2.6"
   val CommonsLang3    = "3.3.2"
 
-  val DseJavaDriver = "2.1.0"
+  val DseJavaDriver = "2.1.1"
+  val ReactiveStreams = "1.0.2"
 
-  val Netty           = "4.0.33.Final"
   val ScalaCheck      = "1.14.0"
   val ScalaTest       = "3.0.8"
   val JUnit           = "4.12"
