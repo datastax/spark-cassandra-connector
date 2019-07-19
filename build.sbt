@@ -44,6 +44,7 @@ lazy val root = (project in file("connector"))
     },
 
     IntegrationTest / testGrouping := Testing.makeTestGroups(integrationTestsWithFixtures.value),
+    IntegrationTest / testOptions += Tests.Argument("-oF"),
 
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
@@ -59,10 +60,3 @@ lazy val testSupport = (project in file("test-support"))
   .settings(
     libraryDependencies ++= Dependencies.TestSupport.dependencies
   )
-
-
-
-
-
-
-
