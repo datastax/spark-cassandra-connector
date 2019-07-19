@@ -6,8 +6,7 @@
 package com.datastax.bdp.spark
 
 import scala.collection.JavaConverters._
-import com.datastax.dse.driver.api.core.DseSession
-import com.datastax.dse.driver.api.core.cql.continuous.ContinuousResultSet
+import com.datastax.dse.driver.api.core.cql.continuous.{ContinuousResultSet, ContinuousSession}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, Statement}
@@ -70,7 +69,7 @@ case class ContinuousPagingScanner(
     */
   private val cpSession = new CassandraConnector(connConf)
     .openSession()
-    .asInstanceOf[DseSession]
+    .asInstanceOf[CqlSession with ContinuousSession]
 
   private val codecRegistry = cpSession.getContext.getCodecRegistry
 

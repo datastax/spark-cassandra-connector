@@ -78,7 +78,7 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
     } else {
       Option(request.getKeyspace)
         .orElse(Option(request.getRoutingKeyspace))
-        .orElse(Option(session.getKeyspace.get()))
+        .orElse(toOption(session.getKeyspace))
         .flatMap { keyspace =>
 
           def replicasForToken(token: Token) = {

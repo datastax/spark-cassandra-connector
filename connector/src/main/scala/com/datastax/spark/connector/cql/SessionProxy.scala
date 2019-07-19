@@ -2,6 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.lang.reflect.{InvocationHandler, InvocationTargetException, Method, Proxy}
 
+import com.datastax.dse.driver.api.core.DseSession
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.util.Logging
 import org.apache.commons.lang3.ClassUtils
@@ -55,6 +56,10 @@ object SessionProxy extends Logging {
   def wrapWithCloseAction(session: CqlSession)(afterClose: CqlSession => Any): CqlSession = {
     val listInterfaces = ClassUtils.getAllInterfaces(session.getClass)
     val availableInterfaces = listInterfaces.toArray[Class[_]](new Array[Class[_]](listInterfaces.size))
+      // DseSession has static `builder` method with incompatible return type to CqlSession.builder return type
+      // which causes errors when generating proxy. Since DseSession has not useful methods at the moment of writing
+      // let's exclude it from proxy interfaces
+      .filter(_ != classOf[DseSession])
     Proxy.newProxyInstance(
       session.getClass.getClassLoader,
       availableInterfaces,

@@ -5,6 +5,7 @@
  */
 package com.datastax.bdp.spark
 
+import com.datastax.dse.driver.api.core.config.DseDriverConfigLoader
 import com.datastax.dse.driver.api.core.{DseProtocolVersion, DseSession}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cql._
@@ -18,7 +19,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   lazy private val logger = LoggerFactory.getLogger("com.datastax.bdp.spark.DseCassandraConnectionFactory")
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val loader = DefaultConnectionFactory.connectorLoader(conf)
+    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DseDriverConfigLoader.programmaticBuilder())
 
 /* TODO:
 

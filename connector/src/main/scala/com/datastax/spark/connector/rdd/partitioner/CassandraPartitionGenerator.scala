@@ -28,8 +28,9 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   private val keyspaceName = CqlIdentifier.fromCql(tableDef.keyspaceName) // TODO Lets fix all this later
 
   private def tokenRange(range: DriverTokenRange, metadata: TokenMap): TokenRange = {
-    val startToken = tokenFactory.tokenFromString(range.getStart.toString)
-    val endToken = tokenFactory.tokenFromString(range.getEnd.toString)
+
+    val startToken = tokenFactory.tokenFromString(metadata.format(range.getStart))
+    val endToken = tokenFactory.tokenFromString(metadata.format(range.getEnd))
     val replicas = metadata.getReplicas(keyspaceName, range).map(_.getBroadcastAddress.get().getAddress).toSet //TODO cover this get
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }

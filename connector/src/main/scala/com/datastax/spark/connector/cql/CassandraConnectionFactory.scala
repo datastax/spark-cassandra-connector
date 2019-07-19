@@ -7,7 +7,7 @@ import java.time.Duration
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
-import com.datastax.oss.driver.api.core.config.DriverConfigLoader
+import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, ProgrammaticDriverConfigLoaderBuilder}
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
@@ -38,9 +38,14 @@ trait CassandraConnectionFactory extends Serializable {
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 object DefaultConnectionFactory extends CassandraConnectionFactory {
 
-  def connectorLoader(conf: CassandraConnectorConf) = {
+  def connectorConfigBuilder(conf: CassandraConnectorConf, initBuilder: ProgrammaticDriverConfigLoaderBuilder) = {
+
+    // compression option cannot be set to NONE (default)
+    def maybeSetCompressionOption(b: ProgrammaticDriverConfigLoaderBuilder) =
+      Option(conf.compression).filter(_ != "NONE").map(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase)).getOrElse(b)
+
     val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
-    val builder = DriverConfigLoader.programmaticBuilder()
+    val builder = maybeSetCompressionOption(initBuilder)
       .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)) // moved from CassandraConnector
       .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
       .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
@@ -51,18 +56,16 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
       .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
       .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
-      .withString(PROTOCOL_COMPRESSION, conf.compression)
-      .withBoolean(METRICS_NODE_ENABLED, false)
-      .withBoolean(METRICS_SESSION_ENABLED, false)
 
     //Add Auth Conf if set
-    conf.authConf.authProperites.foldLeft(builder){ case (builder, (driverOption, value)) =>
-      builder.withString(driverOption, value)}
+    conf.authConf.authProperites.foldLeft(builder){ case (b, (driverOption, value)) =>
+      b.withString(driverOption, value)}
   }
 
   /** Creates and configures native Cassandra connection */
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val loader = connectorLoader(conf)
+    val builder = DriverConfigLoader.programmaticBuilder()
+    val loader = connectorConfigBuilder(conf, builder)
 
     // TODO:
     //        new QueryOptions()

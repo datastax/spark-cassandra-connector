@@ -315,7 +315,7 @@ class CassandraTableScanRDD[R] private[connector](
       val convertedValues =
         for ((value, converter) <- values zip converters)
         yield converter.convert(value)
-      stmt.bind(convertedValues)
+      stmt.bind(convertedValues: _*)
         .setIdempotent(true)
         .setConsistencyLevel(consistencyLevel)
         .setPageSize(fetchSize)
