@@ -28,7 +28,12 @@ object Dependencies
     val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
     val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
     
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream)
+    val dependencies = Seq(driverCore, driverMapper, reactiveStream, Temporary.gremlinCore, Temporary.tinkerGraph)
+  }
+
+  object Temporary {
+    val gremlinCore = "org.apache.tinkerpop" % "gremlin-core" % "3.3.3"  //TODO Remove this when Java Driver includes the correct TP
+    val tinkerGraph = "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.3" //TODO Remove this ''
   }
 
   implicit class Exclude(module: ModuleID) {

@@ -59,8 +59,7 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase with Defau
     sparkSession.sql(s"SELECT * FROM $ks.manycolumns").schema.length should be (1001)
   }
 
-  //TODO renable this when we upgrade the driver (needs shaded guava)
-  ignore should "be able to read from a hive loaded table" in {
+  it should "be able to read from a hive loaded table" in {
     sparkSession.sql("SELECT * FROM test_hive").count() should be (10)
   }
 

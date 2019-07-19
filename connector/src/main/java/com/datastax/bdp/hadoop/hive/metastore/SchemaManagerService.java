@@ -24,6 +24,7 @@ import java.util.stream.StreamSupport;
 
 import com.datastax.dse.driver.api.core.DseSession;
 import com.datastax.dse.driver.api.core.graph.GraphResultSet;
+import com.datastax.dse.driver.api.core.graph.GraphSession;
 import com.datastax.dse.driver.api.core.graph.ScriptGraphStatement;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -163,7 +164,7 @@ public class SchemaManagerService
                 metadata = session.refreshSchema();
                 systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
                 // list all available graphs and check that graph is enabled
-                GraphResultSet rs = ((DseSession)session).execute(ScriptGraphStatement.builder("system.graphs()").build());
+                GraphResultSet rs = ((GraphSession)session).execute(ScriptGraphStatement.builder("system.graphs()").build());
                 graphNames = Optional.of(StreamSupport.stream(rs.spliterator(), false)
                         .map(r -> r.asString())
                         .collect(Collectors.toSet()));
