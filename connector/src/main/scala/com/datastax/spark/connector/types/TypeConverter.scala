@@ -354,16 +354,6 @@ object TypeConverter {
     }
   }
 
-  private val InstantTypeTag = implicitly[TypeTag[Instant]]
-
-  implicit object InstantConverter extends NullableTypeConverter[Instant] {
-    def targetTypeTag = InstantTypeTag
-    override def convertPF = {
-      case x: Instant => x
-      case x => DateConverter.convert(x).toInstant
-    }
-  }
-
   private val BigIntTypeTag = implicitly[TypeTag[BigInt]]
 
   implicit object BigIntConverter extends NullableTypeConverter[BigInt] {
@@ -518,6 +508,7 @@ object TypeConverter {
       case x: String => java.time.Instant.parse(x)
       case x: Long => java.time.Instant.ofEpochMilli(x)
       case x: java.sql.Timestamp => x.toInstant
+      case x => DateConverter.convert(x).toInstant
     }
   }
 
