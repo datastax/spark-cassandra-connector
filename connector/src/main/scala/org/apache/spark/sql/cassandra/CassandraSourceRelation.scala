@@ -389,7 +389,7 @@ case class CassandraSourceRelation(
           val tableIsSolrIndexed =
             rdd.tableDef
               .indexes
-              .exists(index => index.className == SolrConstants.DseSolrIndexClassName)
+              .exists(index => index.className.contains(SolrConstants.DseSolrIndexClassName))
           val countRDD =
             if (searchOptimization.enabled && tableIsSolrIndexed && rdd.where.predicates.isEmpty){
               //This will shortcut actually reading the rows out of Cassandra and just hit the

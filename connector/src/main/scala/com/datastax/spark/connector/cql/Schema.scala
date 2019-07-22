@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.{CqlIdentifier, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
@@ -132,9 +132,12 @@ case class ColumnDef(
   }
 }
 
-/** Cassandra Index Metadata that can be serialized **/
+/** Cassandra Index Metadata that can be serialized
+  *
+  * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
+  */
 case class IndexDef(
-    className: String,
+    className: Option[String],
     target: String,
     indexName: String,
     options: Map[String, String]) extends Serializable
@@ -332,11 +335,15 @@ object Schema extends Logging {
         KeyspaceDef(toName(keyspace.getName), fetchTables(keyspace), systemKeyspaces.contains(toName(keyspace.getName)))
 
     def handleId(table: TableMetadata, columnName: String): String =
-      Option(table.getColumn(columnName)).flatMap(toOption).map(c => toName(c.getName)).getOrElse(columnName)
+      Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
+        .flatMap(toOption)
+        .map(c => toName(c.getName))
+        .getOrElse(columnName)
 
     def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
       case table: TableMetadata =>
-        for (index <- table.getIndexes.asScala.values.toSeq; className <- toOption(index.getClassName)) yield {
+        for (index <- table.getIndexes.asScala.values.toSeq) yield {
+          val className = toOption(index.getClassName)
           val target = handleId(table, index.getTarget)
           IndexDef(className, target, toName(index.getName), Map.empty)
         }
