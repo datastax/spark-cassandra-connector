@@ -58,7 +58,7 @@ private[connector] class BoundStatementBuilder[T](
       boundStatement.update(s => s.setToNull(columnName))
       logUnsetToNullWarning = true
     } else {
-      val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
+      val codec = CodecRegistryUtil.codecFor(boundStatement.stmt.codecRegistry(),columnType, columnValue)
       boundStatement.update(s => s.set(columnName, columnValue, codec))
     }
   }
@@ -72,7 +72,7 @@ private[connector] class BoundStatementBuilder[T](
     if (columnValue == Unset || (ignoreNulls && columnValue == null)) {
       //Do not bind
     } else {
-      val codec = CodecRegistryUtil.codecFor(columnType, columnValue)
+      val codec = CodecRegistryUtil.codecFor(boundStatement.stmt.codecRegistry(),columnType, columnValue)
       boundStatement.update(s => s.set(columnName, columnValue, codec))
     }
   }

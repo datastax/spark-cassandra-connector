@@ -113,7 +113,7 @@ object TupleType {
         for (i <- 0 until fieldTypes.size) {
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(tupleValue.getRaw(i))
-          toSave.set(i, fieldValue,  CodecRegistryUtil.codecFor(fieldTypes(i), fieldValue))
+          toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
         }
         toSave
     }

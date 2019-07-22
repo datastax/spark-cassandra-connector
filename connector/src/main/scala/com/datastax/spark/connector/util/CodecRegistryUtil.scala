@@ -6,8 +6,8 @@ import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 
 
 object CodecRegistryUtil {
-  def codecFor(cqlType: DataType, value: AnyRef) : TypeCodec[AnyRef] = {
-    if(value==null) CodecRegistry.DEFAULT.codecFor(cqlType)
-    else CodecRegistry.DEFAULT.codecFor(cqlType, value)
+  def codecFor(registry: CodecRegistry, cqlType: DataType, value: AnyRef) : TypeCodec[AnyRef] = {
+    if(value==null) registry.codecFor(cqlType)
+    else registry.codecFor(cqlType, value)
   }
 }
