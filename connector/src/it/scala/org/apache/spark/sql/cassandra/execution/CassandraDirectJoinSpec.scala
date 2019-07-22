@@ -1,14 +1,13 @@
 package org.apache.spark.sql.cassandra.execution
 
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
-
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.cassandra._
@@ -72,7 +71,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
         session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
         val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
         val futures = for (id <- 1 to 100) yield {
-          val jT: java.sql.Timestamp = new Timestamp(id.toLong)
+          val jT: Instant = Instant.ofEpochMilli(id.toLong)
           val jV: java.lang.Integer = id.toInt
           session.executeAsync(ps.bind(jT, jV)).toCompletableFuture
         }

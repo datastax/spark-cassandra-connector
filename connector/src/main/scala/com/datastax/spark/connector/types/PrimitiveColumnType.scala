@@ -4,6 +4,7 @@ package com.datastax.spark.connector.types
 import scala.reflect.runtime.universe.TypeTag
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.time.Instant
 import java.util.{Date, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry._
@@ -98,11 +99,11 @@ case object DecimalType extends PrimitiveColumnType[BigDecimal] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.math.BigDecimal])
 }
 
-case object TimestampType extends PrimitiveColumnType[Date] {
-  def scalaTypeTag = implicitly[TypeTag[Date]]
+case object TimestampType extends PrimitiveColumnType[Instant] {
+  def scalaTypeTag = implicitly[TypeTag[Instant]]
   def cqlTypeName = "timestamp"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.util.Date])
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.Instant])
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {

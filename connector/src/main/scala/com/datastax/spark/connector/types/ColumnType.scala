@@ -191,6 +191,7 @@ object ColumnType {
     else if (dataType =:= typeOf[java.lang.Boolean]) BooleanType
     else if (dataType =:= typeOf[String]) VarCharType
     else if (dataType =:= typeOf[InetAddress]) InetType
+    else if (dataType =:= typeOf[java.sql.Timestamp]) TimestampType
     else if (dataType =:= typeOf[Date]) TimestampType
     else if (dataType =:= typeOf[java.sql.Date]) if (pvGt4) DateType else TimestampType
     else if (dataType =:= typeOf[UUID]) UUIDType

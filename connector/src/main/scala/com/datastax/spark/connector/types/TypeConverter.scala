@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
-import java.time.{ZoneId, LocalDate => JavaLocalDate}
+import java.time.{Instant, ZoneId, LocalDate => JavaLocalDate}
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
@@ -351,6 +351,16 @@ object TypeConverter {
     override def convertPF = {
       case x: Timestamp => x
       case x => Timestamp.from(DateConverter.convert(x).toInstant())
+    }
+  }
+
+  private val InstantTypeTag = implicitly[TypeTag[Instant]]
+
+  implicit object InstantConverter extends NullableTypeConverter[Instant] {
+    def targetTypeTag = InstantTypeTag
+    override def convertPF = {
+      case x: Instant => x
+      case x => DateConverter.convert(x).toInstant
     }
   }
 
