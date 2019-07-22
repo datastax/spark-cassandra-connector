@@ -37,12 +37,17 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   }
 
   it should "have larger max hosts if set" in {
-    val maxCon = CassandraConnector(
+    val alteredConnector = CassandraConnector(
       defaultConf
           .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "5")
           .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "3"))
 
-    val conf = conn.withSessionDo(_.getContext.getConfig.getDefaultProfile)
+    // *ConnectionsPerExecutorsParam are not taken in account when retrieving session objects from global cache.
+    // This results in a possibility of grabbing a session that does not have the parameters set.
+    // https://github.com/riptano/bdp/pull/11359/files#diff-a866d6dfb859aa080a01d9a55ae1e5c0R43
+    CassandraConnector.evictCache()
+
+    val conf = alteredConnector.withSessionDo(_.getContext.getConfig.getDefaultProfile)
     conf.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (5)
     conf.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be (3)
   }
@@ -61,7 +66,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   }
 
   it should "disconnect from the session after use" in {
-    val session = conn.withSessionDo{ session => session }
+    val session = conn.withSessionDo { session => session }
     Thread.sleep(
       sc.getConf.getInt(
         "spark.cassandra.connection.keepAliveMS",
@@ -152,7 +157,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       session
         .getContext
         .getConfig
-        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe ("SNAPPY")
+        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe  "snappy"
     }
   }
 }

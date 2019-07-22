@@ -46,19 +46,14 @@ class SessionProxy(session: CqlSession, afterClose: CqlSession => Any) extends I
 object SessionProxy extends Logging {
 
   /** Creates a new `SessionProxy` delegating to the given `Session`.
-    * The proxy adds prepared statement caching functionality. */
-  def wrap(session: CqlSession): CqlSession =
-    wrapWithCloseAction(session)(_ => ())
-
-  /** Creates a new `SessionProxy` delegating to the given `Session`.
     * Additionally registers a callback on `Session#close` method.
     * @param afterClose code to be invoked after the session has been closed */
   def wrapWithCloseAction(session: CqlSession)(afterClose: CqlSession => Any): CqlSession = {
     val listInterfaces = ClassUtils.getAllInterfaces(session.getClass)
     val availableInterfaces = listInterfaces.toArray[Class[_]](new Array[Class[_]](listInterfaces.size))
-      // DseSession has static `builder` method with incompatible return type to CqlSession.builder return type
-      // which causes errors when generating proxy. Since DseSession has not useful methods at the moment of writing
-      // let's exclude it from proxy interfaces
+      // DseSession has static `builder` method with incompatible return type to CqlSession.builder return type,
+      // this causes errors when generating proxy. Let's exclude DseSession from proxy interfaces since it has no
+      // useful methods.
       .filter(_ != classOf[DseSession])
     Proxy.newProxyInstance(
       session.getClass.getClassLoader,

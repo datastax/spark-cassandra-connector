@@ -103,7 +103,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
     * are closed. */
   def withSessionDo[T](code: CqlSession => T): T = {
     closeResourceAfterUse(openSession()) { session =>
-      code(SessionProxy.wrap(session))
+      code(session)
     }
   }
 
