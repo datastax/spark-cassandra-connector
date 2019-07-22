@@ -53,7 +53,7 @@ lazy val root = (project in file("connector"))
       ++ Dependencies.Test.dependencies
       ++ Dependencies.Jetty.dependencies
   )
-  .dependsOn(testSupport % "test->test")
+  .dependsOn(testSupport % "test")
 
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)

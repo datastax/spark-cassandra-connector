@@ -397,7 +397,7 @@ public class CcmBridge implements AutoCloseable {
       try {
         this.configDirectory = Files.createTempDirectory("ccm");
         // mark the ccm temp directories for deletion when the JVM exits
-//        this.configDirectory.toFile().deleteOnExit();
+        this.configDirectory.toFile().deleteOnExit();
       } catch (IOException e) {
         // change to unchecked for now.
         throw new RuntimeException(e);

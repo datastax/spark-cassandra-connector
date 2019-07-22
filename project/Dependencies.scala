@@ -75,10 +75,10 @@ object Dependencies
   }
 
   object TestSupport {
-    val commonsExec = "org.apache.commons" % "commons-exec" % CommonsExec % "test"
+    val commonsExec = "org.apache.commons" % "commons-exec" % CommonsExec
 
     val dependencies = Seq(
       commonsExec,
-      Dependencies.DataStax.driverCore % "test")
+      Dependencies.DataStax.driverCore)
   }
 }
