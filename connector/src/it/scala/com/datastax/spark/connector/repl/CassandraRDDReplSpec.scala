@@ -20,8 +20,6 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')")
   }
 
-  val connectorString = s"""implicit val cassandraConnector = CassandraConnector(Set(InetAddress.getByName("${testCluster.getConnectionHost}")), ${testCluster.getConnectionPort})"""
-
   it should "allow to read a Cassandra table as Array of Scala class objects in REPL" in {
     val output = SparkRepl.runInterpreter(
       s"""
@@ -29,7 +27,6 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         |import com.datastax.spark.connector.cql.CassandraConnector
         |import java.net.InetAddress
         |
-        |$connectorString
         |
         |case class SampleScalaCaseClass(key: Int, value: String)
         |val cnt1 = sc.cassandraTable[SampleScalaCaseClass]("$ks", "simple_kv").collect.length
@@ -62,7 +59,7 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         |  case class ClassInObject(key: Int, value: String)
         |}
         |val cnt7 = sc.cassandraTable[SampleObject.ClassInObject]("$ks", "simple_kv").collect.length
-      """.stripMargin, SparkTemplate.defaultConf)
+      """.stripMargin, defaultConf)
     output should not include "error:"
     output should not include "Exception"
     output should include("cnt1: Int = 3")
