@@ -6,7 +6,7 @@ import org.apache.commons.lang3.ClassUtils
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-/** Source of [[TestCluster]]s for all tests executed within a single test group (single process/JVM).
+/** Source of [[Cluster]]s for all tests executed within a single test group (single process/JVM).
   *
   * Since tests are grouped by a cluster ([[Fixture]]) and each group is executed in a separate process,
   * this cache should never have more than one element. Retrieving a different element from the one that is already
@@ -18,7 +18,7 @@ object ClusterHolder extends Logging {
     close()
   })
 
-  private val clusters: mutable.Map[String, Seq[TestCluster]] = mutable.Map()
+  private val clusters: mutable.Map[String, Seq[Cluster]] = mutable.Map()
 
   private def close(): Unit = synchronized {
     for (testClusters <- clusters.values; cluster <- testClusters) {
@@ -26,7 +26,7 @@ object ClusterHolder extends Logging {
     }
   }
 
-  def get(config: Fixture): Seq[TestCluster] = {
+  def get(config: Fixture): Seq[Cluster] = {
     val key = ClassUtils.getAllInterfaces(config.getClass).asScala
       .filter(_.getPackage.equals(classOf[Fixture].getPackage))
       .map(_.getCanonicalName)
@@ -50,7 +50,7 @@ object ClusterHolder extends Logging {
           val bridge = builder.build()
           bridge.create(clusterName)
           bridge.start()
-          TestCluster(clusterName, bridge)
+          Cluster(clusterName, bridge, config.connectionParameters)
         }
       })
     }

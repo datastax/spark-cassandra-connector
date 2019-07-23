@@ -137,7 +137,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   }
 
   it should "accept multiple hostnames in spark.cassandra.connection.host property" in {
-    val goodHost = testCluster.getConnectionHost
+    val goodHost = cluster.getConnectionHost
     val invalidHost = "192.168.254.254"
     // let's connect to two addresses, of which the first one is deliberately invalid
     val conf = sc.getConf

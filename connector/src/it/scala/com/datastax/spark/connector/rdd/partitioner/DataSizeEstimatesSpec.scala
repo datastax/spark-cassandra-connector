@@ -26,7 +26,7 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase with DefaultClu
       futures.foreach(_.toCompletableFuture.get())
     }
 
-    testCluster.refreshSizeEstimates()
+    cluster.refreshSizeEstimates()
   }
 
   "DataSizeEstimates" should "fetch data size estimates for a known table" in {

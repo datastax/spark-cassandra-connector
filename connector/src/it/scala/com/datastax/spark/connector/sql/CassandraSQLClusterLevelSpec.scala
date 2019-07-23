@@ -13,8 +13,8 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase with Two
   override lazy val conn = CassandraConnector(defaultConf)
 
   val conf2 = defaultConf
-    .set(ConnectionHostParam.name, testCluster(1).addresses.head.getAddress.getHostAddress)
-    .set(ConnectionPortParam.name, testCluster(1).addresses.head.getPort.toString)
+    .set(ConnectionHostParam.name, cluster(1).addresses.head.getAddress.getHostAddress)
+    .set(ConnectionPortParam.name, cluster(1).addresses.head.getPort.toString)
   val conn2 = CassandraConnector(conf2)
 
   awaitAll(
@@ -58,9 +58,9 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase with Two
 
   override def beforeClass {
     sparkSession.setCassandraConf(cluster1,
-      ConnectionHostParam.option(testCluster(0).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(testCluster(0).addresses.head.getPort))
+      ConnectionHostParam.option(cluster(0).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(cluster(0).addresses.head.getPort))
     sparkSession.setCassandraConf(cluster2,
-      ConnectionHostParam.option(testCluster(1).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(testCluster(1).addresses.head.getPort))
+      ConnectionHostParam.option(cluster(1).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(cluster(1).addresses.head.getPort))
   }
 
   "SqlSession" should "allow to join tables from different clusters" in {

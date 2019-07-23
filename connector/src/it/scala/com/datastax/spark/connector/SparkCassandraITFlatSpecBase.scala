@@ -3,7 +3,7 @@ package com.datastax.spark.connector
 import java.util.concurrent.Executors
 
 import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
-import com.datastax.spark.connector.cluster.ConnectionProvider
+import com.datastax.spark.connector.cluster.ClusterProvider
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate
 import com.datastax.spark.connector.testkit.AbstractSpec
@@ -32,11 +32,11 @@ trait SparkCassandraITSpecBase
   extends Suite
   with Matchers
   with BeforeAndAfterAll
-  with ConnectionProvider {
+  with ClusterProvider {
 
   final def defaultConf: SparkConf = {
     SparkTemplate.defaultConf
-      .setAll(connectionParameters)
+      .setAll(cluster.connectionParameters)
   }
   final def sparkConf = defaultConf
 

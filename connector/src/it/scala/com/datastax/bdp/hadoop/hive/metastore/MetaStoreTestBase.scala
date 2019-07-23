@@ -41,10 +41,10 @@ abstract class MetaStoreTestBase extends SparkCassandraITFlatSpecBase {
 
     protected def buildConfiguration: Configuration = {
         val conf: Configuration = new Configuration
-        conf.set(CassandraClientConfiguration.CONF_PARAM_HOST, testCluster.getConnectionHost)
-        conf.set(CassandraClientConfiguration.CONF_PARAM_NATIVE_PORT, testCluster.getConnectionPort)
-        conf.set(CassandraConnectorConf.ConnectionHostParam.name, testCluster.getConnectionHost)
-        conf.set(CassandraConnectorConf.ConnectionPortParam.name, testCluster.getConnectionPort)
+        conf.set(CassandraClientConfiguration.CONF_PARAM_HOST, cluster.getConnectionHost)
+        conf.set(CassandraClientConfiguration.CONF_PARAM_NATIVE_PORT, cluster.getConnectionPort)
+        conf.set(CassandraConnectorConf.ConnectionHostParam.name, cluster.getConnectionHost)
+        conf.set(CassandraConnectorConf.ConnectionPortParam.name, cluster.getConnectionPort)
         conf.set("hive.metastore.warehouse.dir", MetaStoreWarehouseDir.toUri.toString)
         conf.set("cassandra.connection.metaStoreColumnFamilyName", MetaStoreTableName)
         conf.set("spark.cassandra.connection.factory", MiscUtil.objectOrClassName(DseCassandraConnectionFactory))

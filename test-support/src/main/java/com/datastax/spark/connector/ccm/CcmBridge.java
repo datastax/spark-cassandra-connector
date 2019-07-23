@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import com.datastax.oss.driver.api.core.Version;
 
 public class CcmBridge implements AutoCloseable {
 
