@@ -196,7 +196,7 @@ class DseGraphPartitioner[V, T <: Token[V]](
           .asInstanceOf[String]
 
       val tokenGenerator = labelToTokenGenerator(label)
-      val token = tokenFactory.tokenFromString(tokenGenerator.getTokenFor(vertexId).toString)
+      val token = tokenFactory.tokenFromString(tokenGenerator.getStringTokenFor(vertexId))
       val bucketRange = labelToTokenRangeLookup(label)
 
       val originalPartitionIndex = bucketRange
