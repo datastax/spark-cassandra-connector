@@ -15,8 +15,7 @@ lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
-  // TODO: remove com.datastax.dse once the driver is upgraded
-  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "com.datastax.dse" | "org.eclipse.jetty")
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty")
 )
 
 lazy val root = (project in file("connector"))
