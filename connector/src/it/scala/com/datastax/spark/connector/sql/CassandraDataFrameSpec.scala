@@ -8,6 +8,7 @@ import com.datastax.oss.driver.api.core.`type`.DataTypes
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
@@ -159,8 +160,8 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
     val meta = conn.withSessionDo(_.getMetadata)
     val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto").get()
-    autoTableMeta.getPartitionKey.map(_.getName) should contain ("v")
-    autoTableMeta.getClusteringColumns.map(_._1.getName) should contain ("k")
+    autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
+    autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
 
   }
 
