@@ -48,6 +48,7 @@ object Dependencies
   }
 
   object Test {
+    val annotationProcessor = "org.bsc.maven" % "maven-processor-plugin" % "2.2.4" % "test, it" // Annotation Processor
     val commonsIO         = "commons-io"              %  "commons-io"                   % CommonsIO    % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
     val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest    % "test,it"       // ApacheV2
@@ -57,6 +58,7 @@ object Dependencies
     val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
+      annotationProcessor,
       commonsIO, // TODO: used in one place, remove
       scalaCheck,
       scalaTest,

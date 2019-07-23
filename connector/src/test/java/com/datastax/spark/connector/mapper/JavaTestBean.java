@@ -1,12 +1,15 @@
 package com.datastax.spark.connector.mapper;
 
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+
 import java.io.Serializable;
 
 /**
  * This is a Java Bean style class with Java Driver style annotations built in.
  * This class also contains nested UDTs with its own mappings
  */
+@Entity
 public class JavaTestBean implements Serializable {
 
     @CqlName(value = "cassandra_property_1")

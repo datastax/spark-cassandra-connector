@@ -18,6 +18,11 @@ lazy val commonSettings = Seq(
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty")
 )
 
+val annotationProcessor = Seq(
+  "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor",
+  /*"-proc:only",*/ "-XprintRounds", "-XprintProcessorInfo"
+)
+
 lazy val root = (project in file("connector"))
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*) //This and above enables the "it" suite
@@ -41,6 +46,8 @@ lazy val root = (project in file("connector"))
     integrationTestsWithFixtures := {
       Testing.testsWithFixtures((testLoader in IntegrationTest).value, (definedTests in IntegrationTest).value)
     },
+
+    Test / javacOptions ++= annotationProcessor ++ Seq("-d", (classDirectory in Test).value.toString),
 
     IntegrationTest / testGrouping := Testing.makeTestGroups(integrationTestsWithFixtures.value),
     IntegrationTest / testOptions += Tests.Argument("-oF"),
