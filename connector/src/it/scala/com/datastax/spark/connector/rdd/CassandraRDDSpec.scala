@@ -1208,6 +1208,11 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
         .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, expected.toString)
     val rdd = sc.cassandraTable(ks, "big_table").withConnector(CassandraConnector(conf))
 
+    // *ConnectionsPerExecutorsParam are not taken in account when retrieving session objects from global cache.
+    // This results in a possibility of grabbing a session that does not have the parameters set.
+    // https://github.com/riptano/bdp/pull/11359/files#diff-a866d6dfb859aa080a01d9a55ae1e5c0R43
+    CassandraConnector.evictCache()
+
     val poolingOptions = rdd.connector.withSessionDo(_.getContext.getConfig).getDefaultProfile //TODO we gotta do something here I suppose
     poolingOptions.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (expected)
      poolingOptions.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (expected)
