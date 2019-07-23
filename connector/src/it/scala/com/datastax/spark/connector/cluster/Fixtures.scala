@@ -3,7 +3,7 @@ package com.datastax.spark.connector.cluster
 import java.net.InetSocketAddress
 
 import com.datastax.bdp.hadoop.hive.metastore.CassandraClientConfiguration
-import com.datastax.spark.connector.ccm.CcmBridge
+import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.cql.CassandraConnectorConf._
 import com.datastax.spark.connector.cql.DefaultAuthConfFactory
 import org.slf4j.MDC
@@ -16,7 +16,7 @@ trait ClusterProvider {
   def cluster(clusterNo: Int): Cluster
 }
 
-/** Encapsulates cluster configuration. Sub-traits define a builder that configures a cluster.
+/** Encapsulates cluster configuration. Sub-traits provide a configuration objects that define clusters.
   *
   * Integration tests that share the same fixture, share the same process during execution.
   *
@@ -45,7 +45,7 @@ sealed trait Fixture extends ClusterProvider {
     System.setProperty("ccm.branch", "master")
   }
 
-  private[cluster] def builders: Seq[CcmBridge.Builder]
+  private[cluster] def configs: Seq[CcmConfig]
 
   private[cluster] def connectionParameters(address: InetSocketAddress): Map[String, String]
 }
@@ -56,16 +56,16 @@ sealed trait SingleClusterFixture extends Fixture {
   override def cluster(c: Int): Cluster = if (c == 0) cluster else
     throw new IllegalArgumentException(s"This provider defines only one cluster, cluster $c does not exist")
 
-  protected val defaultSingleBuilder: CcmBridge.Builder = CcmBridge.builder()
-    .withIpPrefix(ipPrefix + "0.")
-    .withJMXPortOffset(CcmBridge.MAX_NUMBER_OF_NODES * groupNumber)
+  protected val defaultConfig: CcmConfig = CcmConfig(
+    ipPrefix = ipPrefix + "0.",
+    jmxPortOffset = CcmConfig.MAX_NUMBER_OF_NODES * groupNumber)
 }
 
 /** Most of the integration tests use this cluster configuration. It has no auth configured. Reuse this cluster config
   * whenever is is possible. */
 trait DefaultCluster extends SingleClusterFixture {
 
-  private[cluster] final override val builders: Seq[CcmBridge.Builder] = Seq(defaultSingleBuilder)
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig)
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address)
@@ -87,7 +87,7 @@ object DefaultCluster {
 /** SSL enabled cluster configuration. It has no auth configured. */
 trait SSLCluster extends SingleClusterFixture {
 
-  private[cluster] final override val builders: Seq[CcmBridge.Builder] = Seq(defaultSingleBuilder.withSsl())
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.withSsl())
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address) ++
@@ -99,10 +99,10 @@ object SSLCluster {
     Map(
       SSLEnabledParam.name -> "true",
       SSLClientAuthEnabledParam.name -> "true",
-      SSLTrustStorePasswordParam.name -> CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD,
-      SSLTrustStorePathParam.name -> CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_FILE.getPath,
-      SSLKeyStorePasswordParam.name -> CcmBridge.DEFAULT_CLIENT_KEYSTORE_PASSWORD,
-      SSLKeyStorePathParam.name -> CcmBridge.DEFAULT_CLIENT_KEYSTORE_FILE.getPath
+      SSLTrustStorePasswordParam.name -> CcmConfig.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD,
+      SSLTrustStorePathParam.name -> CcmConfig.DEFAULT_CLIENT_TRUSTSTORE_FILE.getPath,
+      SSLKeyStorePasswordParam.name -> CcmConfig.DEFAULT_CLIENT_KEYSTORE_PASSWORD,
+      SSLKeyStorePathParam.name -> CcmConfig.DEFAULT_CLIENT_KEYSTORE_FILE.getPath
     )
   }
 }
@@ -110,7 +110,7 @@ object SSLCluster {
 /** SSL enabled cluster configuration with auth configured. */
 trait AuthCluster extends SingleClusterFixture {
 
-  private[cluster] final override val builders: Seq[CcmBridge.Builder] = Seq(defaultSingleBuilder.withSslAuth())
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.withSslAuth())
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address) ++
@@ -130,10 +130,10 @@ object AuthCluster {
 /** A fixture that bootstraps two separate clusters with one node each. */
 trait TwoClustersWithOneNode extends Fixture {
 
-  private[cluster] final override val builders: Seq[CcmBridge.Builder] = for (i <- 0 to 1) yield
-    CcmBridge.builder()
-      .withIpPrefix(s"$ipPrefix$i.")
-      .withJMXPortOffset(CcmBridge.MAX_NUMBER_OF_NODES * groupNumber + i)
+  private[cluster] final override val configs: Seq[CcmConfig] = for (i <- 0 to 1) yield
+    CcmConfig(
+      ipPrefix = s"$ipPrefix$i.",
+      jmxPortOffset = CcmConfig.MAX_NUMBER_OF_NODES * groupNumber + i)
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address)

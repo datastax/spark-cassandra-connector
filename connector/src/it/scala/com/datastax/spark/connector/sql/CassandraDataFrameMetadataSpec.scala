@@ -90,7 +90,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
 
-  val dseVersion = cluster.getDseVersion.orElse(Version.parse("6.0.0"))
+  val dseVersion = cluster.getDseVersion.getOrElse(Version.parse("6.0.0"))
 
   val columnsToCheck = Schema
     .fromCassandra(conn, Some(ks), Some("test_reading_types"))

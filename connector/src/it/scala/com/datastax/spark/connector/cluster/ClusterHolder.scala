@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.cluster
 
+import com.datastax.spark.connector.ccm.CcmBridge
 import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.commons.lang3.ClassUtils
 
@@ -26,8 +27,8 @@ object ClusterHolder extends Logging {
     }
   }
 
-  def get(config: Fixture): Seq[Cluster] = {
-    val key = ClassUtils.getAllInterfaces(config.getClass).asScala
+  def get(fixture: Fixture): Seq[Cluster] = {
+    val key = ClassUtils.getAllInterfaces(fixture.getClass).asScala
       .filter(_.getPackage.equals(classOf[Fixture].getPackage))
       .map(_.getCanonicalName)
       .sorted
@@ -37,20 +38,19 @@ object ClusterHolder extends Logging {
       clusters.getOrElseUpdate(key, {
         if (clusters.nonEmpty) {
           logWarning("Test group should contain only tests with the same cluster fixture. Verify your test group setup. " +
-            s"Stopping previous clusters and bootstrapping the new one for ${config.getClass.getCanonicalName}")
+            s"Stopping previous clusters and bootstrapping the new one for ${fixture.getClass.getCanonicalName}")
           for (testClusters <- clusters.values; cluster <- testClusters) {
             cluster.ccmBridge.close()
           }
           clusters.clear()
         }
 
-        config.builders.zipWithIndex.map { case (builder, i) =>
-
+        fixture.configs.zipWithIndex.map { case (config, i) =>
           val clusterName = s"ccm_${i + 1}"
-          val bridge = builder.build()
+          val bridge = new CcmBridge(config)
           bridge.create(clusterName)
           bridge.start()
-          Cluster(clusterName, bridge, config.connectionParameters)
+          Cluster(clusterName, bridge, fixture.connectionParameters)
         }
       })
     }
