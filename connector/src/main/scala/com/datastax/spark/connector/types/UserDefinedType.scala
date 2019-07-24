@@ -90,7 +90,11 @@ object UserDefinedType {
           val fieldName = fieldNames(i)
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(udtValue.getRaw(fieldName.asInternal()))
-          toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
+          if (fieldValue == null) {
+            toSave.setToNull(i)
+          } else {
+            toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
+          }
         }
         toSave
     }
