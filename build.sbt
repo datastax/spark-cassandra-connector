@@ -19,8 +19,7 @@ lazy val commonSettings = Seq(
 )
 
 val annotationProcessor = Seq(
-//  "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor",
-  /*"-proc:only",*/ "-XprintRounds", "-XprintProcessorInfo"
+  "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
 )
 
 lazy val root = (project in file("connector"))
