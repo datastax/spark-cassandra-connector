@@ -5,32 +5,16 @@ import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
-import com.datastax.spark.connector.ccm.{CcmBridge, CcmConfig}
-import org.apache.commons.exec.CommandLine
+import com.datastax.spark.connector.ccm.CcmConfig
 
-private[mode] trait DedicatedDirectoryExecutor extends ClusterModeExecutor {
-
-  protected val dir: Path = Files.createTempDirectory("ccm")
-
-  override def execute(args: String*): Unit = synchronized {
-    val command = s"ccm ${args.mkString(" ")} --config-dir=${dir.toFile.getAbsolutePath}"
-    CcmBridge.execute(CommandLine.parse(command))
-  }
-
-  override def executeUnsanitized(args: String*): Unit = synchronized {
-    val cli = CommandLine.parse("ccm ")
-    args.foreach { arg =>
-      cli.addArgument(arg, false)
-    }
-    cli.addArgument("--config-dir=" + dir.toFile.getAbsolutePath)
-
-    CcmBridge.execute(cli)
-  }
-}
-
-private[mode] trait DefaultCreateExecutor extends ClusterModeExecutor {
+private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 
   private val created = new AtomicBoolean()
+
+  override def start(nodeNo: Int): Unit = {
+    val formattedJvmArgs = config.jvmArgs.map(arg => s" --jvm_arg=$arg").mkString(" ")
+    execute(s"node$nodeNo", "start", formattedJvmArgs + "--wait-for-binary-proto")
+  }
 
   override def create(clusterName: String): Unit = {
     if (created.compareAndSet(false, true)) {
@@ -70,7 +54,9 @@ private[mode] trait DefaultCreateExecutor extends ClusterModeExecutor {
   }
 }
 
-private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultCreateExecutor with DedicatedDirectoryExecutor {
+private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultExecutor {
+
+  override val dir: Path = Files.createTempDirectory("ccm")
 
   // remove config directory on shutdown
   dir.toFile.deleteOnExit()

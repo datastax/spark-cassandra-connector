@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.ccm
 
-import com.datastax.spark.connector.ccm.mode.{ClusterModeExecutor, DebugModeExecutor, StandardModeExecutor}
+import com.datastax.spark.connector.ccm.mode.{ClusterModeExecutor, DebugModeExecutor, DeveloperModeExecutor, StandardModeExecutor}
 
 sealed trait ClusterMode {
   def executor(config: CcmConfig): ClusterModeExecutor
@@ -17,7 +17,7 @@ object ClusterModes {
     def executor(config: CcmConfig): ClusterModeExecutor = new StandardModeExecutor(config)
   }
 
-  /** Debug mode of CCM Cluster.
+  /** CCM Cluster mode that allows to inspect DB artifacts.
     *
     * The cluster is created in a dedicated directory that is not removed on shutdown. This mode allows to inspect DB
     * artifacts after test execution.
@@ -26,8 +26,15 @@ object ClusterModes {
     def executor(config: CcmConfig): ClusterModeExecutor = new DebugModeExecutor(config)
   }
 
+  /** CCM Cluster mode for fixing or developing tests.
+    *
+    * It can not be used to run tests from different test groups.
+    *
+    * The cluster is created and started only if it does not exist during test boostrap. The cluster is not stopped on
+    * JVM shutdown, it needs manual stop.
+    */
   case object Developer extends ClusterMode {
-    def executor(config: CcmConfig): ClusterModeExecutor = ???
+    def executor(config: CcmConfig): ClusterModeExecutor = new DeveloperModeExecutor(config)
   }
 
   def fromEnvVar: ClusterMode = {

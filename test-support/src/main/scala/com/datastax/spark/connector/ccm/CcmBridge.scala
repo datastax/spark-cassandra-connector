@@ -2,12 +2,12 @@ package com.datastax.spark.connector.ccm
 
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
 import org.apache.commons.exec.{CommandLine, ExecuteWatchdog, LogOutputStream, _}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.mutable
 import scala.util.Try
 
 class CcmBridge(config: CcmConfig) extends AutoCloseable {
@@ -15,7 +15,6 @@ class CcmBridge(config: CcmConfig) extends AutoCloseable {
   CcmBridge.logger.info(s"CcmBridge is running in ${config.mode} mode.")
 
   private val executor = config.mode.executor(config)
-  private val started = new AtomicBoolean()
 
   def getDseVersion: Option[Version] = config.getDseVersion
 
@@ -33,21 +32,12 @@ class CcmBridge(config: CcmConfig) extends AutoCloseable {
     remove()
   }
 
-  private def start(n: Int): Unit = {
-    val formattedJvmArgs = config.jvmArgs.map(arg => s" --jvm_arg=$arg").mkString(" ")
-    execute(s"node$n", "start", formattedJvmArgs + "--wait-for-binary-proto")
-  }
-
   def start(): Unit = {
-    if (started.compareAndSet(false, true)) {
-      config.nodes.foreach(start)
-    }
+    config.nodes.foreach(executor.start)
   }
 
   def stop(): Unit = {
-    if (started.compareAndSet(true, false)) {
-      execute("stop")
-    }
+    execute("stop")
   }
 
   def pause(n: Int): Unit = {
@@ -80,12 +70,17 @@ object CcmBridge {
 
   private val logger: Logger = LoggerFactory.getLogger(classOf[CcmBridge])
 
-  def execute(cli: CommandLine): Unit = {
+  def execute(cli: CommandLine): Seq[String] = {
     logger.debug("Executing: " + cli)
 
     val watchDog: ExecuteWatchdog = new ExecuteWatchdog(TimeUnit.MINUTES.toMillis(10))
+
     val outStream = new LogOutputStream() {
-      override def processLine(line: String, logLevel: Int): Unit = logger.debug("ccmout> {}", line)
+      val lines: mutable.Buffer[String] = mutable.Buffer[String]()
+      override def processLine(line: String, logLevel: Int): Unit = {
+        lines += line
+        logger.debug("ccmout> {}", line)
+      }
     }
     val errStream = new LogOutputStream() {
       override def processLine(line: String, logLevel: Int): Unit = logger.error("ccmerr> {}", line)
@@ -101,6 +96,7 @@ object CcmBridge {
         logger.error(
           "Non-zero exit code ({}) returned from executing ccm command: {}", retValue, cli)
       }
+      outStream.lines
     } catch {
       case _: IOException if watchDog.killedProcess() =>
         throw new RuntimeException("The command '" + cli + "' was killed after 10 minutes")
