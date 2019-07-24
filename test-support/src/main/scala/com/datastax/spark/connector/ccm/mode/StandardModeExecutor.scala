@@ -1,36 +1,38 @@
 package com.datastax.spark.connector.ccm.mode
 
 import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.{CcmBridge, CcmConfig}
 import org.apache.commons.exec.CommandLine
 
-class StandardModeExecutor(config: CcmConfig) extends ClusterModeExecutor {
+private[mode] trait DedicatedDirectoryExecutor extends ClusterModeExecutor {
 
-  private val configDirectory = Files.createTempDirectory("ccm")
-  configDirectory.toFile.deleteOnExit()
+  protected val dir: Path = Files.createTempDirectory("ccm")
 
-  private val created = new AtomicBoolean()
-
-  def execute(args: String*): Unit = synchronized {
-    val command = s"ccm ${args.mkString(" ")} --config-dir=${configDirectory.toFile.getAbsolutePath}"
+  override def execute(args: String*): Unit = synchronized {
+    val command = s"ccm ${args.mkString(" ")} --config-dir=${dir.toFile.getAbsolutePath}"
     CcmBridge.execute(CommandLine.parse(command))
   }
 
-  def executeUnsanitized(args: String*): Unit = synchronized {
+  override def executeUnsanitized(args: String*): Unit = synchronized {
     val cli = CommandLine.parse("ccm ")
     args.foreach { arg =>
       cli.addArgument(arg, false)
     }
-    cli.addArgument("--config-dir=" + configDirectory.toFile.getAbsolutePath)
+    cli.addArgument("--config-dir=" + dir.toFile.getAbsolutePath)
 
     CcmBridge.execute(cli)
   }
+}
 
-  def create(clusterName: String): Unit = {
+private[mode] trait DefaultCreateExecutor extends ClusterModeExecutor {
+
+  private val created = new AtomicBoolean()
+
+  override def create(clusterName: String): Unit = {
     if (created.compareAndSet(false, true)) {
       val options = config.installDirectory.map(dir => config.createOptions :+ s"--install-dir=${new File(dir).getAbsolutePath}")
         .orElse(config.installBranch.map(branch => config.createOptions :+ s"-v git:${branch.trim().replaceAll("\"", "")}"))
@@ -66,8 +68,15 @@ class StandardModeExecutor(config: CcmConfig) extends ClusterModeExecutor {
       }
     }
   }
+}
 
-  def remove(): Unit = {
+private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultCreateExecutor with DedicatedDirectoryExecutor {
+
+  // remove config directory on shutdown
+  dir.toFile.deleteOnExit()
+
+  // remove db artifacts
+  override def remove(): Unit = {
     execute("remove")
   }
 

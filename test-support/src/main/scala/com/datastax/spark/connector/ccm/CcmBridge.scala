@@ -12,6 +12,8 @@ import scala.util.Try
 
 class CcmBridge(config: CcmConfig) extends AutoCloseable {
 
+  CcmBridge.logger.info(s"CcmBridge is running in ${config.mode} mode.")
+
   private val executor = config.mode.executor(config)
   private val started = new AtomicBoolean()
 

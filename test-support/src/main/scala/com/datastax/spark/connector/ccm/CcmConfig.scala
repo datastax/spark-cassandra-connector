@@ -23,7 +23,7 @@ case class CcmConfig(
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
     dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toBoolean),
-    mode: ClusterMode = ClusterMode.Standard) {
+    mode: ClusterMode = ClusterModes.fromEnvVar) {
 
   def withSsl(): CcmConfig = {
     copy(cassandraConfiguration = cassandraConfiguration +

@@ -1,6 +1,10 @@
 package com.datastax.spark.connector.ccm.mode
 
-trait ClusterModeExecutor {
+import com.datastax.spark.connector.ccm.CcmConfig
+
+private[ccm] trait ClusterModeExecutor {
+
+  val config: CcmConfig
 
   def execute(args: String*): Unit
 
