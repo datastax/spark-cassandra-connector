@@ -4,7 +4,7 @@ package com.datastax.spark.connector.types
 import scala.reflect.runtime.universe.TypeTag
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.time.{Instant, LocalTime}
+import java.time.{Instant, LocalDate, LocalTime}
 import java.util.{Date, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry._
@@ -141,8 +141,8 @@ case object BlobType extends PrimitiveColumnType[ByteBuffer] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.nio.ByteBuffer])
 }
 
-case object DateType extends PrimitiveColumnType[Int] {
-  def scalaTypeTag = implicitly[TypeTag[Int]]
+case object DateType extends PrimitiveColumnType[LocalDate] {
+  def scalaTypeTag = implicitly[TypeTag[LocalDate]]
   def cqlTypeName = "date"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.LocalDate])
