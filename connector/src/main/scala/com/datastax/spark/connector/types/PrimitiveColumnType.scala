@@ -4,7 +4,7 @@ package com.datastax.spark.connector.types
 import scala.reflect.runtime.universe.TypeTag
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import java.time.Instant
+import java.time.{Instant, LocalTime}
 import java.util.{Date, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry._
@@ -148,13 +148,8 @@ case object DateType extends PrimitiveColumnType[Int] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.LocalDate])
 }
 
-/* The implicit conversions we usually do between types will not work as expected here, Since the
-time representation is stored as nanoseconds from midnight (epoch) we need to make sure any
-translations of Types take this into account. In particular we need to be careful of reading this
-time out and converting it to Dates since they will be off by a factor of a million.
- */
-case object TimeType extends PrimitiveColumnType[Long] {
-  def scalaTypeTag = { implicitly[TypeTag[Long]]}
+case object TimeType extends PrimitiveColumnType[LocalTime] {
+  def scalaTypeTag = { implicitly[TypeTag[LocalTime]]}
   def cqlTypeName = "time"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)

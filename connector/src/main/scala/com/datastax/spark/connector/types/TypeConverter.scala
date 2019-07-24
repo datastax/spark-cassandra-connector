@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
-import java.time.{Instant, ZoneId, LocalDate => JavaLocalDate}
+import java.time.{Instant, LocalTime, ZoneId, LocalDate => JavaLocalDate}
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
@@ -429,12 +429,12 @@ object TypeConverter {
     }
   }
 
-  object TimeTypeConverter extends NullableTypeConverter[java.lang.Long] {
-    def targetTypeTag = JavaLongTypeTag
+  object TimeTypeConverter extends NullableTypeConverter[LocalTime] {
+    def targetTypeTag = JavaLocalTimeTypeTag
     def convertPF = {
-      case x: Date => TimeUnit.MILLISECONDS.toNanos(x.getTime)
-      case x: Long => x.toLong
-      case x: String => x.toLong
+      case x: LocalTime => x
+      case x: Long => LocalTime.ofNanoOfDay(x)
+      case x: String => LocalTime.parse(x)
     }
   }
 
