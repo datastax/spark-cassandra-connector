@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
+
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.ccm.Version
 import com.datastax.spark.connector.cluster.DefaultCluster
@@ -78,6 +79,16 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
              |(1, 1), (1, 1)) USING
              |timestamp 1000
            """.stripMargin)
+      },
+      Future {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks."caseNames" ("Key" INT, "Value" INT, "Dot.Value" INT, PRIMARY KEY ("Key"))
+             |""".stripMargin)
+
+        session.execute(
+          s"""INSERT INTO $ks."caseNames" ("Key", "Value", "Dot.Value") VALUES (1, 2, 3)
+             |USING TTL 10000 AND TIMESTAMP 10000""".stripMargin)
       }
     )
   }
@@ -244,6 +255,94 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     result should be > 0L
   }
 
+  it should "be able to read TTL using the function api and get the column" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "basic",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+      .select(col("v"), ttl("v"))
+
+    val result = df.select(sum("TTL(V)").as("sum"))
+      .collect()
+      .head
+      .getAs[Long]("sum")
+    result should be > 0L
+  }
+
+  it should "be able to read TTL using the function api and get the column from subsequent call" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "basic",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+      .select(col("v"))
+      .select(ttl("v"))
+
+    val result = df.select(sum("TTL(V)").as("sum"))
+      .collect()
+      .head
+      .getAs[Long]("sum")
+    result should be > 0L
+  }
+
+  it should "return null TTL for lit(null) column" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "basic",
+          "keyspace" -> ks
+        )
+      )
+      .load().select("v").limit(1)
+
+    val spark = sparkSession
+    import spark.implicits._
+    val nullDf = (Seq((1))).toDF("n").select (lit(null) as "v")
+
+
+    val unionDf = (df union nullDf).select(ttl("v") as ("ttl"))
+    val result = unionDf.collect()
+
+    result(0).getAs[Int](0) should be > 0
+    result(1).getAs[AnyRef](0) should be (null)
+  }
+
+    it should "return null TTL for lit(null) reversed column" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "basic",
+          "keyspace" -> ks
+        )
+      )
+      .load().select("v").limit(1)
+
+    val spark = sparkSession
+    import spark.implicits._
+    val nullDf = (Seq((1))).toDF("n").select (lit(null) as "v")
+
+    val unionDf = (nullDf union df).select(ttl("v") as ("ttl"))
+    val result = unionDf.collect()
+
+    result(1).getAs[Int](0) should be > 0
+    result(0).getAs[AnyRef](0) should be (null)
+  }
+
   it should "fail trying to read TTL from non-regular columns" in intercept[IllegalArgumentException]{
     val df = sparkSession
       .read
@@ -291,6 +390,20 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     sparkSession
       .createDataFrame(Seq((-1,-1,-1,10000)))
       .toDF("k","c","v","ttlCol")
+      .write
+      .cassandraFormat("basic", ks)
+      .option("ttl", "ttlCol")
+      .mode("APPEND")
+      .save()
+
+    val result = conn.withSessionDo(_.execute(s"SELECT TTL(v) as t FROM $ks.basic WHERE k = -1"))
+    result.one().getInt("t") shouldBe (9000 +- 1000)
+  }
+
+  it should "be able to write ttl as first column" in {
+    sparkSession
+      .createDataFrame(Seq((10000,-1,-1,-2)))
+      .toDF("ttlCol","k","c","v")
       .write
       .cassandraFormat("basic", ks)
       .option("ttl", "ttlCol")
@@ -399,10 +512,62 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
       .head.getLong(0) should be > 1000L
   }
 
-  it should "be able to read WRITETIME in " in {
+  it should "be able to read WRITETIME" in {
     sparkSession.sql(s"SELECT sum(writetime(v)) FROM $ks.basic")
       .collect()
       .head.getLong(0) should be > 1000L
+  }
+
+  it should "be able to read TTL from case sensitive column" in {
+    sparkSession.sql(s"SELECT ttl(Value) FROM $ks.caseNames")
+      .collect()
+      .head.getInt(0) should be > 1000
+  }
+
+  it should "be able to read WRITETIME from case sensitive column" in {
+    sparkSession.sql(s"SELECT writetime(`Dot.Value`) FROM $ks.caseNames")
+      .collect()
+      .head.getLong(0) should be (10000L)
+  }
+
+  it should "be able to read case sensitive column TTL from options" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "caseNames",
+          "keyspace" -> ks,
+          "ttl.Value" -> "ttlOfV"
+        )
+      )
+      .load()
+
+    val result = df.select("ttlOfV")
+      .collect()
+      .head
+      .getAs[Int](0)
+    result should be > 0
+  }
+
+  it should "be able to read case sensitive column WRITETIME from options" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "caseNames",
+          "keyspace" -> ks,
+          "writetime.Dot.Value" -> "wtOfV"
+        )
+      )
+      .load()
+
+    val result = df.select("wtOfV")
+      .collect()
+      .head
+      .getAs[Long](0)
+    result should be (10000L)
   }
 
   it should "throw an exception when calling writetime on more than one column" in intercept[AnalysisException] {
@@ -412,5 +577,6 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   it should "throw an exception when calling ttl on more than one column" in intercept[AnalysisException] {
     sparkSession.sql(s"SELECT sum(ttl(v, k)) FROM $ks.basic")
   }
+
 }
 

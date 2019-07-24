@@ -1,12 +1,14 @@
 package org.apache.spark.sql.cassandra
 
 import org.apache.spark.sql.catalyst.FunctionIdentifier
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression, UnaryExpression, Unevaluable}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, UnaryExpression, Unevaluable}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.{AnalysisException, SparkSession, functions}
 
 trait CassandraMetadataFunction extends UnaryExpression with Unevaluable {
   def confParam: String
@@ -70,6 +72,11 @@ object CassandraMetadataFunction {
   }
 }
 
+//A Nullable version of Unresolved Attribute to Fix Union's Output checking behavior
+class NullableUnresolvedAttribute(name: String) extends UnresolvedAttribute(Seq(name)) {
+  override def nullable = true;
+}
+
 object CassandraMetaDataRule extends Rule[LogicalPlan] {
 
   def replaceMetadata(metaDataExpression: CassandraMetadataFunction, plan: LogicalPlan)
@@ -78,39 +85,71 @@ object CassandraMetaDataRule extends Rule[LogicalPlan] {
       s"""Can only use Cassandra Metadata Functions on Attribute References,
          |found a ${metaDataExpression.child.getClass}""".stripMargin)
 
-    (metaDataExpression.child.isInstanceOf[AttributeReference])
-
     val cassandraColumnName = metaDataExpression.child.asInstanceOf[AttributeReference].name
     val cassandraParameter = s"${metaDataExpression.confParam}.$cassandraColumnName"
     val cassandraCql = s"${metaDataExpression.cql}($cassandraColumnName)"
 
-    val cassandraRelation = plan.collectFirst{
-      case plan@LogicalRelation(relation: CassandraSourceRelation, _, _, _)
+    val cassandraRelation = plan.collectFirst {
+      case plan@LogicalRelation(relation: CassandraTableDefProvider, _, _, _)
         if relation.tableDef.columnByName.contains(cassandraColumnName) => relation }
       .getOrElse(throw new IllegalArgumentException(
         s"Unable to find Cassandra Source Relation for TTL/Writetime for column $cassandraColumnName"))
 
     val columnDef = cassandraRelation.tableDef.columnByName(cassandraColumnName)
 
-    val newAttributeReference = if (columnDef.isMultiCell) {
+    //Used for CassandraRelation Leaves, giving them a reference to the underlying TTL
+    val cassandraAttributeReference = if (columnDef.isMultiCell) {
         AttributeReference(cassandraCql, ArrayType(metaDataExpression.dataType), true)()
       } else {
         AttributeReference(cassandraCql, metaDataExpression.dataType, true)()
       }
 
+    //Used as a placeholder for everywhere except leaf nodes, to be resolved by the Catalyst Analyzer
+    val unResolvedAttributeReference =  new NullableUnresolvedAttribute(cassandraCql)
+
+    //Used for any leaf nodes that do not have the ability to produce a true TTL Value
+    val nullAttributeReference = Alias(functions.lit(null).cast(metaDataExpression.dataType).expr, cassandraCql)()
+
     // Remove Metadata Expressions
-    val metadataFunctionRemovedPlan = plan.transformAllExpressions {
-      case expression: Expression if expression == metaDataExpression => newAttributeReference
+    val metadataFunctionRemovedPlan = plan.transformAllExpressions{
+      case expression: Expression if expression == metaDataExpression => unResolvedAttributeReference
     }
 
     // Add Metadata to CassandraSource
-    metadataFunctionRemovedPlan.transform {
-      case plan@LogicalRelation(relation: CassandraSourceRelation, _, _, _)
+    val cassandraSourceModifiedPlan = metadataFunctionRemovedPlan.transform {
+      case plan@LogicalRelation(relation: CassandraTableDefProvider, _, _, _)
         if relation.tableDef.columnByName.contains(cassandraColumnName) =>
-        val modifiedCassandraRelation = relation.copy(sparkConf = relation.sparkConf.clone()
-          .set(cassandraParameter, cassandraCql))
-        plan.copy(relation = modifiedCassandraRelation, output = plan.output :+ newAttributeReference)
+        val modifiedCassandraRelation = relation.withSparkConfOption(cassandraParameter, cassandraCql)
+        plan.copy(relation = modifiedCassandraRelation, output = plan.output :+ cassandraAttributeReference)
     }
+
+    def containsAnyReferenceToTTL(logicalPlan: LogicalPlan): Boolean ={
+      val references = Seq(cassandraAttributeReference, nullAttributeReference, unResolvedAttributeReference)
+      val input = logicalPlan.inputSet
+      references.exists(input.contains)
+    }
+
+    /* Find the leaves of unstatisfied TTL references. Replace them either with a Cassandra TTL attribute
+    * or a null if no CassandraTTL is possible for that leaf. All other locations are marked as unresolved
+    * for the next pass of the Analyzer */
+    val fixedPlan = cassandraSourceModifiedPlan.transformDown{
+      case plan if (plan.missingInput.contains(unResolvedAttributeReference)) =>
+        plan.mapChildren(_.transformUp {
+          case child: Project =>
+            if (containsAnyReferenceToTTL(child)) {
+              //This node's input contains a value with the Cassandra TTL name, add an unresolved reference to it
+              child.copy(child.projectList :+ unResolvedAttributeReference, child.child)
+            } else {
+              /* This node's input is missing any child reference to the Cassandra TTL we are adding add a null column reference
+                 with the same name.
+                 This is specifically for graphframes which unions Null References with C* columns
+               */
+              child.copy(child.projectList :+ nullAttributeReference, child.child)
+            }
+        })
+    }
+
+    fixedPlan
   }
 
   def findMetadataExpressions(logicalPlan: LogicalPlan): Seq[CassandraMetadataFunction] = {
