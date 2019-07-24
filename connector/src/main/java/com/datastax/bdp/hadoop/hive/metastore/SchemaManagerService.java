@@ -209,7 +209,7 @@ public class SchemaManagerService
 
     private boolean isLegacyGraphKs(String ksName)
     {
-        return ksName.endsWith("_pvt") || ksName.endsWith("_system") || metadata.getKeyspace(ksName + "_system") != null;
+        return ksName.endsWith("_pvt") || ksName.endsWith("_system") || metadata.getKeyspace(ksName + "_system").isPresent();
     }
 
     /**
