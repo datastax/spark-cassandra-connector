@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.ccm
 
 import java.io.{File, IOException, InputStream}
+import java.net.InetSocketAddress
 import java.nio.file.{Files, StandardCopyOption}
 
 import com.datastax.oss.driver.api.core.Version
@@ -21,7 +22,8 @@ case class CcmConfig(
     version: Version = Version.parse(System.getProperty("ccm.version", "3.11.0")),
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
-    dseEnablement: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toBoolean)) {
+    dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toBoolean),
+    mode: ClusterMode = ClusterMode.Standard) {
 
   def withSsl(): CcmConfig = {
     copy(cassandraConfiguration = cassandraConfiguration +
@@ -45,6 +47,43 @@ case class CcmConfig(
       ("client_encryption_options.truststore" -> DEFAULT_SERVER_TRUSTSTORE_FILE.getAbsolutePath) +
       ("client_encryption_options.truststore_password" -> DEFAULT_SERVER_TRUSTSTORE_PASSWORD)
     )
+  }
+
+  def getDseVersion: Option[Version] = {
+    if (dseEnabled) Option(version) else None
+  }
+
+  def getCassandraVersion: Version = {
+    if (!dseEnabled) {
+      version
+    } else {
+      val stableVersion = version.nextStable()
+      if (stableVersion.compareTo(V6_0_0) >= 0) {
+        V4_0_0
+      } else if (stableVersion.compareTo(V5_1_0) >= 0) {
+        V3_10
+      } else if (stableVersion.compareTo(V5_0_0) >= 0) {
+        V3_0_15
+      } else {
+        V2_1_19
+      }
+    }
+  }
+
+  def ipOfNode(n: Int): String = {
+    ipPrefix + n
+  }
+
+  def jmxPort(n: Int): Integer = {
+    7108 + jmxPortOffset + n
+  }
+
+  def addressOfNode(n: Int): InetSocketAddress = {
+    new InetSocketAddress(ipOfNode(n), 9042)
+  }
+
+  def nodeAddresses(): Seq[InetSocketAddress] = {
+    nodes.map(addressOfNode)
   }
 }
 

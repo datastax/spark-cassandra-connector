@@ -3,23 +3,24 @@ package com.datastax.spark.connector.cluster
 import java.net.InetSocketAddress
 
 import com.datastax.oss.driver.api.core.Version
-import com.datastax.spark.connector.ccm.CcmBridge
+import com.datastax.spark.connector.ccm.{CcmBridge, CcmConfig}
 
 /** Cluster facade used by test code. */
 case class Cluster(
     name: String,
+    private[cluster] val config: CcmConfig,
     private[cluster] val ccmBridge: CcmBridge,
     private val nodeConnectionParams: InetSocketAddress => Map[String, String]) {
 
-  val addresses: Seq[InetSocketAddress] = ccmBridge.nodeAddresses()
+  val addresses: Seq[InetSocketAddress] = config.nodeAddresses()
 
-  def flush(): Unit = ccmBridge.nodes().foreach(ccmBridge.flush)
+  def flush(): Unit = config.nodes.foreach(ccmBridge.flush)
 
   def getDseVersion: Option[Version] = ccmBridge.getDseVersion
 
   def refreshSizeEstimates(): Unit = {
     flush()
-    ccmBridge.nodes().foreach(ccmBridge.refreshSizeEstimates)
+    config.nodes.foreach(ccmBridge.refreshSizeEstimates)
   }
 
   def getConnectionHost: String = addresses.head.getHostName

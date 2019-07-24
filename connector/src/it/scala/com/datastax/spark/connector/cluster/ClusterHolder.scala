@@ -50,7 +50,7 @@ object ClusterHolder extends Logging {
           val bridge = new CcmBridge(config)
           bridge.create(clusterName)
           bridge.start()
-          Cluster(clusterName, bridge, fixture.connectionParameters)
+          Cluster(clusterName, config, bridge, fixture.connectionParameters)
         }
       })
     }
