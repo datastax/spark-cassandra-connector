@@ -128,7 +128,7 @@ class CassandraCoGroupedRDD[T](
       val convertedValues =
         for ((value, converter) <- values zip converters)
           yield converter.convert(value)
-      stmt.bind(convertedValues)
+      stmt.bind(convertedValues: _*)
         .setIdempotent(true)
         .setConsistencyLevel(readConf.consistencyLevel)
         .setPageSize(readConf.fetchSizeInRows)
