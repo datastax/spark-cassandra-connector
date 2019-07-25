@@ -62,7 +62,7 @@ trait SparkCassandraITSpecBase
     } catch {
       case e: Throwable =>
         if (isSerializable(e)) {
-          ExceptionUtils.rethrow(e)
+          throw e
         } else {
           logError(s"$this failed due to unserializable exception", e)
           throw new java.io.NotSerializableException(s"Unserializable exception was thrown by $this. The exception " +

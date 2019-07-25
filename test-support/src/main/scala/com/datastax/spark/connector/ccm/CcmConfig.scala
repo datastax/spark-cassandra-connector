@@ -140,6 +140,8 @@ object CcmConfig {
   // artificial estimation of maximum number of nodes for this cluster, may be bumped anytime.
   val MAX_NUMBER_OF_NODES: Integer = 4
 
+  // TODO: these need to have constant name, these should be placed in config-dir (to support developer mode, which
+  // is currently broken for Fixtures that use temporary (different between executions) files)
   /**
     * Extracts a keystore from the classpath into a temporary file.
     *
