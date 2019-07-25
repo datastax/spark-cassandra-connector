@@ -347,16 +347,22 @@ object Schema extends Logging {
           val target = handleId(table, index.getTarget)
           IndexDef(className, target, toName(index.getName), Map.empty)
         }
-      case view: ViewMetadata => Seq.empty
+      case _: ViewMetadata => Seq.empty
     }
 
     connector.withSessionDo { session =>
       logDebug(s"Retrieving database schema")
       val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
-      val keyspaces = fetchKeyspaces(session.getMetadata, systemKeyspaceNames)
-      logDebug(s"${keyspaces.size} keyspaces fetched: " +
-        s"${keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-      Schema(keyspaces)
+
+      def fetchSchema(metadata: => Metadata): Schema =
+        Schema(fetchKeyspaces(session.refreshSchema(), systemKeyspaceNames))
+
+      val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
+      val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
+
+      logDebug(s"${scheme.keyspaces.size} keyspaces fetched: " +
+        s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
+      scheme
     }
   }
 
