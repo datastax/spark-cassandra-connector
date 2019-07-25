@@ -32,8 +32,8 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .setAppName(getClass.getSimpleName)
   )
 
-  override def afterClass(): Unit = {
-    super.afterClass()
+  override def afterClass: Unit = {
+    super.afterClass
     ourSc.stop()
   }
 

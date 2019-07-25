@@ -36,69 +36,71 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, solr_query TEXT, PRIMARY KEY (key))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.counters2 (pkey INT PRIMARY KEY, c counter)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.single_column (pk INT PRIMARY KEY)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.static_test (key INT, group BIGINT, value TEXT STATIC, PRIMARY KEY (key, group))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
-      },
-      Future {
-        session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
-        session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
-        session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
+      awaitAll(
+        Future {
+          session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, solr_query TEXT, PRIMARY KEY (key))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.counters2 (pkey INT PRIMARY KEY, c counter)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.single_column (pk INT PRIMARY KEY)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.static_test (key INT, group BIGINT, value TEXT STATIC, PRIMARY KEY (key, group))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+        },
+        Future {
+          session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
+          session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+          session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
 
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
-        session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.write_if_not_exists_test (id INT PRIMARY KEY, value TEXT)""")
-      }
-    )
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
+          session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.write_if_not_exists_test (id INT PRIMARY KEY, value TEXT)""")
+        }
+      )
+    }
   }
 
   def protocolVersion = conn.withSessionDo(_.getContext.getProtocolVersion)

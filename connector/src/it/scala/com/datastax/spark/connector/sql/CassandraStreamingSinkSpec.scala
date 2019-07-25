@@ -1,11 +1,10 @@
-package org.apache.spark.sql
+package com.datastax.spark.connector.sql
 
 import java.nio.file.Files
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
@@ -14,24 +13,26 @@ import org.scalatest.time.{Seconds, Span}
 
 import scala.concurrent.Future
 
-class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Logging with Eventually{
+class CassandraStreamingSinkSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(
-          s"""CREATE TABLE IF NOT EXISTS $ks.kv (key int, value int, PRIMARY KEY (key))""".stripMargin)
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE IF NOT EXISTS $ks.empty (key int, value int, PRIMARY KEY (key))""".stripMargin)
-      }
+      awaitAll(
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.kv (key int, value int, PRIMARY KEY (key))""".stripMargin)
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.empty (key int, value int, PRIMARY KEY (key))""".stripMargin)
+        }
 
-    )
+      )
+    }
   }
 
   "CassandraStreamingSink" should " be able to written to from a stream" in {

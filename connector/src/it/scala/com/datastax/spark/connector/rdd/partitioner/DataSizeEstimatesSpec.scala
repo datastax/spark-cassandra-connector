@@ -12,7 +12,7 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
   val tableName = "table1"
 
-  override def beforeClass(): Unit = {
+  override def beforeClass: Unit = {
     conn.withSessionDo { session => createKeyspace(session) }
 
 

@@ -8,23 +8,25 @@ class CassandraPartitionKeyWhereSpec extends SparkCassandraITFlatSpecBase with D
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(s"CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
-        session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (1, 100, '0001')")
-        session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (2, 200, '0002')")
-        session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (3, 300, '0003')")
-      },
-      Future {
-        session.execute(s"""CREATE TABLE $ks.ckey_value (key1 INT, "Key2" BIGINT, group INT, value TEXT, PRIMARY KEY ((key1, "Key2"), group))""")
-        session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (1, 100, 1000, '0001')""")
-        session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (2, 200, 2000, '0002')""")
-        session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (3, 300, 3000, '0003')""")
-      }
-    )
+      awaitAll(
+        Future {
+          session.execute(s"CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))")
+          session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (1, 100, '0001')")
+          session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (2, 200, '0002')")
+          session.execute(s"INSERT INTO $ks.key_value (key, group, value) VALUES (3, 300, '0003')")
+        },
+        Future {
+          session.execute(s"""CREATE TABLE $ks.ckey_value (key1 INT, "Key2" BIGINT, group INT, value TEXT, PRIMARY KEY ((key1, "Key2"), group))""")
+          session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (1, 100, 1000, '0001')""")
+          session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (2, 200, 2000, '0002')""")
+          session.execute(s"""INSERT INTO $ks.ckey_value (key1, "Key2", group, value) VALUES (3, 300, 3000, '0003')""")
+        }
+      )
+    }
   }
 
   "A CassandraRDD" should "allow partition key eq in where" in {

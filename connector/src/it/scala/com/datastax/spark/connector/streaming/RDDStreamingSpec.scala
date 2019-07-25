@@ -28,34 +28,36 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
 
   implicit val pc = PatienceConfig(60.seconds, 1.second)
 
-  CassandraConnector(defaultConf).withSessionDo { session =>
+  override def beforeClass {
+    CassandraConnector(defaultConf).withSessionDo { session =>
 
-    createKeyspace(session)
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(s"CREATE TABLE $ks.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
-        val ps = session.prepare(s"UPDATE $ks.streaming_join set count = count + 10 where word = ?")
-        val results = (for (d <- dataSeq; word <- d) yield
-          session.executeAsync(ps.bind(word.trim)).toCompletableFuture)
-        CompletableFuture.allOf(results: _*).get
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.dstream_join_output (word TEXT PRIMARY KEY, count COUNTER)")
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.streaming_deletes (word TEXT PRIMARY KEY, count INT)")
-        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1words', 1)")
-        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1round', 2)")
-        session.execute( s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('survival', 3)")
-      }
-    )
+      awaitAll(
+        Future {
+          session.execute(s"CREATE TABLE $ks.streaming_wordcount (word TEXT PRIMARY KEY, count COUNTER)")
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
+          val ps = session.prepare(s"UPDATE $ks.streaming_join set count = count + 10 where word = ?")
+          val results = (for (d <- dataSeq; word <- d) yield
+            session.executeAsync(ps.bind(word.trim)).toCompletableFuture)
+          CompletableFuture.allOf(results: _*).get
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.dstream_join_output (word TEXT PRIMARY KEY, count COUNTER)")
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.streaming_deletes (word TEXT PRIMARY KEY, count INT)")
+          session.execute(s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1words', 1)")
+          session.execute(s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('1round', 2)")
+          session.execute(s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('survival', 3)")
+        }
+      )
+    }
   }
 
   val r = new Random()

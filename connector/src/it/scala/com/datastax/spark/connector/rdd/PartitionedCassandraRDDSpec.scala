@@ -24,59 +24,61 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
   override lazy val conn = CassandraConnector(defaultConf)
   val rowCount = 100
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table1 (key INT, ckey INT, value INT, PRIMARY KEY (key, ckey)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.table1 (key, ckey, value) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session
-            .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
-            .toCompletableFuture
+      awaitAll(
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table1 (key INT, ckey INT, value INT, PRIMARY KEY (key, ckey)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.table1 (key, ckey, value) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session
+              .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
+              .toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.a (x INT, a INT, b INT, PRIMARY KEY (x)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.a (x, a, b) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session
+              .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
+              .toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.b (y INT, c INT, d INT, PRIMARY KEY (y)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.b (y, c, d) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt)).toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table2 (key INT, ckey INT, value INT, PRIMARY KEY
+               |(key, ckey))""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.table2 (key, ckey, value) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session.executeAsync(ps.bind(value: JInt, value: JInt, (rowCount - value): JInt)).toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table3 (key INT, value INT, PRIMARY KEY (key))""".stripMargin)
         }
-        CompletableFuture.allOf(results: _*).get()
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.a (x INT, a INT, b INT, PRIMARY KEY (x)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.a (x, a, b) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session
-            .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
-            .toCompletableFuture
-        }
-        CompletableFuture.allOf(results: _*).get()
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.b (y INT, c INT, d INT, PRIMARY KEY (y)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.b (y, c, d) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt)).toCompletableFuture
-        }
-        CompletableFuture.allOf(results: _*).get()
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table2 (key INT, ckey INT, value INT, PRIMARY KEY
-              |(key, ckey))""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.table2 (key, ckey, value) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, (rowCount - value): JInt)).toCompletableFuture
-        }
-        CompletableFuture.allOf(results: _*).get()
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table3 (key INT, value INT, PRIMARY KEY (key))""".stripMargin)
-      }
-    )
+      )
+    }
   }
 
   // Make sure that all tests have enough partitions to make things interesting

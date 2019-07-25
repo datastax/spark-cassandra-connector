@@ -14,88 +14,90 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-    awaitAll(
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_table (key INT, value TEXT, PRIMARY KEY (key))")
-      },
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
+      awaitAll(
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_table (key INT, value TEXT, PRIMARY KEY (key))")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_table_2 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_table_2 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.test_table_3 (
-             | c1 INT PRIMARY KEY,
-             | c2 TEXT,
-             | c3 INT,
-             | c4 TEXT,
-             | c5 INT,
-             | c6 TEXT,
-             | c7 INT,
-             | c8 TEXT,
-             | c9 INT,
-             | c10 TEXT,
-             | c11 INT,
-             | c12 TEXT,
-             | c13 INT,
-             | c14 TEXT,
-             | c15 INT,
-             | c16 TEXT,
-             | c17 INT,
-             | c18 TEXT,
-             | c19 INT,
-             | c20 TEXT,
-             | c21 INT,
-             | c22 TEXT
-             |)
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.test_table_3 (
+               | c1 INT PRIMARY KEY,
+               | c2 TEXT,
+               | c3 INT,
+               | c4 TEXT,
+               | c5 INT,
+               | c6 TEXT,
+               | c7 INT,
+               | c8 TEXT,
+               | c9 INT,
+               | c10 TEXT,
+               | c11 INT,
+               | c12 TEXT,
+               | c13 INT,
+               | c14 TEXT,
+               | c15 INT,
+               | c16 TEXT,
+               | c17 INT,
+               | c18 TEXT,
+               | c19 INT,
+               | c20 TEXT,
+               | c21 INT,
+               | c22 TEXT
+               |)
         """.stripMargin)
-        session.execute(
-          s"""
-             |INSERT INTO $ks.test_table_3 (
-             |  c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
-             |  c11, c12, c13, c14, c15, c16, c17, c18, c19, c20,
-             |  c21, c22
-             |) VALUES (
-             |  1, '2', 3, '4', 5, '6', 7, '8', 9, '10',
-             |  11, '12', 13, '14', 15, '16', 17, '18', 19, '20',
-             |  21, '22'
-             |)
+          session.execute(
+            s"""
+               |INSERT INTO $ks.test_table_3 (
+               |  c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
+               |  c11, c12, c13, c14, c15, c16, c17, c18, c19, c20,
+               |  c21, c22
+               |) VALUES (
+               |  1, '2', 3, '4', 5, '6', 7, '8', 9, '10',
+               |  11, '12', 13, '14', 15, '16', 17, '18', 19, '20',
+               |  21, '22'
+               |)
         """.stripMargin)
-      },
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.test_table_4 (
-             | c1 INT PRIMARY KEY,
-             | c2 TEXT,
-             | c3 INT,
-             | c4 TEXT,
-             | c5 INT,
-             | c6 TEXT,
-             | c7 INT,
-             | c8 TEXT,
-             | c9 INT,
-             | c10 TEXT,
-             | c11 INT,
-             | c12 TEXT,
-             | c13 INT,
-             | c14 TEXT,
-             | c15 INT,
-             | c16 TEXT,
-             | c17 INT,
-             | c18 TEXT,
-             | c19 INT,
-             | c20 TEXT,
-             | c21 INT,
-             | c22 TEXT
-             |)
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.test_table_4 (
+               | c1 INT PRIMARY KEY,
+               | c2 TEXT,
+               | c3 INT,
+               | c4 TEXT,
+               | c5 INT,
+               | c6 TEXT,
+               | c7 INT,
+               | c8 TEXT,
+               | c9 INT,
+               | c10 TEXT,
+               | c11 INT,
+               | c12 TEXT,
+               | c13 INT,
+               | c14 TEXT,
+               | c15 INT,
+               | c16 TEXT,
+               | c17 INT,
+               | c18 TEXT,
+               | c19 INT,
+               | c20 TEXT,
+               | c21 INT,
+               | c22 TEXT
+               |)
         """.stripMargin)
-      })
+        })
+    }
   }
 
   "CassandraJavaUtil" should "allow to save beans (with multiple constructors) to Cassandra" in {

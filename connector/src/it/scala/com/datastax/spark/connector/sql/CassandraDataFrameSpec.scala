@@ -27,53 +27,55 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
   def pushDown: Boolean = true
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.kv_copy (k INT, v TEXT, PRIMARY KEY (k))
-             |""".stripMargin)
-      },
+      awaitAll(
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.kv_copy (k INT, v TEXT, PRIMARY KEY (k))
+               |""".stripMargin)
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.hardtoremembernamedtable (k INT, v TEXT, PRIMARY KEY (k))
-             |""".stripMargin)
-      },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.hardtoremembernamedtable (k INT, v TEXT, PRIMARY KEY (k))
+               |""".stripMargin)
+        },
 
-      Future {
-        session.execute(
-          s"""
-              |CREATE TABLE IF NOT EXISTS $ks.kv (k INT, v TEXT, PRIMARY KEY (k))
-              |""".stripMargin)
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $ks.kv (k INT, v TEXT, PRIMARY KEY (k))
+               |""".stripMargin)
 
-        val prepared = session.prepare( s"""INSERT INTO $ks.kv (k, v) VALUES (?, ?)""")
+          val prepared = session.prepare( s"""INSERT INTO $ks.kv (k, v) VALUES (?, ?)""")
 
-        val results = (for (x <- 1 to 1000) yield {
-          session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString)).toCompletableFuture
-        })
-        CompletableFuture.allOf(results: _*).get
-      },
+          val results = (for (x <- 1 to 1000) yield {
+            session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString)).toCompletableFuture
+          })
+          CompletableFuture.allOf(results: _*).get
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.tuple_test1 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
-        session.execute(s"CREATE TABLE $ks.tuple_test2 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
-        session.execute(s"INSERT INTO $ks.tuple_test1 (id, t) VALUES (1, ('xyz', 3))")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.tuple_test1 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
+          session.execute(s"CREATE TABLE $ks.tuple_test2 (id int, t Tuple<text, int>, PRIMARY KEY (id))")
+          session.execute(s"INSERT INTO $ks.tuple_test1 (id, t) VALUES (1, ('xyz', 3))")
+        },
 
-      Future {
-        info ("Setting up Date Tables")
-        skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
-        session.execute(s"create table $ks.date_test (key int primary key, dd date)")
-        session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
-        session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
+        Future {
+          info("Setting up Date Tables")
+          skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
+            session.execute(s"create table $ks.date_test (key int primary key, dd date)")
+            session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
+            session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
+          }
         }
-      }
-    )
+      )
+    }
   }
 
   "A DataFrame" should "be able to be created programmatically" in {

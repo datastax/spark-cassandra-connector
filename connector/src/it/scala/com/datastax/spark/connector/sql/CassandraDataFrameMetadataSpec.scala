@@ -19,71 +19,73 @@ import org.scalatest.concurrent.Eventually
 class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually with Matchers {
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.basic (k INT, c INT, v INT, v2 INT, PRIMARY KEY (k,c))
-             |""".stripMargin)
+      awaitAll(
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.basic (k INT, c INT, v INT, v2 INT, PRIMARY KEY (k,c))
+               |""".stripMargin)
 
-        val prepared = session.prepare(
-          s"""INSERT INTO $ks.basic (k, c, v, v2) VALUES (?, ?, ?, ?)
-             |USING TTL ? AND TIMESTAMP ?""".stripMargin)
+          val prepared = session.prepare(
+            s"""INSERT INTO $ks.basic (k, c, v, v2) VALUES (?, ?, ?, ?)
+               |USING TTL ? AND TIMESTAMP ?""".stripMargin)
 
-        val results = (for (x <- 1 to 100) yield {
-          session.executeAsync(prepared.bind(
-            x: java.lang.Integer,
-            x: java.lang.Integer,
-            x: java.lang.Integer,
-            x: java.lang.Integer,
-            ((x * 10000): java.lang.Integer),
-            x.toLong: java.lang.Long)).toCompletableFuture
-        })
-        CompletableFuture.allOf(results: _*).get
-      },
-     Future {
-        session.execute(
-          s"""
-             |CREATE TYPE $ks.fullname (
-             |    firstname text,
-             |    lastname text
-             |)
+          val results = (for (x <- 1 to 100) yield {
+            session.executeAsync(prepared.bind(
+              x: java.lang.Integer,
+              x: java.lang.Integer,
+              x: java.lang.Integer,
+              x: java.lang.Integer,
+              ((x * 10000): java.lang.Integer),
+              x.toLong: java.lang.Long)).toCompletableFuture
+          })
+          CompletableFuture.allOf(results: _*).get
+        },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TYPE $ks.fullname (
+               |    firstname text,
+               |    lastname text
+               |)
            """.stripMargin)
-        session.execute(
-          s"""
-            |CREATE TABLE $ks.test_reading_types (
-            |    id bigint PRIMARY KEY,
-            |    list_val list<int>,
-            |    list_val_frozen frozen<list<int>>,
-            |    map_val map<text, int>,
-            |    map_val_frozen frozen<map<text, int>>,
-            |    set_val set<int>,
-            |    set_val_frozen frozen<set<int>>,
-            |    simple_val int,
-            |    udt_frozen_val frozen<fullname>,
-            |    udt_val fullname,
-            |    tuple_val tuple <int, int>,
-            |    tuple_val_frozen frozen<tuple<int, int>>
-            |)
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.test_reading_types (
+               |    id bigint PRIMARY KEY,
+               |    list_val list<int>,
+               |    list_val_frozen frozen<list<int>>,
+               |    map_val map<text, int>,
+               |    map_val_frozen frozen<map<text, int>>,
+               |    set_val set<int>,
+               |    set_val_frozen frozen<set<int>>,
+               |    simple_val int,
+               |    udt_frozen_val frozen<fullname>,
+               |    udt_val fullname,
+               |    tuple_val tuple <int, int>,
+               |    tuple_val_frozen frozen<tuple<int, int>>
+               |)
           """.stripMargin)
-        session.execute(
-          s"""
-             |insert into $ks.test_reading_types (id, simple_val, list_val, list_val_frozen,
-             |map_val, map_val_frozen, set_val, set_val_frozen, udt_val, udt_frozen_val, tuple_val,
-             |tuple_val_frozen) values
-             |(0, 1,
-             |[2, 3], [2, 3],
-             |{'four': 4, 'five': 5}, {'four': 4, 'five': 5},
-             |{6, 7}, {6, 7},
-             |{firstname: 'Joe', lastname: 'Smith'}, {firstname: 'Bredo', lastname: 'Morstoel'},
-             |(1, 1), (1, 1)) USING
-             |timestamp 1000
+          session.execute(
+            s"""
+               |insert into $ks.test_reading_types (id, simple_val, list_val, list_val_frozen,
+               |map_val, map_val_frozen, set_val, set_val_frozen, udt_val, udt_frozen_val, tuple_val,
+               |tuple_val_frozen) values
+               |(0, 1,
+               |[2, 3], [2, 3],
+               |{'four': 4, 'five': 5}, {'four': 4, 'five': 5},
+               |{6, 7}, {6, 7},
+               |{firstname: 'Joe', lastname: 'Smith'}, {firstname: 'Bredo', lastname: 'Morstoel'},
+               |(1, 1), (1, 1)) USING
+               |timestamp 1000
            """.stripMargin)
-      }
-    )
+        }
+      )
+    }
   }
 
   //Register Functions for TTL (Required for Spark < 3.0 or non DSE Spark 2.4)

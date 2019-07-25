@@ -17,46 +17,46 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase with Two
     .set(ConnectionPortParam.name, cluster(1).addresses.head.getPort.toString)
   val conn2 = CassandraConnector(conf2)
 
-  awaitAll(
-    Future {
-      conn.withSessionDo { session =>
-        createKeyspace(session, ks)
-
-        session.execute(s"CREATE TABLE $ks.test1 (a INT PRIMARY KEY, b INT, c INT)")
-        session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (1, 1, 1)")
-        session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (2, 1, 2)")
-        session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (3, 1, 3)")
-        session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (4, 1, 4)")
-        session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (5, 1, 5)")
-      }
-    },
-
-    Future {
-      conn2.withSessionDo { session =>
-        createKeyspace(session, ks)
-
-        awaitAll(
-          Future {
-            session.execute(s"CREATE TABLE $ks.test2 (a INT PRIMARY KEY, d INT, e INT)")
-            session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (8, 1, 8)")
-            session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (7, 1, 7)")
-            session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (6, 1, 6)")
-            session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (4, 1, 4)")
-            session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (5, 1, 5)")
-          },
-
-          Future {
-            session.execute(s"CREATE TABLE $ks.test3 (a INT PRIMARY KEY, d INT, e INT)")
-          }
-        )
-      }
-    }
-  )
-
   private val cluster1 = "cluster1"
   private val cluster2 = "cluster2"
 
   override def beforeClass {
+    awaitAll(
+      Future {
+        conn.withSessionDo { session =>
+          createKeyspace(session, ks)
+
+          session.execute(s"CREATE TABLE $ks.test1 (a INT PRIMARY KEY, b INT, c INT)")
+          session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (1, 1, 1)")
+          session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (2, 1, 2)")
+          session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (3, 1, 3)")
+          session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (4, 1, 4)")
+          session.execute(s"INSERT INTO $ks.test1 (a, b, c) VALUES (5, 1, 5)")
+        }
+      },
+
+      Future {
+        conn2.withSessionDo { session =>
+          createKeyspace(session, ks)
+
+          awaitAll(
+            Future {
+              session.execute(s"CREATE TABLE $ks.test2 (a INT PRIMARY KEY, d INT, e INT)")
+              session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (8, 1, 8)")
+              session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (7, 1, 7)")
+              session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (6, 1, 6)")
+              session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (4, 1, 4)")
+              session.execute(s"INSERT INTO $ks.test2 (a, d, e) VALUES (5, 1, 5)")
+            },
+
+            Future {
+              session.execute(s"CREATE TABLE $ks.test3 (a INT PRIMARY KEY, d INT, e INT)")
+            }
+          )
+        }
+      }
+    )
+
     sparkSession.setCassandraConf(cluster1,
       ConnectionHostParam.option(cluster(0).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(cluster(0).addresses.head.getPort))
     sparkSession.setCassandraConf(cluster2,

@@ -11,13 +11,15 @@ class ThrottlingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-      })
+      awaitAll(
+        Future {
+          session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+        })
+    }
   }
 
   //TODO FIX This after we figure out profiles

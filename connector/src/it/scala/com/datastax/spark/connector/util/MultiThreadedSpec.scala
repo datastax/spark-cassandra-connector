@@ -5,11 +5,11 @@ import java.util.concurrent.CompletableFuture
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 import scala.language.postfixOps
-import org.scalatest.concurrent.AsyncAssertions
+import org.scalatest.concurrent.Waiters
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with AsyncAssertions {
+class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Waiters {
 
   override lazy val conn = CassandraConnector(defaultConf)
   val count = 1000

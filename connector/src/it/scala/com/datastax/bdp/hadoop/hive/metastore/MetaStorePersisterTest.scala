@@ -15,7 +15,7 @@ class MetaStorePersisterTest extends MetaStoreTestBase with DefaultCluster {
     private var metaStorePersister: MetaStorePersister = _
 
     override def beforeClass {
-        super.beforeClass()
+        super.beforeClass
         metaStorePersister = MetaStorePersister.getInstance(new CassandraClientConfiguration(configuration), null)
     }
 

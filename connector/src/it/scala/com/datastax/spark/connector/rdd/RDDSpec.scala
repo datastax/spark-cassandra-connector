@@ -40,102 +40,104 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   val smallerTotal = 0 to 10000 by 100
   val total = 0 to 10000
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-    val startTime = System.currentTimeMillis()
-    awaitAll(
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$tableName (
-             |  key INT,
-             |  group BIGINT,
-             |  value TEXT,
-             |  PRIMARY KEY (key, group)
-             |)""".stripMargin)
-        val ps = session
-          .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
-        val results = (for (value <- total) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
-        )
-        CompletableFuture.allOf(results:_*).get
-      },
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$smallerTable (
-             |  key INT,
-             |  group BIGINT,
-             |  value TEXT,
-             |  PRIMARY KEY (key, group)
-             |)""".stripMargin)
-        val ps = session
-          .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
-        val results = (for (value <- smallerTotal) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
-        )
-        CompletableFuture.allOf(results: _*).get
-      },
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
+      val startTime = System.currentTimeMillis()
+      awaitAll(
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$tableName (
+               |  key INT,
+               |  group BIGINT,
+               |  value TEXT,
+               |  PRIMARY KEY (key, group)
+               |)""".stripMargin)
+          val ps = session
+            .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
+          val results = (for (value <- total) yield
+            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
+            )
+          CompletableFuture.allOf(results: _*).get
+        },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$smallerTable (
+               |  key INT,
+               |  group BIGINT,
+               |  value TEXT,
+               |  PRIMARY KEY (key, group)
+               |)""".stripMargin)
+          val ps = session
+            .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
+          val results = (for (value <- smallerTotal) yield
+            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
+            )
+          CompletableFuture.allOf(results: _*).get
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$emptyTable (
-             |  key INT,
-             |  group BIGINT,
-             |  value TEXT,
-             |  PRIMARY KEY (key, group)
-             |)""".stripMargin)
-      },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$emptyTable (
+               |  key INT,
+               |  group BIGINT,
+               |  value TEXT,
+               |  PRIMARY KEY (key, group)
+               |)""".stripMargin)
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$otherTable (key INT, group BIGINT,  PRIMARY KEY (key))
-             |""".stripMargin)
-        val ps = session
-          .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
-        val results = (for (value <- keys) yield
-          session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong)).toCompletableFuture
-        )
-        CompletableFuture.allOf(results:_*)
-      },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$otherTable (key INT, group BIGINT,  PRIMARY KEY (key))
+               |""".stripMargin)
+          val ps = session
+            .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
+          val results = (for (value <- keys) yield
+            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong)).toCompletableFuture
+            )
+          CompletableFuture.allOf(results: _*)
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$wideTable (
-             |  key INT,
-             |  group BIGINT,
-             |  value TEXT,
-             |  PRIMARY KEY (key, group)
-             |)""".stripMargin)
-        val ps = session
-          .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
-        val results = (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
-          session.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
-            .toCompletableFuture
-        )
-        CompletableFuture.allOf(results:_*)
-      },
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$wideTable (
+               |  key INT,
+               |  group BIGINT,
+               |  value TEXT,
+               |  PRIMARY KEY (key, group)
+               |)""".stripMargin)
+          val ps = session
+            .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
+          val results = (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
+            session.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
+              .toCompletableFuture
+            )
+          CompletableFuture.allOf(results: _*)
+        },
 
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.$manyColsTable (
-             |  pk1 int,
-             |  pk2 int,
-             |  pk3 int,
-             |  cc1 int,
-             |  cc2 int,
-             |  cc3 int,
-             |  cc4 int,
-             |  d1 int,
-             |  PRIMARY KEY ((pk1, pk2, pk3), cc1, cc2, cc3, cc4)
-             |)""".stripMargin)
-      }
-    )
-    println(s"Took ${(System.currentTimeMillis() - startTime) /1000.0} Seconds to setup Suite Data")
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.$manyColsTable (
+               |  pk1 int,
+               |  pk2 int,
+               |  pk3 int,
+               |  cc1 int,
+               |  cc2 int,
+               |  cc3 int,
+               |  cc4 int,
+               |  d1 int,
+               |  PRIMARY KEY ((pk1, pk2, pk3), cc1, cc2, cc3, cc4)
+               |)""".stripMargin)
+        }
+      )
+      println(s"Took ${(System.currentTimeMillis() - startTime) / 1000.0} Seconds to setup Suite Data")
+    }
   }
 
   def checkLeftSide[T, S](leftSideSource: Array[T], result: Array[(T, S)]) = {

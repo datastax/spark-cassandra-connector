@@ -4,13 +4,12 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ReadConf
-import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.CatalystUtil._
 import org.apache.spark.sql.cassandra._
 
 import scala.concurrent.Future
 
-class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with DefaultCluster with Logging  {
+class CassandraSourceOptionsSpec  extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(defaultConf)
 

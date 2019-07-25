@@ -12,9 +12,11 @@ class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with 
   override lazy val conn = CassandraConnector(defaultConf)
   implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(conn)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-    session.execute(s"CREATE TABLE $ks.empty(key INT PRIMARY KEY)")
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
+      session.execute(s"CREATE TABLE $ks.empty(key INT PRIMARY KEY)")
+    }
   }
 
   // TODO: Currently CassandraPartitionGenerator uses a size-based algorithm that doesn't guarantee exact

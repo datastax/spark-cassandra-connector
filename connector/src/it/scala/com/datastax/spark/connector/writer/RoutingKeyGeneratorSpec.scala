@@ -9,17 +9,19 @@ import scala.concurrent.Future
 class RoutingKeyGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute( s"""CREATE TABLE $ks.one_key (id INT PRIMARY KEY, value TEXT)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.two_keys (id INT, id2 TEXT, value TEXT, PRIMARY KEY ((id, id2)))""")
-      }
-    )
+      awaitAll(
+        Future {
+          session.execute( s"""CREATE TABLE $ks.one_key (id INT PRIMARY KEY, value TEXT)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.two_keys (id INT, id2 TEXT, value TEXT, PRIMARY KEY ((id, id2)))""")
+        }
+      )
+    }
   }
 
   "RoutingKeyGenerator" should "generate proper routing keys when there is one partition key column" in {
