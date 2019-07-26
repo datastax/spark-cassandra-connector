@@ -20,7 +20,7 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
     if (created.compareAndSet(false, true)) {
       val options = config.installDirectory.map(dir => config.createOptions :+ s"--install-dir=${new File(dir).getAbsolutePath}")
         .orElse(config.installBranch.map(branch => config.createOptions :+ s"-v git:${branch.trim().replaceAll("\"", "")}"))
-        .getOrElse(config.createOptions :+ config.version.toString)
+        .getOrElse(config.createOptions :+ s"-v ${config.version}")
 
       execute(
         "create",
