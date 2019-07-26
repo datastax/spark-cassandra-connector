@@ -69,17 +69,21 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
     // add ssl properties if ssl is enabled
     def sslProperties(builder: LoaderBuilder): LoaderBuilder = {
+      def clientAuthEnabled(value: Option[String]) =
+        if (conf.cassandraSSLConf.clientAuthEnabled) value else None
+
       if (conf.cassandraSSLConf.enabled) {
         Seq(
-          SSL_KEYSTORE_PATH -> conf.cassandraSSLConf.keyStorePath,
-          SSL_KEYSTORE_PASSWORD -> conf.cassandraSSLConf.keyStorePassword,
           SSL_TRUSTSTORE_PATH -> conf.cassandraSSLConf.trustStorePath,
-          SSL_TRUSTSTORE_PASSWORD -> conf.cassandraSSLConf.trustStorePassword)
+          SSL_TRUSTSTORE_PASSWORD -> conf.cassandraSSLConf.trustStorePassword,
+          SSL_KEYSTORE_PATH -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePath),
+          SSL_KEYSTORE_PASSWORD -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePassword))
           .foldLeft(builder) { case (b, (name, value)) =>
             value.map(b.withString(name, _)).getOrElse(b)
           }
           .withString(SSL_ENGINE_FACTORY_CLASS, classOf[DefaultSslEngineFactory].getCanonicalName)
           .withStringList(SSL_CIPHER_SUITES, conf.cassandraSSLConf.enabledAlgorithms.toList.asJava)
+          .withBoolean(SSL_HOSTNAME_VALIDATION, false) // TODO: this needs to be configurable by users. Set to false for our integration tests
       } else {
         builder
       }
