@@ -2,7 +2,7 @@ package com.datastax.spark.connector.ccm
 
 import java.io.{File, IOException, InputStream}
 import java.net.InetSocketAddress
-import java.nio.file.{Files, StandardCopyOption}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig._
@@ -25,27 +25,24 @@ case class CcmConfig(
     dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toBoolean),
     mode: ClusterMode = ClusterModes.fromEnvVar) {
 
-  def withSsl(): CcmConfig = {
+  def withSsl(keystorePath: String, keystorePassword: String): CcmConfig = {
     copy(cassandraConfiguration = cassandraConfiguration +
       ("client_encryption_options.enabled" -> "true") +
-      ("client_encryption_options.keystore" -> DEFAULT_SERVER_KEYSTORE_FILE.getAbsolutePath) +
-      ("client_encryption_options.keystore_password" -> DEFAULT_SERVER_KEYSTORE_PASSWORD)
+      ("client_encryption_options.keystore" -> keystorePath) +
+      ("client_encryption_options.keystore_password" -> keystorePassword)
     )
   }
 
-  def withSslLocalhostCn(): CcmConfig = {
-    copy(cassandraConfiguration = cassandraConfiguration +
-      ("client_encryption_options.enabled" -> "true") +
-      ("client_encryption_options.keystore" -> DEFAULT_SERVER_LOCALHOST_KEYSTORE_FILE.getAbsolutePath) +
-      ("client_encryption_options.keystore_password" -> DEFAULT_SERVER_KEYSTORE_PASSWORD))
-  }
-
-  /** Enables client authentication. This also enables encryption ({@link #withSsl()}. */
-  def withSslAuth(): CcmConfig = {
-    withSsl().copy(cassandraConfiguration = cassandraConfiguration +
+  /** Enables client authentication. This also enables encryption with `withSsl(...)`. */
+  def withSslAuth(
+     keystorePath: String,
+     keystorePassword: String,
+     truststorePath: String,
+     truststorePassword: String): CcmConfig = {
+    withSsl(keystorePath, keystorePassword).copy(cassandraConfiguration = cassandraConfiguration +
       ("client_encryption_options.require_client_auth" -> "true") +
-      ("client_encryption_options.truststore" -> DEFAULT_SERVER_TRUSTSTORE_FILE.getAbsolutePath) +
-      ("client_encryption_options.truststore_password" -> DEFAULT_SERVER_TRUSTSTORE_PASSWORD)
+      ("client_encryption_options.truststore" -> truststorePath) +
+      ("client_encryption_options.truststore_password" -> truststorePassword)
     )
   }
 
@@ -110,21 +107,12 @@ object CcmConfig {
   val DEFAULT_SERVER_TRUSTSTORE_PASSWORD: String = "cassandra1sfun"
   val DEFAULT_SERVER_TRUSTSTORE_PATH: String = "/server.truststore"
 
-  val DEFAULT_SERVER_TRUSTSTORE_FILE: File =
-    createTempStore(DEFAULT_SERVER_TRUSTSTORE_PATH)
-
   val DEFAULT_SERVER_KEYSTORE_PASSWORD: String = "cassandra1sfun"
   val DEFAULT_SERVER_KEYSTORE_PATH: String = "/server.keystore"
-
-  val DEFAULT_SERVER_KEYSTORE_FILE: File =
-    createTempStore(DEFAULT_SERVER_KEYSTORE_PATH)
 
   // A separate keystore where the certificate has a CN of localhost, used for hostname
   // validation testing.
   val DEFAULT_SERVER_LOCALHOST_KEYSTORE_PATH: String = "/server_localhost.keystore"
-
-  val DEFAULT_SERVER_LOCALHOST_KEYSTORE_FILE: File =
-    createTempStore(DEFAULT_SERVER_LOCALHOST_KEYSTORE_PATH)
 
   // major DSE versions
   val V6_0_0: Version = Version.parse("6.0.0")
@@ -140,8 +128,16 @@ object CcmConfig {
   // artificial estimation of maximum number of nodes for this cluster, may be bumped anytime.
   val MAX_NUMBER_OF_NODES: Integer = 4
 
-  // TODO: these need to have constant name, these should be placed in config-dir (to support developer mode, which
-  // is currently broken for Fixtures that use temporary (different between executions) files)
+  private def store(resource: String, target: File): File = {
+    val resourceStream: InputStream = this.getClass.getResourceAsStream(resource)
+    if (resourceStream != null) {
+      Files.copy(resourceStream, target.toPath, StandardCopyOption.REPLACE_EXISTING)
+      target
+    } else {
+      throw new IllegalStateException("Resource path not found: " + resource)
+    }
+  }
+
   /**
     * Extracts a keystore from the classpath into a temporary file.
     *
@@ -152,21 +148,23 @@ object CcmConfig {
     * @return The generated File.
     */
   private def createTempStore(storePath: String): File = {
-    var file: File = null
     try {
-      file = File.createTempFile("server", ".store")
+      val file = File.createTempFile("server", ".store")
       file.deleteOnExit()
-      val resource: InputStream = this.getClass.getResourceAsStream(storePath)
-      if (resource != null) {
-        Files.copy(resource, file.toPath, StandardCopyOption.REPLACE_EXISTING)
-      } else {
-        throw new IllegalStateException("Store path not found: " + storePath)
-      }
+      store(storePath, file)
     } catch {
       case e: IOException =>
-        logger.warn("Failure to write keystore, SSL-enabled servers may fail to start.", e)
+        logger.error("Failure to write keystore, SSL-enabled servers may fail to start.", e)
+        throw e
     }
-    file
   }
 
+  /** Stores the given resource in `/tmp/ccm_resources` directory. Stored file name is prefixed with the given prefix */
+  def storeResource(prefix: String, resource: String): String = {
+    val resourceName = Paths.get(resource).getFileName.toString
+    var file = Paths.get("/tmp/ccm_resources").resolve(s"${prefix}_${resourceName}").toFile
+    file.getParentFile.mkdirs()
+
+    store(resource, file).getAbsolutePath.toString
+  }
 }

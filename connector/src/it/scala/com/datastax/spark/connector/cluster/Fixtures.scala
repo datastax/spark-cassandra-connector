@@ -87,7 +87,14 @@ object DefaultCluster {
 /** SSL enabled cluster configuration. It has no auth configured. */
 trait SSLCluster extends SingleClusterFixture {
 
-  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.withSsl())
+  private val keystorePath = CcmConfig.storeResource(
+    prefix = groupNumber.toString,
+    resource = CcmConfig.DEFAULT_SERVER_KEYSTORE_PATH)
+
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(
+    defaultConfig.withSsl(
+      keystorePath.toString, CcmConfig.DEFAULT_SERVER_KEYSTORE_PASSWORD
+    ))
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address) ++
@@ -110,7 +117,19 @@ object SSLCluster {
 /** SSL enabled cluster configuration with auth configured. */
 trait AuthCluster extends SingleClusterFixture {
 
-  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.withSslAuth())
+  private val keystorePath = CcmConfig.storeResource(
+    prefix = groupNumber.toString,
+    resource = CcmConfig.DEFAULT_SERVER_KEYSTORE_PATH)
+
+  private val truststorePath = CcmConfig.storeResource(
+    prefix = groupNumber.toString,
+    resource = CcmConfig.DEFAULT_SERVER_TRUSTSTORE_PATH)
+
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(
+    defaultConfig.withSslAuth(
+      keystorePath, CcmConfig.DEFAULT_SERVER_KEYSTORE_PASSWORD,
+      truststorePath, CcmConfig.DEFAULT_SERVER_TRUSTSTORE_PASSWORD
+    ))
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address) ++
