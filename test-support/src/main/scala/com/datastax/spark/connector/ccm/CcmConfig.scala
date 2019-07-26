@@ -39,7 +39,8 @@ case class CcmConfig(
      keystorePassword: String,
      truststorePath: String,
      truststorePassword: String): CcmConfig = {
-    withSsl(keystorePath, keystorePassword).copy(cassandraConfiguration = cassandraConfiguration +
+    val ssl = withSsl(keystorePath, keystorePassword)
+    ssl.copy(cassandraConfiguration = ssl.cassandraConfiguration +
       ("client_encryption_options.require_client_auth" -> "true") +
       ("client_encryption_options.truststore" -> truststorePath) +
       ("client_encryption_options.truststore_password" -> truststorePassword)
@@ -72,7 +73,7 @@ case class CcmConfig(
   }
 
   def jmxPort(n: Int): Integer = {
-    7108 + jmxPortOffset + n
+    7100 + jmxPortOffset + n
   }
 
   def addressOfNode(n: Int): InetSocketAddress = {
@@ -125,8 +126,8 @@ object CcmConfig {
   val V3_0_15: Version = Version.parse("3.0.15")
   val V2_1_19: Version = Version.parse("2.1.19")
 
-  // artificial estimation of maximum number of nodes for this cluster, may be bumped anytime.
-  val MAX_NUMBER_OF_NODES: Integer = 4
+  // artificial estimation of maximum number of nodes for this test group, may be bumped anytime.
+  val MAX_NUMBER_OF_NODES: Integer = 2
 
   private def store(resource: String, target: File): File = {
     val resourceStream: InputStream = this.getClass.getResourceAsStream(resource)
@@ -149,7 +150,7 @@ object CcmConfig {
     */
   private def createTempStore(storePath: String): File = {
     try {
-      val file = File.createTempFile("server", ".store")
+      val file = File.createTempFile("client", ".store")
       file.deleteOnExit()
       store(storePath, file)
     } catch {

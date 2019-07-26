@@ -105,9 +105,9 @@ object SSLCluster {
   def defaultConnectionParameters(): Map[String, String] = {
     Map(
       SSLEnabledParam.name -> "true",
-      SSLClientAuthEnabledParam.name -> "true",
       SSLTrustStorePasswordParam.name -> CcmConfig.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD,
       SSLTrustStorePathParam.name -> CcmConfig.DEFAULT_CLIENT_TRUSTSTORE_FILE.getPath,
+      SSLClientAuthEnabledParam.name -> "true",
       SSLKeyStorePasswordParam.name -> CcmConfig.DEFAULT_CLIENT_KEYSTORE_PASSWORD,
       SSLKeyStorePathParam.name -> CcmConfig.DEFAULT_CLIENT_KEYSTORE_FILE.getPath
     )

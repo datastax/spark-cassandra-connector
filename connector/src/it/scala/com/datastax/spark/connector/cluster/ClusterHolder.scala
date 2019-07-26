@@ -23,7 +23,11 @@ object ClusterHolder extends Logging {
 
   private def close(): Unit = synchronized {
     for (testClusters <- clusters.values; cluster <- testClusters) {
-      cluster.ccmBridge.close()
+      try {
+        cluster.ccmBridge.close()
+      } catch {
+        case t: Throwable => logWarning(s"Closing a ${cluster.name} failed", t)
+      }
     }
   }
 

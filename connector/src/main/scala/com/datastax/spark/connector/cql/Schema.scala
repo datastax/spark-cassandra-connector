@@ -355,7 +355,7 @@ object Schema extends Logging {
       val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
 
       def fetchSchema(metadata: => Metadata): Schema =
-        Schema(fetchKeyspaces(session.refreshSchema(), systemKeyspaceNames))
+        Schema(fetchKeyspaces(metadata, systemKeyspaceNames))
 
       val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
       val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
