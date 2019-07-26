@@ -206,6 +206,12 @@ case class TableDef(
   override lazy val columnByName: Map[String, ColumnDef] =
     super.columnByName
 
+  private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map (e => (e._1.toLowerCase, e._2))
+
+  def columnByNameIgnoreCase(columnName: String) = {
+    columnBylowerCaseName(columnName.toLowerCase)
+  }
+
   def cql = {
     val columnList = columns.map(_.cql).mkString(s",${Properties.lineSeparator}  ")
     val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")

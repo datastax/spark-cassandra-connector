@@ -19,7 +19,7 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, CassandraTableScanRDD, ReadConf}
@@ -39,7 +39,14 @@ case object On extends DseSearchOptimizationSetting { override def enabled = tru
 case object Off extends DseSearchOptimizationSetting
 case class Auto(ratio: Double) extends DseSearchOptimizationSetting { override def enabled = true }
 
+trait CassandraTableDefProvider {
+  def tableDef: TableDef
+  def withSparkConfOption(key: String, value: String): BaseRelation
+}
+
 import scala.collection.concurrent.TrieMap
+
+
 
 /**
  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
@@ -62,12 +69,17 @@ case class CassandraSourceRelation(
   extends BaseRelation
   with InsertableRelation
   with PrunedFilteredScan
+  with CassandraTableDefProvider
   with Logging {
 
   import CassandraSourceRelation._
 
   def withDirectJoin(directJoinSetting: DirectJoinSetting) = {
     this.copy(directJoinSetting = directJoinSetting)
+  }
+
+  override def withSparkConfOption(key: String, value: String): CassandraSourceRelation = {
+    this.copy(sparkConf = sparkConf.clone().set(key, value))
   }
 
   val tableDef = Schema.tableFromCassandra(
@@ -93,39 +105,43 @@ case class CassandraSourceRelation(
     }
 
   //Metadata Read Write Fields
-  val allColumnNames = tableDef.columns.map(_.columnName)
-  val regularColumnNames = tableDef.regularColumns.map(_.columnName)
+  // ignore case
+  val regularColumnNames = tableDef.regularColumns.map(_.columnName.toLowerCase())
+  val nonRegularColumnNames = (tableDef.clusteringColumns ++ tableDef.partitionKey).map(_.columnName.toLowerCase)
+  val ignoreMissingMetadataColumns: Boolean = sparkConf.getBoolean(CassandraSourceRelation.IgnoreMissingMetaColumns.name,
+    CassandraSourceRelation.IgnoreMissingMetaColumns.default)
 
-  def checkMetadataColumn(columnName: String, function: String) = {
-    val error = columnName match {
-      case missingColumn if (!allColumnNames.contains(columnName)) => Some("non-existent")
-      case nonRegularColumn if (!regularColumnNames.contains(columnName)) => Some("non-regular")
-      case _ => None
-    }
-    for (errorType <- error){
+  def checkMetadataColumn(columnName: String, function: String): Boolean = {
+    val lowerCaseName = columnName.toLowerCase
+    def metadataError (errorType: String) = {
       throw new IllegalArgumentException(s"Cannot lookup $function on $errorType column $columnName")
     }
+
+    if(nonRegularColumnNames.contains(lowerCaseName)) metadataError("non-regular")
+    if(regularColumnNames.contains(lowerCaseName)) true
+    else if(ignoreMissingMetadataColumns) false
+    else metadataError("missing")
   }
 
   private val writeTimeFields =
     sparkConf
       .getAllWithPrefix(WriteTimeParam.name + ".")
+      .filter { case (columnName: String, writeTimeName: String) => checkMetadataColumn(columnName, "writetime")}
       .map{ case (columnName: String, writeTimeName: String) =>
-        checkMetadataColumn(columnName, "writetime")
-        val colDef = tableDef.columnByName(columnName)
+        val colDef = tableDef.columnByNameIgnoreCase(columnName)
         val colType = if (colDef.isMultiCell)
           ArrayType(LongType) else LongType
-        (columnName, StructField(writeTimeName, colType, false))}
+        (colDef.columnName, StructField(writeTimeName, colType, false))}
 
   private val ttlFields =
     sparkConf
       .getAllWithPrefix(TTLParam.name + ".")
+      .filter { case (columnName: String, writeTimeName: String) => checkMetadataColumn(columnName, "ttl")}
       .map{ case (columnName: String, ttlName: String) =>
-        checkMetadataColumn(columnName, "ttl")
-        val colDef = tableDef.columnByName(columnName)
+        val colDef = tableDef.columnByNameIgnoreCase(columnName)
         val colType = if (colDef.isMultiCell)
           ArrayType(IntegerType) else IntegerType
-        (columnName, StructField(ttlName, colType, true))}
+        (colDef.columnName, StructField(ttlName, colType, true))}
 
   private val ttlWriteOption =
     sparkConf.getOption(TTLParam.name)
@@ -183,13 +199,12 @@ case class CassandraSourceRelation(
     }
 
     implicit val rwf = SqlRowWriter.Factory
-    val requiredCassandraColumns = data.columns.filterNot(metadataColumnNames.contains)
 
     val metadataEnrichedWriteConf = writeConf.copy(
       ttl = ttlWriteOption,
       timestamp = timestampWriteOption)
 
-    val columns = SomeColumns(requiredCassandraColumns.map(x => x: ColumnRef): _*)
+    val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
     val converter = CatalystTypeConverters.createToScalaConverter(data.schema)
     data
       .queryExecution.toRdd
@@ -530,7 +545,7 @@ object CassandraSourceRelation extends Logging {
       """Surfaces the Cassandra Row TTL as a Column
         |with the named specified. When reading use ttl.columnName=aliasForTTL. This
         |can be done for every column with a TTL. When writing use writetime=columnName and the
-        |columname will be used to set the writetime for that row.""".stripMargin
+        |columname will be used to set the TTL for that row.""".stripMargin
   )
 
   val AdditionalCassandraPushDownRulesParam = ConfigParameter[List[CassandraPredicateRules]] (
@@ -619,6 +634,16 @@ object CassandraSourceRelation extends Logging {
          """.stripMargin
   )
 
+  val IgnoreMissingMetaColumns = ConfigParameter[Boolean] (
+    name = "ignoreMissingMetaColumns",
+    section = DseReferenceSection,
+    default = false,
+    description =
+      s"""Acceptable values, "true", "false"
+         |"true" ignore missing meta properties
+         |"false" throw error if missing property is requested
+      """.stripMargin
+  )
   val defaultClusterName = "default"
 
   private val proxyPerSourceRelationEnabled = sys.env.getOrElse("DSE_ENABLE_PROXY_PER_SRC_RELATION", "false").toBoolean

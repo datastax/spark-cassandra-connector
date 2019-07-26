@@ -10,7 +10,7 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 class DseSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     extensions.injectPlannerStrategy(DSEDirectJoinStrategy.apply)
-    extensions.injectPostHocResolutionRule{ session => CassandraMetaDataRule }
+    extensions.injectResolutionRule( session => CassandraMetaDataRule)
     try {
       val injectFunction =
         extensions.getClass.getMethod(

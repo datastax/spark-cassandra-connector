@@ -380,15 +380,15 @@ object TableWriter {
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
-    val selectedColumns = columnNames
-      .selectFrom(tableDef)
-      .filter(col => !InternalColumns.contains(col.columnName))
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
-    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
-      tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns),
-      selectedColumns ++ optionColumns.map(_.ref))
+    val tablDefWithMeta = tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns)
 
-    checkColumns(tableDef, selectedColumns, checkPartitionKey)
-    new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
+    val selectedColumns = columnNames
+      .selectFrom(tablDefWithMeta)
+      .filter(col => !InternalColumns.contains(col.columnName))
+    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tablDefWithMeta, selectedColumns)
+
+    checkColumns(tablDefWithMeta, selectedColumns, checkPartitionKey)
+    new TableWriter[T](connector, tablDefWithMeta, selectedColumns, rowWriter, writeConf)
   }
 }
