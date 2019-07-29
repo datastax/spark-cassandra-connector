@@ -1,15 +1,18 @@
 package com.datastax.spark.connector.rdd
 
 import java.lang.{Long => JLong}
-import java.util.concurrent.CompletableFuture
 
-import scala.concurrent.Future
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
+import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DefaultProtocolVersion}
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
-import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DefaultProtocolVersion}
-import com.datastax.spark.connector.cluster.DefaultCluster
+import com.datastax.spark.connector.writer.AsyncExecutor
+
+import scala.concurrent.Future
 
 case class KVRow(key: Int)
 
@@ -44,6 +47,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     conn.withSessionDo { session =>
       createKeyspace(session)
       val startTime = System.currentTimeMillis()
+
+      val profile = session.getContext.getConfig.getDefaultProfile
+      val maxConcurrent = profile.getInt(CONNECTION_POOL_LOCAL_SIZE) * profile.getInt(CONNECTION_MAX_REQUESTS)
+      val executor = new AsyncExecutor[BoundStatement, AsyncResultSet](
+        stmt => session.executeAsync(stmt.setIdempotent(true)), maxConcurrent, None, None)
+
       awaitAll(
         Future {
           session.execute(
@@ -56,10 +65,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
-          val results = (for (value <- total) yield
-            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
-            )
-          CompletableFuture.allOf(results: _*).get
+          for (value <- total) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
         },
         Future {
           session.execute(
@@ -72,10 +79,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
-          val results = (for (value <- smallerTotal) yield
-            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString)).toCompletableFuture
-            )
-          CompletableFuture.allOf(results: _*).get
+          for (value <- smallerTotal) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
         },
 
         Future {
@@ -96,10 +101,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
-          val results = (for (value <- keys) yield
-            session.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong)).toCompletableFuture
-            )
-          CompletableFuture.allOf(results: _*)
+          for (value <- keys) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong))
         },
 
         Future {
@@ -113,11 +116,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
-          val results = (for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
-            session.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
-              .toCompletableFuture
-            )
-          CompletableFuture.allOf(results: _*)
+          for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
+            executor.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
         },
 
         Future {
