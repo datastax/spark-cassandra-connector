@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.ccm.mode
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
@@ -56,10 +56,16 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 
 private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultExecutor {
 
-  override val dir: Path = Files.createTempDirectory("ccm")
-
-  // remove config directory on shutdown
-  dir.toFile.deleteOnExit()
+  override val dir: Path = {
+    sys.env.get("PRESERVE_LOGS") match {
+      case Some(dir) =>
+        Files.createDirectories(Paths.get(s"/tmp/$dir/ccm_${config.ipPrefix}"))
+      case None =>
+        val tmp = Files.createTempDirectory("ccm")
+        tmp.toFile.deleteOnExit()
+        tmp
+    }
+  }
 
   // remove db artifacts
   override def remove(): Unit = {
