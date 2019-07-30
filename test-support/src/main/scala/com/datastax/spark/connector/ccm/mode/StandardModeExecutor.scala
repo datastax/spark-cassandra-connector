@@ -59,7 +59,7 @@ private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultEx
   override val dir: Path = {
     sys.env.get("PRESERVE_LOGS") match {
       case Some(dir) =>
-        Files.createDirectories(Paths.get(s"/tmp/$dir/ccm_${config.ipPrefix}"))
+        Files.createDirectories(Paths.get(s"/tmp/$dir/ccm_${config.ipPrefix.replace(".","_")}"))
       case None =>
         val tmp = Files.createTempDirectory("ccm")
         tmp.toFile.deleteOnExit()
