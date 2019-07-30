@@ -164,6 +164,8 @@ trait TwoClustersWithOneNode extends Fixture {
 
 trait CETCluster extends DefaultCluster
 
+trait CSTCluster extends DefaultCluster
+
 trait PSTCluster extends DefaultCluster
 
 /** Fixture marker that instructs test framework to execute the marked test within a separated process/JVM. */
