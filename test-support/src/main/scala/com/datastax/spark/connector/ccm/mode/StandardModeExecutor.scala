@@ -80,7 +80,7 @@ private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultEx
 
   // remove db artifacts
   override def remove(): Unit = {
-    execute("remove")
+    if (sys.env.get("PRESERVE_LOGS").isEmpty) execute("remove")
   }
 
 }
