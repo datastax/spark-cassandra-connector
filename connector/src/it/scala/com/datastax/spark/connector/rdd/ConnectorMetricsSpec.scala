@@ -20,10 +20,6 @@ import org.scalatest.concurrent.Eventually
 
 class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM {
 
-  //import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._
-
-  //YamlClientConfiguration.setAsClientConfigurationImpl()
-
   val ourSc = new SparkContext(
     super.defaultConf
       .clone()
@@ -144,8 +140,10 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       stagesMetrics.size() should be(1)
     }
     val metrics = stagesMetrics.poll()
-    metrics.outputMetrics.recordsWritten should be(200)
-    metrics.outputMetrics.bytesWritten should be(200 * 8)
+    Eventually.eventually {
+      metrics.outputMetrics.recordsWritten should be(200)
+      metrics.outputMetrics.bytesWritten should be(200 * 8)
+    }
   }
 }
 
