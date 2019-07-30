@@ -4,7 +4,7 @@ schedules:
     notify:
       slack: dse-analytics-team
     env_vars: |
-      PRESERVE_LOGS="ccm"
+      PRESERVE_LOGS=ccm
   nightly:
     schedule: nightly
     branches:

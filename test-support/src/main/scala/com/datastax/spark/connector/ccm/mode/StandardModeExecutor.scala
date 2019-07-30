@@ -69,7 +69,7 @@ private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultEx
         
         val path = Files.createDirectories(Paths.get(subPath))
         logger.debug(s"Preserving CCM Install Directory at [$path]. It will not be removed")
-        logger.debug(s"Checking directory exists [${Files.exists(path)}")
+        logger.debug(s"Checking directory exists [${Files.exists(path)}]")
         path
       case None =>
         val tmp = Files.createTempDirectory("ccm")
