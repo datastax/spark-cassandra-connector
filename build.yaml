@@ -32,4 +32,4 @@ build:
 
 package:
   include:
-    - /tmp/ccm/ccm_*/*/logs/system.log
+    - /tmp/ccm/ccm_*/**/logs/system.log
