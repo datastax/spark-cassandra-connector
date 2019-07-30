@@ -5,7 +5,7 @@ schedules:
       slack: dse-analytics-team
     env_vars: |
       PRESERVE_LOGS=ccm
-      TEST_PARALLEL_TASKS=6
+      TEST_PARALLEL_TASKS=4
       CCM_CLUSTER_MODE=debug
   nightly:
     schedule: nightly
@@ -36,3 +36,4 @@ package:
   include:
     - ccm/ccm_*/*/*/logs/system.log
     - ccm/*/*/*/*/*.log
+    - ccm/**/*.log

@@ -29,9 +29,9 @@ private[ccm] class DebugModeExecutor(val config: CcmConfig) extends DefaultExecu
     }
   }
 
-  // stop nodes, don't remove logs or just leave nodes running if PRESERVE_LOGS is set
+  // stop nodes, don't remove logs
   override def remove(): Unit = {
-    if (sys.env.get("PRESERVE_LOGS").isEmpty) execute("stop")
+     execute("stop")
   }
 
 }
