@@ -1,12 +1,11 @@
 package com.datastax.spark.connector.ccm.mode
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig
-import org.slf4j.{Logger, LoggerFactory}
 
 private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 
@@ -57,30 +56,11 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 }
 
 private[ccm] class StandardModeExecutor(val config: CcmConfig) extends DefaultExecutor {
-
-  private val logger: Logger = LoggerFactory.getLogger(classOf[StandardModeExecutor])
-
-  override val dir: Path = {
-    sys.env.get("PRESERVE_LOGS") match {
-      case Some(dir) =>
-        val subPath = s"/tmp/$dir/ccm_${config.ipPrefix
-            .replace(".","_")
-            .stripSuffix("_")}"
-        
-        val path = Files.createDirectories(Paths.get(subPath))
-        logger.debug(s"Preserving CCM Install Directory at [$path]. It will not be removed")
-        logger.debug(s"Checking directory exists [${Files.exists(path)}]")
-        path
-      case None =>
-        val tmp = Files.createTempDirectory("ccm")
-        tmp.toFile.deleteOnExit()
-        tmp
-    }
-  }
-
+  override val dir: Path = Files.createTempDirectory("ccm")
+  // remove config directory on shutdown
+  dir.toFile.deleteOnExit()
   // remove db artifacts
   override def remove(): Unit = {
-    if (sys.env.get("PRESERVE_LOGS").isEmpty) execute("remove")
+    execute("remove")
   }
-
 }
