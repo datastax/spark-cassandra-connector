@@ -110,7 +110,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     .regularColumns
     .filter( columnDef =>
       if (dseVersion.getMajor >= 6 && dseVersion.getMinor >= 7) {
-        true
+        //TODO: CHANGE THIS TO TRUE after : https://datastax-oss.atlassian.net/browse/JAVA-2371
+        (!(columnDef.isCollection || columnDef.columnType.isInstanceOf[UserDefinedType]))
       }
       else {
         (!(columnDef.isCollection || columnDef.columnType.isInstanceOf[UserDefinedType]))
