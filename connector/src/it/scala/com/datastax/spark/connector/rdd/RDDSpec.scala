@@ -65,8 +65,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (?, ?, ?)""")
-          for (value <- total) yield
-            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
+          awaitAll((for (value <- total) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))):_*)
         },
         Future {
           session.execute(
@@ -79,8 +79,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$smallerTable (key, group, value) VALUES (?, ?, ?)""")
-          for (value <- smallerTotal) yield
-            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))
+          awaitAll((for (value <- smallerTotal) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong, value.toString))):_*)
         },
 
         Future {
@@ -101,8 +101,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$otherTable (key, group) VALUES (?, ?)""")
-          for (value <- keys) yield
-            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong))
+          awaitAll((for (value <- keys) yield
+            executor.executeAsync(ps.bind(value: Integer, (value * 100).toLong: JLong))):_*)
         },
 
         Future {
@@ -116,8 +116,8 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
           val ps = session
             .prepare(s"""INSERT INTO $ks.$wideTable (key, group, value) VALUES (?, ?, ?)""")
-          for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
-            executor.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))
+          awaitAll((for (value <- keys; cconeValue <- value * 100 until value * 100 + 5) yield
+            executor.executeAsync(ps.bind(value: Integer, cconeValue.toLong: JLong, value.toString))):_*)
         },
 
         Future {
