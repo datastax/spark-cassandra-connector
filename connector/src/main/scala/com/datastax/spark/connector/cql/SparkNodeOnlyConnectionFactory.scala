@@ -26,7 +26,7 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
     // TODO: dse vs cassandra
     val builder = DriverConfigLoader.programmaticBuilder()
     val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, builder)
-       // FIXME: this works only for DefaultLoadBalancingPolicy
+       // TODO: this works only for DefaultLoadBalancingPolicy
       .withString(DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[SparkNodeOnlyFilter].getCanonicalName)
       .build()
 

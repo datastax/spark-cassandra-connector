@@ -6,7 +6,7 @@
 
 package com.datastax.bdp.spark
 
-//Commented out to fix later
+//TODO: Commented out to fix later
 /*
 
 import org.apache.spark.SparkConf

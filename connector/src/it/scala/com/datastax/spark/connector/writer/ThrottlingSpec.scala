@@ -35,7 +35,8 @@ class ThrottlingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   }
 
   it should "prevent failures based on driver pooling limits while joining" in {
- /*   conn.withClusterDo{cluster =>
+ /* TODO:
+      conn.withClusterDo{cluster =>
       val poolingOptions = cluster.getConfiguration.getPoolingOptions
       poolingOptions.setMaxQueueSize(1)
       poolingOptions.setConnectionsPerHost(com.datastax.driver.core.HostDistance.LOCAL, 1, 1)

@@ -111,6 +111,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
   }
 
   /*
+  TODO:
   it should "be equals for the same settings" in {
     val gen = new DataGenerator().registerCustomCasesGeneators {
       case (_, t) if t =:= typeOf[AuthConf] => gen => Iterator(NoAuthConf) ++ gen.generate[PasswordAuthConf]()
