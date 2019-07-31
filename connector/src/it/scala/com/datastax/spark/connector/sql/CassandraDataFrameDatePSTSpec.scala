@@ -8,7 +8,6 @@ import org.scalatest.{FlatSpec, Ignore}
 /**
   * This should be executed in separate JVM, as Catalyst caches default time zone
   */
-@Ignore // TODO: remove @Ignore after driver upgrade
 class CassandraDataFrameDatePSTSpec extends FlatSpec with CassandraDataFrameDateBehaviors with PSTCluster {
 
   val pacificTimeZone = TimeZone.getTimeZone("PST")
