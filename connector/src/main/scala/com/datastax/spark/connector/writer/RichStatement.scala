@@ -29,11 +29,6 @@ private[connector] class RichBoundStatementWrapper(initStatement: BoundStatement
   var bytesCount = 0
   val rowsCount = 1
 
-  def setRoutingKey(buffer: ByteBuffer): RichBoundStatementWrapper = {
-    _stmt = stmt.setRoutingKey(buffer)
-    this
-  }
-
   def setConsistencyLevel(consistencyLevel: ConsistencyLevel): RichBoundStatementWrapper = {
     _stmt = _stmt.setConsistencyLevel(consistencyLevel)
     this

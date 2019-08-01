@@ -71,6 +71,10 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
     (localReplica.iterator #:: maybeShuffledOtherReplicas.iterator #:: otherNodes #:: Stream.empty).flatten
   }
 
+  def tokenMap =
+    Option(metadataManager.getMetadata.getTokenMap.orElse(null))
+      .orElse(throw new IllegalArgumentException("Unable to get Token Metadata"))
+
   // copied and adjusted from DefaultLoadBalancingPolicy
   private def getReplicas(request: Request, session: Session): Set[Node] = {
     if (request == null || session == null) {
@@ -82,11 +86,11 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
         .flatMap { keyspace =>
 
           def replicasForToken(token: Token) = {
-            toOption(metadataManager.getMetadata.getTokenMap).map(_.getReplicas(keyspace, token))
+            tokenMap.map(_.getReplicas(keyspace, token))
           }
 
           def replicasForRoutingKey(key: ByteBuffer) = {
-            toOption(metadataManager.getMetadata.getTokenMap).map(_.getReplicas(keyspace, key))
+            tokenMap.map(_.getReplicas(keyspace, key))
           }
 
           Option(request.getRoutingToken).flatMap(replicasForToken)

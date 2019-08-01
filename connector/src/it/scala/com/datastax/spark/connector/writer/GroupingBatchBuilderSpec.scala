@@ -19,7 +19,6 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
 
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
   val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
-  val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
   def makeBatchBuilder(session: CqlSession): (RichBoundStatementWrapper => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
     val protocolVersion = session.getContext.getProtocolVersion
@@ -28,7 +27,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       rowWriter,
       stmt,
       protocolVersion = protocolVersion)
-    val batchStmtBuilder = new BatchStatementBuilder(DefaultBatchType.UNLOGGED, rkg, DefaultConsistencyLevel.LOCAL_ONE)
+    val batchStmtBuilder = new BatchStatementBuilder(DefaultBatchType.UNLOGGED, DefaultConsistencyLevel.LOCAL_ONE)
     new GroupingBatchBuilder[(Int, String)](
       boundStmtBuilder,
       batchStmtBuilder,

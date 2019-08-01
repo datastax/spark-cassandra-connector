@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.writer
 
 import java.io.IOException
+import java.util.function.Supplier
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, DefaultBatchType, PreparedStatement, SimpleStatement}
@@ -143,22 +144,19 @@ class TableWriter[T] private (
     }
   }
 
-  // TODO: this method looks highly suspicious, minimal fix includes changing return type to something less generic and removing hashcode used below
-  // TODO: this relies on the fact that [[RichBoundStatementWrapper]] is mutable (setRoutingKey)
-  def batchRoutingKey(session: CqlSession, routingKeyGenerator: RoutingKeyGenerator)(bs: RichBoundStatementWrapper): Any = {
+  def batchRoutingKey(session: CqlSession)(bs: RichBoundStatementWrapper): Any = {
+    def missingMetadataException = new Supplier[IllegalArgumentException] {
+      override def get(): IllegalArgumentException = new IllegalArgumentException("TokenMap Metadata Missing")
+    }
+
     writeConf.batchGroupingKey match {
-      case BatchGroupingKey.None => 0
+      case BatchGroupingKey.None =>  0
 
       case BatchGroupingKey.ReplicaSet =>
-        if (bs.stmt.getRoutingKey == null)
-          bs.setRoutingKey(routingKeyGenerator(bs.stmt))
-        toOption(session.getMetadata.getTokenMap).map(_.getReplicas(keyspaceName, bs.stmt.getRoutingKey)).hashCode() // hash code is enough
+        session.getMetadata.getTokenMap.orElseThrow(missingMetadataException)
+          .getReplicas(keyspaceName, bs.stmt.getRoutingKey)
 
-      case BatchGroupingKey.Partition =>
-        if (bs.stmt.getRoutingKey == null) {
-          bs.setRoutingKey(routingKeyGenerator(bs.stmt))
-        }
-        bs.stmt.getRoutingKey.duplicate()
+      case BatchGroupingKey.Partition => bs.stmt.getRoutingKey().duplicate()
     }
   }
 
@@ -204,7 +202,6 @@ class TableWriter[T] private (
       val stmt = prepareStatement(queryTemplate, session)
       val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
         Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
-      val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
       val batchType = if (isCounterUpdate) DefaultBatchType.COUNTER else DefaultBatchType.UNLOGGED
 
       val boundStmtBuilder = new BoundStatementBuilder(
@@ -213,8 +210,8 @@ class TableWriter[T] private (
         protocolVersion = protocolVersion,
         ignoreNulls = writeConf.ignoreNulls)
 
-      val batchStmtBuilder = new BatchStatementBuilder(batchType, routingKeyGenerator, writeConf.consistencyLevel)
-      val batchKeyGenerator = batchRoutingKey(session, routingKeyGenerator) _
+      val batchStmtBuilder = new BatchStatementBuilder(batchType, writeConf.consistencyLevel)
+      val batchKeyGenerator = batchRoutingKey(session) _
       val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
         writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
 

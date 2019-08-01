@@ -6,7 +6,6 @@ import com.datastax.spark.connector.util.Logging
 
 private[connector] class BatchStatementBuilder(
   val batchType: BatchType,
-  val routingKeyGenerator: RoutingKeyGenerator,
   val consistencyLevel: ConsistencyLevel) extends Logging {
 
   /** Converts a sequence of statements into a batch if its size is greater than 1.
@@ -14,8 +13,6 @@ private[connector] class BatchStatementBuilder(
   def maybeCreateBatch(stmts: Seq[RichBoundStatementWrapper]): RichStatement = {
     require(stmts.nonEmpty, "Statements list cannot be empty")
     val stmt = stmts.head
-    // for batch statements, it is enough to set routing key for the first statement
-    stmt.setRoutingKey(routingKeyGenerator.apply(stmt.stmt))
 
     if (stmts.size == 1) {
       stmt.setConsistencyLevel(consistencyLevel)

@@ -36,12 +36,11 @@ class ReplicaLocator[T] private(
       connector.withSessionDo { session =>
         val protocolVersion = session.getContext.getProtocolVersion
         val stmt = prepareDummyStatement(session, tableDef)
-        val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
         val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion = protocolVersion)
         val clusterMetadata = session.getMetadata
         data.map { row =>
           val hosts = tokenMap
-            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row).stmt))
+            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), boundStmtBuilder.bind(row).stmt.getRoutingKey)
             .map(_.getBroadcastAddress.get().getAddress)// TODO Fix Get
             .toSet[InetAddress]
           (hosts, row)

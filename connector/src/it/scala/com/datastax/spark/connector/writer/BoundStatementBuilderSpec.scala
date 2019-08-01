@@ -18,7 +18,6 @@ class BoundStatementBuilderSpec extends SparkCassandraITFlatSpecBase with Defaul
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
   val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, CassandraOption[String])]
     .rowWriter(schema.tables.head, IndexedSeq("id", "value"))
-  val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
   val ps = conn.withSessionDo(session =>
     session.prepare( s"""INSERT INTO "$ks".tab (id, value) VALUES (?, ?) """))
 
