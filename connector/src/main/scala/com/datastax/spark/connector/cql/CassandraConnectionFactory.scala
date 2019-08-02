@@ -55,6 +55,10 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
         .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
         .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
+        .withInt(NETTY_ADMIN_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
+        .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
+        .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
+        .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
     }
 
     // add Auth Conf if set
@@ -97,20 +101,6 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
     val builder = DriverConfigLoader.programmaticBuilder()
     val loader = connectorConfigBuilder(conf, builder)
-
-    // TODO:
-    //        new QueryOptions()
-    //          .setRefreshNodeIntervalMillis(0)
-    //          .setRefreshNodeListIntervalMillis(0)
-    //          .setRefreshSchemaIntervalMillis(0))
-    //      .withoutJMXReporting()
-    //      .withThreadingOptions(new DaemonThreadingOptions)
-    //      .withNettyOptions(new NettyOptions() {
-    //        override def onClusterClose(eventLoopGroup: EventLoopGroup): Unit =
-    //          eventLoopGroup.shutdownGracefully(conf.quietPeriodBeforeCloseMillis, conf.timeoutBeforeCloseMillis, TimeUnit.MILLISECONDS)
-    //            .syncUninterruptibly()
-    //      })
-
     CqlSession.builder()
       .withConfigLoader(loader.build())
       .build()
