@@ -40,7 +40,7 @@ class ReplicaLocator[T] private(
         val clusterMetadata = session.getMetadata
         data.map { row =>
           val hosts = tokenMap
-            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), boundStmtBuilder.bind(row).stmt.getRoutingKey)
+            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
             .map(_.getBroadcastAddress.get().getAddress)// TODO Fix Get
             .toSet[InetAddress]
           (hosts, row)

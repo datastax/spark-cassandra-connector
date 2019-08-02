@@ -4,11 +4,10 @@ import java.io.IOException
 import java.util.function.Supplier
 
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{BoundStatement, DefaultBatchType, PreparedStatement, SimpleStatement}
+import com.datastax.oss.driver.api.core.cql.{DefaultBatchType, PreparedStatement, SimpleStatement}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{ListType, MapType}
-import com.datastax.spark.connector.util.DriverUtil.toOption
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
 import org.apache.spark.TaskContext
@@ -154,9 +153,9 @@ class TableWriter[T] private (
 
       case BatchGroupingKey.ReplicaSet =>
         session.getMetadata.getTokenMap.orElseThrow(missingMetadataException)
-          .getReplicas(keyspaceName, bs.stmt.getRoutingKey)
+          .getReplicas(keyspaceName, QueryUtils.getRoutingKeyOrError(bs.stmt))
 
-      case BatchGroupingKey.Partition => bs.stmt.getRoutingKey().duplicate()
+      case BatchGroupingKey.Partition => QueryUtils.getRoutingKeyOrError(bs.stmt)
     }
   }
 

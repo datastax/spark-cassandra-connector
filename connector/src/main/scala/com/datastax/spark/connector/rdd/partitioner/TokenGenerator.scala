@@ -1,11 +1,16 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import java.nio.ByteBuffer
+
 import com.datastax.driver.core.MetadataHook
+import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.oss.driver.api.core.metadata.token.Token
-import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector, QueryUtils, TableDef}
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
-import com.datastax.spark.connector.writer.{BoundStatementBuilder, RowWriter}
+import com.datastax.spark.connector.writer.{BoundStatementBuilder, NullKeyColumnException, RowWriter}
+
+import scala.collection.JavaConverters._
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine
@@ -29,11 +34,16 @@ private[connector] class TokenGenerator[T] (
     stmt,
     protocolVersion = protocolVersion)
 
+  def getRoutingKey(key: T): ByteBuffer = {
+    val boundStatement = boundStmtBuilder.bind(key).stmt
+    QueryUtils.getRoutingKeyOrError(boundStatement)
+  }
+
   def getTokenFor(key: T): Token = {
-    MetadataHook.newToken(metadata, boundStmtBuilder.bind(key).stmt.getRoutingKey)
+    MetadataHook.newToken(metadata, getRoutingKey(key))
   }
 
   def getStringTokenFor(key: T): String = {
-    MetadataHook.newTokenAsString(metadata, boundStmtBuilder.bind(key).stmt.getRoutingKey)
+    MetadataHook.newTokenAsString(metadata, getRoutingKey(key))
   }
 }
