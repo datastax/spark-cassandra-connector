@@ -24,20 +24,16 @@ private[connector] class TokenGenerator[T] (
   val stmt = connector.withSessionDo { session => prepareDummyStatement(session, tableDef) }
   val metadata = connector.withSessionDo(_.getMetadata)
 
-  val routingKeyGenerator = new RoutingKeyGenerator(
-    tableDef,
-    tableDef.partitionKey.map(_.columnName))
-
   val boundStmtBuilder = new BoundStatementBuilder(
     rowWriter,
     stmt,
     protocolVersion = protocolVersion)
 
   def getTokenFor(key: T): Token = {
-    MetadataHook.newToken(metadata, routingKeyGenerator.apply(boundStmtBuilder.bind(key).stmt))
+    MetadataHook.newToken(metadata, boundStmtBuilder.bind(key).stmt.getRoutingKey)
   }
 
   def getStringTokenFor(key: T): String = {
-    MetadataHook.newTokenAsString(metadata, routingKeyGenerator.apply(boundStmtBuilder.bind(key).stmt))
+    MetadataHook.newTokenAsString(metadata, boundStmtBuilder.bind(key).stmt.getRoutingKey)
   }
 }
