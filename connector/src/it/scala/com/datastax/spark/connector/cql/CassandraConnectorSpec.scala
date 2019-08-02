@@ -80,6 +80,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val session2 = conn.openSession()
     val threadCount2 = Thread.activeCount()
 
+    session1.getName shouldEqual session2.getName
     // Unfortunately we don't have a way to obtain an internal Session object; all we got here are proxies.
     // Instead, we try to figure out whether a new Session was opened by counting active threads.
     // Opening internal Session creates new threads, so if none was created, the thread count would not change.
@@ -98,6 +99,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     val session2 = conn2.openSession()
     val threadCount2 = Thread.activeCount()
     threadCount1 shouldEqual threadCount2
+
+    session1.getName shouldEqual session2.getName
     session1.close()
     session1.isClosed shouldEqual true
     session2.isClosed shouldEqual false
