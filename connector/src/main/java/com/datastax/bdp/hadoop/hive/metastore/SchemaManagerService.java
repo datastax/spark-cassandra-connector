@@ -22,12 +22,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.datastax.dse.driver.api.core.DseSession;
 import com.datastax.dse.driver.api.core.graph.GraphResultSet;
 import com.datastax.dse.driver.api.core.graph.GraphSession;
 import com.datastax.dse.driver.api.core.graph.ScriptGraphStatement;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
-import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
@@ -168,7 +166,7 @@ public class SchemaManagerService
                 graphNames = Optional.of(StreamSupport.stream(rs.spliterator(), false)
                         .map(r -> r.asString())
                         .collect(Collectors.toSet()));
-            } catch (InvalidQueryException | SyntaxError e) {
+            } catch (InvalidQueryException | SyntaxError | ClassCastException e) {
                 //graph is not enabled or connected to OSS Cassandra so empty set
                 graphNames = Optional.empty();
             }
