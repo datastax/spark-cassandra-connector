@@ -72,7 +72,7 @@ public abstract class RDDAndDStreamCommonJavaFunctions<T> {
      *
      * @return an instance of {@link com.datastax.spark.connector.japi.RDDAndDStreamCommonJavaFunctions.WriterBuilder}
      *
-     * @see com.datastax.spark.connector.japi.CassandraJavaUtil#safeMapToRow(Class, ColumnMapper)
+     * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(Class, ColumnMapper)
      * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(Class, java.util.Map)
      * @see com.datastax.spark.connector.japi.CassandraJavaUtil#mapToRow(Class, org.apache.commons.lang3.tuple.Pair[])
      */
