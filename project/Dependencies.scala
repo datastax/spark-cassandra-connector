@@ -58,7 +58,6 @@ object Dependencies
     val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
-      commonsIO, // TODO: used in one place, remove
       driverMapperProcessor,
       scalaCheck,
       scalaTest,

@@ -8,11 +8,13 @@ import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
+import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
+
 
 /** Creates CassandraPartitions for given Cassandra table */
 private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
@@ -27,17 +29,25 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
 
   private val keyspaceName = CqlIdentifier.fromCql(tableDef.keyspaceName) // TODO Lets fix all this later
 
+
   private def tokenRange(range: DriverTokenRange, metadata: TokenMap): TokenRange = {
 
     val startToken = tokenFactory.tokenFromString(metadata.format(range.getStart))
     val endToken = tokenFactory.tokenFromString(metadata.format(range.getEnd))
-    val replicas = metadata.getReplicas(keyspaceName, range).map(_.getBroadcastAddress.get().getAddress).toSet //TODO cover this get
+    val replicas = metadata
+      .getReplicas(keyspaceName, range)
+      .map(node =>
+        toOption(node.getBroadcastAddress)
+          .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
+      .map(_.getAddress)
+      .toSet
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }
 
   private[partitioner] def describeRing: Seq[TokenRange] = {
     val ranges = connector.withSessionDo { session =>
-      val tokenMap = session.getMetadata.getTokenMap.get // TODO Maybe catch this failing?
+      val tokenMap = Option(session.getMetadata.getTokenMap.get)
+        .getOrElse(throw new IllegalStateException("Unable to determine Token Range Metadata"))
       for (tr <- tokenMap.getTokenRanges()) yield tokenRange(tr, tokenMap)
     }
 

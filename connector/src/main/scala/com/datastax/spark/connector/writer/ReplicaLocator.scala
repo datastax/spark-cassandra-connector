@@ -6,6 +6,7 @@ import java.net.InetAddress
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
@@ -25,7 +26,8 @@ class ReplicaLocator[T] private(
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
-  val tokenMap = connector.withSessionDo(_.getMetadata.getTokenMap).get //TODO Fix get
+  val tokenMap = toOption(connector.withSessionDo(_.getMetadata.getTokenMap))
+    .getOrElse(throw new IllegalStateException("Unable to determine Token Map Metadata"))
 
   /**
    * Pairs each piece of data with the Cassandra Replicas which that data would be found on
@@ -41,7 +43,9 @@ class ReplicaLocator[T] private(
         data.map { row =>
           val hosts = tokenMap
             .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
-            .map(_.getBroadcastAddress.get().getAddress)// TODO Fix Get
+            .map(node => toOption(node.getBroadcastAddress)
+              .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
+            .map(_.getAddress)
             .toSet[InetAddress]
           (hosts, row)
         }
