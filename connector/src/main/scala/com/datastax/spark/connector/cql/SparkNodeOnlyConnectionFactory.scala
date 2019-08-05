@@ -19,11 +19,11 @@ import com.datastax.oss.driver.api.core.metadata.Node
   * A Custom Connection Factory for using the Dse Resource Manager
   * Uses the DseCassandraConnectionFactory but uses a SparkNodeOnlyFilter
   */
+// TODO: move this to DSE code base with DSP-19339
 case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   val AnalyticsWorkload: String = "Analytics"
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    // TODO: dse vs cassandra
     val builder = DriverConfigLoader.programmaticBuilder()
     val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, builder)
        // TODO: this works only for DefaultLoadBalancingPolicy

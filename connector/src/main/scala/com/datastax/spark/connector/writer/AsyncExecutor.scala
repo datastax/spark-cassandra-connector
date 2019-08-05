@@ -22,7 +22,6 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
 
   private val semaphore = new Semaphore(maxConcurrentTasks)
   private val pendingFutures = new TrieMap[Future[R], Boolean]
-  private val BackpressureOverload = "Request dropped due to backpressure overload"
 
   @volatile private var latestException: Option[Throwable] = None
 
@@ -61,8 +60,7 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
             case e: AllNodesFailedException if e.getErrors.asScala.values.exists(_.isInstanceOf[BusyConnectionException]) =>
               logTrace("BusyConnectionException ... Retrying")
               tryFuture()
-            // TODO: is this valid?
-            case e: OverloadedException if e.getMessage.contains(BackpressureOverload) =>
+            case e: OverloadedException =>
               logTrace("Backpressure rejection ... Retrying")
               tryFuture()
 

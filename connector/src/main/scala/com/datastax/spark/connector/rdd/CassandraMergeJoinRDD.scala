@@ -118,6 +118,7 @@ class CassandraMergeJoinRDD[L,R](
         for ((value, converter) <- values zip converters)
           yield converter.convert(value)
       stmt.bind(convertedValues: _*)
+        .setIdempotent(true)
         .setPageSize(readConf.fetchSizeInRows)
         .setConsistencyLevel(readConf.consistencyLevel)
     }
