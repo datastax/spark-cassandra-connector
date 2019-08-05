@@ -47,11 +47,11 @@ object YamlTransformations {
 
   private def readTemplate(): JMap[String, AnyRef]@unchecked = {
     val exactTmplt =
-      Option(ClassLoader.getSystemResourceAsStream(s"cassandra-$YamlTemplateVersion.yaml.template"))
+      Option(getClass.getResourceAsStream(s"/cassandra-$YamlTemplateVersion.yaml.template"))
     lazy val fallbackTmplt = {
       System.err.println(s"Warning: Using fallback template for Cassandra 3.2 because " +
         s"the template for Cassandra $YamlTemplateVersion could not be found.")
-      Option(ClassLoader.getSystemResourceAsStream(s"cassandra-3.2.yaml.template"))
+      Option(getClass.getResourceAsStream(s"/cassandra-3.2.yaml.template"))
     }
 
     yaml.load(exactTmplt orElse fallbackTmplt orNull) match {
