@@ -2,7 +2,7 @@ schedules:
   commit:
     schedule: per_commit
     notify:
-      slack: dse-analytics-team
+      slack: #analytics-connector
     env_vars: |
       PRESERVE_LOGS=ccm
       TEST_PARALLEL_TASKS=4
@@ -28,6 +28,9 @@ os:
 
 build:
   - script: |
+      mkdir ~/.sbt
+      awk '{split($0,a,":"); printf "realm=Artifactory Realm\nhost=repo.datastax.com\nuser=%s\npassword=%s\n", a[1], a[2]}' > ~/.sbt/credentials <<< "$ARTIFACTORY_CREDS"
+      if [ -z "$ARTIFACTORY_CREDS" ]; then echo "Creds Empty"; else echo "Non-Empty"; fi;
       ./sbt/sbt test it:test
 
   - xunit: true
