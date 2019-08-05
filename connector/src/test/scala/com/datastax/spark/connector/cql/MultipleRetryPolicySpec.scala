@@ -1,14 +1,19 @@
 package com.datastax.spark.connector.cql
 
+import com.datastax.oss.driver.api.core.config.{DriverConfig, DriverExecutionProfile}
+import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.metadata.Node
 import com.datastax.oss.driver.api.core.retry.RetryDecision
 import com.datastax.oss.driver.api.core.servererrors._
 import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DriverException}
+import com.datastax.spark.connector.cql.CassandraConnectionFactory.CustomDriverOptions
+import org.mockito.Matchers._
+import org.mockito.Mockito._
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 
-class MultipleRetrySpec extends FlatSpec with Matchers with MockitoSugar {
+class MultipleRetryPolicySpec extends FlatSpec with Matchers with MockitoSugar {
 
   private val statement = SimpleStatement.newInstance("foobuzz")
   private val cl = DefaultConsistencyLevel.THREE
@@ -57,8 +62,15 @@ class MultipleRetrySpec extends FlatSpec with Matchers with MockitoSugar {
   val retry = RetryDecision.RETRY_SAME
   val rethrow = RetryDecision.RETHROW
 
-  def createRetryPolicy(retries: Int) =
-    new MultipleRetryPolicy(null, null, retries)
+  def createRetryPolicy(retries: Int) = {
+    val driverContext = mock[DriverContext]
+    val driverConfig = mock[DriverConfig]
+    val profile = mock[DriverExecutionProfile]
+    when(profile.getInt(org.mockito.Matchers.eq(CustomDriverOptions.MaxRetryCount), anyInt())).thenReturn(retries)
+    when(driverConfig.getProfile(anyString)).thenReturn(profile)
+    when(driverContext.getConfig).thenReturn(driverConfig)
+    new MultipleRetryPolicy(driverContext, null)
+  }
 
   "MultipleRetryPolicy" should "retry always if maxRetry is -1" in {
     val policy = createRetryPolicy(-1)

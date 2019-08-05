@@ -11,12 +11,12 @@ import com.datastax.oss.driver.api.core.session.Request
   *
   *  Retries indefinitely if maxRetryCount is -1
   */
-// TODO: remove this 3-arg construction and take maxRetryCount from conf. Adjust test
-class MultipleRetryPolicy(context: DriverContext, profileName: String, maxRetryCount: Int)
+class MultipleRetryPolicy(context: DriverContext, profileName: String)
   extends RetryPolicy {
 
-  def this(context: DriverContext, profileName: String) =
-    this(context, profileName, 5)
+  private val maxRetryCount = context.getConfig.getProfile(profileName).getInt(
+    CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount,
+    CassandraConnectorConf.QueryRetryParam.default)
 
   private def retryManyTimesOrThrow(nbRetry: Int): RetryDecision = maxRetryCount match {
     case -1 => RetryDecision.RETRY_SAME

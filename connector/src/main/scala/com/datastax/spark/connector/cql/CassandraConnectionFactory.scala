@@ -7,7 +7,7 @@ import java.time.Duration
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
-import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, ProgrammaticDriverConfigLoaderBuilder}
+import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, DriverOption, ProgrammaticDriverConfigLoaderBuilder}
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory
 import com.datastax.spark.connector.rdd.ReadConf
@@ -59,6 +59,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
+        .withInt(CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount, conf.queryRetryCount)
     }
 
     // add Auth Conf if set
@@ -162,5 +163,12 @@ object CassandraConnectionFactory {
     conf.getOption(FactoryParam.name)
       .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
       .getOrElse(FactoryParam.default)
+  }
+
+  object CustomDriverOptions {
+
+    val MaxRetryCount: DriverOption = new DriverOption {
+      override def getPath: String = "advanced.retry-policy.max-retry-count"
+    }
   }
 }
