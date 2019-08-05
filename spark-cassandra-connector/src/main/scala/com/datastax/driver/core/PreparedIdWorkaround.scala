@@ -9,7 +9,7 @@ package com.datastax.driver.core
 object PreparedIdWorkaround {
 
   def getResultMetadata(preparedId: PreparedId) = {
-    preparedId.resultSetMetadata
+    preparedId.resultSetMetadata.variables
   }
 
 }

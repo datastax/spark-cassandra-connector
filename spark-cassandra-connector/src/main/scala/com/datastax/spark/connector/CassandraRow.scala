@@ -132,7 +132,7 @@ object CassandraRowMetadata {
   }
 
   def fromPreparedId(columnNames: IndexedSeq[String], ps: PreparedId) = {
-    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList())
+    fromColumnDefs(columnNames, PreparedIdWorkaround.getResultMetadata(ps).asList)
   }
 
   private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: java.util.List[Definition]) = {
