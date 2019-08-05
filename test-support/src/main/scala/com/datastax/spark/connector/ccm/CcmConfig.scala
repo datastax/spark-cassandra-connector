@@ -19,10 +19,10 @@ case class CcmConfig(
     createOptions: List[String] = List(),
     dseWorkloads: List[String] = List(),
     jmxPortOffset: Int = 0,
-    version: Version = Version.parse(System.getProperty("ccm.version", "3.11.0")),
+    version: Version = Version.parse(System.getProperty("ccm.version", "6.7.4")),
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
-    dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toBoolean),
+    dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).forall(_.toBoolean),
     mode: ClusterMode = ClusterModes.fromEnvVar) {
 
   def withSsl(keystorePath: String, keystorePassword: String): CcmConfig = {
