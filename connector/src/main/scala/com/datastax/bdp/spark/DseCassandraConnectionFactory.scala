@@ -5,67 +5,38 @@
  */
 package com.datastax.bdp.spark
 
-import java.util.concurrent.ThreadFactory
-
-import org.apache.spark.SparkEnv
-import org.slf4j.LoggerFactory
-
-import com.datastax.driver.core._
-import com.datastax.driver.dse.DseCluster
-import com.datastax.driver.dse.graph.{GraphOptions, GraphProtocol}
-import com.datastax.driver.extras.codecs.jdk8.{InstantCodec, LocalDateCodec, LocalTimeCodec}
+import com.datastax.dse.driver.api.core.config.DseDriverConfigLoader
+import com.datastax.dse.driver.api.core.{DseProtocolVersion, DseSession}
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter}
+import org.apache.spark.SparkEnv
+import org.slf4j.LoggerFactory
 
 object DseCassandraConnectionFactory extends CassandraConnectionFactory {
   @transient
   lazy private val logger = LoggerFactory.getLogger("com.datastax.bdp.spark.DseCassandraConnectionFactory")
 
-  def customCodecRegistry: CodecRegistry = {
-    new CodecRegistry()
-      .register(LocalDateCodec.instance)
-      .register(LocalTimeCodec.instance)
-      .register(InstantCodec.instance)
-  }
+  override def createSession(conf: CassandraConnectorConf): CqlSession = {
+    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DseDriverConfigLoader.programmaticBuilder())
 
-  def dseClusterBuilder(conf: CassandraConnectorConf) = {
-    val defBuilder = DefaultConnectionFactory.clusterBuilder(conf)
-    val defConf = defBuilder.getConfiguration
+/* TODO:
 
     val dseBuilder = DseCluster.builder()
-      .addContactPointsWithPorts(defBuilder.getContactPoints)
-      .withPort(conf.port)
-      .withRetryPolicy(defConf.getPolicies.getRetryPolicy)
-      .withReconnectionPolicy(defConf.getPolicies.getReconnectionPolicy)
-      .withLoadBalancingPolicy(defConf.getPolicies.getLoadBalancingPolicy)
-      .withAuthProvider(defConf.getProtocolOptions.getAuthProvider)
-      .withSocketOptions(defConf.getSocketOptions)
-      .withCompression(defConf.getProtocolOptions.getCompression)
-      .withQueryOptions(defConf.getQueryOptions)
       .withGraphOptions(new GraphOptions().setGraphSubProtocol(GraphProtocol.GRAPHSON_2_0))
-      .withThreadingOptions(defConf.getThreadingOptions)
-      .withoutJMXReporting()
-      .withoutMetrics()
-      .withNettyOptions(defConf.getNettyOptions)
 
     val maybeSSLOptions =  Option(defConf.getProtocolOptions.getSSLOptions)
     maybeSSLOptions match {
       case Some(sslOptions) => dseBuilder.withSSL(sslOptions)
       case None => dseBuilder
     }
-  }
-
-
-  override def createCluster(conf: CassandraConnectorConf): Cluster = {
-    getClusterBuilder(conf).build
-  }
-
-  def getClusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
-    val builder = dseClusterBuilder(conf)
-    Option(conf.authConf.authProvider).foreach(builder.withAuthProvider)
-    //sslOptions(conf).foreach(builder.withSSL)
-    builder
+    Option(conf.authConf.authProvider).foreach(dseBuilder.withAuthProvider)
+    sslOptions(conf).foreach(dseBuilder.withSSL)
+*/
+    DseSession.builder()
+      .withConfigLoader(loader.build())
+      .build()
   }
 
   val continuousPagingParam = ConfigParameter[Boolean] (
@@ -81,10 +52,10 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     deprecatedSince = "DSE 6.0.0"
   )
 
-  def continuousPagingEnabled(cluster: Cluster): Boolean = {
+  def continuousPagingEnabled(session: CqlSession): Boolean = {
     val confEnabled = SparkEnv.get.conf.getBoolean(continuousPagingParam.name, continuousPagingParam.default)
-    val pv = cluster.getConfiguration.getProtocolOptions.getProtocolVersion
-    if (pv.compareTo(ProtocolVersion.DSE_V1) >= 0 && confEnabled) {
+    val pv = session.getContext.getProtocolVersion
+    if (pv.getCode > DseProtocolVersion.DSE_V1.getCode && confEnabled) {
       logger.debug(s"Scan Method Being Set to Continuous Paging")
       true
     } else {
@@ -99,8 +70,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
                            columnNames: scala.IndexedSeq[String]): Scanner = {
 
     val isContinuousPagingEnabled =
-      new CassandraConnector(connConf)
-        .withClusterDo { continuousPagingEnabled }
+      new CassandraConnector(connConf).withSessionDo { continuousPagingEnabled }
 
     if (isContinuousPagingEnabled) {
       logger.debug("Using ContinousPagingScanner")
@@ -111,7 +81,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     }
   }
 
-  /*
+  /* TODO:
   def sslOptions(conf: CassandraConnectorConf): Option[SSLOptions] = {
     def buildSSLOptions(clientConf: ClientConfiguration): Option[SSLOptions] = {
       getSSLContext(clientConf).map {

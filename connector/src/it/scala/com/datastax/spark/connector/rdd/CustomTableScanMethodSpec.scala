@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.Cluster
+import com.datastax.bdp.spark.DseCassandraConnectionFactory
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -14,9 +15,9 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Defaul
   val ourSc = {
     new SparkContext(
       defaultConf
-      .clone
-      .set(CassandraConnectionFactory.FactoryParam.name,
-        "com.datastax.spark.connector.rdd.DummyFactory"))
+        .clone
+        .set(CassandraConnectionFactory.FactoryParam.name,
+          "com.datastax.spark.connector.rdd.DummyFactory"))
   }
 
   override lazy val conn = CassandraConnector(defaultConf)
@@ -41,12 +42,12 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Defaul
     }
   }
 
-  "CassandraTableScanRDD" should "be able to use a custom scan method" in withoutLogging{
+  "CassandraTableScanRDD" should "be able to use a custom scan method" in withoutLogging {
     //The dummy method set in the SparkConf only throws a NIE
     val se = intercept[SparkException] {
       ourSc.cassandraTable[CassandraRow](ks, tableName).collect
     }
-    se.getCause.getMessage should be (DummyFactory.nie.getMessage)
+    se.getCause.getMessage should be(DummyFactory.nie.getMessage)
   }
 }
 
@@ -59,6 +60,6 @@ object DummyFactory extends CassandraConnectionFactory {
     columnNames: IndexedSeq[String]): Scanner = throw nie
 
   /** Creates and configures native Cassandra connection */
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
-    DefaultConnectionFactory.createCluster(conf)
+  override def createSession(conf: CassandraConnectorConf): CqlSession =
+    DseCassandraConnectionFactory.createSession(conf)
 }

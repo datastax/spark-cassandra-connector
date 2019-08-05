@@ -5,84 +5,53 @@
  */
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
 import java.util
 
-import scala.collection.JavaConverters._
-import com.datastax.bdp.spark.DseCassandraConnectionFactory
-import com.datastax.driver.core.policies.LoadBalancingPolicy
-import com.datastax.driver.core.{Cluster, Host, HostDistance, Statement}
-import com.datastax.spark.connector.util.Logging
+import com.datastax.dse.driver.api.core.DseSession
+import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.config.{DefaultDriverOption, DriverConfigLoader}
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER
+import com.datastax.oss.driver.api.core.context.DriverContext
+import com.datastax.oss.driver.api.core.metadata.Node
 
 /**
   * A Custom Connection Factory for using the Dse Resource Manager
-  * Uses the DseCasasndraConnectionFactory but uses a SparkNodeOnlyLoadBalancingPolicy
+  * Uses the DseCassandraConnectionFactory but uses a SparkNodeOnlyFilter
   */
+// TODO: move this to DSE code base with DSP-19339
 case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   val AnalyticsWorkload: String = "Analytics"
 
-  override def createCluster(conf: CassandraConnectorConf): Cluster =
-    DseCassandraConnectionFactory
-      .getClusterBuilder(conf)
-      .withLoadBalancingPolicy(new SparkNodeOnlyLoadBalancingPolicy(conf.hosts, conf.localDC))
+  override def createSession(conf: CassandraConnectorConf): CqlSession = {
+    val builder = DriverConfigLoader.programmaticBuilder()
+    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, builder)
+       // TODO: this works only for DefaultLoadBalancingPolicy
+      .withString(DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[SparkNodeOnlyFilter].getCanonicalName)
       .build()
+
+    DseSession.builder()
+      .withConfigLoader(loader)
+      .build()
+  }
 }
 
 /**
-  * A Policy which only directs requests at Analytics enabled nodes
+  * A Filter which only directs requests at Analytics enabled nodes
   */
-class SparkNodeOnlyLoadBalancingPolicy(
-    contactPoints: Set[InetAddress],
-    localDC: Option[String] = None) extends LoadBalancingPolicy with Logging {
+class SparkNodeOnlyFilter(driverContext: DriverContext) extends java.util.function.Predicate[Node] {
 
-  import SparkNodeOnlyConnectionFactory.AnalyticsWorkload
+  private val localDataCenter = driverContext.getConfig.getDefaultProfile.getString(LOAD_BALANCING_LOCAL_DATACENTER).trim
 
-  //All the nodes
-  private var sparkNodes = Set.empty[Host]
-  private var dcToUse = ""
+  assert(!localDataCenter.isEmpty, "Local data center must not be empty. Inspect your config, set your local data center.")
 
-  override def newQueryPlan(loggedKeyspace: String, statement: Statement): util.Iterator[Host] = {
-    if (sparkNodes.isEmpty) {
-      logError(
-        s"""Unable to route DSE Resource Manager request.
-           |None of the currently known nodes in the DC $dcToUse are running an $AnalyticsWorkload workload.
-           |Please set the connection.local_dc parameter in your dse:// master URI or
-           |choose a contact point in a DC with DSE $AnalyticsWorkload nodes running.""".stripMargin)
-      Iterator[Host]().asJava
-    } else {
-      LocalNodeFirstLoadBalancingPolicy.sortNodesByStatusAndProximity(dcToUse, sparkNodes).iterator.asJava
-    }
+  private def isAnalyticsWorkload(node: Node) = {
+    val workloads = Option(node.getExtras.get(DseNodeProperties.DSE_WORKLOADS))
+    workloads.exists(_.asInstanceOf[util.Set[String]].contains(SparkNodeOnlyConnectionFactory.AnalyticsWorkload))
   }
 
-  override def init(cluster: Cluster, hosts: util.Collection[Host]): Unit = {
-    dcToUse = localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(contactPoints, hosts.asScala.toSet))
-    sparkNodes = hosts.asScala.filter(sameDCAndAnalytics).toSet
+  override def test(node: Node): Boolean = {
+    localDataCenter == node.getDatacenter && isAnalyticsWorkload(node)
   }
-
-  private def sameDCAndAnalytics(host: Host): Boolean = {
-    host.getDseWorkloads.contains(AnalyticsWorkload) && localDC.forall(host.getDatacenter == _)
-  }
-
-  override def distance(host: Host): HostDistance = {
-    if (LocalNodeFirstLoadBalancingPolicy.isLocalHost(host)) {
-      HostDistance.LOCAL
-    } else {
-      HostDistance.REMOTE
-    }
-  }
-
-  override def onAdd(host: Host): Unit = {
-    if (sameDCAndAnalytics(host)) sparkNodes += host
-  }
-
-  override def onRemove(host: Host): Unit = {
-    sparkNodes -= host
-  }
-
-  override def onUp(host: Host): Unit = {}
-
-  override def onDown(host: Host): Unit = {}
-
-  override def close(): Unit = {}
 }
 

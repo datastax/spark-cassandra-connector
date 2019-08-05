@@ -2,10 +2,10 @@ package com.datastax.spark.connector.writer
 
 import java.io.IOException
 
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
-import com.datastax.driver.core.ProtocolVersion
-import com.datastax.driver.core.ProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
@@ -36,73 +36,74 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, solr_query TEXT, PRIMARY KEY (key))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.counters2 (pkey INT PRIMARY KEY, c counter)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.single_column (pk INT PRIMARY KEY)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.static_test (key INT, group BIGINT, value TEXT STATIC, PRIMARY KEY (key, group))""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
-      },
-      Future {
-        session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
-        session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
-        session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
+      awaitAll(
+        Future {
+          session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.solr_query (key INT, group BIGINT, value TEXT, solr_query TEXT, PRIMARY KEY (key))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.nulls (key INT PRIMARY KEY, text_value TEXT, int_value INT)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.collections_mod (key INT PRIMARY KEY, lcol list<text>, scol set<text>, mcol map<text, text>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.counters (pkey INT, ckey INT, c1 counter, c2 counter, PRIMARY KEY (pkey, ckey))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.counters2 (pkey INT PRIMARY KEY, c counter)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.\"camelCase\" (\"primaryKey\" INT PRIMARY KEY, \"textValue\" text)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.single_column (pk INT PRIMARY KEY)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.map_tuple (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.static_test (key INT, group BIGINT, value TEXT STATIC, PRIMARY KEY (key, group))""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.unset_test (a TEXT, b TEXT, c TEXT, PRIMARY KEY (a))""")
+        },
+        Future {
+          session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
+          session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
+          session.execute( s"""CREATE TABLE $ks.udtcollection(key INT PRIMARY KEY, addrlist list<frozen<address>>, addrmap map<text, frozen<address>>)""")
 
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
-        session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
-      },
-      Future {
-        session.execute( s"""CREATE TABLE $ks.write_if_not_exists_test (id INT PRIMARY KEY, value TEXT)""")
-      }
-    )
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.tuples (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.tuples2 (key INT PRIMARY KEY, value frozen<tuple<int, int, varchar>>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TYPE $ks.address2 (street text, number frozen<tuple<int, int>>)""")
+          session.execute( s"""CREATE TABLE $ks.nested_tuples (key INT PRIMARY KEY, addr frozen<address2>)""")
+        },
+        Future {
+          session.execute( s"""CREATE TABLE $ks.write_if_not_exists_test (id INT PRIMARY KEY, value TEXT)""")
+        }
+      )
+    }
   }
 
-  def protocolVersion = conn.withClusterDo(cluster =>
-    cluster.getConfiguration.getProtocolOptions.getProtocolVersion)
+  def protocolVersion = conn.withSessionDo(_.getContext.getProtocolVersion)
 
   private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
@@ -139,7 +140,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("new_kv_table")
   }
 
-  it should "write an RDD of PV4 Tuples to PV3 without breaking" in skipIfProtocolVersionGTE(V4){
+  it should "write an RDD of PV4 Tuples to PV3 without breaking" in skipIfProtocolVersionGTE(DefaultProtocolVersion.V4){
     val rows = Seq((Byte.MinValue, Short.MinValue, java.sql.Date.valueOf("2016-08-03")))
     sc.parallelize(rows).saveAsCassandraTable(ks, "pv3")
 
@@ -238,7 +239,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(Seq(("Original", Unset, "New"))).saveToCassandra(ks, "unset_test")
     val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
       .collect
-    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+    if (protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode) {
       result(0) should be(("Original", Some("Original"), Some("New")))
     } else {
       result(0) should be(("Original", None, Some("New")))
@@ -255,7 +256,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       .saveToCassandra(ks, "unset_test")
     val result = sc.cassandraTable[(String, Option[String], Option[String])](ks, "unset_test")
       .collect
-    if (protocolVersion.toInt >= ProtocolVersion.V4.toInt) {
+    if (protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode) {
       result(0) should be(("Original", Some("Original"), Some("New")))
     } else {
       result(0) should be(("Original", None, Some("New")))
@@ -376,7 +377,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
       val row1 = rows(2)
-      row0.getBytes("b").remaining shouldEqual 4
+      row0.getByteBuffer("b").remaining shouldEqual 4
       row1.isNull("b") shouldEqual true
     }
   }
@@ -434,8 +435,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Oakland"
-        row.getUDTValue(2).getInt("zip") shouldEqual 90210
+        row.getUdtValue(2).getString("city") shouldEqual "Oakland"
+        row.getUdtValue(2).getInt("zip") shouldEqual 90210
       }
     }
   }
@@ -459,8 +460,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
-        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+        row.getUdtValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUdtValue(2).getInt("zip") shouldEqual 10000
       }
     }
   }
@@ -476,7 +477,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2) should be (null)
+        row.getUdtValue(2) should be (null)
       }
     }
   }
@@ -492,9 +493,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       for (row <- result) {
         row.getInt(0) shouldEqual 1
         row.getString(1) shouldEqual "Joe"
-        row.getUDTValue(2).getString("city") shouldEqual "Warsaw"
-        row.getUDTValue(2).getString("street") should be (null)
-        row.getUDTValue(2).getInt("zip") shouldEqual 10000
+        row.getUdtValue(2).getString("city") shouldEqual "Warsaw"
+        row.getUdtValue(2).getString("street") should be (null)
+        row.getUdtValue(2).getInt("zip") shouldEqual 10000
       }
     }
   }
@@ -545,9 +546,9 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
-        row.getUDTValue(1).getString(0) shouldEqual "foo"
-        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
-        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+        row.getUdtValue(1).getString(0) shouldEqual "foo"
+        row.getUdtValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUdtValue(1).getTupleValue(1).getInt(1) shouldEqual 2
       }
     }
   }
@@ -561,8 +562,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     conn.withSessionDo { session =>
       val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
       for (row <- result) {
-        row.getUDTValue(1).getTupleValue(1).getInt(0) shouldEqual 1
-        row.getUDTValue(1).getTupleValue(1).getInt(1) shouldEqual 2
+        row.getUdtValue(1).getTupleValue(1).getInt(0) shouldEqual 1
+        row.getUdtValue(1).getTupleValue(1).getInt(1) shouldEqual 2
       }
     }
   }

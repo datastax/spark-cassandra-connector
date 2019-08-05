@@ -10,7 +10,6 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraTableScanRDD}
-import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.InClauseToJoinWithTableConversionThreshold
@@ -18,72 +17,73 @@ import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 import scala.concurrent.Future
 
-class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Logging with BeforeAndAfterEach {
+class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach {
 
   override lazy val conn = CassandraConnector(defaultConf)
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-
-    awaitAll(
-      Future {
-        session.execute(s"""CREATE TABLE $ks.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)""")
-        session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)""")
-      },
-
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_rowwriter (a INT PRIMARY KEY, b INT)")
-      },
-
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_insert (a INT PRIMARY KEY, b INT)")
-      },
-
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_insert1 (a INT PRIMARY KEY, b INT)")
-      },
-
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_insert2 (a INT PRIMARY KEY, b INT)")
-        session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (3,4)")
-        session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (5,6)")
-      },
-
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.df_test(
-             |  customer_id int,
-             |  uri text,
-             |  browser text,
-             |  epoch bigint,
-             |  PRIMARY KEY (customer_id, epoch, uri)
-             |)""".stripMargin.replaceAll("\n", " "))
-      },
-
-      Future {
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.df_test2(
-             |  customer_id int,
-             |  uri text,
-             |  browser text,
-             |  epoch bigint,
-             |  PRIMARY KEY (customer_id, epoch)
-             |)""".stripMargin.replaceAll("\n", " "))
-      }
-    )
-  }
 
   def pushDown: Boolean = true
 
   override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
+
+      awaitAll(
+        Future {
+          session.execute(s"""CREATE TABLE $ks.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 2, 1, 2, 2)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 1, 2, 1, 1)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)""")
+          session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)""")
+        },
+
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_rowwriter (a INT PRIMARY KEY, b INT)")
+        },
+
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_insert (a INT PRIMARY KEY, b INT)")
+        },
+
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_insert1 (a INT PRIMARY KEY, b INT)")
+        },
+
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_insert2 (a INT PRIMARY KEY, b INT)")
+          session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (3,4)")
+          session.execute(s"INSERT INTO $ks.test_insert2 (a, b) VALUES (5,6)")
+        },
+
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.df_test(
+               |  customer_id int,
+               |  uri text,
+               |  browser text,
+               |  epoch bigint,
+               |  PRIMARY KEY (customer_id, epoch, uri)
+               |)""".stripMargin.replaceAll("\n", " "))
+        },
+
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.df_test2(
+               |  customer_id int,
+               |  uri text,
+               |  browser text,
+               |  epoch bigint,
+               |  PRIMARY KEY (customer_id, epoch)
+               |)""".stripMargin.replaceAll("\n", " "))
+        }
+      )
+    }
+
     createTempTable(ks, "test1", "tmpTable")
     createTempTable(ks, "df_test2", "tmpDf_test2")
   }

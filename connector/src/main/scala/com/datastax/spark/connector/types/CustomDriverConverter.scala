@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.types
 
-import com.datastax.driver.core.DataType
+import com.datastax.oss.driver.api.core.`type`.DataType
 import org.apache.spark.sql.{types => catalystTypes}
 
 trait CustomDriverConverter {

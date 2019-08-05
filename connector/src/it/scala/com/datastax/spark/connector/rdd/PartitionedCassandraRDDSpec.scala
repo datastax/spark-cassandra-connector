@@ -1,17 +1,14 @@
 package com.datastax.spark.connector.rdd
 
-import java.lang.{Long => JLong}
-
-import scala.concurrent.Future
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.CassandraConnector
 import java.lang.{Integer => JInt}
+import java.util.concurrent.CompletableFuture
 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
-
-import scala.collection.JavaConversions._
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.rdd.RDD
 
+import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 case class PKey(key: Int)
@@ -27,55 +24,61 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
   override lazy val conn = CassandraConnector(defaultConf)
   val rowCount = 100
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table1 (key INT, ckey INT, value INT, PRIMARY KEY (key, ckey)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.table1 (key, ckey, value) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
+      awaitAll(
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table1 (key INT, ckey INT, value INT, PRIMARY KEY (key, ckey)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.table1 (key, ckey, value) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session
+              .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
+              .toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.a (x INT, a INT, b INT, PRIMARY KEY (x)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.a (x, a, b) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session
+              .executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
+              .toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.b (y INT, c INT, d INT, PRIMARY KEY (y)
+               |)""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.b (y, c, d) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt)).toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table2 (key INT, ckey INT, value INT, PRIMARY KEY
+               |(key, ckey))""".stripMargin)
+          val ps = session.prepare( s"""INSERT INTO $ks.table2 (key, ckey, value) VALUES (?, ?, ?)""")
+          val results = for (value <- 1 to rowCount) yield {
+            session.executeAsync(ps.bind(value: JInt, value: JInt, (rowCount - value): JInt)).toCompletableFuture
+          }
+          CompletableFuture.allOf(results: _*).get()
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE $ks.table3 (key INT, value INT, PRIMARY KEY (key))""".stripMargin)
         }
-        results.map(_.get)
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.a (x INT, a INT, b INT, PRIMARY KEY (x)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.a (x, a, b) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
-        }
-        results.map(_.get)
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.b (y INT, c INT, d INT, PRIMARY KEY (y)
-              |)""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.b (y, c, d) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, value: JInt))
-        }
-        results.map(_.get)
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table2 (key INT, ckey INT, value INT, PRIMARY KEY
-              |(key, ckey))""".stripMargin)
-        val ps = session.prepare( s"""INSERT INTO $ks.table2 (key, ckey, value) VALUES (?, ?, ?)""")
-        val results = for (value <- 1 to rowCount) yield {
-          session.executeAsync(ps.bind(value: JInt, value: JInt, (rowCount - value): JInt))
-        }
-        results.map(_.get)
-      },
-      Future {
-        session.execute(
-          s"""CREATE TABLE $ks.table3 (key INT, value INT, PRIMARY KEY (key))""".stripMargin)
-      }
-    )
+      )
+    }
   }
 
   // Make sure that all tests have enough partitions to make things interesting
@@ -112,8 +115,8 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
 
     // verify token actually hashes to Integer.MIN_VALUE
     conn.withSessionDo { session =>
-      val row = session.execute(s"SELECT token(key) FROM $ks.table3 where key=$keyForMinValueHash").one
-      row.getPartitionKeyToken.hashCode() shouldBe Integer.MIN_VALUE
+      val row = session.execute(s"SELECT token(key) as tt FROM $ks.table3 where key=$keyForMinValueHash").one
+      row.getToken("tt").hashCode() shouldBe Integer.MIN_VALUE
     }
   }
 
@@ -159,7 +162,7 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
 
   it should " be joinable against an RDD without a partitioner" in {
     val keyedRDD = testRDD.keyBy[PKey](SomeColumns("key"))
-    val joinedRDD = keyedRDD.join(sc.parallelize(1 to rowCount).map(x => (PKey(x), -x)))
+    val joinedRDD = keyedRDD.join(sc.parallelize(1 to rowCount).map(x => Tuple2(PKey(x), -1 * x)))
     val results = joinedRDD.values.collect
     results should have length (rowCount)
     for (row <- results) {

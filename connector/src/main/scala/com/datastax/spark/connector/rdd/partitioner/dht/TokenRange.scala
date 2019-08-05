@@ -2,6 +2,8 @@ package com.datastax.spark.connector.rdd.partitioner.dht
 
 import java.net.InetAddress
 
+import com.datastax.oss.driver.api.core.metadata.token.{Token => NativeToken}
+
 case class TokenRange[V, T <: Token[V]] (
     start: T, end: T, replicas: Set[InetAddress], tokenFactory: TokenFactory[V, T]) {
 
@@ -34,5 +36,9 @@ case class TokenRange[V, T <: Token[V]] (
       || !isWrappedAround && token > start && token <= end
       || isWrappedAround && (token > start || token <= end))
   }
+
+  def startNativeToken(): NativeToken = start.nativeToken
+
+  def endNativeToken(): NativeToken = end.nativeToken
 }
 

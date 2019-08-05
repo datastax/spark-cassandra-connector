@@ -1,15 +1,13 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import scala.util.Random
-
 import org.scalacheck.Gen
-import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
-
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.{Murmur3TokenFactory, RandomPartitionerTokenFactory}
 import com.datastax.spark.connector.rdd.partitioner.dht.{BigIntToken, LongToken, TokenRange}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class BucketingRangeIndexSpec extends FlatSpec with PropertyChecks with Matchers {
+class BucketingRangeIndexSpec extends FlatSpec with ScalaCheckPropertyChecks with Matchers {
 
   private val clusterSize = 1000 * 16
 

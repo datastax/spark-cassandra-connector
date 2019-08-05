@@ -3,6 +3,7 @@ package com.datastax.spark.connector.rdd.typeTests
 import java.math.BigDecimal
 import java.math.BigInteger
 
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.SaveMode
@@ -16,8 +17,8 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with Defau
   override val typeData: Seq[BigInteger] = Seq(new BigInteger("1001"), new BigInteger("2002"),new BigInteger("3003"), new BigInteger("4004"), new BigInteger("5005"))
   override val addData: Seq[BigInteger] = Seq(new BigInteger("6006"), new BigInteger("7007"), new BigInteger("8008"), new BigInteger("9009"), new BigInteger("100012"))
 
-  override def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): BigInteger = {
-    row.getVarint(colName)
+  override def getDriverColumn(row: Row, colName: String): BigInteger = {
+    row.getBigInteger(colName)
   }
 
   "A LongType DataFrame" should "write to VarInt C* tables" in {
@@ -34,7 +35,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with Defau
 
     val row = conn.withSessionDo(session =>
       session.execute(s"SELECT * FROM $keyspaceName.$typeNormalTable WHERE pkey = $LongValue and ckey1 = $LongValue").one)
-    row.getVarint("data1").longValue() should be (LongValue)
+    row.getBigInteger("data1").longValue() should be (LongValue)
 
   }
 
@@ -58,7 +59,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with Defau
 
     val row = conn.withSessionDo(session =>
       session.execute(s"SELECT * FROM $keyspaceName.$typeNormalTable WHERE pkey = $BigDecimalValue and ckey1 = $BigDecimalValue").one)
-    row.getVarint("data1").longValue() should be (BigDecimalValue.longValue())
+    row.getBigInteger("data1").longValue() should be (BigDecimalValue.longValue())
   }
 }
 

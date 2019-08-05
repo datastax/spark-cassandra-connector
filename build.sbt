@@ -5,6 +5,7 @@ ThisBuild / organization := "com.datastax"
 ThisBuild / scalaVersion := "2.11.12"
 // set the Scala version used for the project
 ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / scalacOptions += "-target:jvm-1.8"
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -14,8 +15,11 @@ lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
-  // TODO: remove com.datastax.dse once the driver is upgraded
-  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "com.datastax.dse" | "org.eclipse.jetty")
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty")
+)
+
+val annotationProcessor = Seq(
+  "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
 )
 
 lazy val root = (project in file("connector"))
@@ -42,7 +46,10 @@ lazy val root = (project in file("connector"))
       Testing.testsWithFixtures((testLoader in IntegrationTest).value, (definedTests in IntegrationTest).value)
     },
 
+    Test / javacOptions ++= annotationProcessor ++ Seq("-d", (classDirectory in Test).value.toString),
+
     IntegrationTest / testGrouping := Testing.makeTestGroups(integrationTestsWithFixtures.value),
+    IntegrationTest / testOptions += Tests.Argument("-oF"),
 
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
@@ -51,17 +58,10 @@ lazy val root = (project in file("connector"))
       ++ Dependencies.Test.dependencies
       ++ Dependencies.Jetty.dependencies
   )
-  .dependsOn(testSupport % "test->test")
+  .dependsOn(testSupport % "test")
 
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Dependencies.TestSupport.dependencies
   )
-
-
-
-
-
-
-

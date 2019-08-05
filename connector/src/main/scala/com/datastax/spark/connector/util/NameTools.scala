@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.driver.core.Metadata
-
+import com.datastax.oss.driver.api.core.metadata.Metadata
+import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConversions._
@@ -51,12 +51,14 @@ object NameTools {
 
     val keyspaceScores = clusterMetadata
       .getKeyspaces
+      .values()
+      .toSeq
       .map(ks =>
-      (ks, StringUtils.getJaroWinklerDistance(ks.getName, keyspace)))
+      (ks, StringUtils.getJaroWinklerDistance(toName(ks.getName), keyspace)))
 
-    val ktScores = for ((ks, ksScore) <- keyspaceScores; t <- (ks.getTables ++ ks.getMaterializedViews)) yield {
-      val tScore = StringUtils.getJaroWinklerDistance(t.getName, table)
-      (ks.getName, t.getName, ksScore, tScore)
+    val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables ++ ks.getViews)) yield {
+      val tScore = StringUtils.getJaroWinklerDistance(toName(t.getName), table)
+      (toName(ks.getName), toName(t.getName), ksScore, tScore)
     }
 
     //1. Perfect match on keyspace, fuzzy match on table

@@ -1,22 +1,20 @@
 package com.datastax.spark.connector.cql
 
-import java.nio.file.{Files, Path, Paths}
-import java.security.{KeyStore, SecureRandom}
-import java.util.concurrent.{ThreadFactory, TimeUnit}
+import java.nio.file.{Files, Path}
+import java.security.KeyStore
+import java.time.Duration
 
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
-import io.netty.channel.EventLoopGroup
-import org.apache.spark.SparkConf
-import com.datastax.driver.core._
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
-import com.datastax.spark.connector.cql.CassandraConnectionFactory.DaemonThreadingOptions
-import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
+import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, DriverOption, ProgrammaticDriverConfigLoaderBuilder}
+import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy
+import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
-import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.netty.util.concurrent.DefaultThreadFactory
+import org.apache.spark.SparkConf
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 /** Creates both native and Thrift connections to Cassandra.
@@ -25,7 +23,7 @@ import scala.util.Try
 trait CassandraConnectionFactory extends Serializable {
 
   /** Creates and configures native Cassandra connection */
-  def createCluster(conf: CassandraConnectorConf): Cluster
+  def createSession(conf: CassandraConnectorConf): CqlSession
 
   /** List of allowed custom property names passed in SparkConf */
   def properties: Set[String] = Set.empty
@@ -41,46 +39,72 @@ trait CassandraConnectionFactory extends Serializable {
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 object DefaultConnectionFactory extends CassandraConnectionFactory {
 
-  /** Returns the Cluster.Builder object used to setup Cluster instance. */
-  def clusterBuilder(conf: CassandraConnectorConf): Cluster.Builder = {
-    val options = new SocketOptions()
-      .setConnectTimeoutMillis(conf.connectTimeoutMillis)
-      .setReadTimeoutMillis(conf.readTimeoutMillis)
+  def connectorConfigBuilder(conf: CassandraConnectorConf, initBuilder: ProgrammaticDriverConfigLoaderBuilder) = {
+    type LoaderBuilder = ProgrammaticDriverConfigLoaderBuilder
 
-    val builder = Cluster.builder()
-      .addContactPoints(conf.hosts.toSeq: _*)
-      .withPort(conf.port)
-      .withRetryPolicy(
-        new MultipleRetryPolicy(conf.queryRetryCount))
-      .withReconnectionPolicy(
-        new ExponentialReconnectionPolicy(conf.minReconnectionDelayMillis, conf.maxReconnectionDelayMillis))
-      .withLoadBalancingPolicy(
-        new LocalNodeFirstLoadBalancingPolicy(conf.hosts, conf.localDC))
-      .withAuthProvider(conf.authConf.authProvider)
-      .withSocketOptions(options)
-      .withCompression(conf.compression)
-      .withQueryOptions(
-        new QueryOptions()
-          .setRefreshNodeIntervalMillis(0)
-          .setRefreshNodeListIntervalMillis(0)
-          .setRefreshSchemaIntervalMillis(0))
-      .withoutJMXReporting()
-      .withoutMetrics()
-      .withThreadingOptions(new DaemonThreadingOptions)
-      .withNettyOptions(new NettyOptions() {
-        override def onClusterClose(eventLoopGroup: EventLoopGroup): Unit =
-          eventLoopGroup.shutdownGracefully(conf.quietPeriodBeforeCloseMillis, conf.timeoutBeforeCloseMillis, TimeUnit.MILLISECONDS)
-            .syncUninterruptibly()
-      })
-
-    if (conf.cassandraSSLConf.enabled) {
-      maybeCreateSSLOptions(conf.cassandraSSLConf) match {
-        case Some(sslOptions) ⇒ builder.withSSL(sslOptions)
-        case None ⇒ builder.withSSL()
-      }
-    } else {
+    def basicProperties(builder: LoaderBuilder): LoaderBuilder = {
+      val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
       builder
+        .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)) // moved from CassandraConnector
+        .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
+        .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
+        .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
+        .withStringList(CONTACT_POINTS, conf.hosts.map(h => s"${h.getHostAddress}:${conf.port}").toList.asJava)
+        .withString(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy].getCanonicalName)
+        .withString(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy].getCanonicalName)
+        .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
+        .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
+        .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
+        .withInt(NETTY_ADMIN_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
+        .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
+        .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
+        .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
+        .withInt(CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount, conf.queryRetryCount)
     }
+
+    // add Auth Conf if set
+    def authProperties(builder: LoaderBuilder): LoaderBuilder =
+      conf.authConf.authProperites.foldLeft(builder) { case (b, (driverOption, value)) =>
+        b.withString(driverOption, value)
+      }
+
+    // compression option cannot be set to NONE (default)
+    def compressionProperties(b: LoaderBuilder): LoaderBuilder =
+      Option(conf.compression).filter(_ != "NONE").map(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase)).getOrElse(b)
+
+    // add ssl properties if ssl is enabled
+    def sslProperties(builder: LoaderBuilder): LoaderBuilder = {
+      def clientAuthEnabled(value: Option[String]) =
+        if (conf.cassandraSSLConf.clientAuthEnabled) value else None
+
+      if (conf.cassandraSSLConf.enabled) {
+        Seq(
+          SSL_TRUSTSTORE_PATH -> conf.cassandraSSLConf.trustStorePath,
+          SSL_TRUSTSTORE_PASSWORD -> conf.cassandraSSLConf.trustStorePassword,
+          SSL_KEYSTORE_PATH -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePath),
+          SSL_KEYSTORE_PASSWORD -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePassword))
+          .foldLeft(builder) { case (b, (name, value)) =>
+            value.map(b.withString(name, _)).getOrElse(b)
+          }
+          .withString(SSL_ENGINE_FACTORY_CLASS, classOf[DefaultSslEngineFactory].getCanonicalName)
+          .withStringList(SSL_CIPHER_SUITES, conf.cassandraSSLConf.enabledAlgorithms.toList.asJava)
+          .withBoolean(SSL_HOSTNAME_VALIDATION, false) // TODO: this needs to be configurable by users. Set to false for our integration tests
+      } else {
+        builder
+      }
+    }
+
+    Seq[LoaderBuilder => LoaderBuilder](basicProperties, authProperties, compressionProperties, sslProperties)
+      .foldLeft(initBuilder) { case (builder, properties) => properties(builder) }
+  }
+
+  /** Creates and configures native Cassandra connection */
+  override def createSession(conf: CassandraConnectorConf): CqlSession = {
+    val builder = DriverConfigLoader.programmaticBuilder()
+    val loader = connectorConfigBuilder(conf, builder)
+    CqlSession.builder()
+      .withConfigLoader(loader.build())
+      .build()
   }
 
   private def getKeyStore(
@@ -101,56 +125,12 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       case None => None
     }
   }
-
-  private def maybeCreateSSLOptions(conf: CassandraSSLConf): Option[SSLOptions] = {
-    lazy val trustStore =
-      getKeyStore(conf.trustStoreType, conf.trustStorePassword, conf.trustStorePath.map(Paths.get(_)))
-    lazy val keyStore =
-      getKeyStore(conf.keyStoreType, conf.keyStorePassword, conf.keyStorePath.map(Paths.get(_)))
-
-    if (conf.enabled) {
-      val trustManagerFactory = for (ts <- trustStore) yield {
-        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-        tmf.init(ts)
-        tmf
-      }
-
-      val keyManagerFactory = if (conf.clientAuthEnabled) {
-        for (ks <- keyStore) yield {
-          val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-          kmf.init(ks, conf.keyStorePassword.map(_.toCharArray).orNull)
-          kmf
-        }
-      } else {
-        None
-      }
-
-      val context = SSLContext.getInstance(conf.protocol)
-      context.init(
-        keyManagerFactory.map(_.getKeyManagers).orNull,
-        trustManagerFactory.map(_.getTrustManagers).orNull,
-        new SecureRandom)
-
-      Some(
-        JdkSSLOptions.builder()
-          .withSSLContext(context)
-          .withCipherSuites(conf.enabledAlgorithms.toArray)
-          .build())
-    } else {
-      None
-    }
-  }
-
-  /** Creates and configures native Cassandra connection */
-  override def createCluster(conf: CassandraConnectorConf): Cluster = {
-    clusterBuilder(conf).build()
-  }
-
 }
 
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
+  /* TODO:
   class DaemonThreadingOptions extends ThreadingOptions {
     override def createThreadFactory(clusterName: String, executorName: String): ThreadFactory =
     {
@@ -165,6 +145,7 @@ object CassandraConnectionFactory {
         .build();
     }
   }
+   */
 
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
   """Name of a Scala module or class implementing
@@ -182,5 +163,12 @@ object CassandraConnectionFactory {
     conf.getOption(FactoryParam.name)
       .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
       .getOrElse(FactoryParam.default)
+  }
+
+  object CustomDriverOptions {
+
+    val MaxRetryCount: DriverOption = new DriverOption {
+      override def getPath: String = "advanced.retry-policy.max-retry-count"
+    }
   }
 }

@@ -1,40 +1,63 @@
 package com.datastax.spark.connector.writer
 
-import java.util
+import java.nio.ByteBuffer
 
-import com.datastax.driver.core.{BatchStatement, BoundStatement, PreparedStatement, Statement}
+import com.datastax.oss.driver.api.core.ConsistencyLevel
+import com.datastax.oss.driver.api.core.cql._
+import com.datastax.spark.connector.util.maybeExecutingAs
+import com.datastax.spark.connector.writer.RichStatement.DriverStatement
 
 trait RichStatement {
   def bytesCount: Int
   def rowsCount: Int
+  def stmt: DriverStatement
+  def executeAs(executeAs: Option[String]): RichStatement
 }
 
-private[connector] class RichBoundStatement(stmt: PreparedStatement) extends BoundStatement(stmt) with RichStatement {
-  var bytesCount = 0
-  val rowsCount = 1
+object RichStatement {
+  type DriverStatement = Statement[_ <: Statement[_]]
 }
 
-private[connector] class RichBatchStatement(batchType: BatchStatement.Type, stmts: Seq[RichBoundStatement])
-    extends BatchStatement(batchType) with RichStatement {
+private[connector] class RichBoundStatementWrapper(initStatement: BoundStatement)
+  extends RichStatement {
 
-  // a small optimisation
-  RichBatchStatement.ensureCapacity(this, stmts.size)
-  var bytesCount = 0
-  for (stmt <- stmts) {
-    add(stmt)
-    bytesCount += stmt.bytesCount
+  def update(updateFunction: BoundStatement => BoundStatement): Unit = {
+    _stmt = updateFunction(_stmt)
   }
 
-  def rowsCount = size()
+  private var _stmt = initStatement
+  var bytesCount = 0
+  val rowsCount = 1
+
+  def setConsistencyLevel(consistencyLevel: ConsistencyLevel): RichBoundStatementWrapper = {
+    _stmt = _stmt.setConsistencyLevel(consistencyLevel)
+    this
+  }
+
+  override def stmt: BoundStatement = _stmt
+
+  override def executeAs(executeAs: Option[String]): RichStatement = {
+    _stmt = maybeExecutingAs(_stmt, executeAs)
+    this
+  }
 }
 
-private[connector] object RichBatchStatement {
-  private val statementsField = classOf[BatchStatement].getDeclaredField("statements")
-  def ensureCapacity(batchStatement: BatchStatement, expectedCapacity: Int): Unit = {
-    // TODO remove this workaround when https://datastax-oss.atlassian.net/browse/JAVA-649 is fixed
-    statementsField.setAccessible(true)
-    statementsField.get(batchStatement)
-        .asInstanceOf[util.ArrayList[Statement]]
-        .ensureCapacity(expectedCapacity)
+private[connector] class RichBatchStatementWrapper(
+    batchType: BatchType,
+    consistencyLevel: ConsistencyLevel,
+    stmts: Seq[RichBoundStatementWrapper])
+  extends RichStatement {
+
+  private var _stmt = BatchStatement.newInstance(batchType, stmts.map(_.stmt):_*).setConsistencyLevel(consistencyLevel)
+
+  override val bytesCount: Int = stmts.map(_.bytesCount).sum
+
+  override val rowsCount = _stmt.size()
+
+  override def stmt: BatchStatement = _stmt
+
+  override def executeAs(executeAs: Option[String]): RichStatement = {
+    _stmt = maybeExecutingAs(_stmt, executeAs)
+    this
   }
 }

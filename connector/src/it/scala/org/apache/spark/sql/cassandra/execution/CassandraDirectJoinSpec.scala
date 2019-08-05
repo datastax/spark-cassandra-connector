@@ -1,12 +1,13 @@
 package org.apache.spark.sql.cassandra.execution
 
 import java.sql.Timestamp
+import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
-import com.datastax.driver.core.ProtocolVersion.V4
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import org.apache.spark.SparkConf
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.cassandra._
@@ -25,111 +26,116 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
+  override def beforeClass {
+    sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-    awaitAll(
-      Future {
-        session.execute(s"CREATE TABLE $ks.kv (k int PRIMARY KEY, v int)")
-        val ps = session.prepare(s"INSERT INTO $ks.kv (k,v) VALUES (?,?)")
-        val futures = for (id <- 1 to 100) yield {
-          session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer))
-        }
-        futures.map(_.get)
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.kv2 (k int PRIMARY KEY, v1 int, v2 int, v3 int, v4 int)")
-        val ps = session.prepare(s"INSERT INTO $ks.kv2 (k, v1, v2, v3, v4) VALUES (?,?,?,?,?)")
-        val futures = for (id <- 1 to 100) yield {
-          session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer))
-        }
-        futures.map(_.get)
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.multikey (ka int, kb int, kc int, c int, v int, PRIMARY KEY ((ka, kb, kc), c))")
-        val ps = session.prepare(s"INSERT INTO $ks.multikey (ka, kb, kc, c, v) VALUES (?,?,?,?,?)")
-        val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
-          val jId: java.lang.Integer = id
-          val jC: java.lang.Integer = c
-          session.executeAsync(ps.bind(jId, jId, jId, jC, jC))
-        }
-        futures.map(_.get)
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.abcd (a int, b int, c int, d int, PRIMARY KEY ((a,b),c))")
-        val ps = session.prepare(s"INSERT INTO $ks.abcd (a, b, c, d) VALUES (?,?,?,?)")
-        val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
-          val jId: java.lang.Integer = id
-          val jC: java.lang.Integer = c
-          session.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC))
-        }
-        futures.map(_.get)
-      },
-      Future {
-        session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
-        val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
-        val futures = for (id <- 1 to 100) yield {
-          val jT: java.sql.Timestamp = new Timestamp(id.toLong)
-          val jV: java.lang.Integer = id.toInt
-          session.executeAsync(ps.bind(jT, jV))
-        }
-        futures.map(_.get)
-      },
-      Future {
-        session.execute(s"CREATE TYPE $ks.address (street text, city text, residents set<frozen<tuple<text, text>>>) ")
-        session.execute(s"CREATE TABLE $ks.location (id text, address frozen <address>, PRIMARY KEY (id))")
-        session.execute(
-          s"""INSERT INTO $ks.location (id, address) VALUES ('test',
-             |{
-             |  street: 'Laurel',
-             |  city: 'New Orleans',
-             |  residents:{('sundance', 'dog'), ('cara', 'dog')}
-             |})""".stripMargin)
-      },
-      Future {
-        report("Making table with all PV4 Datatypes")
-        skipIfProtocolVersionLT(V4) {
-          session.execute(s"""
-                             | CREATE TABLE $ks.test_data_type (
-                             | a ASCII,
-                             | b INT,
-                             | c FLOAT,
-                             | d DOUBLE,
-                             | e BIGINT,
-                             | f BOOLEAN,
-                             | g DECIMAL,
-                             | h INET,
-                             | i TEXT,
-                             | j TIMESTAMP,
-                             | k UUID,
-                             | l VARINT,
-                             | m SMALLINT,
-                             | n TINYINT,
-                             | PRIMARY KEY ((a), b, c)
-                             |)""".stripMargin)
-          session.execute(s"""
-                             | INSERT INTO $ks.test_data_type (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
-                             | VALUES (
-                             | 'ascii',
-                             | 10,
-                             | 12.34,
-                             | 12.3456789,
-                             | 123344556,
-                             | true,
-                             | 12.36,
-                             | '74.125.239.135',
-                             | 'text',
-                             | '2011-02-03 04:05+0000',
-                             | 123e4567-e89b-12d3-a456-426655440000,
-                             | 123456,
-                             | 22,
-                             | 4
-                             |)""".
-            stripMargin)}
-      },
-      Future {
-        session.execute(s"""CREATE TABLE IF NOT EXISTS $ks.module_by_coverage (
+    conn.withSessionDo { session =>
+      createKeyspace(session)
+      awaitAll(
+        Future {
+          session.execute(s"CREATE TABLE $ks.kv (k int PRIMARY KEY, v int)")
+          val ps = session.prepare(s"INSERT INTO $ks.kv (k,v) VALUES (?,?)")
+          val futures = for (id <- 1 to 100) yield {
+            session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer)).toCompletableFuture
+          }
+          CompletableFuture.allOf(futures: _*).get
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.kv2 (k int PRIMARY KEY, v1 int, v2 int, v3 int, v4 int)")
+          val ps = session.prepare(s"INSERT INTO $ks.kv2 (k, v1, v2, v3, v4) VALUES (?,?,?,?,?)")
+          val futures = for (id <- 1 to 100) yield {
+            session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer)).toCompletableFuture
+          }
+          CompletableFuture.allOf(futures: _*).get
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.multikey (ka int, kb int, kc int, c int, v int, PRIMARY KEY ((ka, kb, kc), c))")
+          val ps = session.prepare(s"INSERT INTO $ks.multikey (ka, kb, kc, c, v) VALUES (?,?,?,?,?)")
+          val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
+            val jId: java.lang.Integer = id
+            val jC: java.lang.Integer = c
+            session.executeAsync(ps.bind(jId, jId, jId, jC, jC)).toCompletableFuture
+          }
+          CompletableFuture.allOf(futures: _*).get
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.abcd (a int, b int, c int, d int, PRIMARY KEY ((a,b),c))")
+          val ps = session.prepare(s"INSERT INTO $ks.abcd (a, b, c, d) VALUES (?,?,?,?)")
+          val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
+            val jId: java.lang.Integer = id
+            val jC: java.lang.Integer = c
+            session.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC)).toCompletableFuture
+          }
+          CompletableFuture.allOf(futures: _*).get
+        },
+        Future {
+          session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
+          val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
+          val futures = for (id <- 1 to 100) yield {
+            val jT: Instant = Instant.ofEpochMilli(id.toLong)
+            val jV: java.lang.Integer = id.toInt
+            session.executeAsync(ps.bind(jT, jV)).toCompletableFuture
+          }
+          CompletableFuture.allOf(futures: _*)
+        },
+        Future {
+          session.execute(s"CREATE TYPE $ks.address (street text, city text, residents set<frozen<tuple<text, text>>>) ")
+          session.execute(s"CREATE TABLE $ks.location (id text, address frozen <address>, PRIMARY KEY (id))")
+          session.execute(
+            s"""INSERT INTO $ks.location (id, address) VALUES ('test',
+               |{
+               |  street: 'Laurel',
+               |  city: 'New Orleans',
+               |  residents:{('sundance', 'dog'), ('cara', 'dog')}
+               |})""".stripMargin)
+        },
+        Future {
+          report("Making table with all PV4 Datatypes")
+          skipIfProtocolVersionLT(V4) {
+            session.execute(
+              s"""
+                 | CREATE TABLE $ks.test_data_type (
+                 | a ASCII,
+                 | b INT,
+                 | c FLOAT,
+                 | d DOUBLE,
+                 | e BIGINT,
+                 | f BOOLEAN,
+                 | g DECIMAL,
+                 | h INET,
+                 | i TEXT,
+                 | j TIMESTAMP,
+                 | k UUID,
+                 | l VARINT,
+                 | m SMALLINT,
+                 | n TINYINT,
+                 | PRIMARY KEY ((a), b, c)
+                 |)""".stripMargin)
+            session.execute(
+              s"""
+                 | INSERT INTO $ks.test_data_type (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+                 | VALUES (
+                 | 'ascii',
+                 | 10,
+                 | 12.34,
+                 | 12.3456789,
+                 | 123344556,
+                 | true,
+                 | 12.36,
+                 | '74.125.239.135',
+                 | 'text',
+                 | '2011-02-03 04:05+0000',
+                 | 123e4567-e89b-12d3-a456-426655440000,
+                 | 123456,
+                 | 22,
+                 | 4
+                 |)""".
+                stripMargin)
+          }
+        },
+        Future {
+          session.execute(
+            s"""CREATE TABLE IF NOT EXISTS $ks.module_by_coverage (
           date text,
           hour text,
           xmlid text,
@@ -137,11 +143,12 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
           coverageid text,
           description text,
           PRIMARY KEY ((date, hour), xmlid, moduleid)) WITH CLUSTERING ORDER BY (xmlid ASC, moduleid ASC);""")
-        session.execute(s"INSERT INTO $ks.module_by_coverage " +
-          s"(date,hour,  xmlid,moduleid,coverageid, description) VALUES " +
-          s"('2018-07-03','0301','Q_1','mod1', 'cov1', 'desc1')")
-      }
-    )
+          session.execute(s"INSERT INTO $ks.module_by_coverage " +
+            s"(date,hour,  xmlid,moduleid,coverageid, description) VALUES " +
+            s"('2018-07-03','0301','Q_1','mod1', 'cov1', 'desc1')")
+        }
+      )
+    }
   }
 
 

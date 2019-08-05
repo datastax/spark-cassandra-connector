@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.Row
-import com.datastax.spark.connector.{CassandraRowMetadata, ColumnRef, ColumnSelector}
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.{CassandraRowMetadata, ColumnRef, ColumnSelector}
 
 private[connector] class KeyValueRowReaderFactory[K, V](
     keySelection: ColumnSelector,

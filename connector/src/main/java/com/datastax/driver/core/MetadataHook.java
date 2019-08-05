@@ -1,5 +1,8 @@
 package com.datastax.driver.core;
 
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.token.Token;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -15,10 +18,17 @@ public class MetadataHook {
      * @param routingKey             the routing key of the bound partition key
      * @return the token.
      * @throws IllegalStateException if the token factory was not initialized. This would typically
-     *                               happen if metadata was explicitly disabled with {@link QueryOptions#setMetadataEnabled(boolean)}
-     *                               before startup.
+     *                               happen if metadata was explicitly disabled before startup.
      */
     public static Token newToken(Metadata metadata, ByteBuffer routingKey) {
-        return metadata.tokenFactory().hash(routingKey);
+        return metadata.getTokenMap()
+            .map(tokenMap -> tokenMap.newToken(routingKey))
+            .orElseThrow(()-> new IllegalStateException("Token map was not found"));
+    }
+
+    public static String newTokenAsString(Metadata metadata, ByteBuffer routingKey) {
+        return metadata.getTokenMap()
+                .map(tokenMap -> tokenMap.format(tokenMap.newToken(routingKey)))
+                .orElseThrow(()-> new IllegalStateException("Token map was not found"));
     }
 }

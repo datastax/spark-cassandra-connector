@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.ConsistencyLevel
+import com.datastax.oss.driver.api.core.{ConsistencyLevel, DefaultConsistencyLevel}
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
 import com.datastax.spark.connector.writer.WriteConf.{ReferenceSection, ThroughputMiBPSParam}
 import org.apache.spark.SparkConf
@@ -70,7 +70,7 @@ object ReadConf extends Logging {
   val ConsistencyLevelParam = ConfigParameter[ConsistencyLevel](
     name = "spark.cassandra.input.consistency.level",
     section = ReferenceSection,
-    default = ConsistencyLevel.LOCAL_ONE,
+    default = DefaultConsistencyLevel.LOCAL_ONE,
     description = """Consistency level to use when reading	""")
 
   val TaskMetricParam = ConfigParameter[Boolean](
@@ -115,7 +115,7 @@ object ReadConf extends Logging {
     ReadConf(
       fetchSizeInRows = conf.getInt(FetchSizeInRowsParam.name, FetchSizeInRowsParam.default),
       splitSizeInMB = conf.getInt(SplitSizeInMBParam.name, SplitSizeInMBParam.default),
-      consistencyLevel = ConsistencyLevel.valueOf(
+      consistencyLevel = DefaultConsistencyLevel.valueOf(
         conf.get(ConsistencyLevelParam.name, ConsistencyLevelParam.default.name)),
       taskMetricsEnabled = conf.getBoolean(TaskMetricParam.name, TaskMetricParam.default),
       throughputMiBPS = conf.getOption(ThroughputMiBPSParam.name).map(_.toDouble),

@@ -3,12 +3,13 @@ package com.datastax.spark.connector
 import java.nio.ByteBuffer
 
 import scala.collection.JavaConversions._
+import com.datastax.oss.driver.api.core.cql.Row
+import java.time.LocalDate
 
-import com.datastax.driver.core.{LocalDate, Row, TypeCodec, TupleValue => DriverTupleValue, UDTValue => DriverUDTValue}
+import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
+import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue, UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
-
-import org.joda.time.DateTimeZone.UTC
 
 trait GettableData extends GettableByIndexData {
 
@@ -79,10 +80,7 @@ object GettableData {
       case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
-      case localDate: LocalDate =>
-        new org.joda.time.LocalDate(localDate.getYear, localDate.getMonth, localDate.getDay)
       case other => other.asInstanceOf[AnyRef]
-
     }
   }
 
@@ -108,13 +106,13 @@ object GettableData {
   }
 
   def get(row: Row, name: String): AnyRef = {
-    val index = row.getColumnDefinitions.getIndexOf(name)
+    val index = row.getColumnDefinitions.firstIndexOf(name)
     require(index >= 0, s"Column not found in Java driver Row: $name")
     get(row, index)
   }
 
   def get(row: Row, name: String, codec: TypeCodec[AnyRef]): AnyRef = {
-    val index = row.getColumnDefinitions.getIndexOf(name)
+    val index = row.getColumnDefinitions.firstIndexOf(name)
     require(index >= 0, s"Column not found in Java driver Row: $name")
     get(row, index, codec)
   }

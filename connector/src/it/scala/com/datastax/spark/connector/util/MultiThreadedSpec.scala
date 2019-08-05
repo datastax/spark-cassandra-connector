@@ -1,13 +1,15 @@
 package com.datastax.spark.connector.util
 
+import java.util.concurrent.CompletableFuture
+
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 import scala.language.postfixOps
-import org.scalatest.concurrent.AsyncAssertions
+import org.scalatest.concurrent.Waiters
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with AsyncAssertions {
+class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Waiters {
 
   override lazy val conn = CassandraConnector(defaultConf)
   val count = 1000
@@ -17,12 +19,13 @@ class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
   conn.withSessionDo { session =>
     createKeyspace(session)
     session.execute(s"CREATE TABLE $ks.$tab (pkey int PRIMARY KEY, value varchar)")
+    val ps = session.prepare(s"INSERT INTO $ks.$tab (pkey, value) VALUES (?, ?)")
 
-    (for (i <- 1 to count) yield
-      session.executeAsync(s"INSERT INTO $ks.$tab (pkey, value) VALUES (?, ?)",
-        i: java.lang.Integer,
-        "value " + i)
-      ).par.foreach(_.getUninterruptibly)
+    val results = (for (i <- 1 to count) yield
+      session.executeAsync(ps.bind(i: java.lang.Integer, "value " + i)).toCompletableFuture
+      )
+
+    CompletableFuture.allOf(results: _*).get()
   }
 
   "A Spark Context " should " be able to read a Cassandra table in different threads" in {

@@ -3,12 +3,17 @@ schedules:
     schedule: per_commit
     notify:
       slack: dse-analytics-team
+    env_vars: |
+      PRESERVE_LOGS=ccm
+      TEST_PARALLEL_TASKS=4
+      CCM_CLUSTER_MODE=debug
   nightly:
     schedule: nightly
     branches:
       include: [build_yaml, /master/]
     disable_commit_status: true
     disable_pull_requests: true
+
 
 cassandra:
   - 'dse-6.0'
@@ -26,3 +31,9 @@ build:
       ./sbt/sbt test it:test
 
   - xunit: true
+
+package:
+  include:
+    - ccm/ccm_*/*/*/logs/system.log
+    - ccm/*/*/*/*/*.log
+    - ccm/**/*.log

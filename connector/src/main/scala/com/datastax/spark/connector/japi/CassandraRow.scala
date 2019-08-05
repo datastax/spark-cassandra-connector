@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.japi
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.CassandraRowMetadata
 
 final class CassandraRow(val metaData:CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])

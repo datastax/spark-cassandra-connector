@@ -8,7 +8,7 @@ import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationExcep
 object CustomConnectionFactory extends CassandraConnectionFactory {
   val CustomProperty = "spark.cassandra.connection.custom.property"
   override def properties = Set(CustomProperty)
-  override def createCluster(conf: CassandraConnectorConf) = ???
+  override def createSession(conf: CassandraConnectorConf) = ???
 }
 
 object CustomAuthConfFactory extends AuthConfFactory {

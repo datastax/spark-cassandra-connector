@@ -2,7 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.{Constructor, Method}
 
-import com.datastax.driver.mapping.annotations.{Column, Field}
+import com.datastax.oss.driver.api.mapper.annotations.CqlName
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
@@ -40,10 +40,8 @@ abstract class ReflectionColumnMapper[T : ClassTag] extends ColumnMapper[T] {
     val maybeField = Try(cls.getField(fieldName))
     maybeField.toOption.flatMap {
       case f =>
-        if (f.isAnnotationPresent(classOf[Column])) {
-          Some(f.getAnnotation(classOf[Column]).name())
-        } else if (f.isAnnotationPresent(classOf[Field])) {
-          Some(f.getAnnotation(classOf[Field]).name())
+        if (f.isAnnotationPresent(classOf[CqlName])) {
+          Some(f.getAnnotation(classOf[CqlName]).value())
         } else None
     }
   }

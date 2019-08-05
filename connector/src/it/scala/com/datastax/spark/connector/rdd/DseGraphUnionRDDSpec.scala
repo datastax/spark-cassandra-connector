@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.language.existentials
 import scala.util.Random
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
-import com.datastax.driver.core.Session
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -42,7 +42,7 @@ class DseGraphUnionRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
   }
 
 
-  def makeSimplePropTable(session: Session, name: String, label: String): Unit = {
+  def makeSimplePropTable(session: CqlSession, name: String, label: String): Unit = {
     session.execute(
       s"""CREATE TABLE IF NOT EXISTS $ks.${name} ($label INT, label TEXT, foo TEXT, PRIMARY KEY
          |($label))""".stripMargin)

@@ -3,16 +3,16 @@ package com.datastax.spark.connector.types
 
 import java.io.ObjectOutputStream
 
-import scala.collection.JavaConversions._
-import scala.reflect.runtime.universe._
-
-import org.apache.commons.lang3.tuple.{Triple, Pair}
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-
-import com.datastax.driver.core.{TupleValue => DriverTupleValue, TupleType => DriverTupleType, DataType}
-import com.datastax.spark.connector.{TupleValue, ColumnName}
+import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTupleType}
+import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.util.CodecRegistryUtil
+import com.datastax.spark.connector.{ColumnName, TupleValue}
+import org.apache.commons.lang3.tuple.{Pair, Triple}
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+
+import scala.collection.JavaConversions._
+import scala.reflect.runtime.universe._
 
 case class TupleFieldDef(index: Int, columnType: ColumnType[_]) extends FieldDef {
   override def columnName = index.toString
@@ -113,7 +113,7 @@ object TupleType {
         for (i <- 0 until fieldTypes.size) {
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(tupleValue.getRaw(i))
-          toSave.set(i, fieldValue,  CodecRegistryUtil.codecFor(fieldTypes(i), fieldValue))
+          toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
         }
         toSave
     }

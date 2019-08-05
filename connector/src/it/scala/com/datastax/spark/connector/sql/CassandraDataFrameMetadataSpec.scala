@@ -1,9 +1,12 @@
 package com.datastax.spark.connector.sql
 
+import java.util.concurrent.CompletableFuture
+
+import com.datastax.oss.driver.api.core.Version
+
 import scala.concurrent.Future
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.ccm.Version
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.types.UserDefinedType
@@ -31,41 +34,42 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
           s"""INSERT INTO $ks.basic (k, c, v, v2) VALUES (?, ?, ?, ?)
              |USING TTL ? AND TIMESTAMP ?""".stripMargin)
 
-        (for (x <- 1 to 100) yield {
+        val results = (for (x <- 1 to 100) yield {
           session.executeAsync(prepared.bind(
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             ((x * 10000): java.lang.Integer),
-            x.toLong: java.lang.Long))
-        }).par.foreach(_.getUninterruptibly)
+            x.toLong: java.lang.Long)).toCompletableFuture
+        })
+        CompletableFuture.allOf(results: _*).get
       },
-     Future {
+      Future {
         session.execute(
           s"""
              |CREATE TYPE $ks.fullname (
              |    firstname text,
              |    lastname text
              |)
-           """.stripMargin)
+         """.stripMargin)
         session.execute(
           s"""
-            |CREATE TABLE $ks.test_reading_types (
-            |    id bigint PRIMARY KEY,
-            |    list_val list<int>,
-            |    list_val_frozen frozen<list<int>>,
-            |    map_val map<text, int>,
-            |    map_val_frozen frozen<map<text, int>>,
-            |    set_val set<int>,
-            |    set_val_frozen frozen<set<int>>,
-            |    simple_val int,
-            |    udt_frozen_val frozen<fullname>,
-            |    udt_val fullname,
-            |    tuple_val tuple <int, int>,
-            |    tuple_val_frozen frozen<tuple<int, int>>
-            |)
-          """.stripMargin)
+             |CREATE TABLE $ks.test_reading_types (
+             |    id bigint PRIMARY KEY,
+             |    list_val list<int>,
+             |    list_val_frozen frozen<list<int>>,
+             |    map_val map<text, int>,
+             |    map_val_frozen frozen<map<text, int>>,
+             |    set_val set<int>,
+             |    set_val_frozen frozen<set<int>>,
+             |    simple_val int,
+             |    udt_frozen_val frozen<fullname>,
+             |    udt_val fullname,
+             |    tuple_val tuple <int, int>,
+             |    tuple_val_frozen frozen<tuple<int, int>>
+             |)
+        """.stripMargin)
         session.execute(
           s"""
              |insert into $ks.test_reading_types (id, simple_val, list_val, list_val_frozen,
@@ -97,7 +101,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
 
-  val dseVersion = testCluster.getDseVersion.orElse(Version.parse("6.0.0"))
+  val dseVersion = cluster.getDseVersion.getOrElse(Version.parse("6.0.0"))
 
   val columnsToCheck = Schema
     .fromCassandra(conn, Some(ks), Some("test_reading_types"))
@@ -106,7 +110,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     .regularColumns
     .filter( columnDef =>
       if (dseVersion.getMajor >= 6 && dseVersion.getMinor >= 7) {
-        true
+        //TODO: CHANGE THIS TO TRUE after : https://datastax-oss.atlassian.net/browse/JAVA-2371
+        (!(columnDef.isCollection || columnDef.columnType.isInstanceOf[UserDefinedType]))
       }
       else {
         (!(columnDef.isCollection || columnDef.columnType.isInstanceOf[UserDefinedType]))

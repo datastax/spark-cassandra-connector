@@ -1,13 +1,12 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.driver.core.ProtocolVersion
-import com.datastax.spark.connector.{ColumnName, ColumnRef}
-import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
+import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.spark.connector.ColumnRef
+import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.ReflectionUtil
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.{Type, TypeTag, typeOf}
+import scala.reflect.runtime.universe.{Type, TypeTag}
 import scala.util.{Success, Try}
 
 /** A [[ColumnMapper]] that assumes camel case naming convention for property accessors and constructor
@@ -120,7 +119,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
 
     // filter out inherited scala getters, because they are very likely
     // not the properties users want to map

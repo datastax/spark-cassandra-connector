@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.reader
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.{CassandraRowMetadata, ColumnRef}
 
 /** Transforms a Cassandra Java driver `Row` into high-level row representation, e.g. a tuple

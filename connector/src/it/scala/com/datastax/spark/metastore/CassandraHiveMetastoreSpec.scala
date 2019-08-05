@@ -32,7 +32,6 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase with Defau
       createKeyspace(session, ks)
       awaitAll {
         Future {
-
           session.execute(s"CREATE table $ks.basic (k int, c int, v int, PRIMARY KEY (k,c))")
         }
         Future {
@@ -43,6 +42,7 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase with Defau
           val tmpDir = Files.createTempDirectory("foo")
           val colors_txt = Paths.get(tmpDir.toString, "colors.txt")
           Files.write(colors_txt, COLORS_TXT.getBytes(StandardCharsets.UTF_8))
+          sparkSession.sql("DROP TABLE IF EXISTS test_hive")
           sparkSession.sql("CREATE TABLE IF NOT EXISTS test_hive (id INT, color STRING) PARTITIONED BY (ds STRING)")
           sparkSession.sql(s"LOAD DATA INPATH 'file://$colors_txt' OVERWRITE INTO TABLE test_hive PARTITION (ds ='2008-08-15')")
         }
@@ -54,16 +54,11 @@ class CassandraHiveMetastoreSpec extends SparkCassandraITFlatSpecBase with Defau
     sparkSession.sql(s"SELECT * FROM $ks.basic").schema.length should be (3)
   }
 
-
   it should "auto create reference to a very large table" in {
     sparkSession.sql(s"SELECT * FROM $ks.manycolumns").schema.length should be (1001)
   }
 
-  //TODO renable this when we upgrade the driver (needs shaded guava)
-  ignore should "be able to read from a hive loaded table" in {
+  it should "be able to read from a hive loaded table" in {
     sparkSession.sql("SELECT * FROM test_hive").count() should be (10)
   }
-
-
-
 }

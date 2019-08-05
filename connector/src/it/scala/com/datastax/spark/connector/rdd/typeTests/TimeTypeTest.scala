@@ -1,44 +1,29 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.driver.core.{ProtocolVersion, Row}
-import com.datastax.driver.core.ProtocolVersion._
-import com.datastax.spark.connector._
-import java.util.Date
+import java.time.LocalTime
 
+import com.datastax.spark.connector._
+
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 
-class TimeTypeTest extends AbstractTypeTest[Long, java.lang.Long] with DefaultCluster {
+class TimeTypeTest extends AbstractTypeTest[LocalTime, LocalTime] with DefaultCluster {
 
-  override val minPV = ProtocolVersion.V4
+  override val minPV = DefaultProtocolVersion.V4
 
-  override def getDriverColumn(row: Row, colName: String): Long = row.getTime(colName)
+  override def getDriverColumn(row: Row, colName: String): LocalTime = row.getLocalTime(colName)
 
   override protected val typeName: String = "time"
 
-  override protected val typeData: Seq[Long] = 1L to 5L
-  override protected val addData: Seq[Long] = 6L to 10L
+  override protected val typeData: Seq[LocalTime] = (1L to 5L).map(LocalTime.ofNanoOfDay)
+  override protected val addData: Seq[LocalTime] = (6L to 10L).map(LocalTime.ofNanoOfDay)
 
-  "Time Types" should "be writable as dates" in skipIfProtocolVersionLT(V4) {
-    val dates = (100 to 500 by 100).map(new Date(_))
-    val times = dates.map(_.getTime)
-    sc.parallelize(
-      dates.map(x => (x, x, x, x))
-    ).saveToCassandra(keyspaceName, typeNormalTable)
-    val results = sc.cassandraTable[(Long, Long, Long, Long)](keyspaceName, typeNormalTable).collect
-    checkNormalRowConsistency(times.map(_ * 1000000), results)
-  }
-
-  /*
-  Todo Determine a way to detect when a column is being read as a Long and it is an underlying Time
-  type. This needs a special conversion since a normal Long will convert into milliseconds rather than
-  nanoseconds.
-   */
-  ignore should "be readable as dates" in {
-    val dates = (100 to 500 by 100).map(new Date(_))
-    val times = dates.map(_.getTime)
-    val results = sc.cassandraTable[(Date, Date, Date, Date)](keyspaceName, "time_compound").collect
-    val resultsAsLong = results.map{ case (x, y, z, a) => (x.getTime, y.getTime, z.getTime, a.getTime)}
-    checkNormalRowConsistency(times, resultsAsLong)
+  "Time Types" should "be writable as dates" in skipIfProtocolVersionLT(minPV) {
+    val times = (100 to 500 by 100).map(LocalTime.ofNanoOfDay(_))
+    sc.parallelize(times.map(x => (x, x, x, x))).saveToCassandra(keyspaceName, typeNormalTable)
+    val results = sc.cassandraTable[(LocalTime, LocalTime, LocalTime, LocalTime)](keyspaceName, typeNormalTable).collect
+    checkNormalRowConsistency(times, results)
   }
 
 }

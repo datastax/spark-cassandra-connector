@@ -10,13 +10,10 @@ class TableWriterColumnNamesSpec extends SparkCassandraITAbstractSpecBase with D
 
   case class KeyValue(key: Int, group: Long)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
-    session.execute(s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-  }
-
   override def beforeClass {
     conn.withSessionDo { session =>
+      createKeyspace(session)
+      session.execute(s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
       session.execute(s"""TRUNCATE $ks.key_value""")
     }
   }

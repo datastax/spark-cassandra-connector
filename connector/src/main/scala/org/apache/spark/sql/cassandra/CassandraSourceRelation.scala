@@ -269,7 +269,7 @@ case class CassandraSourceRelation(
 
     logDebug(s"Input Predicates: [${filters.mkString(", ")}]")
 
-    val pv = connector.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+    val pv = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     /** Apply built in rules **/
     val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)
@@ -404,7 +404,7 @@ case class CassandraSourceRelation(
           val tableIsSolrIndexed =
             rdd.tableDef
               .indexes
-              .exists(index => index.className == SolrConstants.DseSolrIndexClassName)
+              .exists(index => index.className.contains(SolrConstants.DseSolrIndexClassName))
           val countRDD =
             if (searchOptimization.enabled && tableIsSolrIndexed && rdd.where.predicates.isEmpty){
               //This will shortcut actually reading the rows out of Cassandra and just hit the

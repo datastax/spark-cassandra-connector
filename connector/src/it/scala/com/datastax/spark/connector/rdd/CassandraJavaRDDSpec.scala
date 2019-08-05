@@ -19,71 +19,73 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    awaitAll(
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_table (key INT, value TEXT, PRIMARY KEY (key))")
-        session.execute(s"CREATE INDEX test_table_idx ON $ks.test_table (value)")
-        session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (1, 'one')")
-        session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (2, 'two')")
-        session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (3,  null)")
-      },
+      awaitAll(
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_table (key INT, value TEXT, PRIMARY KEY (key))")
+          session.execute(s"CREATE INDEX test_table_idx ON $ks.test_table (value)")
+          session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (1, 'one')")
+          session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (2, 'two')")
+          session.execute(s"INSERT INTO $ks.test_table (key, value) VALUES (3,  null)")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_table2 (some_key INT, some_value TEXT, PRIMARY KEY (some_key))")
-        session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (1, 'one')")
-        session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (2, 'two')")
-        session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (3, null)")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_table2 (some_key INT, some_value TEXT, PRIMARY KEY (some_key))")
+          session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (1, 'one')")
+          session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (2, 'two')")
+          session.execute(s"INSERT INTO $ks.test_table2 (some_key, some_value) VALUES (3, null)")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.test_table3 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
-        session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (1, 'one', 'a')")
-        session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (2, 'two', 'b')")
-        session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (3,  null, 'c')")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.test_table3 (key INT, value TEXT, sub_class_field TEXT, PRIMARY KEY (key))")
+          session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (1, 'one', 'a')")
+          session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (2, 'two', 'b')")
+          session.execute(s"INSERT INTO $ks.test_table3 (key, value, sub_class_field) VALUES (3,  null, 'c')")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
-        session.execute(s"INSERT INTO $ks.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
-        session.execute(s"INSERT INTO $ks.collections (key, l, s, m) VALUES (2, null, null, null)")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)")
+          session.execute(s"INSERT INTO $ks.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})")
+          session.execute(s"INSERT INTO $ks.collections (key, l, s, m) VALUES (2, null, null, null)")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.nulls (key INT PRIMARY KEY, i int, vi varint, t text, d timestamp, l list<int>)")
-        session.execute(s"INSERT INTO $ks.nulls (key, i, vi, t, d, l) VALUES (1, null, null, null, null, null)")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.nulls (key INT PRIMARY KEY, i int, vi varint, t text, d timestamp, l list<int>)")
+          session.execute(s"INSERT INTO $ks.nulls (key, i, vi, t, d, l) VALUES (1, null, null, null, null, null)")
+        },
 
-      Future {
-        session.execute(s"CREATE TYPE $ks.address (street text, city text, zip int)")
-        session.execute(s"CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
-        session.execute(s"INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
-      },
+        Future {
+          session.execute(s"CREATE TYPE $ks.address (street text, city text, zip int)")
+          session.execute(s"CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)")
+          session.execute(s"INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)")
-        session.execute(s"INSERT INTO $ks.tuples(key, value) VALUES (1, (1, 'first'))")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)")
+          session.execute(s"INSERT INTO $ks.tuples(key, value) VALUES (1, (1, 'first'))")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 10, '1010')")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 11, '1011')")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 12, '1012')")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')")
-        session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')")
-      },
+        Future {
+          session.execute(s"CREATE TABLE $ks.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+        },
 
-      Future {
-        session.execute(s"CREATE TABLE $ks.limit_test_table (key INT, value TEXT, PRIMARY KEY (key))")
-        for(i <- 0 to 30) {
-          session.execute(s"INSERT INTO $ks.limit_test_table (key, value) VALUES ($i, '$i')")
+        Future {
+          session.execute(s"CREATE TABLE $ks.limit_test_table (key INT, value TEXT, PRIMARY KEY (key))")
+          for (i <- 0 to 30) {
+            session.execute(s"INSERT INTO $ks.limit_test_table (key, value) VALUES ($i, '$i')")
+          }
         }
-      }
-    )
+      )
+    }
   }
 
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
@@ -341,7 +343,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     javaFunctions(sc).cassandraTable(ks, "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(InetAddress.getByName(testCluster.getConnectionHost)), port = 9999)
+    val invalidConnector = CassandraConnector(Set(InetAddress.getByName(cluster.getConnectionHost)), port = 9999)
     intercept[IOException] {
       javaFunctions(sc).cassandraTable(ks, "test_table").withConnector(invalidConnector).collect()
     }

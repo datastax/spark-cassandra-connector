@@ -1,10 +1,9 @@
 package com.datastax.spark.connector
 
-import scala.reflect.runtime.universe._
-
-
-import com.datastax.driver.core.{TupleValue => DriverTupleValue}
+import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
+
+import scala.reflect.runtime.universe._
 
 final case class TupleValue(values: Any*) extends ScalaGettableByIndexData with Product {
   override def columnValues = values.toIndexedSeq.map(_.asInstanceOf[AnyRef])

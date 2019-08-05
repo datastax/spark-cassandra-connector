@@ -2,11 +2,10 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core.{Metadata, ConsistencyLevel}
+import com.datastax.oss.driver.api.core.ConsistencyLevel
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{TableDef, CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.util.NameTools
 
 import scala.reflect.ClassTag
 

@@ -1,14 +1,13 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.spark.connector.embedded.SparkTemplate._
-
-import scala.collection.JavaConversions._
-import scala.util.Random
-import com.datastax.driver.core.BatchStatement.Type
-import com.datastax.driver.core.{BatchStatement, BoundStatement, ConsistencyLevel, Session}
+import com.datastax.oss.driver.api.core.cql.{BatchStatement, BoundStatement, DefaultBatchType}
+import com.datastax.oss.driver.api.core.{CqlSession, DefaultConsistencyLevel}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, SparkCassandraITFlatSpecBase}
+
+import scala.collection.JavaConversions._
+import scala.util.Random
 
 class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   override lazy val conn = CassandraConnector(defaultConf)
@@ -20,39 +19,38 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
 
   val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
   val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
-  val rkg = new RoutingKeyGenerator(schema.tables.head, Seq("id", "value"))
 
-  def makeBatchBuilder(session: Session): (BoundStatement => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
-    val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+  def makeBatchBuilder(session: CqlSession): (RichBoundStatementWrapper => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {
+    val protocolVersion = session.getContext.getProtocolVersion
     val stmt = session.prepare( s"""INSERT INTO $ks.tab (id, value) VALUES (:id, :value)""")
     val boundStmtBuilder = new BoundStatementBuilder(
       rowWriter,
       stmt,
       protocolVersion = protocolVersion)
-    val batchStmtBuilder = new BatchStatementBuilder(Type.UNLOGGED, rkg, ConsistencyLevel.LOCAL_ONE)
+    val batchStmtBuilder = new BatchStatementBuilder(DefaultBatchType.UNLOGGED, DefaultConsistencyLevel.LOCAL_ONE)
     new GroupingBatchBuilder[(Int, String)](
       boundStmtBuilder,
       batchStmtBuilder,
-      _: BoundStatement => Any,
+      _: RichBoundStatementWrapper => Any,
       _: BatchSize,
       _: Int,
       _: Iterator[(Int, String)])
   }
 
-  def staticBatchKeyGen(bs: BoundStatement): Int = 0
+  def staticBatchKeyGen(bs: RichBoundStatementWrapper): Int = 0
 
-  def dynamicBatchKeyGen(bs: BoundStatement): Int = bs.getInt(0) % 2
+  def dynamicBatchKeyGen(bs: RichBoundStatementWrapper): Int = bs.stmt.getInt(0) % 2
 
-  def dynamicBatchKeyGen5(bs: BoundStatement): Int = bs.getInt(0) % 5
+  def dynamicBatchKeyGen5(bs: RichBoundStatementWrapper): Int = bs.stmt.getInt(0) % 5
 
   "GroupingBatchBuilder in fixed batch key mode" should "make bound statements when batch size is specified as RowsInBatch(1)" in {
     conn.withSessionDo { session =>
       val bm = makeBatchBuilder(session)
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(staticBatchKeyGen, RowsInBatch(1), 1, data.toIterator).toList
-      statements.foreach(_ shouldBe a[BoundStatement])
+      statements.foreach(_ shouldBe a[RichBoundStatementWrapper])
       statements should have size 3
-      statements.map(s => s.asInstanceOf[BoundStatement]).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      statements.map(s => s.asInstanceOf[RichBoundStatementWrapper].stmt).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
 
@@ -61,9 +59,9 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val bm = makeBatchBuilder(session)
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(staticBatchKeyGen, BytesInBatch(0), 1, data.toIterator).toList
-      statements.foreach(_ shouldBe a[BoundStatement])
+      statements.foreach(_ shouldBe a[RichBoundStatementWrapper])
       statements should have size 3
-      statements.map(s => s.asInstanceOf[BoundStatement]).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      statements.map(s => s.asInstanceOf[RichBoundStatementWrapper].stmt).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
 
@@ -73,11 +71,11 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(staticBatchKeyGen, RowsInBatch(2), 1, data.toIterator).toList
       statements should have size 2
-      statements(0) shouldBe a[BatchStatement]
-      statements(1) shouldBe a[BoundStatement]
+      statements(0) shouldBe a[RichBatchStatementWrapper]
+      statements(1) shouldBe a[RichBoundStatementWrapper]
       statements.flatMap {
-        case s: BoundStatement => List(s)
-        case s: BatchStatement => s.getStatements.map(_.asInstanceOf[BoundStatement])
+        case s: RichBoundStatementWrapper => List(s.stmt)
+        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -89,12 +87,12 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val statements = bm(staticBatchKeyGen, RowsInBatch(2), 1, data.toIterator).toList
       statements should have size 2
       statements foreach {
-        _ shouldBe a[BatchStatement]
+        _ shouldBe a[RichBatchStatementWrapper]
       }
-      statements.flatMap {
+      statements.map(_.stmt).flatMap {
         case s: BatchStatement =>
           s.size() should be(2)
-          s.getStatements.map(_.asInstanceOf[BoundStatement])
+          s.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -114,15 +112,15 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val statements = bm(staticBatchKeyGen, BytesInBatch(15), 1, data.toIterator).toList
       statements should have size 5
       statements.take(2) foreach {
-        _ shouldBe a[BatchStatement]
+        _ shouldBe a[RichBatchStatementWrapper]
       }
       statements.drop(2).take(3) foreach {
-        _ shouldBe a[BoundStatement]
+        _ shouldBe a[RichBoundStatementWrapper]
       }
 
-      val stmtss = statements.map {
+      val stmtss = statements.map(_.stmt).map {
         case s: BoundStatement => List(s)
-        case s: BatchStatement => s.getStatements.map(_.asInstanceOf[BoundStatement]).toList
+        case s: BatchStatement => s.collect{ case b: BoundStatement => b }
       }
 
       stmtss.foreach(stmts => stmts.size should be > 0)
@@ -154,9 +152,9 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val bm = makeBatchBuilder(session)
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(dynamicBatchKeyGen, RowsInBatch(1), 1, data.toIterator).toList
-      statements.foreach(_ shouldBe a[BoundStatement])
+      statements.foreach(_ shouldBe a[RichBoundStatementWrapper])
       statements should have size 3
-      statements.map(s => s.asInstanceOf[BoundStatement]).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      statements.map(s => s.asInstanceOf[RichBoundStatementWrapper].stmt).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
 
@@ -165,9 +163,9 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val bm = makeBatchBuilder(session)
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(dynamicBatchKeyGen, BytesInBatch(0), 1, data.toIterator).toList
-      statements.foreach(_ shouldBe a[BoundStatement])
+      statements.foreach(_ shouldBe a[RichBoundStatementWrapper])
       statements should have size 3
-      statements.map(s => s.asInstanceOf[BoundStatement]).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      statements.map(s => s.asInstanceOf[RichBoundStatementWrapper].stmt).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
 
@@ -177,11 +175,11 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(dynamicBatchKeyGen, RowsInBatch(2), 2, data.toIterator).toList
       statements should have size 2
-      statements(0) shouldBe a[BatchStatement]
-      statements(1) shouldBe a[BoundStatement]
+      statements(0) shouldBe a[RichBatchStatementWrapper]
+      statements(1) shouldBe a[RichBoundStatementWrapper]
       statements.flatMap {
-        case s: BoundStatement => List(s)
-        case s: BatchStatement => s.getStatements.map(_.asInstanceOf[BoundStatement])
+        case s: RichBoundStatementWrapper => List(s.stmt)
+        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -192,8 +190,8 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val data = Seq((1, "one"), (2, "two"), (3, "three"))
       val statements = bm(dynamicBatchKeyGen, RowsInBatch(2), 1, data.toIterator).toList
       statements should have size 3
-      statements.foreach(_ shouldBe a[BoundStatement])
-      statements.map(s => s.asInstanceOf[BoundStatement]).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
+      statements.foreach(_ shouldBe a[RichBoundStatementWrapper])
+      statements.map(s => s.asInstanceOf[RichBoundStatementWrapper].stmt).map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
 
@@ -204,12 +202,12 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val statements = bm(dynamicBatchKeyGen, RowsInBatch(2), 2, data.toIterator).toList
       statements should have size 2
       statements foreach {
-        _ shouldBe a[BatchStatement]
+        _ shouldBe a[RichBatchStatementWrapper]
       }
       statements.flatMap {
-        case s: BatchStatement =>
-          s.size() should be(2)
-          s.getStatements.map(_.asInstanceOf[BoundStatement])
+        case s: RichBatchStatementWrapper =>
+          s.stmt.size() should be(2)
+          s.stmt.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -234,20 +232,20 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       statements should have size 5
 
       val boundStatements = statements collect {
-        case s: BoundStatement => s.getInt(0)
+        case s: RichBoundStatementWrapper => s.stmt.getInt(0)
       }
       boundStatements should have size 3
       boundStatements should contain theSameElementsAs Seq(5, 6, 7)
 
       val batchStatements = statements collect {
-        case s: BatchStatement if s.size() == 2 => s.getStatements.map(_.asInstanceOf[BoundStatement].getInt(0)).toList
+        case s: RichBatchStatementWrapper if s.stmt.size() == 2 => s.stmt.collect{ case b: BoundStatement => b.getInt(0) }
       }
       batchStatements should have size 2
       batchStatements should contain theSameElementsAs Seq(List(1, 3), List(2, 4))
 
       val stmtss = statements.map {
-        case s: BoundStatement => List(s)
-        case s: BatchStatement => s.getStatements.map(_.asInstanceOf[BoundStatement]).toList
+        case s: RichBoundStatementWrapper => List(s.stmt)
+        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
       }
       stmtss.foreach(stmts => stmts.size should be > 0)
       stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BoundStatementBuilder.calculateDataSize).sum should be <= 15)
@@ -279,12 +277,12 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       val size = 10000
       val data = (1 to size).map(x => (Random.nextInt().abs, Random.nextString(Random.nextInt(20))))
       val statements = bm(dynamicBatchKeyGen5, RowsInBatch(10), 4, data.toIterator).toList
-      val batches = statements.collect { case bs: BatchStatement => bs.size()}
+      val batches = statements.collect { case bs: BatchStatement => bs.size() }
       statements.flatMap {
-        case s: BoundStatement => List(s)
-        case s: BatchStatement =>
-          s.size() should be <= 10
-          s.getStatements.map(_.asInstanceOf[BoundStatement])
+        case s: RichBoundStatementWrapper => List(s.stmt)
+        case s: RichBatchStatementWrapper =>
+          s.stmt.size() should be <= 10
+          s.stmt.collect { case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))).sortBy(_.toString()) should contain theSameElementsInOrderAs data.sortBy(_.toString())
     }
 

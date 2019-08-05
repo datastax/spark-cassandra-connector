@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
@@ -51,7 +51,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
         },
         Future {
           report("Making table with all PV4 Datatypes")
-          skipIfProtocolVersionLT(V4) {
+          skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
             session.execute(s"""
             | CREATE TABLE $ks1.test_data_type (
             | a ASCII,
@@ -92,7 +92,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
         },
         Future {
           report("Creating an all V4 Types Table")
-          skipIfProtocolVersionLT(V4){
+          skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
           session.execute(s"""
               | CREATE TABLE $ks1.test_data_type1 (
               | a ASCII,
@@ -298,7 +298,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
         .foreach(t => sparkSession.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
     Seq("test3", "test2")
         .foreach(t => sparkSession.read.cassandraFormat(t, ks2).load().createOrReplaceTempView(s"ks2_$t"))
-    skipIfProtocolVersionLT(V4) {
+    skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
       Seq("test_data_type1", "test_data_type")
        .foreach(t => sparkSession.read.cassandraFormat(t, ks1).load().createOrReplaceTempView(s"ks1_$t"))
     }
@@ -530,12 +530,12 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     result should have length 1
   }
 
-  it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(V4) {
+  it should "allow to select rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
     val result = sparkSession.sql(s"SELECT * FROM ks1_test_data_type").collect()
     result should have length 1
   }
 
-  it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(V4) {
+  it should "allow to insert rows for data types of ASCII, INT, FLOAT, DOUBLE, BIGINT, BOOLEAN, DECIMAL, INET, TEXT, TIMESTAMP, UUID, VARINT, SMALLINT" in skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
     val result = sparkSession.sql(s"INSERT INTO TABLE ks1_test_data_type1 SELECT * FROM ks1_test_data_type").collect()
     val result1 = sparkSession.sql(s"SELECT * FROM ks1_test_data_type1").collect()
     result1 should have length 1

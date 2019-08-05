@@ -1,12 +1,11 @@
 package com.datastax.spark.connector.japi;
 
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
+import com.datastax.spark.connector.rdd.ReadConf;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.spark.connector.rdd.ReadConf;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
@@ -27,6 +26,6 @@ public class SparkContextJavaFunctionsTest
 
         assertEquals(readConf.fetchSizeInRows(), 1234);
         assertEquals(readConf.splitSizeInMB(), 4321);
-        assertEquals(readConf.consistencyLevel(), ConsistencyLevel.THREE);
+        assertEquals(readConf.consistencyLevel(), DefaultConsistencyLevel.THREE);
     }
 }

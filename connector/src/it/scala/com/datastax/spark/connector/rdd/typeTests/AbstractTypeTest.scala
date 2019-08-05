@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.rdd.typeTests
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
@@ -33,7 +34,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   rowWriterNull: RowWriterFactory[(TestType, TestType, Null, Null, Null, Null)])
   extends SparkCassandraITFlatSpecBase {
 
-  def minPV: ProtocolVersion = ProtocolVersion.V3
+  def minPV: DefaultProtocolVersion = DefaultProtocolVersion.V3
 
   protected lazy val typeNormalTable: String = s"${typeName}_normal"
   protected lazy val typeCollectionTable: String = s"${typeName}_collection"
@@ -76,7 +77,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
    * Java doesn't have the fun typeTests magic that Scala does so we'll need to use the driver
    * specific function for each expectedKeys typeTests
    */
-  def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): TestType
+  def getDriverColumn(row: Row, colName: String): TestType
 
   override lazy val conn = CassandraConnector(defaultConf)
 

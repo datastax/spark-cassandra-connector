@@ -4,9 +4,12 @@ import java.sql.{Date => SqlDate}
 import java.text.SimpleDateFormat
 import java.util.{TimeZone, Date => UtilDate}
 
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+
 import scala.reflect.ClassTag
-import org.joda.time.{DateTime, DateTimeZone, LocalDate => JodaLocalDate}
-import com.datastax.driver.core.{ProtocolVersion, Row, LocalDate => DriverLocalDate}
+import java.time.{LocalDate}
+
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -24,12 +27,11 @@ abstract class AbstractDateTypeTest[TestType: ClassTag](
     rowWriterNormal: RowWriterFactory[(TestType, TestType, TestType, TestType)],
     rowWriterCollection: RowWriterFactory[(TestType, Set[TestType], List[TestType], Map[String, TestType], Map[TestType, String])],
     rowWriterNull: RowWriterFactory[(TestType, TestType, Null, Null, Null, Null)])
-  extends AbstractTypeTest[TestType, DriverLocalDate] {
+  extends AbstractTypeTest[TestType, LocalDate] {
 
-  override def minPV: ProtocolVersion = ProtocolVersion.V4
+  override def minPV: DefaultProtocolVersion = DefaultProtocolVersion.V4
 
   TimeZone.setDefault(testTimeZone)
-  DateTimeZone.setDefault(DateTimeZone.forTimeZone(testTimeZone))
 
   private val dateRegx = """(\d\d\d\d)-(\d\d)-(\d\d).*""".r
 
@@ -51,15 +53,15 @@ abstract class AbstractDateTypeTest[TestType: ClassTag](
     stringToDate("2011-05-20"),
     stringToDate("1950-01-01"))
 
-  override def convertToDriverInsertable(testValue: TestType): DriverLocalDate = {
+  override def convertToDriverInsertable(testValue: TestType): LocalDate = {
     dateToString(testValue) match {
       case dateRegx(year, month, day) =>
-        DriverLocalDate.fromYearMonthDay(year.toInt, month.toInt, day.toInt)
+        LocalDate.of(year.toInt, month.toInt, day.toInt)
     }
   }
 
   override def getDriverColumn(row: Row, colName: String): TestType = {
-    val ld = row.getDate(colName)
+    val ld = row.getLocalDate(colName)
     stringToDate(ld.toString)
   }
 }
@@ -70,12 +72,6 @@ abstract class DateTypeTest(timeZone: TimeZone) extends AbstractDateTypeTest[Uti
   override def stringToDate(str: String): UtilDate = format.parse(str)
 
   override def dateToString(date: UtilDate): String = format.format(date)
-}
-
-abstract class DateTimeTypeTest(timeZone: TimeZone) extends AbstractDateTypeTest[DateTime](timeZone) {
-  override def stringToDate(str: String): DateTime = JodaLocalDate.parse(str).toDateTimeAtStartOfDay
-
-  override def dateToString(date: DateTime): String = date.toLocalDate.toString
 }
 
 abstract class SqlDateTypeTest(timeZone: TimeZone) extends AbstractDateTypeTest[SqlDate](timeZone) {

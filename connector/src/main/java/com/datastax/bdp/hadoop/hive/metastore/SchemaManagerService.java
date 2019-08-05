@@ -22,8 +22,19 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.datastax.driver.core.exceptions.SyntaxError;
-import com.datastax.driver.dse.DseSession;
+import com.datastax.dse.driver.api.core.graph.GraphResultSet;
+import com.datastax.dse.driver.api.core.graph.GraphSession;
+import com.datastax.dse.driver.api.core.graph.ScriptGraphStatement;
+import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.ViewMetadata;
+import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException;
+import com.datastax.oss.driver.api.core.servererrors.SyntaxError;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.cql.CassandraConnectorConf;
 import com.google.common.base.Splitter;
@@ -40,17 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.bdp.spark.DseCassandraConnectionFactory;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.MaterializedViewMetadata;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.TableMetadata;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
-import com.datastax.driver.core.schemabuilder.Create;
-import com.datastax.driver.core.schemabuilder.SchemaBuilder;
-import com.datastax.driver.dse.DseCluster;
-import com.datastax.driver.dse.graph.GraphResultSet;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -75,7 +75,7 @@ public class SchemaManagerService
     private static final Logger log = LoggerFactory.getLogger(SchemaManagerService.class);
     private CassandraClientConfiguration configuration;
     private String wareHouseRoot;
-    private DseCluster externalCluster;
+    private CassandraConnector connector;
     private Metadata metadata;
     private Set<String> systemKeyspaces = Sets.newHashSet();//TODO FIX THIS DriverUtil.getSystemKeyspaces(null);
 
@@ -104,14 +104,14 @@ public class SchemaManagerService
 
     private static WeakHashMap<CassandraClientConfiguration, SchemaManagerService> SchemaManagerServiceCache = new WeakHashMap<>();
 
-    public static synchronized SchemaManagerService getInstance(CassandraHiveMetaStore metaStore,
+    public static synchronized SchemaManagerService getInstance(
             CassandraClientConfiguration clientConfiguration,
-            Cluster externalCluster)
+            CassandraConnector connector)
     {
         SchemaManagerService schemaManagerService = SchemaManagerServiceCache.get(clientConfiguration);
         if (schemaManagerService == null)
         {
-            schemaManagerService = new SchemaManagerService(clientConfiguration, externalCluster);
+            schemaManagerService = new SchemaManagerService(clientConfiguration, connector);
             SchemaManagerServiceCache.put(clientConfiguration, schemaManagerService);
         } else {
             // update config with latest hadoop related changes
@@ -120,11 +120,11 @@ public class SchemaManagerService
         return schemaManagerService;
     }
 
-    private SchemaManagerService(CassandraClientConfiguration clientConfiguration, Cluster externalCluster)
+    private SchemaManagerService(CassandraClientConfiguration clientConfiguration, CassandraConnector connector)
     {
         this.configuration = clientConfiguration;
         this.wareHouseRoot = HiveConf.getVar(configuration.getHadoopConfiguration(), HiveConf.ConfVars.METASTOREWAREHOUSE);
-        this.externalCluster = (DseCluster) externalCluster;
+        this.connector = connector;
     }
 
     public Set<String> getSystemKeyspaces()
@@ -156,31 +156,22 @@ public class SchemaManagerService
     public void refreshMetadata()
     {
         log.info("Refresh cluster meta data");
-        DseSession session = externalCluster != null ? externalCluster.newSession() : (DseSession) getCassandraConnector(configuration).openSession();
-
-        try
-        {
-            metadata = session.getCluster().getMetadata();
-            systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
-            // list all available graphs and check that graph is enabled
+        connector.jWithSessionDo(session -> {
             try
             {
-                GraphResultSet rs = session.executeGraph("system.graphs()");
+                metadata = session.refreshSchema();
+                systemKeyspaces = Sets.newHashSet(); // TODO Fix this DriverUtil.getSystemKeyspaces(session);
+                // list all available graphs and check that graph is enabled
+                GraphResultSet rs = ((GraphSession)session).execute(ScriptGraphStatement.builder("system.graphs()").build());
                 graphNames = Optional.of(StreamSupport.stream(rs.spliterator(), false)
                         .map(r -> r.asString())
                         .collect(Collectors.toSet()));
-            } catch (InvalidQueryException | SyntaxError e)
-            {
+            } catch (InvalidQueryException | SyntaxError | ClassCastException e) {
                 //graph is not enabled or connected to OSS Cassandra so empty set
                 graphNames = Optional.empty();
             }
-        }
-        finally
-        {
-            if(session.getCluster() != externalCluster)
-                session.close();
-        }
-
+            return graphNames;
+        });
     }
 
     public boolean isGraphEnabled() {
@@ -199,9 +190,9 @@ public class SchemaManagerService
         refreshMetadata();
         // make sure no duplicate keyspaces
         Set<String> kss = new HashSet<>();
-        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces())
+        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces().values())
         {
-            String ksName = ksMetadata.getName();
+            String ksName = ksMetadata.getName().asInternal();
             log.debug("Found ksDef name: {}", ksName);
             if (isInternalKeyspace(ksName) || isLegacyGraphKs(ksName) || isKeyspaceMapped(ksName, cassandraHiveMetaStore))
                 continue;
@@ -216,7 +207,7 @@ public class SchemaManagerService
 
     private boolean isLegacyGraphKs(String ksName)
     {
-        return ksName.endsWith("_pvt") || ksName.endsWith("_system") || metadata.getKeyspace(ksName + "_system") != null;
+        return ksName.endsWith("_pvt") || ksName.endsWith("_system") || metadata.getKeyspace(ksName + "_system").isPresent();
     }
 
     /**
@@ -224,9 +215,9 @@ public class SchemaManagerService
      */
     public String getKeyspaceForDatabaseName(String databaseName)
     {
-        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces())
+        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces().values())
         {
-            String ksName = ksMetadata.getName();
+            String ksName = ksMetadata.getName().asInternal();
             if (StringUtils.equalsIgnoreCase(ksName, databaseName))
                 return ksName;
         }
@@ -535,16 +526,16 @@ public class SchemaManagerService
      */
     public Collection<CatalogTableMetadata> getTableOrViewMetadatas(String ksName) {
         if (!isInternalKeyspace(ksName))
-            return getTableOrViewMetadatas(getClusterMetadata().getKeyspace(Metadata.quote(ksName)));
+            return getTableOrViewMetadatas(getClusterMetadata().getKeyspace(CqlIdentifier.fromInternal(ksName)).orElse(null)); //TODO Handle this better
         else
             return Collections.EMPTY_LIST;
     }
 
     public Collection<CatalogTableMetadata> getAllTableOrViewMetadatas() {
         Collection<CatalogTableMetadata> catalogTableMetadata = new LinkedList<CatalogTableMetadata>();
-        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces())
+        for (KeyspaceMetadata ksMetadata : getClusterMetadata().getKeyspaces().values())
         {
-            if (!isInternalKeyspace(ksMetadata.getName()))
+            if (!isInternalKeyspace(ksMetadata.getName().asInternal()))
                 catalogTableMetadata.addAll(getTableOrViewMetadatas(ksMetadata));
         }
 
@@ -553,13 +544,14 @@ public class SchemaManagerService
 
     private Collection<CatalogTableMetadata> getTableOrViewMetadatas(KeyspaceMetadata ksMetadata) {
         Collection<CatalogTableMetadata> metadatas = new LinkedList<>();
-        Collection<TableMetadata> tableMetadatas = (ksMetadata == null) ? Collections.<TableMetadata>emptyList() : ksMetadata.getTables();
+        Collection<TableMetadata> tableMetadatas = (ksMetadata == null) ? Collections.<TableMetadata>emptyList() : ksMetadata.getTables().values();
         for (TableMetadata tableMetadata : tableMetadatas) {
             metadatas.add(new TableOrViewMetadata(tableMetadata));
-            for (MaterializedViewMetadata view : tableMetadata.getViews()) {
-                metadatas.add(new TableOrViewMetadata(view));
             }
-        }
+        Collection<ViewMetadata> viewMetadatas = (ksMetadata == null) ? Collections.<ViewMetadata>emptyList() : ksMetadata.getViews().values();
+         for (ViewMetadata tableMetadata : viewMetadatas) {
+            metadatas.add(new TableOrViewMetadata(tableMetadata));
+            }
         return metadatas;
     }
 
@@ -568,11 +560,12 @@ public class SchemaManagerService
         return getSystemKeyspaces().contains(ksName);
     }
 
-    public static Create getMetaStoreTableSchema(String keyspaceName, String tableName)
+    public static SimpleStatement getMetaStoreTableSchema(String keyspaceName, String tableName)
     {
         return SchemaBuilder.createTable(keyspaceName, tableName)
-                .addPartitionKey("key", DataType.text())
-                .addClusteringColumn("entity", DataType.text())
-                .addColumn("value", DataType.blob());
+                .withPartitionKey("key", DataTypes.TEXT)
+                .withClusteringColumn("entity", DataTypes.TEXT)
+                .withColumn("value", DataTypes.BLOB)
+                .build();
     }
 }

@@ -4,16 +4,30 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.{Date, UUID}
 
-import org.apache.spark.{SparkConf, SparkEnv}
-import com.datastax.driver.core.{DataType, ProtocolVersion, TupleType => DriverTupleType, UserType => DriverUserType}
-import com.datastax.driver.core.ProtocolVersion._
-import com.datastax.driver.dse.geometry.codecs.{LineStringCodec, PointCodec, PolygonCodec}
-import com.datastax.spark.connector.cql.CassandraConnectorConf
+import com.datastax.dse.driver.api.core.`type`.DseDataTypes
+import com.datastax.oss.driver.api.core.DefaultProtocolVersion.V4
+import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.`type`.{
+  DataType,
+  DataTypes => DriverDataTypes,
+  TupleType => DriverTupleType,
+  UserDefinedType => DriverUserDefinedType,
+  ListType => DriverListType,
+  MapType => DriverMapType,
+  SetType => DriverSetType}
 import com.datastax.spark.connector.util._
+import org.apache.spark.sql.types.{
+  BooleanType => SparkSqlBooleanType,
+  DataType => SparkSqlDataType,
+  DateType => SparkSqlDateType,
+  DecimalType => SparkSqlDecimalType,
+  DoubleType => SparkSqlDoubleType,
+  FloatType => SparkSqlFloatType,
+  MapType => SparkSqlMapType,
+  TimestampType => SparkSqlTimestampType, _}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
-import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DataType => SparkSqlDataType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, _}
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {
@@ -59,43 +73,40 @@ case class ColumnTypeConf(customFromDriver: Option[String])
 
 object ColumnType {
 
-  val protocolVersionOrdering = implicitly[Ordering[ProtocolVersion]]
-  import protocolVersionOrdering._
-
   private[connector] val primitiveTypeMap = Map[DataType, ColumnType[_]](
-    DataType.text() -> TextType,
-    DataType.ascii() -> AsciiType,
-    DataType.varchar() -> VarCharType,
-    DataType.cint() -> IntType,
-    DataType.bigint() -> BigIntType,
-    DataType.smallint() -> SmallIntType,
-    DataType.tinyint() -> TinyIntType,
-    DataType.cfloat() -> FloatType,
-    DataType.cdouble() -> DoubleType,
-    DataType.cboolean() -> BooleanType,
-    DataType.varint() -> VarIntType,
-    DataType.decimal() -> DecimalType,
-    DataType.timestamp() -> TimestampType,
-    DataType.inet() -> InetType,
-    DataType.uuid() -> UUIDType,
-    DataType.timeuuid() -> TimeUUIDType,
-    DataType.blob() -> BlobType,
-    DataType.counter() -> CounterType,
-    DataType.date() -> DateType,
-    DataType.time() -> TimeType,
-    DataType.duration() -> DurationType,
-    PointCodec.DATA_TYPE -> PointType,
-    PolygonCodec.DATA_TYPE -> PolygonType,
-    LineStringCodec.DATA_TYPE -> LineStringType
+    DriverDataTypes.TEXT -> TextType,
+    DriverDataTypes.ASCII -> AsciiType,
+    DriverDataTypes.TEXT -> VarCharType,
+    DriverDataTypes.INT -> IntType,
+    DriverDataTypes.BIGINT -> BigIntType,
+    DriverDataTypes.SMALLINT -> SmallIntType,
+    DriverDataTypes.TINYINT -> TinyIntType,
+    DriverDataTypes.FLOAT -> FloatType,
+    DriverDataTypes.DOUBLE -> DoubleType,
+    DriverDataTypes.BOOLEAN -> BooleanType,
+    DriverDataTypes.VARINT -> VarIntType,
+    DriverDataTypes.DECIMAL -> DecimalType,
+    DriverDataTypes.TIMESTAMP -> TimestampType,
+    DriverDataTypes.INET -> InetType,
+    DriverDataTypes.UUID -> UUIDType,
+    DriverDataTypes.TIMEUUID -> TimeUUIDType,
+    DriverDataTypes.BLOB -> BlobType,
+    DriverDataTypes.COUNTER -> CounterType,
+    DriverDataTypes.DATE -> DateType,
+    DriverDataTypes.TIME -> TimeType,
+    DriverDataTypes.DURATION -> DurationType,
+    DseDataTypes.POINT -> PointType,
+    DseDataTypes.POLYGON -> PolygonType,
+    DseDataTypes.LINE_STRING -> LineStringType
   )
 
   /** Makes sure the sequence does not contain any lazy transformations.
     * This guarantees that if T is Serializable, the collection is Serializable. */
   private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
 
-  private def fields(dataType: DriverUserType): IndexedSeq[UDTFieldDef] = unlazify {
-    for (field <- dataType.iterator().toIndexedSeq) yield
-      UDTFieldDef(field.getName, fromDriverType(field.getType))
+  private def fields(dataType: DriverUserDefinedType): IndexedSeq[UDTFieldDef] = unlazify {
+    for ((fieldName, fieldType) <- dataType.getFieldNames.zip(dataType.getFieldTypes).toIndexedSeq) yield
+      UDTFieldDef(fieldName.asInternal(), fromDriverType(fieldType))
   }
 
   private def fields(dataType: DriverTupleType): IndexedSeq[TupleFieldDef] = unlazify {
@@ -103,13 +114,11 @@ object ColumnType {
       TupleFieldDef(index, fromDriverType(field))
   }
 
-  private def typeArg(dataType: DataType, idx: Int) = fromDriverType(dataType.getTypeArguments.get(idx))
-
   private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
-    case listType if listType.getName == DataType.Name.LIST => ListType(typeArg(listType, 0), listType.isFrozen)
-    case setType if setType.getName == DataType.Name.SET => SetType(typeArg(setType, 0), setType.isFrozen)
-    case mapType if mapType.getName == DataType.Name.MAP => MapType(typeArg(mapType, 0), typeArg(mapType, 1), mapType.isFrozen)
-    case userType: DriverUserType => UserDefinedType(userType.getTypeName, fields(userType), userType.isFrozen)
+    case listType: DriverListType => ListType(fromDriverType(listType.getElementType), listType.isFrozen)
+    case setType: DriverSetType => SetType(fromDriverType(setType.getElementType), setType.isFrozen)
+    case mapType: DriverMapType => MapType(fromDriverType(mapType.getKeyType), fromDriverType(mapType.getValueType), mapType.isFrozen)
+    case userType: DriverUserDefinedType => UserDefinedType(userType.getName.asInternal(), fields(userType), userType.isFrozen)
     case tupleType: DriverTupleType => TupleType(fields(tupleType): _*)
     case dataType => primitiveTypeMap(dataType)
   }
@@ -121,13 +130,15 @@ object ColumnType {
   /** Returns natural Cassandra type for representing data of the given Spark SQL type */
   def fromSparkSqlType(
     dataType: SparkSqlDataType,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): ColumnType[_] = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): ColumnType[_] = {
 
     def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
 
+    val pvGt4 = (protocolVersion.getCode >= V4.getCode)
+
     dataType match {
-      case ByteType => if (protocolVersion >= V4) TinyIntType else IntType
-      case ShortType => if (protocolVersion >= V4) SmallIntType else IntType
+      case ByteType => if (pvGt4) TinyIntType else IntType
+      case ShortType => if (pvGt4) SmallIntType else IntType
       case IntegerType => IntType
       case LongType => BigIntType
       case SparkSqlFloatType => FloatType
@@ -136,7 +147,7 @@ object ColumnType {
       case BinaryType => BlobType
       case SparkSqlBooleanType => BooleanType
       case SparkSqlTimestampType => TimestampType
-      case SparkSqlDateType => if (protocolVersion >= V4) DateType else TimestampType
+      case SparkSqlDateType => if (pvGt4) DateType else TimestampType
       case SparkSqlDecimalType() => DecimalType
       case ArrayType(sparkSqlElementType, containsNull) =>
         val argType = fromSparkSqlType(sparkSqlElementType)
@@ -153,19 +164,21 @@ object ColumnType {
   /** Returns natural Cassandra type for representing data of the given Scala type */
   def fromScalaType(
     dataType: Type,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): ColumnType[_] = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): ColumnType[_] = {
 
     def unsupportedType() = throw new IllegalArgumentException(s"Unsupported type: $dataType")
+
+    val pvGt4 = (protocolVersion.getCode >= V4.getCode)
 
     // can't use a HashMap, because there are more than one different Type objects for "real type":
     if (dataType =:= typeOf[Int]) IntType
     else if (dataType =:= typeOf[java.lang.Integer]) IntType
     else if (dataType =:= typeOf[Long]) BigIntType
     else if (dataType =:= typeOf[java.lang.Long]) BigIntType
-    else if (dataType =:= typeOf[Short]) if (protocolVersion >= V4) SmallIntType else IntType
-    else if (dataType =:= typeOf[java.lang.Short]) if (protocolVersion >= V4) SmallIntType else IntType
-    else if (dataType =:= typeOf[Byte]) if (protocolVersion >=  V4) TinyIntType else IntType
-    else if (dataType =:= typeOf[java.lang.Byte]) if (protocolVersion >= V4) TinyIntType else IntType
+    else if (dataType =:= typeOf[Short]) if (pvGt4) SmallIntType else IntType
+    else if (dataType =:= typeOf[java.lang.Short]) if (pvGt4) SmallIntType else IntType
+    else if (dataType =:= typeOf[Byte]) if (pvGt4) TinyIntType else IntType
+    else if (dataType =:= typeOf[java.lang.Byte]) if (pvGt4) TinyIntType else IntType
     else if (dataType =:= typeOf[Float]) FloatType
     else if (dataType =:= typeOf[java.lang.Float]) FloatType
     else if (dataType =:= typeOf[Double]) DoubleType
@@ -178,9 +191,9 @@ object ColumnType {
     else if (dataType =:= typeOf[java.lang.Boolean]) BooleanType
     else if (dataType =:= typeOf[String]) VarCharType
     else if (dataType =:= typeOf[InetAddress]) InetType
+    else if (dataType =:= typeOf[java.sql.Timestamp]) TimestampType
     else if (dataType =:= typeOf[Date]) TimestampType
-    else if (dataType =:= typeOf[java.sql.Date]) if (protocolVersion >= V4) DateType else TimestampType
-    else if (dataType =:= typeOf[org.joda.time.DateTime]) TimestampType
+    else if (dataType =:= typeOf[java.sql.Date]) if (pvGt4) DateType else TimestampType
     else if (dataType =:= typeOf[UUID]) UUIDType
     else if (dataType =:= typeOf[ByteBuffer]) BlobType
     else if (dataType =:= typeOf[Array[Byte]]) BlobType
@@ -214,14 +227,13 @@ object ColumnType {
   def converterToCassandra(dataType: DataType)
       : TypeConverter[_ <: AnyRef] = {
 
-    val typeArgs = dataType.getTypeArguments.map(converterToCassandra)
     val converter: TypeConverter[_] =
-      dataType.getName match {
-        case DataType.Name.LIST => TypeConverter.javaArrayListConverter(typeArgs(0))
-        case DataType.Name.SET => TypeConverter.javaHashSetConverter(typeArgs(0))
-        case DataType.Name.MAP => TypeConverter.javaHashMapConverter(typeArgs(0), typeArgs(1))
-        case DataType.Name.UDT => UserDefinedType.driverUDTValueConverter(dataType)
-        case DataType.Name.TUPLE => TupleType.driverTupleValueConverter(dataType)
+      dataType match {
+        case list: DriverListType => TypeConverter.javaArrayListConverter(converterToCassandra(list.getElementType))
+        case set: DriverSetType => TypeConverter.javaHashSetConverter(converterToCassandra(set.getElementType))
+        case map: DriverMapType => TypeConverter.javaHashMapConverter(converterToCassandra(map.getKeyType), converterToCassandra(map.getValueType))
+        case udt: DriverUserDefinedType => new UserDefinedType.DriverUDTValueConverter(udt)
+        case tuple: DriverTupleType => TupleType.driverTupleValueConverter(dataType)
         case _ => fromDriverType(dataType).converterToCassandra
       }
 

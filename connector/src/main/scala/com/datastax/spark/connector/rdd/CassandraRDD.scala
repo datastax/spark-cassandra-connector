@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.HostDistance
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._

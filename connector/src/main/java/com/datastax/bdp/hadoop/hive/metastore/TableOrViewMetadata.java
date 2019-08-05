@@ -17,39 +17,38 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.driver.core.AbstractTableMetadata;
-import com.datastax.driver.core.MaterializedViewMetadata;
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.TableMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.RelationMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.ViewMetadata;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 
 public class TableOrViewMetadata implements CatalogTableMetadata
 {
 
-    private AbstractTableMetadata metadata;
+    private RelationMetadata metadata;
 
     public TableOrViewMetadata(TableMetadata metadata)
     {
-        this.metadata = (AbstractTableMetadata) metadata;
+        this.metadata = metadata;
     }
 
-    public TableOrViewMetadata(MaterializedViewMetadata metadata)
+    public TableOrViewMetadata(ViewMetadata metadata)
     {
-        this.metadata = (AbstractTableMetadata) metadata;
+        this.metadata = metadata;
     }
 
     @Override
     public String getTableName() {
-        return metadata.getName();
+        return metadata.getName().asInternal();
     }
 
     @Override
     public String getDbName() {
-        return getKeyspace().getName();
+        return metadata.getKeyspace().asInternal();
     }
 
-    public KeyspaceMetadata getKeyspace() {
-        return metadata.getKeyspace();
+    public String getKeyspace() {
+        return metadata.getKeyspace().asInternal();
     }
 
     @Override

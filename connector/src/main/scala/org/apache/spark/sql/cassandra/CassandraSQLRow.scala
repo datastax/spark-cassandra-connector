@@ -3,12 +3,15 @@ package org.apache.spark.sql.cassandra
 import java.math.BigInteger
 import java.net.InetAddress
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.{Duration, Row, TypeCodec}
-import com.datastax.driver.dse.geometry.Geometry
+import com.datastax.dse.driver.api.core.data.geometry.Geometry
+import com.datastax.oss.driver.api.core.`type`.codec.TypeCodecs
+import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.rdd.reader.{RowReader, ThisRowReaderAsFactory}
-import com.datastax.spark.connector.types.{ColumnType, TypeConverter}
+import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
 import org.apache.spark.sql.types.Decimal
 import org.apache.spark.sql.{Row => SparkRow}
@@ -71,7 +74,7 @@ object CassandraSQLRow {
       case localDate: java.time.LocalDate => java.sql.Date.valueOf(localDate)
       case localTime: java.time.LocalTime => localTime.toNanoOfDay.asInstanceOf[AnyRef]
       case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
-      case duration: Duration => TypeCodec.duration().format(duration)
+      case duration: CqlDuration => TypeCodecs.DURATION.format(duration)
       case instant: java.time.Instant => new java.sql.Timestamp(instant.toEpochMilli)
       case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
@@ -91,7 +94,7 @@ object CassandraSQLRow {
   def toUnsafeSqlType(value: Any): AnyRef = {
     val sparkSqlType: PartialFunction[Any, AnyRef] = {
       case geom: Geometry => UTF8String.fromString(geom.asWellKnownText())
-      case duration: Duration => TypeCodec.duration().format(duration)
+      case duration: CqlDuration => TypeCodecs.DURATION.format(duration)
       case javaDate: java.util.Date => java.sql.Timestamp.from(javaDate.toInstant)
       case localDate: org.joda.time.LocalDate =>
         java.time.LocalDate.of(localDate.getYear,localDate.getMonthOfYear, localDate.getDayOfMonth)
@@ -103,6 +106,7 @@ object CassandraSQLRow {
       case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
       case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
+      case instant: Instant => java.sql.Timestamp.from(instant)
       case _ => value.asInstanceOf[AnyRef]
     }
     sparkSqlType(value)

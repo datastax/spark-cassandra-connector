@@ -29,9 +29,9 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
 
   it should "match a conf with all the same settings but maxConnectionsPerHost" in {
     val conf_a = CassandraConnectorConf(
-      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "20"))
+      new SparkConf().set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "20"))
     val conf_b = CassandraConnectorConf(
-      new SparkConf().set(CassandraConnectorConf.MaxRemoteConnectionsPerExecutorParam.name, "13"))
+      new SparkConf().set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "13"))
 
     conf_a should equal(conf_b)
   }
@@ -111,6 +111,7 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
   }
 
   /*
+  TODO:
   it should "be equals for the same settings" in {
     val gen = new DataGenerator().registerCustomCasesGeneators {
       case (_, t) if t =:= typeOf[AuthConf] => gen => Iterator(NoAuthConf) ++ gen.generate[PasswordAuthConf]()

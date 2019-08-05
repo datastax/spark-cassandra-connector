@@ -4,10 +4,11 @@ package com.datastax.spark.connector.types
 import scala.reflect.runtime.universe.TypeTag
 import java.net.InetAddress
 import java.nio.ByteBuffer
+import java.time.{Instant, LocalDate, LocalTime}
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.{Duration, LocalDate}
-import com.datastax.driver.dse.geometry.{LineString, Point, Polygon}
+import com.datastax.dse.driver.api.core.data.geometry._
+import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
@@ -98,11 +99,11 @@ case object DecimalType extends PrimitiveColumnType[BigDecimal] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.math.BigDecimal])
 }
 
-case object TimestampType extends PrimitiveColumnType[Date] {
-  def scalaTypeTag = implicitly[TypeTag[Date]]
+case object TimestampType extends PrimitiveColumnType[Instant] {
+  def scalaTypeTag = implicitly[TypeTag[Instant]]
   def cqlTypeName = "timestamp"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.util.Date])
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.Instant])
 }
 
 case object InetType extends PrimitiveColumnType[InetAddress] {
@@ -140,30 +141,25 @@ case object BlobType extends PrimitiveColumnType[ByteBuffer] {
     new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.nio.ByteBuffer])
 }
 
-case object DateType extends PrimitiveColumnType[Int] {
-  def scalaTypeTag = implicitly[TypeTag[Int]]
+case object DateType extends PrimitiveColumnType[LocalDate] {
+  def scalaTypeTag = implicitly[TypeTag[LocalDate]]
   def cqlTypeName = "date"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.forType[LocalDate])
+    new TypeConverter.OptionToNullConverter(TypeConverter.forType[java.time.LocalDate])
 }
 
-/* The implicit conversions we usually do between types will not work as expected here, Since the
-time representation is stored as nanoseconds from midnight (epoch) we need to make sure any
-translations of Types take this into account. In particular we need to be careful of reading this
-time out and converting it to Dates since they will be off by a factor of a million.
- */
-case object TimeType extends PrimitiveColumnType[Long] {
-  def scalaTypeTag = { implicitly[TypeTag[Long]]}
+case object TimeType extends PrimitiveColumnType[LocalTime] {
+  def scalaTypeTag = { implicitly[TypeTag[LocalTime]]}
   def cqlTypeName = "time"
   def converterToCassandra =
     new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
 }
 
-case object DurationType extends PrimitiveColumnType[Duration] {
-  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[Duration]] }
+case object DurationType extends PrimitiveColumnType[CqlDuration] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[CqlDuration]] }
   def cqlTypeName = "DurationType"
   def converterToCassandra =
-    new OptionToNullConverter(TypeConverter.forType[Duration])
+    new OptionToNullConverter(TypeConverter.forType[CqlDuration])
 }
 
 case object PointType extends PrimitiveColumnType[Point] {

@@ -1,17 +1,20 @@
 package com.datastax.spark.connector.rdd.partitioner
 
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.metadata.TokenMap
+import com.datastax.oss.driver.api.core.metadata.token.{TokenRange => DriverTokenRange}
+
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
-
+import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.Logging
-
-import com.datastax.driver.core.{Metadata, TokenRange => DriverTokenRange}
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
+
 
 /** Creates CassandraPartitions for given Cassandra table */
 private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
@@ -24,19 +27,28 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
-  private val keyspaceName = tableDef.keyspaceName
+  private val keyspaceName = CqlIdentifier.fromCql(tableDef.keyspaceName) // TODO Lets fix all this later
 
-  private def tokenRange(range: DriverTokenRange, metadata: Metadata): TokenRange = {
-    val startToken = tokenFactory.tokenFromString(range.getStart.getValue.toString)
-    val endToken = tokenFactory.tokenFromString(range.getEnd.getValue.toString)
-    val replicas = metadata.getReplicas(Metadata.quote(keyspaceName), range).map(_.getAddress).toSet
+
+  private def tokenRange(range: DriverTokenRange, metadata: TokenMap): TokenRange = {
+
+    val startToken = tokenFactory.tokenFromString(metadata.format(range.getStart))
+    val endToken = tokenFactory.tokenFromString(metadata.format(range.getEnd))
+    val replicas = metadata
+      .getReplicas(keyspaceName, range)
+      .map(node =>
+        toOption(node.getBroadcastAddress)
+          .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
+      .map(_.getAddress)
+      .toSet
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }
 
   private[partitioner] def describeRing: Seq[TokenRange] = {
-    val ranges = connector.withClusterDo { cluster =>
-      val metadata = cluster.getMetadata
-      for (tr <- metadata.getTokenRanges.toSeq) yield tokenRange(tr, metadata)
+    val ranges = connector.withSessionDo { session =>
+      val tokenMap = Option(session.getMetadata.getTokenMap.get)
+        .getOrElse(throw new IllegalStateException("Unable to determine Token Range Metadata"))
+      for (tr <- tokenMap.getTokenRanges()) yield tokenRange(tr, tokenMap)
     }
 
     /**
@@ -46,7 +58,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     if (splitCount == 1) {
       Seq(ranges.head.copy[V, T](tokenFactory.minToken, tokenFactory.minToken))
     } else {
-      ranges
+      ranges.toSeq
     }
   }
 

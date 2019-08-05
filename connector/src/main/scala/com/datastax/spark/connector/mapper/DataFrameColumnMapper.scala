@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.ColumnType
@@ -16,7 +16,7 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
 
     val columns = structType.zipWithIndex.map { case (field, i) => {
       val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn

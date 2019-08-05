@@ -4,12 +4,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.LongAdder
 
 import com.codahale.metrics.Timer.Context
-import org.apache.spark.executor.{DataWriteMethod, OutputMetrics}
-import org.apache.spark.TaskContext
-
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer.{RichStatement, WriteConf}
-import com.datastax.spark.connector.util.Logging
+import org.apache.spark.TaskContext
+import org.apache.spark.executor.OutputMetrics
 
 /** A trait that provides a method to update write metrics which are collected for connector related tasks.
   * The appropriate instance is created by the companion object.

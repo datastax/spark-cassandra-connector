@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.{StructDef, TableDef}
 
@@ -41,7 +41,7 @@ trait ColumnMapper[T] {
   def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED): TableDef
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef
 
 }
 

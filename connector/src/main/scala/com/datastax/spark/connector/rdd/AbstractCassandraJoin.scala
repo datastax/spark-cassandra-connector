@@ -3,6 +3,8 @@ package com.datastax.spark.connector.rdd
 import java.util.concurrent.Future
 
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{PreparedStatement, Row, SimpleStatement}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.CassandraLimit._
@@ -10,7 +12,6 @@ import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPred
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
-
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
@@ -33,7 +34,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
   implicit val rowWriterFactory: RowWriterFactory[L]
 
   private[rdd] def fetchIterator(
-    session: Session,
+    session: CqlSession,
     bsb: BoundStatementBuilder[L],
     rowMetadata: CassandraRowMetadata,
     lastIt: Iterator[L],
@@ -160,18 +161,20 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     query
   }
 
-  private def getPreparedStatement(session: Session): PreparedStatement = {
-    session.prepare(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel).setIdempotent(true)
+  private def getPreparedStatement(session: CqlSession): PreparedStatement = {
+    val stmt = SimpleStatement.newInstance(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel).setIdempotent(true)
+    session.prepare(stmt)
   }
 
-  private def getCassandraRowMetadata(session: Session) = {
+  private def getCassandraRowMetadata(session: CqlSession): CassandraRowMetadata = {
+    val codecRegistry = session.getContext.getCodecRegistry
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
-    val id = getPreparedStatement(session).getPreparedId
-    CassandraRowMetadata.fromPreparedId(columnNames, id, session)
+    val statement = getPreparedStatement(session)
+    CassandraRowMetadata.fromPreparedStatement(columnNames, statement, codecRegistry)
   }
 
-  private[rdd] def boundStatementBuilder(session: Session): BoundStatementBuilder[L] = {
-    val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+  private[rdd] def boundStatementBuilder(session: CqlSession): BoundStatementBuilder[L] = {
+    val protocolVersion = session.getContext.getProtocolVersion
     val stmt = getPreparedStatement(session)
     new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
   }

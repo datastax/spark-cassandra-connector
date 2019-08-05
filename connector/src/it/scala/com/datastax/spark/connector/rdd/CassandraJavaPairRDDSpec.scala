@@ -17,50 +17,52 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase with Default
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    try {
-      createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      try {
+        createKeyspace(session)
 
-      awaitAll(
-        Future {
-          session.execute(s"CREATE TABLE $ks.test_table_1 (key TEXT, key2 TEXT, value INT, PRIMARY KEY (key, key2))")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'x', 1)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'y', 2)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'z', 3)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'x', 4)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'y', 5)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'z', 6)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'x', 7)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'y', 8)")
-          session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'z', 9)")
-        },
-         Future {
-          session.execute(s"CREATE TABLE $ks.test_table_2 (key TEXT, key2 TEXT, value INT, PRIMARY KEY (key, key2))")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'x', 1)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'y', 2)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'z', 3)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'x', 4)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'y', 5)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'z', 6)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'x', 7)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'y', 8)")
-          session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'z', 9)")
-        },
+        awaitAll(
+          Future {
+            session.execute(s"CREATE TABLE $ks.test_table_1 (key TEXT, key2 TEXT, value INT, PRIMARY KEY (key, key2))")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'x', 1)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'y', 2)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('a', 'z', 3)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'x', 4)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'y', 5)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('b', 'z', 6)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'x', 7)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'y', 8)")
+            session.execute(s"INSERT INTO $ks.test_table_1 (key, key2, value) VALUES ('c', 'z', 9)")
+          },
+          Future {
+            session.execute(s"CREATE TABLE $ks.test_table_2 (key TEXT, key2 TEXT, value INT, PRIMARY KEY (key, key2))")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'x', 1)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'y', 2)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('a', 'z', 3)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'x', 4)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'y', 5)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('b', 'z', 6)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'x', 7)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'y', 8)")
+            session.execute(s"INSERT INTO $ks.test_table_2 (key, key2, value) VALUES ('c', 'z', 9)")
+          },
 
-        Future {
-          session.execute(s"CREATE TABLE IF NOT EXISTS $ks.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 10, '1010')")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 11, '1011')")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 12, '1012')")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')")
-          session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')")
-        }
-      )
-    } catch {
-      case ex: Exception =>
-        ex.printStackTrace(System.err)
-        throw ex
+          Future {
+            session.execute(s"CREATE TABLE IF NOT EXISTS $ks.wide_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 10, '1010')")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 11, '1011')")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (10, 12, '1012')")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 20, '2020')")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 21, '2021')")
+            session.execute(s"INSERT INTO $ks.wide_rows(key, group, value) VALUES (20, 22, '2022')")
+          }
+        )
+      } catch {
+        case ex: Exception =>
+          ex.printStackTrace(System.err)
+          throw ex
+      }
     }
   }
 

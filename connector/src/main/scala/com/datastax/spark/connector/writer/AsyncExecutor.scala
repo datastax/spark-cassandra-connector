@@ -1,23 +1,27 @@
 package com.datastax.spark.connector.writer
 
-import java.util.concurrent.Semaphore
+import java.util.concurrent.{CompletionStage, Semaphore}
+import java.util.function.BiConsumer
 
 import com.datastax.spark.connector.util.Logging
-import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture, SettableFuture}
 
-import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
+import scala.collection.concurrent.TrieMap
 import scala.util.Try
 import AsyncExecutor.Handler
-import com.datastax.driver.core.exceptions.{BusyPoolException, NoHostAvailableException, OverloadedException}
+import com.datastax.oss.driver.api.core.AllNodesFailedException
+import com.datastax.oss.driver.api.core.connection.BusyConnectionException
+import com.datastax.oss.driver.api.core.servererrors.OverloadedException
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future, Promise}
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
-class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTasks: Int,
+class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTasks: Int,
                           successHandler: Option[Handler[T]] = None, failureHandler: Option[Handler[T]]) extends Logging {
 
   private val semaphore = new Semaphore(maxConcurrentTasks)
-  private val pendingFutures = new TrieMap[ListenableFuture[R], Boolean]
-  private val BackpressureOverload = "Request dropped due to backpressure overload"
+  private val pendingFutures = new TrieMap[Future[R], Boolean]
 
   @volatile private var latestException: Option[Throwable] = None
 
@@ -27,51 +31,55 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
   def getLatestException(): Option[Throwable] = latestException
 
   /** Executes task asynchronously or blocks if more than `maxConcurrentTasks` limit is reached */
-  def executeAsync(task: T): ListenableFuture[R] = {
+  def executeAsync(task: T): Future[R] = {
     val submissionTimestamp = System.nanoTime()
     semaphore.acquire()
 
-    val settable = SettableFuture.create[R]()
-    pendingFutures.put(settable, true)
+    val promise = Promise[R]()
+    pendingFutures.put(promise.future, true)
 
     val executionTimestamp = System.nanoTime()
 
-    def tryFuture(): SettableFuture[R] = {
-      val future = asyncAction(task)
+    def tryFuture(): Future[R] = {
+      val value = asyncAction(task)
 
-      Futures.addCallback(future, new FutureCallback[R] {
-        def release() {
+      value.whenComplete(new BiConsumer[R, Throwable] {
+        private def release() {
           semaphore.release()
-          pendingFutures.remove(settable)
+          pendingFutures.remove(promise.future)
         }
 
-        def onSuccess(result: R) {
+        private def onSuccess(result: R) {
           release()
-          settable.set(result)
+          promise.success(result)
           successHandler.foreach(_ (task, submissionTimestamp, executionTimestamp))
         }
 
-        def onFailure(throwable: Throwable) {
+        private def onFailure(throwable: Throwable) {
           throwable match {
-            case nHAE: NoHostAvailableException if nHAE.getErrors.asScala.values.exists(_.isInstanceOf[BusyPoolException]) =>
-              logTrace("BusyPoolException ... Retrying")
+            case e: AllNodesFailedException if e.getErrors.asScala.values.exists(_.isInstanceOf[BusyConnectionException]) =>
+              logTrace("BusyConnectionException ... Retrying")
               tryFuture()
-
-            case oE: OverloadedException if oE.getMessage.contains(BackpressureOverload) =>
+            case e: OverloadedException =>
               logTrace("Backpressure rejection ... Retrying")
               tryFuture()
 
             case otherException =>
-              logError("Failed to execute: " + task, throwable)
+              logError("Failed to execute: " + task, otherException)
               latestException = Some(throwable)
               release()
-              settable.setException(throwable)
+              promise.failure(throwable)
               failureHandler.foreach(_ (task, submissionTimestamp, executionTimestamp))
           }
         }
+
+        override def accept(r: R, t: Throwable): Unit = {
+          Option(t).foreach(onFailure)
+          Option(r).foreach(onSuccess)
+        }
       })
 
-      settable
+      promise.future
     }
 
     tryFuture()
@@ -82,7 +90,7 @@ class AsyncExecutor[T, R](asyncAction: T => ListenableFuture[R], maxConcurrentTa
     * nor tasks for which the [[executeAsync]] method did not complete. */
   def waitForCurrentlyExecutingTasks() {
     for ((future, _) <- pendingFutures.snapshot())
-      Try(future.get())
+      Try(Await.result(future, Duration.Inf))
   }
 }
 

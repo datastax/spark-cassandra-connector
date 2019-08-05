@@ -8,7 +8,7 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.LinkedTransferQueue
 
-import com.datastax.driver.core.Session
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -20,10 +20,6 @@ import org.scalatest.concurrent.Eventually
 
 class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM {
 
-  //import com.datastax.bdp.test.ng.DseAnalyticsTestUtils._
-
-  //YamlClientConfiguration.setAsClientConfigurationImpl()
-
   val ourSc = new SparkContext(
     super.defaultConf
       .clone()
@@ -32,8 +28,8 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .setAppName(getClass.getSimpleName)
   )
 
-  override def afterClass(): Unit = {
-    super.afterClass()
+  override def afterClass: Unit = {
+    super.afterClass
     ourSc.stop()
   }
 
@@ -51,7 +47,7 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     }
   }
 
-  def makeTables(session: Session): Unit = {
+  def makeTables(session: CqlSession): Unit = {
     session.execute(
       s"""
          |CREATE TABLE IF NOT EXISTS $ks.leftjoin (
@@ -144,8 +140,10 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       stagesMetrics.size() should be(1)
     }
     val metrics = stagesMetrics.poll()
-    metrics.outputMetrics.recordsWritten should be(200)
-    metrics.outputMetrics.bytesWritten should be(200 * 8)
+    Eventually.eventually {
+      metrics.outputMetrics.recordsWritten should be(200)
+      metrics.outputMetrics.bytesWritten should be(200 * 8)
+    }
   }
 }
 

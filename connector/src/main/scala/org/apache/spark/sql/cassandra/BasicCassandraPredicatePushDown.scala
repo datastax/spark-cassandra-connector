@@ -1,7 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.driver.core.ProtocolVersion
-import com.datastax.driver.core.ProtocolVersion._
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.types.TimeUUIDType
 
@@ -31,9 +30,9 @@ import com.datastax.spark.connector.types.TimeUUIDType
 class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   predicates: Set[Predicate],
   table: TableDef,
-  pv: ProtocolVersion = ProtocolVersion.NEWEST_SUPPORTED) {
+  pv: ProtocolVersion = ProtocolVersion.DEFAULT) {
 
-  val pvOrdering = implicitly[Ordering[ProtocolVersion]]
+  val pvOrdering = Ordering.fromLessThan[ProtocolVersion]((a,b) => a.getCode < b.getCode)
   import pvOrdering._
 
   private val Predicates = implicitly[PredicateOps[Predicate]]
@@ -87,7 +86,7 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   /** Evaluates set of columns used in equality predicates and set of columns use in 'in' predicates.
     * Evaluation is based on protocol version. */
   private def partitionKeyPredicateColumns(pv: ProtocolVersion): (Seq[String], Seq[String]) = {
-    if (pv < ProtocolVersion.V4) {
+    if (pv < DefaultProtocolVersion.V4) {
       val (eqColumns, otherColumns) = partitionKeyColumns.span(eqPredicatesByName.contains)
       (eqColumns, otherColumns.headOption.toSeq.filter(inPredicatesByName.contains))
     } else {
@@ -149,7 +148,7 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
 
   /** Selects clustering key predicates for pushdown based on protocol version */
   private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
-    if (pv < ProtocolVersion.V4) {
+    if (pv < DefaultProtocolVersion.V4) {
       clusteringColumnPredicatesToPushDownPriorV4()
     } else {
       clusteringColumnPredicatesToPushDownFromV4()
@@ -168,7 +167,7 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
     val eqIndexedColumns = indexedColumns.filter(eqPredicatesByName.contains)
     //No Partition Key Equals Predicates In PV < 4
     val eqIndexedPredicates = eqIndexedColumns
-      .filter{ c => pv >= V4 || !partitionKeyColumns.contains(c)}
+      .filter{ c => pv >= DefaultProtocolVersion.V4 || !partitionKeyColumns.contains(c)}
       .flatMap(eqPredicatesByName)
 
     // Don't include partition predicates in nonIndexedPredicates if partition predicates can't

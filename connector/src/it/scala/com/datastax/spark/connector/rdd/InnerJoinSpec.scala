@@ -6,7 +6,7 @@
 
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.Session
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -26,7 +26,7 @@ class InnerJoinSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     }
   }
 
-  def makeSimpleJoinTables(session: Session): Unit = {
+  def makeSimpleJoinTables(session: CqlSession): Unit = {
     session.execute(
       s"""CREATE TABLE IF NOT EXISTS $ks.leftjoin( key INT, foo TEXT, PRIMARY KEY
          |(key))""".stripMargin)
@@ -43,7 +43,7 @@ class InnerJoinSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     }
   }
 
-  def makeComplexJoinTables(session: Session): Unit = {
+  def makeComplexJoinTables(session: CqlSession): Unit = {
     session.execute(
       s"""CREATE TABLE IF NOT EXISTS $ks.complexleftjoin
          |(key1 INT, key2 INT, c TEXT, foo TEXT, PRIMARY KEY ((key1, key2), c))""".stripMargin)

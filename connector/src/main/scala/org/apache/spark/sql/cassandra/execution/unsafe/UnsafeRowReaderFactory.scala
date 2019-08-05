@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra.execution.unsafe
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}

@@ -120,8 +120,8 @@ implicit
   override def getPartition(key: Any): Int = {
     key match {
       case x: Key =>
-        val driverToken = tokenGenerator.getTokenFor(x)
-        val connectorToken = tokenFactory.tokenFromString(driverToken.getValue.toString)
+        val driverToken = tokenGenerator.getStringTokenFor(x)
+        val connectorToken = tokenFactory.tokenFromString(driverToken)
         tokenRangeLookupTable.rangesContaining(connectorToken).head.partitionIndex
       case other =>
         throw new IllegalArgumentException(s"Couldn't determine the key from object $other")

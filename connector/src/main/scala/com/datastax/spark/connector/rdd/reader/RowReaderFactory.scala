@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd.reader
 
 import java.io.Serializable
 
-import com.datastax.driver.core.Row
+import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper

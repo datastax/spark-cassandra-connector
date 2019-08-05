@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.repl
 
-import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -11,16 +10,16 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
 
   override lazy val conn = CassandraConnector(defaultConf)
 
-  conn.withSessionDo { session =>
-    createKeyspace(session)
+  override def beforeClass {
+    conn.withSessionDo { session =>
+      createKeyspace(session)
 
-    session.execute(s"CREATE TABLE IF NOT EXISTS $ks.simple_kv (key INT, value TEXT, PRIMARY KEY (key))")
-    session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (1, '0001')")
-    session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (2, '0002')")
-    session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')")
+      session.execute(s"CREATE TABLE IF NOT EXISTS $ks.simple_kv (key INT, value TEXT, PRIMARY KEY (key))")
+      session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (1, '0001')")
+      session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (2, '0002')")
+      session.execute(s"INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')")
+    }
   }
-
-  val connectorString = s"""implicit val cassandraConnector = CassandraConnector(Set(InetAddress.getByName("${testCluster.getConnectionHost}")), ${testCluster.getConnectionPort})"""
 
   it should "allow to read a Cassandra table as Array of Scala class objects in REPL" in {
     val output = SparkRepl.runInterpreter(
@@ -29,7 +28,6 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         |import com.datastax.spark.connector.cql.CassandraConnector
         |import java.net.InetAddress
         |
-        |$connectorString
         |
         |case class SampleScalaCaseClass(key: Int, value: String)
         |val cnt1 = sc.cassandraTable[SampleScalaCaseClass]("$ks", "simple_kv").collect.length
@@ -62,7 +60,7 @@ class CassandraRDDReplSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         |  case class ClassInObject(key: Int, value: String)
         |}
         |val cnt7 = sc.cassandraTable[SampleObject.ClassInObject]("$ks", "simple_kv").collect.length
-      """.stripMargin, SparkTemplate.defaultConf)
+      """.stripMargin, defaultConf)
     output should not include "error:"
     output should not include "Exception"
     output should include("cnt1: Int = 3")

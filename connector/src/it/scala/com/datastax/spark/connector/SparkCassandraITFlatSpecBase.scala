@@ -1,13 +1,16 @@
 package com.datastax.spark.connector
 
+import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.util.concurrent.Executors
 
-import com.datastax.driver.core.{ProtocolVersion, Session}
-import com.datastax.spark.connector.cluster.ConnectionProvider
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
+import com.datastax.spark.connector.cluster.ClusterProvider
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate
 import com.datastax.spark.connector.testkit.AbstractSpec
+import com.datastax.spark.connector.util.Logging
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest._
@@ -17,6 +20,7 @@ import org.scalatest.time.{Seconds, Span}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Try
 
 trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase {
   override def report(message: String): Unit = info
@@ -29,14 +33,15 @@ trait SparkCassandraITAbstractSpecBase extends AbstractSpec with SparkCassandraI
 }
 
 trait SparkCassandraITSpecBase
-  extends Suite
+  extends TestSuite
   with Matchers
   with BeforeAndAfterAll
-  with ConnectionProvider {
+  with ClusterProvider
+  with Logging {
 
   final def defaultConf: SparkConf = {
     SparkTemplate.defaultConf
-      .setAll(connectionParameters)
+      .setAll(cluster.connectionParameters)
   }
   final def sparkConf = defaultConf
 
@@ -46,18 +51,43 @@ trait SparkCassandraITSpecBase
 
   val originalProps = sys.props.clone()
 
-  final override def beforeAll(): Unit = {
-    initHiveMetastore()
-    beforeClass()
+  private  def isSerializable(e: Throwable): Boolean =
+    Try(new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(e)).isSuccess
+
+  // Exceptions thrown by test code are serialized and sent back to test framework main process.
+  // Unserializable exceptions break communication between forked test and main test process".
+  private def wrapUnserializableExceptions[T](f: => T): T = {
+    try {
+      f
+    } catch {
+      case e: Throwable =>
+        if (isSerializable(e)) {
+          throw e
+        } else {
+          logError(s"$this failed due to unserializable exception", e)
+          throw new java.io.NotSerializableException(s"Unserializable exception was thrown by $this. The exception " +
+            s"message was: ${ExceptionUtils.getMessage(e)}, with root cause: ${ExceptionUtils.getRootCauseMessage(e)}." +
+            s"Full stack trace should be logged above.")
+        }
+    }
   }
 
-  def beforeClass(): Unit = {}
+  final override def beforeAll(): Unit = wrapUnserializableExceptions {
+    initHiveMetastore()
+    beforeClass
+  }
 
-  def afterClass(): Unit = {}
+  def beforeClass: Unit = {}
 
-  final override def afterAll(): Unit = {
-    afterClass()
+  def afterClass: Unit = {}
+
+  final override def afterAll(): Unit = wrapUnserializableExceptions {
+    afterClass
     restoreSystemProps()
+  }
+
+  override def withFixture(test: NoArgTest): Outcome = wrapUnserializableExceptions {
+    super.withFixture(test)
   }
 
   def getKsName = {
@@ -88,25 +118,25 @@ trait SparkCassandraITSpecBase
     }
   }
 
-  def pv = conn.withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+  def pv = conn.withSessionDo(_.getContext.getProtocolVersion)
 
   def report(message: String): Unit = {}
 
   val ks = getKsName
 
   def skipIfProtocolVersionGTE(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
-    if (!(pv.toInt >= protocolVersion.toInt)) f
+    if (!(pv.getCode >= protocolVersion.getCode)) f
     else report(s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
   }
 
   def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
-    if (!(pv.toInt < protocolVersion.toInt)) f
+    if (!(pv.getCode < protocolVersion.getCode)) f
     else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
   }
 
   implicit val ec = SparkCassandraITSpecBase.ec
 
-  def awaitAll(units: Future[Unit]*): Unit = {
+  def awaitAll[T](units: Future[T]*): Seq[T] = {
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
@@ -117,7 +147,7 @@ trait SparkCassandraITSpecBase
        |AND durable_writes = false
        |""".stripMargin
 
-  def createKeyspace(session: Session, name: String = ks): Unit = {
+  def createKeyspace(session: CqlSession, name: String = ks): Unit = {
     session.execute(s"DROP KEYSPACE IF EXISTS $name")
     session.execute(keyspaceCql(name))
   }
@@ -130,10 +160,9 @@ trait SparkCassandraITSpecBase
     eventually(timeout(Span(2, Seconds))) {
       conn.withSessionDo(session =>
         session
-          .getCluster
           .getMetadata
-          .getKeyspace(ks)
-          .getTables()
+          .getKeyspace(ks).get()
+          .getTables().keySet()
           .containsAll(tableNames.asJava)
       )
     }

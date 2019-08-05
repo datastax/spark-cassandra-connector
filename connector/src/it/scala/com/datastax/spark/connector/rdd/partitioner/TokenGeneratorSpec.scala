@@ -1,6 +1,8 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import com.datastax.driver.core.Token
+import java.util.concurrent.CompletableFuture
+
+import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.writer.RowWriterFactory
@@ -29,18 +31,18 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
     val complexPS = session.prepare(s"INSERT INTO $ks.complex (key1, key2, key3) VALUES (?, ?, ?)")
     val insertFutures =
       simpleKeys.map( simpleKey =>
-        session.executeAsync(simplePS.bind(simpleKey.key: java.lang.Integer))) ++
+        session.executeAsync(simplePS.bind(simpleKey.key: java.lang.Integer)).toCompletableFuture) ++
       complexKey.map( complexKey =>
         session.executeAsync(complexPS.bind(
           complexKey.key1: java.lang.Integer,
           complexKey.key2: java.lang.Integer,
-          complexKey.key3: java.lang.String)))
-    insertFutures.map(_.get())
+          complexKey.key3: java.lang.String)).toCompletableFuture)
+    CompletableFuture.allOf(insertFutures: _*)
   }
 
   val simpleTokenMap: Map[SimpleKey, Token] = conn.withSessionDo { session =>
     val resultSet = session.execute(s"SELECT key, TOKEN(key) FROM $ks.simple").all()
-    resultSet.map(row => SimpleKey(row.getInt("key")) -> row.getPartitionKeyToken).toMap
+    resultSet.map(row => SimpleKey(row.getInt("key")) -> row.getToken("system.TOKEN(key)")).toMap
   }
 
   val complexTokenMap: Map[ComplexKey, Token] = conn.withSessionDo { session =>
@@ -49,7 +51,8 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
       .all()
 
     resultSet.map(row =>
-      ComplexKey(row.getInt("key1"), row.getInt("key2"), row.getString("key3")) -> row.getPartitionKeyToken
+      ComplexKey(row.getInt("key1"), row.getInt("key2"), row.getString("key3")) ->
+        row.getToken("system.TOKEN(key1, key2, key3)")
     ).toMap
   }
 

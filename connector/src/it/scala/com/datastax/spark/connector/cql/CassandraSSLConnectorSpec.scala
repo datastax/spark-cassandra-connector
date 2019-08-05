@@ -5,13 +5,12 @@ import com.datastax.spark.connector.cluster.SSLCluster
 
 class CassandraSSLConnectorSpec extends SparkCassandraITFlatSpecBase with SSLCluster {
 
-  override def conn = CassandraConnector(defaultConf)
+  override lazy val conn = CassandraConnector(defaultConf)
 
   "A CassandraConnector" should "be able to use a secure connection when using native protocol" in {
     conn.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
-      assert(session.getCluster.getMetadata.getClusterName === testCluster.name)
     }
   }
 

@@ -5,8 +5,10 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.driver.core.*;
-
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import io.netty.util.internal.StringUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
@@ -29,9 +31,9 @@ public class HiveMetastoreMigrateTool
     private final static int EXIT_SUCCESS = 0;
     private final static int EXIT_FAILURE = 1;
 
-    public void migrate(String from, String to, Session session, PrintStream out, Configuration conf) throws MetaException, InvalidObjectException
+    public void migrate(String from, String to, CqlSession session, PrintStream out, Configuration conf) throws MetaException, InvalidObjectException
     {
-        String currentRelease = HiveMetaStoreVersionUtil.getDSEVersion(session.getCluster()).toString();
+        String currentRelease = HiveMetaStoreVersionUtil.getDSEVersion(session).toString();
 
         if (StringUtil.isNullOrEmpty(to))
         {
@@ -104,7 +106,7 @@ public class HiveMetastoreMigrateTool
         System.exit(EXIT_SUCCESS);
     }
 
-    private void migrate(String from, String to, Session session, String metastoreTable)
+    private void migrate(String from, String to, CqlSession session, String metastoreTable)
     {
         String fromPrefix;
         String toPrefix;
@@ -143,7 +145,7 @@ public class HiveMetastoreMigrateTool
             Row row = rows.next();
             String key = row.getString("key");
             String entity = row.getString("entity");
-            ByteBuffer value = row.getBytes("value");
+            ByteBuffer value = row.getByteBuffer("value");
             if (startWith(key, fromPrefix))
                 insert(session, insertStmt, replace(key, fromPrefix, toPrefix), entity, value);
         }
@@ -165,14 +167,10 @@ public class HiveMetastoreMigrateTool
             return toPrefix + key;
     }
 
-    private void insert(Session session, PreparedStatement insertStmt, String key, String entity, ByteBuffer value)
+    private void insert(CqlSession session, PreparedStatement insertStmt, String key, String entity, ByteBuffer value)
     {
         logger.info(String.format("Insert key: %s, entity: %s with CAS", key, entity));
-        BoundStatement bs = new BoundStatement(insertStmt);
-        bs.setString(0, key);
-        bs.setString(1, entity);
-        bs.setBytesUnsafe(2, value);
-        session.execute(bs);
+        session.execute(insertStmt.bind(key, entity, value));
     }
 
     private int versionValue(String[] subVersion)

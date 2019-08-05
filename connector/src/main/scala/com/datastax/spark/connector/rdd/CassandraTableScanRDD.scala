@@ -3,6 +3,8 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 
 import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.CassandraLimit._
@@ -304,19 +306,19 @@ class CassandraTableScanRDD[R] private[connector](
     (queryTemplate, queryParamValues)
   }
 
-  private def createStatement(session: Session, cql: String, values: Any*): Statement = {
+  private def createStatement(session: CqlSession, cql: String, values: Any*): BoundStatement = {
     try {
-      val stmt = session.prepare(cql).setIdempotent(true)
-      stmt.setConsistencyLevel(consistencyLevel)
-      val converters = stmt.getVariables
+      val stmt = session.prepare(cql)
+      val converters = stmt.getVariableDefinitions
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =
         for ((value, converter) <- values zip converters)
         yield converter.convert(value)
-      val bstm = stmt.bind(convertedValues: _*)
-      bstm.setFetchSize(fetchSize)
-      bstm
+      stmt.bind(convertedValues: _*)
+        .setIdempotent(true)
+        .setConsistencyLevel(consistencyLevel)
+        .setPageSize(fetchSize)
     }
     catch {
       case t: Throwable =>
@@ -337,9 +339,10 @@ class CassandraTableScanRDD[R] private[connector](
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, cql, values: _*)
-    val replicaAwareStmt = new ReplicaAwareStatement(stmt, range.range.replicas)
+      .setRoutingToken(range.range.startNativeToken())
+
     try {
-      val scanResult = scanner.scan(replicaAwareStmt)
+      val scanResult = scanner.scan(stmt)
       val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
       val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
       logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
@@ -351,7 +354,7 @@ class CassandraTableScanRDD[R] private[connector](
   }
 
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
-    val partition = split.asInstanceOf[CassandraPartition[_, _]]
+    val partition = split.asInstanceOf[CassandraPartition[Any, _ <: ConnectorToken[Any]]]
     val tokenRanges = partition.tokenRanges
     val metricsUpdater = InputMetricsUpdater(context, readConf)
 
@@ -362,11 +365,10 @@ class CassandraTableScanRDD[R] private[connector](
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    val rowIterator = tokenRanges.iterator.flatMap(
-      fetchTokenRange(scanner, _: CqlTokenRange[_, _], metricsUpdater))
+    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(scanner, _, metricsUpdater))
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
-    context.addTaskCompletionListener { (context) =>
+    context.addTaskCompletionListener { _ =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(f"Fetched ${countingIterator.count} rows from $keyspaceName.$tableName " +
         f"for partition ${partition.index} in $duration%.3f s.")

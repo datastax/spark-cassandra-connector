@@ -11,7 +11,6 @@ class CassandraSSLClientAuthConnectorSpec extends SparkCassandraITFlatSpecBase w
     conn.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
-      assert(session.getCluster.getMetadata.getClusterName === testCluster.name)
     }
   }
 

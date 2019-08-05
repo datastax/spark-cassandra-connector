@@ -28,8 +28,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
   implicit
     connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
 
-    val protocolVersion = connector.
-      withClusterDo(_.getConfiguration.getProtocolOptions.getProtocolVersion)
+    val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     val rawTable = TableDef.fromDataset(dataset, keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName

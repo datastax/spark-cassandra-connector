@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.writer
 
-import com.datastax.driver.core.ConsistencyLevel
-import com.datastax.spark.connector.{RowsInBatch, BytesInBatch}
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel
+import com.datastax.spark.connector.{BytesInBatch, RowsInBatch}
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -28,7 +28,7 @@ class WriteConfTest extends FlatSpec with Matchers {
       .set("spark.cassandra.output.consistency.level", "THREE")
     val writeConf = WriteConf.fromSparkConf(conf)
 
-    writeConf.consistencyLevel should be(ConsistencyLevel.THREE)
+    writeConf.consistencyLevel should be(DefaultConsistencyLevel.THREE)
   }
 
   it should "allow to set parallelism level" in {

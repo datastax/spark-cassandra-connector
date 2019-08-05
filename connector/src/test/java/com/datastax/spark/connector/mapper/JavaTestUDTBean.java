@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.mapper;
 
-import com.datastax.driver.mapping.annotations.Field;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 
 import java.io.Serializable;
 
@@ -11,9 +11,9 @@ import java.io.Serializable;
  */
 public class JavaTestUDTBean implements Serializable {
     public Integer field;
-    @Field(name = "cassandra_another_field")
+    @CqlName(value = "cassandra_another_field")
     public Integer anotherField;
-    @Field(name = "cassandra_yet_another_field")
+    @CqlName(value = "cassandra_yet_another_field")
     public Integer completelyUnrelatedField;
 
     public Integer getField() {

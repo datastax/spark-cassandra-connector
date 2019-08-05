@@ -1,17 +1,18 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.{ResultSet, Session}
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
-import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
+import com.google.common.util.concurrent.SettableFuture
+import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 
-import com.datastax.spark.connector.util.maybeExecutingAs
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
-
-import org.apache.spark.metrics.InputMetricsUpdater
+import scala.util.{Failure, Success}
 
 /**
  * An [[org.apache.spark.rdd.RDD RDD]] that will do a selecting join between `left` RDD and the specified
@@ -116,7 +117,7 @@ class CassandraJoinRDD[L, R] (
   }
 
   private[rdd] def fetchIterator(
-    session: Session,
+    session: CqlSession,
     bsb: BoundStatementBuilder[L],
     rowMetadata: CassandraRowMetadata,
     leftIterator: Iterator[L],
@@ -130,21 +131,19 @@ class CassandraJoinRDD[L, R] (
       val resultFuture = SettableFuture.create[Iterator[(L, R)]]
       val leftSide = Iterator.continually(left)
 
-      val queryFuture = queryExecutor.executeAsync(maybeExecutingAs(bsb.bind(left), readConf.executeAs))
-      Futures.addCallback(queryFuture, new FutureCallback[ResultSet] {
-        def onSuccess(rs: ResultSet) {
-          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
+      queryExecutor.executeAsync(bsb.bind(left).executeAs(readConf.executeAs)).onComplete {
+        case Success(rs) =>
+          val resultSet = new PrefetchingResultSetIterator(ResultSets.newInstance(rs), fetchSize)
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
           /* This is a much less than ideal place to actually rate limit, we are buffering
           these futures this means we will most likely exceed our threshold*/
           val throttledIterator = iteratorWithMetrics.map(maybeRateLimit)
           val rightSide = throttledIterator.map(rowReader.read(_, rowMetadata))
           resultFuture.set(leftSide.zip(rightSide))
-        }
-        def onFailure(throwable: Throwable) {
+        case Failure(throwable) =>
           resultFuture.setException(throwable)
-        }
-      })
+      }(ExecutionContext.Implicits.global) // TODO: use dedicated context, use Future down the road, remove SettableFuture
+
       resultFuture
     }
 

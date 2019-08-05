@@ -2,8 +2,8 @@ package com.datastax.spark.connector.rdd.typeTests
 
 import java.nio.ByteBuffer
 
-import com.datastax.driver.core.utils.Bytes
-import com.datastax.spark.connector.CassandraRow
+import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.protocol.internal.util.Bytes
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 import scala.collection.JavaConverters._
@@ -26,8 +26,8 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
 
   override def convertToDriverInsertable(testValue: Array[Byte]): ByteBuffer = ByteBuffer.wrap(testValue)
 
-  override def getDriverColumn(row: com.datastax.driver.core.Row, colName: String): Array[Byte] = {
-    row.getBytes(colName).array()
+  override def getDriverColumn(row: Row, colName: String): Array[Byte] = {
+    row.getByteBuffer(colName).array()
   }
 
   /*We need to override checks because of the Array not working with contains, so instead we convert

@@ -5,7 +5,11 @@
  */
 package com.datastax.bdp.hadoop.hive.metastore;
 
-import com.datastax.driver.core.*;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import org.apache.hadoop.hive.metastore.api.*;
 import org.apache.thrift.*;
@@ -33,7 +37,6 @@ public class MetaStorePersister
     private TSerializer serializer;
     private TDeserializer deserializer;
     private CassandraConnector cc;
-    private Cluster externalCluster;
     private String dseVersion;
     private Integer hiveMetaStoreVersion;
 
@@ -51,13 +54,14 @@ public class MetaStorePersister
 
     private static WeakHashMap<CassandraClientConfiguration, MetaStorePersister> metaStorePersisterInstanceCache = new WeakHashMap<>();
 
-    public static synchronized MetaStorePersister getInstance(CassandraClientConfiguration clientConfiguration,
-                                                              Cluster externalCluster)
+    public static synchronized MetaStorePersister getInstance(
+            CassandraClientConfiguration clientConfiguration,
+            CassandraConnector connector)
     {
         MetaStorePersister persister = metaStorePersisterInstanceCache.get(clientConfiguration);
         if (persister == null)
         {
-            persister = new MetaStorePersister(clientConfiguration, externalCluster);
+            persister = new MetaStorePersister(clientConfiguration, connector);
             metaStorePersisterInstanceCache.put(clientConfiguration, persister);
         } else {
             // update config with latest hadoop related changes
@@ -66,13 +70,12 @@ public class MetaStorePersister
         return persister;
     }
 
-    private MetaStorePersister(CassandraClientConfiguration configuration, Cluster externalCluster)
+    private MetaStorePersister(CassandraClientConfiguration configuration, CassandraConnector connector)
     {
         this.configuration = configuration;
-        this.cc = SchemaManagerService.getCassandraConnector(configuration);
-        this.externalCluster = externalCluster;
+        this.cc = connector;
 
-        this.dseVersion = cc.withClusterDo(asScalaFunction(HiveMetaStoreVersionUtil::getDSEVersion)).toString();
+        this.dseVersion = cc.withSessionDo(asScalaFunction(HiveMetaStoreVersionUtil::getDSEVersion)).toString();
         this.hiveMetaStoreVersion = HiveMetaStoreVersionUtil.getHiveMetastoreVersion(dseVersion);
     }
 
@@ -87,10 +90,13 @@ public class MetaStorePersister
         cc.jWithSessionDo(session -> {
             try
             {
-                return session.execute(
-                        String.format(insertQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily()),
-                        versionedName(databaseName.toLowerCase()),
-                        buildEntityColumnName(base), ByteBuffer.wrap(serializer.serialize(base)));
+                String query = String.format(insertQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily());
+                SimpleStatementBuilder builder = new SimpleStatementBuilder(query)
+                    .addPositionalValue(versionedName(databaseName.toLowerCase()))
+                    .addPositionalValue(buildEntityColumnName(base))
+                    .addPositionalValue(ByteBuffer.wrap(serializer.serialize(base)));
+
+                return session.execute(builder.build());
             }
             catch (Exception e)
             {
@@ -107,17 +113,20 @@ public class MetaStorePersister
         deserializer = new TDeserializer();
 
         String entity = buildEntityColumnName(base);
-        ResultSet result = cc.jWithSessionDo( session ->
-                session.execute(
-                        String.format(selectQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily()),
-                        versionedName(databaseName.toLowerCase()),
-                        entity));
+        ResultSet result = cc.jWithSessionDo(session -> {
+            String query = String.format(selectQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily());
+            SimpleStatementBuilder builder = new SimpleStatementBuilder(query)
+                .addPositionalValue(versionedName(databaseName.toLowerCase()))
+                .addPositionalValue(entity);
+
+            return session.execute(builder.build());
+        });
         Row row = result.one();
         if (row == null)
             throw new HiveMetaStoreNotFoundException();
         try
         {
-            deserializer.deserialize(base, row.getBytes("value").array());
+            deserializer.deserialize(base, row.getByteBuffer("value").array());
         }
         catch (Exception e)
         {
@@ -147,8 +156,11 @@ public class MetaStorePersister
         cc.jWithSessionDo(session -> {
                     try
                     {
-                        ResultSet result = session.execute(String.format(selectPerKeyQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily()),
-                                versionedName(databaseName.toLowerCase()));
+                        String query = String.format(selectPerKeyQuery_template, configuration.getKeyspaceName(), configuration.getColumnFamily());
+                        SimpleStatementBuilder builder = new SimpleStatementBuilder(query)
+                                .addPositionalValue(versionedName(databaseName.toLowerCase()));
+
+                        ResultSet result = session.execute(builder.build());
                         Iterator<Row> rows = result.iterator();
                         int size = 0;
                         while (rows.hasNext())
@@ -158,7 +170,7 @@ public class MetaStorePersister
                     if (size < maxCount && row.getString("entity").startsWith(entityPrefix))
                     {
                         TBase other = base.getClass().newInstance();
-                        deserializer.deserialize(other, row.getBytes("value").array());
+                        deserializer.deserialize(other, row.getByteBuffer("value").array());
                         resultList.add(other);
                         size++;
                     }
@@ -216,14 +228,11 @@ public class MetaStorePersister
         });
     }
 
-    private void delete(Session session, PreparedStatement deleteStmt, String key, String entity)
+    private void delete(CqlSession session, PreparedStatement deleteStmt, String key, String entity)
     {
         if (log.isDebugEnabled())
             log.debug("delete key: {}, entity: {}", key, entity);
-        BoundStatement bs = new BoundStatement(deleteStmt);
-        bs.setString(0, key);
-        bs.setString(1, entity);
-        session.execute(bs);
+        session.execute(deleteStmt.bind(key, entity));
     }
 
     private String buildEntityColumnName(TBase base) {

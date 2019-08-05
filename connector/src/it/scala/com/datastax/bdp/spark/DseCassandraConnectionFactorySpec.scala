@@ -5,12 +5,13 @@
  */
 package com.datastax.bdp.spark
 
-import org.scalatest.Matchers
-import com.datastax.driver.dse.DseSession
+import com.datastax.dse.driver.api.core.cql.continuous.ContinuousSession
+import com.datastax.dse.driver.api.core.graph.GraphSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ReadConf
+import org.scalatest.Matchers
 
 class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Matchers {
 
@@ -31,14 +32,14 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
   }
 
   "DseCassandraConnectionFactory" should "have paging on by default" in {
-    sc.cassandraTable(ks, table).connector.withClusterDo(cluster =>
-      DseCassandraConnectionFactory.continuousPagingEnabled(cluster) should be(true)
-    )
+    val session = sc.cassandraTable(ks, table).connector.withSessionDo(session => session)
+      DseCassandraConnectionFactory.continuousPagingEnabled(session) should be(true)
   }
 
-  it should " make DseSession capable sessions" in {
+  it should "make DseSession capable sessions" in {
     conn.withSessionDo { session =>
-      val dseSession = session.asInstanceOf[DseSession]
+      session.asInstanceOf[ContinuousSession]
+      session.asInstanceOf[GraphSession]
     }
   }
 

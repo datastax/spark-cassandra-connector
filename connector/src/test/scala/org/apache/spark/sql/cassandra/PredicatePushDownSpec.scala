@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.driver.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{IntType, TimeUUIDType}
@@ -50,8 +50,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     clusteringColumns = Seq(c1, c2, c3),
     regularColumns = Seq(i1, i2, r1, r2),
     indexes = Seq(
-      IndexDef("DummyIndex", "i1", "IndexOne", Map.empty),
-      IndexDef("DummyIndex", "i2", "IndexTwo", Map.empty))
+      IndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
+      IndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty))
   )
 
   val timeUUIDTable = TableDef(
@@ -69,9 +69,9 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     clusteringColumns = Seq(c1, c2, c3),
     regularColumns = Seq(i1, i2, r1, r2),
     indexes = Seq(
-      IndexDef("DummyIndex", "i1", "IndexOne", Map.empty),
-      IndexDef("DummyIndex", "i2", "IndexTwo", Map.empty),
-      IndexDef("DummyIndex", "pk1", "IndexThree", Map.empty))
+      IndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
+      IndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty),
+      IndexDef(Some("DummyIndex"), "pk1", "IndexThree", Map.empty))
   )
 
   "BasicCassandraPredicatePushDown" should "push down all equality predicates restricting partition key columns" in {
@@ -151,7 +151,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
   it should "not push down an IN partition key predicate on the non-last partition key column for V3 and older" in {
     val f1 = InFilter("pk1")
     val f2 = EqFilter("pk2")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table, ProtocolVersion.V3)
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table, DefaultProtocolVersion.V3)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain allOf(f1, f2)
   }
@@ -223,7 +223,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = InFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table, ProtocolVersion.V3)
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table, DefaultProtocolVersion.V3)
     ppd.predicatesToPushDown should contain only f1
     ppd.predicatesToPreserve should contain only (f2, f3)
   }
@@ -255,7 +255,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
 
   it should "not push down partition key index equality predicates in P3" in {
     val f1 = EqFilter("pk1")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table2, ProtocolVersion.V3)
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table2, DefaultProtocolVersion.V3)
     ppd.predicatesToPushDown shouldBe empty
     ppd.predicatesToPreserve should contain only f1
   }

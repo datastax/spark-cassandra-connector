@@ -88,7 +88,7 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Defaul
       }
     }
 
-    testCluster.refreshSizeEstimates()
+    cluster.refreshSizeEstimates()
 
     val timeout = 1000 * 30
     assert(DataSizeEstimates.waitForDataSizeEstimates(conn, ks, tableName, timeout),

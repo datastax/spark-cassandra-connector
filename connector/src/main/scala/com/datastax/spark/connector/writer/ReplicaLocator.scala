@@ -3,9 +3,10 @@ package com.datastax.spark.connector.writer
 
 import java.net.InetAddress
 
-import com.datastax.driver.core._
+import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
@@ -25,6 +26,8 @@ class ReplicaLocator[T] private(
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames
+  val tokenMap = toOption(connector.withSessionDo(_.getMetadata.getTokenMap))
+    .getOrElse(throw new IllegalStateException("Unable to determine Token Map Metadata"))
 
   /**
    * Pairs each piece of data with the Cassandra Replicas which that data would be found on
@@ -33,14 +36,15 @@ class ReplicaLocator[T] private(
    */
   def keyByReplicas(data: Iterator[T]): Iterator[(scala.collection.immutable.Set[InetAddress], T)] = {
       connector.withSessionDo { session =>
-        val protocolVersion = session.getCluster.getConfiguration.getProtocolOptions.getProtocolVersion
+        val protocolVersion = session.getContext.getProtocolVersion
         val stmt = prepareDummyStatement(session, tableDef)
-        val routingKeyGenerator = new RoutingKeyGenerator(tableDef, columnNames)
         val boundStmtBuilder = new BoundStatementBuilder(rowWriter, stmt, protocolVersion = protocolVersion)
-        val clusterMetadata = session.getCluster.getMetadata
+        val clusterMetadata = session.getMetadata
         data.map { row =>
-          val hosts = clusterMetadata
-            .getReplicas(Metadata.quote(keyspaceName), routingKeyGenerator.apply(boundStmtBuilder.bind(row)))
+          val hosts = tokenMap
+            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
+            .map(node => toOption(node.getBroadcastAddress)
+              .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
             .map(_.getAddress)
             .toSet[InetAddress]
           (hosts, row)

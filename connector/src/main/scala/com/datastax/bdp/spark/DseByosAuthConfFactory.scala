@@ -5,6 +5,8 @@
  */
 
 /*
+TODO:
+
 package com.datastax.bdp.spark
 
 import java.net.InetAddress
@@ -33,6 +35,7 @@ import com.datastax.spark.connector.util.Logging
 /**
   * Read client configuration from spark properties and standard hadoop config files
   */
+  TODO:
 object DseByosAuthConfFactory extends AuthConfFactory with Logging {
 
   val tokenProperty = "spark.hadoop.cassandra.auth.token"
