@@ -124,7 +124,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   }
 
   def checkJDriverInsertsNormal() = conn.withSessionDo { session =>
-      val resultSet = session.execute(s"SELECT * FROM $typeNormalTable")
+      val resultSet = session.execute(s"SELECT * FROM $keyspaceName.$typeNormalTable")
       val rows = resultSet.all().asScala
       rows.size should equal(typeData.length)
       rows.foreach { row =>
@@ -136,7 +136,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   def checkJDriverInsertsNull() = conn.withSessionDo { session =>
     val table = s"${typeName}_null"
-    val resultSet = session.execute(s"SELECT * FROM $table")
+    val resultSet = session.execute(s"SELECT * FROM $keyspaceName.$table")
     val rows = resultSet.all().asScala
     rows.size should equal(typeData.length)
     rows.foreach { row =>
@@ -148,7 +148,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   }
 
   def checkJDriverInsertsCollections() = conn.withSessionDo { session =>
-    var resultSet = session.execute(s"SELECT * FROM $typeCollectionTable")
+    var resultSet = session.execute(s"SELECT * FROM $keyspaceName.$typeCollectionTable")
     var rows = resultSet.all().asScala
 
     rows.size should equal(typeData.length)
@@ -380,23 +380,22 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     val start = System.currentTimeMillis()
     createKeyspace(session, keyspaceName)
 
-    session.execute(s"""USE $keyspaceName""")
     awaitAll(
       Future{
         session.execute(
-          s"""CREATE TABLE IF NOT EXISTS ${typeName}_dataframe
+          s"""CREATE TABLE IF NOT EXISTS $keyspaceName.${typeName}_dataframe
             |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
             .stripMargin)
       },
       Future{
         session.execute(
-        s"""CREATE TABLE IF NOT EXISTS ${typeName}_normal
+        s"""CREATE TABLE IF NOT EXISTS $keyspaceName.${typeName}_normal
           |(pkey $typeName, ckey1 $typeName, ckey2 $typeName, data1 $typeName , PRIMARY KEY ((pkey,ckey1), ckey2))"""
           .stripMargin)
       },
       Future {
         session.execute(
-          s"""CREATE TABLE IF NOT EXISTS ${typeName}_collection
+          s"""CREATE TABLE IF NOT EXISTS $keyspaceName.${typeName}_collection
             |(pkey $typeName,
             |set1 set<$typeName>,
             |list1 list<${typeName}>,
@@ -406,7 +405,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       },
       Future {
         session.execute(
-          s"""CREATE TABLE IF NOT EXISTS ${typeName}_null
+          s"""CREATE TABLE IF NOT EXISTS $keyspaceName.${typeName}_null
             |(pkey $typeName,
             |data1 $typeName,
             |nulldata $typeName,
@@ -421,9 +420,9 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
   }
 
   def truncateTables() = conn.withSessionDo { session =>
-    session.execute(s"TRUNCATE $typeNormalTable")
-    session.execute(s"TRUNCATE $typeCollectionTable")
-    session.execute(s"TRUNCATE $typeNullTable")
+    session.execute(s"TRUNCATE $keyspaceName.$typeNormalTable")
+    session.execute(s"TRUNCATE $keyspaceName.$typeCollectionTable")
+    session.execute(s"TRUNCATE $keyspaceName.$typeNullTable")
   }
 
 }

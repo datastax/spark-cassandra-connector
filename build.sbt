@@ -1,11 +1,20 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
 import sbt.moduleFilter
 // factor out common settings
-ThisBuild / organization := "com.datastax"
 ThisBuild / scalaVersion := "2.11.12"
-// set the Scala version used for the project
-ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalacOptions += "-target:jvm-1.8"
+
+ThisBuild / organization := "com.datastax.dse"
+ThisBuild / publishMavenStyle := true
+ThisBuild / publishTo := Publishing.Repository
+ThisBuild / credentials ++= Publishing.Credentials
+ThisBuild / version := Publishing.Version
+
+Global / resolvers ++= Seq(
+  DefaultMavenRepository,
+  Resolver.sonatypeRepo("public"),
+  "DataStax Repo" at "https://repo.datastax.com/dse"
+)
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -22,34 +31,35 @@ val annotationProcessor = Seq(
   "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
 )
 
-lazy val root = (project in file("connector"))
+lazy val root = (project in file("."))
+  .aggregate(connector, testSupport)
+  .settings(
+    publish / skip := true
+  )
+
+lazy val connector = (project in file("connector"))
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*) //This and above enables the "it" suite
   .settings(commonSettings)
   .settings(
     // set the name of the project
-    name := "DS Analytics Connector",
+    name := "dse-spark-connector",
 
-    // append several options to the list of options passed to the Java compiler
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
 
-    // append -deprecation to the options passed to the Scala compiler
-    scalacOptions += "-deprecation",
-
-    // fork a new JVM for 'run' and 'test:run'
     fork := true,
     parallelExecution := true,
     testForkedParallel := false,
 
-    // test grouping and parallel execution restrictions
+    // test grouping
     integrationTestsWithFixtures := {
       Testing.testsWithFixtures((testLoader in IntegrationTest).value, (definedTests in IntegrationTest).value)
     },
 
-    Test / javacOptions ++= annotationProcessor ++ Seq("-d", (classDirectory in Test).value.toString),
-
     IntegrationTest / testGrouping := Testing.makeTestGroups(integrationTestsWithFixtures.value),
-    IntegrationTest / testOptions += Tests.Argument("-oF"),
+    IntegrationTest / testOptions += Tests.Argument("-oF"),  // show full stack traces
+
+    Test / javacOptions ++= annotationProcessor ++ Seq("-d", (classDirectory in Test).value.toString),
 
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
@@ -63,5 +73,6 @@ lazy val root = (project in file("connector"))
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
+    name := "dse-spark-connector-test-support",
     libraryDependencies ++= Dependencies.TestSupport.dependencies
   )
