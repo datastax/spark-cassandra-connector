@@ -35,7 +35,7 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
 
 
   override def checkJDriverInsertsCollections() = conn.withSessionDo { session =>
-    var resultSet = session.execute(s"SELECT * FROM $typeCollectionTable")
+    var resultSet = session.execute(s"SELECT * FROM $keyspaceName.$typeCollectionTable")
     var rows = resultSet.all().asScala
 
     rows.size should equal(typeData.length)

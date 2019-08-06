@@ -26,22 +26,20 @@ class CounterTypeTest  extends SparkCassandraITFlatSpecBase with DefaultCluster 
   def counterCreateData() = conn.withSessionDo{ session =>
     createKeyspace(session, keyspaceName)
 
-    session.execute("use counter_ks")
-
-    val create_table = "CREATE TABLE IF NOT EXISTS counter_norm ( key bigint PRIMARY KEY, expectedkeys counter )"
-    val create_table_write = "CREATE TABLE IF NOT EXISTS counter_write ( name text, key bigint , expectedkeys counter, PRIMARY KEY(name,key))"
-    val create_table_multi_write = "CREATE TABLE IF NOT EXISTS counter_multi_write ( name text, key bigint , data1 counter, data2 counter, data3 counter, PRIMARY KEY(name,key))"
+    val create_table = s"CREATE TABLE IF NOT EXISTS $keyspaceName.counter_norm ( key bigint PRIMARY KEY, expectedkeys counter )"
+    val create_table_write = s"CREATE TABLE IF NOT EXISTS $keyspaceName.counter_write ( name text, key bigint , expectedkeys counter, PRIMARY KEY(name,key))"
+    val create_table_multi_write = s"CREATE TABLE IF NOT EXISTS $keyspaceName.counter_multi_write ( name text, key bigint , data1 counter, data2 counter, data3 counter, PRIMARY KEY(name,key))"
     awaitAll(
       Future(session.execute(create_table)),
       Future(session.execute(create_table_write)),
       Future(session.execute(create_table_multi_write))
     )
-    val ps = session.prepare("UPDATE counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?")
+    val ps = session.prepare(s"UPDATE $keyspaceName.counter_norm SET expectedkeys = expectedKeys + 1 WHERE key = ?")
     (1L to 10L).foreach { x => (1 to 10).foreach(_ => session.execute(ps.bind(x: java.lang.Long)))}
   }
 
   "Counters" should "be updatable via the C* Connector" in conn.withSessionDo { session =>
-    val ps = session.prepare("SELECT * FROM counter_norm where key = ?")
+    val ps = session.prepare(s"SELECT * FROM $keyspaceName.counter_norm where key = ?")
     (1L to 10L).foreach( x => session.execute(ps.bind(x: java.lang.Long))
       .one()
       .getLong("expectedkeys") should equal (10))
