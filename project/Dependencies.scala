@@ -23,17 +23,21 @@ object Dependencies
       sparkHive)
   }
 
-  object DataStax {
+  object Driver {
     val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
     val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
     val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
-    
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream, Temporary.gremlinCore, Temporary.tinkerGraph)
+    val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
+    val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
+
+    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3)
   }
 
   object Temporary {
     val gremlinCore = "org.apache.tinkerpop" % "gremlin-core" % "3.3.3"  //TODO Remove this when Java Driver includes the correct TP
     val tinkerGraph = "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.3" //TODO Remove this ''
+
+    val dependencies = Seq(Temporary.gremlinCore, Temporary.tinkerGraph)
   }
 
   implicit class Exclude(module: ModuleID) {
@@ -80,6 +84,6 @@ object Dependencies
 
     val dependencies = Seq(
       commonsExec,
-      Dependencies.DataStax.driverCore)
+      Dependencies.Driver.driverCore)
   }
 }

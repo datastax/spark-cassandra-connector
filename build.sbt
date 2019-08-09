@@ -32,7 +32,7 @@ val annotationProcessor = Seq(
 )
 
 lazy val root = (project in file("."))
-  .aggregate(connector, testSupport)
+  .aggregate(connector, testSupport, driver)
   .settings(
     publish / skip := true
   )
@@ -64,15 +64,25 @@ lazy val connector = (project in file("connector"))
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++= Dependencies.Spark.dependencies
-      ++ Dependencies.DataStax.dependencies
       ++ Dependencies.Test.dependencies
+      ++ Dependencies.Temporary.dependencies
       ++ Dependencies.Jetty.dependencies
   )
-  .dependsOn(testSupport % "test")
+  .dependsOn(
+    testSupport % "test",
+    driver
+  )
 
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
     name := "dse-spark-connector-test-support",
     libraryDependencies ++= Dependencies.TestSupport.dependencies
+  )
+
+lazy val driver = (project in file("driver"))
+  .settings(commonSettings)
+  .settings(
+    name := "dse-spark-connector-driver",
+    libraryDependencies ++= Dependencies.Driver.dependencies
   )
