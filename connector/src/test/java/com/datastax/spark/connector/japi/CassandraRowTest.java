@@ -47,14 +47,6 @@ public class CassandraRowTest {
     }
 
     @Test
-    public void testGetDateTime() {
-        long t = System.currentTimeMillis();
-        CassandraRow row = new CassandraRow(new String[]{"value"}, new Object[]{new DateTime(t)});
-        assertEquals(row.getDateTime("value"), new DateTime(t));
-        assertEquals(row.getDateTime(0), new DateTime(t));
-    }
-
-    @Test
     public void testGetDecimal() {
         CassandraRow row = new CassandraRow(new String[]{"value"}, new Object[]{new BigDecimal(123.321d)});
         assertEquals(row.getDecimal("value"), new BigDecimal(123.321d));

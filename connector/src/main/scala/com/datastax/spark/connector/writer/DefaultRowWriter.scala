@@ -2,10 +2,9 @@ package com.datastax.spark.connector.writer
 
 import scala.reflect.runtime.universe._
 import scala.collection.Seq
-
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
-import com.datastax.spark.connector.mapper.ColumnMapper
+import com.datastax.spark.connector.mapper.{ColumnMapper, MappedToGettableDataConverter}
 
 /** A `RowWriter` suitable for saving objects mappable by a [[com.datastax.spark.connector.mapper.ColumnMapper ColumnMapper]].
   * Can save case class objects, java beans and tuples. */

@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.rdd
 
 import java.io.IOException
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.Date
 import java.util.concurrent.CompletableFuture
 
@@ -13,7 +14,6 @@ import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorC
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
-import org.joda.time.{DateTime, LocalDate}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
@@ -551,43 +551,39 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     result should have length 2
   }
 
+  private def dateInDefaultTimeZone(year: Int, month: Int, dayOfMonth: Int, hour: Int, minute: Int, second: Int): Date = {
+    Date.from(instantInDefaultTimeZone(year, month, dayOfMonth, hour, minute, second))
+  }
+
+  private def instantInDefaultTimeZone(year: Int, month: Int, dayOfMonth: Int, hour: Int, minute: Int, second: Int): Instant = {
+    val zonedDateTime = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, 0, ZoneId.systemDefault())
+    zonedDateTime.toInstant
+  }
+
   it should "convert values passed to where to correct types (String -> Timestamp)" in {
-    val start = new DateTime(2014, 7, 12, 20, 0, 2).toInstant.toString()
+    val start = instantInDefaultTimeZone(2014, 7, 12, 20, 0, 2).toString
     val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
       .where("time >= ?", start).collect()
     result should have length 2
   }
 
-  it should "convert values passed to where to correct types (DateTime -> Timestamp)" in {
-    val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
-      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2)).collect()
-    result should have length 2
-  }
-
   it should "convert values passed to where to correct types (Date -> Timestamp)" in {
     val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
-      .where("time >= ?", new DateTime(2014, 7, 12, 20, 0, 2).toDate).collect()
+      .where("time >= ?", dateInDefaultTimeZone(2014, 7, 12, 20, 0, 2)).collect()
     result should have length 2
   }
 
   it should "convert values passed to where to correct types (String -> Timestamp) (double limit)" in {
-    val start = new DateTime(2014, 7, 12, 20, 0, 1).toInstant.toString()
-    val end = new DateTime(2014, 7, 12, 20, 0, 3).toInstant.toString()
+    val start = instantInDefaultTimeZone(2014, 7, 12, 20, 0, 1).toString
+    val end = instantInDefaultTimeZone(2014, 7, 12, 20, 0, 3).toString
     val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
       .where("time > ? and time < ?", start, end).collect()
     result should have length 1
   }
 
-
-  it should "convert values passed to where to correct types (DateTime -> Timestamp) (double limit)" in {
-    val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
-      .where("time > ? and time < ?", new DateTime(2014, 7, 12, 20, 0, 1), new DateTime(2014, 7, 12, 20, 0, 3)).collect()
-    result should have length 1
-  }
-
   it should "convert values passed to where to correct types (Date -> Timestamp) (double limit)" in {
     val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
-      .where("time > ? and time < ?", new DateTime(2014, 7, 12, 20, 0, 1).toDate, new DateTime(2014, 7, 12, 20, 0, 3).toDate).collect()
+      .where("time > ? and time < ?", dateInDefaultTimeZone(2014, 7, 12, 20, 0, 1), dateInDefaultTimeZone(2014, 7, 12, 20, 0, 3)).collect()
     result should have length 1
   }
 
@@ -599,7 +595,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
 
   it should "accept partitioning key and clustering column predicate in where" in {
     val result = sc.cassandraTable[(Int, Date, String)](ks, "clustering_time")
-      .where("key = ? AND time >= ?", 1, new DateTime(2014, 7, 12, 20, 0, 2).toDate).collect()
+      .where("key = ? AND time >= ?", 1, dateInDefaultTimeZone(2014, 7, 12, 20, 0, 2)).collect()
     result should have length 2
   }
 
@@ -1168,7 +1164,6 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     val rows = List(
       (6, new java.sql.Date(new Date().getTime)),
       (7, new Date()),
-      (8, DateTime.now()),
       (9, LocalDate.now()))
 
     sc.parallelize(rows).saveToCassandra(ks, "date_test")
@@ -1181,20 +1176,19 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   }
 
   it should "read C* row with dates as Java dates" in skipIfProtocolVersionLT(V4){
-    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val expected: LocalDate = LocalDate.of(1930, 5, 31)
     val row = sc.cassandraTable(ks, "date_test").where("key = 1").first
 
     row.getInt("key") should be(1)
-    row.getDate("dd") should be(expected.toDateTimeAtStartOfDay.toDate)
-    row.get[LocalDate]("dd") should be(expected)
+    row.getDate("dd") should be(Date.from(expected.atStartOfDay(ZoneId.systemDefault()).toInstant))
   }
 
   it should "read LocalDate as tuple value with given type" in skipIfProtocolVersionLT(V4){
-    val expected: LocalDate = new LocalDate(1930, 5, 31) // note this is Joda
+    val expected: LocalDate = LocalDate.of(1930, 5, 31)
     val date = sc.cassandraTable[(Int, Date)](ks, "date_test").where("key = 1").first._2
     val localDate = sc.cassandraTable[(Int, LocalDate)](ks, "date_test").where("key = 1").first._2
 
-    date should be(expected.toDateTimeAtStartOfDay.toDate)
+    date should be(Date.from(expected.atStartOfDay(ZoneId.systemDefault()).toInstant))
     localDate should be(expected)
   }
 

@@ -1,6 +1,5 @@
-package com.datastax.spark.connector.writer
+package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.mapper.PropertyExtractor
 import org.junit.Assert._
 import org.junit.Test
 

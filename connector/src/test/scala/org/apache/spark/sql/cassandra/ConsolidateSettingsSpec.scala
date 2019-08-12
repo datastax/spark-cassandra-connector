@@ -1,5 +1,6 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.TableRef
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.scalatest.{FlatSpec, Matchers}

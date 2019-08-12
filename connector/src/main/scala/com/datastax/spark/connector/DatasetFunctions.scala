@@ -1,6 +1,8 @@
 package com.datastax.spark.connector
 
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.mapper.DataFrameColumnMapper
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Dataset, Encoder}
 import org.apache.spark.sql.cassandra.{AlwaysOn, CassandraSourceRelation, DirectJoinSetting}
@@ -30,7 +32,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
 
     val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
-    val rawTable = TableDef.fromDataset(dataset, keyspaceName, tableName, protocolVersion)
+    val rawTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName
 
     val columnNames = columnMapping.keys.toSet

@@ -1,9 +1,10 @@
-package com.datastax.spark.connector.rdd.reader
+package com.datastax.spark.connector.mapper
+
+import java.io.ByteArrayInputStream
 
 import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.{ColumnMapper, GettableDataToMappedTypeConverter, JavaBeanColumnMapper}
 import com.datastax.spark.connector.{CassandraRow, UDTValue}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, TableDef}
 import com.datastax.spark.connector.types._
@@ -55,7 +56,7 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   it should "convert a CassandraRow to a tuple" in {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
     val converter =
-      new GettableDataToMappedTypeConverter[(String, String)](userTable, IndexedSeq("login", "password"))
+      new GettableDataToMappedTypeConverter[(String, String)](userTable, IndexedSeq("login", "password").map(ColumnName(_)))
     val user = converter.convert(row)
     user._1 shouldBe "foo"
     user._2 shouldBe "bar"
@@ -64,7 +65,7 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   it should "convert a CassandraRow to a tuple in reversed order" in {
     val row = CassandraRow.fromMap(Map("login" -> "foo", "password" -> "bar"))
     val converter =
-      new GettableDataToMappedTypeConverter[(String, String)](userTable, IndexedSeq("password", "login"))
+      new GettableDataToMappedTypeConverter[(String, String)](userTable, IndexedSeq("password", "login").map(ColumnName(_)))
     val user = converter.convert(row)
     user._1 shouldBe "bar"
     user._2 shouldBe "foo"
@@ -73,7 +74,7 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   it should "convert a CassandraRow to a tuple with a subset of columns" in {
     val row = CassandraRow.fromMap(Map("password" -> "bar"))
     val converter =
-      new GettableDataToMappedTypeConverter[Tuple1[String]](userTable, IndexedSeq("password"))
+      new GettableDataToMappedTypeConverter[Tuple1[String]](userTable, IndexedSeq("password").map(ColumnName(_)))
     val user = converter.convert(row)
     user._1 shouldBe "bar"
   }
@@ -140,7 +141,7 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
     val converter =
       new GettableDataToMappedTypeConverter[DifferentlyNamedUser](
         userTable,
-        IndexedSeq("login" as "name", "password" as "pass"))
+        IndexedSeq(ColumnName("login").as("name") , ColumnName("password").as("pass")))
 
     val user = converter.convert(row)
     user.name shouldBe "foo"

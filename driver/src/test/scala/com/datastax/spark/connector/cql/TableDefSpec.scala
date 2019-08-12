@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.spark.connector.{PartitionKeyColumns, TTL, SomeColumns, AllColumns}
 import com.datastax.spark.connector.types._
-import org.scalatest.{WordSpec, Matchers}
+import org.scalatest.{Matchers, WordSpec}
 
 class TableDefSpec extends WordSpec with Matchers {
 

@@ -6,7 +6,9 @@ object Versions {
 
   val CommonsExec     = "1.3"
   val CommonsIO       = "2.6"
-  val CommonsLang3    = "3.3.2"
+  val CommonsLang3    = "3.5"
+  val Paranamer       = "2.8"
+  val ScalaLogging    = "3.5.0"
 
   val DseJavaDriver = "2.1.1"
   val ReactiveStreams = "1.0.2"

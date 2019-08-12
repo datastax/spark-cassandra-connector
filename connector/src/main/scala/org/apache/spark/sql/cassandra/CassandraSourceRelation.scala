@@ -82,8 +82,7 @@ case class CassandraSourceRelation(
     this.copy(sparkConf = sparkConf.clone().set(key, value))
   }
 
-  val tableDef = Schema.tableFromCassandra(
-    connector,
+  val tableDef: TableDef = tableFromCassandra(connector,
     tableRef.keyspace,
     tableRef.table)
 

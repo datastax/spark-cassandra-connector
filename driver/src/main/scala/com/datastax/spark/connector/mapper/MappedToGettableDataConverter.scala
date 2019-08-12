@@ -1,16 +1,16 @@
-package com.datastax.spark.connector.writer
+package com.datastax.spark.connector.mapper
+
+import com.datastax.spark.connector.cql.StructDef
+import com.datastax.spark.connector.types._
+import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
+import com.datastax.spark.connector.{ColumnRef, GettableByIndexData}
+import com.typesafe.scalalogging.StrictLogging
 
 import scala.language.existentials
 import scala.reflect.runtime.universe._
 import scala.util.control.NonFatal
-import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
-import com.datastax.spark.connector.{ColumnRef, GettableByIndexData, TupleValue, UDTValue}
-import com.datastax.spark.connector.cql.StructDef
-import com.datastax.spark.connector.mapper._
-import com.datastax.spark.connector.types.{ColumnType, ListType, MapType, SetType, TupleType, TypeConverter}
-import com.datastax.spark.connector.util.Logging
 
-private[connector] object MappedToGettableDataConverter extends Logging{
+private[connector] object MappedToGettableDataConverter extends StrictLogging {
 
   /**
     * When the Spark Cassandra Connector is running on a separate
@@ -43,7 +43,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         * and for everything else uses
         * [[com.datastax.spark.connector.mapper.DefaultColumnMapper DefaultColumnMapper]] */
       private def columnMapper[U: TypeTag]: ColumnMapper[U] = {
-        logDebug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
+        logger.debug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
         val tpe = typeTag[U].tpe
         if (ReflectionUtil.isScalaTuple(tpe))
           new TupleColumnMapper[U]
@@ -64,7 +64,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         {
           val scalaType = typeTag[U].tpe
 
-          logDebug(s"Getting converter for $columnType to $scalaType")
+          logger.debug(s"Getting converter for $columnType to $scalaType")
 
           (columnType, scalaType) match {
             // Collections need recursive call to get the converter for the collection elements
@@ -151,7 +151,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       @transient
       private val childClassloader = mirror.classLoader
 
-      logDebug(s"Finding a class for $tpe in ${mirror.classLoader}")
+      logger.debug(s"Finding a class for $tpe in ${mirror.classLoader}")
       private val cls = mirror.runtimeClass(typeTag[T].tpe).asInstanceOf[Class[T]]
       private val typeName = tpe.toString
 

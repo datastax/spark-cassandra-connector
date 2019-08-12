@@ -1,9 +1,8 @@
-package com.datastax.spark.connector.rdd.reader
+package com.datastax.spark.connector
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.text.SimpleDateFormat
 
-import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnNotFoundException}
 import org.junit.Assert._
 import org.scalatest.{FunSuite, Matchers}
 

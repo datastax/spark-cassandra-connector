@@ -74,7 +74,6 @@ import com.datastax.spark.connector.util.DriverUtil.toName
   * Timestamps can be converted to other Date types by using generic `get`. Supported date types:
   * - java.util.Date
   * - java.sql.Date
-  * - org.joda.time.DateTime
   */
 final class CassandraRow(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData with Serializable {

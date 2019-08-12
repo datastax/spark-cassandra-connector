@@ -23,16 +23,6 @@ object Dependencies
       sparkHive)
   }
 
-  object Driver {
-    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
-    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
-    val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
-    val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
-    val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
-
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3)
-  }
-
   object Temporary {
     val gremlinCore = "org.apache.tinkerpop" % "gremlin-core" % "3.3.3"  //TODO Remove this when Java Driver includes the correct TP
     val tinkerGraph = "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.3" //TODO Remove this ''
@@ -77,6 +67,26 @@ object Dependencies
     val jettyServlet      = "org.eclipse.jetty"       % "jetty-servlet"           % SparkJetty % "provided"
 
     val dependencies = Seq(jettyServer, jettyServlet)
+  }
+
+  object Driver {
+    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
+    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
+    val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
+
+    val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
+    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
+    val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
+    val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
+
+    val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest % "test"
+    val junit = "junit" % "junit" % JUnit % "test"
+    val mockito = "org.mockito" % "mockito-all" % Mockito % "test"
+
+    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3, paranamer,
+      scalaLogging,
+      // tests
+      scalaTest, junit, mockito)
   }
 
   object TestSupport {

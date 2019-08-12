@@ -67,7 +67,7 @@ case class TupleType(componentTypes: TupleFieldDef*)
       override def targetTypeTag = TupleValue.TypeTag
 
       override def convertPF = {
-        case x: GenericRowWithSchema =>
+        case IsGenericRowWithSchemePrototype(x) =>
           newInstance(componentConverters)(x.toSeq: _*)
         case x: TupleValue =>
           newInstance(componentConverters)(x.columnValues: _*)

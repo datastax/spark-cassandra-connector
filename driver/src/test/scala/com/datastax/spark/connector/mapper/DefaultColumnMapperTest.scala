@@ -1,9 +1,9 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.{AllColumns, ColumnName}
+
+import com.datastax.spark.connector.ColumnName
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.types.{VarCharType, IntType}
+import com.datastax.spark.connector.types.{IntType, VarCharType}
 import org.junit.Assert._
 import org.junit.Test
 
@@ -182,9 +182,9 @@ class DefaultColumnMapperTest {
   def testWorkWithAliases() {
     val mapper = new DefaultColumnMapper[ClassWithWeirdProps]()
     val selectedColumns = IndexedSeq(
-      "property_1" as "devil",
-      "camel_case_property" as "cat",
-      "column" as "eye")
+      ColumnName("property_1").as("devil"),
+      ColumnName("camel_case_property").as("cat"),
+      ColumnName("column").as("eye"))
     val map = mapper.columnMapForReading(table2, selectedColumns)
     assertEquals(selectedColumns, map.constructor)
   }
@@ -193,9 +193,9 @@ class DefaultColumnMapperTest {
   def testWorkWithAliasesAndHonorOverrides() {
     val mapper = new DefaultColumnMapper[ClassWithWeirdProps](Map("cat" -> "cat2"))
     val selectedColumns = IndexedSeq(
-      "property_1" as "devil",
-      "camel_case_property" as "cat2",
-      "UpperCaseColumn" as "eye")
+      ColumnName("property_1").as("devil"),
+      ColumnName("camel_case_property").as("cat2"),
+      ColumnName("UpperCaseColumn").as("eye"))
     val map = mapper.columnMapForReading(table1, selectedColumns)
     assertEquals(selectedColumns, map.constructor)
   }

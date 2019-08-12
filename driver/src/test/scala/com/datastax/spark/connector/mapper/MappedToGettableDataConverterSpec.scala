@@ -1,8 +1,7 @@
-package com.datastax.spark.connector.writer
+package com.datastax.spark.connector.mapper
 
-import com.datastax.spark.connector.UDTValue
+import com.datastax.spark.connector.{ColumnName, UDTValue}
 import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, TableDef}
-import com.datastax.spark.connector.mapper.{JavaBeanColumnMapper, MappedToGettableDataConverter}
 import com.datastax.spark.connector.types._
 import org.apache.commons.lang3.{SerializationUtils, tuple}
 import org.scalatest.{FlatSpec, Matchers}
@@ -173,7 +172,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     val user = DifferentlyNamedUser("foo", "bar")
     val userTable = newTable(loginColumn, passwordColumn)
     val converter = MappedToGettableDataConverter[DifferentlyNamedUser](
-      userTable, IndexedSeq("login" as "name", "password" as "pass"))
+      userTable, IndexedSeq(ColumnName("login").as("name"), ColumnName("password").as("pass")))
     val result = converter.convert(user)
     result.getString(loginColumn.columnName) shouldBe "foo"
     result.getString(passwordColumn.columnName) shouldBe "bar"

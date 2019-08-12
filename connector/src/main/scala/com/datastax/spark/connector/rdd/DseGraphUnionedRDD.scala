@@ -13,14 +13,12 @@ import scala.annotation.meta.param
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
-
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.{Partitioner, SparkContext}
-
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.rdd.partitioner.{BucketingRangeIndex, CassandraPartition, TokenGenerator, TokenRangeWithPartitionIndex}
-import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.{Logging, schemaFromCassandra}
 import com.datastax.spark.connector.writer.RowWriter
 
 /**
@@ -154,8 +152,8 @@ class DseGraphPartitioner[V, T <: Token[V]](
   private[connector] val labelToTableDef: Map[String, TableDef] = {
     graphLabels.map { labelName =>
       (labelName,
-          (Schema.fromCassandra(connector, Some(keyspaceName), Some(s"${labelName}_p")).tables ++
-              Schema.fromCassandra(connector, Some(keyspaceName), Some(s"${labelName}_e")).tables)
+          (schemaFromCassandra(connector, Some(keyspaceName), Some(s"${labelName}_p")).tables ++
+            schemaFromCassandra(connector, Some(keyspaceName), Some(s"${labelName}_e")).tables)
               .headOption
               .getOrElse(
                 throw new IllegalArgumentException(s"""Couldn't find table for label ${labelName}""")))

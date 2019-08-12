@@ -5,7 +5,7 @@ import java.lang.reflect.{Constructor, Method}
 import com.datastax.oss.driver.api.mapper.annotations.CqlName
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.StructDef
-import com.datastax.spark.connector.rdd.reader.AnyObjectFactory
+import com.datastax.spark.connector.util.AnyObjectFactory._
 
 import scala.reflect.ClassTag
 import scala.util.Try

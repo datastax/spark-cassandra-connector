@@ -2,16 +2,16 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.{ColumnMapper, DataFrameColumnMapper}
+import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType}
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{Logging, NameTools}
-import org.apache.spark.sql.Dataset
+import com.datastax.spark.connector.util.NameTools
+import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
 import scala.language.existentials
@@ -243,13 +243,6 @@ object TableDef {
       protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
-  def fromDataset(
-      dataset: Dataset[_],
-      keyspaceName: String,
-      tableName: String,
-      protocolVersion: ProtocolVersion): TableDef =
-
-    new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
@@ -268,7 +261,7 @@ case class Schema(keyspaces: Set[KeyspaceDef]) {
     for (keyspace <- keyspaces; table <- keyspace.tables) yield table
 }
 
-object Schema {
+object Schema extends StrictLogging {
 
   private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
     for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
@@ -297,7 +290,7 @@ object Schema {
     * @param tableName    if defined, fetches only metadata of the given table
     */
   def fromCassandra(
-      connector: CassandraConnector,
+      session: CqlSession,
       keyspaceName: Option[String] = None,
       tableName: Option[String] = None): Schema = {
 
@@ -356,20 +349,18 @@ object Schema {
       case _: ViewMetadata => Seq.empty
     }
 
-    connector.withSessionDo { session =>
-      logDebug(s"Retrieving database schema")
-      val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
+    logger.debug(s"Retrieving database schema")
+    val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
 
-      def fetchSchema(metadata: => Metadata): Schema =
-        Schema(fetchKeyspaces(metadata, systemKeyspaceNames))
+    def fetchSchema(metadata: => Metadata): Schema =
+      Schema(fetchKeyspaces(metadata, systemKeyspaceNames))
 
-      val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
-      val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
+    val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
+    val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
 
-      logDebug(s"${scheme.keyspaces.size} keyspaces fetched: " +
-        s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-      scheme
-    }
+    logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
+      s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
+    scheme
   }
 
 
@@ -378,14 +369,14 @@ object Schema {
     * exception with name options if the table is not found.
     */
   def tableFromCassandra(
-      connector: CassandraConnector,
+      session: CqlSession,
       keyspaceName: String,
       tableName: String): TableDef = {
 
-    fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    fromCassandra(session, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(t) => t
       case None =>
-        val metadata: Metadata = connector.withSessionDo(_.getMetadata)
+        val metadata: Metadata = session.getMetadata
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
         val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
         throw new IOException(errorMessage)

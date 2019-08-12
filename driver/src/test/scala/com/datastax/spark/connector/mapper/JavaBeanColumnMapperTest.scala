@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.mapper
 
+import com.datastax.spark.connector.ColumnName
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{IntType, UDTFieldDef, UserDefinedType}
-import com.datastax.spark.connector.{ColumnName, _}
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
@@ -65,7 +65,7 @@ class JavaBeanColumnMapperTest {
 
   @Test
   def testGettersWithUDT() {
-    val mapper = new JavaBeanColumnMapper[JavaTestUDTBean]
+    val mapper = new JavaBeanColumnMapper[ColumnMapperTestUDTBean]
     val columnMap = mapper.columnMapForWriting(u1, u1.columnRefs)
     val getters = columnMap.getters
     assertEquals(ColumnName(uf1.columnName), getters("getField"))
@@ -122,9 +122,9 @@ class JavaBeanColumnMapperTest {
   def testWorkWithAliases() {
     val mapper = new JavaBeanColumnMapper[ClassWithWeirdProps]()
     val selectedColumns = IndexedSeq(
-      "property_1" as "devil",
-      "camel_case_property" as "cat",
-      "column" as "eye")
+      ColumnName("property_1").as("devil"),
+      ColumnName("camel_case_property").as("cat"),
+      ColumnName("column").as("eye"))
     val map = mapper.columnMapForReading(table2, selectedColumns)
     assertEquals(selectedColumns, map.constructor)
   }
@@ -133,9 +133,9 @@ class JavaBeanColumnMapperTest {
   def testWorkWithAliasesAndHonorOverrides() {
     val mapper = new JavaBeanColumnMapper[ClassWithWeirdProps](Map("cat" -> "other"))
     val selectedColumns = IndexedSeq(
-      "property_1" as "devil",
-      "camel_case_property" as "other",
-      "column" as "eye")
+      ColumnName("property_1").as("devil"),
+      ColumnName("camel_case_property").as("other"),
+      ColumnName("column").as("eye"))
     val map = mapper.columnMapForReading(table2, selectedColumns)
     assertEquals(selectedColumns, map.constructor)
   }

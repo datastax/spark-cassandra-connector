@@ -375,7 +375,7 @@ object TableWriter {
       writeConf: WriteConf,
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
-    val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
+    val tableDef = tableFromCassandra(connector, keyspaceName, tableName)
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
     val tablDefWithMeta = tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns)
 

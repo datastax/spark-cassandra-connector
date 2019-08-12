@@ -1,5 +1,6 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.TableRef
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.streaming.OutputMode

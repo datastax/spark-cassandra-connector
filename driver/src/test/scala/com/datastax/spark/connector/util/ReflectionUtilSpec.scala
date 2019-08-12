@@ -1,20 +1,20 @@
 package com.datastax.spark.connector.util
 
-import scala.reflect.runtime.universe._
+import com.datastax.spark.connector.ColumnName
 import org.scalatest.concurrent.Conductors
-
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, DefaultConnectionFactory, CassandraConnectionFactory}
 import org.scalatest.{FlatSpec, Matchers}
+
+import scala.reflect.runtime.universe._
 
 trait ReflectionUtilSpecDummyTrait
 object ReflectionUtilSpecDummyObject extends ReflectionUtilSpecDummyTrait
 
 class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
 
-  "ReflectionUtil.findGlobalObject" should "be able to find DefaultConnectionFactory" in {
-    val factory = ReflectionUtil.findGlobalObject[CassandraConnectionFactory](
-      "com.datastax.spark.connector.cql.DefaultConnectionFactory")
-    factory should be(DefaultConnectionFactory)
+  "ReflectionUtil.findGlobalObject" should "be able to find a global object" in {
+    val obj = ReflectionUtil.findGlobalObject[ReflectionUtilSpecDummyTrait](
+      "com.datastax.spark.connector.util.ReflectionUtilSpecDummyObject")
+    obj should be(ReflectionUtilSpecDummyObject)
   }
 
   it should "be able to find a global object in a multi-threaded context" in {
@@ -48,7 +48,7 @@ class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
 
   it should "throw IllegalArgumentException when asked for a Scala object of wrong type" in {
     intercept[IllegalArgumentException] {
-      ReflectionUtil.findGlobalObject[CassandraConnectorConf](
+      ReflectionUtil.findGlobalObject[ColumnName](
         "com.datastax.spark.connector.cql.DefaultConnectionFactory")
     }
   }
@@ -61,7 +61,7 @@ class ReflectionUtilSpec extends FlatSpec with Matchers with Conductors {
 
   it should "throw IllegalArgumentException when object does not exist" in {
     intercept[IllegalArgumentException] {
-      ReflectionUtil.findGlobalObject[CassandraConnectorConf]("NoSuchObject")
+      ReflectionUtil.findGlobalObject[ColumnName]("NoSuchObject")
     }
   }
 

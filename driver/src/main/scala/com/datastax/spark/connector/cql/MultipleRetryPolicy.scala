@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel
+import com.datastax.oss.driver.api.core.config.DriverOption
 import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.retry.{RetryDecision, RetryPolicy}
 import com.datastax.oss.driver.api.core.servererrors.{CoordinatorException, WriteType}
@@ -15,8 +16,7 @@ class MultipleRetryPolicy(context: DriverContext, profileName: String)
   extends RetryPolicy {
 
   private val maxRetryCount = context.getConfig.getProfile(profileName).getInt(
-    CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount,
-    CassandraConnectorConf.QueryRetryParam.default)
+    MultipleRetryPolicy.MaxRetryCount, MultipleRetryPolicy.MaxRetryCountDefault)
 
   private def retryManyTimesOrThrow(nbRetry: Int): RetryDecision = maxRetryCount match {
     case -1 => RetryDecision.RETRY_SAME
@@ -62,4 +62,12 @@ class MultipleRetryPolicy(context: DriverContext, profileName: String)
     retryCount: Int): RetryDecision = RetryDecision.RETHROW
 
   override def close(): Unit = {}
+}
+
+object MultipleRetryPolicy {
+  val MaxRetryCount: DriverOption = new DriverOption {
+    override def getPath: String = "advanced.retry-policy.max-retry-count"
+  }
+
+  val MaxRetryCountDefault: Int = 60
 }

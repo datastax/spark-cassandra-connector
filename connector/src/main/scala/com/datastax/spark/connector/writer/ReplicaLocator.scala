@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.util.DriverUtil._
-import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.{Logging, tableFromCassandra}
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
 import scala.collection.JavaConversions._
@@ -63,7 +63,7 @@ object ReplicaLocator {
       tableName: String,
       partitionKeyMapper: ColumnSelector): ReplicaLocator[T] = {
 
-    val tableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
+    val tableDef = tableFromCassandra(connector, keyspaceName, tableName)
     val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
       tableDef,
       partitionKeyMapper.selectFrom(tableDef)

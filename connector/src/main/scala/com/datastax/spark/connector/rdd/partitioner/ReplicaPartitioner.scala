@@ -4,12 +4,13 @@ import java.net.InetAddress
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.{Partition, Partitioner}
 
-import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
 
 
 case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends EndpointPartition
@@ -31,7 +32,7 @@ implicit
 
   val _keyspace = CqlIdentifier.fromCql(keyspace) // TODO Fix this
 
-  val tableDef = Schema.tableFromCassandra(connector, keyspace, table)
+  val tableDef = tableFromCassandra(connector, keyspace, table)
   val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
     tableDef,
     partitionKeyMapper.selectFrom(tableDef)

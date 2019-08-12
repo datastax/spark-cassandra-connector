@@ -1,11 +1,11 @@
 package com.datastax.spark.connector.types
 
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 import scala.collection.immutable.HashMap
 import scala.util.{Success, Try}
-
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
 /** Parses CQL timestamps.
   *
@@ -55,16 +55,16 @@ object TimestampParser {
   private val converterMatrix = Array.tabulate[DateTimeFormatter](2, 2, formatsBySize.keys.max + 1) { (i, j, k) =>
     (if (j == 0) formatsBySize else formatsWithZBySize).get(k)
         .map(str => if (i == 1) str.replace(" ", "'T'") else str)
-        .map(DateTimeFormat.forPattern).orNull
+        .map(DateTimeFormatter.ofPattern).orNull
   }
 
   private val slowPathConverters = (formatsBySize.values ++ formatsBySize.values.map(_.replace(" ", "'T'")))
-      .map(DateTimeFormat.forPattern)
+      .map(DateTimeFormatter.ofPattern)
 
 
   private def slowParse(date: String): Date = {
-    slowPathConverters.view.map(p => Try(p.parseDateTime(date))).find(_.isSuccess) match {
-      case Some(Success(d)) => d.toDate
+    slowPathConverters.view.map(p => Try(ZonedDateTime.parse(date, p))).find(_.isSuccess) match {
+      case Some(Success(d)) => Date.from(d.toInstant)
       case _ => throw new IllegalArgumentException(s"Invalid date: $date")
     }
   }
@@ -82,7 +82,7 @@ object TimestampParser {
       implicit def bool2int(b: Boolean) = if (b) 1 else 0
       // trying guess string format by length and two symbols
       val format: DateTimeFormatter = converterMatrix(containsTAtFixedPosition(date))(endsWithZ(date))(date.length)
-      format.parseDateTime(date).toDate
+      Date.from(ZonedDateTime.parse(date, format).toInstant)
     } catch {
       // guess fail, iterate over all parsers
       case _: Throwable => slowParse(date)

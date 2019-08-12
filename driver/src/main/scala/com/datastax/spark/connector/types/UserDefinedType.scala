@@ -36,7 +36,7 @@ case class UserDefinedType(
 
   val fieldConvereters = columnTypes.map(_.converterToCassandra)
 
-  def converterToCassandra = new NullableTypeConverter[UDTValue] {
+  override def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
     override def convertPF = {
       case udtValue: UDTValue =>
@@ -48,12 +48,12 @@ case class UserDefinedType(
             columnValue
           }
         new UDTValue(columnNames, columnValues)
-      case dfGenericRow: GenericRowWithSchema =>
+      case IsGenericRowWithSchemePrototype(dfGenericRow) =>
         val columnValues =
          for (i <- columns.indices) yield {
            val columnName = columnNames(i)
            val columnConverter = fieldConvereters(i)
-           val dfSchemaIndex = dfGenericRow.schema.fieldIndex(columnName)
+           val dfSchemaIndex = dfGenericRow.fieldIndex(columnName)
            val columnValue = columnConverter.convert(dfGenericRow.get(dfSchemaIndex))
            columnValue
          }

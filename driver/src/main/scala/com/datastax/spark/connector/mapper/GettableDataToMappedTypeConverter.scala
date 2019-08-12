@@ -1,10 +1,9 @@
-package com.datastax.spark.connector.rdd.reader
+package com.datastax.spark.connector.mapper
 
 import java.lang.reflect.Method
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.StructDef
-import com.datastax.spark.connector.mapper.{ColumnMapper, DefaultColumnMapper, JavaBeanColumnMapper, TupleColumnMapper}
 import com.datastax.spark.connector.types._
 import com.datastax.spark.connector.util.{AnyObjectFactory, ReflectionUtil, Symbols}
 
@@ -17,7 +16,7 @@ import scala.reflect.runtime.universe._
   * @param structDef table or UDT definition to convert from
   * @param columnSelection columns that have been selected from the struct
   */
-private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnMapper](
+class GettableDataToMappedTypeConverter[T : TypeTag : ColumnMapper](
     structDef: StructDef,
     columnSelection: IndexedSeq[ColumnRef])
   extends TypeConverter[T] {
@@ -50,7 +49,7 @@ private[connector] class GettableDataToMappedTypeConverter[T : TypeTag : ColumnM
   private val isJavaBean =
     implicitly[ColumnMapper[T]].isInstanceOf[JavaBeanColumnMapper[_]]
 
-  val columnMap =
+  val columnMap: ColumnMapForReading =
     implicitly[ColumnMapper[T]].columnMapForReading(structDef, columnSelection)
 
   /** Returns the column mapper associated with the given type.

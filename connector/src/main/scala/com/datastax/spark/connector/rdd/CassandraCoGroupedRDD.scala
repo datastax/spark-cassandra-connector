@@ -9,7 +9,7 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row}
-
+import com.datastax.spark.connector.util._
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
@@ -44,7 +44,7 @@ class CassandraCoGroupedRDD[T](
   lazy val connector = scanRDDs.head.connector
 
   def getPartitionKey(connector: CassandraConnector, keyspaceName: String, tableName: String): Seq[ColumnDef] = {
-    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    schemaFromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(table) => table.partitionKey
       case None => {
         val metadata: Metadata = connector.withSessionDo(_.getMetadata)

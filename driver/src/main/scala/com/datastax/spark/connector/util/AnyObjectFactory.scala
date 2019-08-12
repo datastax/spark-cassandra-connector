@@ -1,21 +1,20 @@
-package com.datastax.spark.connector.rdd.reader
+package com.datastax.spark.connector.util
 
 import java.lang.reflect.Constructor
 
+// FIXME:
+import com.datastax.oss.driver.shaded.guava.common.primitives.Primitives
+
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
-
 import org.apache.commons.lang3.reflect.ConstructorUtils
-import com.datastax.spark.connector.util.Logging
-import com.google.common.primitives.Primitives
 import com.thoughtworks.paranamer.AdaptiveParanamer
-
-import com.datastax.spark.connector.util.Reflect
+import com.typesafe.scalalogging.StrictLogging
 
 /** Factory for creating objects of any type by invoking their primary constructor.
   * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
   * and can be safely passed along with Spark tasks. */
-class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
+class AnyObjectFactory[T: TypeTag] extends Serializable {
 
   import AnyObjectFactory._
 
@@ -104,7 +103,7 @@ class AnyObjectFactory[T: TypeTag] extends Logging with Serializable {
   def newInstance(args: AnyRef*): T = javaConstructor.newInstance(outerInstanceArg ++ args: _*)
 }
 
-object AnyObjectFactory extends Logging {
+object AnyObjectFactory extends StrictLogging {
   private[connector] type ParamType = Either[Class[_], String]
 
   private[connector] val paranamer = new AdaptiveParanamer
@@ -122,13 +121,13 @@ object AnyObjectFactory extends Logging {
   private[connector] def resolveConstructor[T](clazz: Class[T]): Constructor[T] = {
     lazy val defaultCtor = Try {
       val ctor = getDefaultConstructor(clazz)
-      logDebug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getName)} for ${clazz.getName}")
+      logger.debug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getName)} for ${clazz.getName}")
       ctor
     }
 
     lazy val noArgsCtor = Try {
       val ctor = getNoArgsConstructor(clazz)
-      logDebug(s"Using a no-args constructor for ${clazz.getName}")
+      logger.debug(s"Using a no-args constructor for ${clazz.getName}")
       ctor
     }
 
@@ -182,7 +181,7 @@ object AnyObjectFactory extends Logging {
 
   /**
    * Returns an enclosing class wrapped by `Option`. It returns `Some` if
-   * [[com.datastax.spark.connector.rdd.reader.AnyObjectFactory#isRealMemberClass isRealMemberClass]] returns `true`.
+   * [[AnyObjectFactory#isRealMemberClass isRealMemberClass]] returns `true`.
    */
   def getRealEnclosingClass[T](clazz: Class[T]) = if (isRealMemberClass(clazz)) Some(clazz.getEnclosingClass) else None
 

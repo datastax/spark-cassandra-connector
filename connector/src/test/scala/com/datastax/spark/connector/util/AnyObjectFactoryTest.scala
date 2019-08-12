@@ -4,11 +4,10 @@ import com.datastax.spark.connector._
 import com.datastax.spark.connector.testkit.AbstractSpec
 import com.datastax.spark.connector.util.JavaApiHelper
 import org.apache.commons.lang3.SerializationUtils
-import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.reflect.runtime.universe._
 
-class AnyObjectFactoryTest extends WordSpecLike with Matchers {
+class AnyObjectFactoryTest extends AbstractSpec {
 
   "AnyObjectFactory" when {
     "instantiated for a bean class with a single, no-args constructor" should {

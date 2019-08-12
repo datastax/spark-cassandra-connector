@@ -4,16 +4,15 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
-import java.time.{Instant, LocalTime, ZoneId, LocalDate => JavaLocalDate}
-import java.util.concurrent.TimeUnit
+import java.time.{LocalTime, ZoneId, LocalDate => JavaLocalDate}
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.{LineString, Point, Polygon}
 import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
+import com.datastax.spark.connector.util.ByteBufferUtil
 import com.datastax.spark.connector.util.Symbols._
-import com.datastax.spark.connector.util.{ByteBufferUtil, Symbols}
 import org.apache.commons.lang3.tuple
 
 import scala.collection.JavaConversions._
@@ -302,7 +301,7 @@ object TypeConverter {
     def targetTypeTag = SqlDateTypeTag
 
     def convertPF = {
-      case x: String => SqlDateConverter.convert(JodaLocalDateConverter.convert(x))
+      case x: String => SqlDateConverter.convert(TimestampParser.parse(x))
       case x: Date => new java.sql.Date(x.getTime)
       case x: JavaLocalDate => new java.sql.Date(x.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli)
     }
@@ -417,6 +416,38 @@ object TypeConverter {
   private val JavaLocalDateTypeTag = implicitly[TypeTag[JavaLocalDate]]
 
   implicit object JavaLocalDateConverter extends NullableTypeConverter[JavaLocalDate] {
+
+    private def fromDateFields(date: Date): JavaLocalDate = {
+      if (date == null) {
+        throw new IllegalArgumentException("The date must not be null")
+      }
+      if (date.getTime() < 0) {
+        // handle years in era BC
+        val cal = new GregorianCalendar();
+        cal.setTime(date);
+        fromCalendarFields(cal);
+      } else {
+        JavaLocalDate.of(
+          date.getYear() + 1900,
+          date.getMonth() + 1,
+          date.getDate()
+        )
+      }
+    }
+
+    private def fromCalendarFields(calendar : Calendar): JavaLocalDate = {
+      if (calendar == null) {
+        throw new IllegalArgumentException("The calendar must not be null")
+      }
+      val era = calendar.get(Calendar.ERA)
+      val yearOfEra = calendar.get(Calendar.YEAR)
+      JavaLocalDate.of(
+        if (era == GregorianCalendar.AD) yearOfEra else 1 - yearOfEra,
+        calendar.get(Calendar.MONTH) + 1,
+        calendar.get(Calendar.DAY_OF_MONTH)
+      )
+    }
+
     def targetTypeTag = JavaLocalDateTypeTag
 
     def convertPF = {
@@ -424,7 +455,7 @@ object TypeConverter {
       case x: String => JavaLocalDate.parse(x)
       case x: Int => JavaLocalDate.ofEpochDay(x)
       case x: Long => JavaLocalDate.ofEpochDay(x)
-      case x: Date => convert(JodaLocalDate.fromDateFields(x))
+      case x: Date => fromDateFields(x)
     }
   }
 

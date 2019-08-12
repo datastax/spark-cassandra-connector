@@ -24,7 +24,10 @@ lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
-  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty")
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty"),
+  fork := true,
+  parallelExecution := true,
+  testForkedParallel := false
 )
 
 val annotationProcessor = Seq(
@@ -46,10 +49,6 @@ lazy val connector = (project in file("connector"))
     name := "dse-spark-connector",
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-
-    fork := true,
-    parallelExecution := true,
-    testForkedParallel := false,
 
     // test grouping
     integrationTestsWithFixtures := {

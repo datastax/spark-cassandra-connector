@@ -59,7 +59,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
-        .withInt(CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount, conf.queryRetryCount)
+        .withInt(MultipleRetryPolicy.MaxRetryCount, conf.queryRetryCount)
     }
 
     // add Auth Conf if set
@@ -165,10 +165,4 @@ object CassandraConnectionFactory {
       .getOrElse(FactoryParam.default)
   }
 
-  object CustomDriverOptions {
-
-    val MaxRetryCount: DriverOption = new DriverOption {
-      override def getPath: String = "advanced.retry-policy.max-retry-count"
-    }
-  }
 }
