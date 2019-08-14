@@ -28,4 +28,8 @@ package object types {
     }
   }
 
+  /** Makes sure the sequence does not contain any lazy transformations.
+    * This guarantees that if T is Serializable, the collection is Serializable. */
+  def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
+
 }

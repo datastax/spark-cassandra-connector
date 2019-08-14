@@ -70,26 +70,12 @@ object ColumnType {
     DseDataTypes.LINE_STRING -> LineStringType
   )
 
-  /** Makes sure the sequence does not contain any lazy transformations.
-    * This guarantees that if T is Serializable, the collection is Serializable. */
-  private def unlazify[T](seq: IndexedSeq[T]): IndexedSeq[T] = IndexedSeq(seq: _*)
-
-  private def fields(dataType: DriverUserDefinedType): IndexedSeq[UDTFieldDef] = unlazify {
-    for ((fieldName, fieldType) <- dataType.getFieldNames.zip(dataType.getFieldTypes).toIndexedSeq) yield
-      UDTFieldDef(fieldName.asInternal(), fromDriverType(fieldType))
-  }
-
-  private def fields(dataType: DriverTupleType): IndexedSeq[TupleFieldDef] = unlazify {
-    for ((field, index) <- dataType.getComponentTypes.toIndexedSeq.zipWithIndex) yield
-      TupleFieldDef(index, fromDriverType(field))
-  }
-
   private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
     case listType: DriverListType => ListType(fromDriverType(listType.getElementType), listType.isFrozen)
     case setType: DriverSetType => SetType(fromDriverType(setType.getElementType), setType.isFrozen)
     case mapType: DriverMapType => MapType(fromDriverType(mapType.getKeyType), fromDriverType(mapType.getValueType), mapType.isFrozen)
-    case userType: DriverUserDefinedType => UserDefinedType(userType.getName.asInternal(), fields(userType), userType.isFrozen)
-    case tupleType: DriverTupleType => TupleType(fields(tupleType): _*)
+    case userType: DriverUserDefinedType => UserDefinedType(userType)
+    case tupleType: DriverTupleType => TupleType(tupleType)
     case dataType => primitiveTypeMap(dataType)
   }
 

@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream
 import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTupleType}
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
+import com.datastax.spark.connector.types.ColumnType.{fields, fromDriverType, unlazify}
 import com.datastax.spark.connector.{ColumnName, TupleValue}
 import org.apache.commons.lang3.tuple.{Pair, Triple}
 
@@ -131,7 +132,13 @@ object TupleType {
       case _ => throw new IllegalArgumentException(s"${classOf[DriverTupleType]} expected.")
     }
   }
+
+  private def fields(dataType: DriverTupleType): IndexedSeq[TupleFieldDef] = unlazify {
+    for ((field, index) <- dataType.getComponentTypes.toIndexedSeq.zipWithIndex) yield
+      TupleFieldDef(index, fromDriverType(field))
+  }
+
+  def apply(javaTupleType: DriverTupleType): TupleType = {
+    TupleType(fields(javaTupleType): _*)
+  }
 }
-
-
-

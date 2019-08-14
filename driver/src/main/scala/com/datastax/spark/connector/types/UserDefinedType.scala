@@ -5,6 +5,7 @@ import java.io.ObjectOutputStream
 import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
+import com.datastax.spark.connector.types.ColumnType.{fields, fromDriverType, unlazify}
 import com.datastax.spark.connector.{ColumnName, UDTValue}
 
 import scala.collection.JavaConversions._
@@ -104,6 +105,15 @@ object UserDefinedType {
         this.getClass.getName + " does not support serialization, because the " +
         "required underlying " + classOf[DataType].getName + " is not Serializable.")
 
+  }
+
+  private def fields(dataType: DriverUserDefinedType): IndexedSeq[UDTFieldDef] = unlazify {
+    for ((fieldName, fieldType) <- dataType.getFieldNames.zip(dataType.getFieldTypes).toIndexedSeq) yield
+      UDTFieldDef(fieldName.asInternal(), fromDriverType(fieldType))
+  }
+
+  def apply(javaUserType: DriverUserDefinedType): UserDefinedType = {
+    UserDefinedType(javaUserType.getName.asInternal(), fields(javaUserType), javaUserType.isFrozen)
   }
 }
 
