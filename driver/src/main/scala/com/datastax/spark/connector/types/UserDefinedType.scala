@@ -5,7 +5,7 @@ import java.io.ObjectOutputStream
 import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
-import com.datastax.spark.connector.types.ColumnType.{fields, fromDriverType, unlazify}
+import com.datastax.spark.connector.types.ColumnType.fromDriverType
 import com.datastax.spark.connector.{ColumnName, UDTValue}
 
 import scala.collection.JavaConversions._

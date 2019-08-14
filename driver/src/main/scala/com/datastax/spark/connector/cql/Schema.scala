@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.NameTools
@@ -246,8 +246,9 @@ object TableDef {
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
-case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef], isSystem: Boolean) {
-  lazy val tableByName = tables.map(t => (t.tableName, t)).toMap
+case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef], userTypes: Set[UserDefinedType], isSystem: Boolean) {
+  lazy val tableByName: Map[String, TableDef] = tables.map(t => (t.tableName, t)).toMap
+  lazy val userTypeByName: Map[String, UserDefinedType] = userTypes.map(t => (t.name, t)).toMap
 }
 
 case class Schema(keyspaces: Set[KeyspaceDef]) {
@@ -329,9 +330,13 @@ object Schema extends StrictLogging {
           isView)
       }
 
+    def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
+      metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) =>  UserDefinedType(driverUserType) }.toSet
+    }
+
     def fetchKeyspaces(metadata: Metadata, systemKeyspaces: Set[String]): Set[KeyspaceDef] =
       for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        KeyspaceDef(toName(keyspace.getName), fetchTables(keyspace), systemKeyspaces.contains(toName(keyspace.getName)))
+        KeyspaceDef(toName(keyspace.getName), fetchTables(keyspace), fetchUserTypes(keyspace), systemKeyspaces.contains(toName(keyspace.getName)))
 
     def handleId(table: TableMetadata, columnName: String): String =
       Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))

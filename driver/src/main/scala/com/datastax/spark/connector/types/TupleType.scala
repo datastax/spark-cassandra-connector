@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream
 import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTupleType}
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
-import com.datastax.spark.connector.types.ColumnType.{fields, fromDriverType, unlazify}
+import com.datastax.spark.connector.types.ColumnType.fromDriverType
 import com.datastax.spark.connector.{ColumnName, TupleValue}
 import org.apache.commons.lang3.tuple.{Pair, Triple}
 

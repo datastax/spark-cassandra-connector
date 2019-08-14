@@ -69,6 +69,11 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       val table = keyspace.tableByName("test")
       table.tableName shouldBe "test"
     }
+    "allow to look up user type by name" in {
+      val keyspace = schema.keyspaceByName(ks)
+      val userType = keyspace.userTypeByName("address")
+      userType.name shouldBe "address"
+    }
   }
 
   "A TableDef" should {
