@@ -97,12 +97,12 @@ object SparkInstaller {
   }
 
   private def installSpark(rootDir: Path, scalaVersion: String): Unit = {
-    val `scala_2.11` = scalaVersion != "2.10"
+    val `scala_2.12` = scalaVersion != "2.11"
 
-    if (`scala_2.11`) {
+    if (`scala_2.12`) {
       val cmd = List(
         Paths.get("dev").resolve("change-scala-version.sh").toString,
-        "2.11"
+        "2.12"
       )
       val result = sbt.Process(cmd, rootDir.toFile) ! StdProcessLogger
       if (result != 0)
@@ -114,7 +114,7 @@ object SparkInstaller {
       "--force",
       "--batch-mode",
       "-DskipTests"
-    ) ::: (if (`scala_2.11`) List("-Dscala-2.11") else Nil) :::
+    ) ::: (if (`scala_2.12`) List("-Dscala-2.12") else Nil) :::
       "install" :: Nil
 
     val result = sbt.Process(cmd, rootDir.toFile, "AMPLAB_JENKINS" -> "1") ! StdProcessLogger

@@ -12,7 +12,7 @@ if [ "$#" -ne "2" ]; then
     echo "Usage: dev/run-real-tests.sh <Spark version> <Scala version>"
     echo "where"
     echo "  <Spark version> is one of the versions available on Apache mirror"
-    echo "  <Scala version> is either 2.10 or 2.11"
+    echo "  <Scala version> is either 2.11 or 2.12"
     exit 1
 fi
 
@@ -23,8 +23,8 @@ TARGET_SPARK_VERSION="$1"
 TARGET_SCALA_VERSION="$2"
 
 scala211=""
-if [ "$TARGET_SCALA_VERSION" = "2.11" ]; then
-    scala211="-Dscala-2.11=true"
+if [ "$TARGET_SCALA_VERSION" = "2.12" ]; then
+    scala211="-Dscala-2.12=true"
 fi
 
 function downloadSpark {
@@ -33,8 +33,8 @@ function downloadSpark {
     sparkVersion="$1"
     scalaVersion="$2"
     scalaVersionSuffix=""
-    if [ "$scalaVersion" = "2.11" ]; then
-        scalaVersionSuffix="-scala2.11"
+    if [ "$scalaVersion" = "2.12" ]; then
+        scalaVersionSuffix="-scala2.12"
     fi
     targetFile="$SPARK_ARCHIVES_DIR/spark-$sparkVersion-$scalaVersion.tgz"
     if [ -f "$targetFile" ]; then

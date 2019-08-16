@@ -20,7 +20,7 @@ addSbtPlugin("com.scalapenos" % "sbt-prompt" % "1.0.0")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.0.4")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.4.0")
 
 //SbtAssembly 0.12.0 is included in sbt-spark-package
 resolvers += "Spark Packages Main repo" at "https://dl.bintray.com/spark-packages/maven" 

@@ -12,7 +12,7 @@ for VERSION in $@ ;do
         continue
     fi
     sbt clean
-    sbt -Dscala-2.11=true doc
+    sbt doc
     mkdir $OUTPUT/$VERSION
     
     for MODULE in spark-cassandra-connector spark-cassandra-connector-embedded; do
