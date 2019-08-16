@@ -18,4 +18,3 @@ private[connector] object Reflect {
     }
   }
 }
-

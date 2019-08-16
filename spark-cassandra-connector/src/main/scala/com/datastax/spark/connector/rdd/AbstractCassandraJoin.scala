@@ -167,7 +167,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     val rowIterator = fetchIterator(session, bsb, rowMetadata, left.iterator(split, context))
     val countingIterator = new CountingIterator(rowIterator, None)
 
-    context.addTaskCompletionListener { (context) =>
+    context.addTaskCompletionListener[Unit] { (context) =>
       val duration = metricsUpdater.finish() / 1000000000d
       logDebug(
         f"Fetched ${countingIterator.count} rows " +
