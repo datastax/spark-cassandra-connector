@@ -10,7 +10,7 @@ import scala.language.existentials
 import scala.reflect.runtime.universe._
 import scala.util.control.NonFatal
 
-private[connector] object MappedToGettableDataConverter extends StrictLogging {
+object MappedToGettableDataConverter extends StrictLogging {
 
   /**
     * When the Spark Cassandra Connector is running on a separate

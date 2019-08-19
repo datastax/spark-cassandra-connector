@@ -101,9 +101,9 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   /** Creates and configures native Cassandra connection */
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
     val builder = DriverConfigLoader.programmaticBuilder()
-    val loader = connectorConfigBuilder(conf, builder)
+    val loader = connectorConfigBuilder(conf, builder).build()
     CqlSession.builder()
-      .withConfigLoader(loader.build())
+      .withConfigLoader(loader)
       .build()
   }
 
