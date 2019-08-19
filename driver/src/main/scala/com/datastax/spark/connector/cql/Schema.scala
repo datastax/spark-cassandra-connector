@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
+import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 
 import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
@@ -206,7 +207,7 @@ case class TableDef(
   override lazy val columnByName: Map[String, ColumnDef] =
     super.columnByName
 
-  private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map (e => (e._1.toLowerCase, e._2))
+  private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 
   def columnByNameIgnoreCase(columnName: String) = {
     columnBylowerCaseName(columnName.toLowerCase)
@@ -285,6 +286,71 @@ object Schema extends StrictLogging {
     }
   }
 
+  private def handleId(table: TableMetadata, columnName: String): String =
+    Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
+      .flatMap(toOption)
+      .map(c => toName(c.getName))
+      .getOrElse(columnName)
+
+  private def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
+    case table: TableMetadata =>
+      for (index <- table.getIndexes.asScala.values.toSeq) yield {
+        val className = toOption(index.getClassName)
+        val target = handleId(table, index.getTarget)
+        IndexDef(className, target, toName(index.getName), Map.empty)
+      }
+    case _: ViewMetadata => Seq.empty
+  }
+
+  def fetchTable(keyspace: CqlIdentifier, table: RelationMetadata): TableDef = {
+    val partitionKey = fetchPartitionKey(table)
+    val clusteringColumns = fetchClusteringColumns(table)
+    val regularColumns = fetchRegularColumns(table)
+    val indexDefs = getIndexDefs(table)
+
+    val isView = table match {
+      case _: ViewMetadata => true
+      case _ => false
+    }
+
+    TableDef(
+      toName(keyspace),
+      toName(table.getName),
+      partitionKey,
+      clusteringColumns,
+      regularColumns,
+      indexDefs,
+      isView)
+  }
+
+  private def isTableSelected(table: RelationMetadata, selected: Option[String]): Boolean = selected match {
+    case None => true
+    case Some(name) => toName(table.getName) == name
+  }
+
+  private def fetchTables(keyspace: KeyspaceMetadata, selected: Option[String] = None): Set[TableDef] =
+    for ((_, table) <- (keyspace.getTables.asScala.toSet ++ keyspace.getViews.asScala.toSet)
+         if isTableSelected(table, selected)) yield {
+      fetchTable(keyspace.getName, table)
+    }
+
+  def fetchUserType(driverUserType: DriverUserDefinedType): UserDefinedType = {
+    UserDefinedType(driverUserType)
+  }
+
+  private def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
+    metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) => fetchUserType(driverUserType) }.toSet
+  }
+
+  private def systemKeyspaces = Set.empty[String] // TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
+
+  def fetchKeyspace(keyspace: KeyspaceMetadata, selectedTable: Option[String] = None): KeyspaceDef =
+    KeyspaceDef(
+      toName(keyspace.getName),
+      fetchTables(keyspace, selectedTable),
+      fetchUserTypes(keyspace),
+      systemKeyspaces.contains(toName(keyspace.getName)))
+
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
     *
     * @param keyspaceName if defined, fetches only metadata of the given keyspace
@@ -301,64 +367,13 @@ object Schema extends StrictLogging {
         case Some(name) => toName(keyspace.getName) == name
       }
 
-    def isTableSelected(table: RelationMetadata): Boolean =
-      tableName match {
-        case None => true
-        case Some(name) => toName(table.getName) == name
-      }
-
-    def fetchTables(keyspace: KeyspaceMetadata): Set[TableDef] =
-      for ((_, table) <- (keyspace.getTables.asScala.toSet ++ keyspace.getViews.asScala.toSet)
-           if isTableSelected(table)) yield {
-        val partitionKey = fetchPartitionKey(table)
-        val clusteringColumns = fetchClusteringColumns(table)
-        val regularColumns = fetchRegularColumns(table)
-        val indexDefs = getIndexDefs(table)
-
-        val isView = table match {
-          case _: ViewMetadata => true
-          case _ => false
-        }
-
-        TableDef(
-          toName(keyspace.getName),
-          toName(table.getName),
-          partitionKey,
-          clusteringColumns,
-          regularColumns,
-          indexDefs,
-          isView)
-      }
-
-    def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
-      metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) =>  UserDefinedType(driverUserType) }.toSet
-    }
-
-    def fetchKeyspaces(metadata: Metadata, systemKeyspaces: Set[String]): Set[KeyspaceDef] =
+    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
       for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        KeyspaceDef(toName(keyspace.getName), fetchTables(keyspace), fetchUserTypes(keyspace), systemKeyspaces.contains(toName(keyspace.getName)))
-
-    def handleId(table: TableMetadata, columnName: String): String =
-      Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
-        .flatMap(toOption)
-        .map(c => toName(c.getName))
-        .getOrElse(columnName)
-
-    def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
-      case table: TableMetadata =>
-        for (index <- table.getIndexes.asScala.values.toSeq) yield {
-          val className = toOption(index.getClassName)
-          val target = handleId(table, index.getTarget)
-          IndexDef(className, target, toName(index.getName), Map.empty)
-        }
-      case _: ViewMetadata => Seq.empty
-    }
+        fetchKeyspace(keyspace)
 
     logger.debug(s"Retrieving database schema")
-    val systemKeyspaceNames = Set.empty[String]// TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
-
     def fetchSchema(metadata: => Metadata): Schema =
-      Schema(fetchKeyspaces(metadata, systemKeyspaceNames))
+      Schema(fetchKeyspaces(metadata))
 
     val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
     val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
