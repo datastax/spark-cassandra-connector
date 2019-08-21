@@ -6,6 +6,11 @@ import scala.reflect.runtime.universe._
 
 trait CollectionColumnType[T] extends ColumnType[T] {
   def isCollection = true
+
+  protected def nestedElementTypeName(elemType: ColumnType[_]): String = elemType match {
+    case _: UserDefinedType => s"frozen<${elemType.cqlTypeName}>" // non-frozen user types are only supported at top-level
+    case _ => s"${elemType.cqlTypeName}"
+  }
 }
 
 case class ListType[T](
@@ -18,7 +23,7 @@ case class ListType[T](
     implicitly[TypeTag[Vector[T]]]
   }
 
-  def cqlTypeName = s"list<${elemType.cqlTypeName}>"
+  def cqlTypeName = s"list<${nestedElementTypeName(elemType)}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
     new TypeConverter.OptionToNullConverter(TypeConverter.listConverter(elemType.converterToCassandra))
@@ -34,7 +39,7 @@ case class SetType[T](
     implicitly[TypeTag[Set[T]]]
   }
 
-  def cqlTypeName = s"set<${elemType.cqlTypeName}>"
+  def cqlTypeName = s"set<${nestedElementTypeName(elemType)}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
     new TypeConverter.OptionToNullConverter(TypeConverter.setConverter(elemType.converterToCassandra))
@@ -52,7 +57,7 @@ case class MapType[K, V](
     implicitly[TypeTag[Map[K, V]]]
   }
 
-  def cqlTypeName = s"map<${keyType.cqlTypeName}, ${valueType.cqlTypeName}>"
+  def cqlTypeName = s"map<${nestedElementTypeName(keyType)}, ${nestedElementTypeName(valueType)}>"
 
   override def converterToCassandra: TypeConverter[_ <: AnyRef] =
     new TypeConverter.OptionToNullConverter(
