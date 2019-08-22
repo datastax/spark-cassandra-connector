@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.util.{Date, GregorianCalendar, UUID}
 
 import com.datastax.oss.driver.api.core.data.CqlDuration
@@ -290,12 +290,16 @@ class TypeConverterTest {
   }
 
   @Test
-  def testTimeType(): Unit = {
-    val c = TypeConverter.TimeTypeConverter
+  def testLocalTimeType(): Unit = {
+    val longC = TypeConverter.LongConverter
     val targetTime = 1482000000L
-    val date = new Date(1482)
-    assertEquals(targetTime, c.convert(targetTime))
-    assertEquals(targetTime, c.convert(date))
+    val localTime = LocalTime.ofNanoOfDay(targetTime)
+    assertEquals(targetTime, longC.convert(targetTime))
+
+    val timeC = TypeConverter.JavaLocalTimeConverter
+    assertEquals(localTime, timeC.convert(localTime))
+    assertEquals(localTime, timeC.convert(targetTime))
+    assertEquals(localTime, timeC.convert("00:00:01.482"))
   }
 
   @Test
@@ -622,11 +626,11 @@ class TypeConverterTest {
   }
 
   @Test
-  def testJavaMapping (): Unit = {
+  def testJavaMapping(): Unit = {
     assertEquals(TypeConverter.JavaBooleanConverter, TypeConverter.forType(classOf[java.lang.Boolean]))
     assertEquals(TypeConverter.JavaShortConverter, TypeConverter.forType(classOf[java.lang.Short]))
     assertEquals(TypeConverter.JavaIntConverter, TypeConverter.forType(classOf[java.lang.Integer]))
-    assertTrue(TypeConverter.forType(classOf[java.lang.Long]).isInstanceOf[ChainedTypeConverter[_]])
+    assertEquals(TypeConverter.JavaLongConverter, TypeConverter.forType(classOf[java.lang.Long]))
     assertEquals(TypeConverter.JavaFloatConverter, TypeConverter.forType(classOf[java.lang.Float]))
     assertEquals(TypeConverter.JavaDoubleConverter, TypeConverter.forType(classOf[java.lang.Double]))
     assertEquals(TypeConverter.JavaBigDecimalConverter, TypeConverter.forType(classOf[java.math.BigDecimal]))

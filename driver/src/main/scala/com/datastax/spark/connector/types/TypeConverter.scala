@@ -404,15 +404,6 @@ object TypeConverter {
     }
   }
 
-  object TimeTypeConverter extends NullableTypeConverter[LocalTime] {
-    def targetTypeTag = JavaLocalTimeTypeTag
-    def convertPF = {
-      case x: LocalTime => x
-      case x: Long => LocalTime.ofNanoOfDay(x)
-      case x: String => LocalTime.parse(x)
-    }
-  }
-
   private val JavaLocalDateTypeTag = implicitly[TypeTag[JavaLocalDate]]
 
   implicit object JavaLocalDateConverter extends NullableTypeConverter[JavaLocalDate] {
@@ -924,7 +915,6 @@ object TypeConverter {
     ByteBufferConverter,
     ByteArrayConverter,
     UDTValueConverter,
-    TimeTypeConverter,
     JavaLocalDateConverter,
     JavaLocalTimeConverter,
     JavaDurationConverter,
