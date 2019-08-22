@@ -41,24 +41,29 @@ object Dependencies
       .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
   }
 
-  object Test {
+  object TestCommon {
+    val mockito = "org.mockito" % "mockito-all" % Mockito
+    val junit = "junit" % "junit" % JUnit
+    val junitInterface = "com.novocode" % "junit-interface" % JUnitInterface
+    val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest
+  }
+
+  object TestConnector {
     val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver % "test, it" // Annotation Processor
     val commonsIO         = "commons-io"              %  "commons-io"                   % CommonsIO    % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
-    val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest    % "test,it"       // ApacheV2
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
-    val mockito           = "org.mockito"             %  "mockito-all"                  % Mockito      % "test,it"       // MIT
-    val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
       driverMapperProcessor,
       scalaCheck,
-      scalaTest,
       sparkCoreT,
       sparkStreamingT,
-      mockito,
-      junit).map(_.logbackExclude())
+      TestCommon.scalaTest % "test,it",
+      TestCommon.mockito % "test,it",
+      TestCommon.junit % "test,it",
+      TestCommon.junitInterface % "test,it").map(_.logbackExclude())
   }
 
   // Required for metrics
@@ -79,14 +84,16 @@ object Dependencies
     val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
     val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
 
-    val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest % "test"
-    val junit = "junit" % "junit" % JUnit % "test"
-    val mockito = "org.mockito" % "mockito-all" % Mockito % "test"
+    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3, paranamer, scalaLogging)
+  }
 
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3, paranamer,
-      scalaLogging,
-      // tests
-      scalaTest, junit, mockito)
+  object TestDriver {
+    val dependencies = Seq(
+      TestCommon.scalaTest % "test",
+      TestCommon.mockito % "test",
+      TestCommon.junit % "test",
+      TestCommon.junitInterface % "test"
+    )
   }
 
   object TestSupport {

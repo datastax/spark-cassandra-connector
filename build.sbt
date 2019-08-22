@@ -63,7 +63,7 @@ lazy val connector = (project in file("connector"))
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++= Dependencies.Spark.dependencies
-      ++ Dependencies.Test.dependencies
+      ++ Dependencies.TestConnector.dependencies
       ++ Dependencies.Temporary.dependencies
       ++ Dependencies.Jetty.dependencies
   )
@@ -84,4 +84,5 @@ lazy val driver = (project in file("driver"))
   .settings(
     name := "dse-spark-connector-driver",
     libraryDependencies ++= Dependencies.Driver.dependencies
+      ++ Dependencies.TestDriver.dependencies
   )
