@@ -369,7 +369,7 @@ object Schema extends StrictLogging {
 
     def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
       for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        fetchKeyspace(keyspace)
+        fetchKeyspace(keyspace, tableName)
 
     logger.debug(s"Retrieving database schema")
     def fetchSchema(metadata: => Metadata): Schema =
