@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
-import java.time.{LocalTime, ZoneId, LocalDate => JavaLocalDate}
+import java.time.{ZoneId, ZoneOffset, LocalDate => JavaLocalDate}
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.{LineString, Point, Polygon}
@@ -279,6 +279,24 @@ object TypeConverter {
     }
   }
 
+  /** For backward compatibility this parses following formats YYYY || YYYY'Z' to YYYY-01-01 dates with local or
+    * UTC time zones respectively.*/
+  private object YearParser {
+    def applicable(x: String): Boolean =
+      x.length == 4 || x.length == 5
+
+    def parseToLocalDate(date: String): JavaLocalDate = {
+      JavaLocalDate.of(date.take(4).toInt, 1, 1)
+    }
+
+    def parseToDate(date: String): Date = {
+      if (date.length == 5 && date.charAt(4) == 'Z')
+        Date.from(parseToLocalDate(date).atStartOfDay.toInstant(ZoneOffset.UTC))
+      else
+        Date.from(parseToLocalDate(date).atStartOfDay(ZoneId.systemDefault()).toInstant)
+    }
+  }
+
   private val DateTypeTag = implicitly[TypeTag[Date]]
 
   implicit object DateConverter extends NullableTypeConverter[Date] {
@@ -289,6 +307,7 @@ object TypeConverter {
       case x: Calendar => x.getTime
       case x: Long => new Date(x)
       case x: UUID if x.version() == 1 => new Date(x.timestamp())
+      case x: String if YearParser.applicable(x) => YearParser.parseToDate(x)
       case x: String => TimestampParser.parse(x)
       case x: JavaLocalDate => Date.from(x.atStartOfDay(ZoneId.systemDefault()).toInstant)
       case x: java.time.Instant => Date.from(x)
@@ -301,7 +320,7 @@ object TypeConverter {
     def targetTypeTag = SqlDateTypeTag
 
     def convertPF = {
-      case x: String => SqlDateConverter.convert(TimestampParser.parse(x))
+      case x: String => SqlDateConverter.convert(DateConverter.convert(x))
       case x: Date => new java.sql.Date(x.getTime)
       case x: JavaLocalDate => new java.sql.Date(x.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli)
     }
@@ -443,6 +462,7 @@ object TypeConverter {
 
     def convertPF = {
       case x: JavaLocalDate => x
+      case x: String if YearParser.applicable(x) => YearParser.parseToLocalDate(x)
       case x: String => JavaLocalDate.parse(x)
       case x: Int => JavaLocalDate.ofEpochDay(x)
       case x: Long => JavaLocalDate.ofEpochDay(x)

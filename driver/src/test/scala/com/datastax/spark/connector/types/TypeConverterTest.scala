@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.time.{LocalDate, LocalTime}
+import java.time.{LocalDate, LocalTime, ZoneId, ZoneOffset}
 import java.util.{Date, GregorianCalendar, UUID}
 
 import com.datastax.oss.driver.api.core.data.CqlDuration
@@ -148,7 +148,12 @@ class TypeConverterTest {
 
     assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(dateDayOnly, c.convert(javaLocalDate))
+    assertEquals(dateDayOnly, c.convert(dayOnlyStr))
     assertEquals(date, c.convert(dateStr))
+
+    val date1 = LocalDate.of(1986, 1, 1)
+    assertEquals(Date.from(date1.atStartOfDay(ZoneId.systemDefault()).toInstant), c.convert("1986"))
+    assertEquals(Date.from(date1.atStartOfDay().toInstant(ZoneOffset.UTC)), c.convert("1986Z"))
   }
 
   @Test
@@ -287,6 +292,7 @@ class TypeConverterTest {
     val c = TypeConverter.forType[LocalDate]
     val testDate = LocalDate.of(1985, 1, 1)
     assertEquals(testDate, c.convert("1985"))
+    assertEquals(testDate, c.convert("1985Z"))
   }
 
   @Test
