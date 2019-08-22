@@ -46,6 +46,7 @@ object Dependencies
     val junit = "junit" % "junit" % JUnit
     val junitInterface = "com.novocode" % "junit-interface" % JUnitInterface
     val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest
+    val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver
   }
 
   object TestConnector {
@@ -56,10 +57,10 @@ object Dependencies
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
 
     val dependencies = Seq(
-      driverMapperProcessor,
       scalaCheck,
       sparkCoreT,
       sparkStreamingT,
+      TestCommon.driverMapperProcessor % "test,it",
       TestCommon.scalaTest % "test,it",
       TestCommon.mockito % "test,it",
       TestCommon.junit % "test,it",
@@ -92,7 +93,8 @@ object Dependencies
       TestCommon.scalaTest % "test",
       TestCommon.mockito % "test",
       TestCommon.junit % "test",
-      TestCommon.junitInterface % "test"
+      TestCommon.junitInterface % "test",
+      TestCommon.driverMapperProcessor % "test"
     )
   }
 
