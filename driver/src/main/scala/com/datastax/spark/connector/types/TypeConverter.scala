@@ -518,7 +518,7 @@ object TypeConverter {
 
     def convertPF = {
       case x: java.time.Instant => x
-      case x: String => java.time.Instant.parse(x)
+      case x: String => TimestampParser.parse(x).toInstant
       case x: Long => java.time.Instant.ofEpochMilli(x)
       case x: java.sql.Timestamp => x.toInstant
       case x => DateConverter.convert(x).toInstant

@@ -344,6 +344,12 @@ class TypeConverterTest {
     assertEquals(testInstant, c.convert(ms))
     assertEquals(testInstant, c.convert(new Timestamp(ms)))
     assertEquals(testInstant, c.convert("2007-12-03T10:15:30.00Z"))
+
+    // for CEST (+0100 at the moment of writing) this gives UTC 2019-08-13 15:15:58.0
+    val javaDateInLocalTZ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse("2019-08-13 16:15:58.0")
+    assertEquals(javaDateInLocalTZ.toInstant, c.convert("2019-08-13 16:15:58.0"))
+
+    assertEquals(java.time.Instant.parse("1986-01-02T18:05:07.123Z"), c.convert("1986-01-02 21:05:07.123+0300"))
   }
 
   @Test
