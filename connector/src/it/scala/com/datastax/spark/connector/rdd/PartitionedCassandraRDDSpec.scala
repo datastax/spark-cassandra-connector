@@ -3,10 +3,13 @@ package com.datastax.spark.connector.rdd
 import java.lang.{Integer => JInt}
 import java.util.concurrent.CompletableFuture
 
+import com.datastax.oss.driver.internal.core.metadata.token.Murmur3Token
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.rdd.partitioner.ReplicaPartitioner
 import org.apache.spark.rdd.RDD
+import org.scalatest.OptionValues
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -19,7 +22,7 @@ case class X(x: Int)
 
 case class WeirdMapping(weirdkey: Int, weirdcol: Int)
 
-class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
+class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with OptionValues {
 
   override lazy val conn = CassandraConnector(defaultConf)
   val rowCount = 100
@@ -27,8 +30,12 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
   override def beforeClass {
     conn.withSessionDo { session =>
       createKeyspace(session)
-
+      createKeyspace(session, """"partitionQuotedKeyspace"""")
+      
       awaitAll(
+        Future {
+          session.execute("""CREATE TABLE "partitionQuotedKeyspace".test (key INT, value INT, PRIMARY KEY (key))""")
+        },
         Future {
           session.execute(
             s"""CREATE TABLE $ks.table1 (key INT, ckey INT, value INT, PRIMARY KEY (key, ckey)
@@ -117,6 +124,19 @@ class PartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase with Defa
     conn.withSessionDo { session =>
       val row = session.execute(s"SELECT token(key) as tt FROM $ks.table3 where key=$keyForMinValueHash").one
       row.getToken("tt").hashCode() shouldBe Integer.MIN_VALUE
+    }
+  }
+
+  it should "be able to handle keyspace with quoted name" in {
+    val partitioner = sc.parallelize(Seq((1, 0)))
+      .repartitionByCassandraReplica("partitionQuotedKeyspace", "test")
+      .partitioner
+      .value
+      .asInstanceOf[ReplicaPartitioner[_]]
+
+    conn.withSessionDo { session =>
+      session.getMetadata.getTokenMap.get()
+        .getReplicas(partitioner._keyspace, new Murmur3Token(0L)) should not be empty
     }
   }
 

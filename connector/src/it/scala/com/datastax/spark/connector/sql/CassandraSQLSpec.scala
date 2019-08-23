@@ -14,12 +14,18 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   val ks1 = ks + "_1"
   val ks2 = ks + "_2"
 
-   override def beforeClass {
+  override def beforeClass {
 
     conn.withSessionDo { session =>
       createKeyspace(session, ks1)
       createKeyspace(session, ks2)
+      createKeyspace(session, """"sqlQuotedKeyspace"""")
       awaitAll(
+        Future {
+          session.execute("""CREATE TABLE "sqlQuotedKeyspace".test (id int PRIMARY KEY, t Tuple<text, int>)""")
+          session.execute("""CREATE TABLE "sqlQuotedKeyspace".test_copy (id int PRIMARY KEY, t Tuple<text, int>)""")
+          session.execute("""INSERT INTO "sqlQuotedKeyspace".test (id, t) VALUES (1, ('xyz', 2))""")
+        },
         Future {
           session.execute( s"""CREATE TABLE $ks1.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
           session.execute( s"""CREATE INDEX test1_g ON $ks1.test1(g)""")
@@ -654,5 +660,17 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
           "keyspace" -> ks1
         )
       ).save()
+  }
+
+  it should "handle keyspace with quoted name" in {
+    sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "test", "keyspace" -> "sqlQuotedKeyspace"))
+      .load()
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "test_copy", "keyspace" -> "sqlQuotedKeyspace"))
+      .save()
   }
 }

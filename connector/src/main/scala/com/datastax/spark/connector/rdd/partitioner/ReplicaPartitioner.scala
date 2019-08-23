@@ -30,7 +30,7 @@ implicit
   currentType: ClassTag[T],
   @transient private val rwf: RowWriterFactory[T]) extends Partitioner {
 
-  val _keyspace = CqlIdentifier.fromCql(keyspace) // TODO Fix this
+  val _keyspace = CqlIdentifier.fromInternal(keyspace) // TODO Fix this
 
   val tableDef = tableFromCassandra(connector, keyspace, table)
   val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(
