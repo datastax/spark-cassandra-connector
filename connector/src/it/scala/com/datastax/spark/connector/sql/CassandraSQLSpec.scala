@@ -14,7 +14,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   val ks1 = ks + "_1"
   val ks2 = ks + "_2"
 
-  override def beforeClass {
+   override def beforeClass {
 
     conn.withSessionDo { session =>
       createKeyspace(session, ks1)
@@ -256,6 +256,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
         Future {
           session.execute(s"CREATE TABLE $ks1.tuple_test1 (id int PRIMARY KEY, t Tuple<text, int>)")
           session.execute(s"INSERT INTO $ks1.tuple_test1 (id, t) VALUES (1, ('xyz', 2))")
+          session.execute(s"CREATE TABLE $ks1.tuple_test1_copy (id int PRIMARY KEY, t Tuple<text, int>)")
         },
 
         Future {
@@ -566,7 +567,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   }
 
   it should "allow writing UDTs to C* tables" in {
-    val result = sparkSession
+    sparkSession
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(
@@ -578,6 +579,7 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
       .load()
       .write
       .format("org.apache.spark.sql.cassandra")
+      .mode("APPEND")
       .options(
         Map(
           "table" -> "objects_copy",
@@ -630,5 +632,27 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     df.count should be (1)
     df.first.getStruct(1).getString(0) should be ("xyz")
     df.first.getStruct(1).getInt(1) should be (2)
+  }
+
+  it should "write C* Tuple using sql" in {
+    sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "tuple_test1",
+          "keyspace" -> ks1
+        )
+      )
+      .load()
+      .write
+      .format("org.apache.spark.sql.cassandra")
+      .mode("APPEND")
+      .options(
+        Map(
+          "table" -> "tuple_test1_copy",
+          "keyspace" -> ks1
+        )
+      ).save()
   }
 }

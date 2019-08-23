@@ -7,6 +7,7 @@ import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTup
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType.fromDriverType
+import com.datastax.spark.connector.types.TypeAdapters.ValuesSeqAdapter
 import com.datastax.spark.connector.{ColumnName, TupleValue}
 import org.apache.commons.lang3.tuple.{Pair, Triple}
 
@@ -62,14 +63,17 @@ case class TupleType(componentTypes: TupleFieldDef*)
   override def newInstance(componentValues: Any*): TupleValue =
     newInstance(defaultComponentConverters)(componentValues: _*)
 
+  private val valuesSeqConverter = TypeConverter.forType[ValuesSeqAdapter]
+
   def converterToCassandra(componentConverters: IndexedSeq[TypeConverter[_ <: AnyRef]]) = {
     new TypeConverter[TupleValue] {
 
       override def targetTypeTag = TupleValue.TypeTag
 
       override def convertPF = {
-        case IsGenericRowWithSchemePrototype(x) =>
-          newInstance(componentConverters)(x.toSeq: _*)
+        case value if valuesSeqConverter.convertPF.isDefinedAt(value) =>
+          val values = valuesSeqConverter.convert(value).toSeq()
+          newInstance(componentConverters)(values: _*)
         case x: TupleValue =>
           newInstance(componentConverters)(x.columnValues: _*)
         case x: Product => // converts from Scala tuples

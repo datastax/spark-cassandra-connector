@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => Dri
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType.fromDriverType
+import com.datastax.spark.connector.types.TypeAdapters.ValueByNameAdapter
 import com.datastax.spark.connector.{ColumnName, UDTValue}
 
 import scala.collection.JavaConversions._
@@ -37,6 +38,8 @@ case class UserDefinedType(
 
   val fieldConvereters = columnTypes.map(_.converterToCassandra)
 
+  private val valueByNameConverter = TypeConverter.forType[ValueByNameAdapter]
+
   override def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
     override def convertPF = {
@@ -49,15 +52,15 @@ case class UserDefinedType(
             columnValue
           }
         new UDTValue(columnNames, columnValues)
-      case IsGenericRowWithSchemePrototype(dfGenericRow) =>
+      case value if valueByNameConverter.convertPF.isDefinedAt(value) =>
+        val valuesByName = valueByNameConverter.convert(value)
         val columnValues =
-         for (i <- columns.indices) yield {
-           val columnName = columnNames(i)
-           val columnConverter = fieldConvereters(i)
-           val dfSchemaIndex = dfGenericRow.fieldIndex(columnName)
-           val columnValue = columnConverter.convert(dfGenericRow.get(dfSchemaIndex))
-           columnValue
-         }
+          for (i <- columns.indices) yield {
+            val columnName = columnNames(i)
+            val columnConverter = fieldConvereters(i)
+            val columnValue = columnConverter.convert(valuesByName.getByName(columnName))
+            columnValue
+          }
         new UDTValue(columnNames, columnValues)
     }
   }

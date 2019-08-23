@@ -5,9 +5,12 @@ import java.net.InetAddress
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
+import com.datastax.spark.connector.types.TypeAdapters.{ValueByNameAdapter, ValuesSeqAdapter}
+import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.DriverUtil.toAddress
 import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConverters._
@@ -127,6 +130,37 @@ class CassandraConnector(val conf: CassandraConnectorConf)
 }
 
 object CassandraConnector extends Logging {
+
+  import scala.reflect.runtime.universe._
+
+  TypeConverter.registerConverter(new GenericRowWithSchemeToValuesByNameConverter())
+  TypeConverter.registerConverter(new GenericRowWithSchemeToValuesSeqConverter())
+
+  private class GenericRowWithSchemeToValuesByNameConverter extends NullableTypeConverter[ValueByNameAdapter] {
+
+    class GenericRowWithSchemaAdapter(row: GenericRowWithSchema) extends ValueByNameAdapter {
+      override def getByName(name: String): Any = row.get(row.fieldIndex(name))
+    }
+
+    override def targetTypeTag = implicitly[TypeTag[ValueByNameAdapter]]
+
+    override def convertPF = {
+      case row: GenericRowWithSchema => new GenericRowWithSchemaAdapter(row)
+    }
+  }
+
+  private class GenericRowWithSchemeToValuesSeqConverter extends NullableTypeConverter[ValuesSeqAdapter] {
+
+    class GenericRowWithSchemaAdapter(row: GenericRowWithSchema) extends ValuesSeqAdapter {
+      override def toSeq(): Seq[Any] = row.toSeq
+    }
+
+    override def targetTypeTag = implicitly[TypeTag[ValuesSeqAdapter]]
+
+    override def convertPF = {
+      case row: GenericRowWithSchema => new GenericRowWithSchemaAdapter(row)
+    }
+  }
 
   private[cql] val sessionCache = new RefCountedCache[CassandraConnectorConf, CqlSession](
     createSession, destroySession, alternativeConnectionConfigs)
