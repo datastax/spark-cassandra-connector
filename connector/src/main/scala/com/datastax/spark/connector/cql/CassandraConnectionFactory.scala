@@ -59,6 +59,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
+        .withBoolean(NETTY_DAEMON, true)
         .withInt(MultipleRetryPolicy.MaxRetryCount, conf.queryRetryCount)
     }
 
