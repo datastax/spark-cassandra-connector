@@ -64,7 +64,6 @@ lazy val connector = (project in file("connector"))
 
     libraryDependencies ++= Dependencies.Spark.dependencies
       ++ Dependencies.TestConnector.dependencies
-      ++ Dependencies.Temporary.dependencies
       ++ Dependencies.Jetty.dependencies
   )
   .dependsOn(

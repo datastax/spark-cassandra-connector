@@ -23,13 +23,6 @@ object Dependencies
       sparkHive)
   }
 
-  object Temporary {
-    val gremlinCore = "org.apache.tinkerpop" % "gremlin-core" % "3.3.3"  //TODO Remove this when Java Driver includes the correct TP
-    val tinkerGraph = "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.3" //TODO Remove this ''
-
-    val dependencies = Seq(Temporary.gremlinCore, Temporary.tinkerGraph)
-  }
-
   implicit class Exclude(module: ModuleID) {
     def logbackExclude(): ModuleID = module
       .exclude("ch.qos.logback", "logback-classic")
@@ -50,7 +43,6 @@ object Dependencies
   }
 
   object TestConnector {
-    val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver % "test, it" // Annotation Processor
     val commonsIO         = "commons-io"              %  "commons-io"                   % CommonsIO    % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
@@ -60,7 +52,7 @@ object Dependencies
       scalaCheck,
       sparkCoreT,
       sparkStreamingT,
-      TestCommon.driverMapperProcessor % "test,it",
+      TestCommon.driverMapperProcessor % "test,it" driverCoreExclude(),
       TestCommon.scalaTest % "test,it",
       TestCommon.mockito % "test,it",
       TestCommon.junit % "test,it",
@@ -78,14 +70,13 @@ object Dependencies
   object Driver {
     val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
     val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
-    val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
 
     val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
     val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
     val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
     val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
 
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream, scalaReflect, commonsLang3, paranamer, scalaLogging)
+    val dependencies = Seq(driverCore, driverMapper, scalaReflect, commonsLang3, paranamer, scalaLogging)
   }
 
   object TestDriver {
@@ -94,7 +85,7 @@ object Dependencies
       TestCommon.mockito % "test",
       TestCommon.junit % "test",
       TestCommon.junitInterface % "test",
-      TestCommon.driverMapperProcessor % "test"
+      TestCommon.driverMapperProcessor % "test" driverCoreExclude()
     )
   }
 

@@ -6,12 +6,10 @@ import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.scalatest.BeforeAndAfterEach
 
-import scala.collection.JavaConverters._
-
 case class KeyValue(key: Int, group: Long, value: String)
 case class KeyValueWithConversion(key: String, group: Int, value: Long)
 
-class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach{
+class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
