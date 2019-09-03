@@ -62,12 +62,6 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(MultipleRetryPolicy.MaxRetryCount, conf.queryRetryCount)
     }
 
-    // add Auth Conf if set
-    def authProperties(builder: LoaderBuilder): LoaderBuilder =
-      conf.authConf.authProperites.foldLeft(builder) { case (b, (driverOption, value)) =>
-        b.withString(driverOption, value)
-      }
-
     // compression option cannot be set to NONE (default)
     def compressionProperties(b: LoaderBuilder): LoaderBuilder =
       Option(conf.compression).filter(_ != "NONE").map(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase)).getOrElse(b)
@@ -94,17 +88,21 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       }
     }
 
-    Seq[LoaderBuilder => LoaderBuilder](basicProperties, authProperties, compressionProperties, sslProperties)
+    Seq[LoaderBuilder => LoaderBuilder](basicProperties, compressionProperties, sslProperties)
       .foldLeft(initBuilder) { case (builder, properties) => properties(builder) }
   }
 
   /** Creates and configures native Cassandra connection */
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val builder = DriverConfigLoader.programmaticBuilder()
-    val loader = connectorConfigBuilder(conf, builder).build()
-    CqlSession.builder()
-      .withConfigLoader(loader)
-      .build()
+    val configLoaderBuilder = DriverConfigLoader.programmaticBuilder()
+    val configLoader = connectorConfigBuilder(conf, configLoaderBuilder).build()
+
+    val builder = CqlSession.builder()
+      .withConfigLoader(configLoader)
+
+    conf.authConf.authProvider.foreach(builder.withAuthProvider)
+
+    builder.build()
   }
 
   private def getKeyStore(
