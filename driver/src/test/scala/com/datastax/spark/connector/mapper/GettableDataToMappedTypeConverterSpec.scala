@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.mapper
 
-import java.io.ByteArrayInputStream
-
 import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector._

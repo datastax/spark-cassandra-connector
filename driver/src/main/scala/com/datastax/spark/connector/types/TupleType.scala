@@ -63,7 +63,7 @@ case class TupleType(componentTypes: TupleFieldDef*)
   override def newInstance(componentValues: Any*): TupleValue =
     newInstance(defaultComponentConverters)(componentValues: _*)
 
-  private val valuesSeqConverter = TypeConverter.forType[ValuesSeqAdapter]
+  private lazy val valuesSeqConverter = scala.util.Try(TypeConverter.forType[ValuesSeqAdapter]).toOption
 
   def converterToCassandra(componentConverters: IndexedSeq[TypeConverter[_ <: AnyRef]]) = {
     new TypeConverter[TupleValue] {
@@ -71,8 +71,8 @@ case class TupleType(componentTypes: TupleFieldDef*)
       override def targetTypeTag = TupleValue.TypeTag
 
       override def convertPF = {
-        case value if valuesSeqConverter.convertPF.isDefinedAt(value) =>
-          val values = valuesSeqConverter.convert(value).toSeq()
+        case value if valuesSeqConverter.exists(_.convertPF.isDefinedAt(value)) =>
+          val values = valuesSeqConverter.get.convert(value).toSeq()
           newInstance(componentConverters)(values: _*)
         case x: TupleValue =>
           newInstance(componentConverters)(x.columnValues: _*)

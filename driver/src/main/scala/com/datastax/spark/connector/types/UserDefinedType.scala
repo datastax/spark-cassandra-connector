@@ -38,7 +38,7 @@ case class UserDefinedType(
 
   val fieldConvereters = columnTypes.map(_.converterToCassandra)
 
-  private val valueByNameConverter = TypeConverter.forType[ValueByNameAdapter]
+  private lazy val valueByNameConverter = scala.util.Try(TypeConverter.forType[ValueByNameAdapter]).toOption
 
   override def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag
@@ -52,8 +52,8 @@ case class UserDefinedType(
             columnValue
           }
         new UDTValue(columnNames, columnValues)
-      case value if valueByNameConverter.convertPF.isDefinedAt(value) =>
-        val valuesByName = valueByNameConverter.convert(value)
+      case value if valueByNameConverter.exists(_.convertPF.isDefinedAt(value)) =>
+        val valuesByName = valueByNameConverter.get.convert(value)
         val columnValues =
           for (i <- columns.indices) yield {
             val columnName = columnNames(i)
