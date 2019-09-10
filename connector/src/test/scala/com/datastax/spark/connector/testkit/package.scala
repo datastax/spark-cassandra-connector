@@ -7,8 +7,6 @@ package object testkit {
   /** Basic unit test abstraction. */
   trait AbstractSpec extends WordSpecLike with Matchers
 
-  final val DefaultHost = "127.0.0.1"
-
   val dataSeq = Seq (
     Seq("1first", "1round", "1words"),
     Seq("2second", "2round", "2words"),

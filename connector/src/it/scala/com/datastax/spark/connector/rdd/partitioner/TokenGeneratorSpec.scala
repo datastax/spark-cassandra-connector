@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture
 import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.util.schemaFromCassandra
 import com.datastax.spark.connector.writer.RowWriterFactory
 import com.datastax.spark.connector.{PartitionKeyColumns, SparkCassandraITFlatSpecBase}
 
@@ -56,8 +57,8 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
     ).toMap
   }
 
-  val simpleTableDef = Schema.fromCassandra(conn, Some(ks), Some("simple")).tables.head
-  val complexTableDef = Schema.fromCassandra(conn, Some(ks), Some("complex")).tables.head
+  val simpleTableDef = schemaFromCassandra(conn, Some(ks), Some("simple")).tables.head
+  val complexTableDef = schemaFromCassandra(conn, Some(ks), Some("complex")).tables.head
 
   val simpleRW = implicitly[RowWriterFactory[SimpleKey]]
     .rowWriter(simpleTableDef, PartitionKeyColumns.selectFrom(simpleTableDef))

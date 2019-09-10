@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.writer
 
+import java.time.Instant
+
 import scala.collection.immutable.Map
 import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
-
 import com.datastax.spark.connector.UDTValue
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types._
@@ -49,7 +49,7 @@ class DefaultRowWriterTest {
 
     assertEquals(java.lang.Integer.valueOf(1), buf(i1))
     assertEquals(new java.math.BigDecimal("1.11"), buf(i2))
-    assertTrue(buf(i3).isInstanceOf[java.util.Date])
+    assertTrue(buf(i3).isInstanceOf[Instant])
   }
 
   case class RowWithUDT(c1: UDTValue)

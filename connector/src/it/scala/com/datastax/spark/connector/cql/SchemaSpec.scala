@@ -3,6 +3,7 @@ package com.datastax.spark.connector.cql
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
+import com.datastax.spark.connector.util.schemaFromCassandra
 import org.scalatest.Inspectors._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
@@ -46,7 +47,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       s"""CREATE INDEX test_d7_int_idx ON $ks.test (d7_int)""")
   }
 
-  val schema = Schema.fromCassandra(conn)
+  val schema = schemaFromCassandra(conn)
 
   "A Schema" should {
     "allow to get a list of keyspaces" in {
@@ -67,6 +68,11 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       val keyspace = schema.keyspaceByName(ks)
       val table = keyspace.tableByName("test")
       table.tableName shouldBe "test"
+    }
+    "allow to look up user type by name" in {
+      val keyspace = schema.keyspaceByName(ks)
+      val userType = keyspace.userTypeByName("address")
+      userType.name shouldBe "address"
     }
   }
 

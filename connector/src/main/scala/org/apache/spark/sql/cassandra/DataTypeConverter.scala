@@ -60,7 +60,7 @@ object DataTypeConverter extends Logging {
       case connector.types.ListType(et, _)               => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
       case connector.types.MapType(kt, vt, _)            => catalystTypes.MapType(catalystDataType(kt, nullable), catalystDataType(vt, nullable), nullable)
       case connector.types.UserDefinedType(_, fields, _) => catalystTypes.StructType(fields.map(catalystStructField))
-      case connector.types.TupleType(fields @ _* )     => catalystTypes.StructType(fields.map(catalystStructFieldFromTuple))
+      case connector.types.TupleType(fields @ _* )       => catalystTypes.StructType(fields.map(catalystStructFieldFromTuple))
       case connector.types.VarIntType                    =>
         logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
         primitiveCatalystDataType(cassandraType)

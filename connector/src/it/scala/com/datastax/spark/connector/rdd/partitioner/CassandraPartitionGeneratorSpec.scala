@@ -6,6 +6,7 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.util.schemaFromCassandra
 
 class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
@@ -23,7 +24,7 @@ class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with 
   // split count, so we are only checking if the split count is "close enough" to the desired value.
   // Should be improved in the future.
   private def testPartitionCount(numPartitions: Int, min: Int, max: Int): Unit = {
-    val table = Schema.fromCassandra(conn, Some(ks), Some("empty")).tables.head
+    val table = schemaFromCassandra(conn, Some(ks), Some("empty")).tables.head
     val partitioner = CassandraPartitionGenerator(conn, table, numPartitions)
     val partitions = partitioner.partitions
     partitions.length should be >= min
@@ -69,7 +70,7 @@ class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with 
   }
 
   it should "round robing partition with different endpoints" in {
-    val table = Schema.fromCassandra(conn, Some(ks), Some("empty")).tables.head
+    val table = schemaFromCassandra(conn, Some(ks), Some("empty")).tables.head
     val partitioner = new MockCassandraPartitionGenerator(conn, table, 12)
     val partitions = partitioner.partitions
     print(s"Partitions: $partitions")

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.sql
 
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceOptions, CassandraSourceRelation}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.DataFrame
 import org.scalatest.BeforeAndAfterEach

@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.cql.{BatchStatement, BoundStatement, Def
 import com.datastax.oss.driver.api.core.{CqlSession, DefaultConsistencyLevel}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.util.schemaFromCassandra
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, SparkCassandraITFlatSpecBase}
 
 import scala.collection.JavaConversions._
@@ -17,7 +18,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
     session.execute(s"""CREATE TABLE $ks.tab (id INT PRIMARY KEY, value TEXT)""")
   }
 
-  val schema = Schema.fromCassandra(conn, Some(ks), Some("tab"))
+  val schema = schemaFromCassandra(conn, Some(ks), Some("tab"))
   val rowWriter = RowWriterFactory.defaultRowWriterFactory[(Int, String)].rowWriter(schema.tables.head, IndexedSeq("id", "value"))
 
   def makeBatchBuilder(session: CqlSession): (RichBoundStatementWrapper => Any, BatchSize, Int, Iterator[(Int, String)]) => GroupingBatchBuilder[(Int, String)] = {

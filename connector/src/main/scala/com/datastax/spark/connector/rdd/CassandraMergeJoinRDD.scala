@@ -25,7 +25,7 @@ import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CqlToke
 import com.datastax.spark.connector.rdd.reader.{PrefetchingResultSetIterator, RowReader}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, MergeJoinIterator, NameTools}
+import com.datastax.spark.connector.util.{CountingIterator, MergeJoinIterator, NameTools, schemaFromCassandra}
 
 /**
   * A RDD which pulls from two separate CassandraTableScanRDDs which share partition keys and
@@ -44,7 +44,7 @@ class CassandraMergeJoinRDD[L,R](
   val connector = leftScanRDD.connector
 
   def getPartitionKey(connector: CassandraConnector, keyspaceName: String, tableName: String): Seq[ColumnDef] = {
-    Schema.fromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    schemaFromCassandra(connector, Some(keyspaceName), Some(tableName)).tables.headOption match {
       case Some(table) => table.partitionKey
       case None => {
         val metadata: Metadata = connector.withSessionDo(_.getMetadata)

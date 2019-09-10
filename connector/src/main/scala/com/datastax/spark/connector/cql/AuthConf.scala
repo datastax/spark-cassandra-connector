@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import com.datastax.oss.driver.api.core.config.{DefaultDriverOption, DriverOption}
-import com.datastax.oss.driver.internal.core.auth.PlainTextAuthProvider
+import com.datastax.oss.driver.api.core.auth.AuthProvider
+import com.datastax.oss.driver.internal.core.auth.ProgrammaticPlainTextAuthProvider
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 import org.apache.spark.SparkConf
 
@@ -13,21 +13,17 @@ import org.apache.spark.SparkConf
   * option. See [[AuthConfFactory]]. */
 trait AuthConf extends Serializable {
 
-  def authProperites: Map[DriverOption, String]
+  def authProvider: Option[AuthProvider]
 }
 
 /** Performs no authentication. Use with `AllowAllAuthenticator` in Cassandra. */
 case object NoAuthConf extends AuthConf {
-  override def authProperites: Map[DriverOption, String] = Map.empty
+  override def authProvider: Option[AuthProvider] = None
 }
 
 /** Performs plain-text password authentication. Use with `PasswordAuthenticator` in Cassandra. */
 case class PasswordAuthConf(user: String, password: String) extends AuthConf {
-  override def authProperites: Map[DriverOption, String] = Map(
-    DefaultDriverOption.AUTH_PROVIDER_CLASS -> classOf[PlainTextAuthProvider].getCanonicalName,
-    DefaultDriverOption.AUTH_PROVIDER_USER_NAME -> user,
-    DefaultDriverOption.AUTH_PROVIDER_PASSWORD -> password
-  )
+  override def authProvider: Option[AuthProvider] = Some(new ProgrammaticPlainTextAuthProvider(user, password))
 }
 
 /** Obtains authentication configuration by reading  [[org.apache.spark.SparkConf SparkConf]] object. */

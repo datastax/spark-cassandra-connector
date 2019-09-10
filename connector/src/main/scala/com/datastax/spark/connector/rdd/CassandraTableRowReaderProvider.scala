@@ -4,8 +4,9 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.reader._
+import com.datastax.spark.connector.util.tableFromCassandra
 
 import scala.reflect.ClassTag
 
@@ -46,7 +47,7 @@ trait CassandraTableRowReaderProvider[R] {
   lazy val rowReader: RowReader[R] =
     rowReaderFactory.rowReader(tableDef, columnNames.selectFrom(tableDef))
 
-  lazy val tableDef: TableDef = Schema.tableFromCassandra(connector, keyspaceName, tableName)
+  lazy val tableDef: TableDef = tableFromCassandra(connector, keyspaceName, tableName)
 
   protected def checkColumnsExistence(columns: Seq[ColumnRef]): Seq[ColumnRef] = {
     val allColumnNames = tableDef.columns.map(_.columnName).toSet

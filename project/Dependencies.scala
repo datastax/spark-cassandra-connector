@@ -23,19 +23,6 @@ object Dependencies
       sparkHive)
   }
 
-  object DataStax {
-    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
-    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
-    val reactiveStream = "org.reactivestreams" % "reactive-streams" % ReactiveStreams
-    
-    val dependencies = Seq(driverCore, driverMapper, reactiveStream, Temporary.gremlinCore, Temporary.tinkerGraph)
-  }
-
-  object Temporary {
-    val gremlinCore = "org.apache.tinkerpop" % "gremlin-core" % "3.3.3"  //TODO Remove this when Java Driver includes the correct TP
-    val tinkerGraph = "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.3" //TODO Remove this ''
-  }
-
   implicit class Exclude(module: ModuleID) {
     def logbackExclude(): ModuleID = module
       .exclude("ch.qos.logback", "logback-classic")
@@ -47,24 +34,29 @@ object Dependencies
       .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
   }
 
-  object Test {
-    val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver % "test, it" // Annotation Processor
+  object TestCommon {
+    val mockito = "org.mockito" % "mockito-all" % Mockito
+    val junit = "junit" % "junit" % JUnit
+    val junitInterface = "com.novocode" % "junit-interface" % JUnitInterface
+    val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest
+    val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver
+  }
+
+  object TestConnector {
     val commonsIO         = "commons-io"              %  "commons-io"                   % CommonsIO    % "test,it"       // ApacheV2
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
-    val scalaTest         = "org.scalatest"           %% "scalatest"                    % ScalaTest    % "test,it"       // ApacheV2
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
-    val mockito           = "org.mockito"             %  "mockito-all"                  % Mockito      % "test,it"       // MIT
-    val junit             = "junit"                   %  "junit"                        % JUnit        % "test,it"
 
     val dependencies = Seq(
-      driverMapperProcessor,
       scalaCheck,
-      scalaTest,
       sparkCoreT,
       sparkStreamingT,
-      mockito,
-      junit).map(_.logbackExclude())
+      TestCommon.driverMapperProcessor % "test,it" driverCoreExclude(),
+      TestCommon.scalaTest % "test,it",
+      TestCommon.mockito % "test,it",
+      TestCommon.junit % "test,it",
+      TestCommon.junitInterface % "test,it").map(_.logbackExclude())
   }
 
   // Required for metrics
@@ -75,11 +67,33 @@ object Dependencies
     val dependencies = Seq(jettyServer, jettyServlet)
   }
 
+  object Driver {
+    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
+    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
+
+    val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
+    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
+    val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
+    val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
+
+    val dependencies = Seq(driverCore, driverMapper, scalaReflect, commonsLang3, paranamer, scalaLogging)
+  }
+
+  object TestDriver {
+    val dependencies = Seq(
+      TestCommon.scalaTest % "test",
+      TestCommon.mockito % "test",
+      TestCommon.junit % "test",
+      TestCommon.junitInterface % "test",
+      TestCommon.driverMapperProcessor % "test" driverCoreExclude()
+    )
+  }
+
   object TestSupport {
     val commonsExec = "org.apache.commons" % "commons-exec" % CommonsExec
 
     val dependencies = Seq(
       commonsExec,
-      Dependencies.DataStax.driverCore)
+      Dependencies.Driver.driverCore)
   }
 }

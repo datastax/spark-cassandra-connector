@@ -18,7 +18,7 @@ object Publishing extends sbt.librarymanagement.DependencyBuilders {
   val Repository: Option[Resolver] = {
     Some((sys.props.get("publish.repository.name"), sys.props.get("publish.repository.location")) match {
       case (Some(name), Some(location)) => name at location
-      case _ =>  DseRelease
+      case _ =>  Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository"))
     })
   }
 

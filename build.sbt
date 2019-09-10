@@ -24,7 +24,10 @@ lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
-  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty")
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty"),
+  fork := true,
+  parallelExecution := true,
+  testForkedParallel := false
 )
 
 val annotationProcessor = Seq(
@@ -32,7 +35,7 @@ val annotationProcessor = Seq(
 )
 
 lazy val root = (project in file("."))
-  .aggregate(connector, testSupport)
+  .aggregate(connector, testSupport, driver)
   .settings(
     publish / skip := true
   )
@@ -47,10 +50,6 @@ lazy val connector = (project in file("connector"))
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
 
-    fork := true,
-    parallelExecution := true,
-    testForkedParallel := false,
-
     // test grouping
     integrationTestsWithFixtures := {
       Testing.testsWithFixtures((testLoader in IntegrationTest).value, (definedTests in IntegrationTest).value)
@@ -64,15 +63,25 @@ lazy val connector = (project in file("connector"))
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++= Dependencies.Spark.dependencies
-      ++ Dependencies.DataStax.dependencies
-      ++ Dependencies.Test.dependencies
+      ++ Dependencies.TestConnector.dependencies
       ++ Dependencies.Jetty.dependencies
   )
-  .dependsOn(testSupport % "test")
+  .dependsOn(
+    testSupport % "test",
+    driver
+  )
 
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
     name := "dse-spark-connector-test-support",
     libraryDependencies ++= Dependencies.TestSupport.dependencies
+  )
+
+lazy val driver = (project in file("driver"))
+  .settings(commonSettings)
+  .settings(
+    name := "dse-spark-connector-driver",
+    libraryDependencies ++= Dependencies.Driver.dependencies
+      ++ Dependencies.TestDriver.dependencies
   )

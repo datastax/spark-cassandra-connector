@@ -7,7 +7,7 @@ import java.time.Duration
 import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
-import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, DriverOption, ProgrammaticDriverConfigLoaderBuilder}
+import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, ProgrammaticDriverConfigLoaderBuilder}
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory
 import com.datastax.spark.connector.rdd.ReadConf
@@ -59,14 +59,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
-        .withInt(CassandraConnectionFactory.CustomDriverOptions.MaxRetryCount, conf.queryRetryCount)
+        .withInt(MultipleRetryPolicy.MaxRetryCount, conf.queryRetryCount)
     }
-
-    // add Auth Conf if set
-    def authProperties(builder: LoaderBuilder): LoaderBuilder =
-      conf.authConf.authProperites.foldLeft(builder) { case (b, (driverOption, value)) =>
-        b.withString(driverOption, value)
-      }
 
     // compression option cannot be set to NONE (default)
     def compressionProperties(b: LoaderBuilder): LoaderBuilder =
@@ -94,17 +88,21 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       }
     }
 
-    Seq[LoaderBuilder => LoaderBuilder](basicProperties, authProperties, compressionProperties, sslProperties)
+    Seq[LoaderBuilder => LoaderBuilder](basicProperties, compressionProperties, sslProperties)
       .foldLeft(initBuilder) { case (builder, properties) => properties(builder) }
   }
 
   /** Creates and configures native Cassandra connection */
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val builder = DriverConfigLoader.programmaticBuilder()
-    val loader = connectorConfigBuilder(conf, builder)
-    CqlSession.builder()
-      .withConfigLoader(loader.build())
-      .build()
+    val configLoaderBuilder = DriverConfigLoader.programmaticBuilder()
+    val configLoader = connectorConfigBuilder(conf, configLoaderBuilder).build()
+
+    val builder = CqlSession.builder()
+      .withConfigLoader(configLoader)
+
+    conf.authConf.authProvider.foreach(builder.withAuthProvider)
+
+    builder.build()
   }
 
   private def getKeyStore(
@@ -130,22 +128,6 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],
   * used when establishing connections to Cassandra. */
 object CassandraConnectionFactory {
-  /* TODO:
-  class DaemonThreadingOptions extends ThreadingOptions {
-    override def createThreadFactory(clusterName: String, executorName: String): ThreadFactory =
-    {
-      return new ThreadFactoryBuilder()
-        .setNameFormat(clusterName + "-" + executorName + "-%d")
-        // Back with Netty's thread factory in order to create FastThreadLocalThread instances. This allows
-        // an optimization around ThreadLocals (we could use DefaultThreadFactory directly but it creates
-        // slightly different thread names, so keep we keep a ThreadFactoryBuilder wrapper for backward
-        // compatibility).
-        .setThreadFactory(new DefaultThreadFactory("ignored name"))
-        .setDaemon(true)
-        .build();
-    }
-  }
-   */
 
   val ReferenceSection = CassandraConnectorConf.ReferenceSection
   """Name of a Scala module or class implementing
@@ -165,10 +147,4 @@ object CassandraConnectionFactory {
       .getOrElse(FactoryParam.default)
   }
 
-  object CustomDriverOptions {
-
-    val MaxRetryCount: DriverOption = new DriverOption {
-      override def getPath: String = "advanced.retry-policy.max-retry-count"
-    }
-  }
 }

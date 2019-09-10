@@ -5,11 +5,11 @@ import java.util.concurrent.CompletableFuture
 import com.datastax.oss.driver.api.core.Version
 
 import scala.concurrent.Future
-
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.types.UserDefinedType
+import com.datastax.spark.connector.util.schemaFromCassandra
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.cassandra._
@@ -103,8 +103,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
 
   val dseVersion = cluster.getDseVersion.getOrElse(Version.parse("6.0.0"))
 
-  val columnsToCheck = Schema
-    .fromCassandra(conn, Some(ks), Some("test_reading_types"))
+  val columnsToCheck = schemaFromCassandra(conn, Some(ks), Some("test_reading_types"))
     .tables
     .head
     .regularColumns

@@ -1,11 +1,12 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.TableRef
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.cassandra.{CassandraSourceRelation, TableRef}
+import org.apache.spark.sql.cassandra.CassandraSourceRelation
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 class DeprecationSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
