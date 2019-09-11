@@ -17,6 +17,7 @@ import com.datastax.oss.driver.api.core.loadbalancing.{LoadBalancingPolicy, Node
 import com.datastax.oss.driver.api.core.metadata.Node
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext
 import com.datastax.oss.driver.internal.core.metadata.MetadataManager
+import com.datastax.spark.connector.util.DriverUtil
 import org.mockito.Mockito._
 import org.mockito.{Matchers => m}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -25,7 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import scala.collection.JavaConverters._
 
 class NodeFilter(context: DriverContext, profileName: String) extends Predicate[Node] {
-  override def test(t: Node): Boolean = t.getBroadcastAddress.get().getHostName.equals("192.168.123.2")
+  override def test(t: Node): Boolean = DriverUtil.toAddress(t).get.getHostName.equals("192.168.123.2")
 }
 
 class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
