@@ -4,7 +4,9 @@ import java.net.{InetAddress, NetworkInterface}
 import java.nio.ByteBuffer
 import java.util
 import java.util.UUID
+import java.util.function.Predicate
 
+import com.datastax.oss.driver.api.core.config.{DefaultDriverOption, DriverOption}
 import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.loadbalancing.{LoadBalancingPolicy, NodeDistance}
 import com.datastax.oss.driver.api.core.metadata.token.Token
@@ -12,7 +14,9 @@ import com.datastax.oss.driver.api.core.metadata.{Node, NodeState}
 import com.datastax.oss.driver.api.core.session.{Request, Session}
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext
 import com.datastax.oss.driver.internal.core.metadata.MetadataManager
+import com.datastax.oss.driver.internal.core.util.Reflection
 import com.datastax.oss.driver.internal.core.util.collection.QueryPlan
+import com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy.{LoadBalancingShuffleNodes, _}
 import com.datastax.spark.connector.util.DriverUtil.{toAddress, toOption}
 
 import scala.collection.JavaConverters._
@@ -24,19 +28,26 @@ import scala.util.Random
 class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: String)
   extends LoadBalancingPolicy {
 
-  val localDC: Option[String] = None // TODO: provide this from outside
-  val shuffleReplicas: Boolean = true // TODO: provide this from outside
-
-  import LocalNodeFirstLoadBalancingPolicy._
+  private val profile = context.getConfig.getProfile(profileName)
+  private val localDC: Option[String] = Option(profile.getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER, null))
+  private val shuffleReplicas: Boolean = profile.getBoolean(LoadBalancingShuffleNodes, true)
 
   private var nodes = Set.empty[Node]
   private var dcToUse = ""
   private val random = new Random
+  private val nodeFilter: Option[Predicate[Node]] = {
+    val internalContext = context.asInstanceOf[InternalDriverContext]
+    Option(internalContext.getNodeFilter(profileName))
+      .orElse {
+        toOption(Reflection.buildFromConfig(internalContext, profileName, DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[Predicate[Node]]))
+      }
+  }
+
   private var distanceReporter: LoadBalancingPolicy.DistanceReporter = _
   private val metadataManager: MetadataManager = context.asInstanceOf[InternalDriverContext].getMetadataManager
 
   private def distance(node: Node): NodeDistance =
-    if (node.getDatacenter == dcToUse) {
+    if (nodeFilter.forall(_.test(node)) && node.getDatacenter == dcToUse) {
       sameDCNodeDistance(node)
     } else {
       // this insures we keep remote hosts out of our list entirely, even when we get notified of newly joined nodes
@@ -182,6 +193,10 @@ object LocalNodeFirstLoadBalancingPolicy {
     assert(dcs.nonEmpty, "There are no contact points in the given set of hosts")
     require(dcs.size == 1, s"Contact points contain multiple data centers: ${dcs.mkString(", ")}")
     dcs.head
+  }
+
+  val LoadBalancingShuffleNodes: DriverOption = new DriverOption {
+    override def getPath: String = "basic.load-balancing-policy.shuffle-replicas"
   }
 
 }
