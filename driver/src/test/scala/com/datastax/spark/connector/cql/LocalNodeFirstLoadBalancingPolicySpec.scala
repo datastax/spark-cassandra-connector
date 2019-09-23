@@ -6,109 +6,111 @@
 
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.util.function.Predicate
+import java.util.{Optional, UUID}
 
-import org.scalatest.{FlatSpec, Matchers}
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption.{LOAD_BALANCING_FILTER_CLASS, LOAD_BALANCING_LOCAL_DATACENTER}
+import com.datastax.oss.driver.api.core.config.{DriverConfig, DriverExecutionProfile}
+import com.datastax.oss.driver.api.core.context.DriverContext
+import com.datastax.oss.driver.api.core.loadbalancing.{LoadBalancingPolicy, NodeDistance}
+import com.datastax.oss.driver.api.core.metadata.Node
+import com.datastax.oss.driver.internal.core.context.InternalDriverContext
+import com.datastax.oss.driver.internal.core.metadata.MetadataManager
+import com.datastax.spark.connector.util.DriverUtil
+import org.mockito.Mockito._
+import org.mockito.{Matchers => m}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatestplus.mockito.MockitoSugar
 
+import scala.collection.JavaConverters._
 
-class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers {
+class NodeFilter(context: DriverContext, profileName: String) extends Predicate[Node] {
+  override def test(t: Node): Boolean = DriverUtil.toAddress(t).get.getHostName.equals("192.168.123.2")
+}
 
-  private val localNode0 = InetAddress.getLoopbackAddress
-  private val remoteNode1 = InetAddress.getByName("192.168.123.1")
-  private val remoteNode2 = InetAddress.getByName("192.168.123.2")
-  private val remoteNode3 = InetAddress.getByName("192.168.123.3")
-  private val remoteNode4 = InetAddress.getByName("192.168.123.4")
+class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
+
   private val dc = "superDC"
-  /* TODO: ReplicaAwareStatement was removed, `setRoutingToken` is used instead - rework following test:
-  private def policyForClusterOf(nodes: InetAddress*) = {
-    val policy = new LocalNodeFirstLoadBalancingPolicy(null, Some(dc))
+  private val localNode0 = nodeMock("127.0.0.1")
+  private val remoteNode1 = nodeMock("192.168.123.1")
+  private val remoteNode2 = nodeMock("192.168.123.2")
+  private val remoteNode3 = nodeMock("192.168.123.3")
 
-    val hosts = nodes.map { address =>
-      val host = mock(classOf[Host])
-      when(host.getAddress).thenReturn(address)
-      when(host.getDatacenter).thenReturn(dc)
-      when(host.isUp).thenReturn(true)
-      host
-    }.toSet
-
-    val metadata = mock(classOf[Metadata])
-    when(metadata.getAllHosts).thenReturn(hosts)
-
-    val cluster = mock(classOf[Cluster])
-    when(cluster.getMetadata).thenReturn(metadata)
-
-    policy.init(cluster, hosts)
-    policy
+  def nodeMock(address: String): Node = {
+    val node = mock[Node]
+    when(node.getHostId).thenReturn(UUID.randomUUID())
+    when(node.getBroadcastAddress).thenReturn(Optional.of(new InetSocketAddress(address, 9042)))
+    when(node.getDatacenter).thenReturn(dc)
+    node
   }
 
-  private def replicateAwareStatementFor(replicas: InetAddress*) = {
-    val stmt = mock(classOf[Statement])
-    when(stmt.getKeyspace).thenReturn(dc)
-    new ReplicaAwareStatement(stmt, replicas.toSet)
+  def toJMap(nodes: Node*): java.util.Map[UUID, Node] = {
+    nodes.map(node => (node.getHostId, node)).toMap.asJava
   }
 
-  "LocalNodeFirstLoadBalancingPolicy" should "favor supplied replicas" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2, remoteNode3, remoteNode4)
-    val statement = replicateAwareStatementFor(remoteNode3, remoteNode4)
+  private val profileName = "someProfile"
+  private val context = mock[InternalDriverContext]
+  private val config = mock[DriverConfig]
+  private val profile = mock[DriverExecutionProfile]
+  private val metaManager = mock[MetadataManager]
 
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
+  override def beforeEach() {
+    when(profile.getString(m.eq(LOAD_BALANCING_LOCAL_DATACENTER))).thenReturn(dc)
+    when(profile.getString(m.eq(LOAD_BALANCING_LOCAL_DATACENTER), m.any())).thenReturn(dc)
 
-    plan.size should be(4)
-    plan.take(2) should contain only(remoteNode3, remoteNode4)
-    plan.takeRight(2) should contain only(remoteNode1, remoteNode2)
+    when(config.getProfile(m.eq(profileName))).thenReturn(profile)
+    when(context.getConfig).thenReturn(config)
+
+    when(context.getMetadataManager).thenReturn(metaManager)
   }
 
-  it should "favor local supplied replicas" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2, remoteNode3, localNode0)
-    val statement = replicateAwareStatementFor(remoteNode3, localNode0)
+  it should "set distance to LOCAL for local node in local dc" in {
+    val policy = new LocalNodeFirstLoadBalancingPolicy(context, profileName)
+    val reporter = mock[LoadBalancingPolicy.DistanceReporter]
 
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
+    policy.init(toJMap(localNode0), reporter)
 
-    plan.size should be(4)
-    plan.take(2) should contain inOrderOnly(localNode0, remoteNode3)
-    plan.takeRight(2) should contain only(remoteNode1, remoteNode2)
+    verify(reporter, times(1)).setDistance(localNode0, NodeDistance.LOCAL)
+    verifyNoMoreInteractions(reporter)
   }
 
-  it should "use available hosts if there are no replicas supplied" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2, remoteNode3)
-    val statement = replicateAwareStatementFor()
+  it should "set distance to IGNORED for local node in different dc" in {
+    val policy = new LocalNodeFirstLoadBalancingPolicy(context, profileName)
+    val reporter = mock[LoadBalancingPolicy.DistanceReporter]
 
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
+    when(localNode0.getDatacenter).thenReturn("some_other_dc")
 
-    plan.size should be(3)
-    plan.takeRight(3) should contain only(remoteNode1, remoteNode2, remoteNode3)
+    policy.init(toJMap(localNode0), reporter)
+
+    verify(reporter, times(1)).setDistance(localNode0, NodeDistance.IGNORED)
+    verifyNoMoreInteractions(reporter)
   }
 
-  it should "use available hosts if there are no replicas supplied and local should be favored" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2, remoteNode3, localNode0)
-    val statement = replicateAwareStatementFor()
+  it should "set distance to REMOTE for remote nodes" in {
+    val policy = new LocalNodeFirstLoadBalancingPolicy(context, profileName)
+    val reporter = mock[LoadBalancingPolicy.DistanceReporter]
 
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
+    policy.init(toJMap(remoteNode1, remoteNode2), reporter)
 
-    plan.size should be(4)
-    plan.head should be(localNode0)
-    plan.takeRight(3) should contain only(remoteNode1, remoteNode2, remoteNode3)
+    verify(reporter, times(1)).setDistance(remoteNode1, NodeDistance.REMOTE)
+    verify(reporter, times(1)).setDistance(remoteNode2, NodeDistance.REMOTE)
+    verifyNoMoreInteractions(reporter)
   }
 
-  it should "not use unavailable supplied replicas" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2)
-    val statement = replicateAwareStatementFor(remoteNode3, localNode0)
+  it should "apply configured node filter" in {
+    when(profile.isDefined(m.eq(LOAD_BALANCING_FILTER_CLASS))).thenReturn(true)
+    when(profile.getString(m.eq(LOAD_BALANCING_FILTER_CLASS))).thenReturn(classOf[NodeFilter].getCanonicalName)
 
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
+    val policy = new LocalNodeFirstLoadBalancingPolicy(context, profileName)
+    val reporter = mock[LoadBalancingPolicy.DistanceReporter]
 
-    plan.size should be(2)
-    plan should contain only(remoteNode1, remoteNode2)
+    policy.init(toJMap(remoteNode1, localNode0, remoteNode2, remoteNode3), reporter)
+
+    verify(reporter, times(1)).setDistance(remoteNode1, NodeDistance.IGNORED)
+    verify(reporter, times(1)).setDistance(localNode0, NodeDistance.IGNORED)
+    verify(reporter, times(1)).setDistance(remoteNode2, NodeDistance.REMOTE)
+    verify(reporter, times(1)).setDistance(remoteNode3, NodeDistance.IGNORED)
+    verifyNoMoreInteractions(reporter)
   }
-
-  it should "not favor local host if is not present among supplied replicas" in {
-    val policy = policyForClusterOf(remoteNode1, remoteNode2, localNode0)
-    val statement = replicateAwareStatementFor(remoteNode2)
-
-    val plan = policy.newQueryPlan("superKeyspace", statement).toSeq.map(_.getAddress)
-
-    plan.size should be(3)
-    plan.head should be(remoteNode2)
-    plan.takeRight(2) should contain only(remoteNode1, localNode0)
-  }
-  */
 }

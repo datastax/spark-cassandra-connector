@@ -9,7 +9,7 @@ import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
 import com.datastax.spark.connector.util.DriverUtil._
-import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.{DriverUtil, Logging}
 import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
@@ -37,9 +37,8 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     val replicas = metadata
       .getReplicas(keyspaceName, range)
       .map(node =>
-        toOption(node.getBroadcastAddress)
+        DriverUtil.toAddress(node)
           .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
-      .map(_.getAddress)
       .toSet
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }

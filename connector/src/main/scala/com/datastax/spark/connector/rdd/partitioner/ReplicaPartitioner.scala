@@ -74,7 +74,7 @@ implicit
         val tokenHash = Math.abs(token.hashCode())
         val replicas = tokenMap
           .getReplicas(_keyspace, token)
-          .map(_.getBroadcastAddress.get.getAddress)
+          .map(n => DriverUtil.toAddress(n).get)
 
         val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {
