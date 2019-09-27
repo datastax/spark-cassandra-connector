@@ -358,4 +358,17 @@ object CassandraConnectorConf extends Logging {
       timeoutBeforeCloseMillis = timeoutBeforeClose
     )
   }
+
+  private def fromConnectionParams(conf: SparkConf, params: Map[String, String]): CassandraConnectorConf = {
+    apply(conf.clone().setAll(
+      params.collect {
+        case (k, v) if ConfigCheck.validStaticPropertyNames.contains(ConfigCheck.Prefix + k) => (ConfigCheck.Prefix + k) -> v
+        case (k, v) if k.startsWith("spark.") => k -> v
+      }))
+  }
+
+  // used by DSE
+  def fromConnectionParams(params: Map[String, String]): CassandraConnectorConf = {
+    fromConnectionParams(new SparkConf(loadDefaults = false), params)
+  }
 }
