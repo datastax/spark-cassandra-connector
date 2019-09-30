@@ -153,7 +153,7 @@ case object TimeType extends PrimitiveColumnType[LocalTime] {
   def scalaTypeTag = { implicitly[TypeTag[LocalTime]]}
   def cqlTypeName = "time"
   def converterToCassandra =
-    new TypeConverter.OptionToNullConverter(TypeConverter.TimeTypeConverter)
+    new TypeConverter.OptionToNullConverter(TypeConverter.JavaLocalTimeConverter)
 }
 
 case object DurationType extends PrimitiveColumnType[CqlDuration] {

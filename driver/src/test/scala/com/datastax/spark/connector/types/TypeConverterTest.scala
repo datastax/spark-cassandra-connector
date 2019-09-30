@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime, ZoneId, ZoneOffset}
 import java.util.{Date, GregorianCalendar, UUID}
 
 import com.datastax.oss.driver.api.core.data.CqlDuration
@@ -148,7 +148,12 @@ class TypeConverterTest {
 
     assertEquals(dateDayOnly, c.convert(localDate))
     assertEquals(dateDayOnly, c.convert(javaLocalDate))
+    assertEquals(dateDayOnly, c.convert(dayOnlyStr))
     assertEquals(date, c.convert(dateStr))
+
+    val date1 = LocalDate.of(1986, 1, 1)
+    assertEquals(Date.from(date1.atStartOfDay(ZoneId.systemDefault()).toInstant), c.convert("1986"))
+    assertEquals(Date.from(date1.atStartOfDay().toInstant(ZoneOffset.UTC)), c.convert("1986Z"))
   }
 
   @Test
@@ -287,15 +292,20 @@ class TypeConverterTest {
     val c = TypeConverter.forType[LocalDate]
     val testDate = LocalDate.of(1985, 1, 1)
     assertEquals(testDate, c.convert("1985"))
+    assertEquals(testDate, c.convert("1985Z"))
   }
 
   @Test
-  def testTimeType(): Unit = {
-    val c = TypeConverter.TimeTypeConverter
+  def testLocalTimeType(): Unit = {
+    val longC = TypeConverter.LongConverter
     val targetTime = 1482000000L
-    val date = new Date(1482)
-    assertEquals(targetTime, c.convert(targetTime))
-    assertEquals(targetTime, c.convert(date))
+    val localTime = LocalTime.ofNanoOfDay(targetTime)
+    assertEquals(targetTime, longC.convert(targetTime))
+
+    val timeC = TypeConverter.JavaLocalTimeConverter
+    assertEquals(localTime, timeC.convert(localTime))
+    assertEquals(localTime, timeC.convert(targetTime))
+    assertEquals(localTime, timeC.convert("00:00:01.482"))
   }
 
   @Test
@@ -334,6 +344,12 @@ class TypeConverterTest {
     assertEquals(testInstant, c.convert(ms))
     assertEquals(testInstant, c.convert(new Timestamp(ms)))
     assertEquals(testInstant, c.convert("2007-12-03T10:15:30.00Z"))
+
+    // for CEST (+0100 at the moment of writing) this gives UTC 2019-08-13 15:15:58.0
+    val javaDateInLocalTZ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse("2019-08-13 16:15:58.0")
+    assertEquals(javaDateInLocalTZ.toInstant, c.convert("2019-08-13 16:15:58.0"))
+
+    assertEquals(java.time.Instant.parse("1986-01-02T18:05:07.123Z"), c.convert("1986-01-02 21:05:07.123+0300"))
   }
 
   @Test
@@ -622,11 +638,11 @@ class TypeConverterTest {
   }
 
   @Test
-  def testJavaMapping (): Unit = {
+  def testJavaMapping(): Unit = {
     assertEquals(TypeConverter.JavaBooleanConverter, TypeConverter.forType(classOf[java.lang.Boolean]))
     assertEquals(TypeConverter.JavaShortConverter, TypeConverter.forType(classOf[java.lang.Short]))
     assertEquals(TypeConverter.JavaIntConverter, TypeConverter.forType(classOf[java.lang.Integer]))
-    assertTrue(TypeConverter.forType(classOf[java.lang.Long]).isInstanceOf[ChainedTypeConverter[_]])
+    assertEquals(TypeConverter.JavaLongConverter, TypeConverter.forType(classOf[java.lang.Long]))
     assertEquals(TypeConverter.JavaFloatConverter, TypeConverter.forType(classOf[java.lang.Float]))
     assertEquals(TypeConverter.JavaDoubleConverter, TypeConverter.forType(classOf[java.lang.Double]))
     assertEquals(TypeConverter.JavaBigDecimalConverter, TypeConverter.forType(classOf[java.math.BigDecimal]))
