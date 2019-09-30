@@ -5,6 +5,7 @@
  */
 package com.datastax.bdp.spark
 
+import com.datastax.dse.driver.api.core.DseSession
 import com.datastax.dse.driver.api.core.cql.continuous.ContinuousSession
 import com.datastax.dse.driver.api.core.graph.GraphSession
 import com.datastax.spark.connector._
@@ -12,8 +13,9 @@ import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.ReadConf
 import org.scalatest.Matchers
+import org.scalatest.concurrent.Eventually
 
-class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Matchers {
+class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Matchers with Eventually {
 
   override lazy val conn = CassandraConnector(sparkConf)
 
@@ -33,13 +35,14 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
 
   "DseCassandraConnectionFactory" should "have paging on by default" in {
     val session = sc.cassandraTable(ks, table).connector.withSessionDo(session => session)
-      DseCassandraConnectionFactory.continuousPagingEnabled(session) should be(true)
+    DseCassandraConnectionFactory.continuousPagingEnabled(session) should be(true)
   }
 
   it should "make DseSession capable sessions" in {
     conn.withSessionDo { session =>
       session.asInstanceOf[ContinuousSession]
       session.asInstanceOf[GraphSession]
+      session.asInstanceOf[DseSession]
     }
   }
 
@@ -47,5 +50,24 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
     val row = sc.cassandraTable[(Int, Int, Int)](ks, table)
       .withReadConf(ReadConf(Some(1))).collect.head
     row should be(1, 1, 1)
+  }
+
+  it should "use cached dse session" in {
+    val zeroKeepAliveConnector = new CassandraConnector(conn.conf.copy(keepAliveMillis = 0))
+
+    val session1 = zeroKeepAliveConnector.openSession()
+    val session2 = zeroKeepAliveConnector.openSession()
+
+    session1.close()
+    session1.isClosed shouldBe false
+    session2.isClosed shouldBe false
+
+    session1.close()
+    session1.isClosed shouldBe false
+    session2.isClosed shouldBe false
+
+    session2.close()
+    session1.isClosed shouldBe true
+    session2.isClosed shouldBe true
   }
 }
