@@ -39,9 +39,9 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
 /**
   * A Filter which only directs requests at Analytics enabled nodes
   */
-class SparkNodeOnlyFilter(driverContext: DriverContext) extends java.util.function.Predicate[Node] {
+class SparkNodeOnlyFilter(driverContext: DriverContext, profile: String) extends java.util.function.Predicate[Node] {
 
-  private val localDataCenter = driverContext.getConfig.getDefaultProfile.getString(LOAD_BALANCING_LOCAL_DATACENTER).trim
+  private val localDataCenter = driverContext.getConfig.getDefaultProfile.getString(LOAD_BALANCING_LOCAL_DATACENTER, "").trim
 
   assert(!localDataCenter.isEmpty, "Local data center must not be empty. Inspect your config, set your local data center.")
 

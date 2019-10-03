@@ -50,11 +50,11 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
         .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
         .withStringList(CONTACT_POINTS, conf.hosts.map(h => s"${h.getHostAddress}:${conf.port}").toList.asJava)
-        .withString(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy].getCanonicalName)
-        .withString(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy].getCanonicalName)
+        .withClass(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy])
+        .withClass(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy])
         .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
         .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
-        .withString(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy].getCanonicalName)
+        .withClass(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy])
         .withInt(NETTY_ADMIN_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
@@ -66,6 +66,9 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     // compression option cannot be set to NONE (default)
     def compressionProperties(b: LoaderBuilder): LoaderBuilder =
       Option(conf.compression).filter(_ != "NONE").map(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase)).getOrElse(b)
+
+    def localDCProperty(b: LoaderBuilder): LoaderBuilder =
+      conf.localDC.map(b.withString(LOAD_BALANCING_LOCAL_DATACENTER, _)).getOrElse(b)
 
     // add ssl properties if ssl is enabled
     def sslProperties(builder: LoaderBuilder): LoaderBuilder = {
@@ -81,7 +84,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           .foldLeft(builder) { case (b, (name, value)) =>
             value.map(b.withString(name, _)).getOrElse(b)
           }
-          .withString(SSL_ENGINE_FACTORY_CLASS, classOf[DefaultSslEngineFactory].getCanonicalName)
+          .withClass(SSL_ENGINE_FACTORY_CLASS, classOf[DefaultSslEngineFactory])
           .withStringList(SSL_CIPHER_SUITES, conf.cassandraSSLConf.enabledAlgorithms.toList.asJava)
           .withBoolean(SSL_HOSTNAME_VALIDATION, false) // TODO: this needs to be configurable by users. Set to false for our integration tests
       } else {
@@ -89,7 +92,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       }
     }
 
-    Seq[LoaderBuilder => LoaderBuilder](basicProperties, compressionProperties, sslProperties)
+    Seq[LoaderBuilder => LoaderBuilder](basicProperties, compressionProperties, localDCProperty, sslProperties)
       .foldLeft(initBuilder) { case (builder, properties) => properties(builder) }
   }
 

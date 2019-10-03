@@ -8,6 +8,7 @@ package com.datastax.bdp.spark
 import com.datastax.dse.driver.api.core.DseSession
 import com.datastax.dse.driver.api.core.cql.continuous.ContinuousSession
 import com.datastax.dse.driver.api.core.graph.GraphSession
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -28,7 +29,7 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
         s"""CREATE KEYSPACE IF NOT EXISTS $ks
            |WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"""
           .stripMargin)
-      session.execute(s"CREATE TABLE $ks.$table (p int, c int, d int, PRIMARY KEY (p,c))")
+      session.execute(s"CREATE TABLE IF NOT EXISTS $ks.$table (p int, c int, d int, PRIMARY KEY (p,c))")
       session.execute(s"INSERT INTO $ks.$table (p,c,d) VALUES (1,1,1)")
     }
   }
@@ -69,5 +70,13 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
     session2.close()
     session1.isClosed shouldBe true
     session2.isClosed shouldBe true
+  }
+
+  it should "use provided local dc" in {
+    val connectorWithDc = new CassandraConnector(conn.conf.copy(localDC = Some("Cassandra")))
+
+    connectorWithDc.withSessionDo { session =>
+      session.getContext.getConfig.getDefaultProfile.getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER) shouldBe "Cassandra"
+    }
   }
 }
