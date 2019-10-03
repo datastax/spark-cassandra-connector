@@ -24,15 +24,16 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   val AnalyticsWorkload: String = "Analytics"
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val builder = DriverConfigLoader.programmaticBuilder()
-    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, builder)
-       // TODO: this works only for DefaultLoadBalancingPolicy
+    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DriverConfigLoader.programmaticBuilder())
       .withString(DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[SparkNodeOnlyFilter].getCanonicalName)
       .build()
 
-    DseSession.builder()
+    val builder = DseSession.builder()
       .withConfigLoader(loader)
-      .build()
+
+    conf.authConf.authProvider.foreach(builder.withAuthProvider)
+
+    builder.build()
   }
 }
 

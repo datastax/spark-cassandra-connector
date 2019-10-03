@@ -1,7 +1,13 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
+
+import com.datastax.oss.driver.api.core.AllNodesFailedException
+import com.datastax.oss.driver.api.core.auth.AuthenticationException
 import com.datastax.spark.connector.cluster.AuthCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
+
+import scala.collection.JavaConverters._
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase with AuthCluster {
 
@@ -10,12 +16,30 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
 
   val authConf = defaultConf
 
-  "A CassandraConnector" should "authenticate with username and password when using native protocol" in {
+  "A CassandraConnector" should "authenticate with username and password when using native protocol for valid credentials provided by AuthCluster" in {
     val conn2 = CassandraConnector(authConf)
     conn2.withSessionDo { session =>
       assert(session !== null)
       assert(session.isClosed === false)
     }
+  }
+
+  it should "authenticate valid username/password for provided credentials" in {
+    val conn2 = new CassandraConnector(CassandraConnectorConf(authConf).copy(
+      authConf = PasswordAuthConf("cassandra", "cassandra")
+    ))
+    conn2.withSessionDo { session => assert(session !== null) }
+  }
+
+  it should "fail to authenticate invalid username/password" in {
+    val conn2 = new CassandraConnector(CassandraConnectorConf(authConf).copy(
+      authConf = PasswordAuthConf("cassandra", "wrong_passoword")
+    ))
+    val exception = intercept[IOException] {
+      conn2.withSessionDo { session => assert(session !== null) }
+    }
+    exception.getCause shouldBe a[AllNodesFailedException]
+    exception.getCause.asInstanceOf[AllNodesFailedException].getErrors.values().asScala.head shouldBe a[AuthenticationException]
   }
 
   "A DataFrame" should "read and write data with valid auth" in {

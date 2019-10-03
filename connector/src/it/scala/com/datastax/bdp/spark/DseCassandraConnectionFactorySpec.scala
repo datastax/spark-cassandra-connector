@@ -10,15 +10,17 @@ import com.datastax.dse.driver.api.core.cql.continuous.ContinuousSession
 import com.datastax.dse.driver.api.core.graph.GraphSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cluster.DefaultCluster
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cluster.AuthCluster
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.rdd.ReadConf
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
 
-class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Matchers with Eventually {
+class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase with AuthCluster with Matchers with Eventually {
 
-  override lazy val conn = CassandraConnector(sparkConf)
+  override lazy val conn = new CassandraConnector(CassandraConnectorConf(sparkConf).copy(
+    connectionFactory = DseCassandraConnectionFactory
+  ))
 
   override val ks = "dsecassconnfact"
   val table = "atab"

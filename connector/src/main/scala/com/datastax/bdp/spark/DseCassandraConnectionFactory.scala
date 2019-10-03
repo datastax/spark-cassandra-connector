@@ -34,9 +34,12 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     Option(conf.authConf.authProvider).foreach(dseBuilder.withAuthProvider)
     sslOptions(conf).foreach(dseBuilder.withSSL)
 */
-    DseSession.builder()
+    val builder = DseSession.builder()
       .withConfigLoader(loader.build())
-      .build()
+
+    conf.authConf.authProvider.foreach(builder.withAuthProvider)
+
+    builder.build()
   }
 
   val continuousPagingParam = ConfigParameter[Boolean] (

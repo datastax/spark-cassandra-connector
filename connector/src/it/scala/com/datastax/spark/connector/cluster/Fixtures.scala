@@ -125,11 +125,15 @@ trait AuthCluster extends SingleClusterFixture {
     prefix = groupNumber.toString,
     resource = CcmConfig.DEFAULT_SERVER_TRUSTSTORE_PATH)
 
-  private[cluster] final override val configs: Seq[CcmConfig] = Seq(
-    defaultConfig.withSslAuth(
+  private[cluster] final override val configs: Seq[CcmConfig] = {
+    val sslConf = defaultConfig.withSslAuth(
       keystorePath, CcmConfig.DEFAULT_SERVER_KEYSTORE_PASSWORD,
       truststorePath, CcmConfig.DEFAULT_SERVER_TRUSTSTORE_PASSWORD
-    ))
+    )
+    Seq(sslConf.copy(dseConfiguration = sslConf.dseConfiguration ++ Map(
+      "authentication_options.enabled" -> "true"
+    )))
+  }
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
     DefaultCluster.defaultConnectionParameters(address) ++
