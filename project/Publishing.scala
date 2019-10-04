@@ -35,5 +35,15 @@ object Publishing extends sbt.librarymanagement.DependencyBuilders {
     Seq(credFile, Some(personalCred), Some(deployCred)).flatten
   }
 
+  //TODO:
+  val License =
+    <licenses>
+      <license>
+        <name>DataStax DSE Driver License</name>
+        <url>http://www.datastax.com/terms/datastax-dse-driver-license-terms</url>
+        <distribution>repo</distribution>
+        <comments />
+      </license>
+    </licenses>
 
 }

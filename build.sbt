@@ -6,6 +6,7 @@ ThisBuild / scalacOptions += "-target:jvm-1.8"
 
 ThisBuild / organization := "com.datastax.dse"
 ThisBuild / publishMavenStyle := true
+ThisBuild / pomExtra := Publishing.License
 ThisBuild / publishTo := Publishing.Repository
 ThisBuild / credentials ++= Publishing.Credentials
 ThisBuild / version := Publishing.Version
