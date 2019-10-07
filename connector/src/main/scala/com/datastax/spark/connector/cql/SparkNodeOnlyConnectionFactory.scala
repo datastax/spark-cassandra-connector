@@ -8,9 +8,10 @@ package com.datastax.spark.connector.cql
 import java.util
 
 import com.datastax.dse.driver.api.core.DseSession
+import com.datastax.dse.driver.api.core.config.DseDriverConfigLoader
 import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.config.{DefaultDriverOption, DriverConfigLoader}
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER
 import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.metadata.Node
@@ -24,7 +25,7 @@ case object SparkNodeOnlyConnectionFactory extends CassandraConnectionFactory {
   val AnalyticsWorkload: String = "Analytics"
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
-    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DriverConfigLoader.programmaticBuilder())
+    val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DseDriverConfigLoader.programmaticBuilder())
       .withString(DefaultDriverOption.LOAD_BALANCING_FILTER_CLASS, classOf[SparkNodeOnlyFilter].getCanonicalName)
       .build()
 
