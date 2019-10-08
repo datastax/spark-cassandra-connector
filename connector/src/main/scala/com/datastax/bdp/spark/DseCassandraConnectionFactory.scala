@@ -38,6 +38,7 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
       .withConfigLoader(loader.build())
 
     conf.authConf.authProvider.foreach(builder.withAuthProvider)
+    builder.withSchemaChangeListener(new MultiplexingSchemaListener())
 
     builder.build()
   }

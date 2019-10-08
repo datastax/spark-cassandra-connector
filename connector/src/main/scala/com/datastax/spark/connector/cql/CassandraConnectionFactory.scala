@@ -105,6 +105,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .withConfigLoader(configLoader)
 
     conf.authConf.authProvider.foreach(builder.withAuthProvider)
+    builder.withSchemaChangeListener(new MultiplexingSchemaListener())
 
     builder.build()
   }
