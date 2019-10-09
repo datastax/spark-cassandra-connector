@@ -5,7 +5,9 @@
  */
 package com.datastax.bdp.spark
 
-import com.datastax.dse.driver.api.core.config.DseDriverConfigLoader
+import java.time.Duration
+
+import com.datastax.dse.driver.api.core.config.{DseDriverConfigLoader, DseDriverOption}
 import com.datastax.dse.driver.api.core.{DseProtocolVersion, DseSession}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cql._
@@ -20,6 +22,9 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
     val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DseDriverConfigLoader.programmaticBuilder())
+
+    loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_FIRST_PAGE, Duration.ofMillis(conf.readTimeoutMillis))
+    loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_OTHER_PAGES, Duration.ofMillis(conf.readTimeoutMillis))
 
 /* TODO:
 
