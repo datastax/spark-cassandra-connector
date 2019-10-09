@@ -26,19 +26,6 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
     loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_FIRST_PAGE, Duration.ofMillis(conf.readTimeoutMillis))
     loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_OTHER_PAGES, Duration.ofMillis(conf.readTimeoutMillis))
 
-/* TODO:
-
-    val dseBuilder = DseCluster.builder()
-      .withGraphOptions(new GraphOptions().setGraphSubProtocol(GraphProtocol.GRAPHSON_2_0))
-
-    val maybeSSLOptions =  Option(defConf.getProtocolOptions.getSSLOptions)
-    maybeSSLOptions match {
-      case Some(sslOptions) => dseBuilder.withSSL(sslOptions)
-      case None => dseBuilder
-    }
-    Option(conf.authConf.authProvider).foreach(dseBuilder.withAuthProvider)
-    sslOptions(conf).foreach(dseBuilder.withSSL)
-*/
     val builder = DseSession.builder()
       .withConfigLoader(loader.build())
 
@@ -89,54 +76,4 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
       new DefaultScanner(readConf, connConf, columnNames)
     }
   }
-
-  /* TODO:
-  def sslOptions(conf: CassandraConnectorConf): Option[SSLOptions] = {
-    def buildSSLOptions(clientConf: ClientConfiguration): Option[SSLOptions] = {
-      getSSLContext(clientConf).map {
-        case sslContext =>
-          logger.info("SSL enabled")
-          JdkSSLOptions.builder()
-              .withSSLContext(sslContext)
-              .withCipherSuites(getCipherSuites(clientConf))
-              .build()
-      }
-    }
-    val clientConf: Option[ClientConfiguration] = conf.authConf match {
-      case byosSslConfig: DseByosAuthConfFactory.ByosAuthConf  => Some(byosSslConfig.clientConfig)
-      case _ => try {
-        Some(DetachedClientConfigurationFactory.getClientConfiguration())
-      } catch {
-        case t: Throwable =>
-          logger.error("Failed to obtain client configuration factory", t)
-          None
-      }
-    }
-    clientConf.flatMap(buildSSLOptions)
-  }
-  private def getSSLContext(clientConf: ClientConfiguration): Option[SSLContext] = {
-    if (clientConf.isSslEnabled) {
-      val tmf = SSLUtil.initTrustManagerFactory(
-        clientConf.getSslTruststorePath,
-        clientConf.getSslTruststoreType,
-        clientConf.getSslTruststorePassword)
-      val kmf = Option(clientConf.getSslKeystorePath)
-          .map(path => SSLUtil.initKeyManagerFactory(
-            path,
-            clientConf.getSslKeystoreType,
-            clientConf.getSslKeystorePassword,
-            clientConf.getSslKeystorePassword))
-      val sslContext = SSLUtil.initSSLContext(tmf, kmf.orNull, clientConf.getSslProtocol)
-      Some(sslContext)
-    } else {
-      None
-    }
-  }
-  private def getCipherSuites(clientConf: ClientConfiguration): Array[String] = {
-    if (clientConf.getCipherSuites != null && clientConf.getCipherSuites.nonEmpty)
-      clientConf.getCipherSuites
-    else
-      CassandraConnectorConf.SSLEnabledAlgorithmsParam.default.toArray
-  }
-   */
 }
