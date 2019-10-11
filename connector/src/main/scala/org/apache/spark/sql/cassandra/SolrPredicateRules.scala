@@ -16,6 +16,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.SolrConstants._
 import org.apache.spark.sql.sources._
 import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.loadbalancing.NodeDistance
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
@@ -364,10 +365,12 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
             //Disable Paging for the count requests since we are fault tolerant and paging cannot
             // be used during a fault tolerant request
             // https://docs.datastax.com/en/drivers/java/2.2/com/datastax/driver/core/Statement.html#setFetchSize-int-
+            val pagingDisabled = session.getContext.getConfig.getDefaultProfile.withInt(DefaultDriverOption.REQUEST_PAGE_SIZE, -1)
             val totalRequest = SimpleStatement.newInstance(request, s"""{"q":"*:*", $FaultTolerant}""")
-              .setPageSize(Integer.MAX_VALUE)
+              .setExecutionProfile(pagingDisabled)
             val queryRequest = SimpleStatement.newInstance(request, solrStringNoFailoverTolerant)
-              .setPageSize(Integer.MAX_VALUE)
+              .setExecutionProfile(pagingDisabled)
+
             val totalFuture = session.executeAsync(totalRequest)
             val queryFuture = session.executeAsync(queryRequest)//TODO THIS can be done in a more reactive way I believe
             (totalFuture.toCompletableFuture.get(5, TimeUnit.SECONDS).one().getLong(0),
