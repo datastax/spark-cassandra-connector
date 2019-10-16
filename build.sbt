@@ -28,7 +28,8 @@ lazy val commonSettings = Seq(
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang" | "org.eclipse.jetty"),
   fork := true,
   parallelExecution := true,
-  testForkedParallel := false
+  testForkedParallel := false,
+  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
 )
 
 val annotationProcessor = Seq(
