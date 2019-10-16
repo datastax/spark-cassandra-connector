@@ -14,24 +14,23 @@ class DseSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
     try {
       val injectFunction =
         extensions.getClass.getMethod(
-          "injectFunction",
-          classOf[catalyst.FunctionIdentifier],
-          classOf[Seq[Expression] => Expression])
+          "injectFunction",classOf[Tuple2[
+          catalyst.FunctionIdentifier,
+          Seq[Expression] => Expression]])
 
       injectFunction.invoke(
         extensions,
-        FunctionIdentifier("writetime"),
-        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input))
+        (FunctionIdentifier("writetime"),
+        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input)))
 
       injectFunction.invoke(
         extensions,
-        FunctionIdentifier("ttl"),
-        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input))
+        (FunctionIdentifier("ttl"),
+        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input)))
     } catch {
-      case _:NoSuchMethodException =>
-      case _:NoSuchMethodError => logWarning(
+      case e @ (_:NoSuchMethodException | _:NoSuchMethodError) => logWarning(
         """Unable to register DSE Specific functions CassandraTTL and CassandraWriteTime
-          |because of spark version, use functionRegistry.registerFunction to add
+          |because of Spark version, use functionRegistry.registerFunction to add
           |the functions.""".stripMargin)
     }
   }
