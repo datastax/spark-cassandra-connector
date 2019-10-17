@@ -22,9 +22,10 @@ object DseCassandraConnectionFactory extends CassandraConnectionFactory {
 
   override def createSession(conf: CassandraConnectorConf): CqlSession = {
     val loader = DefaultConnectionFactory.connectorConfigBuilder(conf, DseDriverConfigLoader.programmaticBuilder())
-
-    loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_FIRST_PAGE, Duration.ofMillis(conf.readTimeoutMillis))
-    loader.withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_OTHER_PAGES, Duration.ofMillis(conf.readTimeoutMillis))
+      .withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_FIRST_PAGE, Duration.ofMillis(conf.readTimeoutMillis))
+      .withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_OTHER_PAGES, Duration.ofMillis(conf.readTimeoutMillis))
+      // disable insights reporting until https://datastax-oss.atlassian.net/browse/JAVA-2433 is done
+      .withBoolean(DseDriverOption.MONITOR_REPORTING_ENABLED, false)
 
     val builder = DseSession.builder()
       .withConfigLoader(loader.build())

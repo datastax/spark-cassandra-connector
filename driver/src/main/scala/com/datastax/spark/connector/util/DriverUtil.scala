@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.util
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.util.Optional
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
@@ -14,6 +14,10 @@ object DriverUtil {
   def toOption[T](optional: Optional[T]): Option[T] =
     if (optional.isPresent) Some(optional.get()) else None
 
-  def toAddress(node: Node): Option[InetAddress] =
-    toOption(node.getBroadcastAddress).map(_.getAddress)
+  def toAddress(node: Node): Option[InetAddress] = {
+    node.getEndPoint.resolve() match {
+      case address: InetSocketAddress => Option(address.getAddress)
+      case _ => toOption(node.getBroadcastAddress).map(_.getAddress)
+    }
+  }
 }
