@@ -475,9 +475,14 @@ object TypeConverter {
   implicit object JavaLocalTimeConverter extends NullableTypeConverter[java.time.LocalTime] {
     def targetTypeTag = JavaLocalTimeTypeTag
 
+    def safeParse(str: String): java.time.LocalTime = {
+      scala.util.Try(java.time.LocalTime.parse(str))
+        .getOrElse(java.time.LocalTime.ofNanoOfDay(str.toLong))
+    }
+
     def convertPF = {
       case x: java.time.LocalTime => x
-      case x: String => java.time.LocalTime.parse(x)
+      case x: String => safeParse(x)
       case x: Long => java.time.LocalTime.ofNanoOfDay(x)
       case x: Int => java.time.LocalTime.ofNanoOfDay(x)
     }
