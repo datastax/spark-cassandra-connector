@@ -8,6 +8,7 @@ import java.time.{ZoneId, ZoneOffset, LocalDate => JavaLocalDate}
 import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.{LineString, Point, Polygon}
+import com.datastax.dse.driver.api.core.data.time.DateRange
 import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
@@ -566,6 +567,18 @@ object TypeConverter {
     }
   }
 
+  private val DateRangeTypeTag = TypeTag.synchronized( {
+    implicitly[TypeTag[DateRange]]
+  })
+
+  implicit object DateRangeConverter extends NullableTypeConverter[DateRange] {
+    def targetTypeTag = DateRangeTypeTag
+    override def convertPF = {
+      case x: DateRange => x
+      case x: String => DateRange.parse(x)
+    }
+  }
+
   class Tuple2Converter[K, V](implicit kc: TypeConverter[K], vc: TypeConverter[V])
     extends TypeConverter[(K, V)] {
 
@@ -947,7 +960,8 @@ object TypeConverter {
     JavaInstantConverter,
     PointConverter,
     LineStringConverter,
-    PolygonConverter
+    PolygonConverter,
+    DateRangeConverter
   )
 
   private val originalConverters = converters.toSet

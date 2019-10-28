@@ -7,6 +7,7 @@ import java.time.Instant
 import java.util.{Date, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.Geometry
+import com.datastax.dse.driver.api.core.data.time.DateRange
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodecs
 import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.oss.driver.api.core.data.CqlDuration
@@ -86,6 +87,7 @@ object CassandraSQLRow {
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
       case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType): _*)
+      case dateRange: DateRange => dateRange.toString
       case _ => value.asInstanceOf[AnyRef]
     }
     sparkSqlType(value)
@@ -106,6 +108,7 @@ object CassandraSQLRow {
       case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
       case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
+      case dateRange: DateRange => UTF8String.fromString(dateRange.toString)
       case instant: Instant => java.sql.Timestamp.from(instant)
       case _ => value.asInstanceOf[AnyRef]
     }

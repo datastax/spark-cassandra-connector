@@ -7,9 +7,11 @@ import java.time.{Instant, LocalDate, LocalTime}
 import java.util.UUID
 
 import com.datastax.dse.driver.api.core.data.geometry._
+import com.datastax.dse.driver.api.core.data.time.DateRange
 import com.datastax.oss.driver.api.core.data.CqlDuration
 import com.datastax.spark.connector.types.TypeConverter.OptionToNullConverter
 
+import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 
 trait PrimitiveColumnType[T] extends ColumnType[T] {
@@ -182,5 +184,12 @@ case object LineStringType extends PrimitiveColumnType[LineString] {
   def cqlTypeName = "LineStringType"
   def converterToCassandra =
     new OptionToNullConverter(TypeConverter.forType[LineString])
+}
+
+case object DateRangeType extends PrimitiveColumnType[DateRange] {
+  def scalaTypeTag = TypeTag.synchronized { implicitly[TypeTag[DateRange]] }
+  def cqlTypeName = "DateRangeType"
+  def converterToCassandra =
+    new OptionToNullConverter(TypeConverter.forType[DateRange])
 }
 

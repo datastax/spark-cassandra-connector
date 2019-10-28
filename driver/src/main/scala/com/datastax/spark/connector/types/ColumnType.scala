@@ -67,7 +67,8 @@ object ColumnType {
     DriverDataTypes.DURATION -> DurationType,
     DseDataTypes.POINT -> PointType,
     DseDataTypes.POLYGON -> PolygonType,
-    DseDataTypes.LINE_STRING -> LineStringType
+    DseDataTypes.LINE_STRING -> LineStringType,
+    DseDataTypes.DATE_RANGE -> DateRangeType
   )
 
   private val standardFromDriverRow: PartialFunction[DataType, ColumnType[_]] = {
