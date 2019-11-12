@@ -46,11 +46,13 @@ object Dependencies
     val scalaCheck        = "org.scalacheck"          %% "scalacheck"                   % ScalaCheck   % "test,it"      // BSD
     val sparkCoreT        = "org.apache.spark"        %% "spark-core"                   % ApacheSpark  % "test,it" classifier "tests"
     val sparkStreamingT   = "org.apache.spark"        %% "spark-streaming"              % ApacheSpark  % "test,it" classifier "tests"
+    val solrj             = "org.apache.solr"         %  "solr-solrj"                   % SolrJ      % "test,it"
 
     val dependencies = Seq(
       scalaCheck,
       sparkCoreT,
       sparkStreamingT,
+      solrj,
       TestCommon.driverMapperProcessor % "test,it" driverCoreExclude(),
       TestCommon.scalaTest % "test,it",
       TestCommon.mockito % "test,it",

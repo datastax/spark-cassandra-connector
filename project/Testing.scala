@@ -33,7 +33,8 @@ object Testing {
       .zipWithIndex
       .map { case ((groupName, tests), i) =>
         println(s"[T$i] $groupName: ${tests.size} test(s)")
-        val envVars = Map("CCM_IP_PREFIX" -> s"127.$i.", "TEST_GROUP_NO" -> i.toString) ++ sys.env
+        val envVars = Map("CCM_IP_PREFIX" -> s"127.$i.", "TEST_GROUP_NO" -> i.toString) ++ sys.env +
+          ("_JAVA_OPTIONS" -> "-ea") // enable java assertions
         Group(groupName, tests.toSeq, SubProcess(
           ForkOptions()
             .withEnvVars(envVars)
