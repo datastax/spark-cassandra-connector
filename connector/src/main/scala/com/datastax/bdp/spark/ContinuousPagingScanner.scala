@@ -93,16 +93,16 @@ case class ContinuousPagingScanner(
   override def getSession(): CqlSession = cpSession
 
   override def scan[StatementT <: Statement[StatementT]](statement: StatementT): ScanResult = {
-     maybeExecutingAs(statement, readConf.executeAs)
+     val authStatement = maybeExecutingAs(statement, readConf.executeAs)
 
-    if (isSolr(statement)) {
+    if (isSolr(authStatement)) {
       logDebug("Continuous Paging doesn't work with Search, Falling back to default paging")
-      val regularResult = cpSession.execute(statement)
+      val regularResult = cpSession.execute(authStatement)
       val regularIterator = regularResult.iterator().asScala
       ScanResult(regularIterator, CassandraRowMetadata.fromResultSet(columnNames, regularResult, codecRegistry))
 
     } else {
-      val cpResult = cpSession.executeContinuously(statement)
+      val cpResult = cpSession.executeContinuously(authStatement)
       val cpIterator = cpResult.iterator().asScala
       ScanResult(cpIterator, getMetaData(cpResult))
     }
