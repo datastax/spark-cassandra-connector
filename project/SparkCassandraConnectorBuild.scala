@@ -39,7 +39,7 @@ object CassandraSparkBuild extends Build {
   lazy val cassandraServerProject = Project(
     id = "cassandra-server",
     base = file(namespace),
-    settings = defaultSettings ++ Seq(
+    settings = defaultSettings ++ sparkPackageSettings ++ Seq(
       libraryDependencies ++= Seq(Artifacts.cassandraServer % "it", Artifacts.airlift),
       Testing.cassandraServerClasspath := {
         (fullClasspath in IntegrationTest).value.map(_.data.getAbsoluteFile).mkString(File.pathSeparator)
