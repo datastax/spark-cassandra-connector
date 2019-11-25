@@ -1,3 +1,6 @@
+2.4.2
+  * Support for Scala 2.12 (SPARKC-458)
+
 2.4.1
  * Includes all up to 2.3.3
 

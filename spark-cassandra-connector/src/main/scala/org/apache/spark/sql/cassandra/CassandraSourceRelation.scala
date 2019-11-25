@@ -10,7 +10,7 @@ import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLo
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{ConfigParameter, Logging, ReflectionUtil}
-import com.datastax.spark.connector.writer.{SqlRowWriter, WriteConf}
+import com.datastax.spark.connector.writer.{RowWriterFactory, SqlRowWriter, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
@@ -43,6 +43,10 @@ private[cassandra] class CassandraSourceRelation(
   with PrunedFilteredScan
   with Logging {
 
+  implicit val readconf: ReadConf = readConf
+  implicit val rwf: RowWriterFactory[Row] = SqlRowWriter.Factory
+  implicit val cassandraConnector: CassandraConnector = connector
+
   private[this] val tableDef = Schema.tableFromCassandra(
     connector,
     tableRef.keyspace,
@@ -51,6 +55,7 @@ private[cassandra] class CassandraSourceRelation(
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
   }
+
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
@@ -71,18 +76,17 @@ private[cassandra] class CassandraSourceRelation(
 
     }
 
-    implicit val rwf = SqlRowWriter.Factory
     val columns = SomeColumns(data.columns.map(x => x: ColumnRef): _*)
     data.rdd.saveToCassandra(tableRef.keyspace, tableRef.table, columns, writeConf)
   }
+
+
 
   override def sizeInBytes: Long = {
     // If it's not found, use SQLConf default setting
     tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
   }
 
-  implicit val cassandraConnector = connector
-  implicit val readconf = readConf
   private[this] val baseRdd =
     sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
 
