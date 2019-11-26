@@ -1,0 +1,834 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>writer - com.datastax.spark.connector.writer</title>
+          <meta name="description" content="writer - com.datastax.spark.connector.writer" />
+          <meta name="keywords" content="writer com.datastax.spark.connector.writer" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.writer.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>writer</h1><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">writer</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Contains components for writing RDDs to Cassandra</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.writer"><span>writer</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.writer.AsyncExecutor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AsyncExecutor[T,R]extendsLogging"></a>
+      <a id="AsyncExecutor[T,R]:AsyncExecutor[T,R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AsyncExecutor.html"><span class="name">AsyncExecutor</span></a><span class="tparams">[<span name="T">T</span>, <span name="R">R</span>]</span><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@AsyncExecutor[T,R]extendsLogging" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached.</p>
+    </li><li name="com.datastax.spark.connector.writer.BatchGroupingKey" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BatchGroupingKeyextendsAnyRef"></a>
+      <a id="BatchGroupingKey:BatchGroupingKey"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BatchGroupingKey.html"><span class="name">BatchGroupingKey</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@BatchGroupingKeyextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.CassandraRowWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRowWriterextendsRowWriter[com.datastax.spark.connector.CassandraRow]"></a>
+      <a id="CassandraRowWriter:CassandraRowWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRowWriter.html"><span class="name">CassandraRowWriter</span></a><span class="result"> extends <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a>[<a href="../CassandraRow.html" class="extype" name="com.datastax.spark.connector.CassandraRow">CassandraRow</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@CassandraRowWriterextendsRowWriter[com.datastax.spark.connector.CassandraRow]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a> that can write <a href="../CassandraRow.html" class="extype" name="com.datastax.spark.connector.CassandraRow">CassandraRow</a> objects.</p>
+    </li><li name="com.datastax.spark.connector.writer.DefaultRowWriter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="DefaultRowWriter[T]extendsRowWriter[T]"></a>
+      <a id="DefaultRowWriter[T]:DefaultRowWriter[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DefaultRowWriter.html"><span class="name">DefaultRowWriter</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a>[<span class="extype" name="com.datastax.spark.connector.writer.DefaultRowWriter.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@DefaultRowWriter[T]extendsRowWriter[T]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <code>RowWriter</code> suitable for saving objects mappable by a <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a>.</p><div class="fullcomment"><div class="comment cmt"><p>A <code>RowWriter</code> suitable for saving objects mappable by a <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a>.
+Can save case class objects, java beans and tuples.</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.LowPriorityRowWriterFactoryImplicits" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="LowPriorityRowWriterFactoryImplicitsextendsAnyRef"></a>
+      <a id="LowPriorityRowWriterFactoryImplicits:LowPriorityRowWriterFactoryImplicits"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="LowPriorityRowWriterFactoryImplicits.html"><span class="name">LowPriorityRowWriterFactoryImplicits</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@LowPriorityRowWriterFactoryImplicitsextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Provides a low-priority implicit <code>RowWriterFactory</code> able to write objects of any class for which
+a <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a> is defined.</p>
+    </li><li name="com.datastax.spark.connector.writer.NullKeyColumnException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NullKeyColumnExceptionextendsNullPointerExceptionwithProductwithSerializable"></a>
+      <a id="NullKeyColumnException:NullKeyColumnException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NullKeyColumnException.html"><span class="name">NullKeyColumnException</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.NullPointerException">NullPointerException</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@NullKeyColumnExceptionextendsNullPointerExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.PerRowWriteOptionValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PerRowWriteOptionValue[T]extendsWriteOptionValue[T]withProductwithSerializable"></a>
+      <a id="PerRowWriteOptionValue[T]:PerRowWriteOptionValue[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="PerRowWriteOptionValue.html"><span class="name">PerRowWriteOptionValue</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="placeholder">placeholder: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="WriteOptionValue.html" class="extype" name="com.datastax.spark.connector.writer.WriteOptionValue">WriteOptionValue</a>[<span class="extype" name="com.datastax.spark.connector.writer.PerRowWriteOptionValue.T">T</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@PerRowWriteOptionValue[T]extendsWriteOptionValue[T]withProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.PropertyExtractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PropertyExtractor[T]extendsSerializable"></a>
+      <a id="PropertyExtractor[T]:PropertyExtractor[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PropertyExtractor.html"><span class="name">PropertyExtractor</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@PropertyExtractor[T]extendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Extracts values from fields of an object.</p>
+    </li><li name="com.datastax.spark.connector.writer.QueryExecutor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryExecutorextendsAsyncExecutor[com.datastax.spark.connector.writer.RichStatement,com.datastax.driver.core.ResultSet]"></a>
+      <a id="QueryExecutor:QueryExecutor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryExecutor.html"><span class="name">QueryExecutor</span></a><span class="result"> extends <a href="AsyncExecutor.html" class="extype" name="com.datastax.spark.connector.writer.AsyncExecutor">AsyncExecutor</a>[<a href="RichStatement.html" class="extype" name="com.datastax.spark.connector.writer.RichStatement">RichStatement</a>, <span class="extype" name="com.datastax.driver.core.ResultSet">ResultSet</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@QueryExecutorextendsAsyncExecutor[com.datastax.spark.connector.writer.RichStatement,com.datastax.driver.core.ResultSet]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.RateLimiter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="RateLimiterextendsAnyRef"></a>
+      <a id="RateLimiter:RateLimiter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RateLimiter.html"><span class="name">RateLimiter</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RateLimiterextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A leaking bucket rate limiter.</p><div class="fullcomment"><div class="comment cmt"><p>A leaking bucket rate limiter.
+It can be used to limit rate of anything,
+but typically it is used to limit rate of data transfer.</p><p>It starts with an empty bucket.
+When packets arrive, they are added to the bucket.
+The bucket has a constant size and is leaking at a constant rate.
+If the bucket overflows, the thread is delayed by the
+amount of time proportional to the amount of the overflow.</p><p>This class is thread safe and lockless.
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.ReplicaLocator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ReplicaLocator[T]extendsSerializablewithLogging"></a>
+      <a id="ReplicaLocator[T]:ReplicaLocator[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReplicaLocator.html"><span class="name">ReplicaLocator</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span> with <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@ReplicaLocator[T]extendsSerializablewithLogging" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A utility class for determining the Replica Set (Ip Addresses) of a particular Cassandra Row.</p><div class="fullcomment"><div class="comment cmt"><p>A utility class for determining the Replica Set (Ip Addresses) of a particular Cassandra Row. Used
+by the <a href="../RDDFunctions.html#keyByCassandraReplica(keyspaceName:String,tableName:String,partitionKeyMapper:com.datastax.spark.connector.ColumnSelector)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitcurrentType:scala.reflect.ClassTag[T],implicitrwf:com.datastax.spark.connector.writer.RowWriterFactory[T]):org.apache.spark.rdd.RDD[(Set[java.net.InetAddress],T)]" class="extmbr" name="com.datastax.spark.connector.RDDFunctions#keyByCassandraReplica">com.datastax.spark.connector.RDDFunctions.keyByCassandraReplica</a> method. Uses the Java
+Driver to obtain replica information.
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.RichStatement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RichStatementextendsAnyRef"></a>
+      <a id="RichStatement:RichStatement"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="RichStatement.html"><span class="name">RichStatement</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RichStatementextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.RoutingKeyGenerator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RoutingKeyGeneratorextendscom.datastax.driver.core.BoundStatement=&gt;java.nio.ByteBuffer"></a>
+      <a id="RoutingKeyGenerator:RoutingKeyGenerator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RoutingKeyGenerator.html"><span class="name">RoutingKeyGenerator</span></a><span class="result"> extends (<span class="extype" name="com.datastax.driver.core.BoundStatement">BoundStatement</span>) ⇒ <span class="extype" name="java.nio.ByteBuffer">ByteBuffer</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RoutingKeyGeneratorextendscom.datastax.driver.core.BoundStatement=&gt;java.nio.ByteBuffer" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">This class computes the routing key of a bound statement.</p>
+    </li><li name="com.datastax.spark.connector.writer.RowWriter" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="RowWriter[T]extendsSerializable"></a>
+      <a id="RowWriter[T]:RowWriter[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="RowWriter.html"><span class="name">RowWriter</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RowWriter[T]extendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"><code>RowWriter</code> knows how to extract column names and values from custom row objects
+and how to convert them to values that can be written to Cassandra.</p><div class="fullcomment"><div class="comment cmt"><p><code>RowWriter</code> knows how to extract column names and values from custom row objects
+and how to convert them to values that can be written to Cassandra.
+<code>RowWriter</code> is required to apply any user-defined data type conversion.</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.RowWriterFactory" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="RowWriterFactory[T]extendsAnyRef"></a>
+      <a id="RowWriterFactory[T]:RowWriterFactory[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="RowWriterFactory.html"><span class="name">RowWriterFactory</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RowWriterFactory[T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Creates instances of <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a> objects for the given row type <code>T</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Creates instances of <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a> objects for the given row type <code>T</code>.
+<code>RowWriterFactory</code> is the trait you need to implement if you want to support row representations
+which cannot be simply mapped by a <a href="../mapper/ColumnMapper.html" class="extype" name="com.datastax.spark.connector.mapper.ColumnMapper">ColumnMapper</a>.</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.SqlRowWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SqlRowWriterextendsRowWriter[org.apache.spark.sql.Row]"></a>
+      <a id="SqlRowWriter:SqlRowWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SqlRowWriter.html"><span class="name">SqlRowWriter</span></a><span class="result"> extends <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a>[<a href="http://spark.apache.org/docs/2.4.0/api/scala/index.html#org.apache.spark.sql.Row" class="extype" target="_top">Row</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@SqlRowWriterextendsRowWriter[org.apache.spark.sql.Row]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a> that can write SparkSQL <code>Row</code> objects.</p>
+    </li><li name="com.datastax.spark.connector.writer.StaticWriteOptionValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StaticWriteOptionValue[T]extendsWriteOptionValue[T]withProductwithSerializable"></a>
+      <a id="StaticWriteOptionValue[T]:StaticWriteOptionValue[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="StaticWriteOptionValue.html"><span class="name">StaticWriteOptionValue</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="value">value: <span class="extype" name="com.datastax.spark.connector.writer.StaticWriteOptionValue.T">T</span></span>)</span><span class="result"> extends <a href="WriteOptionValue.html" class="extype" name="com.datastax.spark.connector.writer.WriteOptionValue">WriteOptionValue</a>[<span class="extype" name="com.datastax.spark.connector.writer.StaticWriteOptionValue.T">T</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@StaticWriteOptionValue[T]extendsWriteOptionValue[T]withProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.TTLOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TTLOptionextendsWriteOption[Int]withProductwithSerializable"></a>
+      <a id="TTLOption:TTLOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TTLOption.html"><span class="name">TTLOption</span></a><span class="params">(<span name="value">value: <a href="WriteOptionValue.html" class="extype" name="com.datastax.spark.connector.writer.WriteOptionValue">WriteOptionValue</a>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <a href="WriteOption.html" class="extype" name="com.datastax.spark.connector.writer.WriteOption">WriteOption</a>[<span class="extype" name="scala.Int">Int</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TTLOptionextendsWriteOption[Int]withProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.TableWriter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="TableWriter[T]extendsSerializablewithLogging"></a>
+      <a id="TableWriter[T]:TableWriter[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TableWriter.html"><span class="name">TableWriter</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span> with <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TableWriter[T]extendsSerializablewithLogging" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Writes RDD data into given Cassandra table.</p><div class="fullcomment"><div class="comment cmt"><p>Writes RDD data into given Cassandra table.
+Individual column values are extracted from RDD objects using given <a href="RowWriter.html" class="extype" name="com.datastax.spark.connector.writer.RowWriter">RowWriter</a>
+Then, data are inserted into Cassandra with batches of CQL INSERT statements.
+Each RDD partition is processed by a single thread.</p></div></div>
+    </li><li name="com.datastax.spark.connector.writer.TimestampOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TimestampOptionextendsWriteOption[Long]withProductwithSerializable"></a>
+      <a id="TimestampOption:TimestampOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TimestampOption.html"><span class="name">TimestampOption</span></a><span class="params">(<span name="value">value: <a href="WriteOptionValue.html" class="extype" name="com.datastax.spark.connector.writer.WriteOptionValue">WriteOptionValue</a>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="result"> extends <a href="WriteOption.html" class="extype" name="com.datastax.spark.connector.writer.WriteOption">WriteOption</a>[<span class="extype" name="scala.Long">Long</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TimestampOptionextendsWriteOption[Long]withProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.WritableToCassandra" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="WritableToCassandra[T]extendsAnyRef"></a>
+      <a id="WritableToCassandra[T]:WritableToCassandra[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="WritableToCassandra.html"><span class="name">WritableToCassandra</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WritableToCassandra[T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.WriteConf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="WriteConfextendsProductwithSerializable"></a>
+      <a id="WriteConf:WriteConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteConf.html"><span class="name">WriteConf</span></a><span class="params">(<span name="batchSize">batchSize: <a href="../BatchSize.html" class="extype" name="com.datastax.spark.connector.BatchSize">BatchSize</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">BatchSize.Automatic</a></span></span></span>, <span name="batchGroupingBufferSize">batchGroupingBufferSize: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name='<span class="name"><a href="WriteConf$.html">WriteConf.BatchBufferSizeParam.default</a></span>'>...</span></span>, <span name="batchGroupingKey">batchGroupingKey: <a href="BatchGroupingKey.html" class="extype" name="com.datastax.spark.connector.writer.BatchGroupingKey">BatchGroupingKey</a> = <span class="symbol"><span class="name"><a href="WriteConf$.html">WriteConf.BatchLevelParam.default</a></span></span></span>, <span name="consistencyLevel">consistencyLevel: <span class="extype" name="com.datastax.driver.core.ConsistencyLevel">ConsistencyLevel</span> = <span class="defval" name='<span class="name"><a href="WriteConf$.html">WriteConf.ConsistencyLevelParam.default</a></span>'>...</span></span>, <span name="ifNotExists">ifNotExists: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol"><span class="name"><a href="WriteConf$.html">WriteConf.IfNotExistsParam.default</a></span></span></span>, <span name="ignoreNulls">ignoreNulls: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol"><span class="name"><a href="WriteConf$.html">WriteConf.IgnoreNullsParam.default</a></span></span></span>, <span name="parallelismLevel">parallelismLevel: <span class="extype" name="scala.Int">Int</span> = <span class="defval" name='<span class="name"><a href="WriteConf$.html">WriteConf.ParallelismLevelParam.default</a></span>'>...</span></span>, <span name="throughputMiBPS">throughputMiBPS: <span class="extype" name="scala.Double">Double</span> = <span class="defval" name='<span class="name"><a href="WriteConf$.html">WriteConf.ThroughputMiBPSParam.default</a></span>'>...</span></span>, <span name="ttl">ttl: <a href="TTLOption.html" class="extype" name="com.datastax.spark.connector.writer.TTLOption">TTLOption</a> = <span class="symbol"><span class="name"><a href="TTLOption$.html">TTLOption.defaultValue</a></span></span></span>, <span name="timestamp">timestamp: <a href="TimestampOption.html" class="extype" name="com.datastax.spark.connector.writer.TimestampOption">TimestampOption</a> = <span class="symbol"><span class="name"><a href="TimestampOption$.html">TimestampOption.defaultValue</a></span></span></span>, <span name="taskMetricsEnabled">taskMetricsEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol"><span class="name"><a href="WriteConf$.html">WriteConf.TaskMetricsParam.default</a></span></span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WriteConfextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Write settings for RDD
+</p><div class="fullcomment"><div class="comment cmt"><p>Write settings for RDD
+</p></div><dl class="paramcmts block"><dt class="param">batchSize</dt><dd class="cmt"><p>approx. number of bytes to be written in a single batch or
+                 exact number of rows to be written in a single batch;</p></dd><dt class="param">batchGroupingBufferSize</dt><dd class="cmt"><p>the number of distinct batches that can be buffered before
+                       they are written to Cassandra</p></dd><dt class="param">batchGroupingKey</dt><dd class="cmt"><p>which rows can be grouped into a single batch</p></dd><dt class="param">consistencyLevel</dt><dd class="cmt"><p>consistency level for writes, default LOCAL_QUORUM</p></dd><dt class="param">ifNotExists</dt><dd class="cmt"><p>inserting a row should happen only if it does not already exist</p></dd><dt class="param">parallelismLevel</dt><dd class="cmt"><p>number of batches to be written in parallel</p></dd><dt class="param">ttl</dt><dd class="cmt"><p>the default TTL value which is used when it is defined (in seconds)</p></dd><dt class="param">timestamp</dt><dd class="cmt"><p>the default timestamp value which is used when it is defined (in microseconds)</p></dd><dt class="param">taskMetricsEnabled</dt><dd class="cmt"><p>whether or not enable task metrics updates (requires Spark 1.2+)</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.writer.WriteOption" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="WriteOption[+T]extendsAnyRef"></a>
+      <a id="WriteOption[+T]:WriteOption[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteOption.html"><span class="name">WriteOption</span></a><span class="tparams">[<span name="T">+T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WriteOption[+T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.WriteOptionValue" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="WriteOptionValue[+T]extendsAnyRef"></a>
+      <a id="WriteOptionValue[+T]:WriteOptionValue[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteOptionValue.html"><span class="name">WriteOptionValue</span></a><span class="tparams">[<span name="T">+T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WriteOptionValue[+T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.writer.AsyncExecutor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AsyncExecutor"></a>
+      <a id="AsyncExecutor:AsyncExecutor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="AsyncExecutor$.html"><span class="name">AsyncExecutor</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@AsyncExecutor" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.BatchGroupingKey" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BatchGroupingKey"></a>
+      <a id="BatchGroupingKey:BatchGroupingKey"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="BatchGroupingKey$.html"><span class="name">BatchGroupingKey</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@BatchGroupingKey" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.CassandraRowWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraRowWriter"></a>
+      <a id="CassandraRowWriter:CassandraRowWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraRowWriter$.html"><span class="name">CassandraRowWriter</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@CassandraRowWriter" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.DefaultRowWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefaultRowWriter"></a>
+      <a id="DefaultRowWriter:DefaultRowWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefaultRowWriter$.html"><span class="name">DefaultRowWriter</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@DefaultRowWriter" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.DefaultValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefaultValue"></a>
+      <a id="DefaultValue:DefaultValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefaultValue$.html"><span class="name">DefaultValue</span></a><span class="result"> extends <a href="WriteOptionValue.html" class="extype" name="com.datastax.spark.connector.writer.WriteOptionValue">WriteOptionValue</a>[<span class="extype" name="scala.Nothing">Nothing</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@DefaultValue" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.ObjectSizeEstimator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ObjectSizeEstimator"></a>
+      <a id="ObjectSizeEstimator:ObjectSizeEstimator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ObjectSizeEstimator$.html"><span class="name">ObjectSizeEstimator</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@ObjectSizeEstimator" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Estimates amount of memory required to serialize Java/Scala objects</p>
+    </li><li name="com.datastax.spark.connector.writer.PropertyExtractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PropertyExtractor"></a>
+      <a id="PropertyExtractor:PropertyExtractor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PropertyExtractor$.html"><span class="name">PropertyExtractor</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@PropertyExtractor" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.QueryExecutor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryExecutor"></a>
+      <a id="QueryExecutor:QueryExecutor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryExecutor$.html"><span class="name">QueryExecutor</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@QueryExecutor" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.ReplicaLocator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReplicaLocator"></a>
+      <a id="ReplicaLocator:ReplicaLocator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReplicaLocator$.html"><span class="name">ReplicaLocator</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@ReplicaLocator" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Helper methods for mapping a set of data to their relative locations in a Cassandra Cluster.</p>
+    </li><li name="com.datastax.spark.connector.writer.RowWriterFactory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RowWriterFactory"></a>
+      <a id="RowWriterFactory:RowWriterFactory"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RowWriterFactory$.html"><span class="name">RowWriterFactory</span></a><span class="result"> extends <a href="LowPriorityRowWriterFactoryImplicits.html" class="extype" name="com.datastax.spark.connector.writer.LowPriorityRowWriterFactoryImplicits">LowPriorityRowWriterFactoryImplicits</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@RowWriterFactory" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Provides an implicit <code>RowWriterFactory</code> for saving <a href="../CassandraRow.html" class="extype" name="com.datastax.spark.connector.CassandraRow">CassandraRow</a> objects.</p>
+    </li><li name="com.datastax.spark.connector.writer.SqlRowWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SqlRowWriter"></a>
+      <a id="SqlRowWriter:SqlRowWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="SqlRowWriter$.html"><span class="name">SqlRowWriter</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@SqlRowWriter" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.TTLOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TTLOption"></a>
+      <a id="TTLOption:TTLOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TTLOption$.html"><span class="name">TTLOption</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TTLOption" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.TableWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TableWriter"></a>
+      <a id="TableWriter:TableWriter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TableWriter$.html"><span class="name">TableWriter</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TableWriter" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.TimestampOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TimestampOption"></a>
+      <a id="TimestampOption:TimestampOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TimestampOption$.html"><span class="name">TimestampOption</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@TimestampOption" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.WriteConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="WriteConf"></a>
+      <a id="WriteConf:WriteConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteConf$.html"><span class="name">WriteConf</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WriteConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.writer.WriteOption" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="WriteOption"></a>
+      <a id="WriteOption:WriteOption"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteOption$.html"><span class="name">WriteOption</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.writer.package@WriteOption" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
