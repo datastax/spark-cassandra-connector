@@ -15,7 +15,7 @@ Configure a new Scala project with the Apache Spark and dependency.
 
 The dependencies are easily retrieved via Maven Central 
 
-    libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector" % "2.4.2-s_2.11"
+    libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.4.2"
  
 The spark-packages libraries can also be used with spark-submit and spark shell, these
 commands will place the connector and all of its dependencies on the path of the
