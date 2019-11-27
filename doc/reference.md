@@ -228,6 +228,11 @@ OSS Cassandra this should never be used.</td>
   <td>Sets whether to record connector specific metrics on write</td>
 </tr>
 <tr>
+  <td><code>input.ratelimiterprovider</code></td>
+  <td>main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider</td>
+  <td>Determines which rate limiter provider to use in reads</td>
+</tr>
+<tr>
   <td><code>input.reads_per_sec</code></td>
   <td>2147483647</td>
   <td>Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations</td>
@@ -313,6 +318,11 @@ finer control see the CassandraOption class</td>
   <td><code>output.metrics</code></td>
   <td>true</td>
   <td>Sets whether to record connector specific metrics on write</td>
+</tr>
+<tr>
+  <td><code>output.ratelimiterprovider</code></td>
+  <td>main.scala.com.datastax.spark.connector.writer.LeakyBucketRateLimiterProvider</td>
+  <td>Determines which rate limiter provider to use in writes</td>
 </tr>
 <tr>
   <td><code>output.throughput_mb_per_sec</code></td>

@@ -22,11 +22,11 @@ import scala.annotation.tailrec
   * @param sleep a function to call to slow down the calling thread;
   *              must use the same time units as `time`
   */
-class RateLimiter(
-    rate: Long,
-    bucketSize: Long,
-    time: () => Long = System.currentTimeMillis,
-    sleep: Long => Any = Thread.sleep) {
+class LeakyBucketRateLimiter(
+  rate: Long,
+  bucketSize: Long,
+  time: () => Long = System.currentTimeMillis,
+  sleep: Long => Any = Thread.sleep) extends BaseRateLimiter {
 
   require(rate > 0, "A positive rate is required")
   require(bucketSize > 0, "A positive bucket size is required")
@@ -62,5 +62,4 @@ class RateLimiter(
     if (delay > 0L)
       sleep(delay)
   }
-
 }

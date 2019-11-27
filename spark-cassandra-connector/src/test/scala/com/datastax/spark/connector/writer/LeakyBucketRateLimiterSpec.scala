@@ -5,7 +5,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 
 
-class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Eventually{
+class LeakyBucketRateLimiterSpec extends FlatSpec with Matchers with MockFactory with Eventually{
 
  val TestRates = Seq(1L, 2L, 4L, 6L, 8L, 16L, 32L, WriteConf.ThroughputMiBPSParam.default.toLong)
 
@@ -14,7 +14,7 @@ class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Event
     val sleep = mockFunction[Long, Any]("sleep")
     sleep.expects(*).never()
 
-    val limiter = new RateLimiter(Long.MaxValue, 1000, () => now, sleep)
+    val limiter = new LeakyBucketRateLimiter(Long.MaxValue, 1000, () => now, sleep)
     for (i <- 1 to 1000000) {
       now += 1
       limiter.maybeSleep(1000)
@@ -33,7 +33,7 @@ class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Event
     // 10 units per second + 5 units burst allowed
     val bucketSize = 5
     val rate = 10
-    val limiter = new RateLimiter(rate, bucketSize, () => now, sleep)
+    val limiter = new LeakyBucketRateLimiter(rate, bucketSize, () => now, sleep)
 
     val iterations = 25
     for (i <- 1 to iterations)
@@ -53,7 +53,7 @@ class RateLimiterSpec extends FlatSpec with Matchers with MockFactory with Event
         now += delay
       }
 
-      val limiter = new RateLimiter(rate, rate * 2, () => now, sleep)
+      val limiter = new LeakyBucketRateLimiter(rate, rate * 2, () => now, sleep)
       for (leakNum <- 1 to 1000) {
         assert(
           limiter.bucketFill.get() >= 0,

@@ -78,5 +78,12 @@ class WriteConfTest extends FlatSpec with Matchers {
     writeConf.batchGroupingBufferSize should be(30000)
   }
 
+  it should "allow to set custom rate limiter provider" in {
+    val conf = new SparkConf(false)
+      .set("spark.cassandra.output.ratelimiterprovider", "custom.ratelimiter.provider")
+    val writeConf = WriteConf.fromSparkConf(conf)
+    writeConf.rateLimiterProvider should be("custom.ratelimiter.provider")
+  }
+
 
 }

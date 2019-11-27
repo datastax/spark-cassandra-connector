@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.rdd
 
+import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -25,6 +26,13 @@ class ReadConfTest extends FlatSpec with Matchers {
 
     val readConf = ReadConf.fromSparkConf(conf)
     readConf.readsPerSec should be (expected)
+  }
+
+  it should "allow to set custom rate limiter provider" in {
+    val conf = new SparkConf(false)
+      .set("spark.cassandra.input.ratelimiterprovider", "custom.ratelimiter.provider")
+    val readConf = ReadConf.fromSparkConf(conf)
+    readConf.rateLimiterProvider should be("custom.ratelimiter.provider")
   }
 
 }

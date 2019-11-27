@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.driver.core.HostDistance
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.rdd.ClusteringOrder.{Ascending, Descending}
 import com.datastax.spark.connector.rdd.reader._
@@ -26,7 +25,6 @@ abstract class CassandraRDD[R : ClassTag](
   type Self <: CassandraRDD[R]
   
   ConfigCheck.checkConfig(sc.getConf)
-
 
   protected[connector] def keyspaceName: String
 
