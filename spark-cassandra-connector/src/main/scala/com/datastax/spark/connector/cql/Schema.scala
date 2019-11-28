@@ -94,7 +94,8 @@ case object RegularColumn extends ColumnRole
 case class ColumnDef(
   columnName: String,
   columnRole: ColumnRole,
-  columnType: ColumnType[_]) extends FieldDef {
+  columnType: ColumnType[_],
+  clusteringOrder: ClusteringOrder = ClusteringOrder.ASC) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
   def isStatic = columnRole == StaticColumn
@@ -130,6 +131,15 @@ object ColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(column.getName, columnRole, columnType)
   }
+
+  def apply(
+    column: ColumnMetadata,
+    columnRole: ColumnRole,
+    clusteringOrder: ClusteringOrder): ColumnDef = {
+
+    val columnType = ColumnType.fromDriverType(column.getType)
+    ColumnDef(column.getName, columnRole, columnType, clusteringOrder)
+  }
 }
 
 /** A Cassandra table metadata that can be serialized. */
@@ -140,7 +150,8 @@ case class TableDef(
     clusteringColumns: Seq[ColumnDef],
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
-    isView: Boolean = false) extends StructDef {
+    isView: Boolean = false,
+    tableOptions: Map[String,String] = Map.empty) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
@@ -191,10 +202,24 @@ case class TableDef(
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
 
-    s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
+    val stmt = s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
        |)""".stripMargin
+
+    val clusteringOrderingClause = clusteringColumns.map( col => s"${quote(col.columnName)} ${col.clusteringOrder}")
+      .mkString("CLUSTERING ORDER BY (", ", ",")")
+
+    val tableOptionsString:Seq[String] = tableOptions.map(option => s"${option._1} = ${option._2}").toSeq
+
+    val tableOptionsClause:Seq[String] = if (clusteringColumns.size > 0)
+        tableOptionsString.+:(clusteringOrderingClause)
+      else tableOptionsString
+
+    if (tableOptionsClause.size > 0)
+      s"""$stmt${Properties.lineSeparator}WITH ${tableOptionsClause.mkString(s"${Properties.lineSeparator}  AND ")}"""
+    else
+      stmt
   }
 
   type ValueRepr = CassandraRow
