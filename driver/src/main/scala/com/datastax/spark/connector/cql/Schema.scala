@@ -375,8 +375,7 @@ object Schema extends StrictLogging {
     def fetchSchema(metadata: => Metadata): Schema =
       Schema(fetchKeyspaces(metadata))
 
-    val schemeStream = fetchSchema(session.getMetadata) #:: fetchSchema(session.refreshSchema()) #:: Stream.empty
-    val scheme = schemeStream.find(s => s.tables.nonEmpty).getOrElse(schemeStream.head)
+    val scheme = fetchSchema(session.refreshSchema())
 
     logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
       s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
