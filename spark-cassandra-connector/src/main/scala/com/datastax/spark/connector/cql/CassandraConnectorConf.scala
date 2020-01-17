@@ -27,7 +27,8 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
+  jmxEnabled: Boolean = true
 ) {
 
   @transient
@@ -86,6 +87,12 @@ object CassandraConnectorConf extends Logging {
     section = ReferenceSection,
     default = 9042,
     description = """Cassandra native connection port""")
+
+  val JmxEnabledParam = ConfigParameter[Boolean](
+    name = "spark.cassandra.connection.jmxEnabled",
+    section = ReferenceSection,
+    default = true,
+    description = """Cassandra JMX Reporting""")
 
   val LocalDCParam = ConfigParameter[Option[String]](
     name = "spark.cassandra.connection.local_dc",
@@ -219,6 +226,7 @@ object CassandraConnectorConf extends Logging {
     ConnectionPortParam,
     LocalDCParam,
     ConnectionTimeoutParam,
+    JmxEnabledParam,
     KeepAliveMillisParam,
     MinReconnectionDelayParam,
     MaxReconnectionDelayParam,
@@ -254,10 +262,11 @@ object CassandraConnectorConf extends Logging {
       hostName <- hostsStr.split(",").toSet[String]
       hostAddress <- resolveHost(hostName.trim)
     } yield hostAddress
-    
+
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
 
     val authConf = AuthConf.fromSparkConf(conf)
+    val jmxEnabled = conf.getOption(JmxEnabledParam.name).map(_.toBoolean).getOrElse(JmxEnabledParam.default)
     val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
 
     val localDC = conf.getOption(LocalDCParam.name)
@@ -312,7 +321,8 @@ object CassandraConnectorConf extends Logging {
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf
+      cassandraSSLConf = cassandraSSLConf,
+      jmxEnabled = jmxEnabled
     )
   }
 }
