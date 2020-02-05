@@ -50,10 +50,10 @@ class DocCheck extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
     val matchesByFile = parameterUsages.groupBy(x => x.fileName).toList.sortBy( x => x._1)
     for ( fileToMatches <- matchesByFile) {
-      info( s"${fileToMatches._1} had ${fileToMatches._2.size} parameter usages")
+      info( s"${fileToMatches._1} had ${fileToMatches._2.length} parameter usages")
     }
 
-    info(s"Docs contains ${parameterUsages.size} references to spark.cassandra properties")
+    info(s"Docs contains ${parameterUsages.length} references to spark.cassandra properties")
 
     val unknownParameters: Seq[ParameterFound] =
       for (foundParameter <- parameterUsages

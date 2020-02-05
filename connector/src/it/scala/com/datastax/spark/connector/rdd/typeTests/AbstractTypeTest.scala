@@ -172,7 +172,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
 
   def checkSparkReadNormal() {
     val result = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName, typeNormalTable).collect
-    result.size should equal(typeData.length)
+    result.length should equal(typeData.length)
     checkNormalRowConsistency(typeData, result)
   }
 
@@ -219,7 +219,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       Map[String, TestType],
       Map[TestType, String])](keyspaceName, typeCollectionTable).select(collCols.columns: _*).collect
 
-    result.size should equal(typeData.length)
+    result.length should equal(typeData.length)
     checkCollectionConsistency(typeData, (typeSet, typeSet.toList, typeMap, typeReverseMap), result)
   }
 
@@ -228,7 +228,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       .cassandraTable[(TestType, TestType, Option[TestType], Set[TestType], Map[TestType, TestType], Seq[TestType])](keyspaceName, typeNullTable)
       .collect
 
-    result.size should equal(typeData.length)
+    result.length should equal(typeData.length)
     var keys = result.map {
       case (
         pkey,
@@ -251,7 +251,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     val writeRdd = sc.parallelize(writeArray)
     writeRdd.saveToCassandra(keyspaceName, typeNormalTable, normCols)
     val rdd = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName, typeNormalTable).collect
-    rdd.size should equal(addData.length + typeData.length)
+    rdd.length should equal(addData.length + typeData.length)
     checkNormalRowConsistency(addData, rdd)
   }
 
@@ -265,7 +265,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       List[TestType],
       Map[String, TestType],
       Map[TestType, String])](keyspaceName, typeCollectionTable).select(collCols.columns: _*).collect
-    rdd.size should equal(addData.length + typeData.length)
+    rdd.length should equal(addData.length + typeData.length)
     checkCollectionConsistency(addData, (addSet, addSet.toList, addMap, addReverseMap), rdd)
   }
 
@@ -281,7 +281,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       Map[TestType,
       TestType],
       Seq[TestType])](keyspaceName, typeNullTable).collect
-    result.size should equal(addData.length + typeData.length)
+    result.length should equal(addData.length + typeData.length)
 
     var keys = result.map {
       case (

@@ -104,7 +104,7 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
                                 resultSetColumnNames: Option[IndexedSeq[String]] = None,
                                 // transient because codecs are not serializable and used only at Row parsing
                                 // not and option as deserialized fileld will be null not None
-                                @transient val codecs: IndexedSeq[TypeCodec[AnyRef]] = null) {
+                                @transient codecs: IndexedSeq[TypeCodec[AnyRef]] = null) {
   @transient
   lazy val namesToIndex: Map[String, Int] = columnNames.zipWithIndex.toMap.withDefaultValue(-1)
   @transient

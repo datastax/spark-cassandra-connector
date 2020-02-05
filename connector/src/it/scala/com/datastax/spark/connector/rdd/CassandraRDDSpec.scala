@@ -792,7 +792,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   }
   it should "allow the use of PER PARTITION LIMITs " in skipIfProtocolVersionLT(V4){
     val result = sc.cassandraTable(ks, "clustering_time").perPartitionLimit(1).collect
-    result.size should be (1)
+    result.length should be (1)
   }
 
   it should "allow to read Cassandra table as Array of KV tuples of a case class and a tuple grouped by partition key" in {
@@ -1224,17 +1224,17 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
 
   it should "set exact number of partitions" in {
     val rdd = sc.cassandraTable(ks, "big_table").coalesce(8)
-    rdd.partitions.size should be (8 +-1 )
+    rdd.partitions.length should be (8 +-1 )
   }
 
   it should "set exact number of partitions (1)" in {
     val rdd = sc.cassandraTable(ks, "big_table").coalesce(1)
-    rdd.partitions.size should be (1)
+    rdd.partitions.length should be (1)
   }
 
   it should "work with 0" in {
     val rdd = sc.cassandraTable(ks, "big_table").coalesce(0)
-    rdd.partitions.size should be (1)
+    rdd.partitions.length should be (1)
   }
 
   "RDD.repartition"  should "not loose data" in {
@@ -1244,7 +1244,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
 
   it should "set exact number of partitions" in {
     val rdd = sc.cassandraTable(ks, "big_table").repartition(4)
-    rdd.partitions.size should be (4)
+    rdd.partitions.length should be (4)
   }
 
   "RDD.deleteFromCassandra" should "delete rows just selected from the C*" in {
@@ -1357,7 +1357,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   "DataSize Estimates" should "handle overflows in the size estimates for a table" in {
     fudgeSizeEstimatesTable("key_value", Long.MaxValue)
     val partitions = sc.cassandraTable(ks, "key_value").partitions
-    partitions.size should be <= (sc.defaultParallelism * 3)
+    partitions.length should be <= (sc.defaultParallelism * 3)
   }
 
 

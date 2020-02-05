@@ -24,7 +24,7 @@ private[connector] class BoundStatementBuilder[T](
   private val buffer = Array.ofDim[Any](columnNames.size)
 
 
-  require(ignoreNulls == false || protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode,
+  require(!ignoreNulls || protocolVersion.getCode >= DefaultProtocolVersion.V4.getCode,
     s"""
        |Protocol Version $protocolVersion does not support ignoring null values and leaving
        |parameters unset. This is only supported in ${DefaultProtocolVersion.V4.getCode} and greater.
@@ -88,7 +88,7 @@ private[connector] class BoundStatementBuilder[T](
   }
 
   private val prefixConverted = for {
-    prefixIndex: Int <- 0 until prefixVals.length
+    prefixIndex: Int <- prefixVals.indices
     prefixVal = prefixVals(prefixIndex)
     prefixType = preparedStmt.getVariableDefinitions.get(prefixIndex).getType
     prefixConverter =  ColumnType.converterToCassandra(prefixType)
@@ -101,7 +101,7 @@ private[connector] class BoundStatementBuilder[T](
 
     rowWriter.readColumnValues(row, buffer)
     var bytesCount = 0
-    for (i <- 0 until columnNames.size) {
+    for (i <- columnNames.indices) {
       val converter = converters(i)
       val columnName = columnNames(i)
       val columnType = columnTypes(i)

@@ -57,7 +57,7 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
 
         private def onFailure(throwable: Throwable) {
           throwable match {
-            case e: AllNodesFailedException if e.getErrors.asScala.values.exists(_.isInstanceOf[BusyConnectionException]) =>
+            case e: AllNodesFailedException if e.getAllErrors.asScala.values.exists(_.isInstanceOf[BusyConnectionException]) =>
               logTrace("BusyConnectionException ... Retrying")
               tryFuture()
             case e: OverloadedException =>

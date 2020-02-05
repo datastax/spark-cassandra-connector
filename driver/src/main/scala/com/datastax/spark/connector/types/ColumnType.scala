@@ -127,16 +127,16 @@ object ColumnType {
           if (symbol == Symbols.OptionSymbol)
             argType
           else if (Symbols.ListSymbols contains symbol)
-            ListType(argType, false)
+            ListType(argType, isFrozen = false)
           else if (Symbols.SetSymbols contains symbol)
-            SetType(argType, false)
+            SetType(argType, isFrozen = false)
           else
             unsupportedType()
         case TypeRef(_, symbol, List(k, v)) =>
           val keyType = fromScalaType(k)
           val valueType = fromScalaType(v)
           if (Symbols.MapSymbols contains symbol)
-            MapType(keyType, valueType, false)
+            MapType(keyType, valueType, isFrozen = false)
           else
             unsupportedType()
         case _ =>

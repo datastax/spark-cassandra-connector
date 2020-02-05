@@ -156,6 +156,7 @@ object AnyObjectFactory extends StrictLogging {
     }
   }
 
+  @scala.annotation.tailrec
   private[connector] def dive(instance: AnyRef): AnyRef = {
     Try {
       instance.getClass.getDeclaredField("$iw")

@@ -277,6 +277,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
       .filter("a=1 and b=2 and c=1 and e=1")
       .select("a", "b", "c", "e")
 
+    @scala.annotation.tailrec
     def getSourceRDD(rdd: RDD[_]): RDD[_] = {
       if (rdd.dependencies.nonEmpty)
         getSourceRDD(rdd.dependencies.head.rdd)

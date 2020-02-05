@@ -235,7 +235,7 @@ class CassandraCoGroupedRDD[T](
 
   override protected def getPartitions: Array[Partition] = {
     checkValidMergeJoin()
-    scanRDDs.maxBy(_.partitions.size).partitions
+    scanRDDs.maxBy(_.partitions.length).partitions
   }
 
   private lazy val nodeAddresses = new NodeAddresses(connector)

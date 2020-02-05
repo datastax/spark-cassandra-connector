@@ -26,7 +26,7 @@ class TableWriter[T] private (
     rowWriter: RowWriter[T],
     writeConf: WriteConf) extends Serializable with Logging {
 
-  require(tableDef.isView == false,
+  require(!tableDef.isView,
     s"${tableDef.name} is a Materialized View and Views are not writable")
 
   val keyspaceName = tableDef.keyspaceName
@@ -110,7 +110,7 @@ class TableWriter[T] private (
 
   private[connector] val isIdempotent: Boolean = {
     //All counter operations are not Idempotent
-    if (columns.filter(_.isCounterColumn).nonEmpty) {
+    if (columns.exists(_.isCounterColumn)) {
        false
     } else {
       columnSelector.forall {

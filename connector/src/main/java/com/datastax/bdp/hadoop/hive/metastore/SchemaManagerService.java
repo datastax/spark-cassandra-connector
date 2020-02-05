@@ -50,7 +50,6 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.bdp.spark.DseCassandraConnectionFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -149,7 +148,6 @@ public class SchemaManagerService
                         base.set("spark.hadoop." + entry.getKey(), entry.getValue());
                 });
 
-        base.set("spark.cassandra.connection.factory", DseCassandraConnectionFactory.class.getName());
         return new CassandraConnector(CassandraConnectorConf.fromSparkConf(base));
     }
 

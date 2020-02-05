@@ -130,8 +130,8 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
       val result = rdd.collect
       result.nonEmpty should be(true)
       result.length should be(data.size)
-      rdd.collect.nonEmpty && rdd.collect.size == data.size
-      ssc.sparkContext.cassandraTable(ks, "streaming_join_output").collect.size should be(data.size)
+      rdd.collect.nonEmpty && rdd.collect.length == data.size
+      ssc.sparkContext.cassandraTable(ks, "streaming_join_output").collect.length should be(data.size)
     }
   }
 
@@ -173,7 +173,7 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
       val rdd = ssc.cassandraTable[WordCount](ks, "dstream_join_output")
       val result = rdd.collect
       result should have size data.size
-      ssc.sparkContext.cassandraTable(ks, "dstream_join_output").collect.size should be(data.size)
+      ssc.sparkContext.cassandraTable(ks, "dstream_join_output").collect.length should be(data.size)
     }
   }
 

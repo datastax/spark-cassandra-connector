@@ -28,7 +28,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
 
   override protected def isSetter(method: Method): Boolean =
     SetterRegex.findFirstMatchIn(method.getName).isDefined &&
-    method.getParameterTypes.size == 1 &&
+    method.getParameterTypes.length == 1 &&
     method.getReturnType == Void.TYPE
 
   private def resolve(name: String, columns: Map[String, ColumnRef]): Option[ColumnRef] = {

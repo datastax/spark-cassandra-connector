@@ -130,7 +130,7 @@ case class CassandraSourceRelation(
         val colDef = tableDef.columnByNameIgnoreCase(columnName)
         val colType = if (colDef.isMultiCell)
           ArrayType(LongType) else LongType
-        (colDef.columnName, StructField(writeTimeName, colType, false))}
+        (colDef.columnName, StructField(writeTimeName, colType, nullable = false))}
 
   private val ttlFields =
     sparkConf
@@ -140,7 +140,7 @@ case class CassandraSourceRelation(
         val colDef = tableDef.columnByNameIgnoreCase(columnName)
         val colType = if (colDef.isMultiCell)
           ArrayType(IntegerType) else IntegerType
-        (colDef.columnName, StructField(ttlName, colType, true))}
+        (colDef.columnName, StructField(ttlName, colType, nullable = true))}
 
   private val ttlWriteOption =
     sparkConf.getOption(TTLParam.name)

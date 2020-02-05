@@ -12,7 +12,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.language.existentials
 import scala.util.Random
-import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster

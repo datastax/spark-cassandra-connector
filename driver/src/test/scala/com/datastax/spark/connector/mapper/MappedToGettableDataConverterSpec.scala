@@ -15,7 +15,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
   val loginColumn = ColumnDef("login", PartitionKeyColumn, VarCharType)
   val passwordColumn = ColumnDef("password", RegularColumn, VarCharType)
   val addressColumn = ColumnDef("address", RegularColumn, addressType)
-  val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(addressType, false))
+  val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(addressType, isFrozen = false))
 
   private def newTable(columns: ColumnDef*): TableDef = {
     val (partitionKeyColumns, other) = columns.partition(_.isPartitionKeyColumn)

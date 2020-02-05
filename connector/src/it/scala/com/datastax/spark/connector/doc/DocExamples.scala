@@ -92,11 +92,11 @@ class DocExamples extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   it should "demonstrate only deleting some records" in skipIfProtocolVersionLT(V4){
     sc.parallelize(1 to 6).map(x => (x, x, x)).saveToCassandra(ks, "tab1")
-    sc.parallelize(1 to 6).map(x => x match {
+    sc.parallelize(1 to 6).map {
       case x if (x >= 5) => (x, CassandraOption.Null, CassandraOption.Unset)
       case x if (x <= 2) => (x, CassandraOption.Unset, CassandraOption.Null)
       case x => (x, CassandraOption(-1), CassandraOption(-1))
-    }).saveToCassandra(ks, "tab1")
+    }.saveToCassandra(ks, "tab1")
 
 
     val results = sc.cassandraTable[(Int, Option[Int], Option[Int])](ks, "tab1").collect

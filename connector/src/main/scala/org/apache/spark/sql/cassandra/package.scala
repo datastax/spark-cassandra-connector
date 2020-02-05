@@ -149,6 +149,7 @@ package object cassandra {
     /** Set the Spark Cassandra Connector configuration parameters */
     @deprecated("Use SparkSession instead of SQLContext", "2.0.0")
     def setCassandraConf(options: Map[String, String]): SQLContext = {
+      //noinspection ScalaDeprecation
       setCassandraConf(SqlClusterParam.default, options)
       sqlContext
     }

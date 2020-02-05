@@ -154,7 +154,7 @@ class CassandraJoinRDD[L, R] (
       pairWithRight(left)
     })
 
-    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatMap(identity)
+    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
   }
 
   /**

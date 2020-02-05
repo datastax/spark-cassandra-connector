@@ -7,11 +7,9 @@
 package com.datastax.bdp.hadoop.hive.metastore
 
 import java.nio.file.{Files, Path}
-
-import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.bdp.util.MiscUtil
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, DefaultConnectionFactory}
 import org.apache.hadoop.conf.Configuration
 
 
@@ -47,7 +45,7 @@ abstract class MetaStoreTestBase extends SparkCassandraITFlatSpecBase {
         conf.set(CassandraConnectorConf.ConnectionPortParam.name, cluster.getConnectionPort)
         conf.set("hive.metastore.warehouse.dir", MetaStoreWarehouseDir.toUri.toString)
         conf.set("cassandra.connection.metaStoreColumnFamilyName", MetaStoreTableName)
-        conf.set("spark.cassandra.connection.factory", MiscUtil.objectOrClassName(DseCassandraConnectionFactory))
+        conf.set("spark.cassandra.connection.factory", MiscUtil.objectOrClassName(DefaultConnectionFactory))
         conf.set(CassandraClientConfiguration.CONF_PARAM_KEYSPACE_NAME, getKsName)
         conf
     }

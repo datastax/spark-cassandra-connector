@@ -166,7 +166,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
   it should "return selected columns" in {
     val rdd = javaFunctions(sc).cassandraTable(ks, "test_table")
       .select("key")
-    assert(rdd.selectedColumnNames().size === 1)
+    assert(rdd.selectedColumnNames().length === 1)
     assert(rdd.selectedColumnNames().contains("key"))
   }
 

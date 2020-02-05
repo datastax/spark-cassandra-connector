@@ -31,7 +31,7 @@ object SparkRepl {
     Main.interp = interp
     val separator = System.getProperty("path.separator")
     val settings = new GenericRunnerSettings(s => throw new RuntimeException(s"Scala options error: $s"))
-    settings.processArguments(List("-classpath", paths.mkString(separator)), true)
+    settings.processArguments(List("-classpath", paths.mkString(separator)), processAll = true)
     interp.process(settings) // Repl starts and goes in loop of R.E.P.L
     Main.interp = null
     Option(Main.sparkContext).foreach(_.stop())

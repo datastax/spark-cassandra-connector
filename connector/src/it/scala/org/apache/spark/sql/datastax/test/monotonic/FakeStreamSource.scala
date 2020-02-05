@@ -21,7 +21,7 @@ class DefaultSource extends StreamSourceProvider {
 
     new Source {
       var offset = new LongOffset(0)
-      override def schema: StructType = StructType(Seq(StructField("key", IntegerType, false )))
+      override def schema: StructType = StructType(Seq(StructField("key", IntegerType, nullable = false )))
 
       override def getOffset: Option[Offset] = {
         offset = offset + 100L
@@ -43,7 +43,7 @@ class DefaultSource extends StreamSourceProvider {
         }
         val rows = (startValue.toInt to endValue.toInt).map( value =>
           new GenericInternalRow(values = Array(value)))
-        Dataset.ofRows(spark.sparkSession, LocalRelation(schema.toAttributes, rows, true))
+        Dataset.ofRows(spark.sparkSession, LocalRelation(schema.toAttributes, rows, isStreaming = true))
       }
 
       override def stop() {}
@@ -56,7 +56,7 @@ class DefaultSource extends StreamSourceProvider {
                              providerName: String,
                              parameters: Map[String, String]): (String, StructType) = {
 
-    ("FakeStream", StructType(Seq(StructField("key", IntegerType, false ))))
+    ("FakeStream", StructType(Seq(StructField("key", IntegerType, nullable = false ))))
   }
 }
 

@@ -62,11 +62,11 @@ object DataFrameColumnMapper {
       case SparkSqlDecimalType() => DecimalType
       case ArrayType(sparkSqlElementType, containsNull) =>
         val argType = fromSparkSqlType(sparkSqlElementType)
-        ListType(argType, false)
+        ListType(argType, isFrozen = false)
       case SparkSqlMapType(sparkSqlKeyType, sparkSqlValueType, containsNull) =>
         val keyType = fromSparkSqlType(sparkSqlKeyType)
         val valueType = fromSparkSqlType(sparkSqlValueType)
-        MapType(keyType, valueType, false)
+        MapType(keyType, valueType, isFrozen = false)
       case _ =>
         unsupportedType()
     }

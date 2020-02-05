@@ -149,6 +149,7 @@ object DSEDirectJoinStrategy extends Logging {
     * Recursively search the dependencies of an RDD for a CassandraTableScanRDD
     * Only searches single dependency chains, on branches chooses left
     */
+  @scala.annotation.tailrec
   def getCassandraTableScanRDD(rdd: RDD[_]): Option[CassandraTableScanRDD[_]] ={
     rdd match {
       case cassandraTableScanRDD: CassandraTableScanRDD[_] =>

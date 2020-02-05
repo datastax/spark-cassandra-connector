@@ -17,7 +17,7 @@ class DefaultSource extends StreamSourceProvider {
                              providerName: String,
                              parameters: Map[String, String]): (String, StructType) = {
 
-    ("FakeStream", StructType(Seq(StructField("key", IntegerType, false ))))
+    ("FakeStream", StructType(Seq(StructField("key", IntegerType, nullable = false ))))
   }
 
   override def createSource(sqlContext: SQLContext, metadataPath: String,
@@ -25,7 +25,7 @@ class DefaultSource extends StreamSourceProvider {
     new Source {
 
     var offset = new LongOffset(0)
-    override def schema: StructType = StructType(Seq(StructField("key", IntegerType, false )))
+    override def schema: StructType = StructType(Seq(StructField("key", IntegerType, nullable = false )))
 
     override def getOffset: Option[Offset] = {
       offset = offset + 100L

@@ -99,9 +99,9 @@ object CassandraMetaDataRule extends Rule[LogicalPlan] {
 
     //Used for CassandraRelation Leaves, giving them a reference to the underlying TTL
     val cassandraAttributeReference = if (columnDef.isMultiCell) {
-        AttributeReference(cassandraCql, ArrayType(metaDataExpression.dataType), true)()
+        AttributeReference(cassandraCql, ArrayType(metaDataExpression.dataType), nullable = true)()
       } else {
-        AttributeReference(cassandraCql, metaDataExpression.dataType, true)()
+        AttributeReference(cassandraCql, metaDataExpression.dataType, nullable = true)()
       }
 
     //Used as a placeholder for everywhere except leaf nodes, to be resolved by the Catalyst Analyzer

@@ -39,7 +39,10 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
       conn2.withSessionDo { session => assert(session !== null) }
     }
     exception.getCause shouldBe a[AllNodesFailedException]
-    exception.getCause.asInstanceOf[AllNodesFailedException].getErrors.values().asScala.head shouldBe a[AuthenticationException]
+    exception.getCause.asInstanceOf[AllNodesFailedException]
+      .getAllErrors.values().asScala
+      .head.asScala
+      .head shouldBe a[AuthenticationException]
   }
 
   "A DataFrame" should "read and write data with valid auth" in {

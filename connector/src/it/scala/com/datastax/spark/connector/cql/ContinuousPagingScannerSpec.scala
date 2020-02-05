@@ -6,7 +6,7 @@
 
 package com.datastax.spark.connector.cql
 
-import com.datastax.bdp.spark.{ContinuousPagingScanner, DseCassandraConnectionFactory}
+import com.datastax.bdp.spark.ContinuousPagingScanner
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.rdd.ReadConf
@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 class ContinuousPagingScannerSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually {
 
-  sparkConf.set(DseCassandraConnectionFactory.continuousPagingParam.name, "true")
+  sparkConf.set(CassandraConnectionFactory.continuousPagingParam.name, "true")
 
   override lazy val conn = CassandraConnector(sparkConf)
 

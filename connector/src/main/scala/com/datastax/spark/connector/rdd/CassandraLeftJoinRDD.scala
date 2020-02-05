@@ -178,6 +178,6 @@ class CassandraLeftJoinRDD[L, R] (
       requestsPerSecondRateLimiter.maybeSleep(1)
       pairWithRight(left)
     })
-    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatMap(identity)
+    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
   }
 }

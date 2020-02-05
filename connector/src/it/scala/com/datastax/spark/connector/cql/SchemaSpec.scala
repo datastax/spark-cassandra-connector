@@ -62,7 +62,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
   "A KeyspaceDef" should {
     "allow to get a list of tables in the given keyspace" in {
       val keyspace = schema.keyspaceByName(ks)
-      keyspace.tables.map(_.tableName).toSet shouldBe Set("test")
+      keyspace.tables.map(_.tableName) shouldBe Set("test")
     }
     "allow to look up a table by name" in {
       val keyspace = schema.keyspaceByName(ks)
@@ -86,16 +86,16 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
     "allow to read primary key column definitions" in {
       table.primaryKey.size shouldBe 6
-      table.primaryKey.map(_.columnName).toSeq shouldBe Seq(
+      table.primaryKey.map(_.columnName) shouldBe Seq(
         "k1", "k2", "k3", "c1", "c2", "c3")
-      table.primaryKey.map(_.columnType).toSeq shouldBe Seq(
+      table.primaryKey.map(_.columnType) shouldBe Seq(
         IntType, VarCharType, TimestampType, BigIntType, VarCharType, UUIDType)
       forAll(table.primaryKey) { c => c.isPrimaryKeyColumn shouldBe true }
     }
 
     "allow to read partitioning key column definitions" in {
       table.partitionKey.size shouldBe 3
-      table.partitionKey.map(_.columnName).toSeq shouldBe Seq("k1", "k2", "k3")
+      table.partitionKey.map(_.columnName) shouldBe Seq("k1", "k2", "k3")
       forAll(table.partitionKey) { c => c.isPartitionKeyColumn shouldBe true }
       forAll(table.partitionKey) { c => c.isPrimaryKeyColumn shouldBe true }
     }

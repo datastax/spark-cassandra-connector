@@ -39,7 +39,7 @@ class RefCountMap[T] {
         else
           acquire(key)
       case None =>
-        if (!refCounts.putIfAbsent(key, 1).isDefined)
+        if (refCounts.putIfAbsent(key, 1).isEmpty)
           1
         else
           acquire(key)

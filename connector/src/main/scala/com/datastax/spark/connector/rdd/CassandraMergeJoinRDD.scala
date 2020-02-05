@@ -229,7 +229,7 @@ class CassandraMergeJoinRDD[L,R](
 
   override protected def getPartitions: Array[Partition] = {
     checkValidMergeJoin()
-    if (leftScanRDD.partitions.size >= rightScanRDD.partitions.size)
+    if (leftScanRDD.partitions.length >= rightScanRDD.partitions.length)
       leftScanRDD.partitions else rightScanRDD.partitions
   }
 

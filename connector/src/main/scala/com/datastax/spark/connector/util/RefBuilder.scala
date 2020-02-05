@@ -21,7 +21,7 @@ object RefBuilder {
     val configBySection = allConfigs.groupBy(x => x.section)
     val sections = configBySection.keys.toSeq.sorted
     val markdown = for (section <- sections) yield {
-      val parameters = configBySection.get(section).get
+      val parameters = configBySection(section)
       val paramTable = parameters.toList.sortBy(_.name).map { case parameter: ConfigParameter[_] =>
         val default = parameter.default match {
           case x: CassandraConnectionFactory => x.getClass.getSimpleName.stripSuffix("$")

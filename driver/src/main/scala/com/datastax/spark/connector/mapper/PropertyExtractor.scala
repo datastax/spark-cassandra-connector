@@ -22,7 +22,7 @@ class PropertyExtractor[T](val cls: Class[T], val propertyNames: Seq[String]) ex
     extract(obj, Array.ofDim(methods.length))
 
   def extract(obj: T, target: Array[AnyRef]): Array[AnyRef] = {
-    for (i <- 0 until methods.length)
+    for (i <- methods.indices)
       target(i) = methods(i).invoke(obj)
     target
   }

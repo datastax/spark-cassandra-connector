@@ -12,7 +12,7 @@ class PropertyExtractorTest {
     val testObject = new TestClass("a", 1)
     val propertyExtractor = new PropertyExtractor(classOf[TestClass], Seq("field1", "field2"))
     val result = propertyExtractor.extract(testObject)
-    assertEquals(2, result.size)
+    assertEquals(2, result.length)
     assertEquals("a", result(0))
     assertEquals(1, result(1))
   }

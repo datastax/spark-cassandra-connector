@@ -43,7 +43,7 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
   private def createRandomValueMap: PriorityHashMap[Int, Int] = {
     val m = new PriorityHashMap[Int, Int](capacity)
     val keys = 1 to maxKey
-    val values = random.shuffle(1 to maxKey).toSeq
+    val values = random.shuffle(1 to maxKey)
     putItems(m, keys, values)
     m
   }
@@ -87,7 +87,7 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
     "support adding elements in random order of values" in {
       val m = new PriorityHashMap[Int, Int](capacity)
       val keys = 1 to maxKey
-      val values = random.shuffle(1 to maxKey).toSeq
+      val values = random.shuffle(1 to maxKey)
       putItems(m, keys, values)
     }
 
@@ -112,7 +112,7 @@ class PriorityHashMapSpec extends WordSpec with Matchers {
 
     "support removing elements in random order from a sorted map" in {
       val m = createSortedMap
-      removeKeys(m, random.shuffle(1 to maxKey).toSeq)
+      removeKeys(m, random.shuffle(1 to maxKey))
       m.isEmpty shouldBe true
     }
 

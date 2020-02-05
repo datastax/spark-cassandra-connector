@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.rdd
 
-import com.datastax.bdp.spark.DseCassandraConnectionFactory
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql._
@@ -61,5 +60,5 @@ object DummyFactory extends CassandraConnectionFactory {
 
   /** Creates and configures native Cassandra connection */
   override def createSession(conf: CassandraConnectorConf): CqlSession =
-    DseCassandraConnectionFactory.createSession(conf)
+    DefaultConnectionFactory.createSession(conf)
 }

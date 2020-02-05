@@ -28,7 +28,7 @@ class MultipleRetryPolicySpec extends FlatSpec with Matchers with MockitoSugar {
         cl,
         3,
         1,
-        false,
+        dataPresent = false,
         nbRetry
       )
       case e: WriteTimeoutException => policy.onWriteTimeout(
