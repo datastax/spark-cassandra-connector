@@ -9,7 +9,7 @@ import scala.sys.process._
 
 object Publishing extends sbt.librarymanagement.DependencyBuilders {
 
-  val DseRelease = "datastax-releases-local" at "https://repo.sjc.dsinternal.org/artifactory/datastax-releases-local"
+  val DseRelease = "datastax-releases-local" at "https://repo.datastax.com/datastax-releases-local"
 
   val Version: String = {
     sys.props.get("publish.version").getOrElse("git describe --tags" !!).stripLineEnd
