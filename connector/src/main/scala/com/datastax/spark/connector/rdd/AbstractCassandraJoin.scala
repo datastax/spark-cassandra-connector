@@ -200,6 +200,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
           f"for partition ${split.index} in $duration%.3f s."
       )
       session.close()
+      context
     }
     countingIterator
   }

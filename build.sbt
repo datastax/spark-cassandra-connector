@@ -1,7 +1,11 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
 import sbt.moduleFilter
+
+lazy val scala211 = "2.11.12"
+lazy val scala212 = "2.12.10"
+lazy val supportedScalaVersions = List(scala212, scala211)
+
 // factor out common settings
-ThisBuild / scalaVersion := "2.11.12"
 ThisBuild / scalacOptions += "-target:jvm-1.8"
 
 ThisBuild / organization := "com.datastax.dse"
@@ -39,6 +43,8 @@ val annotationProcessor = Seq(
 lazy val root = (project in file("."))
   .aggregate(connector, testSupport, driver)
   .settings(
+    // crossScalaVersions must be set to Nil on the aggregating project
+    crossScalaVersions := Nil,
     publish / skip := true
   )
 
@@ -47,6 +53,8 @@ lazy val connector = (project in file("connector"))
   .settings(Defaults.itSettings: _*) //This and above enables the "it" suite
   .settings(commonSettings)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
+
     // set the name of the project
     name := "dse-spark-connector",
 
@@ -76,6 +84,7 @@ lazy val connector = (project in file("connector"))
 lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     name := "dse-spark-connector-test-support",
     libraryDependencies ++= Dependencies.TestSupport.dependencies
   )
@@ -83,6 +92,7 @@ lazy val testSupport = (project in file("test-support"))
 lazy val driver = (project in file("driver"))
   .settings(commonSettings)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     name := "dse-spark-connector-driver",
     libraryDependencies ++= Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies

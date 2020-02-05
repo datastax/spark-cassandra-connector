@@ -31,61 +31,73 @@ import com.datastax.spark.connector.types.TypeConverter;
 @SuppressWarnings("unchecked")
 public class CassandraJavaUtilTest {
 
+    /**
+     * Scala refelection type tags change the string reprsentation of some types, in scala 2.11 java.lang
+     * is included, in scala 2.12 it is removed. To remove this conflict we just always remove the java.lang
+     * portion
+     */
+    private String removeJavaLang(String target) {
+        return target.replaceAll("java.lang.", "");
+    }
+
+    private final String STRING = removeJavaLang(String.class.getName());
+    private final String LIST_STRING =
+            removeJavaLang(String.format("%s[%s]", List.class.getName(), String.class.getName()));
+    private final String MAP_STRING_INT =
+            removeJavaLang(String.format("%s[%s,%s]", Map.class.getName(), String.class.getName(), Integer.class.getName()));
+    private final String LIST_SET_MAP_STRING_INT =
+            removeJavaLang(String.format("%s[%s[%s[%s,%s]]]", List.class.getName(), Set.class.getName(), Map.class.getName(), String.class.getName(), Integer.class.getName()));
+
+
+
     @Test
     public void testTypeTag1() throws Exception {
         TypeTags.TypeTag<String> tt = typeTag(String.class);
-        assertThat(tt.tpe().toString(), is(String.class.getName()));
+        assertThat(removeJavaLang(tt.tpe().toString()), is(STRING));
     }
 
     @Test
     public void testTypeTag2() throws Exception {
         TypeTags.TypeTag<List> tt1 = typeTag(List.class, String.class);
-        assertThat(tt1.tpe().toString(), is(String.format("%s[%s]",
-                List.class.getName(), String.class.getName())));
+        assertThat(removeJavaLang(removeJavaLang(tt1.tpe().toString())), is(LIST_STRING));
 
         TypeTags.TypeTag<Map> tt2 = typeTag(Map.class, String.class, Integer.class);
-        assertThat(tt2.tpe().toString(), is(String.format("%s[%s,%s]",
-                Map.class.getName(), String.class.getName(), Integer.class.getName())));
+        assertThat(removeJavaLang(removeJavaLang(tt2.tpe().toString())), is(MAP_STRING_INT));
     }
 
     @Test
     public void testTypeTag3() throws Exception {
         TypeTags.TypeTag<List> tt = typeTag(List.class, typeTag(Set.class, typeTag(Map.class, typeTag(String.class), typeTag(Integer.class))));
-        assertThat(tt.tpe().toString(), is(String.format("%s[%s[%s[%s,%s]]]",
-                List.class.getName(), Set.class.getName(), Map.class.getName(), String.class.getName(), Integer.class.getName())));
+        assertThat(removeJavaLang(tt.tpe().toString()), is(LIST_SET_MAP_STRING_INT));
     }
 
     @Test
     public void testTypeConverter1() throws Exception {
         TypeConverter<List<String>> tc = typeConverter(String.class);
-        assertThat(tc.targetTypeName(), is(String.class.getSimpleName()));
+        assertThat(removeJavaLang(tc.targetTypeName()), is(STRING));
     }
 
     @Test
     public void testTypeConverter2() throws Exception {
         TypeConverter<List<String>> tc1 = typeConverter(List.class, String.class);
-        assertThat(tc1.targetTypeName(), is(String.format("%s[%s]",
-                List.class.getName(), String.class.getSimpleName())));
+        assertThat(removeJavaLang(tc1.targetTypeName()), is(LIST_STRING));
 
         TypeConverter<Map<String, Integer>> tc2 = typeConverter(Map.class, String.class, Integer.class);
-        assertThat(tc2.targetTypeName(), is(String.format("%s[%s,%s]",
-                Map.class.getName(), String.class.getSimpleName(), Integer.class.getName())));
+        assertThat(removeJavaLang(tc2.targetTypeName()), is(MAP_STRING_INT));
 
     }
 
     @Test
     public void testTypeConverter3() throws Exception {
         TypeConverter<List> tc = typeConverter(List.class, typeTag(Set.class, typeTag(Map.class, typeTag(String.class), typeTag(Integer.class))));
-        assertThat(tc.targetTypeName(), is(String.format("%s[%s[%s[%s,%s]]]",
-                List.class.getName(), Set.class.getName(), Map.class.getName(), String.class.getSimpleName(), Integer.class.getName())));
+        assertThat(removeJavaLang(tc.targetTypeName()), is(LIST_SET_MAP_STRING_INT));
     }
 
     @Test
     public void testTypeConverter4() throws Exception {
         TypeTags.TypeTag<List> tt = typeTag(List.class, typeTag(Set.class, typeTag(Map.class, typeTag(String.class), typeTag(Integer.class))));
         TypeConverter<List> tc = typeConverter(tt);
-        assertThat(tc.targetTypeName(), is(String.format("%s[%s[%s[%s,%s]]]",
-                List.class.getName(), Set.class.getName(), Map.class.getName(), String.class.getSimpleName(), Integer.class.getName())));
+        assertThat(removeJavaLang(tc.targetTypeName()), is(LIST_SET_MAP_STRING_INT));
     }
 
     @Test
@@ -186,7 +198,8 @@ public class CassandraJavaUtilTest {
     @Test
     public void testJavaFunctions1() throws Exception {
         SparkContext sc = mock(SparkContext.class);
-        JavaSparkContext jsc = new JavaSparkContext(sc);
+        JavaSparkContext jsc = mock(JavaSparkContext.class);
+        when(jsc.sc()).thenReturn(sc);
         SparkContextJavaFunctions scjf = javaFunctions(jsc);
         assertThat(scjf.sparkContext, is(jsc.sc()));
     }

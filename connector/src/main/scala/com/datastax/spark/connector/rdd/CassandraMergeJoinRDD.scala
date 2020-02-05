@@ -222,6 +222,7 @@ class CassandraMergeJoinRDD[L,R](
             |${leftScanRDD.keyspaceName} ${leftScanRDD.tableName} and ${rightScanRDD.tableName}
             |for partition ${partition.index} in $duration%.3f s.""".stripMargin)
       closeSessions(leftSession, rightSession)
+      context
     }
     val iteratorWithoutToken = countingIterator.map(tuple => (tuple._2, tuple._3))
     iteratorWithoutToken

@@ -228,6 +228,7 @@ class CassandraCoGroupedRDD[T](
             |${scanRDDs.head.keyspaceName}
             |for partition ${partition.index} in $duration%.3f s.""".stripMargin)
       closeSessions(rddWithSessions.map(_._2))
+      context
     }
 
     countingIterator
