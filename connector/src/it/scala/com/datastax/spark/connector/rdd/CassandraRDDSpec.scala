@@ -627,8 +627,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     udtValue.getInt("zip") should be(11120)
   }
 
-  //TODO: Until we fix type mapping for annotated classes this will fail
-  ignore should "allow to save UDT columns from mapped Java objects and read them as UDTValue or Java objects" in {
+  it should "allow to save UDT columns from mapped Java objects and read them as UDTValue or Java objects" in {
     val judt = new JavaTestUDTBean
     val jb = new JavaTestBean
 

@@ -30,6 +30,12 @@ private[cql] class DseSessionWrapper(val session: DseSession, val afterClose: Cq
   extends DefaultDseSession(session)
     with CloseHandler {
 
+  override def close(): Unit = {
+    onClose()
+  }
+
+  override def isClosed: Boolean = closed
+
   override def closeAsync(): CompletionStage[Void] = {
     onClose()
     CompletableFuture.completedFuture(null)
@@ -45,6 +51,7 @@ class SessionProxy(val session: CqlSession, val afterClose: CqlSession => Any) e
     try {
       (method.getName, method.getParameterTypes) match {
         case ("close", Array()) =>
+          onClose()
           null
         case ("closeUnderlying", Array()) =>
           session.close()

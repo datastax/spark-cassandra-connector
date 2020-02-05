@@ -62,11 +62,11 @@ class DseCassandraConnectionFactorySpec extends SparkCassandraITFlatSpecBase wit
     val session2 = zeroKeepAliveConnector.openSession()
 
     session1.close()
-    session1.isClosed shouldBe false
+    session1.isClosed shouldBe true
     session2.isClosed shouldBe false
 
     session1.close()
-    session1.isClosed shouldBe false
+    session1.isClosed shouldBe true
     session2.isClosed shouldBe false
 
     session2.close()

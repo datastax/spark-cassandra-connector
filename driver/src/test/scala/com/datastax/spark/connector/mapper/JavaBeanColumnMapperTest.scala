@@ -62,8 +62,7 @@ class JavaBeanColumnMapperTest {
     assertEquals(ColumnName(c2.columnName), getters("getCassandraCamelCaseProperty"))
     assertEquals(ColumnName(c3.columnName), getters("isFlagged"))
   }
-  //TODO:
-  @Ignore("Until we fix type mapping for annotated classes this will fail, see history of CassandraRDDSpec.allow to save UDT columns from mapped Java(...)")
+
   @Test
   def testGettersWithUDT() {
     val mapper = new JavaBeanColumnMapper[ColumnMapperTestUDTBean]

@@ -1,12 +1,15 @@
 package com.datastax.spark.connector.cluster
 
-import java.net.InetSocketAddress
+import java.io.IOException
+import java.net.{InetAddress, InetSocketAddress, Socket}
 
 import com.datastax.bdp.hadoop.hive.metastore.CassandraClientConfiguration
 import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.cql.CassandraConnectorConf._
 import com.datastax.spark.connector.cql.DefaultAuthConfFactory
 import org.slf4j.MDC
+
+import scala.util.{Failure, Success, Try}
 
 /** Provides cluster(s) defined by one of the sub-traits. */
 trait ClusterProvider {

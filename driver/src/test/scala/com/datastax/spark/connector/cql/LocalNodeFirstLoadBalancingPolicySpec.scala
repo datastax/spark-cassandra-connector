@@ -14,7 +14,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption.{LOAD_BALANCI
 import com.datastax.oss.driver.api.core.config.{DriverConfig, DriverExecutionProfile}
 import com.datastax.oss.driver.api.core.context.DriverContext
 import com.datastax.oss.driver.api.core.loadbalancing.{LoadBalancingPolicy, NodeDistance}
-import com.datastax.oss.driver.api.core.metadata.Node
+import com.datastax.oss.driver.api.core.metadata.{EndPoint, Node}
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext
 import com.datastax.oss.driver.internal.core.metadata.MetadataManager
 import com.datastax.spark.connector.util.DriverUtil
@@ -38,9 +38,13 @@ class LocalNodeFirstLoadBalancingPolicySpec extends FlatSpec with Matchers with 
   private val remoteNode3 = nodeMock("192.168.123.3")
 
   def nodeMock(address: String): Node = {
+    val endpoint = mock[EndPoint]
+    when(endpoint.resolve).thenReturn(new InetSocketAddress(address, 9042))
+
     val node = mock[Node]
     when(node.getHostId).thenReturn(UUID.randomUUID())
     when(node.getBroadcastAddress).thenReturn(Optional.of(new InetSocketAddress(address, 9042)))
+    when(node.getEndPoint).thenReturn(endpoint)
     when(node.getDatacenter).thenReturn(dc)
     node
   }

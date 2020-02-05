@@ -30,7 +30,6 @@ object Dependencies
       .exclude("org.slf4j", "log4j-over-slf4j")
 
     def driverCoreExclude(): ModuleID = module
-      .exclude("com.datastax.dse", "dse-java-driver-core") // doesn't shade guava
       .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
   }
 
@@ -39,7 +38,7 @@ object Dependencies
     val junit = "junit" % "junit" % JUnit
     val junitInterface = "com.novocode" % "junit-interface" % JUnitInterface
     val scalaTest = "org.scalatest" %% "scalatest" % ScalaTest
-    val driverMapperProcessor = "com.datastax.dse" % "dse-java-driver-mapper-processor" % DseJavaDriver
+    val driverMapperProcessor = "com.datastax.oss" % "java-driver-mapper-processor" % DataStaxJavaDriver
   }
 
   object TestConnector {
@@ -68,8 +67,8 @@ object Dependencies
   }
 
   object Driver {
-    val driverCore = "com.datastax.dse" % "dse-java-driver-core-shaded" % DseJavaDriver
-    val driverMapper = "com.datastax.dse" % "dse-java-driver-mapper-runtime" % DseJavaDriver driverCoreExclude()
+    val driverCore = "com.datastax.oss" % "java-driver-core-shaded" % DataStaxJavaDriver
+    val driverMapper = "com.datastax.oss" % "java-driver-mapper-runtime" % DataStaxJavaDriver driverCoreExclude()
 
     val scalaReflect = "org.scala-lang" % "scala-reflect" % scalaVersion
     val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
