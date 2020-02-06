@@ -3,9 +3,9 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.{ConfigParameter, ConfigCheck}
+import com.datastax.spark.connector.util.ConfigCheck.ConfigurationException
+import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
-import org.apache.commons.configuration.ConfigurationException
 import org.apache.spark.SparkConf
 
 /** Write settings for RDD

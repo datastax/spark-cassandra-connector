@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.util
 
-import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.{CassandraSQLContextParams, CassandraSourceRelation}
@@ -60,7 +59,7 @@ object ConfigCheck {
 
   /**
    * For a given unknown property determine if we have any guesses as
-   * to what the property should be. Suggestions are found by 
+   * to what the property should be. Suggestions are found by
    * breaking the unknown property into fragments.
    * spark.cassandra.foo.bar => [foo,bar]
    * Any known property which has some fragments which fuzzy match
@@ -83,6 +82,8 @@ object ConfigCheck {
     }
   }
 
+  class ConfigurationException(cause: String) extends Exception(cause)
+
   /**
    * Exception to be thrown when unknown properties are found in the SparkConf
  *
@@ -91,7 +92,7 @@ object ConfigCheck {
    */
   class ConnectorConfigurationException(
       unknownProps: Seq[String],
-      suggestionMap: Map[String, Seq[String]]) extends ConfigurationException {
+      suggestionMap: Map[String, Seq[String]]) extends Exception {
 
     override def getMessage: String = {
       val intro =
