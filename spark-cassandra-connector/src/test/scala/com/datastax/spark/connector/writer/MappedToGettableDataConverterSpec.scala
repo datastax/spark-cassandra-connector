@@ -147,6 +147,13 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     row.isNullAt(1) shouldEqual true
   }
 
+  it should "convert null UDTs to null" in {
+    val userTable = newTable(loginColumn, passwordColumn)
+    val converter = MappedToGettableDataConverter[UserWithOption](userTable, userTable.columnRefs)
+    val row = converter.convert(null)
+    row shouldEqual null
+  }
+
   case class UserWithNestedOption(login: String, address: Option[Address])
 
   it should "convert None case class to null" in {
