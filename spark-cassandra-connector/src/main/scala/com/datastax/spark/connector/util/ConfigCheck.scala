@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.util
 
-import org.apache.commons.configuration.ConfigurationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.{CassandraSQLContextParams, CassandraSourceRelation}
@@ -60,7 +59,7 @@ object ConfigCheck {
 
   /**
    * For a given unknown property determine if we have any guesses as
-   * to what the property should be. Suggestions are found by 
+   * to what the property should be. Suggestions are found by
    * breaking the unknown property into fragments.
    * spark.cassandra.foo.bar => [foo,bar]
    * Any known property which has some fragments which fuzzy match
@@ -83,32 +82,29 @@ object ConfigCheck {
     }
   }
 
-  /**
-   * Exception to be thrown when unknown properties are found in the SparkConf
- *
-   * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
-   * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
-   */
-  class ConnectorConfigurationException(
-      unknownProps: Seq[String],
-      suggestionMap: Map[String, Seq[String]]) extends ConfigurationException {
-
-    override def getMessage: String = {
+  class ConnectorConfigurationException(message: String) extends Exception(message) {
+    /**
+      * Exception to be thrown when unknown properties are found in the SparkConf
+      *
+      * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
+      * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
+      */
+    def this(unknownProps: Seq[String], suggestionMap: Map[String, Seq[String]]) = this({
       val intro =
         "Invalid Config Variables\n" +
-        "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
+          "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
       val body = unknownProps.map { unknown =>
         suggestionMap.get(unknown) match {
           case Some(Seq()) | None =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |No likely matches found.""".stripMargin
+               |No likely matches found.""".stripMargin
           case Some(suggestions) =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |Possible matches:
-                          |${suggestions.mkString("\n")}""".stripMargin
+               |Possible matches:
+               |${suggestions.mkString("\n")}""".stripMargin
         }
       }.mkString("\n")
       intro + body
-    }
+    })
   }
 }
