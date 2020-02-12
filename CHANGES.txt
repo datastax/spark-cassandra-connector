@@ -1,3 +1,6 @@
+2.4.3
+  * Remove Undeclared Dependency on Commons-Configuration
+
 2.4.2
   * Support for Scala 2.12 (SPARKC-458)
 
