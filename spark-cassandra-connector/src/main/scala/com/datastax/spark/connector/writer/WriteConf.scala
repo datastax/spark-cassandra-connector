@@ -3,7 +3,7 @@ package com.datastax.spark.connector.writer
 import com.datastax.driver.core.{ConsistencyLevel, DataType}
 import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.ConfigCheck.ConfigurationException
+import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter}
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch}
 import org.apache.spark.SparkConf
@@ -191,7 +191,7 @@ object WriteConf {
         case "auto" => BytesInBatch(batchSizeInBytes)
         case Number(x) => RowsInBatch(x.toInt)
         case other =>
-          throw new ConfigurationException(
+          throw new ConnectorConfigurationException(
             s"Invalid value of spark.cassandra.output.batch.size.rows: $other. Number or 'auto' expected")
       }
     }

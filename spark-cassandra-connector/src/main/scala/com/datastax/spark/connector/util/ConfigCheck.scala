@@ -82,34 +82,29 @@ object ConfigCheck {
     }
   }
 
-  class ConfigurationException(cause: String) extends Exception(cause)
-
-  /**
-   * Exception to be thrown when unknown properties are found in the SparkConf
- *
-   * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
-   * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
-   */
-  class ConnectorConfigurationException(
-      unknownProps: Seq[String],
-      suggestionMap: Map[String, Seq[String]]) extends Exception {
-
-    override def getMessage: String = {
+  class ConnectorConfigurationException(message: String) extends Exception(message) {
+    /**
+      * Exception to be thrown when unknown properties are found in the SparkConf
+      *
+      * @param unknownProps Properties that have no mapping to known Spark Cassandra Connector properties
+      * @param suggestionMap A map possibly containing suggestions for each of of the unknown properties
+      */
+    def this(unknownProps: Seq[String], suggestionMap: Map[String, Seq[String]]) = this({
       val intro =
         "Invalid Config Variables\n" +
-        "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
+          "Only known spark.cassandra.* variables are allowed when using the Spark Cassandra Connector.\n"
       val body = unknownProps.map { unknown =>
         suggestionMap.get(unknown) match {
           case Some(Seq()) | None =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |No likely matches found.""".stripMargin
+               |No likely matches found.""".stripMargin
           case Some(suggestions) =>
             s"""$unknown is not a valid Spark Cassandra Connector variable.
-                          |Possible matches:
-                          |${suggestions.mkString("\n")}""".stripMargin
+               |Possible matches:
+               |${suggestions.mkString("\n")}""".stripMargin
         }
       }.mkString("\n")
       intro + body
-    }
+    })
   }
 }
