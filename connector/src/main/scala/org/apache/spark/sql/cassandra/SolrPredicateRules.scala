@@ -57,7 +57,7 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
     val solrEnabledOnTargetHosts = CassandraConnector(sparkConf)
       .withSessionDo{ session =>
         val hosts = session.getMetadata.getNodes.values().asScala
-        val possibleHosts = hosts.filter( host => hosts.head.getDistance != NodeDistance.IGNORED)
+        val possibleHosts = hosts.filter(host => host.getDistance != NodeDistance.IGNORED)
         possibleHosts.forall { host =>
           val workloads = Option(host.getExtras.get(DseNodeProperties.DSE_WORKLOADS))
           workloads.exists(_.asInstanceOf[java.util.Set[String]].contains("Search"))

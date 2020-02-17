@@ -1,10 +1,9 @@
 package com.datastax.spark.connector.embedded
 
-import java.io.File
 import java.nio.file.Files
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.{SparkConf, SparkContext, SparkEnv}
+import org.apache.spark.SparkConf
 
 object SparkTemplate {
 

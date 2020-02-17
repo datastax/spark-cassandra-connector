@@ -153,6 +153,17 @@ object AuthCluster {
   }
 }
 
+/** DSE single node cluster with SearchAnalytics workload. Enables tests that utilize Search specific features. */
+trait DseSearchAnalyticsCluster extends SingleClusterFixture {
+
+  // Note that solr paging behaves differently for SearchAnalytics workloads. Technically we don't use Analytics (spark)
+  // workload but it's included to force driver paging.
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.copy(dseWorkloads = List("solr", "spark")))
+
+  private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
+    DefaultCluster.defaultConnectionParameters(address)
+}
+
 /** A fixture that bootstraps two separate clusters with one node each. */
 trait TwoClustersWithOneNode extends Fixture {
 
