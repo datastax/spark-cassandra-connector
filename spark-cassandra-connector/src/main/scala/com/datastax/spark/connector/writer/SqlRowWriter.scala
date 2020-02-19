@@ -5,7 +5,10 @@ import java.util.UUID
 
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.types.TypeConversionException
 import org.apache.spark.sql.Row
+
+import scala.util.{Failure, Success, Try}
 
 
 /** A [[RowWriter]] that can write SparkSQL `Row` objects. */
@@ -23,9 +26,16 @@ class SqlRowWriter(val table: TableDef, val selectedColumns: IndexedSeq[ColumnRe
     require(row.size == columnNames.size, s"Invalid row size: ${row.size} instead of ${columnNames.size}.")
     for (i <- 0 until row.size) {
       val colValue = row(i)
-      buffer(i) = converters(i).convert(colValue)
+      buffer(i) = Try(converters(i).convert(colValue)) match {
+        case Success(value) => value
+        case Failure(ex: IllegalArgumentException) =>
+          val columnType = columnTypes(i).scalaTypeName
+          throw new TypeConversionException(
+            s"Cannot convert value $colValue of column ${columnNames(i)} to type $columnType", ex)
+        case Failure(ex) => throw ex
       }
     }
+  }
 }
 
 
