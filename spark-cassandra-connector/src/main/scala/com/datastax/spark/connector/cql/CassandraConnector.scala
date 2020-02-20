@@ -3,13 +3,13 @@ package com.datastax.spark.connector.cql
 import java.io.IOException
 import java.net.InetAddress
 
-import scala.collection.JavaConversions._
-import scala.language.reflectiveCalls
-import org.apache.spark.{SparkConf, SparkContext}
 import com.datastax.driver.core._
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
-import com.datastax.spark.connector.util.SerialShutdownHooks
-import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
+import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.JavaConversions._
+import scala.language.reflectiveCalls
 
 /** Provides and manages connections to Cassandra.
   *
@@ -78,10 +78,8 @@ class CassandraConnector(val conf: CassandraConnectorConf)
   def openSession() = {
     val session = sessionCache.acquire(_config)
     try {
-      val allNodes = session.getCluster.getMetadata.getAllHosts.toSet
-      val dcToUse = _config.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(_config.hosts, allNodes))
-      val myNodes = allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
-      _config = _config.copy(hosts = myNodes)
+      val foundNodes = findNodes(session)
+      _config = _config.copy(hosts = foundNodes)
 
       val connectionsPerHost = _config.maxConnectionsPerExecutor.getOrElse(1)
       val poolingOptions = session.getCluster.getConfiguration.getPoolingOptions
@@ -99,6 +97,18 @@ class CassandraConnector(val conf: CassandraConnectorConf)
       case e: Throwable =>
         sessionCache.release(session, 0)
         throw e
+    }
+  }
+
+  private def findNodes(session: Session) = {
+    val allNodes: Set[Host] = session.getCluster.getMetadata.getAllHosts.toSet
+
+    session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy match {
+      case policy: DataCenterAware => {
+        val dcToUse = _config.localDC.getOrElse(policy.determineDataCenter(_config.hosts, allNodes))
+       allNodes.filter(_.getDatacenter == dcToUse).map(_.getAddress)
+      }
+      case _ => allNodes.map(_.getAddress)
     }
   }
 
