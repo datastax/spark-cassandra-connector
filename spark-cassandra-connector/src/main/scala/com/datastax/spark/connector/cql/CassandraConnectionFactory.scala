@@ -40,7 +40,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       .setConnectTimeoutMillis(conf.connectTimeoutMillis)
       .setReadTimeoutMillis(conf.readTimeoutMillis)
 
-    val builder = Cluster.builder()
+    var builder = Cluster.builder()
       .addContactPoints(conf.hosts.toSeq: _*)
       .withPort(conf.port)
       .withRetryPolicy(
@@ -57,6 +57,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
           .setRefreshNodeIntervalMillis(0)
           .setRefreshNodeListIntervalMillis(0)
           .setRefreshSchemaIntervalMillis(0))
+
+     if (!conf.jmxEnabled) builder = builder.withoutJMXReporting()
 
     if (conf.cassandraSSLConf.enabled) {
       maybeCreateSSLOptions(conf.cassandraSSLConf) match {
