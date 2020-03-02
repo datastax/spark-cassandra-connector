@@ -1,10 +1,9 @@
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import scala.language.postfixOps
 import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.SparkConf
 import org.scalatest.{FlatSpec, Matchers}
@@ -40,6 +39,9 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val sparkConf = new SparkConf(loadDefaults = false)
 
     val connConf = CassandraConnectorConf(sparkConf)
+      .contactInfo
+      .asInstanceOf[IpBasedContactInfo]
+
     connConf.cassandraSSLConf.enabled shouldBe false
     connConf.cassandraSSLConf.trustStorePath shouldBe empty
     connConf.cassandraSSLConf.trustStorePassword shouldBe empty
@@ -66,6 +68,8 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     sparkConf.set(CassandraConnectorConf.SSLKeyStoreTypeParam.name, "JCEKS")
 
     val connConf = CassandraConnectorConf(sparkConf)
+      .contactInfo
+      .asInstanceOf[IpBasedContactInfo]
     connConf.cassandraSSLConf.enabled shouldBe true
     connConf.cassandraSSLConf.trustStorePath shouldBe Some("/etc/keys/.truststore")
     connConf.cassandraSSLConf.trustStorePassword shouldBe Some("secret")
@@ -82,30 +86,48 @@ class CassandraConnectorConfSpec extends FlatSpec with Matchers {
     val addressAndHost = InetAddress.getLocalHost
     val addressOnly = InetAddress.getByAddress(addressAndHost.getAddress)
 
-    val addressOnlyConf = CassandraConnectorConf(hosts = Set(addressOnly))
-    val addressAndHostConf = CassandraConnectorConf(hosts = Set(addressAndHost))
+    val addressOnlyConf = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(new InetSocketAddress(addressOnly, 9042))))
+    val addressAndHostConf = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(new InetSocketAddress(addressAndHost, 9042))))
 
     addressOnlyConf should be(addressAndHostConf)
   }
 
-  it should "be equal to a conf with the same settings and different hosts if at least one host is common" in {
-    val addr1 = InetAddress.getByName("127.0.0.1")
-    val addr2 = InetAddress.getByName("127.0.0.2")
-    val addr3 = InetAddress.getByName("127.0.0.3")
+  val addr1 = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 9042)
+  val addr2 = new InetSocketAddress(InetAddress.getByName("127.0.0.2"), 9042)
+  val addr3 = new InetSocketAddress(InetAddress.getByName("127.0.0.3"), 9042)
 
-    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
-    val conf2 = CassandraConnectorConf(hosts = Set(addr2, addr3))
+  it should "be equal to a conf with the same settings and hosts" in {
+    val conf1 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+    val conf2 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+
+    conf1 should equal(conf2)
+
+  }
+
+  it should "be not equal to a conf with the same settings and different hosts" in {
+    val conf1 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+    val conf2 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr2, addr3)))
+
+    conf1 shouldNot equal(conf2)
+  }
+
+  it should "be equal to a conf with the same hosts in different order" in {
+    val conf1 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+    val conf2 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr2, addr1)))
 
     conf1 should equal(conf2)
   }
 
-  it should "not be equal to a conf with the same settings and different hosts if no host is common" in {
-    val addr1 = InetAddress.getByName("127.0.0.1")
-    val addr2 = InetAddress.getByName("127.0.0.2")
-    val addr3 = InetAddress.getByName("127.0.0.3")
+  it should "be not equal to a conf with the same hosts but different settings" in {
+    val conf1 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+    val conf2 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)), compression = "FunPression")
 
-    val conf1 = CassandraConnectorConf(hosts = Set(addr1, addr2))
-    val conf2 = CassandraConnectorConf(hosts = Set(addr3))
+    conf1 shouldNot equal(conf2)
+  }
+
+  it should "not be equal to a conf with the same settings and different hosts if no host is common" in {
+    val conf1 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr1, addr2)))
+    val conf2 = CassandraConnectorConf(contactInfo = IpBasedContactInfo(Set(addr3)))
 
     conf1 shouldNot equal(conf2)
   }

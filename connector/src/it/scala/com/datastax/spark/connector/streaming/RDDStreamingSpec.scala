@@ -1,5 +1,6 @@
 package com.datastax.spark.connector.streaming
 
+import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 
 import com.datastax.spark.connector._
@@ -154,7 +155,7 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
       .map(rdd.preferredLocations)
       .foreach { preferredLocations =>
         withClue("Failed to verify preferred locations of repartitionByCassandraReplica RDD") {
-          conn.hosts.map(_.getHostAddress) should contain(preferredLocations.head)
+          conn.hosts.map(_.getAddress) should contain(InetAddress.getByName(preferredLocations.head))
         }
       }
     )

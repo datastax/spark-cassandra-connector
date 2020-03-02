@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
@@ -43,8 +43,8 @@ implicit
   @transient lazy private val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
   @transient lazy private val clazz = implicitly[ClassTag[T]].runtimeClass
 
-  private val hosts = connector.hosts.toVector
-  private val hostSet = connector.hosts
+  private val hosts = connector.hosts.map(_.getAddress).toVector
+  private val hostSet = hosts.toSet
   private val numHosts = hosts.size
   private val partitionIndexes = (0 until partitionsPerReplicaSet * numHosts)
     .grouped(partitionsPerReplicaSet)
@@ -74,7 +74,7 @@ implicit
         val tokenHash = Math.abs(token.hashCode())
         val replicas = tokenMap
           .getReplicas(_keyspace, token)
-          .map(n => DriverUtil.toAddress(n).get)
+          .map(n => DriverUtil.toAddress(n).get.getAddress)
 
         val replicaSetInDC = (hostSet & replicas).toVector
         if (replicaSetInDC.nonEmpty) {

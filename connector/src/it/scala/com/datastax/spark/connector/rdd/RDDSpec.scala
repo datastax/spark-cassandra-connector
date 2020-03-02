@@ -251,7 +251,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hosts should contain(e.endpoints.head)
+        conn.hostAddresses should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -303,7 +303,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hosts should contain(e.endpoints.head)
+        conn.hostAddresses should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -371,7 +371,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hosts should contain(e.endpoints.head)
+        conn.hostAddresses should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -506,7 +506,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hosts should contain(e.endpoints.head)
+        conn.hostAddresses should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }

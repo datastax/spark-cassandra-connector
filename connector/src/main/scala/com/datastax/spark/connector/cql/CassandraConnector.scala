@@ -1,9 +1,10 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.loadbalancing.NodeDistance
 import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.types.TypeAdapters.{ValueByNameAdapter, ValuesSeqAdapter}
 import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
@@ -11,7 +12,7 @@ import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationExcep
 import com.datastax.spark.connector.util.DriverUtil.toAddress
 import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkFiles}
 
 import scala.collection.JavaConverters._
 import scala.language.reflectiveCalls
@@ -61,16 +62,20 @@ class CassandraConnector(val conf: CassandraConnectorConf)
   private[this] var _config = conf
 
   /** Known cluster hosts in the connected datacenter.*/
-  lazy val hosts: Set[InetAddress] =
+  def hosts: Set[InetSocketAddress] =
     // wrapped in a session, so we get full lists of hosts,
     // not only those explicitly passed in the conf
-    withSessionDo { _ => _config.hosts }
+    withSessionDo {
+      _.getMetadata
+        .getNodes
+        .values
+        .asScala
+        .filter(_.getDistance == NodeDistance.LOCAL)
+        .flatMap(node => Option(node.getBroadcastAddress.orElse(null)))
+        .toSet
+    }
 
-  /** Configured native port */
-  def port = _config.port
-
-  /** Configured authentication options */
-  def authConf = _config.authConf
+  private[connector] def hostAddresses: Set[InetAddress] = hosts.map(_.getAddress)
 
   /** Connection configurator */
   def connectionFactory = _config.connectionFactory
@@ -83,8 +88,6 @@ class CassandraConnector(val conf: CassandraConnectorConf)
   def openSession() = {
     val session = sessionCache.acquire(_config)
     try {
-      _config = _config.copy(hosts = dataCenterNodes(_config, session))
-
       // We need a separate SessionProxy here to protect against double closing the session.
       // Closing SessionProxy is not really closing the session, because sessions are shared.
       // Instead, refcount is decreased. But double closing the same Session reference must not
@@ -166,8 +169,8 @@ object CassandraConnector extends Logging {
     createSession, destroySession, alternativeConnectionConfigs)
 
   private def createSession(conf: CassandraConnectorConf): CqlSession = {
-    lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.port
-    logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
+    lazy val endpointsStr = conf.contactInfo.endPointStr()
+    logDebug(s"Attempting to open native connection to Cassandra with $endpointsStr")
     try {
       val session = conf.connectionFactory.createSession(conf)
       logInfo(s"Connected to Cassandra cluster.")
@@ -175,7 +178,7 @@ object CassandraConnector extends Logging {
     }
     catch {
       case e: Throwable =>
-        throw new IOException(s"Failed to open native connection to Cassandra at $endpointsStr", e)
+        throw new IOException(s"Failed to open native connection to Cassandra at $endpointsStr :: ${e.getLocalizedMessage}", e)
     }
   }
 
@@ -184,9 +187,9 @@ object CassandraConnector extends Logging {
     logInfo(s"Disconnected from Cassandra cluster.")
   }
 
-  private def dataCenterNodes(conf: CassandraConnectorConf, session: CqlSession): Set[InetAddress] = {
+  private def dataCenterNodes(conf: CassandraConnectorConf, ipConf: IpBasedContactInfo, session: CqlSession): Set[InetSocketAddress] = {
     val allNodes = session.getMetadata.getNodes.asScala.values.toSet
-    val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(conf.hosts, allNodes))
+    val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(ipConf.hosts, allNodes))
     val nodes = allNodes
       .collect { case n if n.getDatacenter == dcToUse => toAddress(n) }
       .flatten
@@ -197,19 +200,27 @@ object CassandraConnector extends Logging {
     nodes
   }
 
-  // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together.
+  // This is to ensure the Cluster can be found by requesting for any of its hosts, or all hosts together. We can only do this for IP defined contactInfo
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: CqlSession): Set[CassandraConnectorConf] = {
-    val nodes = dataCenterNodes(conf, session)
-    nodes.map(n => conf.copy(hosts = Set(n))) + conf.copy(hosts = nodes)
+    conf.contactInfo match {
+      case ipConf: IpBasedContactInfo =>
+        val nodes = dataCenterNodes(conf, ipConf, session)
+        nodes.map(n => conf.copy(contactInfo = ipConf.copy(hosts = Set(n)))) + conf.copy(contactInfo = ipConf.copy(hosts = nodes))
+      case _ => Set.empty
+    }
   }
 
   SerialShutdownHooks.add("Clearing session cache for C* connector", 200)(() => {
     sessionCache.shutdown()
   })
 
+  def apply(conf: CassandraConnectorConf) = {
+    new CassandraConnector(conf)
+  }
+
   /** Returns a CassandraConnector created from properties found in the [[org.apache.spark.SparkConf SparkConf]] object */
   def apply(conf: SparkConf): CassandraConnector = {
-    new CassandraConnector(CassandraConnectorConf(conf))
+    CassandraConnector(CassandraConnectorConf.fromSparkConf(conf))
   }
 
   /** Returns a CassandraConnector with runtime Cluster Environment information. This can set remoteConnectionsPerExecutor
@@ -226,9 +237,7 @@ object CassandraConnector extends Logging {
   }
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */
-  def apply(hosts: Set[InetAddress],
-            port: Int = CassandraConnectorConf.ConnectionPortParam.default,
-            authConf: AuthConf = NoAuthConf,
+  def apply(contactInfo: ContactInfo,
             localDC: Option[String] = None,
             keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
             minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
@@ -236,13 +245,10 @@ object CassandraConnector extends Logging {
             queryRetryCount: Int = CassandraConnectorConf.QueryRetryParam.default,
             connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
             readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
-            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-            cassandraSSLConf: CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf) = {
+            connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory) = {
 
     val config = CassandraConnectorConf(
-      hosts = hosts,
-      port = port,
-      authConf = authConf,
+      contactInfo,
       localDC = localDC,
       keepAliveMillis = keepAliveMillis,
       minReconnectionDelayMillis = minReconnectionDelayMillis,
@@ -250,8 +256,7 @@ object CassandraConnector extends Logging {
       queryRetryCount = queryRetryCount,
       connectTimeoutMillis = connectTimeoutMillis,
       readTimeoutMillis = readTimeoutMillis,
-      connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf
+      connectionFactory = connectionFactory
     )
 
     new CassandraConnector(config)

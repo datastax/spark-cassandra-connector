@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.writer
 
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.spark.connector.ColumnSelector
@@ -45,6 +45,7 @@ class ReplicaLocator[T] private(
             .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
             .map(node => DriverUtil.toAddress(node)
               .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
+            .map(_.getAddress)
             .toSet[InetAddress]
           (hosts, row)
         }

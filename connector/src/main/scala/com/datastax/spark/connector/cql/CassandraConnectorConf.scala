@@ -1,22 +1,55 @@
 package com.datastax.spark.connector.cql
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-
 import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder}
 import org.apache.spark.SparkConf
-
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter, Logging}
+
+
+//All of these classes must be serializable
+sealed trait ContactInfo {
+  def endPointStr(): String
+};
+
+case class IpBasedContactInfo (
+  hosts: Set[InetSocketAddress],
+  authConf: AuthConf = NoAuthConf,
+  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf) extends ContactInfo {
+
+  override def equals(obj: Any): Boolean = obj match {
+    case that: IpBasedContactInfo =>
+      (this.hosts == that.hosts  && this.authConf == that.authConf)
+    case _ => false
+  }
+
+  def apply(
+    hosts: Set[InetAddress],
+    port: Int = CassandraConnectorConf.ConnectionPortParam.default,
+    authConf: AuthConf,
+    cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf): IpBasedContactInfo = {
+
+    IpBasedContactInfo(hosts.map( host => new InetSocketAddress(host, port)), authConf, cassandraSSLConf)
+  }
+
+  override def endPointStr() = hosts.map(i => s"${i.getAddress}:${i.getPort}").mkString("{", ", ", "}")
+}
+
+case class CloudBasedContactInfo(path: String, authConf: AuthConf ) extends ContactInfo {
+  override def endPointStr(): String = s"Cloud File Based Config at $path"
+}
+
+case class ProfileFileBasedContactInfo(path: String) extends ContactInfo {
+  override def endPointStr(): String = s"Profile based config at $path"
+}
 
 /** Stores configuration of a connection to Cassandra.
   * Provides information about cluster nodes, ports and optional credentials for authentication. */
 case class CassandraConnectorConf(
-  hosts: Set[InetAddress],
-  port: Int = CassandraConnectorConf.ConnectionPortParam.default,
-  authConf: AuthConf = NoAuthConf,
-  localDC: Option[String] = None,
+  contactInfo: ContactInfo,
+  localDC: Option[String] = CassandraConnectorConf.LocalDCParam.default,
   keepAliveMillis: Int = CassandraConnectorConf.KeepAliveMillisParam.default,
   minReconnectionDelayMillis: Int = CassandraConnectorConf.MinReconnectionDelayParam.default,
   maxReconnectionDelayMillis: Int = CassandraConnectorConf.MaxReconnectionDelayParam.default,
@@ -27,7 +60,6 @@ case class CassandraConnectorConf(
   connectTimeoutMillis: Int = CassandraConnectorConf.ConnectionTimeoutParam.default,
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
-  cassandraSSLConf: CassandraConnectorConf.CassandraSSLConf = CassandraConnectorConf.DefaultCassandraSSLConf,
   quietPeriodBeforeCloseMillis: Int = CassandraConnectorConf.QuietPeriodBeforeCloseParam.default,
   timeoutBeforeCloseMillis: Int = CassandraConnectorConf.TimeoutBeforeCloseParam.default
 ) {
@@ -37,10 +69,9 @@ case class CassandraConnectorConf(
   // reflectionHashCode or reflectionEquals. However in this case we would have to mention those fields as strings
   // and compiler would not notify us that they are missing if we change something in connector configuration
   // and the errors could be difficult to figure out.
-
   @transient
   private lazy val comparableConf: CassandraConnectorConf = this.copy(
-    hosts = Set.empty,
+    contactInfo = contactInfo,
     localConnectionsPerExecutor = None,
     remoteConnectionsPerExecutor = None)
 
@@ -49,8 +80,7 @@ case class CassandraConnectorConf(
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: CassandraConnectorConf if hashCode == that.hashCode =>
-        EqualsBuilder.reflectionEquals(this.comparableConf, that.comparableConf, false) &&
-          (hosts == that.hosts || (hosts & that.hosts).nonEmpty)
+        EqualsBuilder.reflectionEquals(this.comparableConf, that.comparableConf, false)
       case _ => false
     }
   }
@@ -77,20 +107,21 @@ object CassandraConnectorConf extends Logging {
 
   val ReferenceSection = "Cassandra Connection Parameters"
 
+  val ConnectionPortParam = ConfigParameter[Int](
+    name = "spark.cassandra.connection.port",
+    section = ReferenceSection,
+    default = 9042,
+    description = """Cassandra native connection port, will be set to all hosts if no individual ports are given""")
+
   val ConnectionHostParam = ConfigParameter[String](
     name = "spark.cassandra.connection.host",
     section = ReferenceSection,
     default = "localhost",
     description =
-      """Contact point to connect to the Cassandra cluster. A comma separated list
-        |may also be used. ("127.0.0.1,192.168.0.1")
+      s"""Contact point to connect to the Cassandra cluster. A comma separated list
+        |may also be used. Ports may be provided but are optional. If Ports are missing $ConnectionPortParam.name will
+        | be used ("127.0.0.1:9042,192.168.0.1:9051")
       """.stripMargin)
-
-  val ConnectionPortParam = ConfigParameter[Int](
-    name = "spark.cassandra.connection.port",
-    section = ReferenceSection,
-    default = 9042,
-    description = """Cassandra native connection port""")
 
   val LocalDCParam = ConfigParameter[Option[String]](
     name = "spark.cassandra.connection.localDC",
@@ -209,6 +240,25 @@ object CassandraConnectorConf extends Logging {
     deprecatedSince = "DSE 6.0.0"
   )
 
+  val ReferenceSectionAlternativeConnection = "Alternative Connection Configuration Options"
+
+  val CloudBasedConfigurationParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.config.cloud.path",
+    section = ReferenceSectionAlternativeConnection,
+    default = None,
+    description =
+      """Specifies a default CloudConnectionBundle file to be for this connection. Accepts URLs (including HDFS Compatible URI's) as
+        |and references to files passed in via --files""".stripMargin
+  )
+
+  val ProfileFileBasedConfigurationParam = ConfigParameter[Option[String]](
+    name = "spark.cassandra.connection.config.profile.path",
+    section = ReferenceSectionAlternativeConnection,
+    default = None,
+    description = """Specifies a default Java Driver 4.0 Profile file to be used for this connection. Accepts URLs (including HDFS Compatible URI's) as
+      |and references to files passed in via --files""".stripMargin
+  )
+
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
   val DefaultCassandraSSLConf = CassandraSSLConf()
 
@@ -272,8 +322,16 @@ object CassandraConnectorConf extends Logging {
     default = DefaultCassandraSSLConf.keyStoreType,
     description = """Key store type""")
 
-  private def resolveHost(hostName: String): Option[InetAddress] = {
-    try Some(InetAddress.getByName(hostName))
+  private def resolveHostAndPort(hostAndPort: String, defaultPort: Int): Option[InetSocketAddress] = {
+    val (hostName, port) = if (hostAndPort.contains(":")) {
+      val splitStr = hostAndPort.split(":")
+      if (splitStr.length!= 2) throw new IllegalArgumentException(s"Couldn't parse host $hostAndPort")
+      (splitStr(0), splitStr(1).toInt)
+    } else {
+      (hostAndPort, defaultPort)
+    }
+
+    try Some(new InetSocketAddress(InetAddress.getByName(hostName), port))
     catch {
       case NonFatal(e) =>
         logError(s"Unknown host '$hostName'", e)
@@ -286,33 +344,28 @@ object CassandraConnectorConf extends Logging {
     fromSparkConf(conf)
   }
 
-  def fromSparkConf(conf: SparkConf) = {
-    val hostsStr = conf.get(ConnectionHostParam.name, ConnectionHostParam.default)
-    val hosts = for {
-      hostName <- hostsStr.split(",").toSet[String]
-      hostAddress <- resolveHost(hostName.trim)
-    } yield hostAddress
+  /**
+    * Determine how we should be connecting to Cassandra for this configuration
+    */
+  def getContactInfoFromSparkConf(conf: SparkConf): ContactInfo = {
+    Seq(
+      conf.getOption(CloudBasedConfigurationParam.name).map(url => CloudBasedContactInfo(url, AuthConf.fromSparkConf(conf))),
+      conf.getOption(ProfileFileBasedConfigurationParam.name).map(path => ProfileFileBasedContactInfo(path)),
+      Some(getIpBasedContactInfoFromSparkConf(conf))
+    ).collectFirst{ case Some(contactPoint) => contactPoint}.get
+  }
+
+  private def getIpBasedContactInfoFromSparkConf(conf: SparkConf): IpBasedContactInfo = {
 
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
 
+    val hostsStr = conf.get(ConnectionHostParam.name, ConnectionHostParam.default)
+    val hosts = for {
+      hostName <- hostsStr.split(",").toSet[String]
+      hostAddress <- resolveHostAndPort(hostName.trim, port)
+    } yield hostAddress
+
     val authConf = AuthConf.fromSparkConf(conf)
-    val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
-
-    val localDC = conf.getOption(LocalDCParam.name)
-    val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
-    val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
-    val localConnections = conf.getOption(LocalConnectionsPerExecutorParam.name).map(_.toInt)
-    val remoteConnections = conf.getOption(RemoteConnectionsPerExecutorParam.name).map(_.toInt)
-    val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
-    val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
-    val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
-    val quietPeriodBeforeClose = conf.getInt(QuietPeriodBeforeCloseParam.name, QuietPeriodBeforeCloseParam.default)
-    val timeoutBeforeClose = conf.getInt(TimeoutBeforeCloseParam.name, TimeoutBeforeCloseParam.default)
-
-    val compression = conf.getOption(CompressionParam.name).getOrElse(CompressionParam.default)
-
-    val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
-
     val sslEnabled = conf.getBoolean(SSLEnabledParam.name, SSLEnabledParam.default)
     val sslTrustStorePath = conf.getOption(SSLTrustStorePathParam.name).orElse(SSLTrustStorePathParam.default)
     val sslTrustStorePassword = conf.getOption(SSLTrustStorePasswordParam.name).orElse(SSLTrustStorePasswordParam.default)
@@ -338,10 +391,28 @@ object CassandraConnectorConf extends Logging {
       enabledAlgorithms = sslEnabledAlgorithms
     )
 
+    IpBasedContactInfo(hosts, authConf, cassandraSSLConf)
+  }
+
+  def fromSparkConf(conf: SparkConf) = {
+    val localDC = conf.getOption(LocalDCParam.name)
+    val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
+    val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
+    val maxReconnectionDelay = conf.getInt(MaxReconnectionDelayParam.name, MaxReconnectionDelayParam.default)
+    val localConnections = conf.getOption(LocalConnectionsPerExecutorParam.name).map(_.toInt)
+    val remoteConnections = conf.getOption(RemoteConnectionsPerExecutorParam.name).map(_.toInt)
+    val queryRetryCount = conf.getInt(QueryRetryParam.name, QueryRetryParam.default)
+    val connectTimeout = conf.getInt(ConnectionTimeoutParam.name, ConnectionTimeoutParam.default)
+    val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
+    val quietPeriodBeforeClose = conf.getInt(QuietPeriodBeforeCloseParam.name, QuietPeriodBeforeCloseParam.default)
+    val timeoutBeforeClose = conf.getInt(TimeoutBeforeCloseParam.name, TimeoutBeforeCloseParam.default)
+
+    val compression = conf.getOption(CompressionParam.name).getOrElse(CompressionParam.default)
+
+    val connectionFactory = CassandraConnectionFactory.fromSparkConf(conf)
+
     CassandraConnectorConf(
-      hosts = hosts,
-      port = port,
-      authConf = authConf,
+      contactInfo = getContactInfoFromSparkConf(conf),
       localDC = localDC,
       keepAliveMillis = keepAlive,
       minReconnectionDelayMillis = minReconnectionDelay,
@@ -353,7 +424,6 @@ object CassandraConnectorConf extends Logging {
       connectTimeoutMillis = connectTimeout,
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
-      cassandraSSLConf = cassandraSSLConf,
       quietPeriodBeforeCloseMillis = quietPeriodBeforeClose,
       timeoutBeforeCloseMillis = timeoutBeforeClose
     )

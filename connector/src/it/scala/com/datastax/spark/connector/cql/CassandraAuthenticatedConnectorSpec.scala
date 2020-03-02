@@ -15,6 +15,8 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
   Thread.sleep(1000)
 
   val authConf = defaultConf
+  val defaultConnConf = CassandraConnectorConf(authConf)
+  val defaultContactInfo = defaultConnConf.contactInfo.asInstanceOf[IpBasedContactInfo]
 
   "A CassandraConnector" should "authenticate with username and password when using native protocol for valid credentials provided by AuthCluster" in {
     val conn2 = CassandraConnector(authConf)
@@ -25,15 +27,15 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
   }
 
   it should "authenticate valid username/password for provided credentials" in {
-    val conn2 = new CassandraConnector(CassandraConnectorConf(authConf).copy(
-      authConf = PasswordAuthConf("cassandra", "cassandra")
+    val conn2 = new CassandraConnector(defaultConnConf.copy(
+      contactInfo = defaultContactInfo.copy(authConf = PasswordAuthConf("cassandra", "cassandra"))
     ))
     conn2.withSessionDo { session => assert(session !== null) }
   }
 
   it should "fail to authenticate invalid username/password" in {
-    val conn2 = new CassandraConnector(CassandraConnectorConf(authConf).copy(
-      authConf = PasswordAuthConf("cassandra", "wrong_passoword")
+    val conn2 = new CassandraConnector(defaultConnConf.copy(
+      contactInfo = defaultContactInfo.copy(authConf = PasswordAuthConf("cassandra", "wrong_passoword"))
     ))
     val exception = intercept[IOException] {
       conn2.withSessionDo { session => assert(session !== null) }
