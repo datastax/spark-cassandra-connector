@@ -5,6 +5,7 @@ import java.util.concurrent.{Callable, CompletableFuture, CompletionStage}
 
 import org.junit.Assert._
 import org.junit.Test
+import org.scalatest.Matchers._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -49,8 +50,9 @@ class AsyncExecutorTest {
       asyncExecutor.executeAsync(task)
 
     asyncExecutor.waitForCurrentlyExecutingTasks()
-    assertEquals(maxParallel, maxParallelCounter.get())
-    assertEquals(taskCount, totalFinishedExecutionsCounter.get())
-    assertEquals(None, asyncExecutor.getLatestException())
+
+    maxParallelCounter.get() should be <= maxParallel
+    totalFinishedExecutionsCounter.get() shouldBe taskCount
+    asyncExecutor.getLatestException() shouldBe None
   }
 }
