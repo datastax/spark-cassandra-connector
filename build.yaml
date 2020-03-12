@@ -1,0 +1,42 @@
+schedules:
+  commit:
+    schedule: per_commit
+    notify:
+      slack: #analytics-connector
+    env_vars: |
+      PRESERVE_LOGS=ccm
+      TEST_PARALLEL_TASKS=4
+      CCM_CLUSTER_MODE=debug
+  nightly:
+    schedule: nightly
+    branches:
+      include: [build_yaml, /master/]
+    disable_commit_status: true
+    disable_pull_requests: true
+
+
+cassandra:
+  - 'dse-6.0'
+  - 'dse-6.7'
+  - 'dse-6.8'
+
+java:
+  - openjdk8
+
+os:
+  - ubuntu/bionic64/java-driver
+
+build:
+  - script: |
+      mkdir ~/.sbt
+      awk '{split($0,a,":"); printf "realm=Artifactory Realm\nhost=repo.datastax.com\nuser=%s\npassword=%s\n", a[1], a[2]}' > ~/.sbt/credentials <<< "$ARTIFACTORY_CREDS"
+      if [ -z "$ARTIFACTORY_CREDS" ]; then echo "Creds Empty"; else echo "Non-Empty"; fi;
+      ./sbt/sbt test it:test
+
+  - xunit: true
+
+package:
+  include:
+    - ccm/ccm_*/*/*/logs/system.log
+    - ccm/*/*/*/*/*.log
+    - ccm/**/*.log

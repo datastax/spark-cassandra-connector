@@ -22,5 +22,6 @@ metastore_db
 .idea_modules
 *.ipr
 *.iws
+*.iml
 
 checkpoint
