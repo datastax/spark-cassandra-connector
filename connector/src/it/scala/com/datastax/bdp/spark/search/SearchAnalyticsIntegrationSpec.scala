@@ -42,6 +42,8 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
     val typeIndex: String = s"$ks.$typesTable"
     val weirdIndex: String = s"$ks.$weirdTable"
 
+    if (this.cluster.getDseVersion.isEmpty) cancel("DSE Not Enabled")
+
     conn.withSessionDo { session =>
       session.execute(
         s"""CREATE KEYSPACE IF NOT EXISTS $ks

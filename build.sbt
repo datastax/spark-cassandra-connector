@@ -17,8 +17,7 @@ ThisBuild / version := Publishing.Version
 
 Global / resolvers ++= Seq(
   DefaultMavenRepository,
-  Resolver.sonatypeRepo("public"),
-  "DataStax Repo" at "https://repo.datastax.com/dse"
+  Resolver.sonatypeRepo("public")
 )
 
 lazy val IntegrationTest = config("it") extend Test

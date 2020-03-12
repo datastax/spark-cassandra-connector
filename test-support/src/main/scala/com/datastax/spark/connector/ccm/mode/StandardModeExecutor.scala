@@ -19,19 +19,27 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 
   override def create(clusterName: String): Unit = {
     if (created.compareAndSet(false, true)) {
-      val options = config.installDirectory.map(dir => config.createOptions :+ s"--install-dir=${new File(dir).getAbsolutePath}")
+      val options = config.installDirectory
+        .map(dir => config.createOptions :+ s"--install-dir=${new File(dir).getAbsolutePath}")
         .orElse(config.installBranch.map(branch => config.createOptions :+ s"-v git:${branch.trim().replaceAll("\"", "")}"))
         .getOrElse(config.createOptions :+ s"-v ${config.version}")
 
-      execute(
-        "create",
-        clusterName,
-        "-i",
-        config.ipPrefix,
-        (if (config.dseEnabled) options :+ "--dse" else options).mkString(" "))
+      val dseFlag = if (config.dseEnabled) Some("--dse") else None
+
+      val createArgs = Seq("create", clusterName, "-i", config.ipPrefix, (options ++ dseFlag).mkString(" "))
+
+      execute( createArgs: _*)
 
       config.nodes.foreach { i =>
-        execute("add", "-s", "-j", config.jmxPort(i).toString, "--dse", "-i", config.ipOfNode(i), "--remote-debug-port=0", s"node$i")
+        val addArgs = Seq ("add",
+          "-s",
+          "-j", config.jmxPort(i).toString,
+          "-i", config.ipOfNode(i),
+          "--remote-debug-port=0") ++
+          dseFlag :+
+          s"node$i"
+
+        execute(addArgs: _*)
       }
 
       config.cassandraConfiguration.foreach { case (key, value) =>

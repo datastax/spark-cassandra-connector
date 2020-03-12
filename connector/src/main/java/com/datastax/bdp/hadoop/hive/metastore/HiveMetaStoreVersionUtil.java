@@ -56,6 +56,7 @@ public class HiveMetaStoreVersionUtil
     {
         return session.getMetadata().getNodes().values().stream()
                 .map(node -> (Version)node.getExtras().get(DseNodeProperties.DSE_VERSION))
+                .map(version -> version == null ? Version.V6_8_0 : version) // TODO Fix this to not rely on DSE Version
                 .min(Version::compareTo)
                 .orElseThrow(() -> new RuntimeException("No host to get the current DSE version"));
     }
