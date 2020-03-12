@@ -56,7 +56,7 @@ lazy val connector = (project in file("connector"))
     crossScalaVersions := supportedScalaVersions,
 
     // set the name of the project
-    name := "dse-spark-connector",
+    name := "spark-cassandra-connector",
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
 
@@ -85,7 +85,7 @@ lazy val testSupport = (project in file("test-support"))
   .settings(commonSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
-    name := "dse-spark-connector-test-support",
+    name := "spark-cassandra-connector-test-support",
     libraryDependencies ++= Dependencies.TestSupport.dependencies
   )
 
@@ -93,7 +93,7 @@ lazy val driver = (project in file("driver"))
   .settings(commonSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
-    name := "dse-spark-connector-driver",
+    name := "spark-cassandra-connector-driver",
     libraryDependencies ++= Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies
   )
