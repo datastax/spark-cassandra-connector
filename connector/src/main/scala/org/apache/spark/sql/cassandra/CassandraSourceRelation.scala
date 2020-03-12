@@ -5,7 +5,6 @@ import java.util.{Locale, UUID}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
@@ -18,7 +17,6 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
@@ -26,7 +24,7 @@ import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, Cassand
 import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
-import com.datastax.spark.connector.writer.{SqlRowWriter, TTLOption, TimestampOption, WriteConf}
+import com.datastax.spark.connector.writer.{RowWriterFactory, SqlRowWriter, TTLOption, TimestampOption, WriteConf}
 import com.datastax.spark.connector.{SomeColumns, _}
 
 sealed trait DirectJoinSetting
@@ -73,6 +71,11 @@ case class CassandraSourceRelation(
   with Logging {
 
   import CassandraSourceRelation._
+
+  //Keep implicits at the top!
+  implicit val rwf: RowWriterFactory[Row] = SqlRowWriter.Factory
+  implicit val cassandraConnector: CassandraConnector = connector
+  implicit val readconf: ReadConf = readConf
 
   def withDirectJoin(directJoinSetting: DirectJoinSetting) = {
     this.copy(directJoinSetting = directJoinSetting)
@@ -197,8 +200,6 @@ case class CassandraSourceRelation(
 
     }
 
-    implicit val rwf = SqlRowWriter.Factory
-
     val metadataEnrichedWriteConf = writeConf.copy(
       ttl = ttlWriteOption,
       timestamp = timestampWriteOption)
@@ -216,8 +217,6 @@ case class CassandraSourceRelation(
     tableSizeInBytes.getOrElse(sqlContext.conf.defaultSizeInBytes)
   }
 
-  implicit val cassandraConnector = connector
-  implicit val readconf = readConf
   private[this] val baseRdd =
     sqlContext.sparkContext.cassandraTable[CassandraSQLRow](tableRef.keyspace, tableRef.table)
 

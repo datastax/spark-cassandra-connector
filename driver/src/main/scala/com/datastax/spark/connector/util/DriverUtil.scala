@@ -14,10 +14,10 @@ object DriverUtil {
   def toOption[T](optional: Optional[T]): Option[T] =
     if (optional.isPresent) Some(optional.get()) else None
 
-  def toAddress(node: Node): Option[InetAddress] = {
+  def toAddress(node: Node): Option[InetSocketAddress] = {
     node.getEndPoint.resolve() match {
-      case address: InetSocketAddress => Option(address.getAddress)
-      case _ => toOption(node.getBroadcastAddress).map(_.getAddress)
+      case address: InetSocketAddress => Option(address)
+      case _ => toOption(node.getBroadcastAddress)
     }
   }
 }

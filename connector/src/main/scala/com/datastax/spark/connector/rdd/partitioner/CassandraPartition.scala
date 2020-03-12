@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd.partitioner
 import java.net.InetAddress
 
 import org.apache.spark.Partition
-
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
 
 /** Stores a CQL `WHERE` predicate matching a range of tokens. */

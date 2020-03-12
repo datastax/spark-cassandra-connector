@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
+
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.spark.connector.cluster.DefaultCluster
@@ -149,18 +151,99 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     conn2.withSessionDo { session => }
   }
 
+  it should "accept multiple hostnames with ports in spark.cassandra.connection.host property" in {
+    val goodHost = s"${cluster.getConnectionHost}:9042"
+    val invalidHost = s"${cluster.getConnectionHost}:32"
+    // let's connect to two addresses, of which the first one is deliberately invalid
+    val conf = sc.getConf
+    conf.set(CassandraConnectorConf.ConnectionHostParam.name, invalidHost + "," + goodHost)
+
+    // would throw exception if connection unsuccessful
+    val conn2 = CassandraConnector(conf)
+    conn2.withSessionDo { session => }
+  }
+
   it should "use compression when configured" in {
     val conf = sc.getConf
       .set(CassandraConnectorConf.CompressionParam.name, "SNAPPY")
 
     val conn = CassandraConnector(conf)
-    conn.withSessionDo { session ⇒
+    conn.withSessionDo { session =>
       session
         .getContext
         .getConfig
         .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe  "snappy"
     }
   }
+
+  /*
+  Check to see whether a parameter set in our "test-conf" is actually read, we do this by trying to
+  connect using the file and making sure the invalid ip is used.
+   */
+  it should "accept a driver profile file added to --files" in {
+    sc.addFile(ClassLoader.getSystemResource("test.conf").getFile)
+    val conf = sc.getConf
+      .set(CassandraConnectorConf.ProfileFileBasedConfigurationParam.name, "test.conf")
+    val conn = CassandraConnector(conf)
+
+    val exception = intercept[IOException] {
+      conn.withSessionDo(session => session.getContext)
+    }
+    exception.getMessage should include ("test.conf")
+    exception.getMessage should include ("6.6.6.6:9042")
+  }
+
+  it should "use a driver profile file accessed via URL" in {
+    val url = ClassLoader.getSystemResource("test.conf")
+
+    val conf = sc.getConf
+      .set(CassandraConnectorConf.ProfileFileBasedConfigurationParam.name, url.toString)
+    val conn = CassandraConnector(conf)
+
+    val exception = intercept[IOException] {
+      conn.withSessionDo(session => session.getContext)
+    }
+    exception.getMessage should include ("test.conf")
+    exception.getMessage should include ("6.6.6.6:9042")
+  }
+
+  /**
+    * Once again we don't have a good way of testing the cloud connection either, so we are just
+    * testing to make sure that it is properly in the config. To this end we are going to use an
+    * invalid bundle and just make sure it is loaded.
+    */
+  it should "use a cloud connect bundle added to --files" in {
+    sc.addFile(ClassLoader.getSystemResource("test.conf").getFile)
+
+    val conf = sc.getConf
+      .set(CassandraConnectorConf.CloudBasedConfigurationParam.name, "test.conf")
+    val conn = CassandraConnector(conf)
+
+    val exception = intercept[IOException] {
+      conn.withSessionDo(session => session.getContext)
+    }
+
+    exception.getMessage should include ("Invalid bundle")
+    exception.getMessage should include ("missing file config.json")
+  }
+
+
+  it should "use a cloud connect bundle added to URL" in {
+    val url = ClassLoader.getSystemResource("test.conf")
+
+    val conf = sc.getConf
+      .set(CassandraConnectorConf.CloudBasedConfigurationParam.name, url.toString)
+    val conn = CassandraConnector(conf)
+
+    val exception = intercept[IOException] {
+      conn.withSessionDo(session => session.getContext)
+    }
+
+    exception.getMessage should include ("Invalid bundle")
+    exception.getMessage should include ("missing file config.json")
+  }
+
+
 }
 
 

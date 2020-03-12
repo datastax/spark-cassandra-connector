@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.cql
 
+import java.net.URL
+import java.nio.file.{Files, Paths}
 import java.time.Duration
 
 import com.datastax.bdp.spark.ContinuousPagingScanner
@@ -7,12 +9,12 @@ import com.datastax.dse.driver.api.core.DseProtocolVersion
 import com.datastax.dse.driver.api.core.config.DseDriverOption
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
-import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, ProgrammaticDriverConfigLoaderBuilder}
+import com.datastax.oss.driver.api.core.config.{DriverConfigLoader, ProgrammaticDriverConfigLoaderBuilder => PDCLB}
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter, ReflectionUtil}
-import org.apache.spark.{SparkConf, SparkEnv}
+import org.apache.spark.{SparkConf, SparkEnv, SparkFiles}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -41,22 +43,19 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   @transient
   lazy private val logger = LoggerFactory.getLogger("com.datastax.spark.connector.cql.CassandraConnectionFactory")
 
-  def connectorConfigBuilder(conf: CassandraConnectorConf, initBuilder: ProgrammaticDriverConfigLoaderBuilder) = {
-    type LoaderBuilder = ProgrammaticDriverConfigLoaderBuilder
+  def connectorConfigBuilder(conf: CassandraConnectorConf, initBuilder: PDCLB) = {
 
-    def basicProperties(builder: LoaderBuilder): LoaderBuilder = {
+    def basicProperties(builder: PDCLB): PDCLB = {
       val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
       builder
         .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)) // moved from CassandraConnector
         .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
         .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
         .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
-        .withStringList(CONTACT_POINTS, conf.hosts.map(h => s"${h.getHostAddress}:${conf.port}").toList.asJava)
         .withClass(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy])
         .withClass(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy])
         .withDuration(RECONNECTION_BASE_DELAY, Duration.ofMillis(conf.minReconnectionDelayMillis))
         .withDuration(RECONNECTION_MAX_DELAY, Duration.ofMillis(conf.maxReconnectionDelayMillis))
-        .withClass(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy])
         .withInt(NETTY_ADMIN_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_ADMIN_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
@@ -68,36 +67,49 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     }
 
     // compression option cannot be set to NONE (default)
-    def compressionProperties(b: LoaderBuilder): LoaderBuilder =
-      Option(conf.compression).filter(_ != "NONE").map(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase)).getOrElse(b)
+    def compressionProperties(b: PDCLB): PDCLB =
+      Option(conf.compression)
+        .filter(_.toLowerCase != "none")
+        .fold(b)(c => b.withString(PROTOCOL_COMPRESSION, c.toLowerCase))
 
-    def localDCProperty(b: LoaderBuilder): LoaderBuilder =
+    def localDCProperty(b: PDCLB): PDCLB =
       conf.localDC.map(b.withString(LOAD_BALANCING_LOCAL_DATACENTER, _)).getOrElse(b)
 
     // add ssl properties if ssl is enabled
-    def sslProperties(builder: LoaderBuilder): LoaderBuilder = {
-      def clientAuthEnabled(value: Option[String]) =
-        if (conf.cassandraSSLConf.clientAuthEnabled) value else None
+    def ipBasedConnectionProperties(ipConf: IpBasedContactInfo) = (builder: PDCLB) => {
+      builder
+        .withStringList(CONTACT_POINTS, ipConf.hosts.map(h => s"${h.getAddress.getHostAddress}:${h.getPort}").toList.asJava)
+        .withClass(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy])
 
-      if (conf.cassandraSSLConf.enabled) {
+      def clientAuthEnabled(value: Option[String]) =
+        if (ipConf.cassandraSSLConf.clientAuthEnabled) value else None
+
+      if (ipConf.cassandraSSLConf.enabled) {
         Seq(
-          SSL_TRUSTSTORE_PATH -> conf.cassandraSSLConf.trustStorePath,
-          SSL_TRUSTSTORE_PASSWORD -> conf.cassandraSSLConf.trustStorePassword,
-          SSL_KEYSTORE_PATH -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePath),
-          SSL_KEYSTORE_PASSWORD -> clientAuthEnabled(conf.cassandraSSLConf.keyStorePassword))
+          SSL_TRUSTSTORE_PATH -> ipConf.cassandraSSLConf.trustStorePath,
+          SSL_TRUSTSTORE_PASSWORD -> ipConf.cassandraSSLConf.trustStorePassword,
+          SSL_KEYSTORE_PATH -> clientAuthEnabled(ipConf.cassandraSSLConf.keyStorePath),
+          SSL_KEYSTORE_PASSWORD -> clientAuthEnabled(ipConf.cassandraSSLConf.keyStorePassword))
           .foldLeft(builder) { case (b, (name, value)) =>
             value.map(b.withString(name, _)).getOrElse(b)
           }
           .withClass(SSL_ENGINE_FACTORY_CLASS, classOf[DefaultSslEngineFactory])
-          .withStringList(SSL_CIPHER_SUITES, conf.cassandraSSLConf.enabledAlgorithms.toList.asJava)
+          .withStringList(SSL_CIPHER_SUITES, ipConf.cassandraSSLConf.enabledAlgorithms.toList.asJava)
           .withBoolean(SSL_HOSTNAME_VALIDATION, false) // TODO: this needs to be configurable by users. Set to false for our integration tests
       } else {
         builder
       }
     }
 
-    Seq[LoaderBuilder => LoaderBuilder](basicProperties, compressionProperties, localDCProperty, sslProperties)
-      .foldLeft(initBuilder) { case (builder, properties) => properties(builder) }
+    val universalProperties: Seq[PDCLB => PDCLB] =
+      Seq( basicProperties, compressionProperties, localDCProperty)
+
+    val appliedProperties: Seq[PDCLB => PDCLB] = conf.contactInfo match {
+      case ipConf: IpBasedContactInfo => universalProperties :+ ipBasedConnectionProperties(ipConf)
+      case other => universalProperties
+    }
+
+    appliedProperties.foldLeft(initBuilder){ case (builder, properties) => properties(builder)}
   }
 
   /** Creates and configures native Cassandra connection */
@@ -105,15 +117,42 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     val configLoaderBuilder = DriverConfigLoader.programmaticBuilder()
     val configLoader = connectorConfigBuilder(conf, configLoaderBuilder).build()
 
-    val builder = CqlSession.builder()
-      .withConfigLoader(configLoader)
+    val initialBuilder = CqlSession.builder()
 
-    conf.authConf.authProvider.foreach(builder.withAuthProvider)
-    builder.withSchemaChangeListener(new MultiplexingSchemaListener())
+    val builderWithContactInfo =  conf.contactInfo match {
+      case ipConf: IpBasedContactInfo =>
+        ipConf.authConf.authProvider.fold(initialBuilder)(initialBuilder.withAuthProvider)
+          .withConfigLoader(configLoader)
+      case CloudBasedContactInfo(path, authConf) =>
+        authConf.authProvider.fold(initialBuilder)(initialBuilder.withAuthProvider)
+          .withCloudSecureConnectBundle(maybeGetLocalFile(path))
+          .withConfigLoader(configLoader)
+      case ProfileFileBasedContactInfo(path) =>
+        //Ignore all programmatic config for now ... //todo maybe allow programmatic config here by changing the profile?
+        logger.warn(s"Ignoring all programmatic configuration, only using configuration from $path")
+        initialBuilder.withConfigLoader(DriverConfigLoader.fromUrl(maybeGetLocalFile(path)))
+    }
 
-    builder.build()
+    val appName = Option(SparkEnv.get).map(env => env.conf.getAppId).getOrElse("NoAppID")
+    builderWithContactInfo
+      .withApplicationName(s"Spark-Cassandra-Connector-$appName")
+      .withSchemaChangeListener(new MultiplexingSchemaListener())
+      .build()
   }
 
+  /**
+    * Checks the Spark Temp work directory for the file in question, returning
+    * it if exists, returning a generic URL from the string if not
+    */
+  def maybeGetLocalFile(path: String): URL = {
+    val localPath = Paths.get(SparkFiles.get(path))
+    if (Files.exists(localPath)) {
+      logger.info(s"Found the $path locally at $localPath, using this file local file")
+      localPath.toUri.toURL
+    } else {
+      new URL(path)
+    }
+  }
 
   def continuousPagingEnabled(session: CqlSession): Boolean = {
     val confEnabled = SparkEnv.get.conf.getBoolean(CassandraConnectionFactory.continuousPagingParam.name, CassandraConnectionFactory.continuousPagingParam.default)
@@ -143,7 +182,6 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
       new DefaultScanner(readConf, connConf, columnNames)
     }
   }
-
 }
 
 /** Entry point for obtaining `CassandraConnectionFactory` object from [[org.apache.spark.SparkConf SparkConf]],

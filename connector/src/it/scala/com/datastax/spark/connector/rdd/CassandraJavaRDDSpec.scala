@@ -1,11 +1,11 @@
 package com.datastax.spark.connector.rdd
 
 import java.io.IOException
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnector, IpBasedContactInfo}
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import com.datastax.spark.connector.japi.CassandraRow
 import com.datastax.spark.connector.types.TypeConverter
@@ -343,7 +343,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     javaFunctions(sc).cassandraTable(ks, "test_table").collect()
 
     // doesn't work with invalid connector
-    val invalidConnector = CassandraConnector(Set(InetAddress.getByName(cluster.getConnectionHost)), port = 9999)
+    val invalidConnector = CassandraConnector(IpBasedContactInfo(Set(new InetSocketAddress(InetAddress.getByName(cluster.getConnectionHost), 9999))))
     intercept[IOException] {
       javaFunctions(sc).cassandraTable(ks, "test_table").withConnector(invalidConnector).collect()
     }

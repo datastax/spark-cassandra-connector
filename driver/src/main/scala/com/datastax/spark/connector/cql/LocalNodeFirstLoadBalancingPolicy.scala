@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.cql
 
-import java.net.{InetAddress, NetworkInterface}
+import java.net.{InetSocketAddress, NetworkInterface}
 import java.nio.ByteBuffer
 import java.util
 import java.util.UUID
@@ -159,7 +159,7 @@ object LocalNodeFirstLoadBalancingPolicy {
 
   /** Returns true if given host is local host */
   def isLocalHost(node: Node): Boolean = {
-    toAddress(node).exists(hostAddress => hostAddress.isLoopbackAddress || localAddresses.contains(hostAddress))
+    toAddress(node).exists(hostAddress => hostAddress.getAddress.isLoopbackAddress || localAddresses.contains(hostAddress.getAddress))
   }
 
   /** Sorts nodes in the following order:
@@ -186,7 +186,7 @@ object LocalNodeFirstLoadBalancingPolicy {
     * For each contact point there must be a [[Node]] in `allNodes` collection in order to determine its data center
     * name. If contact points belong to more than a single data center, an [[IllegalArgumentException]] is thrown.
     */
-  def determineDataCenter(contactPoints: Set[InetAddress], allNodes: Set[Node]): String = {
+  def determineDataCenter(contactPoints: Set[InetSocketAddress], allNodes: Set[Node]): String = {
     val dcs = allNodes
       .filter(node => toAddress(node).exists(contactPoints.contains))
       .flatMap(node => Option(node.getDatacenter))

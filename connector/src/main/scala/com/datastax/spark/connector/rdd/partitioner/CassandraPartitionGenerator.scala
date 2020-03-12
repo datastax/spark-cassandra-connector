@@ -39,6 +39,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
       .map(node =>
         DriverUtil.toAddress(node)
           .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
+      .map(_.getAddress)
       .toSet
     new TokenRange(startToken, endToken, replicas, tokenFactory)
   }
