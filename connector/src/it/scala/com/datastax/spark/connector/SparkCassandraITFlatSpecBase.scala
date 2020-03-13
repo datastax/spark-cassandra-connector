@@ -3,9 +3,10 @@ package com.datastax.spark.connector
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.util.concurrent.Executors
 
-import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
+import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion, Version}
 import com.datastax.spark.connector.cluster.ClusterProvider
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnector, DefaultAuthConfFactory}
 import com.datastax.spark.connector.embedded.SparkTemplate
 import com.datastax.spark.connector.testkit.AbstractSpec
 import com.datastax.spark.connector.util.Logging
@@ -102,6 +103,12 @@ trait SparkCassandraITSpecBase
     /**
       * Creates CassandraHiveMetastore
       */
+    //For Auth Clusters we have to wait for the default User before a connection will work
+    if (sparkConf.contains(DefaultAuthConfFactory.PasswordParam.name)) {
+      eventually(timeout(Span(60, Seconds))) {
+        CassandraConnector(sparkConf).withSessionDo(session => assert(session != null))
+      }
+    }
     val conn = CassandraConnector(sparkConf)
     conn.withSessionDo { session =>
       session.execute(
@@ -129,9 +136,24 @@ trait SparkCassandraITSpecBase
     else report(s"Skipped Because ProtcolVersion $pv >= $protocolVersion")
   }
 
+  val Cass36: Version = Version.parse("3.6.0")
+
+  def skipIfCassandraLT(cassandraVersion: Version)(f: => Unit): Unit = {
+    val verOrd = implicitly[Ordering[Version]]
+    import verOrd._
+    if (cluster.getCassandraVersion >= cassandraVersion) f
+    else report(s"Skipped because Cassandra Version ${cluster.getCassandraVersion} < $cassandraVersion")
+  }
+
   def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
     if (!(pv.getCode < protocolVersion.getCode)) f
     else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
+  }
+
+  def skipIfNotDSE(connector: CassandraConnector)(f: => Unit): Unit = {
+    val firstNodeExtras = connector.withSessionDo(_.getMetadata.getNodes.values().asScala.head.getExtras)
+    if (firstNodeExtras.containsKey(DseNodeProperties.DSE_VERSION)) f
+    else report(s"Skipped because not DSE")
   }
 
   implicit val ec = SparkCassandraITSpecBase.ec

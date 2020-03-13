@@ -427,7 +427,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   }
 
-  it should "should be joinable with a PER PARTITION LIMIT limit" in skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
+  it should "should be joinable with a PER PARTITION LIMIT limit" in skipIfCassandraLT(Cass36){
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source
       .joinWithCassandraTable(ks, wideTable, joinColumns = SomeColumns("key", "group"))

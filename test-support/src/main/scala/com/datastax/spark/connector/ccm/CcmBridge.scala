@@ -92,7 +92,7 @@ object CcmBridge {
       val streamHandler = new PumpStreamHandler(outStream, errStream)
       executor.setStreamHandler(streamHandler)
       executor.setWatchdog(watchDog)
-      val retValue = executor.execute(cli, maybeTravisFriendlyEnv.asJava)
+      val retValue = executor.execute(cli)
       if (retValue != 0) {
         logger.error(
           "Non-zero exit code ({}) returned from executing ccm command: {}", retValue, cli)
@@ -108,19 +108,4 @@ object CcmBridge {
       Try(errStream.close())
     }
   }
-
-  /**
-    * Travis uses a @/etc/sbt/jvmopts value for JVM_OPTS which
-    * destorys CCM's JVM_OPTS settings. So lets remove that if we are on travis.
-    * @return
-    */
-  def maybeTravisFriendlyEnv: Map[String,String] = {
-    if (sys.props.get("travis").nonEmpty){
-      logger.info("Removing JVM_OPTS because we are running on Travis")
-      sys.env - ("JVM_OPTS")
-    } else {
-      sys.env
-    }
-  }
-
 }

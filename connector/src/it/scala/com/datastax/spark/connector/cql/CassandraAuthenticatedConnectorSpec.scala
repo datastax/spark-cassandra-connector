@@ -11,12 +11,11 @@ import scala.collection.JavaConverters._
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase with AuthCluster {
 
-  // Wait for the default user to be created in Cassandra.
-  Thread.sleep(1000)
 
   val authConf = defaultConf
   val defaultConnConf = CassandraConnectorConf(authConf)
   val defaultContactInfo = defaultConnConf.contactInfo.asInstanceOf[IpBasedContactInfo]
+
 
   "A CassandraConnector" should "authenticate with username and password when using native protocol for valid credentials provided by AuthCluster" in {
     val conn2 = CassandraConnector(authConf)

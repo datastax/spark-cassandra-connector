@@ -40,29 +40,31 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
   }
 
   override def beforeClass {
-
-    conn.withSessionDo { session =>
-      session.execute(
-        s"""CREATE KEYSPACE IF NOT EXISTS $ks
-            |WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"""
+    skipIfNotDSE(conn)
+    {
+      conn.withSessionDo { session =>
+        session.execute(
+          s"""CREATE KEYSPACE IF NOT EXISTS $ks
+             |WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }"""
             .stripMargin)
-      makeGeometricTables(session)
+        makeGeometricTables(session)
+      }
     }
   }
 
-  "The Spark Cassandra Connector" should "find a converter for Point types" in {
+  "The Spark Cassandra Connector" should "find a converter for Point types" in skipIfNotDSE(conn){
     ColumnType.fromDriverType(DseDataTypes.POINT) should be(PointType)
   }
 
-  it should "find a converter for Polygon types" in {
+  it should "find a converter for Polygon types" in skipIfNotDSE(conn){
     ColumnType.fromDriverType(DseDataTypes.POLYGON) should be(PolygonType)
   }
 
-  it should "find a converter for LineString types" in {
+  it should "find a converter for LineString types" in skipIfNotDSE(conn){
     ColumnType.fromDriverType(DseDataTypes.LINE_STRING) should be(LineStringType)
   }
 
-  it should "read point types" in {
+  it should "read point types" in skipIfNotDSE(conn){
     val result = sc.cassandraTable(ks, "geom").select("pnt").collect
     val resultCC = sc.cassandraTable[(Point)](ks, "geom").select("pnt").collect
     val expected = Point.fromCoordinates(1.1, 2.2)
@@ -70,7 +72,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     resultCC(0) should be(expected)
   }
 
-  it should "read polygon types" in {
+  it should "read polygon types" in skipIfNotDSE(conn){
     val result = sc.cassandraTable(ks, "geom").select("poly").collect
     val resultCC = sc.cassandraTable[(Polygon)](ks, "geom").select("poly").collect
     val expected = Polygon.fromPoints(
@@ -84,7 +86,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     resultCC(0) should be(expected)
   }
 
-  it should "read linestring types" in {
+  it should "read linestring types" in skipIfNotDSE(conn){
     val result = sc.cassandraTable(ks, "geom").select("line").collect
     val resultCC = sc.cassandraTable[(LineString)](ks, "geom").select("line").collect
     val expected = LineString.fromPoints(
@@ -96,14 +98,14 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     resultCC(0) should be(expected)
   }
 
-  it should "write point types" in {
+  it should "write point types" in skipIfNotDSE(conn){
     val expected = Point.fromCoordinates(1.1, 2.2)
     sc.parallelize(Seq((2, expected))).saveToCassandra(ks, "geom", SomeColumns("k", "pnt"))
     val result = conn.withSessionDo(_.execute(s"SELECT pnt FROM $ks.geom where k = 2").one())
     result.get[Point](0, classOf[Point]) should be(expected)
   }
 
-  it should "write polygon types" in {
+  it should "write polygon types" in skipIfNotDSE(conn){
     val expected = Polygon.fromPoints(
       Point.fromCoordinates(30, 10),
       Point.fromCoordinates(40, 40),
@@ -116,7 +118,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     result.get[Polygon](0, classOf[Polygon]) should be(expected)
   }
 
-  it should "write linestring types" in {
+  it should "write linestring types" in skipIfNotDSE(conn){
     val expected = LineString.fromPoints(
       Point.fromCoordinates(30, 10),
       Point.fromCoordinates(10, 30),
@@ -129,13 +131,13 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
 
   def readGeoDF: DataFrame = spark.read.format("org.apache.spark.sql.cassandra").option("table", "geom").option("keyspace", ks).load()
 
-  "SparkSQL" should "read point types" in {
+  "SparkSQL" should "read point types" in skipIfNotDSE(conn){
     val result = readGeoDF.select("pnt").collect
     val expected = Point.fromCoordinates(1.1, 2.2)
     Point.fromWellKnownText(result(0).getString(0)) should be(expected)
   }
 
-  it should "read polygon types" in {
+  it should "read polygon types" in skipIfNotDSE(conn){
     val result = readGeoDF.select("poly").collect
     val expected = Polygon.fromPoints(
       Point.fromCoordinates(30, 10),
@@ -146,7 +148,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     Polygon.fromWellKnownText(result(0).getString(0)) should be(expected)
   }
 
-  it should "read linestring types" in {
+  it should "read linestring types" in skipIfNotDSE(conn){
     val result = readGeoDF.select("line").collect
     val expected = LineString.fromPoints(
       Point.fromCoordinates(30, 10),
@@ -157,7 +159,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
 
   def writeGeoDF(df: DataFrame): Unit = df.write.mode(SaveMode.Append).format("org.apache.spark.sql.cassandra").options(Map("table" -> "geom", "keyspace" -> ks)).save
 
-  it should "write point types" in {
+  it should "write point types" in skipIfNotDSE(conn){
     val expected = Point.fromCoordinates(1.1, 2.2)
     val df = spark.createDataFrame(Seq((3, expected.toString))).select(col("_1") as "k", col("_2") as "pnt")
     writeGeoDF(df)
@@ -165,7 +167,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     result.get[Point](0, classOf[Point]) should be(expected)
   }
 
-  it should "write polygon types" in {
+  it should "write polygon types" in skipIfNotDSE(conn){
     val expected = Polygon.fromPoints(
       Point.fromCoordinates(30, 10),
       Point.fromCoordinates(40, 40),
@@ -178,7 +180,7 @@ class GeometricTypeSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     result.get[Polygon](0, classOf[Polygon]) should be(expected)
   }
 
-  it should "write linestring types" in {
+  it should "write linestring types" in skipIfNotDSE(conn){
     val expected = LineString.fromPoints(
       Point.fromCoordinates(30, 10),
       Point.fromCoordinates(10, 30),

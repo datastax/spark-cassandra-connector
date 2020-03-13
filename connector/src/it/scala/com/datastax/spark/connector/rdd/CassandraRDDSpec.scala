@@ -790,7 +790,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     results should contain ((KeyGroup(2, 100), (2, 100, "0002")))
     results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
   }
-  it should "allow the use of PER PARTITION LIMITs " in skipIfProtocolVersionLT(V4){
+
+  it should "allow the use of PER PARTITION LIMITs " in skipIfCassandraLT(Cass36) {
     val result = sc.cassandraTable(ks, "clustering_time").perPartitionLimit(1).collect
     result.length should be (1)
   }

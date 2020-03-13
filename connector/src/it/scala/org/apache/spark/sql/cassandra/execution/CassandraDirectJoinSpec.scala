@@ -90,7 +90,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
                |})""".stripMargin)
         },
         Future {
-          report("Making table with all PV4 Datatypes")
+          info("Making table with all PV4 Datatypes")
           skipIfProtocolVersionLT(V4) {
             session.execute(
               s"""

@@ -195,7 +195,7 @@ class MultiplexingSchemaListenerTest extends FlatSpec with Matchers with Mockito
 
   it should "allow listeners to be added while triggering events" in {
     var listeners = 0
-    for (it <- 1 to 100) {
+    for (it <- 1 to 200) {
       Future (listener.addListener(new IncrementingSchemaListener()))
       Future (triggerAllEvents(5))
       Future (listener.addListener(new IncrementingSchemaListener()))

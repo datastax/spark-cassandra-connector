@@ -39,8 +39,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   it should "have larger max hosts if set" in {
     val alteredConnector = CassandraConnector(
       defaultConf
-          .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "5")
-          .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "3"))
+          .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, "12")
+          .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, "14"))
 
     // *ConnectionsPerExecutorsParam are not taken in account when retrieving session objects from global cache.
     // This results in a possibility of grabbing a session that does not have the parameters set.
@@ -48,8 +48,8 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     CassandraConnector.evictCache()
 
     val conf = alteredConnector.withSessionDo(_.getContext.getConfig.getDefaultProfile)
-    conf.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (5)
-    conf.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be (3)
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (12)
+    conf.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be (14)
   }
 
   it should "run queries" in {

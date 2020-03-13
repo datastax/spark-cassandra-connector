@@ -133,9 +133,16 @@ trait AuthCluster extends SingleClusterFixture {
       keystorePath, CcmConfig.DEFAULT_SERVER_KEYSTORE_PASSWORD,
       truststorePath, CcmConfig.DEFAULT_SERVER_TRUSTSTORE_PASSWORD
     )
-    Seq(sslConf.copy(dseConfiguration = sslConf.dseConfiguration ++ Map(
-      "authentication_options.enabled" -> "true"
-    )))
+
+    if (defaultConfig.dseEnabled) {
+      Seq(sslConf.copy(dseConfiguration = sslConf.dseConfiguration ++ Map(
+        "authentication_options.enabled" -> "true"
+      )))
+    } else {
+      Seq(sslConf.copy(cassandraConfiguration = sslConf.cassandraConfiguration ++ Map(
+        "authenticator" -> "PasswordAuthenticator"
+      )))
+    }
   }
 
   private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =

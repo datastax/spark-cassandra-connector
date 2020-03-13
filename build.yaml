@@ -22,7 +22,6 @@ cassandra:
   - '2.1'
   - '3.0'
   - '3.11'
-  - '4.0'
 
 java:
   - openjdk8

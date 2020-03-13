@@ -16,6 +16,7 @@ case class Cluster(
 
   def flush(): Unit = config.nodes.foreach(ccmBridge.flush)
 
+  def getCassandraVersion: Version = ccmBridge.getCassandraVersion
   def getDseVersion: Option[Version] = ccmBridge.getDseVersion
 
   def refreshSizeEstimates(): Unit = {

@@ -20,8 +20,73 @@ import org.scalatest.concurrent.Eventually
 class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually with Matchers {
   override lazy val conn = CassandraConnector(defaultConf)
 
+
   conn.withSessionDo { session =>
     createKeyspace(session)
+
+    def typesToCheck = {
+      val ord = implicitly[Ordering[Version]]
+      import ord._
+      if (cluster.getCassandraVersion > Cass36) {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.test_reading_types (
+             |    id bigint PRIMARY KEY,
+             |    list_val list<int>,
+             |    list_val_frozen frozen<list<int>>,
+             |    map_val map<text, int>,
+             |    map_val_frozen frozen<map<text, int>>,
+             |    set_val set<int>,
+             |    set_val_frozen frozen<set<int>>,
+             |    simple_val int,
+             |    udt_frozen_val frozen<fullname>,
+             |    udt_val fullname,
+             |    tuple_val tuple <int, int>,
+             |    tuple_val_frozen frozen<tuple<int, int>>
+             |)
+        """.stripMargin)
+        session.execute(
+          s"""
+             |insert into $ks.test_reading_types (id, simple_val, list_val, list_val_frozen,
+             |map_val, map_val_frozen, set_val, set_val_frozen, udt_val, udt_frozen_val, tuple_val,
+             |tuple_val_frozen) values
+             |(0, 1,
+             |[2, 3], [2, 3],
+             |{'four': 4, 'five': 5}, {'four': 4, 'five': 5},
+             |{6, 7}, {6, 7},
+             |{firstname: 'Joe', lastname: 'Smith'}, {firstname: 'Bredo', lastname: 'Morstoel'},
+             |(1, 1), (1, 1)) USING
+             |timestamp 1000
+           """.stripMargin)
+      } else {
+        session.execute(
+          s"""
+             |CREATE TABLE $ks.test_reading_types (
+             |    id bigint PRIMARY KEY,
+             |    list_val_frozen frozen<list<int>>,
+             |    map_val_frozen frozen<map<text, int>>,
+             |    set_val_frozen frozen<set<int>>,
+             |    simple_val int,
+             |    udt_frozen_val frozen<fullname>,
+             |    tuple_val_frozen frozen<tuple<int, int>>
+             |)
+        """.stripMargin)
+        session.execute(
+          s"""
+             |insert into $ks.test_reading_types (id, simple_val, list_val_frozen,
+             |map_val_frozen, set_val_frozen, udt_frozen_val,
+             |tuple_val_frozen) values
+             |(0, 1,
+             |[2, 3],
+             |{'four': 4, 'five': 5},
+             |{6, 7},
+             |{firstname: 'Joe', lastname: 'Smith'},
+             |(1, 1)) USING
+             |timestamp 1000
+           """.stripMargin)
+      }
+    }
+
 
     awaitAll(
       Future {
@@ -53,36 +118,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
              |    lastname text
              |)
          """.stripMargin)
-        session.execute(
-          s"""
-             |CREATE TABLE $ks.test_reading_types (
-             |    id bigint PRIMARY KEY,
-             |    list_val list<int>,
-             |    list_val_frozen frozen<list<int>>,
-             |    map_val map<text, int>,
-             |    map_val_frozen frozen<map<text, int>>,
-             |    set_val set<int>,
-             |    set_val_frozen frozen<set<int>>,
-             |    simple_val int,
-             |    udt_frozen_val frozen<fullname>,
-             |    udt_val fullname,
-             |    tuple_val tuple <int, int>,
-             |    tuple_val_frozen frozen<tuple<int, int>>
-             |)
-        """.stripMargin)
-        session.execute(
-          s"""
-             |insert into $ks.test_reading_types (id, simple_val, list_val, list_val_frozen,
-             |map_val, map_val_frozen, set_val, set_val_frozen, udt_val, udt_frozen_val, tuple_val,
-             |tuple_val_frozen) values
-             |(0, 1,
-             |[2, 3], [2, 3],
-             |{'four': 4, 'five': 5}, {'four': 4, 'five': 5},
-             |{6, 7}, {6, 7},
-             |{firstname: 'Joe', lastname: 'Smith'}, {firstname: 'Bredo', lastname: 'Morstoel'},
-             |(1, 1), (1, 1)) USING
-             |timestamp 1000
-           """.stripMargin)
+        typesToCheck
+
       },
       Future {
         session.execute(
@@ -138,9 +175,9 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
       .cassandraFormat("test_reading_types", ks)
       .option("ttl.simple_val", "simple_val_TTL").load()
 
-    val a = df.select("simple_val_TTL", "id", "map_val").collect.head.toSeq
-    val b = df.select("id", "map_val", "simple_val_TTL").collect.head.toSeq
-    val c = df.select("map_val", "simple_val_TTL", "id").collect.head.toSeq
+    val a = df.select("simple_val_TTL", "id", "map_val_frozen").collect.head.toSeq
+    val b = df.select("id", "map_val_frozen", "simple_val_TTL").collect.head.toSeq
+    val c = df.select("map_val_frozen", "simple_val_TTL", "id").collect.head.toSeq
 
     a should contain theSameElementsAs (b)
     b should contain theSameElementsAs (c)
