@@ -296,7 +296,7 @@ case class CassandraSourceRelation(
 
   /** Preserves `columns` order */
   private def eqAndInColumnFilters(columns: Seq[ColumnDef], predicates: AnalyzedPredicates): Seq[Filter] = {
-    val predicatesByColumnName = predicates.handledByCassandra.collect {
+    val predicatesByColumnName = (predicates.handledByCassandra ++ predicates.handledBySpark).collect {
       case eq @ EqualTo(column, _) => (column, eq)
       case in @ In(column, _) => (column, in)
     }.toMap

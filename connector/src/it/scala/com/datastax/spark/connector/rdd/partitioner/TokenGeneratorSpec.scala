@@ -43,7 +43,7 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
 
   val simpleTokenMap: Map[SimpleKey, Token] = conn.withSessionDo { session =>
     val resultSet = session.execute(s"SELECT key, TOKEN(key) FROM $ks.simple").all()
-    resultSet.map(row => SimpleKey(row.getInt("key")) -> row.getToken("system.TOKEN(key)")).toMap
+    resultSet.map(row => SimpleKey(row.getInt("key")) -> row.getToken(1)).toMap
   }
 
   val complexTokenMap: Map[ComplexKey, Token] = conn.withSessionDo { session =>
@@ -53,7 +53,7 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
 
     resultSet.map(row =>
       ComplexKey(row.getInt("key1"), row.getInt("key2"), row.getString("key3")) ->
-        row.getToken("system.TOKEN(key1, key2, key3)")
+        row.getToken(3)
     ).toMap
   }
 

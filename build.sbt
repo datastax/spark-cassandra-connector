@@ -1,5 +1,6 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
 import sbt.moduleFilter
+import sbt.{ModuleID, _}
 
 lazy val scala211 = "2.11.12"
 lazy val scala212 = "2.12.10"
@@ -95,4 +96,5 @@ lazy val driver = (project in file("driver"))
     name := "spark-cassandra-connector-driver",
     libraryDependencies ++= Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies
+      :+ ("org.scala-lang" % "scala-reflect" % scalaVersion.value)
   )

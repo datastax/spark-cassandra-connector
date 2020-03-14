@@ -393,7 +393,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     }
   }
 
-  it should "join with a table with all types" in {
+  it should "join with a table with all types" in skipIfProtocolVersionLT(V4){
     val left = sparkSession.createDataset(Seq("ascii"))
     val right = sparkSession.read.cassandraFormat("test_data_type", ks).load()
     val join = left.join(right, left("value") === right("a"))

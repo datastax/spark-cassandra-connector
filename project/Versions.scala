@@ -1,8 +1,4 @@
 object Versions {
-  lazy val scalaVersion = "2.11.12"
-
-  /* For `scalaBinaryVersion.value outside an sbt task. */
-  lazy val scalaBinary = scalaVersion.dropRight(2)
 
   val CommonsExec     = "1.3"
   val CommonsIO       = "2.6"

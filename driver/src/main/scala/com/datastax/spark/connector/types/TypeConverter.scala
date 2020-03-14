@@ -527,7 +527,7 @@ object TypeConverter {
       case x: String => TimestampParser.parse(x).toInstant
       case x: Long => java.time.Instant.ofEpochMilli(x)
       case x: java.sql.Timestamp => x.toInstant
-      case x => DateConverter.convert(x).toInstant
+      case x => java.time.Instant.ofEpochMilli(DateConverter.convert(x).getTime)
     }
   }
 
