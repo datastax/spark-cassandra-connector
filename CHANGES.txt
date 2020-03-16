@@ -1,3 +1,9 @@
+3.0.0
+  * Include all DS Specific Features
+     ** Todo List here
+
+*******************************************************************************
+
 2.4.2
   * Support for Scala 2.12 (SPARKC-458)
 

@@ -4,6 +4,8 @@
 
 ### Getting Started
 
+### This Section Needs Updating For Post DS Code Merge ###
+
 The Spark Cassandra Connector is built using sbt. There is a premade
 launching script for sbt so it is unneccessary to download it. To invoke
 this script you can run `./sbt/sbt` from a clone of this repository.
