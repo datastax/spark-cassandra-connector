@@ -4,8 +4,6 @@
 
 ### Getting Started
 
-### This Section Needs Updating For Post DS Code Merge ###
-
 The Spark Cassandra Connector is built using sbt. There is a premade
 launching script for sbt so it is unneccessary to download it. To invoke
 this script you can run `./sbt/sbt` from a clone of this repository.
@@ -14,11 +12,14 @@ For information on setting up your clone please follow the [Github
 Help](https://help.github.com/articles/cloning-a-repository/).
 
 Once in the sbt shell you will be able to build and run tests for the
-connector without any Spark or Cassandra nodes running. The most common
-commands to use when developing the connector are
+connector without any Spark or Cassandra nodes running. The integration tests 
+require [CCM](https://github.com/riptano/ccm) installed on your machine. 
+This can be accomplished with `pip install ccm`
+ 
+The most common commands to use when developing the connector are
 
 1. `test` - Runs the the unit tests for the project.
-2. `it:test` - Runs the integeration tests with embedded Cassandra and Spark
+2. `it:test` - Runs the integration tests with embedded Cassandra and Spark
 3. `assembly` - Builds a fat jar for using with --jars in spark submit or spark-shell
 
 The integration tests located in `spark-cassandra-connector/src/it` should
@@ -29,29 +30,47 @@ coverage.
 
 ### Sub-Projects
 
-The connector currently contains several subprojects
+The connector currently contains several sub-projects
 
-#### spark-cassandra-connector
-This subproject contains all of the actual connector code and is where
+#### connector
+This sub-project contains all of the actual connector code and is where
 any new features or tests should go. This Scala project also contains the
-Java API and related code.
+Java API and related code. Anything related to the actual connecting or modification
+of Java Driver code belongs in the next module
 
-It includes the code for building reference documentation. This 
-automatically determines what belongs in the reference file. It should 
-mostly be used for regenerating the reference file after new parameters 
-have been added or old parameters have been changed. Tests will throw 
-errors if the reference file is not up to date. To fix this run 
-`spark-cassandra-connector-unshaded/run` to update the file. It is still 
-necessary to commit the changed file after running this sub-project.
+#### driver
+All of the code relating to the Java Driver. Connection factories, row transformers
+anything which could be used for any application even if Spark is not involved.
 
-#### spark-cassandra-connector-embedded
-The code used to start the embedded services used in the integration tests. 
-This contains methods for starting up Cassandra as a thread within the running
-test code.
 
-#### spark-cassandra-connector-perf
-Code for performance based tests. Add any performance comparisons needed
-to this project.
+#### test-support
+CCM Wrapper code. Much of this code is based on the Datastax Java Driver's test code. 
+Includes code for spawning CCM as well as several modes for launching clusters
+while testing. Together this also defines which tests require seperate clusters to
+run and the parallelization used while running tests.
+
+### Test Parallelization
+
+In order to limit the number of test groups running simultaneously use the
+`TEST_PARALLEL_TASKS` environment variable. Only applies to sbt test tasks.
+
+### Set Cassandra Test Target
+Our CI Build runs through the Datastax Infrastructure and tests on all the builds
+listed in build.yaml. In addition the test-support module supports Cassandra
+or other CCM Compatible installations.
+
+If using SBT you can set
+`CCM_CASSANDRA_VERSION` to propagate a version for CCM to use during tests
+
+If you are running tests through IntelliJ or through an alternative framework (jUnit)
+set the system property `ccm.version` to the version you like.
+
+### CCM Modes
+The integration tests have a variety of modes which can be set with `CCM_CLUSTER_MODE`
+
+* Debug - Use to preserve logs of running CCM Clusters as well as the cluster directories themselves
+* Standard - Starts a new cluster which is cleaned up entirely on finish the test run
+* Developer - Does not clean up cluster on test completion, can be used when running a test multiple times for faster iteration
 
 ### Continuous Testing
 
@@ -62,7 +81,8 @@ change in the source code is detected. This is often useful to use in
 conjunction with `testOnly` which runs a single test. So if a new feature
 were being added to the integration suite `foo` you may want to run
 `~ it:testOnly foo`. Which would only run the suite you are interested in
-on a loop while you are modifying the connector code.
+on a loop while you are modifying the connector code. Use this in conjunction
+with "Developer" CCM Mode for the fastest test iteration.
 
 ### Packaging
 
