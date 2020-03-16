@@ -280,6 +280,21 @@ First we can create a Dataset and see that it has no `pushdown filters` set in t
 means all requests will go directly to Cassandra and we will require reading all of the data to `show`
 this Dataset.
 
+### Special Cassandra Catalyst Rules
+
+The Spark Cassandra Connector includes a variety of catalyst rules which rewrite internal
+Spark plans and provide unique C* specific optimizations. To load these rules you can either
+directly add the extensions to your Spark environment or they can be added via a configuration property
+
+```spark.sql.extensions = com.datastax.spark.connector.DseSparkExtensions```
+
+Within this file are the triggers for handling `ttl`, `writetime` functions as well as the
+`DirectJoinStrategy` which implements the DirectJoin optimization which replaces joins
+with Cassandra with nested lookup joins when possible. 
+
+The functions may not be automatically registered depending on your Spark version and may require
+manually registering on the Spark Session.
+
 #### Example Catalyst Optimization with Cassandra Server Side Pushdowns
 ```scala
 val df = spark
