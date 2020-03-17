@@ -1,6 +1,6 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
 import sbt.moduleFilter
-import sbt.{ModuleID, _}
+import sbt._
 
 lazy val scala211 = "2.11.12"
 lazy val scala212 = "2.12.10"
@@ -9,11 +9,18 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 // factor out common settings
 ThisBuild / scalacOptions += "-target:jvm-1.8"
 
-ThisBuild / organization := "com.datastax.dse"
-ThisBuild / publishMavenStyle := true
-ThisBuild / pomExtra := Publishing.License ++ Publishing.ExtraPom
-ThisBuild / publishTo := Publishing.Repository
+// Publishing Info
 ThisBuild / credentials ++= Publishing.Creds
+ThisBuild / homepage := Some(url("https://github.com/datastax/spark-cassandra-connector"))
+ThisBuild / licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt") )
+ThisBuild / organization := "com.datastax.spark"
+ThisBuild / organizationName := "Datastax"
+ThisBuild / organizationHomepage := Some(url("https://www.datastax.com"))
+ThisBuild / pomExtra := Publishing.OurDevelopers
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishMavenStyle := true
+ThisBuild / publishTo := Publishing.Repository
+ThisBuild / scmInfo := Publishing.OurScmInfo
 ThisBuild / version := Publishing.Version
 
 Global / resolvers ++= Seq(

@@ -65,11 +65,15 @@ object Publishing extends sbt.librarymanagement.DependencyBuilders {
       </license>
     </licenses>
 
-  val ExtraPom =
-    <scm>
-      <url>git@github.com:datastax/spark-cassandra-connector.git</url>
-      <connection>scm:git:git@github.com:datastax/spark-cassandra-connector.git</connection>
-    </scm>
+  val OurScmInfo =
+    Some(
+      ScmInfo(
+        url("https://github.com/datastax/spark-cassandra-connector"),
+        "scm:git@github.com:datastax/spark-cassandra-connector.git"
+      )
+    )
+
+  val OurDevelopers =
       <developers>
         <developer>
           <id>pkolaczk</id>
