@@ -187,8 +187,10 @@ object LocalNodeFirstLoadBalancingPolicy {
     * name. If contact points belong to more than a single data center, an [[IllegalArgumentException]] is thrown.
     */
   def determineDataCenter(contactPoints: Set[InetSocketAddress], allNodes: Set[Node]): String = {
+    val maybeResolved = contactPoints.map(x =>
+      if (x.isUnresolved) new InetSocketAddress(x.getHostString, x.getPort) else x)
     val dcs = allNodes
-      .filter(node => toAddress(node).exists(contactPoints.contains))
+      .filter(node => toAddress(node).exists(maybeResolved.contains))
       .flatMap(node => Option(node.getDatacenter))
     assert(dcs.nonEmpty, "There are no contact points in the given set of hosts")
     require(dcs.size == 1, s"Contact points contain multiple data centers: ${dcs.mkString(", ")}")
