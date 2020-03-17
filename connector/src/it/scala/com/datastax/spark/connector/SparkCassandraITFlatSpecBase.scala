@@ -4,12 +4,15 @@ import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.util.concurrent.Executors
 
 import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption.{CONNECTION_MAX_REQUESTS, CONNECTION_POOL_LOCAL_SIZE}
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
 import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion, Version}
 import com.datastax.spark.connector.cluster.ClusterProvider
 import com.datastax.spark.connector.cql.{CassandraConnector, DefaultAuthConfFactory}
 import com.datastax.spark.connector.embedded.SparkTemplate
 import com.datastax.spark.connector.testkit.AbstractSpec
 import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.writer.AsyncExecutor
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.SparkConf
@@ -98,6 +101,13 @@ trait SparkCassandraITSpecBase
   }
 
   def conn: CassandraConnector = ???
+
+  def getExecutor(session: CqlSession): AsyncExecutor[BoundStatement, AsyncResultSet] = {
+    val profile = session.getContext.getConfig.getDefaultProfile
+    val maxConcurrent = profile.getInt(CONNECTION_POOL_LOCAL_SIZE) * profile.getInt(CONNECTION_MAX_REQUESTS)
+    new AsyncExecutor[BoundStatement, AsyncResultSet](
+      stmt => session.executeAsync(stmt.setIdempotent(true)), maxConcurrent, None, None)
+  }
 
   def initHiveMetastore() {
     /**

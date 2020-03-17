@@ -72,7 +72,7 @@ object CcmBridge {
   private val logger: Logger = LoggerFactory.getLogger(classOf[CcmBridge])
 
   def execute(cli: CommandLine): Seq[String] = {
-    logger.debug("Executing: " + cli)
+    logger.info("Executing: " + cli)
 
     val watchDog: ExecuteWatchdog = new ExecuteWatchdog(TimeUnit.MINUTES.toMillis(10))
 
@@ -100,9 +100,9 @@ object CcmBridge {
       outStream.lines
     } catch {
       case _: IOException if watchDog.killedProcess() =>
-        throw new RuntimeException("The command '" + cli + "' was killed after 10 minutes")
+        throw new RuntimeException(s"The command $cli was killed after 10 minutes")
       case ex: IOException =>
-        throw new RuntimeException("The command '" + cli + "' failed to execute", ex)
+        throw new RuntimeException(s"The command $cli failed to execute", ex)
     } finally {
       Try(outStream.close())
       Try(errStream.close())

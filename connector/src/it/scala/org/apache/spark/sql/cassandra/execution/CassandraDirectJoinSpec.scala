@@ -30,53 +30,49 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
 
     conn.withSessionDo { session =>
+      val executor = getExecutor(session)
       createKeyspace(session)
       awaitAll(
         Future {
           session.execute(s"CREATE TABLE $ks.kv (k int PRIMARY KEY, v int)")
           val ps = session.prepare(s"INSERT INTO $ks.kv (k,v) VALUES (?,?)")
-          val futures = for (id <- 1 to 100) yield {
-            session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer)).toCompletableFuture
+          for (id <- 1 to 100) {
+            executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer))
           }
-          CompletableFuture.allOf(futures: _*).get
         },
         Future {
           session.execute(s"CREATE TABLE $ks.kv2 (k int PRIMARY KEY, v1 int, v2 int, v3 int, v4 int)")
           val ps = session.prepare(s"INSERT INTO $ks.kv2 (k, v1, v2, v3, v4) VALUES (?,?,?,?,?)")
-          val futures = for (id <- 1 to 100) yield {
-            session.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer)).toCompletableFuture
+          for (id <- 1 to 100) {
+            executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer))
           }
-          CompletableFuture.allOf(futures: _*).get
         },
         Future {
           session.execute(s"CREATE TABLE $ks.multikey (ka int, kb int, kc int, c int, v int, PRIMARY KEY ((ka, kb, kc), c))")
           val ps = session.prepare(s"INSERT INTO $ks.multikey (ka, kb, kc, c, v) VALUES (?,?,?,?,?)")
-          val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
+          for (id <- 1 to 100; c <- 1 to 5) {
             val jId: java.lang.Integer = id
             val jC: java.lang.Integer = c
-            session.executeAsync(ps.bind(jId, jId, jId, jC, jC)).toCompletableFuture
+            executor.executeAsync(ps.bind(jId, jId, jId, jC, jC))
           }
-          CompletableFuture.allOf(futures: _*).get
         },
         Future {
           session.execute(s"CREATE TABLE $ks.abcd (a int, b int, c int, d int, PRIMARY KEY ((a,b),c))")
           val ps = session.prepare(s"INSERT INTO $ks.abcd (a, b, c, d) VALUES (?,?,?,?)")
-          val futures = for (id <- 1 to 100; c <- 1 to 5) yield {
+          for (id <- 1 to 100; c <- 1 to 5) {
             val jId: java.lang.Integer = id
             val jC: java.lang.Integer = c
-            session.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC)).toCompletableFuture
+            executor.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC))
           }
-          CompletableFuture.allOf(futures: _*).get
         },
         Future {
           session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
           val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
-          val futures = for (id <- 1 to 100) yield {
+          for (id <- 1 to 100) {
             val jT: Instant = Instant.ofEpochMilli(id.toLong)
             val jV: java.lang.Integer = id.toInt
-            session.executeAsync(ps.bind(jT, jV)).toCompletableFuture
+            executor.executeAsync(ps.bind(jT, jV))
           }
-          CompletableFuture.allOf(futures: _*)
         },
         Future {
           session.execute(s"CREATE TYPE $ks.address (street text, city text, residents set<frozen<tuple<text, text>>>) ")
@@ -148,6 +144,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
             s"('2018-07-03','0301','Q_1','mod1', 'cov1', 'desc1')")
         }
       )
+      executor.waitForCurrentlyExecutingTasks()
     }
   }
 

@@ -48,10 +48,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       createKeyspace(session)
       val startTime = System.currentTimeMillis()
 
-      val profile = session.getContext.getConfig.getDefaultProfile
-      val maxConcurrent = profile.getInt(CONNECTION_POOL_LOCAL_SIZE) * profile.getInt(CONNECTION_MAX_REQUESTS)
-      val executor = new AsyncExecutor[BoundStatement, AsyncResultSet](
-        stmt => session.executeAsync(stmt.setIdempotent(true)), maxConcurrent, None, None)
+      val executor = getExecutor(session)
 
       awaitAll(
         Future {
