@@ -86,12 +86,13 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Defaul
       session.execute(s"CREATE TABLE $ks.$tableName(key int primary key, value text)")
       val st = session.prepare(s"INSERT INTO $ks.$tableName(key, value) VALUES(?, ?)")
       // 1M rows x 64 bytes of payload = 64 MB of data + overhead
-      for (i <- (1 to 1000000).par) {
-        val key = i.asInstanceOf[AnyRef]
-        val value = "123456789.123456789.123456789.123456789.123456789.123456789."
-        executor.executeAsync(st.bind(key, value))
+      awaitAll {
+        for (i <- (1 to 1000000)) yield {
+          val key = i.asInstanceOf[AnyRef]
+          val value = "123456789.123456789.123456789.123456789.123456789.123456789."
+          executor.executeAsync(st.bind(key, value))
+        }
       }
-      executor.waitForCurrentlyExecutingTasks()
     }
 
     cluster.refreshSizeEstimates()

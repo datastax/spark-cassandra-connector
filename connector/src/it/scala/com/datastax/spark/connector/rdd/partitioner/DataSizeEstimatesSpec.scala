@@ -17,13 +17,14 @@ class DataSizeEstimatesSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
 
     conn.withSessionDo { session =>
+      val executor = getExecutor(session)
       session.execute(s"CREATE TABLE $ks.$tableName(key int PRIMARY KEY, value VARCHAR)")
       val ps = session.prepare(s"INSERT INTO $ks.$tableName(key, value) VALUES (?, ?)")
-      val futures = for (i <- 1 to 1000) yield
-        session.executeAsync( ps.bind(
-          i.asInstanceOf[AnyRef],
-          "value" + i))
-      futures.foreach(_.toCompletableFuture.get())
+      awaitAll(
+        for (i <- 1 to 1000) yield
+          executor.executeAsync(ps.bind(i.asInstanceOf[AnyRef], "value" + i))
+      )
+      executor.waitForCurrentlyExecutingTasks()
     }
 
     cluster.refreshSizeEstimates()

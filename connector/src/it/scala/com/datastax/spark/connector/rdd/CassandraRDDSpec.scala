@@ -1,13 +1,13 @@
 package com.datastax.spark.connector.rdd
 
 import java.io.IOException
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
 import java.util.Date
-import java.util.concurrent.CompletableFuture
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
-import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
+import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
@@ -69,144 +69,144 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
       Future {
         skipIfProtocolVersionLT(V4) {
           markup(s"Making PV4 Types")
-          session.execute( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))""")
-          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)""")
-          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)""")
-          session.execute( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)""")
+          executor.execute(newInstance( s"""CREATE TABLE $ks.short_value (key INT, value SMALLINT, PRIMARY KEY (key))"""))
+          executor.execute(newInstance( s"""INSERT INTO $ks.short_value (key, value) VALUES (1,100)"""))
+          executor.execute(newInstance( s"""INSERT INTO $ks.short_value (key, value) VALUES (2,200)"""))
+          executor.execute(newInstance( s"""INSERT INTO $ks.short_value (key, value) VALUES (3,300)"""))
         }
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))""")
-        session.execute( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (1, 100, '0001')""")
-        session.execute( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (2, 100, '0002')""")
-        session.execute( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (3, 300, '0003')""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.key_value (key INT, group BIGINT, value TEXT, PRIMARY KEY (key, group))"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (1, 100, '0001')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (2, 100, '0002')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.key_value (key, group, value) VALUES (3, 300, '0003')"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.simple_kv (key INT, value TEXT, PRIMARY KEY (key))""")
-        session.execute( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (1, '0001')""")
-        session.execute( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (2, '0002')""")
-        session.execute( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.simple_kv (key INT, value TEXT, PRIMARY KEY (key))"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (1, '0001')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (2, '0002')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.simple_kv (key, value) VALUES (3, '0003')"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)""")
-        session.execute( s"""INSERT INTO $ks.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})""")
-        session.execute( s"""INSERT INTO $ks.collections (key, l, s, m) VALUES (2, null, null, null)""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.collections (key INT PRIMARY KEY, l list<text>, s set<text>, m map<text, text>)"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.collections (key, l, s, m) VALUES (1, ['item1', 'item2'], {'item1', 'item2'}, {'key1': 'value1', 'key2': 'value2'})"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.collections (key, l, s, m) VALUES (2, null, null, null)"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)""")
-        session.execute( s"""INSERT INTO $ks.blobs (key, b) VALUES (1, 0x0102030405060708090a0b0c)""")
-        session.execute( s"""INSERT INTO $ks.blobs (key, b) VALUES (2, null)""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.blobs (key INT PRIMARY KEY, b blob)"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.blobs (key, b) VALUES (1, 0x0102030405060708090a0b0c)"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.blobs (key, b) VALUES (2, null)"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))""")
-        session.execute( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 1, 'value1')""")
-        session.execute( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 2, 'value2')""")
-        session.execute( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')""")
-        session.execute( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (2, 2, 4, 'value4')""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.composite_key (key_c1 INT, key_c2 INT, group INT, value TEXT, PRIMARY KEY ((key_c1, key_c2), group))"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 1, 'value1')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 1, 2, 'value2')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (1, 2, 3, 'value3')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.composite_key (key_c1, key_c2, group, value) VALUES (2, 2, 4, 'value4')"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))""")
-        session.execute( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')""")
-        session.execute( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')""")
-        session.execute( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.clustering_time (key INT, time TIMESTAMP, value TEXT, PRIMARY KEY (key, time))"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:01', 'value1')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:02', 'value2')"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.clustering_time (key, time, value) VALUES (1, '2014-07-12 20:00:03', 'value3')"""))
       },
 
       Future {
-        session.execute( s"""CREATE TYPE $ks.address (street text, city text, zip int)""")
-        session.execute( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)""")
-        session.execute( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})""")
+        executor.execute(newInstance( s"""CREATE TYPE $ks.address (street text, city text, zip int)"""))
+        executor.execute(newInstance( s"""CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.udts(key, name, addr) VALUES (1, 'name', {street: 'Some Street', city: 'Paris', zip: 11120})"""))
       },
 
       Future {
-        session.execute( s"""CREATE TYPE $ks.nested (field int, cassandra_another_field int, cassandra_yet_another_field int)""")
-        session.execute( s"""CREATE TABLE $ks.udts_nested(cassandra_property_1 INT PRIMARY KEY, cassandra_camel_case_property text, nested frozen<nested>)""")
+        executor.execute(newInstance( s"""CREATE TYPE $ks.nested (field int, cassandra_another_field int, cassandra_yet_another_field int)"""))
+        executor.execute(newInstance( s"""CREATE TABLE $ks.udts_nested(cassandra_property_1 INT PRIMARY KEY, cassandra_camel_case_property text, nested frozen<nested>)"""))
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)""")
-        session.execute( s"""INSERT INTO $ks.tuples(key, value) VALUES (1, (1, 'first'))""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.tuples(key INT PRIMARY KEY, value FROZEN<TUPLE<INT, VARCHAR>>)"""))
+        executor.execute(newInstance( s"""INSERT INTO $ks.tuples(key, value) VALUES (1, (1, 'first'))"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_short_rows_partition(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 21, '2021')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 22, '2022')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_short_rows_partition(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 21, '2021')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows_partition(key, group, value) VALUES (20, 22, '2022')"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_short_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 21, '2021')""")
-        session.execute(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 22, '2022')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_short_rows(key INT, group INT, value VARCHAR, PRIMARY KEY (key,group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 21, '2021')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_short_rows(key, group, value) VALUES (20, 22, '2022')"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_wide_rows4(key INT, group TEXT, group2 INT, value VARCHAR, PRIMARY KEY ((key, group), group2))""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 1, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 2, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '2', 1, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (1, '2', 2, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (2, '2', 1, '2021')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_wide_rows4(key INT, group TEXT, group2 INT, value VARCHAR, PRIMARY KEY ((key, group), group2))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 1, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '1', 2, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (10, '2', 1, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (1, '2', 2, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows4(key, group, group2, value) VALUES (2, '2', 1, '2021')"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_wide_rows3(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (1, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (2, 21, '2021')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_wide_rows3(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (1, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows3(key, group, value) VALUES (2, 21, '2021')"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_wide_rows2(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 21, '2021')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 22, '2022')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_wide_rows2(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 21, '2021')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows2(key, group, value) VALUES (20, 22, '2022')"""))
       },
 
       Future {
-        session.execute(s"""CREATE TABLE $ks.delete_wide_rows1(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 21, '2021')""")
-        session.execute(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 22, '2022')""")
+        executor.execute(newInstance(s"""CREATE TABLE $ks.delete_wide_rows1(key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 21, '2021')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.delete_wide_rows1(key, group, value) VALUES (20, 22, '2022')"""))
        },
 
       Future {
-        session.execute(
+        executor.execute(newInstance(
           s"""CREATE TYPE $ks."Attachment" (
             |  "Id" text,
             |  "MimeType" text,
             |  "FileName" text
             |)
-          """.stripMargin)
-        session.execute(
+          """.stripMargin))
+        executor.execute(newInstance(
           s"""CREATE TABLE $ks."Interaction" (
             |  "Id" text PRIMARY KEY,
             |  "Attachments" map<text,frozen<"Attachment">>,
             |  "ContactId" text
             |)
-          """.stripMargin)
-        session.execute(
+          """.stripMargin))
+        executor.execute(newInstance(
           s"""INSERT INTO $ks."Interaction"(
             |  "Id",
             |  "Attachments",
@@ -217,8 +217,8 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
             |  null,
             |  'xcb9HMoQ'
             |)
-          """.stripMargin)
-        session.execute(
+          """.stripMargin))
+        executor.execute(newInstance(
           s"""UPDATE $ks."Interaction"
             |SET
             |  "Attachments" = "Attachments" + {'rVpgK':
@@ -226,65 +226,64 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
             |  "MimeType":'text/plain',
             |  "FileName":'notes.txt'}}
             |WHERE "Id" = '000000a5ixIEvmPD'
-          """.stripMargin)
+          """.stripMargin))
       },
 
       Future {
         val tableName = "caseclasstuplegrouped"
-        session.execute(s"""CREATE TABLE IF NOT EXISTS $ks.$tableName (key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 10, '1010')""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 11, '1011')""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 12, '1012')""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 20, '2020')""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 21, '2021')""")
-        session.execute(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 22, '2022')""")
+        executor.execute(newInstance(s"""CREATE TABLE IF NOT EXISTS $ks.$tableName (key INT, group INT, value VARCHAR, PRIMARY KEY (key, group))"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 10, '1010')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 11, '1011')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (10, 12, '1012')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 20, '2020')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 21, '2021')"""))
+        executor.execute(newInstance(s"""INSERT INTO $ks.$tableName (key, group, value) VALUES (20, 22, '2022')"""))
       },
       Future {
         createKeyspace(session, s""""MixedSpace"""")
-        session.execute(s"""CREATE TABLE "MixedSpace"."MixedCase"(key INT PRIMARY KEY, value INT)""")
-        session.execute(s"""CREATE TABLE "MixedSpace"."MiXEDCase"(key INT PRIMARY KEY, value INT)""")
-        session.execute(s"""CREATE TABLE "MixedSpace"."MixedCASE"(key INT PRIMARY KEY, value INT)""")
-        session.execute(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)""")
+        executor.execute(newInstance(s"""CREATE TABLE "MixedSpace"."MixedCase"(key INT PRIMARY KEY, value INT)"""))
+        executor.execute(newInstance(s"""CREATE TABLE "MixedSpace"."MiXEDCase"(key INT PRIMARY KEY, value INT)"""))
+        executor.execute(newInstance(s"""CREATE TABLE "MixedSpace"."MixedCASE"(key INT PRIMARY KEY, value INT)"""))
+        executor.execute(newInstance(s"""CREATE TABLE "MixedSpace"."MoxedCAs" (key INT PRIMARY KEY, value INT)"""))
       },
       Future {
         skipIfProtocolVersionLT(V4) {
-          session.execute(
+          executor.execute(newInstance(
             s"""
                |CREATE TABLE $ks.user(
                |  id int PRIMARY KEY,
                |  login text,
                |  firstname text,
                |  lastname text,
-               |  country text)""".stripMargin)
+               |  country text)""".stripMargin))
 
-          session.execute(
+          executor.execute(newInstance(
             s"""
                |CREATE MATERIALIZED VIEW $ks.user_by_country
                |  AS SELECT *  //denormalize ALL columns
                |  FROM user
                |  WHERE country IS NOT NULL AND id IS NOT NULL
-               |  PRIMARY KEY(country, id);""".stripMargin)
+               |  PRIMARY KEY(country, id);""".stripMargin))
 
-          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')")
+          executor.execute(newInstance(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(1, 'jdoe', 'John', 'DOE', 'US')"))
 
-          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')")
-          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')")
-          session.execute(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')")
+          executor.execute(newInstance(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(2, 'hsue', 'Helen', 'SUE', 'US')"))
+          executor.execute(newInstance(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(3, 'rsmith', 'Richard', 'SMITH', 'UK')"))
+          executor.execute(newInstance(s"INSERT INTO $ks.user(id,login,firstname,lastname,country) VALUES(4, 'doanduyhai', 'DuyHai', 'DOAN', 'FR')"))
         }
       },
       Future {
-        session.execute( s"""CREATE TABLE $ks.big_table (key INT PRIMARY KEY, value INT)""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.big_table (key INT PRIMARY KEY, value INT)"""))
         val insert = session.prepare( s"""INSERT INTO $ks.big_table(key, value) VALUES (?, ?)""")
-        for (k <- (0 until bigTableRowCount).grouped(100)) {
-          val futures = for (i <- k) yield {
-            session.executeAsync(insert.bind(i.asInstanceOf[AnyRef], i.asInstanceOf[AnyRef])).toCompletableFuture
+        awaitAll {
+          for (k <- (0 until bigTableRowCount).grouped(100); i <- k) yield {
+            executor.executeAsync(insert.bind(i.asInstanceOf[AnyRef], i.asInstanceOf[AnyRef]))
           }
-          CompletableFuture.allOf(futures: _*).get()
         }
       },
 
       Future {
-        session.execute( s"""CREATE TABLE $ks.write_time_ttl_test (id INT PRIMARY KEY, value TEXT, value2 TEXT)""")
+        executor.execute(newInstance( s"""CREATE TABLE $ks.write_time_ttl_test (id INT PRIMARY KEY, value TEXT, value2 TEXT)"""))
       },
 
       Future {
@@ -293,19 +292,20 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
           |  t frozen <tuple <int, tuple<text, double>>>
           |)""".stripMargin
 
-        session.execute(nestedTupleTable("tuple_test3"))
-        session.execute(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))")
-        session.execute(nestedTupleTable("tuple_test4"))
-        session.execute(nestedTupleTable("tuple_test5"))
+        executor.execute(newInstance(nestedTupleTable("tuple_test3")))
+        executor.execute(newInstance(s"insert into $ks.tuple_test3  (id, t) VALUES (0, (1, ('foo', 2.3)))"))
+        executor.execute(newInstance(nestedTupleTable("tuple_test4")))
+        executor.execute(newInstance(nestedTupleTable("tuple_test5")))
       },
 
       Future {
         skipIfProtocolVersionLT(V4) {
-          session.execute(s"CREATE TABLE $ks.date_test (key int primary key, dd date)")
-          session.execute(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')")
+          executor.execute(newInstance(s"CREATE TABLE $ks.date_test (key int primary key, dd date)"))
+          executor.execute(newInstance(s"INSERT INTO $ks.date_test (key, dd) VALUES (1, '1930-05-31')"))
         }
       }
     )
+    executor.waitForCurrentlyExecutingTasks()
   }
 
   "A CassandraRDD" should "allow to read a Cassandra table as Array of CassandraRow" in {
@@ -1201,20 +1201,15 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
   }
 
   it should "allow forcing a larger maxConnection based on a runtime conf change" in {
-    val expected = 10
+    val expected = 15
     val conf = sc.getConf
         .set(CassandraConnectorConf.RemoteConnectionsPerExecutorParam.name, expected.toString)
         .set(CassandraConnectorConf.LocalConnectionsPerExecutorParam.name, expected.toString)
     val rdd = sc.cassandraTable(ks, "big_table").withConnector(CassandraConnector(conf))
 
-    // *ConnectionsPerExecutorsParam are not taken in account when retrieving session objects from global cache.
-    // This results in a possibility of grabbing a session that does not have the parameters set.
-    // https://github.com/riptano/bdp/pull/11359/files#diff-a866d6dfb859aa080a01d9a55ae1e5c0R43
-    CassandraConnector.evictCache()
-
     val poolingOptions = rdd.connector.withSessionDo(_.getContext.getConfig).getDefaultProfile //TODO we gotta do something here I suppose
     poolingOptions.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (expected)
-     poolingOptions.getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE) should be (expected)
+    poolingOptions.getInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE) should be (expected)
   }
 
 

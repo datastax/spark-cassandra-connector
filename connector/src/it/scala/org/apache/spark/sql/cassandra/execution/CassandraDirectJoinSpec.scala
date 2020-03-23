@@ -36,42 +36,52 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
         Future {
           session.execute(s"CREATE TABLE $ks.kv (k int PRIMARY KEY, v int)")
           val ps = session.prepare(s"INSERT INTO $ks.kv (k,v) VALUES (?,?)")
-          for (id <- 1 to 100) {
-            executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer))
+          awaitAll {
+            for (id <- 1 to 100) yield {
+              executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer))
+            }
           }
         },
         Future {
           session.execute(s"CREATE TABLE $ks.kv2 (k int PRIMARY KEY, v1 int, v2 int, v3 int, v4 int)")
           val ps = session.prepare(s"INSERT INTO $ks.kv2 (k, v1, v2, v3, v4) VALUES (?,?,?,?,?)")
-          for (id <- 1 to 100) {
-            executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer))
+          awaitAll {
+            for (id <- 1 to 100) yield {
+              executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer, id: java.lang.Integer))
+            }
           }
         },
         Future {
           session.execute(s"CREATE TABLE $ks.multikey (ka int, kb int, kc int, c int, v int, PRIMARY KEY ((ka, kb, kc), c))")
           val ps = session.prepare(s"INSERT INTO $ks.multikey (ka, kb, kc, c, v) VALUES (?,?,?,?,?)")
-          for (id <- 1 to 100; c <- 1 to 5) {
-            val jId: java.lang.Integer = id
-            val jC: java.lang.Integer = c
-            executor.executeAsync(ps.bind(jId, jId, jId, jC, jC))
+          awaitAll {
+            for (id <- 1 to 100; c <- 1 to 5) yield {
+              val jId: java.lang.Integer = id
+              val jC: java.lang.Integer = c
+              executor.executeAsync(ps.bind(jId, jId, jId, jC, jC))
+            }
           }
         },
         Future {
           session.execute(s"CREATE TABLE $ks.abcd (a int, b int, c int, d int, PRIMARY KEY ((a,b),c))")
           val ps = session.prepare(s"INSERT INTO $ks.abcd (a, b, c, d) VALUES (?,?,?,?)")
-          for (id <- 1 to 100; c <- 1 to 5) {
-            val jId: java.lang.Integer = id
-            val jC: java.lang.Integer = c
-            executor.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC))
+          awaitAll {
+            for (id <- 1 to 100; c <- 1 to 5) yield {
+              val jId: java.lang.Integer = id
+              val jC: java.lang.Integer = c
+              executor.executeAsync(ps.bind(jId, jId + 1: java.lang.Integer, jC, jC))
+            }
           }
         },
         Future {
           session.execute(s"CREATE TABLE $ks.tstest (t timestamp, v int, PRIMARY KEY ((t),v))")
           val ps = session.prepare(s"INSERT INTO $ks.tstest (t, v) VALUES (?,?)")
-          for (id <- 1 to 100) {
-            val jT: Instant = Instant.ofEpochMilli(id.toLong)
-            val jV: java.lang.Integer = id.toInt
-            executor.executeAsync(ps.bind(jT, jV))
+          awaitAll {
+            for (id <- 1 to 100) yield {
+              val jT: Instant = Instant.ofEpochMilli(id.toLong)
+              val jV: java.lang.Integer = id.toInt
+              executor.executeAsync(ps.bind(jT, jV))
+            }
           }
         },
         Future {
@@ -144,6 +154,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
             s"('2018-07-03','0301','Q_1','mod1', 'cov1', 'desc1')")
         }
       )
+      //Just in case
       executor.waitForCurrentlyExecutingTasks()
     }
   }

@@ -31,6 +31,7 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
 
   override def beforeClass {
     CassandraConnector(defaultConf).withSessionDo { session =>
+      val executor = getExecutor(session)
 
       createKeyspace(session)
 
@@ -41,9 +42,9 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
         Future {
           session.execute(s"CREATE TABLE $ks.streaming_join (word TEXT PRIMARY KEY, count COUNTER)")
           val ps = session.prepare(s"UPDATE $ks.streaming_join set count = count + 10 where word = ?")
-          val results = (for (d <- dataSeq; word <- d) yield
-            session.executeAsync(ps.bind(word.trim)).toCompletableFuture)
-          CompletableFuture.allOf(results: _*).get
+          awaitAll(for (d <- dataSeq; word <- d) yield
+            executor.executeAsync(ps.bind(word.trim))
+          )
         },
         Future {
           session.execute(s"CREATE TABLE $ks.streaming_join_output (word TEXT PRIMARY KEY, count COUNTER)")
@@ -58,6 +59,7 @@ class RDDStreamingSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
           session.execute(s"INSERT INTO $ks.streaming_deletes (word, count) VALUES ('survival', 3)")
         }
       )
+      executor.waitForCurrentlyExecutingTasks()
     }
   }
 

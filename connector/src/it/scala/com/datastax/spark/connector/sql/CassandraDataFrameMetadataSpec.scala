@@ -23,6 +23,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
 
   conn.withSessionDo { session =>
     createKeyspace(session)
+    val executor = getExecutor(session)
 
     def typesToCheck = {
       val ord = implicitly[Ordering[Version]]
@@ -99,16 +100,15 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
           s"""INSERT INTO $ks.basic (k, c, v, v2) VALUES (?, ?, ?, ?)
              |USING TTL ? AND TIMESTAMP ?""".stripMargin)
 
-        val results = (for (x <- 1 to 100) yield {
-          session.executeAsync(prepared.bind(
+        awaitAll(for (x <- 1 to 100) yield {
+          executor.executeAsync(prepared.bind(
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             x: java.lang.Integer,
             ((x * 10000): java.lang.Integer),
-            x.toLong: java.lang.Long)).toCompletableFuture
+            x.toLong: java.lang.Long))
         })
-        CompletableFuture.allOf(results: _*).get
       },
       Future {
         session.execute(
@@ -132,6 +132,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
              |USING TTL 10000 AND TIMESTAMP 10000""".stripMargin)
       }
     )
+    executor.waitForCurrentlyExecutingTasks()
   }
 
   //Register Functions for TTL (Required for Spark < 3.0 or non DSE Spark 2.4)

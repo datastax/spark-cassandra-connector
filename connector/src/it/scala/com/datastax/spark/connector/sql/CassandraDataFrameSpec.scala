@@ -30,6 +30,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   override def beforeClass {
     conn.withSessionDo { session =>
       createKeyspace(session)
+      val executor = getExecutor(session)
 
       awaitAll(
         Future {
@@ -54,10 +55,9 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
           val prepared = session.prepare( s"""INSERT INTO $ks.kv (k, v) VALUES (?, ?)""")
 
-          val results = (for (x <- 1 to 1000) yield {
-            session.executeAsync(prepared.bind(x: java.lang.Integer, x.toString)).toCompletableFuture
+          awaitAll(for (x <- 1 to 1000) yield {
+            executor.executeAsync(prepared.bind(x: java.lang.Integer, x.toString))
           })
-          CompletableFuture.allOf(results: _*).get
         },
 
         Future {
@@ -75,6 +75,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
           }
         }
       )
+      executor.waitForCurrentlyExecutingTasks()
     }
   }
 

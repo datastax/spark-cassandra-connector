@@ -133,6 +133,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
                |)""".stripMargin)
         }
       )
+      executor.waitForCurrentlyExecutingTasks()
       println(s"Took ${(System.currentTimeMillis() - startTime) / 1000.0} Seconds to setup Suite Data")
     }
   }

@@ -5,7 +5,8 @@ import java.util.concurrent.Executors
 
 import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption.{CONNECTION_MAX_REQUESTS, CONNECTION_POOL_LOCAL_SIZE}
-import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement, SimpleStatement, Statement}
+import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion, Version}
 import com.datastax.spark.connector.cluster.ClusterProvider
 import com.datastax.spark.connector.cql.{CassandraConnector, DefaultAuthConfFactory}
@@ -102,11 +103,24 @@ trait SparkCassandraITSpecBase
 
   def conn: CassandraConnector = ???
 
-  def getExecutor(session: CqlSession): AsyncExecutor[BoundStatement, AsyncResultSet] = {
+  lazy val executor = getExecutor(CassandraConnector(sc.getConf).openSession)
+
+  def getExecutor(session: CqlSession): AsyncExecutor[Statement[_], AsyncResultSet] = {
     val profile = session.getContext.getConfig.getDefaultProfile
     val maxConcurrent = profile.getInt(CONNECTION_POOL_LOCAL_SIZE) * profile.getInt(CONNECTION_MAX_REQUESTS)
-    new AsyncExecutor[BoundStatement, AsyncResultSet](
-      stmt => session.executeAsync(stmt.setIdempotent(true)), maxConcurrent, None, None)
+    new AsyncExecutor[Statement[_], AsyncResultSet](
+      stmt => stmt match {
+        //Handling Types
+        case bs: BoundStatement => session.executeAsync(bs.setIdempotent(true))
+        case ss: SimpleStatement => session.executeAsync(ss.setIdempotent(true))
+        case unknown => throw new IllegalArgumentException(
+          s"""Extend SparkCassandraITFlatSpecBase to utilize statement type,
+             | currently does not support ${unknown.getClass}""".stripMargin)
+      },
+      maxConcurrent,
+      None,
+      None
+    )
   }
 
   def initHiveMetastore() {
@@ -121,6 +135,7 @@ trait SparkCassandraITSpecBase
     }
     val conn = CassandraConnector(sparkConf)
     conn.withSessionDo { session =>
+      val executor = getExecutor(session)
       session.execute(
         """
           |CREATE KEYSPACE IF NOT EXISTS "HiveMetaStore" WITH REPLICATION =
@@ -172,6 +187,10 @@ trait SparkCassandraITSpecBase
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
+  def awaitAll[T](units: TraversableOnce[Future[T]]): TraversableOnce[T] = {
+    Await.result(Future.sequence(units), Duration.Inf)
+  }
+
   def keyspaceCql(name: String = ks) =
     s"""
        |CREATE KEYSPACE IF NOT EXISTS $name
@@ -180,8 +199,9 @@ trait SparkCassandraITSpecBase
        |""".stripMargin
 
   def createKeyspace(session: CqlSession, name: String = ks): Unit = {
-    session.execute(s"DROP KEYSPACE IF EXISTS $name")
-    session.execute(keyspaceCql(name))
+    val ks_ex = getExecutor(session)
+    ks_ex.execute(newInstance(s"DROP KEYSPACE IF EXISTS $name"))
+    ks_ex.execute(newInstance(keyspaceCql(name)))
   }
 
   /**

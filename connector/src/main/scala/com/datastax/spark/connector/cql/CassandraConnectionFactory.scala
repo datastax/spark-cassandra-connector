@@ -46,9 +46,9 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   def connectorConfigBuilder(conf: CassandraConnectorConf, initBuilder: PDCLB) = {
 
     def basicProperties(builder: PDCLB): PDCLB = {
-      val cassandraCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
+      val localCoreThreadCount = Math.max(1, Runtime.getRuntime.availableProcessors() - 1)
       builder
-        .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(cassandraCoreThreadCount)) // moved from CassandraConnector
+        .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(localCoreThreadCount)) // moved from CassandraConnector
         .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
         .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
         .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
