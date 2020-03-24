@@ -5,7 +5,7 @@
 | What       | Where |
 | ---------- | ----- |
 | Packages   | [Spark Cassandra Connector Spark Packages Website](https://spark-packages.org/package/datastax/spark-cassandra-connector) |
-| Community  | Chat with us at [DataStax Academy's #spark-connector Slack channel](#slack) |
+| Community  | Chat with us at [https://community.datastax.com/index.html](Datastax and Cassandra Q&A) |
 | Scala Docs | Most Recent Release (2.4.2): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/) |
 
 ## Features
