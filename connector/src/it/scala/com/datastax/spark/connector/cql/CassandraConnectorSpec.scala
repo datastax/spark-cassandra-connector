@@ -117,17 +117,19 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
   }
 
   it should "not make multiple clusters when writing multiple RDDs" in {
+    val sessionCache = CassandraConnector.sessionCache
+    val originalSize = sessionCache.cache.size
+
     CassandraConnector(sc.getConf).withSessionDo { session =>
       session.execute(createKeyspaceCql)
       session.execute(s"CREATE TABLE IF NOT EXISTS $ks.pair (x int, y int, PRIMARY KEY (x))")
     }
-    for (trial <- 1 to 3) {
+    for (trial <- 1 to 4) {
       val rdd = sc.parallelize(1 to 100).map(x => (x, x)).saveToCassandra(ks, "pair")
     }
 
-    val sessionCache = CassandraConnector.sessionCache
     sessionCache.contains(CassandraConnectorConf(sc.getConf)) should be(true)
-    sessionCache.cache.size should be(1)
+    sessionCache.cache.size should be <= (originalSize + 1)
   }
 
 

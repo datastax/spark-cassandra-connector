@@ -44,6 +44,8 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
     skipIfNotDSE(conn) {
       conn.withSessionDo { session =>
+
+        val executor = getExecutor(session)
         session.execute(
           s"""CREATE KEYSPACE IF NOT EXISTS $ks
              |WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }
@@ -96,12 +98,13 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
       )
       val ps = session.prepare(s"INSERT INTO $ks.$table (key, a, b, c) VALUES (?,?,?,?)")
       val groupedRows = generatedRows.grouped(100)
-      for (group <- groupedRows) {
-        val futures = for (row <- group) yield {
-          session.executeAsync(ps.bind(row.getInt(0): JInt, row.getInt(1): JInt, row.getInt(2): JInt, row.getString(3)))
+      awaitAll(
+        for (group <- groupedRows; row <- group) yield {
+          executor.executeAsync(ps.bind(row.getInt(0): JInt, row.getInt(1): JInt, row.getInt(2): JInt, row.getString(3)))
         }
-        futures.map(_.toCompletableFuture.get())
-      }
+      )
+
+      executor.waitForCurrentlyExecutingTasks()
     }
 
     registerTableWithOptions(typesTable, tableName = typesTable)

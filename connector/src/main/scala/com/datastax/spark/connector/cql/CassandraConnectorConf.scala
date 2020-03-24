@@ -64,23 +64,12 @@ case class CassandraConnectorConf(
   timeoutBeforeCloseMillis: Int = CassandraConnectorConf.TimeoutBeforeCloseParam.default
 ) {
 
-  // For hashCode and equals we use a copy of CassandraConnectorConf with reset those properties which should be
-  // excluded from comparisons and hashCode. We could also explicitly mention those fields as excluded in calls to
-  // reflectionHashCode or reflectionEquals. However in this case we would have to mention those fields as strings
-  // and compiler would not notify us that they are missing if we change something in connector configuration
-  // and the errors could be difficult to figure out.
-  @transient
-  private lazy val comparableConf: CassandraConnectorConf = this.copy(
-    contactInfo = contactInfo,
-    localConnectionsPerExecutor = None,
-    remoteConnectionsPerExecutor = None)
-
-  override def hashCode: Int = HashCodeBuilder.reflectionHashCode(comparableConf, false)
+  override def hashCode: Int = HashCodeBuilder.reflectionHashCode(this, false)
 
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: CassandraConnectorConf if hashCode == that.hashCode =>
-        EqualsBuilder.reflectionEquals(this.comparableConf, that.comparableConf, false)
+        EqualsBuilder.reflectionEquals(this, that, false)
       case _ => false
     }
   }
