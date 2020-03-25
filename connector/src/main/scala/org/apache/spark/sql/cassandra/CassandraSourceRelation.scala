@@ -513,7 +513,6 @@ object CassandraSourceRelation extends Logging {
   private lazy val hiveConf = new HiveConf()
 
   val ReferenceSection = "Cassandra Datasource Parameters"
-  val DseReferenceSection = "DSE Exclusive Datasource Parameters"
 
   val TableSizeInBytesParam = ConfigParameter[Option[Long]](
     name = "spark.cassandra.table.size.in.bytes",
@@ -558,7 +557,7 @@ object CassandraSourceRelation extends Logging {
 
   val SearchPredicateOptimizationRatioParam = ConfigParameter[Double] (
     name = "spark.sql.dse.search.autoRatio",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = 0.03,
     description = "When Search Predicate Optimization is set to auto, Search optimizations will be " +
       "preformed if this parameter * the total number of rows is greater than the number of rows" +
@@ -567,7 +566,7 @@ object CassandraSourceRelation extends Logging {
 
   val SearchPredicateOptimizationParam = ConfigParameter[String] (
     name = "spark.sql.dse.search.enableOptimization",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = "auto",
     description =
       s"""Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
@@ -584,7 +583,7 @@ object CassandraSourceRelation extends Logging {
 
   val DirectJoinSizeRatioParam = ConfigParameter[Double] (
     name = "directJoinSizeRatio",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = 0.9d,
     description =
       s"""
@@ -596,7 +595,7 @@ object CassandraSourceRelation extends Logging {
 
   val DirectJoinSettingParam = ConfigParameter[String] (
     name = "directJoinSetting",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = "auto",
     description =
       s"""Acceptable values, "on", "off", "auto"
@@ -608,7 +607,7 @@ object CassandraSourceRelation extends Logging {
 
   val InClauseToJoinWithTableConversionThreshold = ConfigParameter[Long](
     name = "spark.sql.dse.inClauseToJoinConversionThreshold",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = 2500L,
     description =
         s"""Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
@@ -620,7 +619,7 @@ object CassandraSourceRelation extends Logging {
 
   val InClauseToFullTableScanConversionThreshold = ConfigParameter[Long](
     name = "spark.sql.dse.inClauseToFullScanConversionThreshold",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = 20000000L,
     description =
         s"""Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
@@ -634,7 +633,7 @@ object CassandraSourceRelation extends Logging {
 
   val IgnoreMissingMetaColumns = ConfigParameter[Boolean] (
     name = "ignoreMissingMetaColumns",
-    section = DseReferenceSection,
+    section = ReferenceSection,
     default = false,
     description =
       s"""Acceptable values, "true", "false"

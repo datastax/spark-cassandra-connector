@@ -1,6 +1,5 @@
 package com.datastax.spark.connector.util
 
-import com.datastax.bdp.spark.DseConnectionParams
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation
@@ -28,8 +27,7 @@ object ConfigCheck {
     CassandraSourceRelation,
     CassandraConnectorConf,
     AuthConfFactory,
-    CassandraConnectionFactory,
-    DseConnectionParams)
+    CassandraConnectionFactory)
 
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */
