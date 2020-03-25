@@ -2,6 +2,39 @@
 
 
     
+## 
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>dsefs.port</code></td>
+  <td>5598</td>
+  <td>DSE FS port</td>
+</tr>
+</table>
+
+
+## Alternative Connection Configuration Options
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>connection.config.cloud.path</code></td>
+  <td>None</td>
+  <td>Specifies a default CloudConnectionBundle file to be for this connection. Accepts URLs (including HDFS Compatible URI's) as
+and references to files passed in via --files</td>
+</tr>
+<tr>
+  <td><code>connection.config.profile.path</code></td>
+  <td>None</td>
+  <td>Specifies a default Java Driver 4.0 Profile file to be used for this connection. Accepts URLs (including HDFS Compatible URI's) as
+and references to files passed in via --files</td>
+</tr>
+</table>
+
+
 ## Cassandra Authentication Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
@@ -11,6 +44,26 @@
   <td><code>auth.conf.factory</code></td>
   <td>DefaultAuthConfFactory</td>
   <td>Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration</td>
+</tr>
+<tr>
+  <td><code>auth.qop</code></td>
+  <td>auth</td>
+  <td>Quality of protection to be used with SASL based authentication protocol (for example Kerberos) - can be: auth, int, conf</td>
+</tr>
+<tr>
+  <td><code>auth.saslProtocol</code></td>
+  <td>dse</td>
+  <td>SASL protocol name - for DSE it is the service principal short name used on the server (usually 'dse')</td>
+</tr>
+<tr>
+  <td><code>auth.serverAuthEnabled</code></td>
+  <td>true</td>
+  <td>Authenticate server when using SASL based authentication protocol</td>
+</tr>
+<tr>
+  <td><code>auth.token</code></td>
+  <td></td>
+  <td>Delegation token for SASL based authentication</td>
 </tr>
 </table>
 
@@ -22,15 +75,8 @@
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
   <td><code>connection.compression</code></td>
-  <td></td>
+  <td>NONE</td>
   <td>Compression to use (LZ4, SNAPPY or NONE)</td>
-</tr>
-<tr>
-  <td><code>connection.connections_per_executor_max</code></td>
-  <td>None</td>
-  <td>Maximum number of connections per Host set on each Executor JVM. Will be
-updated to DefaultParallelism / Executors for Spark Commands. Defaults to 1
- if not specifying and not in a Spark Env</td>
 </tr>
 <tr>
   <td><code>connection.factory</code></td>
@@ -42,54 +88,78 @@ CassandraConnectionFactory providing connections to the Cassandra cluster</td>
   <td><code>connection.host</code></td>
   <td>localhost</td>
   <td>Contact point to connect to the Cassandra cluster. A comma separated list
-may also be used. ("127.0.0.1,192.168.0.1")
+may also be used. Ports may be provided but are optional. If Ports are missing spark.cassandra.connection.port will
+ be used ("127.0.0.1:9042,192.168.0.1:9051")
       </td>
 </tr>
 <tr>
-  <td><code>connection.keep_alive_ms</code></td>
-  <td>5000</td>
+  <td><code>connection.keepAliveMS</code></td>
+  <td>3600000</td>
   <td>Period of time to keep unused connections open</td>
 </tr>
 <tr>
-  <td><code>connection.local_dc</code></td>
+  <td><code>connection.localConnectionsPerExecutor</code></td>
+  <td>None</td>
+  <td>Number of local connections set on each Executor JVM. Defaults to the number
+ of available CPU cores on the local node if not specified and not in a Spark Env</td>
+</tr>
+<tr>
+  <td><code>connection.localDC</code></td>
   <td>None</td>
   <td>The local DC to connect to (other nodes will be ignored)</td>
 </tr>
 <tr>
   <td><code>connection.port</code></td>
   <td>9042</td>
-  <td>Cassandra native connection port</td>
+  <td>Cassandra native connection port, will be set to all hosts if no individual ports are given</td>
 </tr>
 <tr>
-  <td><code>connection.reconnection_delay_ms.max</code></td>
+  <td><code>connection.quietPeriodBeforeCloseMS</code></td>
+  <td>0</td>
+  <td>The time in seconds that must pass without any additional request after requesting connection close (see Netty quiet period)</td>
+</tr>
+<tr>
+  <td><code>connection.reconnectionDelayMS.max</code></td>
   <td>60000</td>
   <td>Maximum period of time to wait before reconnecting to a dead node</td>
 </tr>
 <tr>
-  <td><code>connection.reconnection_delay_ms.min</code></td>
+  <td><code>connection.reconnectionDelayMS.min</code></td>
   <td>1000</td>
   <td>Minimum period of time to wait before reconnecting to a dead node</td>
 </tr>
 <tr>
-  <td><code>connection.timeout_ms</code></td>
+  <td><code>connection.remoteConnectionsPerExecutor</code></td>
+  <td>None</td>
+  <td>Minimum number of remote connections per Host set on each Executor JVM. Default value is
+ estimated automatically based on the total number of executors in the cluster</td>
+</tr>
+<tr>
+  <td><code>connection.timeoutBeforeCloseMS</code></td>
+  <td>15000</td>
+  <td>The time in seconds for all in-flight connections to finish after requesting connection close</td>
+</tr>
+<tr>
+  <td><code>connection.timeoutMS</code></td>
   <td>5000</td>
   <td>Maximum period of time to attempt connecting to a node</td>
 </tr>
 <tr>
   <td><code>query.retry.count</code></td>
   <td>60</td>
-  <td>Number of times to retry a timed-out query,
-Setting this to -1 means unlimited retries</td>
+  <td>Number of times to retry a timed-out query
+Setting this to -1 means unlimited retries
+      </td>
 </tr>
 <tr>
-  <td><code>read.timeout_ms</code></td>
+  <td><code>read.timeoutMS</code></td>
   <td>120000</td>
   <td>Maximum period of time to wait for a read to return </td>
 </tr>
 </table>
 
 
-## Cassandra DataFrame Source Parameters
+## Cassandra Datasource Parameters
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
 <table class="table">
@@ -107,18 +177,21 @@ Setting this to -1 means unlimited retries</td>
   <td>Used by DataFrames Internally, will be updated in a future release to
 retrieve size from Cassandra. Can be set manually now</td>
 </tr>
-</table>
-
-
-## Cassandra SQL Context Options
-**All parameters should be prefixed with <code> spark.cassandra. </code>**
-
-<table class="table">
-<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>sql.cluster</code></td>
-  <td>default</td>
-  <td>Sets the default Cluster to inherit configuration from</td>
+  <td><code>ttl</code></td>
+  <td>None</td>
+  <td>Surfaces the Cassandra Row TTL as a Column
+with the named specified. When reading use ttl.columnName=aliasForTTL. This
+can be done for every column with a TTL. When writing use writetime=columnName and the
+columname will be used to set the TTL for that row.</td>
+</tr>
+<tr>
+  <td><code>writetime</code></td>
+  <td>None</td>
+  <td>Surfaces the Cassandra Row Writetime as a Column
+with the named specified. When reading use writetime.columnName=aliasForWritetime. This
+can be done for every column with a writetime. When Writing use writetime=columnName and the
+columname will be used to set the writetime for that row.</td>
 </tr>
 </table>
 
@@ -181,18 +254,100 @@ retrieve size from Cassandra. Can be set manually now</td>
 </table>
 
 
-## Custom Cassandra Type Parameters (Expert Use Only)
+## Continuous Paging
 **All parameters should be prefixed with <code> spark.cassandra. </code>**
 
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
-  <td><code>dev.customFromDriver</code></td>
+  <td><code>spark.dse.continuousPagingEnabled</code></td>
+  <td>true</td>
+  <td>Enables DSE Continuous Paging which improves scanning performance</td>
+</tr>
+</table>
+
+
+## DSE Exclusive Datasource Parameters
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>directJoinSetting</code></td>
+  <td>auto</td>
+  <td>Acceptable values, "on", "off", "auto"
+"on" causes a direct join to happen if possible regardless of size ratio.
+"off" disables direct join even when possible
+"auto" only does a direct join when the size ratio is satisfied see directJoinSizeRatio
+      </td>
+</tr>
+<tr>
+  <td><code>directJoinSizeRatio</code></td>
+  <td>0.9</td>
+  <td>
+ Sets the threshold on when to perform a DirectJoin in place of a full table scan. When
+ the size of the (CassandraSource * thisParameter) > The other side of the join, A direct
+ join will be performed if possible.
+      </td>
+</tr>
+<tr>
+  <td><code>ignoreMissingMetaColumns</code></td>
+  <td>false</td>
+  <td>Acceptable values, "true", "false"
+"true" ignore missing meta properties
+"false" throw error if missing property is requested
+      </td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.inClauseToFullScanConversionThreshold</code></td>
+  <td>20000000</td>
+  <td>Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. It is meant to stop conversion for huge `IN` values sets
+that may cause memory problems. If this limit is exceeded full table scan is performed.
+This setting takes precedence over spark.sql.dse.inClauseToJoinConversionThreshold.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+         </td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.inClauseToJoinConversionThreshold</code></td>
+  <td>2500</td>
+  <td>Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. To disable `IN` clause conversion, set this setting to 0.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+         </td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.search.autoRatio</code></td>
+  <td>0.03</td>
+  <td>When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rowsto be returned by the solr query</td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.search.enableOptimization</code></td>
+  <td>auto</td>
+  <td>Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
+Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
+optimizations when the solr query will pull less than spark.sql.dse.search.autoRatio * the
+total table record count</td>
+</tr>
+</table>
+
+
+## Default Authentication Parameters
+**All parameters should be prefixed with <code> spark.cassandra. </code>**
+
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
+  <td><code>auth.password</code></td>
   <td>None</td>
-  <td>Provides an additional class implementing CustomDriverConverter for those
-clients that need to read non-standard primitive Cassandra types. If your Cassandra implementation
-uses a Java Driver which can read DataType.custom() you may need it this. If you are using
-OSS Cassandra this should never be used.</td>
+  <td>password for password authentication</td>
+</tr>
+<tr>
+  <td><code>auth.username</code></td>
+  <td>None</td>
+  <td>Login name for password authentication</td>
 </tr>
 </table>
 
@@ -213,14 +368,9 @@ OSS Cassandra this should never be used.</td>
   <td>Consistency level to use when reading	</td>
 </tr>
 <tr>
-  <td><code>input.fetch.size_in_rows</code></td>
+  <td><code>input.fetch.sizeInRows</code></td>
   <td>1000</td>
   <td>Number of CQL rows fetched per driver request</td>
-</tr>
-<tr>
-  <td><code>input.join.throughput_query_per_sec</code></td>
-  <td>2147483647</td>
-  <td>**Deprecated** Please use input.reads_per_sec. Maximum read throughput allowed per single core in query/s while joining RDD with Cassandra table</td>
 </tr>
 <tr>
   <td><code>input.metrics</code></td>
@@ -228,22 +378,21 @@ OSS Cassandra this should never be used.</td>
   <td>Sets whether to record connector specific metrics on write</td>
 </tr>
 <tr>
-  <td><code>input.reads_per_sec</code></td>
-  <td>2147483647</td>
-  <td>Sets max requests per core per second for joinWithCassandraTable and some Enterprise integrations</td>
+  <td><code>input.readsPerSec</code></td>
+  <td>None</td>
+  <td>Sets max requests or pages per core per second, unlimited by default.</td>
 </tr>
 <tr>
-  <td><code>input.split.size_in_mb</code></td>
-  <td>64</td>
+  <td><code>input.split.sizeInMB</code></td>
+  <td>512</td>
   <td>Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark partitions is <code>1 + 2 * SparkContext.defaultParallelism</code></td>
 </tr>
 <tr>
-  <td><code>splitCount</code></td>
+  <td><code>input.throughputMBPerSec</code></td>
   <td>None</td>
-  <td>Specify the number of Spark partitions to
-read the Cassandra table into. This parameter is
-used in SparkSql and DataFrame Options.
-      </td>
+  <td>*(Floating points allowed)* <br> Maximum read throughput allowed
+ per single core in MB/s. Effects point lookups as well as full
+ scans.</td>
 </tr>
 </table>
 
@@ -315,8 +464,8 @@ finer control see the CassandraOption class</td>
   <td>Sets whether to record connector specific metrics on write</td>
 </tr>
 <tr>
-  <td><code>output.throughput_mb_per_sec</code></td>
-  <td>2.147483647E9</td>
+  <td><code>output.throughputMBPerSec</code></td>
+  <td>None</td>
   <td>*(Floating points allowed)* <br> Maximum write throughput allowed
  per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
  as seen on a smaller job for stability</td>

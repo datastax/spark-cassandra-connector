@@ -572,7 +572,7 @@ object CassandraSourceRelation extends Logging {
     description =
       s"""Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
         |Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
-        |optimizations when the solr query will pull less than $SearchPredicateOptimizationRatioParam * the
+        |optimizations when the solr query will pull less than ${SearchPredicateOptimizationRatioParam.name} * the
         |total table record count""".stripMargin
   )
 
