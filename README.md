@@ -4,10 +4,10 @@
 
 | What       | Where |
 | ---------- | ----- |
-| Packages   | [Spark Cassandra Connector Spark Packages Website](https://spark-packages.org/package/datastax/spark-cassandra-connector) |
 | Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
-| Scala Docs | Most Recent Release (2.4.2): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/) |
-
+| Scala Docs | Most Recent Release (2.4.3): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/) |
+| Latest Production Release | [2.4.3](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/2.4.3) |
+| Latest Preview Release | [3.0-alpha](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/2.4.3) | 
 ## Features
 
 *Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
@@ -105,7 +105,7 @@ This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.4.2"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.4.3"
 
 * The default Scala version for Spark 2.0+ is 2.11 please choose the appropriate build. See the
 [FAQ](doc/FAQ.md) for more information

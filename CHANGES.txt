@@ -1,4 +1,4 @@
-3.0.0-Alpha
+3.0-Alpha
   * Include all DS Specific Features
      * Includes CassandraHiveMetastore
      * Structured Streaming Sink Support
@@ -11,6 +11,9 @@
      * More
 
 *******************************************************************************
+
+2.4.3
+  * Fix issue with Hadoop3 Compatibility
 
 2.4.2
   * Support for Scala 2.12 (SPARKC-458)
