@@ -227,13 +227,7 @@ object CassandraConnector extends Logging {
     * based on cores and executors in use
     */
   def apply(sc: SparkContext): CassandraConnector = {
-    val conf = CassandraConnectorConf(sc.getConf)
-    val numCassandraCoresPerNode = 64 // guessed typical number of CPUs in each C* node - the goal is not to be too low
-    val numExecutors: Int = math.max(Option(sc.getExecutorMemoryStatus).getOrElse(Map.empty).size, 1)
-    val remoteConnections = Math.max(1, Math.round(Math.ceil(numCassandraCoresPerNode / numExecutors).toInt))
-    val runtimeConf = conf.copy(
-      remoteConnectionsPerExecutor = conf.remoteConnectionsPerExecutor orElse Some(remoteConnections))
-    new CassandraConnector(runtimeConf)
+    CassandraConnector(sc.getConf)
   }
 
   /** Returns a CassandraConnector created from explicitly given connection configuration. */

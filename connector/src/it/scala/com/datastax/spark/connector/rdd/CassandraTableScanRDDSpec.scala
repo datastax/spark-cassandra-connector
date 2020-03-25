@@ -1,11 +1,14 @@
 package com.datastax.spark.connector.rdd
 
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
 import org.scalatest.Inspectors
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.writer.AsyncExecutor
 
 class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Inspectors {
 
@@ -75,16 +78,20 @@ class CassandraTableScanRDDSpec extends SparkCassandraITFlatSpecBase with Defaul
   override def beforeClass {
     conn.withSessionDo { session =>
 
+      val executor = getExecutor(session)
+
       session.execute(s"CREATE KEYSPACE IF NOT EXISTS $ks " +
         s"WITH REPLICATION = { 'class': 'SimpleStrategy', 'replication_factor': 1 }")
 
       session.execute(s"CREATE TABLE $ks.$tableName(key int primary key, value text)")
       val st = session.prepare(s"INSERT INTO $ks.$tableName(key, value) VALUES(?, ?)")
       // 1M rows x 64 bytes of payload = 64 MB of data + overhead
-      for (i <- (1 to 1000000).par) {
-        val key = i.asInstanceOf[AnyRef]
-        val value = "123456789.123456789.123456789.123456789.123456789.123456789."
-        session.execute(st.bind(key, value))
+      awaitAll {
+        for (i <- (1 to 1000000)) yield {
+          val key = i.asInstanceOf[AnyRef]
+          val value = "123456789.123456789.123456789.123456789.123456789.123456789."
+          executor.executeAsync(st.bind(key, value))
+        }
       }
     }
 

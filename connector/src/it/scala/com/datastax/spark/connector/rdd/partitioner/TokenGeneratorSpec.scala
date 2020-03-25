@@ -24,21 +24,23 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
 
   conn.withSessionDo { session =>
     createKeyspace(session)
+    val executor = getExecutor(session)
     awaitAll(
       Future{session.execute(s"CREATE TABLE $ks.simple(key INT PRIMARY KEY)")},
       Future{session.execute(s"CREATE TABLE $ks.complex(key1 INT, key2 INT, key3 text, PRIMARY KEY ((key1, key2, key3)))")}
     )
     val simplePS = session.prepare(s"INSERT INTO $ks.simple (key) VALUES (?)")
     val complexPS = session.prepare(s"INSERT INTO $ks.complex (key1, key2, key3) VALUES (?, ?, ?)")
-    val insertFutures =
-      simpleKeys.map( simpleKey =>
-        session.executeAsync(simplePS.bind(simpleKey.key: java.lang.Integer)).toCompletableFuture) ++
-      complexKey.map( complexKey =>
-        session.executeAsync(complexPS.bind(
+    awaitAll {
+      simpleKeys.map(simpleKey =>
+        executor.executeAsync(simplePS.bind(simpleKey.key: java.lang.Integer))) ++
+      complexKey.map(complexKey =>
+        executor.executeAsync(complexPS.bind(
           complexKey.key1: java.lang.Integer,
           complexKey.key2: java.lang.Integer,
-          complexKey.key3: java.lang.String)).toCompletableFuture)
-    CompletableFuture.allOf(insertFutures: _*)
+          complexKey.key3: java.lang.String)))
+    }
+    executor.waitForCurrentlyExecutingTasks()
   }
 
   val simpleTokenMap: Map[SimpleKey, Token] = conn.withSessionDo { session =>

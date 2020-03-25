@@ -17,6 +17,7 @@ import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.scheduler.{SparkListener, SparkListenerStageCompleted}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Seconds, Span}
 
 class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with SeparateJVM {
 
@@ -24,7 +25,7 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     super.defaultConf
       .clone()
       .set("spark.extraListeners", classOf[ConnectorMetricsListener].getName)
-      .setMaster("local[16]")
+      .setMaster("local")
       .setAppName(getClass.getSimpleName)
   )
 
@@ -139,8 +140,9 @@ class ConnectorMetricsSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     Eventually.eventually {
       stagesMetrics.size() should be(1)
     }
-    val metrics = stagesMetrics.poll()
-    Eventually.eventually {
+
+    Eventually.eventually(Eventually.timeout(Span(20, Seconds))) {
+      val metrics = stagesMetrics.poll()
       metrics.outputMetrics.recordsWritten should be(200)
       metrics.outputMetrics.bytesWritten should be(200 * 8)
     }

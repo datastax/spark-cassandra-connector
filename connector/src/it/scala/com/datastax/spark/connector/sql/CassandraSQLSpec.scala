@@ -56,7 +56,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
                |b))""".stripMargin)
         },
         Future {
-          info("Making table with all PV4 Datatypes")
           skipIfProtocolVersionLT(DefaultProtocolVersion.V4) {
             session.execute(s"""
             | CREATE TABLE $ks1.test_data_type (
@@ -97,7 +96,6 @@ class CassandraSQLSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
                 stripMargin)}
         },
         Future {
-          info("Creating an all V4 Types Table")
           skipIfProtocolVersionLT(DefaultProtocolVersion.V4){
           session.execute(s"""
               | CREATE TABLE $ks1.test_data_type1 (

@@ -9,11 +9,11 @@ import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 import AsyncExecutor.Handler
-import com.datastax.oss.driver.api.core.AllNodesFailedException
+import com.datastax.oss.driver.api.core.{AllNodesFailedException, NoNodeAvailableException}
 import com.datastax.oss.driver.api.core.connection.BusyConnectionException
 import com.datastax.oss.driver.api.core.servererrors.OverloadedException
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
 
 /** Asynchronously executes tasks but blocks if the limit of unfinished tasks is reached. */
@@ -60,6 +60,9 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
             case e: AllNodesFailedException if e.getAllErrors.asScala.values.exists(_.isInstanceOf[BusyConnectionException]) =>
               logTrace("BusyConnectionException ... Retrying")
               tryFuture()
+            case e: NoNodeAvailableException =>
+              logTrace("No Nodes Available ... Retrying")
+              tryFuture()
             case e: OverloadedException =>
               logTrace("Backpressure rejection ... Retrying")
               tryFuture()
@@ -85,7 +88,12 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
     tryFuture()
   }
 
-  /** Waits until the tasks being currently executed get completed.
+  def execute(task: T): R = {
+    Await.result(executeAsync(task), Duration(20, SECONDS))
+  }
+
+
+    /** Waits until the tasks being currently executed get completed.
     * It will not wait for tasks scheduled for execution during this method call,
     * nor tasks for which the [[executeAsync]] method did not complete. */
   def waitForCurrentlyExecutingTasks() {
