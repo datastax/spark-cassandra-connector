@@ -9,6 +9,8 @@ dist: trusty
 cache:
   directories:
     -  /home/travis/.ccm/repository
+    -  /home/travis/.m2
+    -  /home/travis/.ivy2/
 
 scala:
   - 2.11.12
