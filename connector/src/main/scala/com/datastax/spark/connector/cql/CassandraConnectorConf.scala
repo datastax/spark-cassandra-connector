@@ -109,7 +109,7 @@ object CassandraConnectorConf extends Logging {
     default = "localhost",
     description =
       s"""Contact point to connect to the Cassandra cluster. A comma separated list
-        |may also be used. Ports may be provided but are optional. If Ports are missing $ConnectionPortParam.name will
+        |may also be used. Ports may be provided but are optional. If Ports are missing ${ConnectionPortParam.name} will
         | be used ("127.0.0.1:9042,192.168.0.1:9051")
       """.stripMargin)
 
