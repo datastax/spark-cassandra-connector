@@ -32,7 +32,7 @@ object RefBuilder {
           case value => value
         }
         s"""<tr>
-            |  <td><code>${parameter.name.stripPrefix("spark.cassandra.")}</code></td>
+            |  <td><code>${parameter.name}</code></td>
             |  <td>$default</td>
             |  <td>${parameter.description}</td>
             |</tr>""".stripMargin
@@ -40,8 +40,6 @@ object RefBuilder {
 
       s"""
          |## $section
-         |**All parameters should be prefixed with <code> spark.cassandra. </code>**
-         |
          |$HtmlTableHeader
          |$paramTable
          |</table>""".stripMargin
