@@ -34,7 +34,7 @@ case class IpBasedContactInfo (
     IpBasedContactInfo(hosts.map( host => new InetSocketAddress(host, port)), authConf, cassandraSSLConf)
   }
 
-  override def endPointStr() = hosts.map(i => s"${i.getAddress}:${i.getPort}").mkString("{", ", ", "}")
+  override def endPointStr() = hosts.map(i => s"${i.getHostString}:${i.getPort}").mkString("{", ", ", "}")
 }
 
 case class CloudBasedContactInfo(path: String, authConf: AuthConf ) extends ContactInfo {
@@ -61,7 +61,8 @@ case class CassandraConnectorConf(
   readTimeoutMillis: Int = CassandraConnectorConf.ReadTimeoutParam.default,
   connectionFactory: CassandraConnectionFactory = DefaultConnectionFactory,
   quietPeriodBeforeCloseMillis: Int = CassandraConnectorConf.QuietPeriodBeforeCloseParam.default,
-  timeoutBeforeCloseMillis: Int = CassandraConnectorConf.TimeoutBeforeCloseParam.default
+  timeoutBeforeCloseMillis: Int = CassandraConnectorConf.TimeoutBeforeCloseParam.default,
+  resolveContactPoints: Boolean = CassandraConnectorConf.ResolveContactPoints.default
 ) {
 
   override def hashCode: Int = HashCodeBuilder.reflectionHashCode(this, false)
@@ -229,6 +230,15 @@ object CassandraConnectorConf extends Logging {
     deprecatedSince = "DSE 6.0.0"
   )
 
+  val ResolveContactPoints = ConfigParameter[Boolean](
+    name = "spark.cassandra.connection.resolveContactPoints",
+    section = ReferenceSection,
+    default = true,
+    description =
+      """Controls, if we need to resolve contact points at start (true), or at reconnection (false).
+        |Helpful for usage with Kubernetes or other systems with dynamic endpoints which may change
+        |while the application is running.""".stripMargin)
+
   val ReferenceSectionAlternativeConnection = "Alternative Connection Configuration Options"
 
   val CloudBasedConfigurationParam = ConfigParameter[Option[String]](
@@ -311,7 +321,8 @@ object CassandraConnectorConf extends Logging {
     default = DefaultCassandraSSLConf.keyStoreType,
     description = """Key store type""")
 
-  private def resolveHostAndPort(hostAndPort: String, defaultPort: Int): Option[InetSocketAddress] = {
+  private def maybeResolveHostAndPort(hostAndPort: String, defaultPort: Int,
+                                      resolveContactPoints: Boolean): Option[InetSocketAddress] = {
     val (hostName, port) = if (hostAndPort.contains(":")) {
       val splitStr = hostAndPort.split(":")
       if (splitStr.length!= 2) throw new IllegalArgumentException(s"Couldn't parse host $hostAndPort")
@@ -320,11 +331,15 @@ object CassandraConnectorConf extends Logging {
       (hostAndPort, defaultPort)
     }
 
-    try Some(new InetSocketAddress(InetAddress.getByName(hostName), port))
-    catch {
-      case NonFatal(e) =>
-        logError(s"Unknown host '$hostName'", e)
-        None
+    if (resolveContactPoints) {
+      try Some(new InetSocketAddress(InetAddress.getByName(hostName), port))
+      catch {
+        case NonFatal(e) =>
+          logError(s"Unknown host '$hostName'", e)
+          None
+      }
+    } else {
+      Some(InetSocketAddress.createUnresolved(hostName, port))
     }
   }
 
@@ -345,13 +360,13 @@ object CassandraConnectorConf extends Logging {
   }
 
   private def getIpBasedContactInfoFromSparkConf(conf: SparkConf): IpBasedContactInfo = {
-
+    val resolveContactPoints = conf.getBoolean(ResolveContactPoints.name, ResolveContactPoints.default)
     val port = conf.getInt(ConnectionPortParam.name, ConnectionPortParam.default)
 
     val hostsStr = conf.get(ConnectionHostParam.name, ConnectionHostParam.default)
     val hosts = for {
       hostName <- hostsStr.split(",").toSet[String]
-      hostAddress <- resolveHostAndPort(hostName.trim, port)
+      hostAddress <- maybeResolveHostAndPort(hostName.trim, port, resolveContactPoints)
     } yield hostAddress
 
     val authConf = AuthConf.fromSparkConf(conf)
@@ -395,6 +410,7 @@ object CassandraConnectorConf extends Logging {
     val readTimeout = conf.getInt(ReadTimeoutParam.name, ReadTimeoutParam.default)
     val quietPeriodBeforeClose = conf.getInt(QuietPeriodBeforeCloseParam.name, QuietPeriodBeforeCloseParam.default)
     val timeoutBeforeClose = conf.getInt(TimeoutBeforeCloseParam.name, TimeoutBeforeCloseParam.default)
+    val resolveContactPoints = conf.getBoolean(ResolveContactPoints.name, ResolveContactPoints.default)
 
     val compression = conf.getOption(CompressionParam.name).getOrElse(CompressionParam.default)
 
@@ -414,7 +430,8 @@ object CassandraConnectorConf extends Logging {
       readTimeoutMillis = readTimeout,
       connectionFactory = connectionFactory,
       quietPeriodBeforeCloseMillis = quietPeriodBeforeClose,
-      timeoutBeforeCloseMillis = timeoutBeforeClose
+      timeoutBeforeCloseMillis = timeoutBeforeClose,
+      resolveContactPoints = resolveContactPoints
     )
   }
 

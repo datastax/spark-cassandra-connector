@@ -2,6 +2,11 @@ language: scala
 jdk:
   - oraclejdk8
 
+branches:
+  only:
+  - master
+  - /b.*/
+
 sudo: required
 
 dist: trusty
