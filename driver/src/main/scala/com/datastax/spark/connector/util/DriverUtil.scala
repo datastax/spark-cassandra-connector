@@ -16,7 +16,11 @@ object DriverUtil {
 
   def toAddress(node: Node): Option[InetSocketAddress] = {
     node.getEndPoint.resolve() match {
-      case address: InetSocketAddress => Option(address)
+      case address: InetSocketAddress => if (address.isUnresolved) {
+        Option(new InetSocketAddress(address.getHostString, address.getPort))
+      } else {
+        Option(address)
+      }
       case _ => toOption(node.getBroadcastAddress)
     }
   }

@@ -61,6 +61,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(NETTY_IO_SHUTDOWN_QUIET_PERIOD, conf.quietPeriodBeforeCloseMillis / 1000)
         .withInt(NETTY_IO_SHUTDOWN_TIMEOUT, conf.timeoutBeforeCloseMillis / 1000)
         .withBoolean(NETTY_DAEMON, true)
+        .withBoolean(RESOLVE_CONTACT_POINTS, conf.resolveContactPoints)
         .withInt(MultipleRetryPolicy.MaxRetryCount, conf.queryRetryCount)
         .withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_FIRST_PAGE, Duration.ofMillis(conf.readTimeoutMillis))
         .withDuration(DseDriverOption.CONTINUOUS_PAGING_TIMEOUT_OTHER_PAGES, Duration.ofMillis(conf.readTimeoutMillis))
@@ -78,7 +79,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
     // add ssl properties if ssl is enabled
     def ipBasedConnectionProperties(ipConf: IpBasedContactInfo) = (builder: PDCLB) => {
       builder
-        .withStringList(CONTACT_POINTS, ipConf.hosts.map(h => s"${h.getAddress.getHostAddress}:${h.getPort}").toList.asJava)
+        .withStringList(CONTACT_POINTS, ipConf.hosts.map(h => s"${h.getHostString}:${h.getPort}").toList.asJava)
         .withClass(LOAD_BALANCING_POLICY_CLASS, classOf[LocalNodeFirstLoadBalancingPolicy])
 
       def clientAuthEnabled(value: Option[String]) =
