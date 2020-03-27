@@ -96,6 +96,13 @@ may also be used. Ports may be provided but are optional. If Ports are missing s
  estimated automatically based on the total number of executors in the cluster</td>
 </tr>
 <tr>
+  <td><code>spark.cassandra.connection.resolveContactPoints</code></td>
+  <td>true</td>
+  <td>Controls, if we need to resolve contact points at start (true), or at reconnection (false).
+Helpful for usage with Kubernetes or other systems with dynamic endpoints which may change
+while the application is running.</td>
+</tr>
+<tr>
   <td><code>spark.cassandra.connection.timeoutBeforeCloseMS</code></td>
   <td>15000</td>
   <td>The time in seconds for all in-flight connections to finish after requesting connection close</td>
