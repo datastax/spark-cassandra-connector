@@ -1,3 +1,20 @@
+3.0-Alpha
+  * Include all DS Specific Features
+     * Includes CassandraHiveMetastore
+     * Structured Streaming Sink Support
+     * DirectJoin Catalyst Optimziation
+     * Ttl and Writetime functions for Dataframes
+     * Astra and Java Driver 4.0 Support
+     * InJoin Optimizations
+     * Read Throttle
+     * Continuous Paging For DSE Clusters
+     * More
+
+*******************************************************************************
+
+2.4.3
+  * Fix issue with Hadoop3 Compatibility
+
 2.4.2
   * Support for Scala 2.12 (SPARKC-458)
 

@@ -4,33 +4,35 @@
 
 | What       | Where |
 | ---------- | ----- |
-| Packages   | [Spark Cassandra Connector Spark Packages Website](https://spark-packages.org/package/datastax/spark-cassandra-connector) |
-| Community  | Chat with us at [DataStax Academy's #spark-connector Slack channel](#slack) |
-| Scala Docs | Most Recent Release (2.4.2): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/) |
-
+| Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
+| Scala Docs | Most Recent Release (2.4.3): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/), [Embedded-Cassandra](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/) |
+| Latest Production Release | [2.4.3](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/2.4.3) |
+| Latest Preview Release | [3.0-alpha](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0-alpha) | 
 ## Features
 
 *Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
 
-This library lets you expose Cassandra tables as Spark RDDs, write Spark RDDs to Cassandra tables, and
-execute arbitrary CQL queries in your Spark applications.
+This library lets you expose Cassandra tables as Spark RDDs and Datasets/DataFrames, write
+Spark RDDs and Datasets/DataFrames to Cassandra tables, and execute arbitrary CQL queries
+in your Spark applications.
 
- - Compatible with Apache Cassandra version 2.0 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 2.0 (see table below)
+ - Compatible with Apache Cassandra version 2.1 or higher (see table below)
+ - Compatible with Apache Spark 1.0 through 2.4 (see table below)
  - Compatible with Scala 2.11 and 2.12
- - Exposes Cassandra tables as Spark RDDs
+ - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
  - Saves RDDs back to Cassandra by implicit `saveToCassandra` call
  - Delete rows and columns from cassandra by implicit `deleteFromCassandra` call
- - Join with a subset of Cassandra data using `joinWithCassandraTable` call
+ - Join with a subset of Cassandra data using `joinWithCassandraTable` call for RDDs, and
+   optimizes join with data in Cassandra when using Datasets/DataFrames
  - Partition RDDs according to Cassandra replication using `repartitionByCassandraReplica` call
  - Converts data types between Cassandra and Scala
  - Supports all Cassandra data types including collections
  - Filters rows on the server side via the CQL `WHERE` clause
  - Allows for execution of arbitrary CQL statements
  - Plays nice with Cassandra Virtual Nodes
- - Works with PySpark DataFrames
+ - Could be used in all languages supporting Datasets/DataFrames API: Python, R, etc.
 
 ## Version Compatibility
 
@@ -42,17 +44,18 @@ development for the next connector release in progress.
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
-| 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.0 | 3.0                   | 8             | 2.11, 2.12
-| 2.4       | 2.4           | 2.1.5*, 2.2, 3.0 | 3.0                   | 8             | 2.11                     |
-| 2.3       | 2.3           | 2.1.5*, 2.2, 3.0 | 3.0                   | 8             | 2.11                     |
-| 2.0       | 2.0, 2.1, 2.2 | 2.1.5*, 2.2, 3.0 | 3.0                   | 8             | 2.10, 2.11               |
-| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0 | 3.0                   | 7             | 2.10, 2.11               |
-| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0 | 3.0                   | 7             | 2.10, 2.11               |
-| 1.4       | 1.4           | 2.1.5*           | 2.1                   | 7             | 2.10, 2.11               |
-| 1.3       | 1.3           | 2.1.5*           | 2.1                   | 7             | 2.10, 2.11               |
-| 1.2       | 1.2           | 2.1, 2.0         | 2.1                   | 7             | 2.10, 2.11               |
-| 1.1       | 1.1, 1.0      | 2.1, 2.0         | 2.1                   | 7             | 2.10, 2.11               |
-| 1.0       | 1.0, 0.9      | 2.0              | 2.0                   | 7             | 2.10, 2.11               |
+| 3.0.0     | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.5              | 8             | 2.11, 2.12               |
+| 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11, 2.12               |
+| 2.4       | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
+| 2.3       | 2.3           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
+| 2.0       | 2.0, 2.1, 2.2 | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.10, 2.11               |
+| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0      | 3.0              | 7             | 2.10, 2.11               |
+| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0      | 3.0              | 7             | 2.10, 2.11               |
+| 1.4       | 1.4           | 2.1.5*                | 2.1              | 7             | 2.10, 2.11               |
+| 1.3       | 1.3           | 2.1.5*                | 2.1              | 7             | 2.10, 2.11               |
+| 1.2       | 1.2           | 2.1, 2.0              | 2.1              | 7             | 2.10, 2.11               |
+| 1.1       | 1.1, 1.0      | 2.1, 2.0              | 2.1              | 7             | 2.10, 2.11               |
+| 1.0       | 1.0, 0.9      | 2.0                   | 2.0              | 7             | 2.10, 2.11               |
 
 **Compatible with 2.1.X where X >= 5*
 
@@ -102,7 +105,7 @@ This project has also been published to the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.4.2"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.4.3"
 
 * The default Scala version for Spark 2.0+ is 2.11 please choose the appropriate build. See the
 [FAQ](doc/FAQ.md) for more information
