@@ -29,7 +29,7 @@ class DseSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
         (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input)))
     } catch {
       case e @ (_:NoSuchMethodException | _:NoSuchMethodError) => logWarning(
-        """Unable to register DSE Specific functions CassandraTTL and CassandraWriteTime
+        """Unable to register Cassandra Specific functions CassandraTTL and CassandraWriteTime
           |because of Spark version, use functionRegistry.registerFunction to add
           |the functions.""".stripMargin)
     }
