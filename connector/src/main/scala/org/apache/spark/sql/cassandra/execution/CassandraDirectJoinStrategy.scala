@@ -20,8 +20,8 @@ import org.apache.spark.sql.execution.{DataSourceScanExec, ProjectExec, SparkPla
   * Converts logical plans where the join target is a Cassandra derived branch with joinWithCassandraTable
   * style Join
   */
-case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Serializable {
-  import DSEDirectJoinStrategy._
+case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy with Serializable {
+  import CassandraDirectJoinStrategy._
 
   val conf = spark.sqlContext.conf
 
@@ -51,7 +51,7 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
         case PhysicalOperation(attributes, _, LogicalRelation(_: CassandraSourceRelation, _, _, _)) =>
 
           val directJoin =
-            DSEDirectJoinExec(
+            CassandraDirectJoinExec(
             leftKeys,
             rightKeys,
             joinType,
@@ -67,7 +67,7 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
           val newOutput = (newPlan.head.outputSet, newPlan.head.output.map(_.name))
           val oldOutput = (plan.outputSet, plan.output.map(_.name))
           val noMissingOutput = oldOutput._1.subsetOf(newPlan.head.outputSet)
-          require(noMissingOutput, s"DSE DirectJoin Optimization produced invalid output. Original plan output: " +
+          require(noMissingOutput, s"Cassandra DirectJoin Optimization produced invalid output. Original plan output: " +
             s"${oldOutput} was not part of ${newOutput} \nOld Plan\n${plan}\nNew Plan\n${newPlan}")
 
           newPlan
@@ -143,7 +143,7 @@ case class DSEDirectJoinStrategy(spark: SparkSession) extends Strategy with Seri
 
 }
 
-object DSEDirectJoinStrategy extends Logging {
+object CassandraDirectJoinStrategy extends Logging {
 
   /**
     * Recursively search the dependencies of an RDD for a CassandraTableScanRDD
@@ -244,7 +244,7 @@ object DSEDirectJoinStrategy extends Logging {
     *
     * This should only be called on optimized Physical Plans
     */
-  def reorderPlan(plan: SparkPlan, directJoin: DSEDirectJoinExec): SparkPlan = {
+  def reorderPlan(plan: SparkPlan, directJoin: CassandraDirectJoinExec): SparkPlan = {
     val reordered = plan match {
       //This may be the only node in the Plan
       case dataSourceScan: DataSourceScanExec

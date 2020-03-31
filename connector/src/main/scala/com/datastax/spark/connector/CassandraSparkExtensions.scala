@@ -1,15 +1,15 @@
 package com.datastax.spark.connector
 
 import org.apache.spark.sql.{SparkSessionExtensions, catalyst}
-import org.apache.spark.sql.cassandra.execution.DSEDirectJoinStrategy
+import org.apache.spark.sql.cassandra.execution.CassandraDirectJoinStrategy
 import org.apache.spark.sql.cassandra.{CassandraMetaDataRule, CassandraMetadataFunction}
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.catalyst.expressions.Expression
 
-class DseSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
+class CassandraSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    extensions.injectPlannerStrategy(DSEDirectJoinStrategy.apply)
+    extensions.injectPlannerStrategy(CassandraDirectJoinStrategy.apply)
     extensions.injectResolutionRule( session => CassandraMetaDataRule)
     try {
       val injectFunction =

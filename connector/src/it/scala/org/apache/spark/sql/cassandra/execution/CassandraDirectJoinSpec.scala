@@ -650,14 +650,14 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     }
   }
 
-  def getDirectJoin(df: Dataset[_]): Option[DSEDirectJoinExec] = {
+  def getDirectJoin(df: Dataset[_]): Option[CassandraDirectJoinExec] = {
     val plan = df.queryExecution.sparkPlan
-    plan.collectFirst{ case x: DSEDirectJoinExec => x }
+    plan.collectFirst{ case x: CassandraDirectJoinExec => x }
   }
 
   def getDirectJoin(stream: StreamingQueryWrapper) = {
     val plan = stream.streamingQuery.lastExecution.executedPlan
-    plan.collectFirst { case x: DSEDirectJoinExec => x }
+    plan.collectFirst { case x: CassandraDirectJoinExec => x }
   }
 
   def planDetails(df: Dataset[_]): String = {
