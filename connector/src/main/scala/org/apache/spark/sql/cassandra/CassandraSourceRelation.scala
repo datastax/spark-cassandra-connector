@@ -513,6 +513,7 @@ object CassandraSourceRelation extends Logging {
   private lazy val hiveConf = new HiveConf()
 
   val ReferenceSection = "Cassandra Datasource Parameters"
+  val TableOptions = "Cassandra Datasource Table Options"
 
   val TableSizeInBytesParam = ConfigParameter[Option[Long]](
     name = "spark.cassandra.table.size.in.bytes",
@@ -525,7 +526,7 @@ object CassandraSourceRelation extends Logging {
 
   val WriteTimeParam = ConfigParameter[Option[String]](
     name = "writetime",
-    section = ReferenceSection,
+    section = TableOptions,
     default = None,
     description =
       """Surfaces the Cassandra Row Writetime as a Column
@@ -536,7 +537,7 @@ object CassandraSourceRelation extends Logging {
 
   val TTLParam = ConfigParameter[Option[String]](
     name = "ttl",
-    section = ReferenceSection,
+    section = TableOptions,
     default = None,
     description =
       """Surfaces the Cassandra Row TTL as a Column
@@ -583,7 +584,7 @@ object CassandraSourceRelation extends Logging {
 
   val DirectJoinSizeRatioParam = ConfigParameter[Double] (
     name = "directJoinSizeRatio",
-    section = ReferenceSection,
+    section = TableOptions,
     default = 0.9d,
     description =
       s"""
@@ -595,7 +596,7 @@ object CassandraSourceRelation extends Logging {
 
   val DirectJoinSettingParam = ConfigParameter[String] (
     name = "directJoinSetting",
-    section = ReferenceSection,
+    section = TableOptions,
     default = "auto",
     description =
       s"""Acceptable values, "on", "off", "auto"
@@ -605,8 +606,9 @@ object CassandraSourceRelation extends Logging {
       """.stripMargin
   )
 
+
   val InClauseToJoinWithTableConversionThreshold = ConfigParameter[Long](
-    name = "spark.sql.dse.inClauseToJoinConversionThreshold",
+    name = "spark.cassandra.sql.inClauseToJoinConversionThreshold",
     section = ReferenceSection,
     default = 2500L,
     description =
@@ -617,8 +619,15 @@ object CassandraSourceRelation extends Logging {
          """.stripMargin
   )
 
+  val DseInClauseToJoinWithTableConversionThreshold = DeprecatedConfigParameter[Long](
+    name = "spark.sql.dse.inClauseToJoinConversionThreshold",
+    replacementParameter = Some(InClauseToJoinWithTableConversionThreshold),
+    deprecatedSince = "3.0.0",
+    rational = "Renamed since this is no longer DSE Specific"
+  )
+
   val InClauseToFullTableScanConversionThreshold = ConfigParameter[Long](
-    name = "spark.sql.dse.inClauseToFullScanConversionThreshold",
+    name = "spark.cassandra.sql.inClauseToFullScanConversionThreshold",
     section = ReferenceSection,
     default = 20000000L,
     description =
@@ -631,9 +640,16 @@ object CassandraSourceRelation extends Logging {
          """.stripMargin
   )
 
+  val DseInClauseToFullTableScanConversionThreshold = DeprecatedConfigParameter[Long](
+    name = "spark.sql.dse.inClauseToFullScanConversionThreshold",
+    replacementParameter = Some(InClauseToFullTableScanConversionThreshold),
+    deprecatedSince = "3.0.0",
+    rational = "Renamed because this is no longer DSE Specific"
+  )
+
   val IgnoreMissingMetaColumns = ConfigParameter[Boolean] (
     name = "ignoreMissingMetaColumns",
-    section = ReferenceSection,
+    section = TableOptions,
     default = false,
     description =
       s"""Acceptable values, "true", "false"

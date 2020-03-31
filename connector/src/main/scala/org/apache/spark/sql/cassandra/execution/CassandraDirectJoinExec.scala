@@ -14,7 +14,7 @@ import org.apache.spark.sql.execution.metric.SQLMetrics
 /**
   * A physical plan for performing a join against a CassandraTable given a set of keys.
   */
-case class DSEDirectJoinExec(
+case class CassandraDirectJoinExec(
   leftKeys: Seq[Expression],
   rightKeys: Seq[Expression],
   joinType: JoinType,
@@ -213,6 +213,6 @@ case class DSEDirectJoinExec(
       .map{ case (colref: Attribute, exp) => s"${attributeToCassandra(colref)} = ${exp}"}
       .mkString(", ")
 
-    s"DSE Direct Join [${joinString}] $keyspace.$table - $selectString${pushedWhere} "
+    s"Cassandra Direct Join [${joinString}] $keyspace.$table - $selectString${pushedWhere} "
   }
 }
