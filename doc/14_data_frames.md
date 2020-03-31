@@ -260,13 +260,15 @@ options(CassandraConnectorConf.ReadTimeoutParam.sqlOption("7000") ++ ReadConf.Ta
 ```
 
 ### Creating a New Cassandra Table From a Dataset Schema
-Spark Cassandra Connector adds a method to `Dataset` that allows it to create a new Cassandra table from
+Spark Cassandra Connector adds methods to `Dataset` that allows it to create a new Cassandra table from
 the `StructType` schema of the Dataset. This is convenient for persisting a Dataset to a new table, especially
 when the schema of the Dataset is not known (fully or at all) ahead of time (at compile time of your application).
 Once the new table is created, you can persist the Dataset to the new table using the save function described above.
 
 The partition key and clustering key of the newly generated table can be set by passing in a list of 
-names of columns which should be used as partition key and clustering key.
+names of columns which should be used as partition key and clustering key.  The
+`createCassandraTableEx` method allows further customize table structure by specifying
+sorting direction for clustering columns, and additional table options.
 
 #### Example Creating a Cassandra Table from a Dataset
 ```scala

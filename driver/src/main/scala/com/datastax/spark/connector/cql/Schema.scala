@@ -93,7 +93,17 @@ sealed trait ColumnRole
 
 case object PartitionKeyColumn extends ColumnRole
 
-case class ClusteringColumn(index: Int) extends ColumnRole
+object ClusteringColumn {
+  sealed trait SortingOrder
+  case object Ascending extends SortingOrder {
+    override def toString = "ASC"
+  }
+  case object Descending extends SortingOrder {
+    override def toString = "DESC"
+  }
+}
+case class ClusteringColumn(index: Int, sortDirection: ClusteringColumn.SortingOrder = ClusteringColumn.Ascending)
+  extends ColumnRole
 
 case object StaticColumn extends ColumnRole
 
@@ -124,8 +134,13 @@ case class ColumnDef(
   def isCounterColumn = columnType == CounterType
 
   def componentIndex = columnRole match {
-    case ClusteringColumn(i) => Some(i)
+    case ClusteringColumn(i, _) => Some(i)
     case _ => None
+  }
+
+  def sortingDirection = columnRole match {
+    case ClusteringColumn(_, v) => v
+    case _ => true
   }
 
   def cql = {
@@ -162,7 +177,9 @@ case class TableDef(
     clusteringColumns: Seq[ColumnDef],
     regularColumns: Seq[ColumnDef],
     indexes: Seq[IndexDef] = Seq.empty,
-    isView: Boolean = false) extends StructDef {
+    isView: Boolean = false,
+    ifNotExists: Boolean = false,
+    tableOptions: Map[String, String] = Map()) extends StructDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
@@ -218,11 +235,24 @@ case class TableDef(
     val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
+    val addIfNotExists = if (ifNotExists) "IF NOT EXISTS " else ""
+    val clusterOrder = if (clusteringColumns.isEmpty ||
+      clusteringColumns.forall(x => x.sortingDirection == ClusteringColumn.Ascending)) {
+      Seq()
+    } else {
+      Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.columnName) +
+          " " + x.sortingDirection).mkString(", ") + ")")
+    }
+    val allOptions = clusterOrder ++ tableOptions.map(x => x._1 + " = " + x._2)
+    val allOptionsStr = if (allOptions.isEmpty)
+      ""
+    else
+      allOptions.mkString(" WITH ", "\n  AND ", "")
 
-    s"""CREATE TABLE ${quote(keyspaceName)}.${quote(tableName)} (
+    s"""CREATE TABLE $addIfNotExists${quote(keyspaceName)}.${quote(tableName)} (
        |  $columnList,
        |  PRIMARY KEY ($primaryKeyClause)
-       |)""".stripMargin
+       |)$allOptionsStr""".stripMargin
   }
 
   type ValueRepr = CassandraRow

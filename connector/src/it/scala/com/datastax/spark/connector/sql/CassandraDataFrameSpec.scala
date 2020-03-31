@@ -3,11 +3,12 @@ package com.datastax.spark.connector.sql
 import java.io.IOException
 import java.util.concurrent.CompletableFuture
 
-import com.datastax.oss.driver.api.core.DefaultProtocolVersion
+import com.datastax.oss.driver.api.core.{CqlIdentifier, DefaultProtocolVersion}
 import com.datastax.oss.driver.api.core.`type`.DataTypes
+import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnector, ClusteringColumn}
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.cassandra._
@@ -166,6 +167,29 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
     autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
 
+  }
+
+  it should " be able to create a customized C* schema from a table" in {
+    val df = sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "kv",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+
+    df.createCassandraTableEx(ks, "kv_auto2", Seq("v"), Seq(("k", ClusteringColumn.Descending)),
+      tableOptions = Map("gc_grace_seconds" -> "1000"))
+
+    val meta = conn.withSessionDo(_.getMetadata)
+    val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto2").get()
+    autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
+    autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
+    autoTableMeta.getClusteringColumns.map(_._2) should contain (ClusteringOrder.DESC)
+    autoTableMeta.getOptions.getOrDefault(CqlIdentifier.fromCql("gc_grace_seconds"), "0").toString should equal ("1000")
   }
 
   it should " provide useful messages when creating a table with columnName mismatches" in {

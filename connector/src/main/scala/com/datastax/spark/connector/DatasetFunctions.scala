@@ -17,11 +17,11 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
   }
 
   /**
-    *  Creates a C* table based on the Dataset Struct provided. Optionally
-    *  takes in a list of partition columns or clustering columns names. When absent
-    *  the first column will be used as the partition key and there will be no clustering
-    *  keys.
-    */
+   *  Creates a C* table based on the Dataset Struct provided. Optionally
+   *  takes in a list of partition columns or clustering columns names. When absent
+   *  the first column will be used as the partition key and there will be no clustering
+   *  keys.
+   */
   def createCassandraTable(
     keyspaceName: String,
     tableName: String,
@@ -31,20 +31,42 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
     connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
 
     val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
+    val rawTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
+    val partitionKeyNames = partitionKeyColumns.getOrElse(rawTable.partitionKey.map(_.columnName))
+    val clusteringKeyNames = clusteringKeyColumns.getOrElse(Seq.empty)
+
+    createCassandraTableEx(keyspaceName, tableName, partitionKeyNames,
+      clusteringKeyNames.map((_, ClusteringColumn.Ascending)))(connector)
+  }
+
+    /**
+    *  Creates a C* table based on the Dataset Struct provided.
+    *  Takes in a list of partition columns, clustering columns names, and optionally, the table options.
+    */
+  def createCassandraTableEx(
+    keyspaceName: String,
+    tableName: String,
+    partitionKeyColumns: Seq[String],
+    clusteringKeyColumns: Seq[(String, ClusteringColumn.SortingOrder)],
+    ifNotExists: Boolean = false,
+    tableOptions: Map[String, String] = Map())(
+  implicit
+    connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
+
+    val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     val rawTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
     val columnMapping = rawTable.columnByName
 
     val columnNames = columnMapping.keys.toSet
-    val partitionKeyNames = partitionKeyColumns.getOrElse(rawTable.partitionKey.map(_.columnName))
-    val clusteringKeyNames = clusteringKeyColumns.getOrElse(Seq.empty)
+    val partitionKeyNames = partitionKeyColumns
+    val clusteringKeyNames = clusteringKeyColumns.map(_._1)
     val regularColumnNames = (columnNames -- (partitionKeyNames ++ clusteringKeyNames)).toSeq
 
     def missingColumnException(columnName: String, columnType: String) = {
       new IllegalArgumentException(
         s""""$columnName" not Found. Unable to make specified column $columnName a $columnType.
           |Available Columns: $columnNames""".stripMargin)
-
     }
 
     val table = rawTable.copy (
@@ -54,18 +76,23 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
               throw missingColumnException(partitionKeyName, "Partition Key Column")))
           .map(_.copy(columnRole = PartitionKeyColumn))
       ,
-      clusteringColumns = clusteringKeyNames
-          .map(clusteringKeyName =>
-            columnMapping.getOrElse(clusteringKeyName,
-              throw missingColumnException(clusteringKeyName, "Clustering Column")))
+      clusteringColumns = clusteringKeyColumns
+          .map(clusteringKey =>
+            (columnMapping.getOrElse(clusteringKey._1,
+              throw missingColumnException(clusteringKey._1, "Clustering Column")),
+              clusteringKey._2))
           .zipWithIndex
-          .map { case (col, index) => col.copy(columnRole = ClusteringColumn(index))}
+          .map { case (col, index) => col._1.copy(columnRole = ClusteringColumn(index, col._2))}
       ,
       regularColumns = regularColumnNames
           .map(regularColumnName =>
              columnMapping.getOrElse(regularColumnName,
                   throw missingColumnException(regularColumnName, "Regular Column")))
           .map(_.copy(columnRole = RegularColumn))
+      ,
+      ifNotExists = ifNotExists
+      ,
+      tableOptions = tableOptions
     )
 
     connector.withSessionDo(session => session.execute(table.cql))
