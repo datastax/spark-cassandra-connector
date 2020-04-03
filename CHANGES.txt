@@ -1,3 +1,11 @@
+3.0.0-Alpha2
+ * Add ReadConf Parameter to JoinWithCassandraTable Methods (SPARKC-570)
+ * Change Dse Prefixed Parameters (SPARKC-575)
+ * Update Reference Docs (SPARKC-574)
+ * Re-enable Travis CI (SPARKC-573)
+ * Control when resolution of Contact Points Occurs (SPARKC-571)
+
+
 3.0.0-Alpha
   * Include all DS Specific Features
      * Includes CassandraHiveMetastore
