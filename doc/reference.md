@@ -131,6 +131,58 @@ Setting this to -1 means unlimited retries
 <table class="table">
 <tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
 <tr>
+  <td><code>spark.cassandra.sql.inClauseToFullScanConversionThreshold</code></td>
+  <td>20000000</td>
+  <td>Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. It is meant to stop conversion for huge `IN` values sets
+that may cause memory problems. If this limit is exceeded full table scan is performed.
+This setting takes precedence over spark.cassandra.sql.inClauseToJoinConversionThreshold.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+         </td>
+</tr>
+<tr>
+  <td><code>spark.cassandra.sql.inClauseToJoinConversionThreshold</code></td>
+  <td>2500</td>
+  <td>Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. To disable `IN` clause conversion, set this setting to 0.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+         </td>
+</tr>
+<tr>
+  <td><code>spark.cassandra.sql.pushdown.additionalClasses</code></td>
+  <td></td>
+  <td>A comma separated list of classes to be used (in order) to apply additional
+ pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
+      </td>
+</tr>
+<tr>
+  <td><code>spark.cassandra.table.size.in.bytes</code></td>
+  <td>None</td>
+  <td>Used by DataFrames Internally, will be updated in a future release to
+retrieve size from Cassandra. Can be set manually now</td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.search.autoRatio</code></td>
+  <td>0.03</td>
+  <td>When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rowsto be returned by the solr query</td>
+</tr>
+<tr>
+  <td><code>spark.sql.dse.search.enableOptimization</code></td>
+  <td>auto</td>
+  <td>Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
+Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
+optimizations when the solr query will pull less than spark.sql.dse.search.autoRatio * the
+total table record count</td>
+</tr>
+</table>
+
+
+## Cassandra Datasource Table Options
+<table class="table">
+<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>
+<tr>
   <td><code>directJoinSetting</code></td>
   <td>auto</td>
   <td>Acceptable values, "on", "off", "auto"
@@ -155,52 +207,6 @@ Setting this to -1 means unlimited retries
 "true" ignore missing meta properties
 "false" throw error if missing property is requested
       </td>
-</tr>
-<tr>
-  <td><code>spark.cassandra.sql.pushdown.additionalClasses</code></td>
-  <td></td>
-  <td>A comma separated list of classes to be used (in order) to apply additional
- pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
-      </td>
-</tr>
-<tr>
-  <td><code>spark.cassandra.table.size.in.bytes</code></td>
-  <td>None</td>
-  <td>Used by DataFrames Internally, will be updated in a future release to
-retrieve size from Cassandra. Can be set manually now</td>
-</tr>
-<tr>
-  <td><code>spark.sql.dse.inClauseToFullScanConversionThreshold</code></td>
-  <td>20000000</td>
-  <td>Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
-product of all `IN` value sets exceeds this value. It is meant to stop conversion for huge `IN` values sets
-that may cause memory problems. If this limit is exceeded full table scan is performed.
-This setting takes precedence over spark.sql.dse.inClauseToJoinConversionThreshold.
-Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
-Cross product of these values has size of 24.
-         </td>
-</tr>
-<tr>
-  <td><code>spark.sql.dse.inClauseToJoinConversionThreshold</code></td>
-  <td>2500</td>
-  <td>Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
-product of all `IN` value sets exceeds this value. To disable `IN` clause conversion, set this setting to 0.
-Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
-Cross product of these values has size of 24.
-         </td>
-</tr>
-<tr>
-  <td><code>spark.sql.dse.search.autoRatio</code></td>
-  <td>0.03</td>
-  <td>When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rowsto be returned by the solr query</td>
-</tr>
-<tr>
-  <td><code>spark.sql.dse.search.enableOptimization</code></td>
-  <td>auto</td>
-  <td>Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
-Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
-optimizations when the solr query will pull less than spark.sql.dse.search.autoRatio * the
-total table record count</td>
 </tr>
 <tr>
   <td><code>ttl</code></td>

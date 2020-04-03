@@ -323,7 +323,7 @@ Spark plans and provide unique C* specific optimizations. To load these rules yo
 directly add the extensions to your Spark environment or they can be added via a configuration property
 
 ```
-spark.sql.extensions = com.datastax.spark.connector.DseSparkExtensions
+spark.sql.extensions = com.datastax.spark.connector.CassandraSparkExtensions
 ```
 
 Within this file are the triggers for handling `ttl`, `writetime` functions (`ttl` and

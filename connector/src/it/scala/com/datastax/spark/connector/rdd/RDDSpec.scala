@@ -402,14 +402,12 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     checkLeftSide(leftSide, result)
   }
 
-  it should "be joinable on both partitioning key and csdfsdfsdflustering key using on" in {
+  it should "respect a custom readConf in a join with cassandra table" in {
     val source = sc.parallelize(keys).map(x => (x, x * 100))
-    val someCass = source.joinWithCassandraTable(ks, wideTable).on(PrimaryKeyColumns)
-    val result = someCass.collect
-    val leftSide = source.collect
-    checkArrayCassandraRow(result)
-    checkLeftSide(leftSide, result)
+    val someCass = source.joinWithCassandraTable(ks, wideTable, readConf = ReadConf(splitCount = Some(1))).on(SomeColumns("key", "group"))
+    someCass.readConf.splitCount shouldBe (Some(1))
   }
+
 
   it should "be able to be limited" in {
     val source = sc.parallelize(keys).map(x => KVRow(x))

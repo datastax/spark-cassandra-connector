@@ -9,6 +9,10 @@ import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.sources.{EqualTo, Filter, In, IsNotNull}
 
+
+/**
+  *  A series of pushdown rules that only apply when connecting to Datastax Enterprise
+  */
 object DsePredicateRules extends CassandraPredicateRules {
 
   override def apply(
