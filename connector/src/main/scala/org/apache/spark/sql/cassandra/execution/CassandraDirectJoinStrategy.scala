@@ -26,7 +26,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
   val conf = spark.sqlContext.conf
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
+    case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right, _)
       if hasValidDirectJoin(joinType, leftKeys, rightKeys, condition, left, right) =>
 
       val (otherBranch, joinTargetBranch, joinKeys, buildType) = {

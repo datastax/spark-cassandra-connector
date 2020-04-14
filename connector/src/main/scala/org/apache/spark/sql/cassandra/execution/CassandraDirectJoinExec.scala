@@ -5,7 +5,7 @@ import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraLeftJoinRDD,
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.execution.unsafe.{UnsafeRowReaderFactory, UnsafeRowWriterFactory}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, Expression, GenericInternalRow, JoinedRow, UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, Expression, GenericInternalRow, JoinedRow, Predicate, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.execution.{DataSourceScanExec, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildSide}
@@ -78,7 +78,7 @@ case class CassandraDirectJoinExec(
     val unhandledConditions = Seq(unhandledEquiPredicates, condition).flatten.reduceOption(And)
 
     if (unhandledConditions.isDefined) {
-      newPredicate(unhandledConditions.get , keySource.output ++ cassandraPlan.output).eval _
+      Predicate.create(unhandledConditions.get , keySource.output ++ cassandraPlan.output).eval _
     } else {
       (r: InternalRow) => true
     }
@@ -199,7 +199,7 @@ case class CassandraDirectJoinExec(
   }
 
 
-  override def simpleString: String = {
+  override def simpleString(maxFields: Int): String = {
     val pushedWhere =
       whereClause
         .predicates.zip(whereClause.values)
