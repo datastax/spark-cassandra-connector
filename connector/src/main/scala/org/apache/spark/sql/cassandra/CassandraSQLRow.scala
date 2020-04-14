@@ -3,7 +3,7 @@ package org.apache.spark.sql.cassandra
 import java.math.BigInteger
 import java.net.InetAddress
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, LocalTime}
 import java.util.{Date, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.Geometry
@@ -16,7 +16,6 @@ import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, GettableData, TupleValue, UDTValue}
 import org.apache.spark.sql.types.Decimal
 import org.apache.spark.sql.{Row => SparkRow}
-import org.apache.spark.unsafe.types.UTF8String
 
 final class CassandraSQLRow(val metaData: CassandraRowMetadata, val columnValues: IndexedSeq[AnyRef])
   extends GettableData with SparkRow with Serializable {
@@ -68,7 +67,7 @@ object CassandraSQLRow {
 
   def toSparkSqlType(value: Any): AnyRef = {
     val sparkSqlType: PartialFunction[Any, AnyRef] = {
-      case geo: Geometry => UTF8String.fromString(geo.asWellKnownText())
+      case geo: Geometry => geo.asWellKnownText()
       case date: Date => new Timestamp(date.getTime)
       case localDate: org.joda.time.LocalDate =>
         new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis)
@@ -77,16 +76,15 @@ object CassandraSQLRow {
       case duration: java.time.Duration => duration.toMillis.asInstanceOf[AnyRef]
       case duration: CqlDuration => TypeCodecs.DURATION.format(duration)
       case instant: java.time.Instant => new java.sql.Timestamp(instant.toEpochMilli)
-      case str: String => UTF8String.fromString(str)
       case bigInteger: BigInteger => Decimal(bigInteger.toString)
       case bigDecimal: java.math.BigDecimal => Decimal(bigDecimal)
-      case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
-      case uuid: UUID => UTF8String.fromString(uuid.toString)
+      case inetAddress: InetAddress => inetAddress.getHostAddress
+      case uuid: UUID => uuid.toString
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
-      case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType): _*)
+      case udt: UDTValue => SparkRow(udt.columnValues.map(toSparkSqlType): _*)
+      case tupleValue: TupleValue => SparkRow(tupleValue.values.map(toSparkSqlType): _*)
       case dateRange: DateRange => dateRange.toString
       case _ => value.asInstanceOf[AnyRef]
     }
@@ -95,20 +93,22 @@ object CassandraSQLRow {
 
   def toUnsafeSqlType(value: Any): AnyRef = {
     val sparkSqlType: PartialFunction[Any, AnyRef] = {
-      case geom: Geometry => UTF8String.fromString(geom.asWellKnownText())
+      case geom: Geometry => geom.asWellKnownText()
       case duration: CqlDuration => TypeCodecs.DURATION.format(duration)
       case javaDate: java.util.Date => java.sql.Timestamp.from(javaDate.toInstant)
+      case localDate: java.time.LocalDate => java.sql.Date.valueOf(localDate)
       case localDate: org.joda.time.LocalDate =>
         java.time.LocalDate.of(localDate.getYear,localDate.getMonthOfYear, localDate.getDayOfMonth)
           .toEpochDay.asInstanceOf[AnyRef]
-      case inetAddress: InetAddress => UTF8String.fromString(inetAddress.getHostAddress)
-      case uuid: UUID => UTF8String.fromString(uuid.toString)
+      case inetAddress: InetAddress => inetAddress.getHostAddress
+      case uuid: UUID => uuid.toString
       case set: Set[_] => set.map(toUnsafeSqlType).toSeq
       case list: List[_] => list.map(toUnsafeSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
       case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
-      case dateRange: DateRange => UTF8String.fromString(dateRange.toString)
+      case dateRange: DateRange => dateRange.toString
+      case time: LocalTime => time.toNanoOfDay: java.lang.Long
       case instant: Instant => java.sql.Timestamp.from(instant)
       case _ => value.asInstanceOf[AnyRef]
     }

@@ -10,28 +10,8 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 class CassandraSparkExtensions extends (SparkSessionExtensions => Unit) with Logging {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     extensions.injectPlannerStrategy(CassandraDirectJoinStrategy.apply)
-    extensions.injectResolutionRule( session => CassandraMetaDataRule)
-    try {
-      val injectFunction =
-        extensions.getClass.getMethod(
-          "injectFunction",classOf[Tuple2[
-          catalyst.FunctionIdentifier,
-          Seq[Expression] => Expression]])
-
-      injectFunction.invoke(
-        extensions,
-        (FunctionIdentifier("writetime"),
-        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input)))
-
-      injectFunction.invoke(
-        extensions,
-        (FunctionIdentifier("ttl"),
-        (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input)))
-    } catch {
-      case e @ (_:NoSuchMethodException | _:NoSuchMethodError) => logWarning(
-        """Unable to register Cassandra Specific functions CassandraTTL and CassandraWriteTime
-          |because of Spark version, use functionRegistry.registerFunction to add
-          |the functions.""".stripMargin)
-    }
+    extensions.injectResolutionRule(session => CassandraMetaDataRule)
+    extensions.injectFunction(CassandraMetadataFunction.cassandraTTLFunctionDescriptor)
+    extensions.injectFunction(CassandraMetadataFunction.cassandraWriteTimeFunctionDescriptor)
   }
 }

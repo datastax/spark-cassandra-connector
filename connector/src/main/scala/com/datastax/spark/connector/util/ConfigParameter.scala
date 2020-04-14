@@ -1,6 +1,11 @@
 package com.datastax.spark.connector.util
 
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf}
+import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.types.ColumnTypeConf
+import com.datastax.spark.connector.writer.WriteConf
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.cassandra.CassandraSourceRelation
 
 class ConfigParameter[T] private (
   val name: String,
@@ -56,8 +61,18 @@ class DeprecatedConfigParameter[N] private (
 }
 
 object ConfigParameter{
-
   val staticParameters = scala.collection.mutable.Set.empty[ConfigParameter[_]]
+
+  /** Force creation of all Parameters. Any New Parameter Holding Objects should be added here **/
+  val ConfObjects = (
+    WriteConf,
+    ReadConf,
+    ColumnTypeConf,
+    CassandraSourceRelation,
+    CassandraConnectorConf,
+    AuthConfFactory,
+    CassandraConnectionFactory)
+
   def names: Seq[String] = staticParameters.map(_.name).toSeq
 
   def apply[T](name: String, section: String, default: T, description: String): ConfigParameter[T] = {
@@ -65,7 +80,6 @@ object ConfigParameter{
     staticParameters.add(param)
     param
   }
-
 }
 
 object DeprecatedConfigParameter {

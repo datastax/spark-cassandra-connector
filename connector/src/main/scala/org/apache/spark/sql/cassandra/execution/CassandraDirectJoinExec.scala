@@ -1,12 +1,13 @@
 package org.apache.spark.sql.cassandra.execution
 
+import com.datastax.spark.connector.datasource.{CassandraScan, UnsafeRowReaderFactory, UnsafeRowWriterFactory}
 import com.datastax.spark.connector.{ColumnName, SomeColumns}
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraLeftJoinRDD, CassandraTableScanRDD}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.execution.unsafe.{UnsafeRowReaderFactory, UnsafeRowWriterFactory}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, Expression, GenericInternalRow, JoinedRow, UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, ExprId, Expression, GenericInternalRow, JoinedRow, Predicate, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
+import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 import org.apache.spark.sql.execution.{DataSourceScanExec, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildSide}
 import org.apache.spark.sql.execution.metric.SQLMetrics
@@ -21,9 +22,8 @@ case class CassandraDirectJoinExec(
   cassandraSide: BuildSide,
   condition: Option[Expression],
   child: SparkPlan,
-  aliasMap: Map[String, Attribute],
-  cassandraScan: CassandraTableScanRDD[_],
-  cassandraPlan: DataSourceScanExec) extends UnaryExecNode {
+  aliasMap: Map[String, ExprId],
+  cassandraPlan: BatchScanExec) extends UnaryExecNode {
 
   val numOutputRows = SQLMetrics.createMetric(sparkContext, "number of output rows")
 
@@ -31,17 +31,21 @@ case class CassandraDirectJoinExec(
     "numOutputRows" -> numOutputRows
   )
 
-  val keySource = child
+  //Not Serializable
+  def cassandraScan = cassandraPlan.scan.asInstanceOf[CassandraScan]
 
+  val keySource = child
+  val connector = cassandraScan.connector
   val keyspace = cassandraScan.tableDef.keyspaceName
   val table = cassandraScan.tableDef.tableName
-  val whereClause = cassandraScan.where
+  val cqlQueryParts = cassandraScan.cqlQueryParts
+  val whereClause = cqlQueryParts.whereClause
   val readConf = cassandraScan.readConf
-  val selectedColumns = cassandraScan.selectedColumnRefs
+  val selectedColumns = cqlQueryParts.selectedColumnRefs
   val primaryKeys = cassandraScan.tableDef.primaryKey.map(_.columnName)
   val cassandraSchema = cassandraPlan.schema
 
-  val attributeToCassandra = aliasMap.map(_.swap)
+  val exprIdToCassandra = aliasMap.map(_.swap)
 
   val leftJoinCouplets =
     if (cassandraSide == BuildLeft) leftKeys.zip(rightKeys) else rightKeys.zip(leftKeys)
@@ -54,7 +58,7 @@ case class CassandraDirectJoinExec(
     */
   val (pkJoinCoulplets, otherJoinCouplets) = leftJoinCouplets.partition {
     case (cassandraAttribute: Attribute, _) =>
-      attributeToCassandra.get(cassandraAttribute) match {
+      exprIdToCassandra.get(cassandraAttribute.exprId) match {
         case Some(name) if primaryKeys.contains(name) => true
         case _ => false
     }
@@ -62,7 +66,7 @@ case class CassandraDirectJoinExec(
   }
 
   val (joinColumns, joinExpressions) = pkJoinCoulplets.map { case (cAttr: Attribute, otherCol: Expression) =>
-    (ColumnName(attributeToCassandra(cAttr)), BindReferences.bindReference(otherCol, keySource.output))
+    (ColumnName(exprIdToCassandra(cAttr.exprId)), BindReferences.bindReference(otherCol, keySource.output))
   }.unzip
 
   /**
@@ -78,7 +82,7 @@ case class CassandraDirectJoinExec(
     val unhandledConditions = Seq(unhandledEquiPredicates, condition).flatten.reduceOption(And)
 
     if (unhandledConditions.isDefined) {
-      newPredicate(unhandledConditions.get , keySource.output ++ cassandraPlan.output).eval _
+      Predicate.create(unhandledConditions.get , keySource.output ++ cassandraPlan.output).eval _
     } else {
       (r: InternalRow) => true
     }
@@ -144,13 +148,13 @@ case class CassandraDirectJoinExec(
         unsafeKeyRows,
         keyspace,
         table,
-        cassandraScan.connector,
-        cassandraScan.columnNames,
+        connector,
+        SomeColumns(cassandraScan.cqlQueryParts.selectedColumnRefs: _*),
         SomeColumns(joinColumns: _*),
-        cassandraScan.where,
-        cassandraScan.limit,
-        cassandraScan.clusteringOrder,
-        cassandraScan.readConf)
+        cqlQueryParts.whereClause,
+        cqlQueryParts.limitClause,
+        cqlQueryParts.clusteringOrder,
+        readConf)
 
       val joinRow = new JoinedRow
       joinRDD.mapPartitions { it =>
@@ -169,13 +173,13 @@ case class CassandraDirectJoinExec(
         unsafeKeyRows,
         keyspace,
         table,
-        cassandraScan.connector,
-        cassandraScan.columnNames,
+        connector,
+        SomeColumns(cassandraScan.cqlQueryParts.selectedColumnRefs: _*),
         SomeColumns(joinColumns: _*),
-        cassandraScan.where,
-        cassandraScan.limit,
-        cassandraScan.clusteringOrder,
-        cassandraScan.readConf)
+        cqlQueryParts.whereClause,
+        cqlQueryParts.limitClause,
+        cqlQueryParts.clusteringOrder,
+        readConf)
 
       val joinRow = new JoinedRow
       joinRDD.mapPartitions { it =>
@@ -199,7 +203,7 @@ case class CassandraDirectJoinExec(
   }
 
 
-  override def simpleString: String = {
+  override def simpleString(maxFields: Int): String = {
     val pushedWhere =
       whereClause
         .predicates.zip(whereClause.values)
@@ -210,7 +214,7 @@ case class CassandraDirectJoinExec(
     val selectString = selectedColumns.mkString("Reading (", ", ", ")")
 
     val joinString = pkJoinCoulplets
-      .map{ case (colref: Attribute, exp) => s"${attributeToCassandra(colref)} = ${exp}"}
+      .map{ case (colref: Attribute, exp) => s"${exprIdToCassandra(colref.exprId)} = ${exp}"}
       .mkString(", ")
 
     s"Cassandra Direct Join [${joinString}] $keyspace.$table - $selectString${pushedWhere} "

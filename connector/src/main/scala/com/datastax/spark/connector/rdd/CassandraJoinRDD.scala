@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.datasource.JoinHelper
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.SettableFuture
@@ -137,7 +138,7 @@ class CassandraJoinRDD[L, R] (
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
           /* This is a much less than ideal place to actually rate limit, we are buffering
           these futures this means we will most likely exceed our threshold*/
-          val throttledIterator = iteratorWithMetrics.map(maybeRateLimit)
+          val throttledIterator = iteratorWithMetrics.map(JoinHelper.maybeRateLimit(readConf))
           val rightSide = throttledIterator.map(rowReader.read(_, rowMetadata))
           resultFuture.set(leftSide.zip(rightSide))
         case Failure(throwable) =>
@@ -150,11 +151,11 @@ class CassandraJoinRDD[L, R] (
 
 
     val queryFutures = leftIterator.map(left => {
-      requestsPerSecondRateLimiter.maybeSleep(1)
+      JoinHelper.requestsPerSecondRateLimiter(readConf).maybeSleep(1)
       pairWithRight(left)
     })
 
-    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
+    JoinHelper.slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
   }
 
   /**

@@ -135,9 +135,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     executor.waitForCurrentlyExecutingTasks()
   }
 
-  //Register Functions for TTL (Required for Spark < 3.0 or non DSE Spark 2.4)
-  sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
-  sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
+  setupCassandraCatalog
+
 
   val dseVersion = cluster.getDseVersion.getOrElse(Version.parse("6.0.0"))
 
@@ -151,19 +150,9 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
       )
 
   "A DataFrame" should "be able to read TTL" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks,
-          "ttl.v" -> "ttlOfV"
-        )
-      )
-      .load()
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
 
-    val result = df.select(sum("ttlOfV").as("sum"))
+    val result = df.select(sum(ttl("v")).as("sum"))
       .collect()
       .head
       .getAs[Long]("sum")
@@ -171,10 +160,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "handle various attribute orderings" in {
-    val df = sparkSession
-      .read
-      .cassandraFormat("test_reading_types", ks)
-      .option("ttl.simple_val", "simple_val_TTL").load()
+    val df =  spark.sql(s"SELECT * from $ks.test_reading_types")
+      .withColumn("simple_val_TTL", ttl("simple_val"))
 
     val a = df.select("simple_val_TTL", "id", "map_val_frozen").collect.head.toSeq
     val b = df.select("id", "map_val_frozen", "simple_val_TTL").collect.head.toSeq
@@ -186,57 +173,21 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
 
   for (col <- columnsToCheck) {
     val name = col.columnName
-    it should s" handle ttl on $name ${col.columnType} with option" in {
-      val df = sparkSession
-        .read
-        .cassandraFormat("test_reading_types", ks)
-        .option(s"ttl.${col.columnName}", "ttlResult")
-        .load()
-
-      val result = df.collect().head
-      if (col.isMultiCell) {
-        result.getList[Int](result.fieldIndex("ttlResult")) should contain theSameElementsAs Seq(null, null)
-      } else {
-        result.get(result.fieldIndex("ttlResult")).asInstanceOf[AnyRef] should be (null)
-      }
-    }
-
     it should s" handle ttl on $name ${col.columnType} with function" in {
-      val df = sparkSession
-        .read
-        .cassandraFormat("test_reading_types", ks)
-        .load()
-        .select(ttl(col.columnName).as("ttlResult"))
+      val df =  spark.sql(s"SELECT * from $ks.test_reading_types")
+        .withColumn("ttlResult", ttl(col.columnName))
 
       val result = df.collect().head
       if (col.isMultiCell) {
         result.getList[Int](result.fieldIndex("ttlResult")) should contain theSameElementsAs Seq(null, null)
       } else {
         result.get(result.fieldIndex("ttlResult")).asInstanceOf[AnyRef] should be (null)
-      }
-    }
-
-    it should s" handle writeTime on $name ${col.columnType} with option" in {
-      val df = sparkSession
-        .read
-        .cassandraFormat("test_reading_types", ks)
-        .option(s"writeTime.${col.columnName}", "writeTimeResult")
-        .load()
-
-      val result = df.collect().head
-      if (col.isMultiCell) {
-        result.getList[Long](result.fieldIndex("writeTimeResult")) should contain theSameElementsAs Seq(1000, 1000)
-      } else {
-        result.get(result.fieldIndex("writeTimeResult")).asInstanceOf[AnyRef] should be (1000)
       }
     }
 
     it should s" handle writeTime on $name ${col.columnType} with function" in {
-      val df = sparkSession
-        .read
-        .cassandraFormat("test_reading_types", ks)
-        .load()
-        .select(writeTime(col.columnName).as("writeTimeResult"))
+      val df =  spark.sql(s"SELECT * from $ks.test_reading_types")
+        .withColumn("writeTimeResult", writeTime(col.columnName))
 
       val result = df.collect().head
       if (col.isMultiCell) {
@@ -248,18 +199,8 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to read multiple TTLs" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks,
-          "ttl.v" -> "ttlOfV",
-          "ttl.v2" -> "ttlOfV2"
-        )
-      )
-      .load()
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
+      .select(ttl("v") as "ttlOfV", ttl("v2") as "ttlOfV2")
 
     val result = df.select(sum("ttlOfV").as("sum"))
       .collect()
@@ -274,16 +215,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to read TTL using the function api" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load()
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
       .select(ttl("v"))
 
     val result = df.select(sum("TTL(V)").as("sum"))
@@ -294,16 +226,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to read TTL using the function api and get the column" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load()
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
       .select(col("v"), ttl("v"))
 
     val result = df.select(sum("TTL(V)").as("sum"))
@@ -314,16 +237,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to read TTL using the function api and get the column from subsequent call" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load()
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
       .select(col("v"))
       .select(ttl("v"))
 
@@ -335,18 +249,9 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "return null TTL for lit(null) column" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load().select("v").limit(1)
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
+      .select("v").limit(1)
 
-    val spark = sparkSession
     import spark.implicits._
     val nullDf = (Seq((1))).toDF("n").select (lit(null) as "v")
 
@@ -358,19 +263,10 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     result(1).getAs[AnyRef](0) should be (null)
   }
 
-    it should "return null TTL for lit(null) reversed column" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load().select("v").limit(1)
+  it should "return null TTL for lit(null) reversed column" in {
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
+      .select("v").limit(1)
 
-    val spark = sparkSession
     import spark.implicits._
     val nullDf = (Seq((1))).toDF("n").select (lit(null) as "v")
 
@@ -381,51 +277,22 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     result(0).getAs[AnyRef](0) should be (null)
   }
 
-  it should "fail trying to read TTL from non-regular columns" in intercept[IllegalArgumentException]{
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks,
-          "ttl.v" -> "ttlOfV",
-          "ttl.c" -> "ttlOfC"
-        )
-      ).load()
+  it should "fail trying to read TTL from non-regular columns" in intercept[AnalysisException]{
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
+      .withColumn("ttlOfV", ttl("v"))
+      .withColumn("ttlOfC", ttl("c"))
+      .collect()
   }
 
-  it should "fail trying to read TTL from non-regular columns with the function api" in intercept[IllegalArgumentException]{
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks
-        )
-      )
-      .load()
-      .select(ttl("k"))
-  }
-
-  it should "throw an exception when reading writetime from non-regular columns" in intercept[IllegalArgumentException]{
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "basic",
-          "keyspace" -> ks,
-          "writetime.v" -> "writeTimeOfV",
-          "writetime.c" -> "writeTimeOfC"
-        )
-      )
-      .load()
+  it should "throw an exception when reading writetime from non-regular columns" in intercept[AnalysisException]{
+    val df = spark.sql(s"SELECT * FROM $ks.basic")
+      .withColumn("writeTimeOfV", writeTime("v"))
+      .withColumn("writeTimeOfC", writeTime("c"))
+      .collect()
   }
 
   it should "be able to write ttl" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((-1,-1,-1,10000)))
       .toDF("k","c","v","ttlCol")
       .write
@@ -439,7 +306,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to write ttl as first column" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((10000,-1,-1,-2)))
       .toDF("ttlCol","k","c","v")
       .write
@@ -453,7 +320,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to write ttl literals" in {
-     sparkSession
+     spark
       .createDataFrame(Seq((-500,-1,-1)))
       .toDF("k","c","v")
       .write
@@ -467,7 +334,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to write ttl withTTL" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((-50,-1,-1,10000)))
       .toDF("k","c","v","ttlCol")
       .write
@@ -481,7 +348,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
    it should "be able to write withWritetime" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((-501,-2,-2)))
       .toDF("k","c","v")
       .write
@@ -495,7 +362,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to write writeTime literals" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((-51,-2,-2,10000)))
       .toDF("k","c","v","writetimeCol")
       .write
@@ -510,7 +377,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "throw an exception when attempting to use withWriteTime or withTTL on non-Cassandra sources" in {
      intercept[IllegalArgumentException] {
-       sparkSession
+       spark
          .createDataFrame(Seq((-51,-2,-2,10000)))
          .toDF("k","c","v","writetimeCol")
          .write
@@ -519,7 +386,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
          .save()
      }
     intercept[IllegalArgumentException] {
-       sparkSession
+       spark
          .createDataFrame(Seq((-51,-2,-2,10000)))
          .toDF("k","c","v","writetimeCol")
          .write
@@ -531,7 +398,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
 
 
   it should "be able to write writetime" in {
-    sparkSession
+    spark
       .createDataFrame(Seq((-2,-2,-2,10000)))
       .toDF("k","c","v","writetimeCol")
       .write
@@ -545,75 +412,39 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   "Spark SQL" should "be able to read TTL" in {
-    sparkSession.sql(s"SELECT sum(ttl(v)) FROM $ks.basic")
+    spark.sql(s"SELECT sum(ttl(v)) FROM $ks.basic")
       .collect()
       .head.getLong(0) should be > 1000L
   }
 
   it should "be able to read WRITETIME" in {
-    sparkSession.sql(s"SELECT sum(writetime(v)) FROM $ks.basic")
+    spark.sql(s"SELECT sum(writetime(v)) FROM $ks.basic")
       .collect()
       .head.getLong(0) should be > 1000L
   }
 
   it should "be able to read TTL from case sensitive column" in {
-    sparkSession.sql(s"SELECT ttl(Value) FROM $ks.caseNames")
+
+    val request = spark.sql(s"SELECT ttl(Value) FROM $ks.caseNames")
+    request.explain(true)
+    request
       .collect()
       .head.getInt(0) should be > 1000
   }
 
   it should "be able to read WRITETIME from case sensitive column" in {
-    sparkSession.sql(s"SELECT writetime(`Dot.Value`) FROM $ks.caseNames")
+    spark.sql(s"SELECT writetime(`Dot.Value`) FROM $ks.caseNames")
       .collect()
       .head.getLong(0) should be (10000L)
   }
 
-  it should "be able to read case sensitive column TTL from options" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "caseNames",
-          "keyspace" -> ks,
-          "ttl.Value" -> "ttlOfV"
-        )
-      )
-      .load()
-
-    val result = df.select("ttlOfV")
-      .collect()
-      .head
-      .getAs[Int](0)
-    result should be > 0
-  }
-
-  it should "be able to read case sensitive column WRITETIME from options" in {
-    val df = sparkSession
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(
-        Map(
-          "table" -> "caseNames",
-          "keyspace" -> ks,
-          "writetime.Dot.Value" -> "wtOfV"
-        )
-      )
-      .load()
-
-    val result = df.select("wtOfV")
-      .collect()
-      .head
-      .getAs[Long](0)
-    result should be (10000L)
-  }
 
   it should "throw an exception when calling writetime on more than one column" in intercept[AnalysisException] {
-    sparkSession.sql(s"SELECT sum(writetime(v, k)) FROM $ks.basic")
+    spark.sql(s"SELECT sum(writetime(v, k)) FROM $ks.basic")
   }
 
   it should "throw an exception when calling ttl on more than one column" in intercept[AnalysisException] {
-    sparkSession.sql(s"SELECT sum(ttl(v, k)) FROM $ks.basic")
+    spark.sql(s"SELECT sum(ttl(v, k)) FROM $ks.basic")
   }
 
 }

@@ -19,15 +19,7 @@ object ConfigCheck {
   val MatchThreshold = 0.85
   val Prefix = "spark.cassandra."
 
-  /** Force creation of all Parameters. Any New Parameter Holding Objects should be added here **/
-  val ConfObjects = (
-    WriteConf,
-    ReadConf,
-    ColumnTypeConf,
-    CassandraSourceRelation,
-    CassandraConnectorConf,
-    AuthConfFactory,
-    CassandraConnectionFactory)
+
 
   /** Set of valid static properties hardcoded in the connector.
     * Custom CassandraConnectionFactory and AuthConf properties are not listed here. */

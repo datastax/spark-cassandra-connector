@@ -249,7 +249,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hostAddresses should contain(e.endpoints.head)
+        conn.hostAddresses.map(_.getHostAddress) should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -301,7 +301,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hostAddresses should contain(e.endpoints.head)
+        conn.hostAddresses.map(_.getHostAddress) should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -369,7 +369,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hostAddresses should contain(e.endpoints.head)
+        conn.hostAddresses.map(_.getHostAddress) should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -502,7 +502,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hostAddresses should contain(e.endpoints.head)
+        conn.hostAddresses.map(_.getHostAddress) should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
@@ -564,9 +564,9 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     }
   }
 
-  it should " throw an exception if using a where on a column that is a part of the Partition key" in {
-    val exc = intercept[IllegalArgumentException] {
-      val someCass = sc.parallelize(keys)
+  it should "throw an exception if using a where on a column that is a part of the Partition key" in {
+    intercept[IllegalArgumentException] {
+      sc.parallelize(keys)
         .map(x => new KVRow(x))
         .joinWithCassandraTable(ks, tableName)
         .where("key = 200")

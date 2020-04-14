@@ -49,7 +49,7 @@ class CassandraMergeJoinRDD[L,R](
       case None => {
         val metadata: Metadata = connector.withSessionDo(_.getMetadata)
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
-        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
+        val errorMessage = NameTools.getErrorString(keyspaceName, Some(tableName), suggestions)
         throw new IOException(errorMessage)
       }
     }
@@ -234,8 +234,6 @@ class CassandraMergeJoinRDD[L,R](
       leftScanRDD.partitions else rightScanRDD.partitions
   }
 
-  private lazy val nodeAddresses = new NodeAddresses(connector)
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition[_, _]].endpoints.flatMap(nodeAddresses.hostNames).toSeq
-
+    split.asInstanceOf[CassandraPartition[_, _]].endpoints
 }

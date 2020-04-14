@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.writer
 
-import java.io.IOException
+import java.io.{Closeable, IOException}
 import java.util.function.Supplier
 
 import com.datastax.oss.driver.api.core.CqlSession
@@ -10,6 +10,7 @@ import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{ListType, MapType}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util._
+import com.datastax.spark.connector.writer.AsyncExecutor.Handler
 import org.apache.spark.TaskContext
 import org.apache.spark.metrics.OutputMetricsUpdater
 
@@ -165,24 +166,9 @@ class TableWriter[T] private (
     * INSERT otherwise
     */
   def write(taskContext: TaskContext, data: Iterator[T]): Unit = {
-    if (isCounterUpdate || containsCollectionBehaviors) {
-      update(taskContext, data)
-    }
-    else {
-      insert(taskContext, data)
-    }
+    val asyncStatementWriter = getAsyncWriter()
+    writeInternal(asyncStatementWriter, taskContext, data)
   }
-
-  /**
-    * Write data with Cql UPDATE statement
-    */
-  def update(taskContext: TaskContext, data: Iterator[T]): Unit =
-    writeInternal(queryTemplateUsingUpdate, taskContext, data)
-  /**
-    * Write data with Cql INSERT statement
-    */
-  def insert(taskContext: TaskContext, data: Iterator[T]):Unit =
-    writeInternal(queryTemplateUsingInsert, taskContext, data)
 
   /**
     * Cql DELETE statement
@@ -191,16 +177,21 @@ class TableWriter[T] private (
     * @param data primary key values to select delete rows
     */
   def delete(columns: ColumnSelector) (taskContext: TaskContext, data: Iterator[T]): Unit =
-    writeInternal(deleteQueryTemplate(columns), taskContext, data)
+    writeInternal(getAsyncWriterInternal(deleteQueryTemplate(columns)), taskContext, data)
 
-  private def writeInternal(queryTemplate: String, taskContext: TaskContext, data: Iterator[T]) {
-    val updater = OutputMetricsUpdater(taskContext, writeConf)
+  def getAsyncWriter(): AsyncStatementWriter[T] = {
+    if (isCounterUpdate || containsCollectionBehaviors) {
+      getAsyncWriterInternal(queryTemplateUsingUpdate)
+    }
+    else {
+      getAsyncWriterInternal(queryTemplateUsingInsert)
+    }
+  }
+
+  private def getAsyncWriterInternal(queryTemplate: String): AsyncStatementWriter[T] = {
     connector.withSessionDo { session =>
       val protocolVersion = session.getContext.getProtocolVersion
-      val rowIterator = new CountingIterator(data)
       val stmt = prepareStatement(queryTemplate, session)
-      val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel,
-        Some(updater.batchFinished(success = true, _, _, _)), Some(updater.batchFinished(success = false, _, _, _)))
       val batchType = if (isCounterUpdate) DefaultBatchType.COUNTER else DefaultBatchType.UNLOGGED
 
       val boundStmtBuilder = new BoundStatementBuilder(
@@ -211,43 +202,90 @@ class TableWriter[T] private (
 
       val batchStmtBuilder = new BatchStatementBuilder(batchType, writeConf.consistencyLevel)
       val batchKeyGenerator = batchRoutingKey(session) _
-      val batchBuilder = new GroupingBatchBuilder(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
-        writeConf.batchSize, writeConf.batchGroupingBufferSize, rowIterator)
+      val batchBuilder = new GroupingBatchBuilderBase(boundStmtBuilder, batchStmtBuilder, batchKeyGenerator,
+        writeConf.batchSize, writeConf.batchGroupingBufferSize)
 
       val maybeRateLimit: RichStatement => Unit = writeConf.throughputMiBPS match {
         case Some(throughput) =>
           val rateLimiter = new RateLimiter(
-              (throughput * 1024 * 1024).toLong,
-              1024 * 1024)
+            (throughput * 1024 * 1024).toLong,
+            1024 * 1024)
           (stmt: RichStatement) => rateLimiter.maybeSleep(stmt.bytesCount)
         case None =>
           (stmt: RichStatement) => Unit
       }
 
-      logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
-
-      for (stmtToWrite <- batchBuilder) {
-        queryExecutor.executeAsync(stmtToWrite.executeAs(writeConf.executeAs))
-        maybeRateLimit(stmtToWrite)
-      }
-
-      queryExecutor.waitForCurrentlyExecutingTasks()
-
-      queryExecutor.getLatestException().map {
-        case exception =>
-          throw new IOException(
-            s"""Failed to write statements to $keyspaceName.$tableName. The
-               |latest exception was
-               |  ${exception.getMessage}
-               |
-               |Please check the executor logs for more exceptions and information
-             """.stripMargin)
-      }
-
-      val duration = updater.finish() / 1000000000d
-      logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
-      if (boundStmtBuilder.logUnsetToNullWarning){ logWarning(boundStmtBuilder.UnsetToNullWarning) }
+      AsyncStatementWriter(connector, writeConf, tableDef, stmt, batchBuilder, maybeRateLimit)
     }
+  }
+
+  private def writeInternal(asyncStatementWriter: AsyncStatementWriter[T], taskContext: TaskContext, data: Iterator[T]) {
+    val updater = OutputMetricsUpdater(taskContext, writeConf)
+
+    val metricMonitoringWriter = asyncStatementWriter.copy(
+        successHandler = Some(updater.batchFinished(success = true, _, _, _)),
+        failureHandler = Some(updater.batchFinished(success = false, _, _, _)))
+
+    val rowIterator = new CountingIterator(data)
+
+    logDebug(s"Writing data partition to $keyspaceName.$tableName in batches of ${writeConf.batchSize}.")
+
+    for (stmtToWrite <- rowIterator) {
+      metricMonitoringWriter.write(stmtToWrite)
+    }
+
+    metricMonitoringWriter.close()
+
+    val duration = updater.finish() / 1000000000d
+    logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
+  }
+}
+
+case class AsyncStatementWriter[T](
+  connector: CassandraConnector,
+  writeConf: WriteConf,
+  tableDef: TableDef,
+  preparedStatement: PreparedStatement,
+  groupingBatchBuilderBase: GroupingBatchBuilderBase[T],
+  maybeRateLimit: RichStatement => Unit,
+  successHandler: Option[Handler[RichStatement]] = None,
+  failureHandler: Option[Handler[RichStatement]] = None)
+  extends Closeable
+    with Logging {
+
+  //Don't grab a connection or queryExecutor unless we are using this statement writer
+  private lazy val session: CqlSession = connector.openSession()
+  private val keyspaceName: String = tableDef.keyspaceName
+  private val tableName: String = tableDef.tableName
+
+  private lazy val queryExecutor = new QueryExecutor(session, writeConf.parallelismLevel, successHandler, failureHandler)
+
+  def write(record: T): Unit= {
+    groupingBatchBuilderBase.batchRecord(record).foreach{ stmt =>
+      queryExecutor.executeAsync(stmt.executeAs(writeConf.executeAs))
+      maybeRateLimit(stmt)
+    }
+  }
+
+  override def close(): Unit = {
+    for (statement <- groupingBatchBuilderBase.finish()) {
+      queryExecutor.executeAsync(statement.executeAs(writeConf.executeAs))
+      maybeRateLimit(statement)
+    }
+
+    queryExecutor.waitForCurrentlyExecutingTasks()
+    queryExecutor.getLatestException().map {
+      case exception =>
+        throw new IOException(
+          s"""Failed to write statements to $keyspaceName.$tableName. The
+             |latest exception was
+             |  ${exception.getMessage}
+             |
+             |Please check the executor logs for more exceptions and information
+             """.stripMargin)
+    }
+    queryExecutor.waitForCurrentlyExecutingTasks()
+    session.close()
   }
 }
 

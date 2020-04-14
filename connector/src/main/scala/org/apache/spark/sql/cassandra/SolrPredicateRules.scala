@@ -187,7 +187,7 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
       false
   }
 
-  case class SolrFilter(solrQuery: String, references: Array[String]) extends Filter
+  case class SolrFilter(solrQuery: String, references: Array[String])
 
   /** Sometimes the Java String Representation of the Value is not what solr is expecting
     * so we need to do conversions. Additionally we need to encode that encoded string

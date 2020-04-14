@@ -14,6 +14,7 @@ import com.datastax.spark.connector.ColumnSelector
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
+import org.apache.spark.sql.connector.read.InputPartition
 
 
 /** Creates CassandraPartitions for given Cassandra table */
@@ -77,6 +78,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     range.unwrap.map(CqlTokenRange(_))
 
   def partitions: Seq[CassandraPartition[V, T]] = {
+    val hostAddresses = new NodeAddresses(connector)
     val tokenRanges = describeRing
     val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
     val maxGroupSize = tokenRanges.size / endpointCount
@@ -92,7 +94,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
       val rowCount = group.map(_.rangeSize).sum
       val cqlRanges = group.flatMap(rangeToCql)
       // partition index will be set later
-      CassandraPartition(0, replicas, cqlRanges, rowCount.toLong)
+      CassandraPartition(0, replicas.flatMap(hostAddresses.hostNames).toArray, cqlRanges, rowCount.toLong)
     }
 
     // sort partitions and assign sequential numbers so that
@@ -114,6 +116,10 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
       .zipWithIndex
       .map { case (p, index) => p.copy(index = index) }
     indexedPartitions
+  }
+
+  def getInputPartitions(): Array[InputPartition] = {
+    partitions.toArray
   }
 
   /**

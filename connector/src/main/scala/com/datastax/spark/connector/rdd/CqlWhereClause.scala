@@ -9,6 +9,10 @@ case class CqlWhereClause(predicates: Seq[String], values: Seq[Any]) {
   def and(other: CqlWhereClause) =
     CqlWhereClause(predicates ++ other.predicates, values ++ other.values)
 
+  override def toString: String = {
+    predicates.zip(values).map{ case (pred, value) =>  s"[$pred, $value]"}.mkString("[", ",", "]")
+  }
+
 }
 
 object CqlWhereClause {

@@ -13,14 +13,15 @@ object Dependencies
     val sparkCatalyst = "org.apache.spark" %% "spark-catalyst" % ApacheSpark % "provided" // ApacheV2
     val sparkHive = "org.apache.spark" %% "spark-hive" % ApacheSpark % "provided" // ApacheV2
 
+
     val dependencies = Seq(
       sparkCore,
       sparkRepl,
       sparkUnsafe,
       sparkStreaming,
       sparkSql,
-      sparkCatalyst,
-      sparkHive)
+      sparkHive,
+      sparkCatalyst)
   }
 
   implicit class Exclude(module: ModuleID) {

@@ -1,14 +1,13 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
 import sbt.Keys.parallelExecution
-import sbt.moduleFilter
-import sbt._
+import sbt.{moduleFilter, _}
 
-lazy val scala211 = "2.11.12"
-lazy val scala212 = "2.12.10"
-lazy val supportedScalaVersions = List(scala212, scala211)
+lazy val scala212 = "2.12.11"
+lazy val supportedScalaVersions = List(scala212)
 
 // factor out common settings
-ThisBuild / scalacOptions += "-target:jvm-1.8"
+ThisBuild / scalaVersion := scala212
+ThisBuild / scalacOptions ++= Seq("-target:jvm-1.8")
 
 // Publishing Info
 ThisBuild / credentials ++= Publishing.Creds
@@ -26,7 +25,8 @@ ThisBuild / version := Publishing.Version
 
 Global / resolvers ++= Seq(
   DefaultMavenRepository,
-  Resolver.sonatypeRepo("public")
+  Resolver.sonatypeRepo("public"),
+  "Staging for SparkcRc3" at "https://repository.apache.org/content/repositories/orgapachespark-1350/"
 )
 
 lazy val IntegrationTest = config("it") extend Test
@@ -117,6 +117,7 @@ lazy val driver = (project in file("driver"))
   .settings(
     crossScalaVersions := supportedScalaVersions,
     name := "spark-cassandra-connector-driver",
+    assembly /test := {},
     libraryDependencies ++= Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies
       :+ ("org.scala-lang" % "scala-reflect" % scalaVersion.value)

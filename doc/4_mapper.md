@@ -1,4 +1,5 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs
 ## Working with user-defined case classes and tuples
 
 This section describes how to store Cassandra rows in Scala tuples or objects of your own classes.
