@@ -78,7 +78,6 @@ trait SparkCassandraITSpecBase
   }
 
   final override def beforeAll(): Unit = wrapUnserializableExceptions {
-    initHiveMetastore()
     beforeClass
   }
 
@@ -121,33 +120,6 @@ trait SparkCassandraITSpecBase
       None,
       None
     )
-  }
-
-  def initHiveMetastore() {
-    /**
-      * Creates CassandraHiveMetastore
-      */
-    //For Auth Clusters we have to wait for the default User before a connection will work
-    if (sparkConf.contains(DefaultAuthConfFactory.PasswordParam.name)) {
-      eventually(timeout(Span(60, Seconds))) {
-        CassandraConnector(sparkConf).withSessionDo(session => assert(session != null))
-      }
-    }
-    val conn = CassandraConnector(sparkConf)
-    conn.withSessionDo { session =>
-      val executor = getExecutor(session)
-      session.execute(
-        """
-          |CREATE KEYSPACE IF NOT EXISTS "HiveMetaStore" WITH REPLICATION =
-          |{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; """
-          .stripMargin)
-      session.execute(
-        """CREATE TABLE IF NOT EXISTS "HiveMetaStore"."sparkmetastore"
-          |(key text,
-          |entity text,
-          |value blob,
-          |PRIMARY KEY (key, entity))""".stripMargin)
-    }
   }
 
   def pv = conn.withSessionDo(_.getContext.getProtocolVersion)
