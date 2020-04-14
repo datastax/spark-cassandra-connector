@@ -7,16 +7,6 @@ import org.apache.spark.SparkConf
 
 object SparkTemplate {
 
-  val HiveMetastoreConfig: Map[String, String] = Map (
-    "spark.hadoop.hive.metastore.rawstore.impl" -> "com.datastax.bdp.hadoop.hive.metastore.CassandraHiveMetaStore",
-    "spark.hadoop.cassandra.autoCreateHiveSchema" -> "true",
-    "spark.hadoop.spark.enable" -> "true",
-    "spark.hadoop.cassandra.connection.metaStoreColumnFamilyName" -> "sparkmetastore",
-    "spark.sql.catalogImplementation" -> "hive",
-    "spark.sql.warehouse.dir" -> Files.createTempDirectory("tempWarehouse").toString
-  )
-
-
   /** Default configuration for [[org.apache.spark.SparkContext SparkContext]]. */
   private val _defaultConf = new SparkConf(true)
     .set("spark.cassandra.connection.keepAliveMS", "5000")
@@ -27,7 +17,6 @@ object SparkTemplate {
     .set("spark.sql.extensions","com.datastax.spark.connector.CassandraSparkExtensions")
     .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[2]"))
     .setAppName("Test")
-    .setAll(HiveMetastoreConfig)
 
 
   def defaultConf = _defaultConf.clone()
