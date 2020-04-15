@@ -17,7 +17,8 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, TableDef}
+import com.datastax.spark.connector.datasource.CassandraSourceUtil._
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, CassandraTableScanRDD, ReadConf}
@@ -657,7 +658,6 @@ object CassandraSourceRelation extends Logging {
          |"false" throw error if missing property is requested
       """.stripMargin
   )
-  val defaultClusterName = "default"
 
   private val proxyPerSourceRelationEnabled = sys.env.getOrElse("DSE_ENABLE_PROXY_PER_SRC_RELATION", "false").toBoolean
 
@@ -670,7 +670,7 @@ object CassandraSourceRelation extends Logging {
     val sparkConf = sqlContext.sparkContext.getConf
     val sqlConf = sqlContext.getAllConfs
     val conf =
-      consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
+      consolidateConfs(sparkConf, sqlConf, tableRef.cluster.getOrElse(defaultClusterName), tableRef.keyspace, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(TableSizeInBytesParam.name)
     val cassandraConnector =
       new CassandraConnector(CassandraConnectorConf(conf))
@@ -728,37 +728,7 @@ object CassandraSourceRelation extends Logging {
       directJoinSetting = directJoinSetting)
   }
 
-  /**
-    * Consolidate Cassandra conf settings in the order of
-    * table level -> keyspace level -> cluster level ->
-    * default. Use the first available setting. Default
-    * settings are stored in SparkConf.
-    */
-  def consolidateConfs(
-    sparkConf: SparkConf,
-    sqlConf: Map[String, String],
-    tableRef: TableRef,
-    tableConf: Map[String, String]) : SparkConf = {
 
-    //Default settings
-    val conf = sparkConf.clone()
-    val cluster = tableRef.cluster.getOrElse(defaultClusterName)
-    val ks = tableRef.keyspace
-    val AllSCCConfNames = (ConfigParameter.names ++ DeprecatedConfigParameter.names)
-    //Keyspace/Cluster level settings
-    for (prop <- AllSCCConfNames) {
-      val value = Seq(
-        tableConf.get(prop.toLowerCase(Locale.ROOT)), //tableConf is actually a caseInsensitive map so lower case keys must be used
-        sqlConf.get(s"$cluster:$ks/$prop"),
-        sqlConf.get(s"$cluster/$prop"),
-        sqlConf.get(s"default/$prop"),
-        sqlConf.get(prop)).flatten.headOption
-      value.foreach(conf.set(prop, _))
-    }
-    //Set all user properties
-    conf.setAll(tableConf -- AllSCCConfNames)
-    conf
-  }
 
   private def getProxyUser(sqlContext: SQLContext): Option[String] = {
     val doAsEnabled = hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS)
@@ -784,6 +754,9 @@ object CassandraSourceRelation extends Logging {
       }
     )
   }
+
+  val defaultClusterName = "default"
+
 }
 
 object SolrConstants {

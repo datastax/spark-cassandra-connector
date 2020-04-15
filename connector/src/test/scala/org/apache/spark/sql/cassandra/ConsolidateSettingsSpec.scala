@@ -2,7 +2,7 @@ package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.TableRef
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.cassandra.CassandraSourceRelation._
+import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector.rdd.ReadConf
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
@@ -22,8 +22,8 @@ class ConsolidateSettingsSpec extends FlatSpec with Matchers {
       valueForDefaultCluster: Option[String]): Unit = {
     val sc = this.sparkConf.clone().setAll(sparkConf)
 
-    val consolidatedConf1 = consolidateConfs(sc, sqlContextConf, tableRef, CaseInsensitiveMap(tableConf))
-    val consolidatedConf2 = consolidateConfs(sc, sqlContextConf, tableRefDefaultCluster, CaseInsensitiveMap(Map.empty))
+    val consolidatedConf1 = consolidateConfs(sc, sqlContextConf, tableRef.cluster.get, tableRef.keyspace, CaseInsensitiveMap(tableConf))
+    val consolidatedConf2 = consolidateConfs(sc, sqlContextConf, tableRefDefaultCluster.cluster.getOrElse("default"), tableRefDefaultCluster.keyspace, CaseInsensitiveMap(Map.empty))
     consolidatedConf1.getOption(param.name) shouldBe value
     consolidatedConf2.getOption(param.name) shouldBe valueForDefaultCluster
   }
