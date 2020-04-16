@@ -1,43 +1,9 @@
 package com.datastax.spark.connector.datasource
 
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cluster.DefaultCluster
-import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchNamespaceException}
-import org.apache.spark.sql.internal.SQLConf
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually._
-import org.scalatest.time.SpanSugar._
+import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchNamespaceException}
 
-
-class CassandraCatalogSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterAll {
-
-  override def conn: CassandraConnector = CassandraConnector(sparkConf)
-
-  val defaultKs = "catalogtestks"
-
-  def getMetadata() = {
-    conn.withSessionDo(_.getMetadata)
-  }
-
-  def dropKeyspace(name: String) = {
-    conn.withSessionDo(_.execute(s"DROP KEYSPACE IF EXISTS $name"))
-  }
-
-  def waitForKeyspaceToExist(keyspace: String, exist: Boolean) = {
-    eventually(getMetadata().getKeyspace(keyspace).isPresent shouldBe exist)
-  }
-
-  implicit val patienceConfig = PatienceConfig(scaled(5 seconds), scaled(200 millis))
-
-  val catalogName = "cassandra"
-
-  override def beforeClass: Unit =
-    {
-      super.beforeClass
-      spark.conf.set(s"spark.sql.catalog.$catalogName", classOf[CassandraCatalog].getCanonicalName)
-      spark.conf.set(SQLConf.DEFAULT_CATALOG.key, "cassandra")
-    }
+class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
 
   "A Cassandra Catalog Namespace Support" should "initialize successfully" in {
 
@@ -49,12 +15,12 @@ class CassandraCatalogSpec extends SparkCassandraITFlatSpecBase with DefaultClus
      currentKeyspaces should contain allOf("system_auth", "system_schema", "system_distributed", "system", "system_traces")
   }
 
-  it should "list a keyspace by name"  in {
+  it should "list a keyspaces in a keyspace"  in {
     spark.sql(s"CREATE DATABASE IF NOT EXISTS $defaultKs WITH DBPROPERTIES (class='SimpleStrategy',replication_factor='5')")
     waitForKeyspaceToExist(defaultKs, true)
     //Using Catalog and DefaultKS triggers listNamespaces(namespace) pathway
     val result = spark.sql(s"SHOW NAMESPACES FROM $catalogName.$defaultKs").collect
-    result.head.getString(0) should be (defaultKs)
+    result shouldBe empty
   }
 
   it should "give no keyspace found when looking up a keyspace which doesn't exist" in {
@@ -125,6 +91,13 @@ class CassandraCatalogSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     intercept[CassandraCatalogException] {
       spark.sql(s"ALTER NAMESPACE $defaultKs SET DBPROPERTIES (class='2')")
     }
+  }
+
+  it should "drop a keyspace" in {
+    spark.sql(s"CREATE DATABASE IF NOT EXISTS $defaultKs WITH DBPROPERTIES (class='SimpleStrategy',replication_factor='5')")
+    waitForKeyspaceToExist(defaultKs, true)
+    spark.sql(s"DROP DATABASE $defaultKs")
+    waitForKeyspaceToExist(defaultKs, false)
   }
   // Drop (needs TableCatalog)
 
