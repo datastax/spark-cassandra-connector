@@ -11,14 +11,13 @@ import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
-import org.apache.spark.sql.cassandra.DataTypeConverter._
 import org.apache.spark.sql.catalyst.CatalystTypeConverters
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, TableDef}
-import com.datastax.spark.connector.datasource.CassandraSourceUtil._
+import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, CassandraTableScanRDD, ReadConf}
