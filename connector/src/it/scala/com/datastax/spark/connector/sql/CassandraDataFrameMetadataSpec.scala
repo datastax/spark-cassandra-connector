@@ -139,6 +139,21 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("ttl"), CassandraMetadataFunction.cassandraTTLFunctionBuilder)
   sparkSession.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writetime"), CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
 
+  //Register C* Tables in Spark Session Catalog
+  //TODO remove when DSV2 Work is complete
+  sparkSession
+    .read
+    .cassandraFormat("basic", ks)
+    .load()
+    .createTempView("basic")
+
+  sparkSession
+    .read
+    .cassandraFormat("caseNames", ks)
+    .load()
+    .createTempView("caseNames")
+
+
   val dseVersion = cluster.getDseVersion.getOrElse(Version.parse("6.0.0"))
 
   val columnsToCheck = schemaFromCassandra(conn, Some(ks), Some("test_reading_types"))
@@ -545,25 +560,26 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   "Spark SQL" should "be able to read TTL" in {
-    sparkSession.sql(s"SELECT sum(ttl(v)) FROM $ks.basic")
+    sparkSession.sql(s"SELECT sum(ttl(v)) FROM basic")
       .collect()
       .head.getLong(0) should be > 1000L
   }
 
   it should "be able to read WRITETIME" in {
-    sparkSession.sql(s"SELECT sum(writetime(v)) FROM $ks.basic")
+    sparkSession.sql(s"SELECT sum(writetime(v)) FROM basic")
       .collect()
       .head.getLong(0) should be > 1000L
   }
 
   it should "be able to read TTL from case sensitive column" in {
-    sparkSession.sql(s"SELECT ttl(Value) FROM $ks.caseNames")
+
+    sparkSession.sql(s"SELECT ttl(Value) FROM caseNames")
       .collect()
       .head.getInt(0) should be > 1000
   }
 
   it should "be able to read WRITETIME from case sensitive column" in {
-    sparkSession.sql(s"SELECT writetime(`Dot.Value`) FROM $ks.caseNames")
+    sparkSession.sql(s"SELECT writetime(`Dot.Value`) FROM caseNames")
       .collect()
       .head.getLong(0) should be (10000L)
   }
@@ -609,11 +625,11 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "throw an exception when calling writetime on more than one column" in intercept[AnalysisException] {
-    sparkSession.sql(s"SELECT sum(writetime(v, k)) FROM $ks.basic")
+    sparkSession.sql(s"SELECT sum(writetime(v, k)) FROM basic")
   }
 
   it should "throw an exception when calling ttl on more than one column" in intercept[AnalysisException] {
-    sparkSession.sql(s"SELECT sum(ttl(v, k)) FROM $ks.basic")
+    sparkSession.sql(s"SELECT sum(ttl(v, k)) FROM basic")
   }
 
 }

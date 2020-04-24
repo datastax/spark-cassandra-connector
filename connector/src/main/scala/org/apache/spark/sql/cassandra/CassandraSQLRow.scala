@@ -84,7 +84,7 @@ object CassandraSQLRow {
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
+      case udt: UDTValue => SparkRow(udt.columnValues.map(toSparkSqlType): _*)
       case tupleValue: TupleValue => SparkRow(tupleValue.values.map(toSparkSqlType): _*)
       case dateRange: DateRange => dateRange.toString
       case _ => value.asInstanceOf[AnyRef]
