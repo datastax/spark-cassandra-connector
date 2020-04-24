@@ -11,6 +11,8 @@ object Dependencies
     val sparkStreaming = "org.apache.spark" %% "spark-streaming" % ApacheSpark % "provided" // ApacheV2
     val sparkSql = "org.apache.spark" %% "spark-sql" % ApacheSpark % "provided" // ApacheV2
     val sparkCatalyst = "org.apache.spark" %% "spark-catalyst" % ApacheSpark % "provided" // ApacheV2
+    val sparkHive = "org.apache.spark" %% "spark-hive" % ApacheSpark % "provided" // ApacheV2
+
 
     val dependencies = Seq(
       sparkCore,
@@ -18,6 +20,7 @@ object Dependencies
       sparkUnsafe,
       sparkStreaming,
       sparkSql,
+      sparkHive,
       sparkCatalyst)
   }
 

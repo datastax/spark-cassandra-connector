@@ -175,7 +175,7 @@ case class CassandraSourceRelation(
 
   override def schema: StructType = {
     userSpecifiedSchema.getOrElse(
-      StructType(tableDef.columns.map(toStructField)
+      StructType(tableDef.columns.map(DataTypeConverter.toStructField)
         ++ writeTimeFields.map(_._2)
         ++ ttlFields.map(_._2)
       ))

@@ -160,6 +160,7 @@ class CassandraCatalog extends CatalogPlugin
         metadata + (setProperty.property() -> setProperty.value)
       case (removeProperty: RemoveProperty, metadata: mutable.Map[String, String]) =>
         metadata - removeProperty.property()
+      case (other, _) => throw new CassandraCatalogException(s"Unable to handle alter namespace operation: ${other.getClass.getSimpleName}")
     }
 
     val alterStart = SchemaBuilder.alterKeyspace(namespace.head)

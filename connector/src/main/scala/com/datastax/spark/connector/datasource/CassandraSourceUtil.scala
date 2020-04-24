@@ -211,8 +211,8 @@ object CassandraSourceUtil extends Logging {
   def optionsListToString(options: List[(String, Any)]): String = {
     options.map{
       case (k: String, v: String) => s"$k='$v'"
-      case (k: String, innerM: Map[String, String]) =>
-        s"$k='${mapToString(innerM)}'"
+      case (k: String, innerM: Map[String, String]) => s"$k='${mapToString(innerM)}'"
+      case (_, _) => throw new IllegalArgumentException(s"Unable to parse $options")
     } .mkString(",")
 
   }
