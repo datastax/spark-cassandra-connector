@@ -55,19 +55,12 @@ class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
          |PARTITIONED BY (key_1, key_2, key_3)
          |TBLPROPERTIES (${CassandraSourceUtil.optionsListToString(options)})""".stripMargin)
 
-    println (s"""CREATE TABLE $defaultKs.$testTable (
-                |key_1 Int, key_2 Int, key_3 Int,
-                |cc1 STRING, cc2 String, cc3 String,
-                |value String)
-                |PARTITIONED BY (key_1, key_2, key_3)
-                |TBLPROPERTIES (${CassandraSourceUtil.optionsListToString(options)})""".stripMargin)
-
     val createdOptions = getTable(defaultKs, testTable)
       .getOptions.asScala
 
-    createdOptions(fromInternal(CachingOption._1)) should be (CachingOption._2.asJava)
+    createdOptions(fromInternal(CachingOption._1)).asInstanceOf[java.util.Map[String, String]].asScala should contain theSameElementsAs (CachingOption._2)
     createdOptions(fromInternal(DefaultTimeToLiveOption._1)) should be (DefaultTimeToLiveOption._2.toInt)
-    createdOptions(fromInternal(CompactionOption._1)) should be (CompactionOption._2.asJava)
+    createdOptions(fromInternal(CompactionOption._1)).asInstanceOf[java.util.Map[String, String]].asScala should contain theSameElementsAs (CompactionOption._2)
   }
 
   it should "create a table with multiple partition keys and clustering keys" in {
