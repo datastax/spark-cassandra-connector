@@ -18,7 +18,6 @@ cache:
     -  /home/travis/.ivy2/
 
 scala:
-  - 2.11.12
   - 2.12.10
 
 env:
