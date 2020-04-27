@@ -187,18 +187,6 @@ case class TableDef(
   }
 }
 
-object TableDef {
-
-  /** Constructs a table definition based on the mapping provided by
-    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
-  def fromType[T: ColumnMapper](
-      keyspaceName: String,
-      tableName: String,
-      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
-    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
-
-}
-
 case class Schema(keyspaces: Set[KeyspaceMetadata]) {
 
   /** Returns a map from keyspace name to keyspace metadata */

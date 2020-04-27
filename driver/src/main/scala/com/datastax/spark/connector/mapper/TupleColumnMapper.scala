@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.ProtocolVersion
 
 import scala.reflect.runtime.universe._
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
+import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
@@ -71,7 +71,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef = {
 
     val tpe = implicitly[TypeTag[T]].tpe
     val ctorSymbol = Reflect.constructor(tpe).asMethod
@@ -80,13 +80,12 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     require(ctorParamTypes.nonEmpty, "Expected a constructor with at least one parameter")
 
     val columnTypes = ctorParamTypes.map(ColumnType.fromScalaType(_, protocolVersion))
-    val columns = {
-      for ((columnType, i) <- columnTypes.zipWithIndex) yield {
-        val columnName = "_" + (i + 1).toString
-        val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn
-        ColumnDef(columnName, columnRole, columnType)
+    val columns = columnTypes.zipWithIndex.map { case (columnType:ColumnType[_], i:Int) =>
+      MapperColumnDef("_" + (i + 1).toString,
+        columnType,
+        i == 0,
+        false)
       }
-    }
-    TableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
+    MapperTableDef(keyspaceName, tableName, columns)
   }
 }

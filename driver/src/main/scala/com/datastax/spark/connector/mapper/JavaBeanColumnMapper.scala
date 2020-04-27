@@ -59,7 +59,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = ???
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef = ???
 }
 
 object JavaBeanColumnMapper {

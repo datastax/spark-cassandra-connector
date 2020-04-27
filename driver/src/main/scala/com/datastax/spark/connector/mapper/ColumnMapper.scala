@@ -3,6 +3,7 @@ package com.datastax.spark.connector.mapper
 import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.{StructDef, TableDef}
+import com.datastax.spark.connector.types.ColumnType
 
 import scala.reflect.runtime.universe._
 
@@ -41,9 +42,24 @@ trait ColumnMapper[T] {
   def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef
 
 }
+
+case class MapperTableDef(keyspace:String, name: String, cols:Seq[MapperColumnDef])
+
+object MapperTableDef {
+
+  /** Constructs a table definition based on the mapping provided by
+    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
+  def fromType[T: ColumnMapper](
+                                 keyspaceName: String,
+                                 tableName: String,
+                                 protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef =
+    implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
+}
+
+case class MapperColumnDef(name:String, colType: ColumnType[_], partition:Boolean, clustering:Boolean)
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {

@@ -119,7 +119,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef = {
 
     // filter out inherited scala getters, because they are very likely
     // not the properties users want to map
@@ -143,16 +143,14 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
       "No mappable properties found in class: " + tpe.toString)
 
     val columns =
-      for ((property, i) <- mappableProperties.zipWithIndex) yield {
-        val propertyName = property._1
-        val columnType = property._2
-        val columnName = ColumnMapperConvention.camelCaseToUnderscore(propertyName)
-        val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn
-        ColumnDef(columnName, columnRole, columnType)
-      }
-    TableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
+      mappableProperties.zipWithIndex.map { case ((propertyName: String, columnType: ColumnType[_]),i:Int) =>
+            MapperColumnDef(ColumnMapperConvention.camelCaseToUnderscore(propertyName),
+              columnType,
+              i == 0,
+              false)
+        }
+    MapperTableDef(keyspaceName, tableName, columns)
   }
-
 }
 
 object DefaultColumnMapper {
