@@ -31,7 +31,6 @@ class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
   it should "create a table with options" in {
     createDefaultKs
 
-    val CachingOption = "caching" -> Map("keys" -> "ALL", "rows_per_partition" -> "42")
     val DefaultTimeToLiveOption = "default_time_to_live" -> "33"
     val CompactionOption = "compaction" -> Map(
       "bucket_high" -> "42",
@@ -41,7 +40,6 @@ class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
     )
 
     val options: List[(String, Any)] = List(
-      CachingOption,
       DefaultTimeToLiveOption,
       CompactionOption,
       "clustering_key" -> "cc1.asc, cc2.desc, cc3.asc"
@@ -58,7 +56,6 @@ class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
     val createdOptions = getTable(defaultKs, testTable)
       .getOptions.asScala
 
-    createdOptions(fromInternal(CachingOption._1)).asInstanceOf[java.util.Map[String, String]].asScala should contain theSameElementsAs (CachingOption._2)
     createdOptions(fromInternal(DefaultTimeToLiveOption._1)) should be (DefaultTimeToLiveOption._2.toInt)
     createdOptions(fromInternal(CompactionOption._1)).asInstanceOf[java.util.Map[String, String]].asScala should contain theSameElementsAs (CompactionOption._2)
   }
