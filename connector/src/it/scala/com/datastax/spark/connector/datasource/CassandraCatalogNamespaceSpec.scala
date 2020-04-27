@@ -2,6 +2,7 @@ package com.datastax.spark.connector.datasource
 
 import org.scalatest.concurrent.Eventually._
 import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchNamespaceException}
+import scala.collection.JavaConverters._
 
 class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
 
@@ -12,7 +13,9 @@ class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
 
   it should "list available keyspaces" in {
     val currentKeyspaces = spark.sql("SHOW DATABASES").collect().map(_.getString(0))
-     currentKeyspaces should contain allOf("system_auth", "system_schema", "system_distributed", "system", "system_traces")
+    val existingKeyspaces = getMetadata().getKeyspaces().keySet().asScala.map(_.asInternal())
+    currentKeyspaces should contain allElementsOf(existingKeyspaces)
+
   }
 
   it should "list a keyspaces in a keyspace"  in {
