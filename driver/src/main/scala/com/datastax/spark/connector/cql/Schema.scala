@@ -1,22 +1,20 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 
 import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
-import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
-import com.datastax.spark.connector.util.Quote._
+import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util.NameTools
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
 import scala.language.existentials
-import scala.util.{Properties, Try}
+import scala.util.Try
 
 /** Abstract column / field definition.
   * Common to tables and user-defined types */
@@ -88,36 +86,15 @@ trait StructDef extends Serializable {
   def newInstance(columnValues: Any*): ValueRepr
 }
 
-
-sealed trait ColumnRole
-
-case object PartitionKeyColumn extends ColumnRole
-
-object ClusteringColumn {
-  sealed trait SortingOrder
-  case object Ascending extends SortingOrder {
-    override def toString = "ASC"
-  }
-  case object Descending extends SortingOrder {
-    override def toString = "DESC"
-  }
-}
-case class ClusteringColumn(index: Int, sortDirection: ClusteringColumn.SortingOrder = ClusteringColumn.Ascending)
-  extends ColumnRole
-
-case object StaticColumn extends ColumnRole
-
-case object RegularColumn extends ColumnRole
-
-/** A Cassandra column metadata that can be serialized.  */
-case class ColumnDef(
-    columnName: String,
-    columnRole: ColumnRole,
-    columnType: ColumnType[_]) extends FieldDef {
+case class ColumnDef(column:ColumnMetadata,
+                     table:TableMetadata,
+                     keyspace:KeyspaceMetadata) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
+  def columnName = column.getName.toString
+  def columnType = ColumnType.fromDriverType(column.getType)
 
-  def isStatic = columnRole == StaticColumn
+  def isStatic = column.isStatic
 
   def isCollection = columnType.isCollection
 
@@ -125,69 +102,38 @@ case class ColumnDef(
 
   def isMultiCell = columnType.isMultiCell
 
-  def isPartitionKeyColumn = columnRole == PartitionKeyColumn
+  def isPartitionKeyColumn = table.getPartitionKey.asScala.contains(column)
 
-  def isClusteringColumn = columnRole.isInstanceOf[ClusteringColumn]
+  def isClusteringColumn = table.getClusteringColumns.keySet().asScala.contains(column)
 
   def isPrimaryKeyColumn = isClusteringColumn || isPartitionKeyColumn
 
   def isCounterColumn = columnType == CounterType
 
-  def componentIndex = columnRole match {
-    case ClusteringColumn(i, _) => Some(i)
-    case _ => None
-  }
-
-  def sortingDirection = columnRole match {
-    case ClusteringColumn(_, v) => v
-    case _ => true
-  }
-
-  def cql = {
-    s"${quote(columnName)} ${columnType.cqlTypeName}"
-  }
+  def sortingDirection = table.getClusteringColumns.asScala.get(column)
 }
 
-/** Cassandra Index Metadata that can be serialized
-  *
-  * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
-  */
 case class IndexDef(
-    className: Option[String],
-    target: String,
-    indexName: String,
-    options: Map[String, String]) extends Serializable
-
-object ColumnDef {
-
-  def apply(
-      column: ColumnMetadata,
-      columnRole: ColumnRole): ColumnDef = {
-
-    val columnType = ColumnType.fromDriverType(column.getType)
-    ColumnDef(toName(column.getName), columnRole, columnType)
-  }
-}
+    index:IndexMetadata,
+    table:TableMetadata,
+    keyspace:KeyspaceMetadata) extends Serializable
 
 /** A Cassandra table metadata that can be serialized. */
 case class TableDef(
-    keyspaceName: String,
-    tableName: String,
-    partitionKey: Seq[ColumnDef],
-    clusteringColumns: Seq[ColumnDef],
-    regularColumns: Seq[ColumnDef],
-    indexes: Seq[IndexDef] = Seq.empty,
-    isView: Boolean = false,
-    ifNotExists: Boolean = false,
-    tableOptions: Map[String, String] = Map()) extends StructDef {
+    table:TableMetadata,
+    keyspace:KeyspaceMetadata) extends StructDef {
 
-  require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
-  require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
-  require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
+  val cols = table.getColumns.values().asScala.map(c => ColumnDef(c,table,keyspace)).toSet
+  val partitionKey = cols.filter(c => table.getPartitionKey.contains(c.column))
+  val clusteringColumns = cols.filter(c=> table.getClusteringColumns.values().contains(c.column))
+  val regularColumns = cols -- partitionKey
+  val indexes =
+    if (table.isInstanceOf[ViewMetadata]) Seq.empty else
+      table.getIndexes.values().asScala.map(i => IndexDef(i,table,keyspace)).toSeq
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
-  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
+  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.index.getTarget)
 
   /**
     * Contains indices that can be directly mapped to single column, namely indices with a handled column
@@ -213,7 +159,7 @@ case class TableDef(
 
   override type Column = ColumnDef
 
-  override val name: String = s"$keyspaceName.$tableName"
+  override val name: String = s"${keyspace.getName}.${table.getName}"
 
   lazy val primaryKey: IndexedSeq[ColumnDef] =
     (partitionKey ++ clusteringColumns).toIndexedSeq
@@ -230,30 +176,7 @@ case class TableDef(
     columnBylowerCaseName(columnName.toLowerCase)
   }
 
-  def cql = {
-    val columnList = columns.map(_.cql).mkString(s",${Properties.lineSeparator}  ")
-    val partitionKeyClause = partitionKey.map(_.columnName).map(quote).mkString("(", ", ", ")")
-    val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
-    val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
-    val addIfNotExists = if (ifNotExists) "IF NOT EXISTS " else ""
-    val clusterOrder = if (clusteringColumns.isEmpty ||
-      clusteringColumns.forall(x => x.sortingDirection == ClusteringColumn.Ascending)) {
-      Seq()
-    } else {
-      Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.columnName) +
-          " " + x.sortingDirection).mkString(", ") + ")")
-    }
-    val allOptions = clusterOrder ++ tableOptions.map(x => x._1 + " = " + x._2)
-    val allOptionsStr = if (allOptions.isEmpty)
-      ""
-    else
-      allOptions.mkString(" WITH ", "\n  AND ", "")
-
-    s"""CREATE TABLE $addIfNotExists${quote(keyspaceName)}.${quote(tableName)} (
-       |  $columnList,
-       |  PRIMARY KEY ($primaryKeyClause)
-       |)$allOptionsStr""".stripMargin
-  }
+  def cql = table.describe(true)
 
   type ValueRepr = CassandraRow
 
@@ -276,110 +199,18 @@ object TableDef {
 
 }
 
-/** A Cassandra keyspace metadata that can be serialized. */
-case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef], userTypes: Set[UserDefinedType], isSystem: Boolean) {
-  lazy val tableByName: Map[String, TableDef] = tables.map(t => (t.tableName, t)).toMap
-  lazy val userTypeByName: Map[String, UserDefinedType] = userTypes.map(t => (t.name, t)).toMap
-}
-
-case class Schema(keyspaces: Set[KeyspaceDef]) {
+case class Schema(keyspaces: Set[KeyspaceMetadata]) {
 
   /** Returns a map from keyspace name to keyspace metadata */
-  lazy val keyspaceByName: Map[String, KeyspaceDef] =
-    keyspaces.map(k => (k.keyspaceName, k)).toMap
+  lazy val keyspaceByName: Map[CqlIdentifier, KeyspaceMetadata] =
+    keyspaces.map(k => (k.getName, k)).toMap
 
   /** All tables from all keyspaces */
   lazy val tables: Set[TableDef] =
-    for (keyspace <- keyspaces; table <- keyspace.tables) yield table
+    keyspaces.flatMap(k => k.getTables.values().asScala.map(t => TableDef(t,k)))
 }
 
 object Schema extends StrictLogging {
-
-  private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
-    for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
-  }
-
-  private def fetchClusteringColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    for ((column, index) <- table.getClusteringColumns.asScala.toSeq.zipWithIndex) yield {
-      ColumnDef(column._1, ClusteringColumn(index))
-    }
-  }
-
-  private def fetchRegularColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    val primaryKey = table.getPrimaryKey.asScala.toSet
-    val regularColumns = table.getColumns.asScala.values.toSeq.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield {
-      if (column.isStatic)
-        ColumnDef(column, StaticColumn)
-      else
-        ColumnDef(column, RegularColumn)
-    }
-  }
-
-  private def handleId(table: TableMetadata, columnName: String): String =
-    Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
-      .flatMap(toOption)
-      .map(c => toName(c.getName))
-      .getOrElse(columnName)
-
-  private def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
-    case table: TableMetadata =>
-      for (index <- table.getIndexes.asScala.values.toSeq) yield {
-        val className = toOption(index.getClassName)
-        val target = handleId(table, index.getTarget)
-        IndexDef(className, target, toName(index.getName), Map.empty)
-      }
-    case _: ViewMetadata => Seq.empty
-  }
-
-  def fetchTable(keyspace: CqlIdentifier, table: RelationMetadata): TableDef = {
-    val partitionKey = fetchPartitionKey(table)
-    val clusteringColumns = fetchClusteringColumns(table)
-    val regularColumns = fetchRegularColumns(table)
-    val indexDefs = getIndexDefs(table)
-
-    val isView = table match {
-      case _: ViewMetadata => true
-      case _ => false
-    }
-
-    TableDef(
-      toName(keyspace),
-      toName(table.getName),
-      partitionKey,
-      clusteringColumns,
-      regularColumns,
-      indexDefs,
-      isView)
-  }
-
-  private def isTableSelected(table: RelationMetadata, selected: Option[String]): Boolean = selected match {
-    case None => true
-    case Some(name) => toName(table.getName) == name
-  }
-
-  private def fetchTables(keyspace: KeyspaceMetadata, selected: Option[String] = None): Set[TableDef] =
-    for ((_, table) <- (keyspace.getTables.asScala.toSet ++ keyspace.getViews.asScala.toSet)
-         if isTableSelected(table, selected)) yield {
-      fetchTable(keyspace.getName, table)
-    }
-
-  def fetchUserType(driverUserType: DriverUserDefinedType): UserDefinedType = {
-    UserDefinedType(driverUserType)
-  }
-
-  private def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
-    metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) => fetchUserType(driverUserType) }.toSet
-  }
-
-  private def systemKeyspaces = Set.empty[String] // TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
-
-  def fetchKeyspace(keyspace: KeyspaceMetadata, selectedTable: Option[String] = None): KeyspaceDef =
-    KeyspaceDef(
-      toName(keyspace.getName),
-      fetchTables(keyspace, selectedTable),
-      fetchUserTypes(keyspace),
-      systemKeyspaces.contains(toName(keyspace.getName)))
 
   /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
     *
@@ -397,19 +228,14 @@ object Schema extends StrictLogging {
         case Some(name) => toName(keyspace.getName) == name
       }
 
-    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
-      for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        fetchKeyspace(keyspace, tableName)
+    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceMetadata] =
+      metadata.getKeyspaces.values().asScala.filter(isKeyspaceSelected(_)).toSet
 
     logger.debug(s"Retrieving database schema")
-    def fetchSchema(metadata: => Metadata): Schema =
-      Schema(fetchKeyspaces(metadata))
-
-    val scheme = fetchSchema(session.refreshSchema())
-
-    logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
-      s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-    scheme
+    val schema = Schema(fetchKeyspaces(session.refreshSchema()))
+    logger.debug(s"${schema.keyspaces.size} keyspaces fetched: " +
+      s"${schema.keyspaces.map(_.getName).mkString("{", ",", "}")}")
+    schema
   }
 
 
