@@ -1,0 +1,2716 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>CassandraDirectJoinExec - org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec</title>
+          <meta name="description" content="CassandraDirectJoinExec - org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec" />
+          <meta name="keywords" content="CassandraDirectJoinExec org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img alt="Class" src="../../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="org">org</a>.<a href="../../../../package.html" class="extype" name="org.apache">apache</a>.<a href="../../../package.html" class="extype" name="org.apache.spark">spark</a>.<a href="../../package.html" class="extype" name="org.apache.spark.sql">sql</a>.<a href="../package.html" class="extype" name="org.apache.spark.sql.cassandra">cassandra</a>.<a href="package.html" class="extype" name="org.apache.spark.sql.cassandra.execution">execution</a></p>
+        <h1>CassandraDirectJoinExec</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="org.apache.spark.sql.cassandra.execution">package execution</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CassandraDirectJoinExec</span><span class="params">(<span name="leftKeys">leftKeys: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="rightKeys">rightKeys: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="joinType">joinType: <span class="extype" name="org.apache.spark.sql.catalyst.plans.JoinType">JoinType</span></span>, <span name="cassandraSide">cassandraSide: <span class="extype" name="org.apache.spark.sql.execution.joins.BuildSide">BuildSide</span></span>, <span name="condition">condition: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="child">child: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>, <span name="aliasMap">aliasMap: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>, <span name="cassandraScan">cassandraScan: <a href="../../../../../../com/datastax/spark/connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a>[_]</span>, <span name="cassandraPlan">cassandraPlan: <span class="extype" name="org.apache.spark.sql.execution.DataSourceScanExec">DataSourceScanExec</span></span>)</span><span class="result"> extends <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span> with <span class="extype" name="org.apache.spark.sql.execution.UnaryExecNode">UnaryExecNode</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A physical plan for performing a join against a CassandraTable given a set of keys.
+</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="org.apache.spark.sql.execution.UnaryExecNode">UnaryExecNode</span>, <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="org.apache.spark.internal.Logging">Logging</span>, <span class="extype" name="org.apache.spark.sql.catalyst.plans.QueryPlan">QueryPlan</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>], <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode">TreeNode</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>], <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec"><span>CassandraDirectJoinExec</span></li><li class="in" name="org.apache.spark.sql.execution.UnaryExecNode"><span>UnaryExecNode</span></li><li class="in" name="org.apache.spark.sql.execution.SparkPlan"><span>SparkPlan</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="org.apache.spark.internal.Logging"><span>Logging</span></li><li class="in" name="org.apache.spark.sql.catalyst.plans.QueryPlan"><span>QueryPlan</span></li><li class="in" name="org.apache.spark.sql.catalyst.trees.TreeNode"><span>TreeNode</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(leftKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression],rightKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression],joinType:org.apache.spark.sql.catalyst.plans.JoinType,cassandraSide:org.apache.spark.sql.execution.joins.BuildSide,condition:Option[org.apache.spark.sql.catalyst.expressions.Expression],child:org.apache.spark.sql.execution.SparkPlan,aliasMap:Map[String,org.apache.spark.sql.catalyst.expressions.Attribute],cassandraScan:com.datastax.spark.connector.rdd.CassandraTableScanRDD[_],cassandraPlan:org.apache.spark.sql.execution.DataSourceScanExec):org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec"></a>
+      <a id="&lt;init&gt;:CassandraDirectJoinExec"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CassandraDirectJoinExec</span><span class="params">(<span name="leftKeys">leftKeys: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="rightKeys">rightKeys: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="joinType">joinType: <span class="extype" name="org.apache.spark.sql.catalyst.plans.JoinType">JoinType</span></span>, <span name="cassandraSide">cassandraSide: <span class="extype" name="org.apache.spark.sql.execution.joins.BuildSide">BuildSide</span></span>, <span name="condition">condition: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="child">child: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>, <span name="aliasMap">aliasMap: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>, <span name="cassandraScan">cassandraScan: <a href="../../../../../../com/datastax/spark/connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a>[_]</span>, <span name="cassandraPlan">cassandraPlan: <span class="extype" name="org.apache.spark.sql.execution.DataSourceScanExec">DataSourceScanExec</span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@&lt;init&gt;(leftKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression],rightKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression],joinType:org.apache.spark.sql.catalyst.plans.JoinType,cassandraSide:org.apache.spark.sql.execution.joins.BuildSide,condition:Option[org.apache.spark.sql.catalyst.expressions.Expression],child:org.apache.spark.sql.execution.SparkPlan,aliasMap:Map[String,org.apache.spark.sql.catalyst.expressions.Attribute],cassandraScan:com.datastax.spark.connector.rdd.CassandraTableScanRDD[_],cassandraPlan:org.apache.spark.sql.execution.DataSourceScanExec):org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#aliasMap" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="aliasMap:Map[String,org.apache.spark.sql.catalyst.expressions.Attribute]"></a>
+      <a id="aliasMap:Map[String,Attribute]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">aliasMap</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@aliasMap:Map[String,org.apache.spark.sql.catalyst.expressions.Attribute]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#allAttributes" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="allAttributes:org.apache.spark.sql.catalyst.expressions.AttributeSeq"></a>
+      <a id="allAttributes:AttributeSeq"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">allAttributes</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSeq">AttributeSeq</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@allAttributes:org.apache.spark.sql.catalyst.expressions.AttributeSeq" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(number:&lt;?&gt;):org.apache.spark.sql.catalyst.trees.TreeNode[_]"></a>
+      <a id="apply(Int):TreeNode[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="number">number: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode">TreeNode</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@apply(number:Int):org.apache.spark.sql.catalyst.trees.TreeNode[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#argString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="argString:String"></a>
+      <a id="argString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">argString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@argString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#asCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asCode:String"></a>
+      <a id="asCode:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asCode</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@asCode:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#attributeToCassandra" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="attributeToCassandra:scala.collection.immutable.Map[org.apache.spark.sql.catalyst.expressions.Attribute,String]"></a>
+      <a id="attributeToCassandra:Map[Attribute,String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">attributeToCassandra</span><span class="result">: <span class="extype" name="scala.collection.immutable.Map">Map</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@attributeToCassandra:scala.collection.immutable.Map[org.apache.spark.sql.catalyst.expressions.Attribute,String]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#canonicalized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="canonicalized:PlanType"></a>
+      <a id="canonicalized:SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">canonicalized</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@canonicalized:PlanType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#cassandraPlan" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cassandraPlan:org.apache.spark.sql.execution.DataSourceScanExec"></a>
+      <a id="cassandraPlan:DataSourceScanExec"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cassandraPlan</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.DataSourceScanExec">DataSourceScanExec</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@cassandraPlan:org.apache.spark.sql.execution.DataSourceScanExec" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#cassandraScan" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cassandraScan:com.datastax.spark.connector.rdd.CassandraTableScanRDD[_]"></a>
+      <a id="cassandraScan:CassandraTableScanRDD[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cassandraScan</span><span class="result">: <a href="../../../../../../com/datastax/spark/connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraTableScanRDD</a>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@cassandraScan:com.datastax.spark.connector.rdd.CassandraTableScanRDD[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#cassandraSchema" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cassandraSchema:org.apache.spark.sql.types.StructType"></a>
+      <a id="cassandraSchema:StructType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cassandraSchema</span><span class="result">: <span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@cassandraSchema:org.apache.spark.sql.types.StructType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#cassandraSide" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cassandraSide:org.apache.spark.sql.execution.joins.BuildSide"></a>
+      <a id="cassandraSide:BuildSide"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cassandraSide</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.joins.BuildSide">BuildSide</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@cassandraSide:org.apache.spark.sql.execution.joins.BuildSide" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#child" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="child:org.apache.spark.sql.execution.SparkPlan"></a>
+      <a id="child:SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">child</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@child:org.apache.spark.sql.execution.SparkPlan" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a> → UnaryExecNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.UnaryExecNode#children" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="children:Seq[org.apache.spark.sql.execution.SparkPlan]"></a>
+      <a id="children:Seq[SparkPlan]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">children</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@children:Seq[org.apache.spark.sql.execution.SparkPlan]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>UnaryExecNode → TreeNode</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#collect" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="collect[B&lt;:&lt;?&gt;](pf:&lt;?&gt;):Seq[B]"></a>
+      <a id="collect[B](PartialFunction[SparkPlan,B]):Seq[B]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">collect</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="pf">pf: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.collect.B">B</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.collect.B">B</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@collect[B](pf:PartialFunction[BaseType,B]):Seq[B]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#collectFirst" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="collectFirst[B](pf:PartialFunction[BaseType,B]):Option[B]"></a>
+      <a id="collectFirst[B](PartialFunction[SparkPlan,B]):Option[B]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">collectFirst</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="pf">pf: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.collectFirst.B">B</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.collectFirst.B">B</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@collectFirst[B](pf:PartialFunction[BaseType,B]):Option[B]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#collectLeaves" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="collectLeaves():Seq[BaseType]"></a>
+      <a id="collectLeaves():Seq[SparkPlan]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">collectLeaves</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@collectLeaves():Seq[BaseType]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#condition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="condition:Option[org.apache.spark.sql.catalyst.expressions.Expression]"></a>
+      <a id="condition:Option[Expression]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">condition</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@condition:Option[org.apache.spark.sql.catalyst.expressions.Expression]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#conf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="conf:org.apache.spark.sql.internal.SQLConf"></a>
+      <a id="conf:SQLConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">conf</span><span class="result">: <span class="extype" name="org.apache.spark.sql.internal.SQLConf">SQLConf</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@conf:org.apache.spark.sql.internal.SQLConf" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#containsChild" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="containsChild:Set[org.apache.spark.sql.catalyst.trees.TreeNode[_]]"></a>
+      <a id="containsChild:Set[TreeNode[_]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">containsChild</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode">TreeNode</span>[_]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@containsChild:Set[org.apache.spark.sql.catalyst.trees.TreeNode[_]]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#createResultProjection" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="createResultProjection():org.apache.spark.sql.catalyst.InternalRow=&gt;org.apache.spark.sql.catalyst.InternalRow"></a>
+      <a id="createResultProjection():(InternalRow)⇒InternalRow"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">createResultProjection</span><span class="params">()</span><span class="result">: (<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>) ⇒ <span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@createResultProjection():org.apache.spark.sql.catalyst.InternalRow=&gt;org.apache.spark.sql.catalyst.InternalRow" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#doCanonicalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="doCanonicalize():PlanType"></a>
+      <a id="doCanonicalize():SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">doCanonicalize</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@doCanonicalize():PlanType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#doExecute" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="doExecute():org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="doExecute():RDD[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">doExecute</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@doExecute():org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Join type do the correct JoinWithCassandraTable Operation
+</p><div class="fullcomment"><div class="comment cmt"><p>Join type do the correct JoinWithCassandraTable Operation
+</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a> → SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#doExecuteBroadcast" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="doExecuteBroadcast[T&lt;:&lt;?&gt;]():org.apache.spark.broadcast.Broadcast[T]"></a>
+      <a id="doExecuteBroadcast[T]():Broadcast[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">doExecuteBroadcast</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan.doExecuteBroadcast.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@doExecuteBroadcast[T]():org.apache.spark.broadcast.Broadcast[T]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../package.html" class="extype" name="org.apache.spark.sql">org.apache.spark.sql</a>] </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#doPrepare" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="doPrepare():Unit"></a>
+      <a id="doPrepare():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">doPrepare</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@doPrepare():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#execute" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="execute():org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="execute():RDD[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">execute</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@execute():org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeBroadcast" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeBroadcast[T&lt;:&lt;?&gt;]():org.apache.spark.broadcast.Broadcast[T]"></a>
+      <a id="executeBroadcast[T]():Broadcast[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeBroadcast</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan.executeBroadcast.T">T</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeBroadcast[T]():org.apache.spark.broadcast.Broadcast[T]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeCollect" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeCollect():Array[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="executeCollect():Array[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeCollect</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeCollect():Array[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeCollectPublic" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeCollectPublic():Array[org.apache.spark.sql.Row]"></a>
+      <a id="executeCollectPublic():Array[Row]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeCollectPublic</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.Row">Row</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeCollectPublic():Array[org.apache.spark.sql.Row]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeQuery" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeQuery[T&lt;:&lt;?&gt;](query:&lt;?&gt;):T"></a>
+      <a id="executeQuery[T](⇒T):T"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeQuery</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="query">query: ⇒ <span class="extype" name="org.apache.spark.sql.execution.SparkPlan.executeQuery.T">T</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan.executeQuery.T">T</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeQuery[T](query:=&gt;T):T" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeTake" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeTake(n:&lt;?&gt;):Array[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="executeTake(Int):Array[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeTake</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeTake(n:Int):Array[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#executeToIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="executeToIterator():Iterator[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="executeToIterator():Iterator[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">executeToIterator</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@executeToIterator():Iterator[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#expressions" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="expressions:Seq[org.apache.spark.sql.catalyst.expressions.Expression]"></a>
+      <a id="expressions:Seq[Expression]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">expressions</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@expressions:Seq[org.apache.spark.sql.catalyst.expressions.Expression]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#fastEquals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="fastEquals(other:&lt;?&gt;):Boolean"></a>
+      <a id="fastEquals(TreeNode[_]):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fastEquals</span><span class="params">(<span name="other">other: <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode">TreeNode</span>[_]</span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@fastEquals(other:org.apache.spark.sql.catalyst.trees.TreeNode[_]):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#find" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="find(f:&lt;?&gt;):Option[BaseType]"></a>
+      <a id="find((SparkPlan)⇒Boolean):Option[SparkPlan]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">find</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@find(f:BaseType=&gt;Boolean):Option[BaseType]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#flatMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="flatMap[A&lt;:&lt;?&gt;](f:&lt;?&gt;):Seq[A]"></a>
+      <a id="flatMap[A]((SparkPlan)⇒TraversableOnce[A]):Seq[A]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">flatMap</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="scala.TraversableOnce">TraversableOnce</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.flatMap.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.flatMap.A">A</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@flatMap[A](f:BaseType=&gt;TraversableOnce[A]):Seq[A]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#foreach" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="foreach(f:&lt;?&gt;):Unit"></a>
+      <a id="foreach((SparkPlan)⇒Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">foreach</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@foreach(f:BaseType=&gt;Unit):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#foreachUp" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="foreachUp(f:&lt;?&gt;):Unit"></a>
+      <a id="foreachUp((SparkPlan)⇒Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">foreachUp</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@foreachUp(f:BaseType=&gt;Unit):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#generateTreeString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="generateTreeString(depth:&lt;?&gt;,lastChildren:&lt;?&gt;,builder:&lt;?&gt;,verbose:&lt;?&gt;,prefix:&lt;?&gt;,addSuffix:&lt;?&gt;):StringBuilder"></a>
+      <a id="generateTreeString(Int,Seq[Boolean],StringBuilder,Boolean,String,Boolean):StringBuilder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">generateTreeString</span><span class="params">(<span name="depth">depth: <span class="extype" name="scala.Int">Int</span></span>, <span name="lastChildren">lastChildren: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>, <span name="builder">builder: <span class="extype" name="scala.StringBuilder">StringBuilder</span></span>, <span name="verbose">verbose: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="addSuffix">addSuffix: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.StringBuilder">StringBuilder</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@generateTreeString(depth:Int,lastChildren:Seq[Boolean],builder:StringBuilder,verbose:Boolean,prefix:String,addSuffix:Boolean):StringBuilder" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode → AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#initializeLogIfNecessary" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="initializeLogIfNecessary(isInterpreter:Boolean,silent:Boolean):Boolean"></a>
+      <a id="initializeLogIfNecessary(Boolean,Boolean):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">initializeLogIfNecessary</span><span class="params">(<span name="isInterpreter">isInterpreter: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="silent">silent: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@initializeLogIfNecessary(isInterpreter:Boolean,silent:Boolean):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#initializeLogIfNecessary" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="initializeLogIfNecessary(isInterpreter:Boolean):Unit"></a>
+      <a id="initializeLogIfNecessary(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">initializeLogIfNecessary</span><span class="params">(<span name="isInterpreter">isInterpreter: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@initializeLogIfNecessary(isInterpreter:Boolean):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#innerChildren" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="innerChildren:Seq[org.apache.spark.sql.catalyst.plans.QueryPlan[_]]"></a>
+      <a id="innerChildren:Seq[QueryPlan[_]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">innerChildren</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.plans.QueryPlan">QueryPlan</span>[_]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@innerChildren:Seq[org.apache.spark.sql.catalyst.plans.QueryPlan[_]]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>QueryPlan → TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#inputSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inputSet:org.apache.spark.sql.catalyst.expressions.AttributeSet"></a>
+      <a id="inputSet:AttributeSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inputSet</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSet">AttributeSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@inputSet:org.apache.spark.sql.catalyst.expressions.AttributeSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#isCanonicalizedPlan" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isCanonicalizedPlan:Boolean"></a>
+      <a id="isCanonicalizedPlan:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isCanonicalizedPlan</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@isCanonicalizedPlan:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#isTraceEnabled" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isTraceEnabled():Boolean"></a>
+      <a id="isTraceEnabled():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isTraceEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@isTraceEnabled():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#joinColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="joinColumns:Seq[com.datastax.spark.connector.ColumnName]"></a>
+      <a id="joinColumns:Seq[com.datastax.spark.connector.ColumnName]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">joinColumns</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[<span class="extype" name="com.datastax.spark.connector.ColumnName">com.datastax.spark.connector.ColumnName</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@joinColumns:Seq[com.datastax.spark.connector.ColumnName]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#joinExpressions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="joinExpressions:Seq[org.apache.spark.sql.catalyst.expressions.Expression]"></a>
+      <a id="joinExpressions:Seq[Expression]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">joinExpressions</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@joinExpressions:Seq[org.apache.spark.sql.catalyst.expressions.Expression]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#joinType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="joinType:org.apache.spark.sql.catalyst.plans.JoinType"></a>
+      <a id="joinType:JoinType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">joinType</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.plans.JoinType">JoinType</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@joinType:org.apache.spark.sql.catalyst.plans.JoinType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#jsonFields" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="jsonFields:List[org.json4s.JsonAST.JField]"></a>
+      <a id="jsonFields:List[JField]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">jsonFields</span><span class="result">: <span class="extype" name="scala.List">List</span>[<span class="extype" name="org.json4s.JsonAST.JField">JField</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@jsonFields:List[org.json4s.JsonAST.JField]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#keySource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="keySource:org.apache.spark.sql.execution.SparkPlan"></a>
+      <a id="keySource:SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keySource</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@keySource:org.apache.spark.sql.execution.SparkPlan" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#keyspace" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="keyspace:String"></a>
+      <a id="keyspace:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keyspace</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@keyspace:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#left" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="left:org.apache.spark.sql.execution.SparkPlan"></a>
+      <a id="left:SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">left</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@left:org.apache.spark.sql.execution.SparkPlan" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#leftJoinCouplets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="leftJoinCouplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]"></a>
+      <a id="leftJoinCouplets:Seq[(Expression,Expression)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">leftJoinCouplets</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[(<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>)]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@leftJoinCouplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#leftKeys" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="leftKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression]"></a>
+      <a id="leftKeys:Seq[Expression]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">leftKeys</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@leftKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.internal.Logging#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@log:org.slf4j.Logger" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logDebug(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logDebug(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String):Unit"></a>
+      <a id="logDebug(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logDebug(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logError(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logError(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logError(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logInfo(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logInfo(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String):Unit"></a>
+      <a id="logInfo(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logInfo(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logName:String"></a>
+      <a id="logName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logName:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logTrace(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logTrace(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String):Unit"></a>
+      <a id="logTrace(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logTrace(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logWarning(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logWarning(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.internal.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String):Unit"></a>
+      <a id="logWarning(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@logWarning(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Logging</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#longMetric" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="longMetric(name:&lt;?&gt;):org.apache.spark.sql.execution.metric.SQLMetric"></a>
+      <a id="longMetric(String):SQLMetric"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">longMetric</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.metric.SQLMetric">SQLMetric</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@longMetric(name:String):org.apache.spark.sql.execution.metric.SQLMetric" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#makeCopy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="makeCopy(newArgs:Array[AnyRef]):org.apache.spark.sql.execution.SparkPlan"></a>
+      <a id="makeCopy(Array[AnyRef]):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">makeCopy</span><span class="params">(<span name="newArgs">newArgs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@makeCopy(newArgs:Array[AnyRef]):org.apache.spark.sql.execution.SparkPlan" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan → TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#map" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="map[A&lt;:&lt;?&gt;](f:&lt;?&gt;):Seq[A]"></a>
+      <a id="map[A]((SparkPlan)⇒A):Seq[A]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">map</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.map.A">A</span></span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.map.A">A</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@map[A](f:BaseType=&gt;A):Seq[A]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#mapChildren" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="mapChildren(f:BaseType=&gt;BaseType):BaseType"></a>
+      <a id="mapChildren((SparkPlan)⇒SparkPlan):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapChildren</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>) ⇒ <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@mapChildren(f:BaseType=&gt;BaseType):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#mapExpressions" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="mapExpressions(f:&lt;?&gt;):QueryPlan.this.type"></a>
+      <a id="mapExpressions((Expression)⇒Expression):CassandraDirectJoinExec.this.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapExpressions</span><span class="params">(<span name="f">f: (<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>) ⇒ <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span></span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a>.this.type</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@mapExpressions(f:org.apache.spark.sql.catalyst.expressions.Expression=&gt;org.apache.spark.sql.catalyst.expressions.Expression):QueryPlan.this.type" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#mapProductIterator" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="mapProductIterator[B&lt;:&lt;?&gt;](f:&lt;?&gt;)(implicitevidence$1:&lt;?&gt;):Array[B]"></a>
+      <a id="mapProductIterator[B]((Any)⇒B)(ClassTag[B]):Array[B]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapProductIterator</span><span class="tparams">[<span name="B">B</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="scala.Any">Any</span>) ⇒ <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.mapProductIterator.B">B</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="scala.reflect.ClassTag">ClassTag</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.mapProductIterator.B">B</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode.mapProductIterator.B">B</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@mapProductIterator[B](f:Any=&gt;B)(implicitevidence$1:scala.reflect.ClassTag[B]):Array[B]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#metrics" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="metrics:scala.collection.immutable.Map[String,org.apache.spark.sql.execution.metric.SQLMetric]"></a>
+      <a id="metrics:Map[String,SQLMetric]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">metrics</span><span class="result">: <span class="extype" name="scala.collection.immutable.Map">Map</span>[<span class="extype" name="java.lang.String">String</span>, <span class="extype" name="org.apache.spark.sql.execution.metric.SQLMetric">SQLMetric</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@metrics:scala.collection.immutable.Map[String,org.apache.spark.sql.execution.metric.SQLMetric]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a> → SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#missingInput" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="missingInput:org.apache.spark.sql.catalyst.expressions.AttributeSet"></a>
+      <a id="missingInput:AttributeSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">missingInput</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSet">AttributeSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@missingInput:org.apache.spark.sql.catalyst.expressions.AttributeSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#newMutableProjection" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="newMutableProjection(expressions:&lt;?&gt;,inputSchema:&lt;?&gt;,useSubexprElimination:&lt;?&gt;):org.apache.spark.sql.catalyst.expressions.MutableProjection"></a>
+      <a id="newMutableProjection(Seq[Expression],Seq[Attribute],Boolean):MutableProjection"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">newMutableProjection</span><span class="params">(<span name="expressions">expressions: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>, <span name="inputSchema">inputSchema: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>, <span name="useSubexprElimination">useSubexprElimination: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.MutableProjection">MutableProjection</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@newMutableProjection(expressions:Seq[org.apache.spark.sql.catalyst.expressions.Expression],inputSchema:Seq[org.apache.spark.sql.catalyst.expressions.Attribute],useSubexprElimination:Boolean):org.apache.spark.sql.catalyst.expressions.MutableProjection" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#newNaturalAscendingOrdering" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="newNaturalAscendingOrdering(dataTypes:&lt;?&gt;):Ordering[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="newNaturalAscendingOrdering(Seq[DataType]):Ordering[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">newNaturalAscendingOrdering</span><span class="params">(<span name="dataTypes">dataTypes: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.types.DataType">DataType</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Ordering">Ordering</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@newNaturalAscendingOrdering(dataTypes:Seq[org.apache.spark.sql.types.DataType]):Ordering[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#newOrdering" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="newOrdering(order:&lt;?&gt;,inputSchema:&lt;?&gt;):Ordering[org.apache.spark.sql.catalyst.InternalRow]"></a>
+      <a id="newOrdering(Seq[SortOrder],Seq[Attribute]):Ordering[InternalRow]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">newOrdering</span><span class="params">(<span name="order">order: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.SortOrder">SortOrder</span>]</span>, <span name="inputSchema">inputSchema: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Ordering">Ordering</span>[<span class="extype" name="org.apache.spark.sql.catalyst.InternalRow">InternalRow</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@newOrdering(order:Seq[org.apache.spark.sql.catalyst.expressions.SortOrder],inputSchema:Seq[org.apache.spark.sql.catalyst.expressions.Attribute]):Ordering[org.apache.spark.sql.catalyst.InternalRow]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#newPredicate" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="newPredicate(expression:org.apache.spark.sql.catalyst.expressions.Expression,inputSchema:Seq[org.apache.spark.sql.catalyst.expressions.Attribute]):org.apache.spark.sql.catalyst.expressions.codegen.Predicate"></a>
+      <a id="newPredicate(Expression,Seq[Attribute]):Predicate"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">newPredicate</span><span class="params">(<span name="expression">expression: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span></span>, <span name="inputSchema">inputSchema: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.codegen.Predicate">Predicate</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@newPredicate(expression:org.apache.spark.sql.catalyst.expressions.Expression,inputSchema:Seq[org.apache.spark.sql.catalyst.expressions.Attribute]):org.apache.spark.sql.catalyst.expressions.codegen.Predicate" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#nodeName" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="nodeName:String"></a>
+      <a id="nodeName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">nodeName</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@nodeName:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#numOutputRows" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numOutputRows:org.apache.spark.sql.execution.metric.SQLMetric"></a>
+      <a id="numOutputRows:SQLMetric"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numOutputRows</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.metric.SQLMetric">SQLMetric</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@numOutputRows:org.apache.spark.sql.execution.metric.SQLMetric" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#numberedTreeString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="numberedTreeString:String"></a>
+      <a id="numberedTreeString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numberedTreeString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@numberedTreeString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#origin" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="origin:org.apache.spark.sql.catalyst.trees.Origin"></a>
+      <a id="origin:Origin"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">origin</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.trees.Origin">Origin</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@origin:org.apache.spark.sql.catalyst.trees.Origin" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#otherCopyArgs" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="otherCopyArgs:Seq[AnyRef]"></a>
+      <a id="otherCopyArgs:Seq[AnyRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">otherCopyArgs</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.AnyRef">AnyRef</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@otherCopyArgs:Seq[AnyRef]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#otherJoinCouplets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="otherJoinCouplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]"></a>
+      <a id="otherJoinCouplets:Seq[(Expression,Expression)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">otherJoinCouplets</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[(<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>)]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@otherJoinCouplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#output" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="output:Seq[org.apache.spark.sql.catalyst.expressions.Attribute]"></a>
+      <a id="output:Seq[Attribute]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">output</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Attribute">Attribute</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@output:Seq[org.apache.spark.sql.catalyst.expressions.Attribute]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a> → QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#outputOrdering" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="outputOrdering:Seq[org.apache.spark.sql.catalyst.expressions.SortOrder]"></a>
+      <a id="outputOrdering:Seq[SortOrder]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">outputOrdering</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.SortOrder">SortOrder</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@outputOrdering:Seq[org.apache.spark.sql.catalyst.expressions.SortOrder]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#outputPartitioning" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="outputPartitioning:org.apache.spark.sql.catalyst.plans.physical.Partitioning"></a>
+      <a id="outputPartitioning:Partitioning"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">outputPartitioning</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.plans.physical.Partitioning">Partitioning</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@outputPartitioning:org.apache.spark.sql.catalyst.plans.physical.Partitioning" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#outputSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="outputSet:org.apache.spark.sql.catalyst.expressions.AttributeSet"></a>
+      <a id="outputSet:AttributeSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">outputSet</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSet">AttributeSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@outputSet:org.apache.spark.sql.catalyst.expressions.AttributeSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#p" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="p(number:&lt;?&gt;):BaseType"></a>
+      <a id="p(Int):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">p</span><span class="params">(<span name="number">number: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@p(number:Int):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#pkJoinCoulplets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pkJoinCoulplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]"></a>
+      <a id="pkJoinCoulplets:Seq[(Expression,Expression)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pkJoinCoulplets</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[(<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>)]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@pkJoinCoulplets:Seq[(org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression)]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#prepare" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="prepare():Unit"></a>
+      <a id="prepare():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">prepare</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@prepare():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#prepareSubqueries" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="prepareSubqueries():Unit"></a>
+      <a id="prepareSubqueries():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">prepareSubqueries</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@prepareSubqueries():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#prettyJson" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="prettyJson:String"></a>
+      <a id="prettyJson:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">prettyJson</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@prettyJson:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#primaryKeys" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="primaryKeys:IndexedSeq[String]"></a>
+      <a id="primaryKeys:IndexedSeq[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">primaryKeys</span><span class="result">: <span class="extype" name="scala.collection.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@primaryKeys:IndexedSeq[String]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#printSchema" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="printSchema():Unit"></a>
+      <a id="printSchema():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">printSchema</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@printSchema():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#producedAttributes" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="producedAttributes:org.apache.spark.sql.catalyst.expressions.AttributeSet"></a>
+      <a id="producedAttributes:AttributeSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">producedAttributes</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSet">AttributeSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@producedAttributes:org.apache.spark.sql.catalyst.expressions.AttributeSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#readConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readConf:com.datastax.spark.connector.rdd.ReadConf"></a>
+      <a id="readConf:ReadConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readConf</span><span class="result">: <a href="../../../../../../com/datastax/spark/connector/rdd/ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@readConf:com.datastax.spark.connector.rdd.ReadConf" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#references" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="references:org.apache.spark.sql.catalyst.expressions.AttributeSet"></a>
+      <a id="references:AttributeSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">references</span><span class="result">: <span class="extype" name="org.apache.spark.sql.catalyst.expressions.AttributeSet">AttributeSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@references:org.apache.spark.sql.catalyst.expressions.AttributeSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#requiredChildDistribution" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="requiredChildDistribution:Seq[org.apache.spark.sql.catalyst.plans.physical.Distribution]"></a>
+      <a id="requiredChildDistribution:Seq[Distribution]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">requiredChildDistribution</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.plans.physical.Distribution">Distribution</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@requiredChildDistribution:Seq[org.apache.spark.sql.catalyst.plans.physical.Distribution]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#requiredChildOrdering" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="requiredChildOrdering:Seq[Seq[org.apache.spark.sql.catalyst.expressions.SortOrder]]"></a>
+      <a id="requiredChildOrdering:Seq[Seq[SortOrder]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">requiredChildOrdering</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.SortOrder">SortOrder</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@requiredChildOrdering:Seq[Seq[org.apache.spark.sql.catalyst.expressions.SortOrder]]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#resetMetrics" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="resetMetrics():Unit"></a>
+      <a id="resetMetrics():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">resetMetrics</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@resetMetrics():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#right" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="right:org.apache.spark.sql.execution.SparkPlan"></a>
+      <a id="right:SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">right</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@right:org.apache.spark.sql.execution.SparkPlan" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#rightKeys" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="rightKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression]"></a>
+      <a id="rightKeys:Seq[Expression]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rightKeys</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@rightKeys:Seq[org.apache.spark.sql.catalyst.expressions.Expression]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#sameResult" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sameResult(other:&lt;?&gt;):Boolean"></a>
+      <a id="sameResult(SparkPlan):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sameResult</span><span class="params">(<span name="other">other: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@sameResult(other:PlanType):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#schema" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="schema:org.apache.spark.sql.types.StructType"></a>
+      <a id="schema:StructType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">schema</span><span class="result">: <span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@schema:org.apache.spark.sql.types.StructType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#schemaString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="schemaString:String"></a>
+      <a id="schemaString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">schemaString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@schemaString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#selectedColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="selectedColumns:Seq[com.datastax.spark.connector.ColumnRef]"></a>
+      <a id="selectedColumns:Seq[ColumnRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">selectedColumns</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="com.datastax.spark.connector.ColumnRef">ColumnRef</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@selectedColumns:Seq[com.datastax.spark.connector.ColumnRef]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#semanticHash" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="semanticHash():Int"></a>
+      <a id="semanticHash():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">semanticHash</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@semanticHash():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#simpleString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="simpleString:String"></a>
+      <a id="simpleString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">simpleString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@simpleString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a> → QueryPlan → TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#sparkContext" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sparkContext:org.apache.spark.SparkContext"></a>
+      <a id="sparkContext:SparkContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sparkContext</span><span class="result">: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@sparkContext:org.apache.spark.SparkContext" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#sqlContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sqlContext:org.apache.spark.sql.SQLContext"></a>
+      <a id="sqlContext:SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sqlContext</span><span class="result">: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@sqlContext:org.apache.spark.sql.SQLContext" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#statePrefix" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="statePrefix:String"></a>
+      <a id="statePrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">statePrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@statePrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#stringArgs" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="stringArgs:Iterator[Any]"></a>
+      <a id="stringArgs:Iterator[Any]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">stringArgs</span><span class="result">: <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="scala.Any">Any</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@stringArgs:Iterator[Any]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#subexpressionEliminationEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="subexpressionEliminationEnabled:Boolean"></a>
+      <a id="subexpressionEliminationEnabled:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">subexpressionEliminationEnabled</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@subexpressionEliminationEnabled:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#subqueries" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="subqueries:Seq[PlanType]"></a>
+      <a id="subqueries:Seq[SparkPlan]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">subqueries</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@subqueries:Seq[PlanType]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#table" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="table:String"></a>
+      <a id="table:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">table</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@table:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#toJSON" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toJSON:String"></a>
+      <a id="toJSON:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toJSON</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@toJSON:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode → AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#transform" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transform(rule:PartialFunction[BaseType,BaseType]):BaseType"></a>
+      <a id="transform(PartialFunction[SparkPlan,SparkPlan]):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transform</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transform(rule:PartialFunction[BaseType,BaseType]):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#transformAllExpressions" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformAllExpressions(rule:PartialFunction[org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression]):QueryPlan.this.type"></a>
+      <a id="transformAllExpressions(PartialFunction[Expression,Expression]):CassandraDirectJoinExec.this.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformAllExpressions</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a>.this.type</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformAllExpressions(rule:PartialFunction[org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression]):QueryPlan.this.type" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#transformDown" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformDown(rule:PartialFunction[BaseType,BaseType]):BaseType"></a>
+      <a id="transformDown(PartialFunction[SparkPlan,SparkPlan]):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformDown</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformDown(rule:PartialFunction[BaseType,BaseType]):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#transformExpressions" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformExpressions(rule:&lt;?&gt;):QueryPlan.this.type"></a>
+      <a id="transformExpressions(PartialFunction[Expression,Expression]):CassandraDirectJoinExec.this.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformExpressions</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a>.this.type</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformExpressions(rule:PartialFunction[org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression]):QueryPlan.this.type" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#transformExpressionsDown" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformExpressionsDown(rule:&lt;?&gt;):QueryPlan.this.type"></a>
+      <a id="transformExpressionsDown(PartialFunction[Expression,Expression]):CassandraDirectJoinExec.this.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformExpressionsDown</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a>.this.type</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformExpressionsDown(rule:PartialFunction[org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression]):QueryPlan.this.type" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#transformExpressionsUp" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformExpressionsUp(rule:&lt;?&gt;):QueryPlan.this.type"></a>
+      <a id="transformExpressionsUp(PartialFunction[Expression,Expression]):CassandraDirectJoinExec.this.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformExpressionsUp</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>, <span class="extype" name="org.apache.spark.sql.catalyst.expressions.Expression">Expression</span>]</span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec">CassandraDirectJoinExec</a>.this.type</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformExpressionsUp(rule:PartialFunction[org.apache.spark.sql.catalyst.expressions.Expression,org.apache.spark.sql.catalyst.expressions.Expression]):QueryPlan.this.type" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#transformUp" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="transformUp(rule:PartialFunction[BaseType,BaseType]):BaseType"></a>
+      <a id="transformUp(PartialFunction[SparkPlan,SparkPlan]):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transformUp</span><span class="params">(<span name="rule">rule: <span class="extype" name="scala.PartialFunction">PartialFunction</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>, <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@transformUp(rule:PartialFunction[BaseType,BaseType]):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#treeString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="treeString(verbose:Boolean,addSuffix:Boolean):String"></a>
+      <a id="treeString(Boolean,Boolean):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">treeString</span><span class="params">(<span name="verbose">verbose: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="addSuffix">addSuffix: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@treeString(verbose:Boolean,addSuffix:Boolean):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#treeString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="treeString:String"></a>
+      <a id="treeString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">treeString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@treeString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.plans.QueryPlan#verboseString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="verboseString:String"></a>
+      <a id="verboseString:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">verboseString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@verboseString:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>QueryPlan → TreeNode</dd></dl></div>
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#verboseStringWithSuffix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="verboseStringWithSuffix:String"></a>
+      <a id="verboseStringWithSuffix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">verboseStringWithSuffix</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@verboseStringWithSuffix:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="org.apache.spark.sql.execution.SparkPlan#waitForSubqueries" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="waitForSubqueries():Unit"></a>
+      <a id="waitForSubqueries():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">waitForSubqueries</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@waitForSubqueries():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>SparkPlan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec#whereClause" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="whereClause:com.datastax.spark.connector.rdd.CqlWhereClause"></a>
+      <a id="whereClause:CqlWhereClause"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">whereClause</span><span class="result">: <a href="../../../../../../com/datastax/spark/connector/rdd/CqlWhereClause.html" class="extype" name="com.datastax.spark.connector.rdd.CqlWhereClause">CqlWhereClause</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@whereClause:com.datastax.spark.connector.rdd.CqlWhereClause" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.catalyst.trees.TreeNode#withNewChildren" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="withNewChildren(newChildren:Seq[BaseType]):BaseType"></a>
+      <a id="withNewChildren(Seq[SparkPlan]):SparkPlan"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withNewChildren</span><span class="params">(<span name="newChildren">newChildren: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#org.apache.spark.sql.cassandra.execution.CassandraDirectJoinExec@withNewChildren(newChildren:Seq[BaseType]):BaseType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TreeNode</dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="org.apache.spark.sql.execution.UnaryExecNode">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.execution.UnaryExecNode">UnaryExecNode</span></h3>
+            </div><div class="parent" name="org.apache.spark.sql.execution.SparkPlan">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span></h3>
+            </div><div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="org.apache.spark.internal.Logging">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.internal.Logging">Logging</span></h3>
+            </div><div class="parent" name="org.apache.spark.sql.catalyst.plans.QueryPlan">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.catalyst.plans.QueryPlan">QueryPlan</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</h3>
+            </div><div class="parent" name="org.apache.spark.sql.catalyst.trees.TreeNode">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.catalyst.trees.TreeNode">TreeNode</span>[<span class="extype" name="org.apache.spark.sql.execution.SparkPlan">SparkPlan</span>]</h3>
+            </div><div class="parent" name="scala.Product">
+              <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
+            </div><div class="parent" name="scala.Equals">
+              <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

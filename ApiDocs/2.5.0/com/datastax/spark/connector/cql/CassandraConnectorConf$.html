@@ -1,0 +1,1433 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>CassandraConnectorConf - com.datastax.spark.connector.cql.CassandraConnectorConf</title>
+          <meta name="description" content="CassandraConnectorConf - com.datastax.spark.connector.cql.CassandraConnectorConf" />
+          <meta name="keywords" content="CassandraConnectorConf com.datastax.spark.connector.cql.CassandraConnectorConf" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.cql.CassandraConnectorConf$';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <a href="CassandraConnectorConf.html" title="See companion class"><img alt="Object/Class" src="../../../../../lib/object_to_class_big.png" /></a>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a>.<a href="package.html" class="extype" name="com.datastax.spark.connector.cql">cql</a></p>
+        <h1><a href="CassandraConnectorConf.html" title="See companion class">CassandraConnectorConf</a></h1><h3><span class="morelinks"><div>
+            Related Docs:
+            <a href="CassandraConnectorConf.html" title="See companion class">class CassandraConnectorConf</a>
+            | <a href="package.html" class="extype" name="com.datastax.spark.connector.cql">package cql</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CassandraConnectorConf</span><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A factory for <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a> objects.
+Allows for manually setting connection properties or reading them from <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span>
+object. By embedding connection information in <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span>,
+<span class="extype" name="org.apache.spark.SparkContext">SparkContext</span> can offer Cassandra specific methods which require establishing
+connections to a Cassandra cluster.</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.datastax.spark.connector.cql.CassandraConnectorConf"><span>CassandraConnectorConf</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="com.datastax.spark.connector.util.Logging"><span>Logging</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CassandraSSLConfextendsProductwithSerializable"></a>
+      <a id="CassandraSSLConf:CassandraSSLConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="CassandraConnectorConf$$CassandraSSLConf.html"><span class="name">CassandraSSLConf</span></a><span class="params">(<span name="enabled">enabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="trustStorePath">trustStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">None</span></span>, <span name="trustStorePassword">trustStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">None</span></span>, <span name="trustStoreType">trustStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>, <span name="protocol">protocol: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;TLS&quot;</span></span>, <span name="enabledAlgorithms">enabledAlgorithms: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="defval" name="Set(&quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;)">...</span></span>, <span name="clientAuthEnabled">clientAuthEnabled: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="keyStorePath">keyStorePath: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">None</span></span>, <span name="keyStorePassword">keyStorePassword: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">None</span></span>, <span name="keyStoreType">keyStoreType: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;JKS&quot;</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@CassandraSSLConfextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#CloudBasedConfigurationParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CloudBasedConfigurationParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="CloudBasedConfigurationParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CloudBasedConfigurationParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@CloudBasedConfigurationParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#CompressionParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CompressionParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="CompressionParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CompressionParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@CompressionParam:com.datastax.spark.connector.util.ConfigParameter[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ConnectionHostParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConnectionHostParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="ConnectionHostParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ConnectionHostParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ConnectionHostParam:com.datastax.spark.connector.util.ConfigParameter[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ConnectionPortParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConnectionPortParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="ConnectionPortParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ConnectionPortParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ConnectionPortParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ConnectionTimeoutParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConnectionTimeoutParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="ConnectionTimeoutParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ConnectionTimeoutParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ConnectionTimeoutParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DefaultCassandraSSLConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefaultCassandraSSLConf:com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf"></a>
+      <a id="DefaultCassandraSSLConf:CassandraSSLConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DefaultCassandraSSLConf</span><span class="result">: <a href="CassandraConnectorConf$$CassandraSSLConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf">CassandraSSLConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DefaultCassandraSSLConf:com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedConnectionTimeoutParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedConnectionTimeoutParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]"></a>
+      <a id="DeprecatedConnectionTimeoutParam:DeprecatedConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedConnectionTimeoutParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedConnectionTimeoutParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedKeepAliveMillisParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedKeepAliveMillisParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]"></a>
+      <a id="DeprecatedKeepAliveMillisParam:DeprecatedConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedKeepAliveMillisParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedKeepAliveMillisParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedLocalDCParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedLocalDCParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Option[String]]"></a>
+      <a id="DeprecatedLocalDCParam:DeprecatedConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedLocalDCParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedLocalDCParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedMaxReconnectionDelayParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedMaxReconnectionDelayParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]"></a>
+      <a id="DeprecatedMaxReconnectionDelayParam:DeprecatedConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedMaxReconnectionDelayParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedMaxReconnectionDelayParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedMinReconnectionDelayParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedMinReconnectionDelayParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]"></a>
+      <a id="DeprecatedMinReconnectionDelayParam:DeprecatedConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedMinReconnectionDelayParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedMinReconnectionDelayParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#DeprecatedReadTimeoutParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeprecatedReadTimeoutParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]"></a>
+      <a id="DeprecatedReadTimeoutParam:DeprecatedConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DeprecatedReadTimeoutParam</span><span class="result">: <a href="../util/DeprecatedConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.DeprecatedConfigParameter">DeprecatedConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@DeprecatedReadTimeoutParam:com.datastax.spark.connector.util.DeprecatedConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#KeepAliveMillisParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="KeepAliveMillisParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="KeepAliveMillisParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">KeepAliveMillisParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@KeepAliveMillisParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#LocalConnectionsPerExecutorParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LocalConnectionsPerExecutorParam:com.datastax.spark.connector.util.ConfigParameter[Option[Int]]"></a>
+      <a id="LocalConnectionsPerExecutorParam:ConfigParameter[Option[Int]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LocalConnectionsPerExecutorParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@LocalConnectionsPerExecutorParam:com.datastax.spark.connector.util.ConfigParameter[Option[Int]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#LocalDCParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LocalDCParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="LocalDCParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LocalDCParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@LocalDCParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#MaxReconnectionDelayParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MaxReconnectionDelayParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="MaxReconnectionDelayParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MaxReconnectionDelayParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@MaxReconnectionDelayParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#MinReconnectionDelayParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MinReconnectionDelayParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="MinReconnectionDelayParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MinReconnectionDelayParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@MinReconnectionDelayParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ProfileFileBasedConfigurationParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ProfileFileBasedConfigurationParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="ProfileFileBasedConfigurationParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ProfileFileBasedConfigurationParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ProfileFileBasedConfigurationParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#QueryRetryParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryRetryParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="QueryRetryParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">QueryRetryParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@QueryRetryParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#QuietPeriodBeforeCloseParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QuietPeriodBeforeCloseParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="QuietPeriodBeforeCloseParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">QuietPeriodBeforeCloseParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@QuietPeriodBeforeCloseParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ReadTimeoutParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReadTimeoutParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="ReadTimeoutParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ReadTimeoutParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ReadTimeoutParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ReferenceSection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReferenceSection:String"></a>
+      <a id="ReferenceSection:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ReferenceSection</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ReferenceSection:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ReferenceSectionAlternativeConnection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReferenceSectionAlternativeConnection:String"></a>
+      <a id="ReferenceSectionAlternativeConnection:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ReferenceSectionAlternativeConnection</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ReferenceSectionAlternativeConnection:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ReferenceSectionSSL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ReferenceSectionSSL:String"></a>
+      <a id="ReferenceSectionSSL:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ReferenceSectionSSL</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ReferenceSectionSSL:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#RemoteConnectionsPerExecutorParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RemoteConnectionsPerExecutorParam:com.datastax.spark.connector.util.ConfigParameter[Option[Int]]"></a>
+      <a id="RemoteConnectionsPerExecutorParam:ConfigParameter[Option[Int]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">RemoteConnectionsPerExecutorParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@RemoteConnectionsPerExecutorParam:com.datastax.spark.connector.util.ConfigParameter[Option[Int]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#ResolveContactPoints" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ResolveContactPoints:com.datastax.spark.connector.util.ConfigParameter[Boolean]"></a>
+      <a id="ResolveContactPoints:ConfigParameter[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ResolveContactPoints</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ResolveContactPoints:com.datastax.spark.connector.util.ConfigParameter[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLClientAuthEnabledParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLClientAuthEnabledParam:com.datastax.spark.connector.util.ConfigParameter[Boolean]"></a>
+      <a id="SSLClientAuthEnabledParam:ConfigParameter[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLClientAuthEnabledParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLClientAuthEnabledParam:com.datastax.spark.connector.util.ConfigParameter[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLEnabledAlgorithmsParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLEnabledAlgorithmsParam:com.datastax.spark.connector.util.ConfigParameter[Set[String]]"></a>
+      <a id="SSLEnabledAlgorithmsParam:ConfigParameter[Set[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLEnabledAlgorithmsParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLEnabledAlgorithmsParam:com.datastax.spark.connector.util.ConfigParameter[Set[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLEnabledParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLEnabledParam:com.datastax.spark.connector.util.ConfigParameter[Boolean]"></a>
+      <a id="SSLEnabledParam:ConfigParameter[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLEnabledParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLEnabledParam:com.datastax.spark.connector.util.ConfigParameter[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStorePasswordParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStorePasswordParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLKeyStorePasswordParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStorePasswordParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLKeyStorePasswordParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStorePathParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStorePathParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLKeyStorePathParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStorePathParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLKeyStorePathParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLKeyStoreTypeParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLKeyStoreTypeParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="SSLKeyStoreTypeParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLKeyStoreTypeParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLKeyStoreTypeParam:com.datastax.spark.connector.util.ConfigParameter[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLProtocolParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLProtocolParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="SSLProtocolParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLProtocolParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLProtocolParam:com.datastax.spark.connector.util.ConfigParameter[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLTrustStorePasswordParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLTrustStorePasswordParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLTrustStorePasswordParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLTrustStorePasswordParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLTrustStorePasswordParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLTrustStorePathParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLTrustStorePathParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]"></a>
+      <a id="SSLTrustStorePathParam:ConfigParameter[Option[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLTrustStorePathParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLTrustStorePathParam:com.datastax.spark.connector.util.ConfigParameter[Option[String]]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#SSLTrustStoreTypeParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SSLTrustStoreTypeParam:com.datastax.spark.connector.util.ConfigParameter[String]"></a>
+      <a id="SSLTrustStoreTypeParam:ConfigParameter[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">SSLTrustStoreTypeParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@SSLTrustStoreTypeParam:com.datastax.spark.connector.util.ConfigParameter[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#TimeoutBeforeCloseParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TimeoutBeforeCloseParam:com.datastax.spark.connector.util.ConfigParameter[Int]"></a>
+      <a id="TimeoutBeforeCloseParam:ConfigParameter[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">TimeoutBeforeCloseParam</span><span class="result">: <a href="../util/ConfigParameter.html" class="extype" name="com.datastax.spark.connector.util.ConfigParameter">ConfigParameter</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@TimeoutBeforeCloseParam:com.datastax.spark.connector.util.ConfigParameter[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="apply(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.CassandraConnectorConf"></a>
+      <a id="apply(SparkConf):CassandraConnectorConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="conf">conf: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>)</span><span class="result">: <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@apply(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.CassandraConnectorConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#fromConnectionParams" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="fromConnectionParams(params:Map[String,String]):com.datastax.spark.connector.cql.CassandraConnectorConf"></a>
+      <a id="fromConnectionParams(Map[String,String]):CassandraConnectorConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromConnectionParams</span><span class="params">(<span name="params">params: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@fromConnectionParams(params:Map[String,String]):com.datastax.spark.connector.cql.CassandraConnectorConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#fromSparkConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="fromSparkConf(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.CassandraConnectorConf"></a>
+      <a id="fromSparkConf(SparkConf):CassandraConnectorConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromSparkConf</span><span class="params">(<span name="conf">conf: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>)</span><span class="result">: <a href="CassandraConnectorConf.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnectorConf">CassandraConnectorConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@fromSparkConf(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.CassandraConnectorConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.CassandraConnectorConf#getContactInfoFromSparkConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getContactInfoFromSparkConf(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.ContactInfo"></a>
+      <a id="getContactInfoFromSparkConf(SparkConf):ContactInfo"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getContactInfoFromSparkConf</span><span class="params">(<span name="conf">conf: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>)</span><span class="result">: <a href="ContactInfo.html" class="extype" name="com.datastax.spark.connector.cql.ContactInfo">ContactInfo</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@getContactInfoFromSparkConf(conf:org.apache.spark.SparkConf):com.datastax.spark.connector.cql.ContactInfo" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Determine how we should be connecting to Cassandra for this configuration
+</p>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#isTraceEnabled" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isTraceEnabled():Boolean"></a>
+      <a id="isTraceEnabled():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isTraceEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@isTraceEnabled():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@log:org.slf4j.Logger" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logDebug(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logDebug(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String):Unit"></a>
+      <a id="logDebug(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logDebug(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logError(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logError(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logError(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logInfo(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logInfo(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String):Unit"></a>
+      <a id="logInfo(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logInfo(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logName:String"></a>
+      <a id="logName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logName:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logTrace(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logTrace(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String):Unit"></a>
+      <a id="logTrace(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logTrace(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logWarning(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logWarning(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String):Unit"></a>
+      <a id="logWarning(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@logWarning(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.CassandraConnectorConf$@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.util.Logging">
+              <h3>Inherited from <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

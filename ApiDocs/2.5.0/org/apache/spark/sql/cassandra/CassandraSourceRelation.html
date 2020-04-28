@@ -1,0 +1,1289 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>CassandraSourceRelation - org.apache.spark.sql.cassandra.CassandraSourceRelation</title>
+          <meta name="description" content="CassandraSourceRelation - org.apache.spark.sql.cassandra.CassandraSourceRelation" />
+          <meta name="keywords" content="CassandraSourceRelation org.apache.spark.sql.cassandra.CassandraSourceRelation" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'org.apache.spark.sql.cassandra.CassandraSourceRelation';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <a href="CassandraSourceRelation$.html" title="See companion object"><img alt="Class/Object" src="../../../../../lib/class_to_object_big.png" /></a>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="org">org</a>.<a href="../../../package.html" class="extype" name="org.apache">apache</a>.<a href="../../package.html" class="extype" name="org.apache.spark">spark</a>.<a href="../package.html" class="extype" name="org.apache.spark.sql">sql</a>.<a href="package.html" class="extype" name="org.apache.spark.sql.cassandra">cassandra</a></p>
+        <h1><a href="CassandraSourceRelation$.html" title="See companion object">CassandraSourceRelation</a></h1><h3><span class="morelinks"><div>
+            Related Docs:
+            <a href="CassandraSourceRelation$.html" title="See companion object">object CassandraSourceRelation</a>
+            | <a href="package.html" class="extype" name="org.apache.spark.sql.cassandra">package cassandra</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CassandraSourceRelation</span><span class="params">(<span name="tableRef">tableRef: <span class="extype" name="com.datastax.spark.connector.TableRef">TableRef</span></span>, <span name="userSpecifiedSchema">userSpecifiedSchema: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span>]</span>, <span name="filterPushdown">filterPushdown: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="confirmTruncate">confirmTruncate: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="tableSizeInBytes">tableSizeInBytes: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="connector">connector: <a href="../../../../../com/datastax/spark/connector/cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>, <span name="readConf">readConf: <a href="../../../../../com/datastax/spark/connector/rdd/ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>, <span name="writeConf">writeConf: <a href="../../../../../com/datastax/spark/connector/writer/WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>, <span name="sparkConf">sparkConf: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>, <span name="directJoinSetting">directJoinSetting: <a href="DirectJoinSetting.html" class="extype" name="org.apache.spark.sql.cassandra.DirectJoinSetting">DirectJoinSetting</a> = <span class="symbol"><span class="name"><a href="Automatic$.html">Automatic</a></span></span></span>)</span><span class="result"> extends <span class="extype" name="org.apache.spark.sql.sources.BaseRelation">BaseRelation</span> with <span class="extype" name="org.apache.spark.sql.sources.InsertableRelation">InsertableRelation</span> with <span class="extype" name="org.apache.spark.sql.sources.PrunedFilteredScan">PrunedFilteredScan</span> with <a href="CassandraTableDefProvider.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">CassandraTableDefProvider</a> with <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Implements <span class="extype" name="BaseRelation">BaseRelation</span>]], <span class="extype" name="InsertableRelation">InsertableRelation</span>]] and <span class="extype" name="PrunedFilteredScan">PrunedFilteredScan</span>]]
+It inserts data to and scans Cassandra table. If filterPushdown is true, it pushs down
+some filters to CQL</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a>, <a href="CassandraTableDefProvider.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">CassandraTableDefProvider</a>, <span class="extype" name="org.apache.spark.sql.sources.PrunedFilteredScan">PrunedFilteredScan</span>, <span class="extype" name="org.apache.spark.sql.sources.InsertableRelation">InsertableRelation</span>, <span class="extype" name="org.apache.spark.sql.sources.BaseRelation">BaseRelation</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="org.apache.spark.sql.cassandra.CassandraSourceRelation"><span>CassandraSourceRelation</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="com.datastax.spark.connector.util.Logging"><span>Logging</span></li><li class="in" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider"><span>CassandraTableDefProvider</span></li><li class="in" name="org.apache.spark.sql.sources.PrunedFilteredScan"><span>PrunedFilteredScan</span></li><li class="in" name="org.apache.spark.sql.sources.InsertableRelation"><span>InsertableRelation</span></li><li class="in" name="org.apache.spark.sql.sources.BaseRelation"><span>BaseRelation</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(tableRef:com.datastax.spark.connector.TableRef,userSpecifiedSchema:Option[org.apache.spark.sql.types.StructType],filterPushdown:Boolean,confirmTruncate:Boolean,tableSizeInBytes:Option[Long],connector:com.datastax.spark.connector.cql.CassandraConnector,readConf:com.datastax.spark.connector.rdd.ReadConf,writeConf:com.datastax.spark.connector.writer.WriteConf,sparkConf:org.apache.spark.SparkConf,sqlContext:org.apache.spark.sql.SQLContext,directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting):org.apache.spark.sql.cassandra.CassandraSourceRelation"></a>
+      <a id="&lt;init&gt;:CassandraSourceRelation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">CassandraSourceRelation</span><span class="params">(<span name="tableRef">tableRef: <span class="extype" name="com.datastax.spark.connector.TableRef">TableRef</span></span>, <span name="userSpecifiedSchema">userSpecifiedSchema: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span>]</span>, <span name="filterPushdown">filterPushdown: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="confirmTruncate">confirmTruncate: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="tableSizeInBytes">tableSizeInBytes: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="connector">connector: <a href="../../../../../com/datastax/spark/connector/cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>, <span name="readConf">readConf: <a href="../../../../../com/datastax/spark/connector/rdd/ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>, <span name="writeConf">writeConf: <a href="../../../../../com/datastax/spark/connector/writer/WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>, <span name="sparkConf">sparkConf: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>, <span name="directJoinSetting">directJoinSetting: <a href="DirectJoinSetting.html" class="extype" name="org.apache.spark.sql.cassandra.DirectJoinSetting">DirectJoinSetting</a> = <span class="symbol"><span class="name"><a href="Automatic$.html">Automatic</a></span></span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@&lt;init&gt;(tableRef:com.datastax.spark.connector.TableRef,userSpecifiedSchema:Option[org.apache.spark.sql.types.StructType],filterPushdown:Boolean,confirmTruncate:Boolean,tableSizeInBytes:Option[Long],connector:com.datastax.spark.connector.cql.CassandraConnector,readConf:com.datastax.spark.connector.rdd.ReadConf,writeConf:com.datastax.spark.connector.writer.WriteConf,sparkConf:org.apache.spark.SparkConf,sqlContext:org.apache.spark.sql.SQLContext,directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting):org.apache.spark.sql.cassandra.CassandraSourceRelation" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#additionalRules" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="additionalRules:Seq[org.apache.spark.sql.cassandra.CassandraPredicateRules]"></a>
+      <a id="additionalRules:Seq[CassandraPredicateRules]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">additionalRules</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<a href="CassandraPredicateRules.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraPredicateRules">CassandraPredicateRules</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@additionalRules:Seq[org.apache.spark.sql.cassandra.CassandraPredicateRules]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#buildScan" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="buildScan(requiredColumns:Array[String],filters:Array[org.apache.spark.sql.sources.Filter]):org.apache.spark.rdd.RDD[org.apache.spark.sql.Row]"></a>
+      <a id="buildScan(Array[String],Array[Filter]):RDD[Row]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">buildScan</span><span class="params">(<span name="requiredColumns">requiredColumns: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="filters">filters: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.sources.Filter">Filter</span>]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="org.apache.spark.sql.Row">Row</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@buildScan(requiredColumns:Array[String],filters:Array[org.apache.spark.sql.sources.Filter]):org.apache.spark.rdd.RDD[org.apache.spark.sql.Row]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → PrunedFilteredScan</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#buildScan" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="buildScan():org.apache.spark.rdd.RDD[org.apache.spark.sql.Row]"></a>
+      <a id="buildScan():RDD[Row]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">buildScan</span><span class="params">()</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="org.apache.spark.sql.Row">Row</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@buildScan():org.apache.spark.rdd.RDD[org.apache.spark.sql.Row]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#canEqual" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="canEqual(a:Any):Boolean"></a>
+      <a id="canEqual(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">canEqual</span><span class="params">(<span name="a">a: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@canEqual(a:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → Equals</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#cassandraConnector" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cassandraConnector:com.datastax.spark.connector.cql.CassandraConnector"></a>
+      <a id="cassandraConnector:CassandraConnector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cassandraConnector</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@cassandraConnector:com.datastax.spark.connector.cql.CassandraConnector" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#checkMetadataColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="checkMetadataColumn(columnName:String,function:String):Boolean"></a>
+      <a id="checkMetadataColumn(String,String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">checkMetadataColumn</span><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="function">function: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@checkMetadataColumn(columnName:String,function:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#confirmTruncate" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="confirmTruncate:Boolean"></a>
+      <a id="confirmTruncate:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">confirmTruncate</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@confirmTruncate:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#connector" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="connector:com.datastax.spark.connector.cql.CassandraConnector"></a>
+      <a id="connector:CassandraConnector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">connector</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/cql/CassandraConnector.html" class="extype" name="com.datastax.spark.connector.cql.CassandraConnector">CassandraConnector</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@connector:com.datastax.spark.connector.cql.CassandraConnector" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#directJoinSetting" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting"></a>
+      <a id="directJoinSetting:DirectJoinSetting"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">directJoinSetting</span><span class="result">: <a href="DirectJoinSetting.html" class="extype" name="org.apache.spark.sql.cassandra.DirectJoinSetting">DirectJoinSetting</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(that:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="that">that: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@equals(that:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → Equals → AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#filterPushdown" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="filterPushdown:Boolean"></a>
+      <a id="filterPushdown:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">filterPushdown</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@filterPushdown:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode:Int"></a>
+      <a id="hashCode:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@hashCode:Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#ignoreMissingMetadataColumns" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ignoreMissingMetadataColumns:Boolean"></a>
+      <a id="ignoreMissingMetadataColumns:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ignoreMissingMetadataColumns</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@ignoreMissingMetadataColumns:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#insert" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="insert(data:org.apache.spark.sql.DataFrame,overwrite:Boolean):Unit"></a>
+      <a id="insert(DataFrame,Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">insert</span><span class="params">(<span name="data">data: <a href="../package.html#DataFrame=org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]" class="extmbr" name="org.apache.spark.sql.DataFrame">DataFrame</a></span>, <span name="overwrite">overwrite: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@insert(data:org.apache.spark.sql.DataFrame,overwrite:Boolean):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → InsertableRelation</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#isTraceEnabled" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isTraceEnabled():Boolean"></a>
+      <a id="isTraceEnabled():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isTraceEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@isTraceEnabled():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@log:org.slf4j.Logger" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logDebug(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logDebug(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logDebug" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logDebug(msg:=&gt;String):Unit"></a>
+      <a id="logDebug(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logDebug</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logDebug(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logError(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logError(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(msg:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logError(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logInfo(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logInfo(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logInfo" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logInfo(msg:=&gt;String):Unit"></a>
+      <a id="logInfo(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logInfo</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logInfo(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logName:String"></a>
+      <a id="logName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logName:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logTrace(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logTrace(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logTrace" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTrace(msg:=&gt;String):Unit"></a>
+      <a id="logTrace(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTrace</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logTrace(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String,throwable:Throwable):Unit"></a>
+      <a id="logWarning(⇒String,Throwable):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="throwable">throwable: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logWarning(msg:=&gt;String,throwable:Throwable):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.util.Logging#logWarning" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logWarning(msg:=&gt;String):Unit"></a>
+      <a id="logWarning(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logWarning</span><span class="params">(<span name="msg">msg: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@logWarning(msg:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.sources.BaseRelation#needConversion" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="needConversion:Boolean"></a>
+      <a id="needConversion:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">needConversion</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@needConversion:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>BaseRelation</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#nonRegularColumnNames" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="nonRegularColumnNames:Seq[String]"></a>
+      <a id="nonRegularColumnNames:Seq[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">nonRegularColumnNames</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[<span class="extype" name="java.lang.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@nonRegularColumnNames:Seq[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#pushdownCache" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pushdownCache:scala.collection.concurrent.TrieMap[Seq[org.apache.spark.sql.sources.Filter],org.apache.spark.sql.cassandra.AnalyzedPredicates]"></a>
+      <a id="pushdownCache:TrieMap[Seq[Filter],AnalyzedPredicates]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pushdownCache</span><span class="result">: <span class="extype" name="scala.collection.concurrent.TrieMap">TrieMap</span>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.sources.Filter">Filter</span>], <a href="AnalyzedPredicates.html" class="extype" name="org.apache.spark.sql.cassandra.AnalyzedPredicates">AnalyzedPredicates</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@pushdownCache:scala.collection.concurrent.TrieMap[Seq[org.apache.spark.sql.sources.Filter],org.apache.spark.sql.cassandra.AnalyzedPredicates]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#readConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readConf:com.datastax.spark.connector.rdd.ReadConf"></a>
+      <a id="readConf:ReadConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readConf</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/rdd/ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@readConf:com.datastax.spark.connector.rdd.ReadConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#readconf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readconf:com.datastax.spark.connector.rdd.ReadConf"></a>
+      <a id="readconf:ReadConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readconf</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/rdd/ReadConf.html" class="extype" name="com.datastax.spark.connector.rdd.ReadConf">ReadConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@readconf:com.datastax.spark.connector.rdd.ReadConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#regularColumnNames" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="regularColumnNames:Seq[String]"></a>
+      <a id="regularColumnNames:Seq[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">regularColumnNames</span><span class="result">: <span class="extype" name="scala.collection.Seq">Seq</span>[<span class="extype" name="java.lang.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@regularColumnNames:Seq[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#rwf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="rwf:com.datastax.spark.connector.writer.RowWriterFactory[org.apache.spark.sql.Row]"></a>
+      <a id="rwf:RowWriterFactory[Row]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rwf</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/writer/RowWriterFactory.html" class="extype" name="com.datastax.spark.connector.writer.RowWriterFactory">RowWriterFactory</a>[<span class="extype" name="org.apache.spark.sql.Row">Row</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@rwf:com.datastax.spark.connector.writer.RowWriterFactory[org.apache.spark.sql.Row]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#schema" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="schema:org.apache.spark.sql.types.StructType"></a>
+      <a id="schema:StructType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">schema</span><span class="result">: <span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@schema:org.apache.spark.sql.types.StructType" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → BaseRelation</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#searchOptimization" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="searchOptimization:org.apache.spark.sql.cassandra.DseSearchOptimizationSetting"></a>
+      <a id="searchOptimization:DseSearchOptimizationSetting"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">searchOptimization</span><span class="result">: <a href="DseSearchOptimizationSetting.html" class="extype" name="org.apache.spark.sql.cassandra.DseSearchOptimizationSetting">DseSearchOptimizationSetting</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@searchOptimization:org.apache.spark.sql.cassandra.DseSearchOptimizationSetting" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#sizeInBytes" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sizeInBytes:Long"></a>
+      <a id="sizeInBytes:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sizeInBytes</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@sizeInBytes:Long" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → BaseRelation</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#sparkConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="sparkConf:org.apache.spark.SparkConf"></a>
+      <a id="sparkConf:SparkConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sparkConf</span><span class="result">: <span class="extype" name="org.apache.spark.SparkConf">SparkConf</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@sparkConf:org.apache.spark.SparkConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#sqlContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sqlContext:org.apache.spark.sql.SQLContext"></a>
+      <a id="sqlContext:SQLContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sqlContext</span><span class="result">: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@sqlContext:org.apache.spark.sql.SQLContext" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → BaseRelation</dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#tableDef" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="tableDef:com.datastax.spark.connector.cql.TableDef"></a>
+      <a id="tableDef:TableDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">tableDef</span><span class="result">: <span class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@tableDef:com.datastax.spark.connector.cql.TableDef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → <a href="CassandraTableDefProvider.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">CassandraTableDefProvider</a></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#tableRef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="tableRef:com.datastax.spark.connector.TableRef"></a>
+      <a id="tableRef:TableRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">tableRef</span><span class="result">: <span class="extype" name="com.datastax.spark.connector.TableRef">TableRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@tableRef:com.datastax.spark.connector.TableRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#tableSizeInBytes" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="tableSizeInBytes:Option[Long]"></a>
+      <a id="tableSizeInBytes:Option[Long]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">tableSizeInBytes</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Long">Long</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@tableSizeInBytes:Option[Long]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#unhandledFilters" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="unhandledFilters(filters:Array[org.apache.spark.sql.sources.Filter]):Array[org.apache.spark.sql.sources.Filter]"></a>
+      <a id="unhandledFilters(Array[Filter]):Array[Filter]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unhandledFilters</span><span class="params">(<span name="filters">filters: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.sources.Filter">Filter</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="org.apache.spark.sql.sources.Filter">Filter</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@unhandledFilters(filters:Array[org.apache.spark.sql.sources.Filter]):Array[org.apache.spark.sql.sources.Filter]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → BaseRelation</dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#userSpecifiedSchema" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="userSpecifiedSchema:Option[org.apache.spark.sql.types.StructType]"></a>
+      <a id="userSpecifiedSchema:Option[StructType]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">userSpecifiedSchema</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="org.apache.spark.sql.types.StructType">StructType</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@userSpecifiedSchema:Option[org.apache.spark.sql.types.StructType]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#withDirectJoin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="withDirectJoin(directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting):org.apache.spark.sql.cassandra.CassandraSourceRelation"></a>
+      <a id="withDirectJoin(DirectJoinSetting):CassandraSourceRelation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withDirectJoin</span><span class="params">(<span name="directJoinSetting">directJoinSetting: <a href="DirectJoinSetting.html" class="extype" name="org.apache.spark.sql.cassandra.DirectJoinSetting">DirectJoinSetting</a></span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@withDirectJoin(directJoinSetting:org.apache.spark.sql.cassandra.DirectJoinSetting):org.apache.spark.sql.cassandra.CassandraSourceRelation" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#withSparkConfOption" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="withSparkConfOption(key:String,value:String):org.apache.spark.sql.cassandra.CassandraSourceRelation"></a>
+      <a id="withSparkConfOption(String,String):CassandraSourceRelation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withSparkConfOption</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@withSparkConfOption(key:String,value:String):org.apache.spark.sql.cassandra.CassandraSourceRelation" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="org.apache.spark.sql.cassandra.CassandraSourceRelation">CassandraSourceRelation</a> → <a href="CassandraTableDefProvider.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">CassandraTableDefProvider</a></dd></dl></div>
+    </li><li name="org.apache.spark.sql.cassandra.CassandraSourceRelation#writeConf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="writeConf:com.datastax.spark.connector.writer.WriteConf"></a>
+      <a id="writeConf:WriteConf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">writeConf</span><span class="result">: <a href="../../../../../com/datastax/spark/connector/writer/WriteConf.html" class="extype" name="com.datastax.spark.connector.writer.WriteConf">WriteConf</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#org.apache.spark.sql.cassandra.CassandraSourceRelation@writeConf:com.datastax.spark.connector.writer.WriteConf" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.Product">
+              <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
+            </div><div class="parent" name="scala.Equals">
+              <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
+            </div><div class="parent" name="com.datastax.spark.connector.util.Logging">
+              <h3>Inherited from <a href="../../../../../com/datastax/spark/connector/util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a></h3>
+            </div><div class="parent" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">
+              <h3>Inherited from <a href="CassandraTableDefProvider.html" class="extype" name="org.apache.spark.sql.cassandra.CassandraTableDefProvider">CassandraTableDefProvider</a></h3>
+            </div><div class="parent" name="org.apache.spark.sql.sources.PrunedFilteredScan">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.sources.PrunedFilteredScan">PrunedFilteredScan</span></h3>
+            </div><div class="parent" name="org.apache.spark.sql.sources.InsertableRelation">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.sources.InsertableRelation">InsertableRelation</span></h3>
+            </div><div class="parent" name="org.apache.spark.sql.sources.BaseRelation">
+              <h3>Inherited from <span class="extype" name="org.apache.spark.sql.sources.BaseRelation">BaseRelation</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
