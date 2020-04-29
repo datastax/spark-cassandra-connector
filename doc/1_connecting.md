@@ -26,7 +26,7 @@ Multiple hosts can be passed in using a comma-separated list in `spark.cassandra
 
 See the reference section for [Cassandra Connection Parameters](reference.md#cassandra-connection-parameters).
 
-### Connecting using an Astra Cloud Bundle or Driver Profile File (Since SCC 3.0)
+### Connecting using an Astra Cloud Bundle or Driver Profile File (Since SCC 2.5)
 
 Using a separate configuration file can be done as long as 
 
