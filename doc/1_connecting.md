@@ -41,7 +41,7 @@ files added in this way just pass the file name to either of the following param
 
 Files are then referenced through one of the following parameters
 
-  1. `spark.cassandra.connection.config.cloud.path` for use with a Cloud Secure Connect bundle from [Datastax Astra]("https://astra.datastax.com/")
+  1. `spark.cassandra.connection.config.cloud.path` for use with a Cloud Secure Connect bundle from [Datastax Astra]("https://astra.datastax.com/").  Please note that you must provide user name and password as well using corresponding configuration properties;
   2. `spark.cassandra.connection.config.profile.path` for use with a Java Driver [Profile](https://docs.datastax.com/en/developer/java-driver/4.2/manual/core/configuration/) 
   
 When using a profile file all other configuration will be ignored. We are working on improving this behavior but at the moment,
