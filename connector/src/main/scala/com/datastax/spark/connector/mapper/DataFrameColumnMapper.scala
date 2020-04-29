@@ -26,16 +26,16 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDescriptor = {
 
     val columns = structType.zipWithIndex.map { case (field:StructField, i:Int) =>
-      MapperColumnDef(field.name,
+      ColumnDescriptor(field.name,
         DataFrameColumnMapper.fromSparkSqlType(field.dataType, protocolVersion),
         i == 0,
         false)
       }
 
-    MapperTableDef(keyspaceName, tableName, columns)
+    TableDescriptor(keyspaceName, tableName, columns)
   }
 }
 

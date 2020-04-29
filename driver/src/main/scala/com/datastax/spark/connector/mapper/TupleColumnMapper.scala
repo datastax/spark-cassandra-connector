@@ -71,7 +71,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): MapperTableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDescriptor = {
 
     val tpe = implicitly[TypeTag[T]].tpe
     val ctorSymbol = Reflect.constructor(tpe).asMethod
@@ -81,11 +81,11 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
 
     val columnTypes = ctorParamTypes.map(ColumnType.fromScalaType(_, protocolVersion))
     val columns = columnTypes.zipWithIndex.map { case (columnType:ColumnType[_], i:Int) =>
-      MapperColumnDef("_" + (i + 1).toString,
+      ColumnDescriptor("_" + (i + 1).toString,
         columnType,
         i == 0,
         false)
       }
-    MapperTableDef(keyspaceName, tableName, columns)
+    TableDescriptor(keyspaceName, tableName, columns)
   }
 }
