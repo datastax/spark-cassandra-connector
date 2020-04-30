@@ -4,7 +4,6 @@ import java.lang.reflect.Method
 
 import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.TableDef
 
 import scala.reflect.ClassTag
 

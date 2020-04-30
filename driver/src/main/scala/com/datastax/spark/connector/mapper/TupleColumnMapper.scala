@@ -83,8 +83,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     val columns = columnTypes.zipWithIndex.map { case (columnType:ColumnType[_], i:Int) =>
       ColumnDescriptor("_" + (i + 1).toString,
         columnType,
-        i == 0,
-        false)
+        i == 0)
       }
     TableDescriptor(keyspaceName, tableName, columns)
   }

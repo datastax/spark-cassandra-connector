@@ -31,8 +31,7 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
     val columns = structType.zipWithIndex.map { case (field:StructField, i:Int) =>
       ColumnDescriptor(field.name,
         DataFrameColumnMapper.fromSparkSqlType(field.dataType, protocolVersion),
-        i == 0,
-        false)
+        i == 0)
       }
 
     TableDescriptor(keyspaceName, tableName, columns)

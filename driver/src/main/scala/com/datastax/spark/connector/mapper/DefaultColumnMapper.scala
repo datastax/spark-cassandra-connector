@@ -146,8 +146,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
       mappableProperties.zipWithIndex.map { case ((propertyName: String, columnType: ColumnType[_]),i:Int) =>
             ColumnDescriptor(ColumnMapperConvention.camelCaseToUnderscore(propertyName),
               columnType,
-              i == 0,
-              false)
+              i == 0)
         }
     TableDescriptor(keyspaceName, tableName, columns)
   }

@@ -1,11 +1,14 @@
 package com.datastax.spark.connector.mapper
 
-import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
+import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
+import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.{StructDef, TableDef}
+import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.types.ColumnType
+import com.datastax.spark.connector.util.Quote._
 
 import scala.reflect.runtime.universe._
+import scala.util.Properties
 
 
 /** Produces [[ColumnMapForReading]] or [[ColumnMapForWriting]] objects that map
@@ -46,20 +49,62 @@ trait ColumnMapper[T] {
 
 }
 
-case class TableDescriptor(keyspace:String, name: String, cols:Seq[ColumnDescriptor])
+case class TableDescriptor(keyspace:String,
+                           name: String,
+                           cols:Seq[ColumnDescriptor],
+                           ifNotExists:Boolean = false,
+                           options: Map[String, String] = Map()) {
+
+  def partitionKey:Seq[ColumnDescriptor] = { cols.filter(_.isParitionKey) }
+
+  def clusteringColumns:Seq[ColumnDescriptor] = { cols.filter(_.clusteringKey.isDefined) }
+
+  def cql():String = {
+
+    val columnList = cols.map(_.cql).mkString(s",${Properties.lineSeparator}  ")
+    val partitionKeyClause = partitionKey.map(_.name).map(quote).mkString("(", ", ", ")")
+    val clusteringColumnNames = clusteringColumns.map(_.name).map(quote)
+    val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
+    val addIfNotExists = if (ifNotExists) "IF NOT EXISTS " else ""
+    val clusterOrder = if (clusteringColumns.isEmpty ||
+      clusteringColumns.forall(_.clusteringKey.map(_ == ClusteringOrder.ASC).getOrElse(false))) {
+      Seq()
+    } else {
+      Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.name) +
+        " " + x.clusteringKey.get).mkString(", ") + ")")
+    }
+    val allOptions = clusterOrder ++ options.map(x => x._1 + " = " + x._2)
+    val allOptionsStr = if (allOptions.isEmpty)
+      ""
+    else
+      allOptions.mkString(" WITH ", "\n  AND ", "")
+
+    s"""CREATE TABLE $addIfNotExists${quote(keyspace)}.${quote(name)} (
+       |  $columnList,
+       |  PRIMARY KEY ($primaryKeyClause)
+       |)$allOptionsStr""".stripMargin
+  }
+}
 
 object TableDescriptor {
 
   /** Constructs a table definition based on the mapping provided by
     * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
-  def fromType[T: ColumnMapper](
-                                 keyspaceName: String,
-                                 tableName: String,
-                                 protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDescriptor =
+  def fromType[T: ColumnMapper](keyspaceName: String,
+                                tableName: String,
+                                protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDescriptor =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 }
 
-case class ColumnDescriptor(name:String, colType: ColumnType[_], partition:Boolean, clustering:Boolean)
+case class ColumnDescriptor(name:String,
+                            colType: ColumnType[_],
+                            isParitionKey:Boolean,
+                            clusteringKey:Option[ClusteringOrder] = Option.empty) {
+
+  def cql():String = {
+    s"${quote(name)} ${colType.cqlTypeName}"
+  }
+}
 
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {

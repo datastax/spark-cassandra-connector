@@ -1,6 +1,6 @@
 package com.datastax.spark.connector
 
-import com.datastax.oss.driver.api.core.ProtocolVersion
+import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.DataFrameColumnMapper
 import org.apache.spark.SparkContext
@@ -22,80 +22,45 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
    *  the first column will be used as the partition key and there will be no clustering
    *  keys.
    */
-  def createCassandraTable(
-    keyspaceName: String,
+  def createCassandraTable(keyspaceName: String,
     tableName: String,
     partitionKeyColumns: Option[Seq[String]] = None,
-    clusteringKeyColumns: Option[Seq[String]] = None)(
-  implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
+    clusteringKeyColumns: Option[Seq[String]] = None)
+                          (implicit connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
 
     val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
-    val rawTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
-    val partitionKeyNames = partitionKeyColumns.getOrElse(rawTable.partitionKey.map(_.columnName))
-    val clusteringKeyNames = clusteringKeyColumns.getOrElse(Seq.empty)
+    val partitionKeys = partitionKeyColumns.map(_.toSet).getOrElse(Set[String]())
+    val clusteringKeys = clusteringKeyColumns.map(_.toSet).getOrElse(Set[String]())
 
-    createCassandraTableEx(keyspaceName, tableName, partitionKeyNames,
-      clusteringKeyNames.map((_, ClusteringColumn.Ascending)))(connector)
-  }
+    val originalTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
+    val newColumns = originalTable.cols.map(col => {
+      col.copy(
+        isParitionKey = partitionKeys(col.name),
+        clusteringKey = if (clusteringKeys(col.name)) Option(ClusteringOrder.ASC) else Option.empty
+      )
+    })
+    val newPartitionKeys = newColumns.filter(_.isParitionKey).map(_.name).toSet
+    val newClusteringKeys = newColumns.filter(_.clusteringKey.isDefined).map(_.name).toSet
 
-    /**
-    *  Creates a C* table based on the Dataset Struct provided.
-    *  Takes in a list of partition columns, clustering columns names, and optionally, the table options.
-    */
-  def createCassandraTableEx(
-    keyspaceName: String,
-    tableName: String,
-    partitionKeyColumns: Seq[String],
-    clusteringKeyColumns: Seq[(String, ClusteringColumn.SortingOrder)],
-    ifNotExists: Boolean = false,
-    tableOptions: Map[String, String] = Map())(
-  implicit
-    connector: CassandraConnector = CassandraConnector(sparkContext)): Unit = {
-
-    val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
-
-    val rawTable = new DataFrameColumnMapper(dataset.schema).newTable(keyspaceName, tableName, protocolVersion)
-    val columnMapping = rawTable.columnByName
-
-    val columnNames = columnMapping.keys.toSet
-    val partitionKeyNames = partitionKeyColumns
-    val clusteringKeyNames = clusteringKeyColumns.map(_._1)
-    val regularColumnNames = (columnNames -- (partitionKeyNames ++ clusteringKeyNames)).toSeq
-
-    def missingColumnException(columnName: String, columnType: String) = {
-      new IllegalArgumentException(
-        s""""$columnName" not Found. Unable to make specified column $columnName a $columnType.
-          |Available Columns: $columnNames""".stripMargin)
+    val missedPartitionKeys = partitionKeys -- newPartitionKeys
+    if (!missedPartitionKeys.isEmpty) {
+      throw new IllegalArgumentException(
+        s""""Columns $missedPartitionKeys" not Found. Unable to make specified column(s) partition key(s).
+           |Available Columns: ${originalTable.cols.map(_.name)}""".stripMargin)
+    }
+    val missedClusteringKeys = clusteringKeys -- newClusteringKeys
+    if (!missedClusteringKeys.isEmpty) {
+      throw new IllegalArgumentException(
+        s""""Columns $missedClusteringKeys" not Found. Unable to make specified column(s) clustering key(s).
+           |Available Columns: ${originalTable.cols.map(_.name)}""".stripMargin)
     }
 
-    val table = rawTable.copy (
-      partitionKey = partitionKeyNames
-          .map(partitionKeyName =>
-            columnMapping.getOrElse(partitionKeyName,
-              throw missingColumnException(partitionKeyName, "Partition Key Column")))
-          .map(_.copy(columnRole = PartitionKeyColumn))
-      ,
-      clusteringColumns = clusteringKeyColumns
-          .map(clusteringKey =>
-            (columnMapping.getOrElse(clusteringKey._1,
-              throw missingColumnException(clusteringKey._1, "Clustering Column")),
-              clusteringKey._2))
-          .zipWithIndex
-          .map { case (col, index) => col._1.copy(columnRole = ClusteringColumn(index, col._2))}
-      ,
-      regularColumns = regularColumnNames
-          .map(regularColumnName =>
-             columnMapping.getOrElse(regularColumnName,
-                  throw missingColumnException(regularColumnName, "Regular Column")))
-          .map(_.copy(columnRole = RegularColumn))
-      ,
-      ifNotExists = ifNotExists
-      ,
-      tableOptions = tableOptions
+    val newTable = originalTable.copy(
+      cols = newColumns,
+      ifNotExists = false,
+      options = Map()
     )
 
-    connector.withSessionDo(session => session.execute(table.cql))
+    connector.withSessionDo(session => session.execute(newTable.cql))
   }
-
 }
