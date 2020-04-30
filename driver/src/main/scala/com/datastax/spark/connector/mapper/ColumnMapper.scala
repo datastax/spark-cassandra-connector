@@ -67,7 +67,7 @@ case class TableDescriptor(keyspace:String,
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
     val addIfNotExists = if (ifNotExists) "IF NOT EXISTS " else ""
     val clusterOrder = if (clusteringColumns.isEmpty ||
-      clusteringColumns.forall(_.clusteringKey.map(_ == ClusteringOrder.ASC).getOrElse(false))) {
+      clusteringColumns.forall(_.clusteringKey.map(_ == ClusteringOrder.ASC).getOrElse(true))) {
       Seq()
     } else {
       Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.name) +
