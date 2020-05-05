@@ -282,7 +282,7 @@ object TableWriter {
     val nonPartitionKeyColumnRefs = table
       .allColumns
       .filter(columnDef => nonPartitionKeyColumnNames.contains(columnDef.columnName))
-    nonPartitionKeyColumnRefs.forall( columnDef => columnDef.columnRole == StaticColumn)
+    nonPartitionKeyColumnRefs.forall( columnDef => columnDef.isStatic)
   }
 
   /**
@@ -376,15 +376,13 @@ object TableWriter {
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = tableFromCassandra(connector, keyspaceName, tableName)
-    val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
-    val tablDefWithMeta = tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns)
 
     val selectedColumns = columnNames
-      .selectFrom(tablDefWithMeta)
+      .selectFrom(tableDef)
       .filter(col => !InternalColumns.contains(col.columnName))
-    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tablDefWithMeta, selectedColumns)
+    val rowWriter = implicitly[RowWriterFactory[T]].rowWriter(tableDef, selectedColumns)
 
-    checkColumns(tablDefWithMeta, selectedColumns, checkPartitionKey)
-    new TableWriter[T](connector, tablDefWithMeta, selectedColumns, rowWriter, writeConf)
+    checkColumns(tableDef, selectedColumns, checkPartitionKey)
+    new TableWriter[T](connector, tableDef, selectedColumns, rowWriter, writeConf)
   }
 }

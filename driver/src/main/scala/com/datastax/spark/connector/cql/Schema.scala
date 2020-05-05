@@ -2,11 +2,10 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType}
 import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util.NameTools
@@ -87,7 +86,7 @@ trait StructDef extends Serializable {
 }
 
 case class ColumnDef(column:ColumnMetadata,
-                     table:TableMetadata,
+                     relation:RelationMetadata,
                      keyspace:KeyspaceMetadata) extends FieldDef {
 
   def ref: ColumnRef = ColumnName(columnName)
@@ -102,15 +101,15 @@ case class ColumnDef(column:ColumnMetadata,
 
   def isMultiCell = columnType.isMultiCell
 
-  def isPartitionKeyColumn = table.getPartitionKey.asScala.contains(column)
+  def isPartitionKeyColumn = relation.getPartitionKey.asScala.contains(column)
 
-  def isClusteringColumn = table.getClusteringColumns.keySet().asScala.contains(column)
+  def isClusteringColumn = relation.getClusteringColumns.keySet().asScala.contains(column)
 
   def isPrimaryKeyColumn = isClusteringColumn || isPartitionKeyColumn
 
   def isCounterColumn = columnType == CounterType
 
-  def sortingDirection = table.getClusteringColumns.asScala.get(column)
+  def sortingDirection = relation.getClusteringColumns.asScala.get(column)
 }
 
 case class IndexDef(
@@ -120,16 +119,26 @@ case class IndexDef(
 
 /** A Cassandra table metadata that can be serialized. */
 case class TableDef(
-    table:TableMetadata,
-    keyspace:KeyspaceMetadata) extends StructDef {
+                     relation:RelationMetadata,
+                     keyspace:KeyspaceMetadata) extends StructDef {
 
-  val cols = table.getColumns.values().asScala.map(c => ColumnDef(c,table,keyspace)).toSet
-  val partitionKey = cols.filter(c => table.getPartitionKey.contains(c.column))
-  val clusteringColumns = cols.filter(c=> table.getClusteringColumns.values().contains(c.column))
+  val keyspaceName = keyspace.getName.toString
+  val tableName = relation.getName.toString
+  val cols = relation.getColumns.values().asScala.map(c => ColumnDef(c,relation,keyspace)).toSet
+  val partitionKey = cols.filter(c => relation.getPartitionKey.contains(c.column))
+  val clusteringColumns = cols.filter(c=> relation.getClusteringColumns.values().contains(c.column))
   val regularColumns = cols -- partitionKey
+  val isTable = relation.isInstanceOf[TableMetadata]
+  val isView = relation.isInstanceOf[ViewMetadata]
+  val asTable = if (isTable) Some(relation.asInstanceOf[TableMetadata]) else Option.empty
+  val asView = if (isView) Some(relation.asInstanceOf[ViewMetadata]) else Option.empty
+
   val indexes =
-    if (table.isInstanceOf[ViewMetadata]) Seq.empty else
-      table.getIndexes.values().asScala.map(i => IndexDef(i,table,keyspace)).toSeq
+    asTable match {
+      case Some(table:TableMetadata) =>
+        table.getIndexes.values().asScala.map(i => IndexDef(i,table, keyspace)).toSeq
+      case None => Seq.empty
+    }
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
@@ -159,7 +168,7 @@ case class TableDef(
 
   override type Column = ColumnDef
 
-  override val name: String = s"${keyspace.getName}.${table.getName}"
+  override val name: String = s"${keyspace.getName}.${relation.getName}"
 
   lazy val primaryKey: IndexedSeq[ColumnDef] =
     (partitionKey ++ clusteringColumns).toIndexedSeq
@@ -176,7 +185,7 @@ case class TableDef(
     columnBylowerCaseName(columnName.toLowerCase)
   }
 
-  def cql = table.describe(true)
+  def cql = relation.describe(true)
 
   type ValueRepr = CassandraRow
 
@@ -195,7 +204,9 @@ case class Schema(keyspaces: Set[KeyspaceMetadata]) {
 
   /** All tables from all keyspaces */
   lazy val tables: Set[TableDef] =
-    keyspaces.flatMap(k => k.getTables.values().asScala.map(t => TableDef(t,k)))
+    keyspaces.flatMap(k =>
+      (k.getTables.asScala.values ++ k.getViews.asScala.values).map(t => TableDef(t,k))
+    )
 }
 
 object Schema extends StrictLogging {
