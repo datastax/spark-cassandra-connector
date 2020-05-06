@@ -118,16 +118,15 @@ case class IndexDef(
     keyspace:KeyspaceMetadata) extends Serializable
 
 /** A Cassandra table metadata that can be serialized. */
-case class TableDef(
-                     relation:RelationMetadata,
-                     keyspace:KeyspaceMetadata) extends StructDef {
+case class TableDef(relation:RelationMetadata,
+                    keyspace:KeyspaceMetadata) extends StructDef {
 
   val keyspaceName = keyspace.getName.toString
   val tableName = relation.getName.toString
-  val cols = relation.getColumns.values().asScala.map(c => ColumnDef(c,relation,keyspace)).toSet
-  val partitionKey = cols.filter(c => relation.getPartitionKey.contains(c.column))
-  val clusteringColumns = cols.filter(c=> relation.getClusteringColumns.values().contains(c.column))
-  val regularColumns = cols -- partitionKey
+  val cols:Seq[ColumnDef] = relation.getColumns.asScala.values.map(c => ColumnDef(c,relation,keyspace)).toSeq
+  val partitionKey:Seq[ColumnDef] = cols.filter(c => relation.getPartitionKey.contains(c.column))
+  val clusteringColumns:Seq[ColumnDef] = cols.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
+  val regularColumns:Seq[ColumnDef] = cols.filterNot(partitionKey.toSet)
   val isTable = relation.isInstanceOf[TableMetadata]
   val isView = relation.isInstanceOf[ViewMetadata]
   val asTable = if (isTable) Some(relation.asInstanceOf[TableMetadata]) else Option.empty
@@ -139,8 +138,6 @@ case class TableDef(
         table.getIndexes.values().asScala.map(i => IndexDef(i,table, keyspace)).toSeq
       case None => Seq.empty
     }
-
-  val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
   private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.index.getTarget)
 

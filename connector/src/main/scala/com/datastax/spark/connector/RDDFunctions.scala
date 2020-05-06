@@ -4,7 +4,7 @@ package com.datastax.spark.connector
 import java.net.InetAddress
 
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.mapper.ColumnMapper
+import com.datastax.spark.connector.mapper.{ColumnMapper, TableDescriptor}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionedRDD, ReplicaPartitioner}
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.rdd._
@@ -53,7 +53,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    */
   def saveAsCassandraTableEx(
-    table: TableDef,
+    table: TableDescriptor,
     columns: ColumnSelector = AllColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
@@ -61,7 +61,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     rwf: RowWriterFactory[T]): Unit = {
 
     connector.withSessionDo(session => session.execute(table.cql))
-    saveToCassandra(table.keyspaceName, table.tableName, columns, writeConf)
+    saveToCassandra(table.keyspace, table.name, columns, writeConf)
   }
 
   /**
@@ -92,7 +92,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
 
     val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
-    val table = TableDef.fromType[T](keyspaceName, tableName, protocolVersion)
+    val table = TableDescriptor.fromType[T](keyspaceName, tableName, protocolVersion)
     saveAsCassandraTableEx(table, columns, writeConf)
   }
 

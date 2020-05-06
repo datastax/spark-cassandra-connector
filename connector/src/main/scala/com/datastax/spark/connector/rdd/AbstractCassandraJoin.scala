@@ -2,7 +2,6 @@ package com.datastax.spark.connector.rdd
 
 import java.util.concurrent.Future
 
-import com.datastax.driver.core._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{PreparedStatement, Row, SimpleStatement}
 import com.datastax.spark.connector._
@@ -71,7 +70,7 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     case PrimaryKeyColumns =>
       tableDef.primaryKey.map(col => col.columnName: ColumnRef)
     case PartitionKeyColumns =>
-      tableDef.partitionKey.map(col => col.columnName: ColumnRef)
+      tableDef.partitionKey.map(col => col.columnName: ColumnRef).toSeq
     case SomeColumns(cs @ _*) =>
       checkColumnsExistence(cs)
       cs.map {
@@ -108,8 +107,8 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       .filter(cc => colNames.contains(cc.columnName))
     if (!tableDef.clusteringColumns.startsWith(chosenClusteringColumns)) {
       val maxCol = chosenClusteringColumns.last
-      val maxIndex = maxCol.componentIndex.get
-      val requiredColumns = tableDef.clusteringColumns.takeWhile(_.componentIndex.get <= maxIndex)
+      val maxIndex = tableDef.clusteringColumns.indexOf(maxCol)
+      val requiredColumns = tableDef.clusteringColumns.take(maxIndex + 1)
       val missingColumns = requiredColumns.toSet -- chosenClusteringColumns.toSet
       throw new IllegalArgumentException(
         s"Can't pushdown join on column $maxCol without also specifying [ $missingColumns ]"

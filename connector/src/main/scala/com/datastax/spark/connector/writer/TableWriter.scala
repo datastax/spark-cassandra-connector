@@ -280,7 +280,7 @@ object TableWriter {
   private def onlyPartitionKeyAndStatic(table: TableDef, columnNames: Seq[String]): Boolean = {
     val nonPartitionKeyColumnNames = columnNames.toSet -- table.partitionKey.map(_.columnName)
     val nonPartitionKeyColumnRefs = table
-      .allColumns
+      .cols
       .filter(columnDef => nonPartitionKeyColumnNames.contains(columnDef.columnName))
     nonPartitionKeyColumnRefs.forall( columnDef => columnDef.isStatic)
   }
