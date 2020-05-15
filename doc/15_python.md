@@ -16,7 +16,7 @@ https://spark-packages.org/package/datastax/spark-cassandra-connector
 
 ```bash
 ./bin/pyspark \
-  --packages com.datastax.spark:spark-cassandra-connector_2.11:2.4.2
+  --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
 ```
 
 ### Loading a DataFrame in Python
@@ -46,7 +46,7 @@ source and by specifying keyword arguments for `keyspace` and `table`.
 
 ### Saving a DataFrame in Python to Cassandra
 
-A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguments for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-programming-guide.html#save-modes)).
+A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguments for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#save-modes)).
 
 #### Example Saving to a Cassanra Table as a Pyspark DataFrame
 ```python

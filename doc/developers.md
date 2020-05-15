@@ -20,13 +20,23 @@ The most common commands to use when developing the connector are
 
 1. `test` - Runs the the unit tests for the project.
 2. `it:test` - Runs the integration tests with embedded Cassandra and Spark
-3. `assembly` - Builds a fat jar for using with --jars in spark submit or spark-shell
+3. `package` - Builds the project and produces a runtime jar
+4. `publishM2` - Publishes a snapshot of the project to your local maven repository allowing for usage with --packages in the spark-shell
 
-The integration tests located in `spark-cassandra-connector/src/it` should
+Note: Since 2.5.0 The Connector does not include the assembly plugin for making fat-jars
+
+The integration tests located in `connector/src/it` should
 probably be the first place to look for anyone considering adding code.
 There are many examples of executing a feature of the connector with
 the embedded Cassandra and Spark nodes and are the core of our test 
 coverage.
+
+### Merge Path
+
+b2.5 => b3.0 => Master
+
+New features can be considered for 2.5 as long as they do not break apis
+In general 3.0 should be the target for new features
 
 ### Sub-Projects
 
