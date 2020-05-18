@@ -1,4 +1,5 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
+import sbt.Keys.parallelExecution
 import sbt.moduleFilter
 import sbt._
 
@@ -33,6 +34,19 @@ lazy val IntegrationTest = config("it") extend Test
 lazy val integrationTestsWithFixtures = taskKey[Map[TestDefinition, Seq[String]]]("Evaluates names of all " +
   "Fixtures sub-traits for each test. Sets of fixture sub-traits names are used to form group tests.")
 
+lazy val assemblySettings = Seq(
+  assembly / parallelExecution := false,
+  assembly / test := {},
+  assembly / assemblyMergeStrategy := {
+    case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) => MergeStrategy.last
+    case "module-info.class" => MergeStrategy.discard
+    case x =>
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  }
+)
+
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
@@ -41,7 +55,7 @@ lazy val commonSettings = Seq(
   parallelExecution := true,
   testForkedParallel := false,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
-)
+) ++ assemblySettings
 
 val annotationProcessor = Seq(
   "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
@@ -81,7 +95,9 @@ lazy val connector = (project in file("connector"))
 
     libraryDependencies ++= Dependencies.Spark.dependencies
       ++ Dependencies.TestConnector.dependencies
-      ++ Dependencies.Jetty.dependencies
+      ++ Dependencies.Jetty.dependencies,
+
+    scalacOptions in (Compile, doc) ++= Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
   )
   .dependsOn(
     testSupport % "test",
