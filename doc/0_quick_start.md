@@ -15,14 +15,14 @@ Configure a new Scala project with the Apache Spark and dependency.
 
 The dependencies are easily retrieved via Maven Central 
 
-    libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.4.2"
+    libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.5.0"
  
 The spark-packages libraries can also be used with spark-submit and spark shell, these
 commands will place the connector and all of its dependencies on the path of the
 Spark Driver and all Spark Executors.
    
-    $SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.11:2.4.2
-    $SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.11:2.4.2
+    $SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+    $SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
    
 For the list of available versions, see:
 - https://spark-packages.org/package/datastax/spark-cassandra-connector
@@ -58,7 +58,7 @@ Run the `spark-shell` with the packages line for your version. To configure
 the default Spark Configuration pass key value pairs with `--conf`
 
     $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
-                                --packages com.datastax.spark:spark-cassandra-connector_2.11:2.4.2
+                                --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
 
 This command would set the Spark Cassandra Connector parameter 
 `spark.cassandra.connection.host` to `127.0.0.1`. Change this

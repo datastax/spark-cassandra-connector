@@ -166,7 +166,7 @@ retrieve size from Cassandra. Can be set manually now</td>
 <tr>
   <td><code>spark.sql.dse.search.autoRatio</code></td>
   <td>0.03</td>
-  <td>When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rowsto be returned by the solr query</td>
+  <td>When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rows to be returned by the solr query</td>
 </tr>
 <tr>
   <td><code>spark.sql.dse.search.enableOptimization</code></td>
