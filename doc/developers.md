@@ -23,8 +23,6 @@ The most common commands to use when developing the connector are
 3. `package` - Builds the project and produces a runtime jar
 4. `publishM2` - Publishes a snapshot of the project to your local maven repository allowing for usage with --packages in the spark-shell
 
-Note: Since 2.5.0 The Connector does not include the assembly plugin for making fat-jars
-
 The integration tests located in `connector/src/it` should
 probably be the first place to look for anyone considering adding code.
 There are many examples of executing a feature of the connector with
