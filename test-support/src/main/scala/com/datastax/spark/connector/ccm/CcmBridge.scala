@@ -92,7 +92,14 @@ object CcmBridge {
       val streamHandler = new PumpStreamHandler(outStream, errStream)
       executor.setStreamHandler(streamHandler)
       executor.setWatchdog(watchDog)
-      val retValue = executor.execute(cli)
+      val env =
+        if (sys.env.contains("CCM_JAVA_HOME")) {
+          sys.env + ("JAVA_HOME" -> sys.env("CCM_JAVA_HOME"))
+        } else {
+          sys.env
+        }
+
+      val retValue = executor.execute(cli, env.asJava)
       if (retValue != 0) {
         logger.error(
           "Non-zero exit code ({}) returned from executing ccm command: {}", retValue, cli)

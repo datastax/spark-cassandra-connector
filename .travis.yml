@@ -24,6 +24,7 @@ scala:
 env:
   global:
     - CCM_CLUSTER_MODE=debug
+    - CCM_JAVA_HOME=/usr/lib/jvm/java-8-oracle #C* requires JAVA 8 For now
     - PRESERVE_LOGS=ccm
     - TEST_PARALLEL_TASKS=1 #Times out on 2
 
