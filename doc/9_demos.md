@@ -1,8 +1,8 @@
-# Demos
+== Demos
 
 Demos are not a part of Spark Cassandra Connector as of 2.0.0.
 
 Build examples are provided here
-[Spark Build Examples](https://github.com/datastax/SparkBuildExamples)
+https://github.com/datastax/SparkBuildExamples[Spark Build Examples]
 
-[Back to main page](../README.md)
+link:../README.md[Back to main page]

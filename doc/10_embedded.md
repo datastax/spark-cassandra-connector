@@ -1,9 +1,10 @@
-# Documentation
+== Documentation
 
-# Spark-Connector-Embedded No Longer Supported
+== Spark-Connector-Embedded No Longer Supported
 
-Please see the `test-support` package for more info about our new CCM based integration testing framework
-    
-## Examples
+Please see the `+test-support+` package for more info about our new CCM
+based integration testing framework
 
-[Next - Performance Monitoring](11_metrics.md)
+=== Examples
+
+link:11_metrics.md[Next - Performance Monitoring]

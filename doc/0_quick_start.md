@@ -1,78 +1,99 @@
-# Documentation
+== Documentation
 
-## 5-minute quick start guide
+[[5-minute-quick-start-guide]]
+=== 5-minute quick start guide
 
-In this tutorial, you'll learn how to setup a very simple Spark application for reading and writing data from/to Cassandra.
-Before you start, you need to have basic knowledge of Apache Cassandra and Apache Spark.
-Refer to [Datastax](https://docs.datastax.com/en/) and [Cassandra documentation](https://cassandra.apache.org/doc/latest/getting_started/index.html)
-and [Spark documentation](https://spark.apache.org/docs/latest/). 
+In this tutorial, you'll learn how to setup a very simple Spark
+application for reading and writing data from/to Cassandra. Before you
+start, you need to have basic knowledge of Apache Cassandra and Apache
+Spark. Refer to https://docs.datastax.com/en/[Datastax] and
+https://cassandra.apache.org/doc/latest/getting_started/index.html[Cassandra
+documentation] and https://spark.apache.org/docs/latest/[Spark
+documentation].
 
-### Prerequisites
+==== Prerequisites
 
-Install and launch a Cassandra cluster and a Spark cluster.   
+Install and launch a Cassandra cluster and a Spark cluster.
 
 Configure a new Scala project with the Apache Spark and dependency.
 
-The dependencies are easily retrieved via Maven Central 
+The dependencies are easily retrieved via Maven Central
 
-    libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.5.0"
- 
-The spark-packages libraries can also be used with spark-submit and spark shell, these
-commands will place the connector and all of its dependencies on the path of the
-Spark Driver and all Spark Executors.
-   
-    $SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
-    $SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
-   
+....
+libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.5.0"
+....
+
+The spark-packages libraries can also be used with spark-submit and
+spark shell, these commands will place the connector and all of its
+dependencies on the path of the Spark Driver and all Spark Executors.
+
+....
+$SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+$SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+....
+
 For the list of available versions, see:
-- https://spark-packages.org/package/datastax/spark-cassandra-connector
- 
+
+* https://spark-packages.org/package/datastax/spark-cassandra-connector[https://spark-packages.org/package/datastax/spark-cassandra-connector]
+
 This driver does not depend on the Cassandra server code.
 
- - For a detailed dependency list, see [project/SparkCassandraConnectorBuild.scala](../project/SparkCassandraConnectorBuild.scala)
- - For dependency versions, see [project/Versions.scala](../project/Versions.scala)
+* For a detailed dependency list, see
+link:../project/SparkCassandraConnectorBuild.scala[project/SparkCassandraConnectorBuild.scala]
+* For dependency versions, see
+link:../project/Versions.scala[project/Versions.scala]
 
-### Building
-See [Building And Artifacts](12_building_and_artifacts.md)
+==== Building
 
-### Loading up the Spark-Shell
+See link:12_building_and_artifacts.md[Building And Artifacts]
 
-Run the `spark-shell` with the packages line for your version. This will include the connector
-and *all* of its dependencies on the Spark Class PathTo configure
-the default Spark Configuration pass key value pairs with `--conf`
+==== Loading up the Spark-Shell
 
-    $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
-                                --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
-                                --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
+Run the `+spark-shell+` with the packages line for your version. This
+will include the connector and _all_ of its dependencies on the Spark
+Class PathTo configure the default Spark Configuration pass key value
+pairs with `+--conf+`
 
-This command would set the Spark Cassandra Connector parameter 
-`spark.cassandra.connection.host` to `127.0.0.1`. Change this
-to the address of one of the nodes in your Cassandra cluster.
+....
+$SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
+                            --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+                            --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
+....
+
+This command would set the Spark Cassandra Connector parameter
+`+spark.cassandra.connection.host+` to `+127.0.0.1+`. Change this to the
+address of one of the nodes in your Cassandra cluster.
 
 The extensions configuration option enables Cassandra Specific Catalyst
 optimizations and functions.
- 
+
 Create a Catalog Reference to your Cassandra Cluster
 
-```scala
+[source,scala]
+----
 spark.conf.set(s"spark.sql.catalog.mycatalog", "com.datastax.spark.connector.datasource.CassandraCatalog")
-```
+----
 
-### Create a keyspace and table in Cassandra
+==== Create a keyspace and table in Cassandra
+
 These lines will create an actual Keyspace and Table in Cassandra.
-```scala
+
+[source,scala]
+----
 spark.sql("CREATE DATABASE IF NOT EXISTS mycatalog.testks WITH DBPROPERTIES (class='SimpleStrategy',replication_factor='1')")
 spark.sql("CREATE TABLE mycatalog.testks.testtab (key Int, value STRING) USING cassandra PARTITIONED BY (key)")
 
 //List their contents
 spark.sql("SHOW NAMESPACES FROM mycatalog").show
 spark.sql("SHOW TABLES FROM mycatalog.testks").show
-```
+----
 
-### Loading and analyzing data from Cassandra
+==== Loading and analyzing data from Cassandra
+
 Use the SparkSQL or a DataframeReader to Load a table
 
-```scala
+[source,scala]
+----
 val df = spark.read.table("mycatalog.testks.testtab")
 println(df.count)
 df.show
@@ -80,20 +101,21 @@ df.show
 //or
 
 spark.sql("SELECT * FROM mycatalog.testks.testtab").show
-```
+----
 
-### Saving data from a dataframe to Cassandra  
+==== Saving data from a dataframe to Cassandra
+
 Add 10 more rows to the table:
 
-```scala
+[source,scala]
+----
 spark
   .range(1, 10)
   .withColumnRenamed("id", "key")
   .withColumn("value", col("key").cast("string"))
   .writeTo("mycatalog.testks.testtab")
   .append
-```
+----
 
-[Accessing data with DataFrames](14_data_frames.md)
-[More details on Connecting to Cassandra](1_connecting.md)
-
+link:14_data_frames.md[Accessing data with DataFrames]
+link:1_connecting.md[More details on Connecting to Cassandra]
