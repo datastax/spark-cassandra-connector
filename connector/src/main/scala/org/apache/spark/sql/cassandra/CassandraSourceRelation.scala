@@ -561,7 +561,7 @@ object CassandraSourceRelation extends Logging {
     section = ReferenceSection,
     default = 0.03,
     description = "When Search Predicate Optimization is set to auto, Search optimizations will be " +
-      "preformed if this parameter * the total number of rows is greater than the number of rows" +
+      "preformed if this parameter * the total number of rows is greater than the number of rows " +
       "to be returned by the solr query"
   )
 

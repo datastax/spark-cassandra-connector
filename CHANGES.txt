@@ -1,4 +1,10 @@
-3.0.0-Alpha2
+
+
+***************************************************************************
+2.5.0
+ * LTS Release for Spark 2.4
+
+3.0.0-Alpha2 (Included in 2.5.0)
  * Add ReadConf Parameter to JoinWithCassandraTable Methods (SPARKC-570)
  * Change Dse Prefixed Parameters (SPARKC-575)
  * Update Reference Docs (SPARKC-574)
@@ -6,7 +12,7 @@
  * Control when resolution of Contact Points Occurs (SPARKC-571)
 
 
-3.0.0-Alpha
+3.0.0-Alpha (Included in 2.5.0)
   * Include all DS Specific Features
      * Includes CassandraHiveMetastore
      * Structured Streaming Sink Support
@@ -19,6 +25,9 @@
      * More
 
 *******************************************************************************
+
+2.4.3
+  * Fix issue with Hadoop3 Compatibility
 
 2.4.2
   * Support for Scala 2.12 (SPARKC-458)
