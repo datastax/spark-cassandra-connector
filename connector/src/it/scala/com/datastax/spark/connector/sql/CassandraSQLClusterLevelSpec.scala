@@ -4,6 +4,7 @@ import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.TwoClustersWithOneNode
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.cql.CassandraConnectorConf.{ConnectionHostParam, ConnectionPortParam}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.cassandra._
 
 import scala.concurrent.Future
@@ -57,26 +58,27 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase with Two
       }
     )
 
-    sparkSession.setCassandraConf(cluster1,
+    spark.setCassandraConf(cluster1,
       ConnectionHostParam.option(cluster(0).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(cluster(0).addresses.head.getPort))
-    sparkSession.setCassandraConf(cluster2,
+    spark.setCassandraConf(cluster2,
       ConnectionHostParam.option(cluster(1).addresses.head.getAddress.getHostAddress) ++ ConnectionPortParam.option(cluster(1).addresses.head.getPort))
+    SparkSession.setActiveSession(spark)
   }
 
   "SqlSession" should "allow to join tables from different clusters" in {
-    sparkSession.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
-    sparkSession.read.cassandraFormat("test2", ks, cluster2).load().createOrReplaceTempView("c2_test2")
+    spark.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
+    spark.read.cassandraFormat("test2", ks, cluster2).load().createOrReplaceTempView("c2_test2")
 
-    val result = sparkSession.sql(s"SELECT * FROM c1_test1 AS test1 JOIN c2_test2 AS test2 WHERE test1.a = test2.a").collect()
+    val result = spark.sql(s"SELECT * FROM c1_test1 AS test1 JOIN c2_test2 AS test2 WHERE test1.a = test2.a").collect()
     result should have length 2
   }
 
   it should "allow to write data to another cluster" in {
-    sparkSession.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
-    sparkSession.read.cassandraFormat("test3", ks, cluster2).load().createOrReplaceTempView("c2_test3")
+    spark.read.cassandraFormat("test1", ks, cluster1).load().createOrReplaceTempView("c1_test1")
+    spark.read.cassandraFormat("test3", ks, cluster2).load().createOrReplaceTempView("c2_test3")
 
-    val insert = sparkSession.sql(s"INSERT INTO TABLE c2_test3 SELECT * FROM c1_test1 AS t1").collect()
-    val result = sparkSession.sql(s"SELECT * FROM c2_test3 AS test3").collect()
+    val insert = spark.sql(s"INSERT INTO TABLE c2_test3 SELECT a, b as d, c as e FROM c1_test1 AS t1").collect()
+    val result = spark.sql(s"SELECT * FROM c2_test3 AS test3").collect()
     result should have length 5
   }
 }

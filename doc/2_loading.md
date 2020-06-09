@@ -1,4 +1,6 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs
+
 ## Accessing Cassandra data with CassandraRDD
 
 This section describes how to access data from Cassandra table with Spark.   

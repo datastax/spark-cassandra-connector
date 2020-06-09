@@ -6,11 +6,9 @@ import com.datastax.driver.core._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{PreparedStatement, Row, SimpleStatement}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.rdd.CassandraLimit._
-import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, RangePredicate}
-import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
+import com.datastax.spark.connector.datasource.JoinHelper
+import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
+import com.datastax.spark.connector.util.{CountingIterator}
 import com.datastax.spark.connector.writer._
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
@@ -41,45 +39,14 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)]
 
-  val requestsPerSecondRateLimiter = new RateLimiter(
-      readConf.readsPerSec.getOrElse(Integer.MAX_VALUE).toLong,
-      readConf.readsPerSec.getOrElse(Integer.MAX_VALUE).toLong
-    )
+  val requestsPerSecondRateLimiter = JoinHelper.requestsPerSecondRateLimiter(readConf)
+  val maybeRateLimit: (Row => Row) = JoinHelper.maybeRateLimit(readConf)
 
-  val maybeRateLimit: (Row => Row) = readConf.throughputMiBPS match {
-    case Some(throughput) =>
-      val bytesPerSecond: Long = (throughput * 1024 * 1024).toLong
-      val rateLimiter = new RateLimiter(bytesPerSecond, bytesPerSecond)
-      logDebug(s"Throttling join at $bytesPerSecond bytes per second")
-      (row: Row) => {
-        rateLimiter.maybeSleep(getRowBinarySize(row))
-        row
-      }
-    case None => identity[Row]
-  }
-
+  lazy val joinColumnNames = JoinHelper.joinColumnNames(joinColumns, tableDef)
 
   lazy val rowWriter = manualRowWriter match {
     case Some(_rowWriter) => _rowWriter
     case None => implicitly[RowWriterFactory[L]].rowWriter(tableDef, joinColumnNames.toIndexedSeq)
-  }
-
-  lazy val joinColumnNames: Seq[ColumnRef] = joinColumns match {
-    case AllColumns => throw new IllegalArgumentException(
-      "Unable to join against all columns in a Cassandra Table. Only primary key columns allowed."
-    )
-    case PrimaryKeyColumns =>
-      tableDef.primaryKey.map(col => col.columnName: ColumnRef)
-    case PartitionKeyColumns =>
-      tableDef.partitionKey.map(col => col.columnName: ColumnRef)
-    case SomeColumns(cs @ _*) =>
-      checkColumnsExistence(cs)
-      cs.map {
-        case c: ColumnRef => c
-        case _ => throw new IllegalArgumentException(
-          "Unable to join against unnamed columns. No CQL Functions allowed."
-        )
-      }
   }
 
   /**
@@ -93,7 +60,6 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
 
     // Initialize RowWriter and Query to be used for accessing Cassandra
     rowWriter.columnNames
-    singleKeyCqlQuery.length
 
     def checkSingleColumn(column: ColumnRef): Unit = {
       require(
@@ -121,62 +87,11 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       s"Can't join without the full partition key. Missing: [ $missingPartitionKeys ]"
     )
 
+    //Run To check for conflicting where clauses
+    JoinHelper.getJoinQueryString(tableDef, joinColumnNames, CqlQueryParts(selectedColumnRefs, where, limit, clusteringOrder))
+
     joinColumnNames.foreach(checkSingleColumn)
     joinColumnNames
-  }
-
-  //We need to make sure we get selectedColumnRefs before serialization so that our RowReader is
-  //built
-  lazy val singleKeyCqlQuery: (String) = {
-    val whereClauses = where.predicates.flatMap(CqlWhereParser.parse)
-    val joinColumns = joinColumnNames.map(_.columnName)
-    val joinColumnPredicates = whereClauses.collect {
-      case EqPredicate(c, _) if joinColumns.contains(c) => c
-      case InPredicate(c) if joinColumns.contains(c) => c
-      case InListPredicate(c, _) if joinColumns.contains(c) => c
-      case RangePredicate(c, _, _) if joinColumns.contains(c) => c
-    }.toSet
-
-    require(
-      joinColumnPredicates.isEmpty,
-      s"""Columns specified in both the join on clause and the where clause.
-         |Partition key columns are always part of the join clause.
-         |Columns in both: ${joinColumnPredicates.mkString(", ")}""".stripMargin
-    )
-
-    logDebug("Generating Single Key Query Prepared Statement String")
-    logDebug(s"SelectedColumns : $selectedColumnRefs -- JoinColumnNames : $joinColumnNames")
-    val columns = selectedColumnRefs.map(_.cql).mkString(", ")
-    val joinWhere = joinColumnNames.map(_.columnName).map(name => s"${quote(name)} = :$name")
-    val limitClause = limitToClause(limit)
-    val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
-    val filter = (where.predicates ++ joinWhere).mkString(" AND ")
-    val quotedKeyspaceName = quote(keyspaceName)
-    val quotedTableName = quote(tableName)
-    val query =
-      s"SELECT $columns " +
-        s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $orderBy $limitClause"
-    logDebug(s"Query : $query")
-    query
-  }
-
-  private def getPreparedStatement(session: CqlSession): PreparedStatement = {
-    val stmt = SimpleStatement.newInstance(singleKeyCqlQuery).setConsistencyLevel(consistencyLevel).setIdempotent(true)
-    session.prepare(stmt)
-  }
-
-  private def getCassandraRowMetadata(session: CqlSession): CassandraRowMetadata = {
-    val codecRegistry = session.getContext.getCodecRegistry
-    val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
-    val statement = getPreparedStatement(session)
-    CassandraRowMetadata.fromPreparedStatement(columnNames, statement, codecRegistry)
-  }
-
-  private[rdd] def boundStatementBuilder(session: CqlSession): BoundStatementBuilder[L] = {
-    val protocolVersion = session.getContext.getProtocolVersion
-    val stmt = getPreparedStatement(session)
-    new BoundStatementBuilder[L](rowWriter, stmt, where.values, protocolVersion = protocolVersion)
   }
 
   /**
@@ -186,8 +101,10 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
    */
   override def compute(split: Partition, context: TaskContext): Iterator[(L, R)] = {
     val session = connector.openSession()
-    val bsb = boundStatementBuilder(session)
-    val rowMetadata = getCassandraRowMetadata(session)
+    val stmt = JoinHelper.getJoinQueryString(tableDef, joinColumnNames, CqlQueryParts(selectedColumnRefs, where, limit, clusteringOrder))
+    val preparedStatement = JoinHelper.getJoinPreparedStatement(session, stmt, consistencyLevel)
+    val bsb = JoinHelper.getKeyBuilderStatementBuilder(session, rowWriter, preparedStatement, where)
+    val rowMetadata = JoinHelper.getCassandraRowMetadata(session,preparedStatement, selectedColumnRefs)
     val metricsUpdater = InputMetricsUpdater(context, readConf)
     val rowIterator = fetchIterator(session, bsb, rowMetadata, left.iterator(split, context), metricsUpdater)
     val countingIterator = new CountingIterator(rowIterator, None)
@@ -225,14 +142,6 @@ private[rdd] trait AbstractCassandraJoin[L, R] {
       readConf = readConf
     )
 
-  /** Prefetches a batchSize of elements at a time **/
-  protected def slidingPrefetchIterator[T](it: Iterator[Future[T]], batchSize: Int): Iterator[T] = {
-    val (firstElements, lastElement) =  it
-      .grouped(batchSize)
-      .sliding(2)
-      .span(_ => it.hasNext)
 
-    (firstElements.map(_.head) ++ lastElement.flatten).flatten.map(_.get)
-    }
 }
 

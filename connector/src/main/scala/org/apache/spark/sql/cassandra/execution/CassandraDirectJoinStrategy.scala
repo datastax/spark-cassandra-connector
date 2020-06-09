@@ -1,18 +1,17 @@
 package org.apache.spark.sql.cassandra.execution
 
-import com.datastax.spark.connector.rdd.CassandraTableScanRDD
+import com.datastax.spark.connector.datasource.{CassandraScan, CassandraScanBuilder, CassandraTable}
 import com.datastax.spark.connector.util.Logging
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.cassandra.{AlwaysOff, AlwaysOn, Automatic, CassandraSourceRelation}
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, ExprId, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans._
-import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.v2.{BatchScanExec, DataSourceV2ScanRelation, DataSourceV2Strategy}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
-import org.apache.spark.sql.execution.{DataSourceScanExec, ProjectExec, SparkPlan}
+import org.apache.spark.sql.execution.{ProjectExec, SparkPlan}
 
 
 /**
@@ -26,7 +25,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
   val conf = spark.sqlContext.conf
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
+    case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right, _)
       if hasValidDirectJoin(joinType, leftKeys, rightKeys, condition, left, right) =>
 
       val (otherBranch, joinTargetBranch, joinKeys, buildType) = {
@@ -39,17 +38,15 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
 
       /* We want to take advantage of all of our pushed filter code which happens in
       full table scans. Unfortunately the pushdown code itself is private within the
-      DataSourceStrategy class. To work around this we will invoke DataSourceStrategy on
+      DataSourceV2Strategy class. To work around this we will invoke DataSourceV2Strategy on
       our target branch. This will let us know all of the pushable filters that we can
       use in the direct join.
        */
-      val dataSourceOpitimzedPlan = DataSourceStrategy(conf)(joinTargetBranch).head
+      val dataSourceOpitimzedPlan = new DataSourceV2Strategy(spark)(joinTargetBranch).head
       val cassandraScanExec = getScanExec(dataSourceOpitimzedPlan).get
-      val cassandraRdd = getCassandraTableScanRDD(cassandraScanExec.execute()).get
 
       joinTargetBranch match {
-        case PhysicalOperation(attributes, _, LogicalRelation(_: CassandraSourceRelation, _, _, _)) =>
-
+        case PhysicalOperation(attributes, _, DataSourceV2ScanRelation(_: CassandraTable, _, _)) =>
           val directJoin =
             CassandraDirectJoinExec(
             leftKeys,
@@ -59,7 +56,6 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
             condition,
             planLater(otherBranch),
             aliasMap(attributes),
-            cassandraRdd,
             cassandraScanExec
           )
 
@@ -87,13 +83,14 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
       rightValid(joinType,leftKeys, rightKeys, condition, left, right)
   }
 
+
   /**
     * Checks whether the size of the cassandra target is larger than the
     * key plan by the sizeRatio specified in the configuration.
     */
   private def checkSizeRatio(cassandraPlan: LogicalPlan, keyPlan: LogicalPlan): Boolean = {
-    val cassandraSource = getCassandraSource(cassandraPlan).get
-    cassandraSource.directJoinSetting match {
+    val cassandraScan = getCassandraScan(cassandraPlan).get
+    CassandraSourceRelation.getDirectJoinSetting(cassandraScan.consolidatedConf) match {
       case AlwaysOn =>
         logDebug("No Size Test for Direct Join. Direct Join is Always On")
         true
@@ -102,9 +99,8 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
         false
       case Automatic =>
         val ratio = BigDecimal(
-          cassandraSource
-            .sqlContext
-            .getConf(DirectJoinSizeRatioParam.name, DirectJoinSizeRatioParam.default.toString))
+          cassandraScan.consolidatedConf
+            .get(DirectJoinSizeRatioParam.name, DirectJoinSizeRatioParam.default.toString))
 
         val cassandraSize = BigDecimal(cassandraPlan.stats.sizeInBytes)
         val keySize = BigDecimal(keyPlan.stats.sizeInBytes.doubleValue())
@@ -146,43 +142,12 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
 object CassandraDirectJoinStrategy extends Logging {
 
   /**
-    * Recursively search the dependencies of an RDD for a CassandraTableScanRDD
-    * Only searches single dependency chains, on branches chooses left
+    * Returns the single DataSourceScanExec for the branch if there is one and
+    * it scans Cassandra
     */
-  @scala.annotation.tailrec
-  def getCassandraTableScanRDD(rdd: RDD[_]): Option[CassandraTableScanRDD[_]] ={
-    rdd match {
-      case cassandraTableScanRDD: CassandraTableScanRDD[_] =>
-        Some(cassandraTableScanRDD)
-      case other if rdd.dependencies.headOption.nonEmpty =>
-        getCassandraTableScanRDD(other.dependencies.head.rdd)
-      case _ => None
-    }
-  }
-
-  /**
-    * Returns a single logical source for the branch if there is one
-    */
-  def getLogicalRelation(plan: LogicalPlan): Option[LogicalRelation] = {
-    val leaves = plan.collectLeaves
-    if (leaves.size != 1) {
-      None
-    } else leaves.head match {
-      case logicalRelation: LogicalRelation => Some(logicalRelation)
-      case _ => None
-    }
-  }
-
-  /**
-    * Returns the single DataSourceScanExec for the branch if there is one
-    */
-  def getScanExec(plan: SparkPlan): Option[DataSourceScanExec] = {
-     val leaves = plan.collectLeaves
-    if (leaves.size != 1) {
-      None
-    } else leaves.head match {
-      case dataSourceScanExec: DataSourceScanExec => Some(dataSourceScanExec)
-      case _ => None
+  def getScanExec(plan: SparkPlan): Option[BatchScanExec] = {
+    plan.collectFirst {
+      case exec@BatchScanExec(_, _: CassandraScan) => exec
     }
   }
 
@@ -200,24 +165,47 @@ object CassandraDirectJoinStrategy extends Logging {
 
   /**
     * Checks whether there is only a single leaf to this plan and that the
-    * leaf is a CassandraSourceRelation. If it is returns that relation.
+    * leaf is a DSV2 Relation Reading from a C* table. If it is returns that table.
     */
-  def getCassandraSource(plan: LogicalPlan): Option[CassandraSourceRelation] = {
-   getLogicalRelation(plan).flatMap(
-     logicalSource => logicalSource.relation match {
-       case cassandraSourceRelation: CassandraSourceRelation => Some(cassandraSourceRelation)
-       case _ => None
-     }
-   )
+  def getDSV2CassandraRelation(plan: LogicalPlan): Option[DataSourceV2ScanRelation] = {
+    val children = plan.collectLeaves()
+    if (children.length == 1) {
+      plan.collectLeaves().collectFirst { case ds@DataSourceV2ScanRelation(_: CassandraTable, _, _) => ds }
+    } else {
+      None
+    }
   }
+
+  /**
+    * Checks whether there is only a single leaf to this plan and that the
+    * leaf is a CassandraTable. If it is returns that table.
+    */
+  def getCassandraTable(plan: LogicalPlan): Option[CassandraTable] = {
+    val children = plan.collectLeaves()
+    if (children.length == 1) {
+      children.collectFirst{ case DataSourceV2ScanRelation(table: CassandraTable, _, _) =>  table}
+    } else {
+      None
+    }
+  }
+
+  def getCassandraScan(plan: LogicalPlan): Option[CassandraScan] = {
+    val children = plan.collectLeaves()
+    if (children.length == 1) {
+      plan.collectLeaves().collectFirst { case DataSourceV2ScanRelation(_: CassandraTable, cs: CassandraScan, _) => cs }
+    } else {
+      None
+    }
+  }
+
 
   /**
     * Checks whether a query plan has either a logical or physical node pulling data from cassandra
     */
   def hasCassandraChild[T <: QueryPlan[T]](plan: T): Boolean = {
     plan.children.size == 1 && plan.children.exists {
-      case child: LogicalRelation if child.relation.isInstanceOf[CassandraSourceRelation] => true
-      case child: DataSourceScanExec if child.relation.isInstanceOf[CassandraSourceRelation] => true
+      case DataSourceV2ScanRelation(_: CassandraTable, _, _) => true
+      case BatchScanExec(_, _: CassandraScan) => true
       case _ => false
     }
   }
@@ -247,9 +235,7 @@ object CassandraDirectJoinStrategy extends Logging {
   def reorderPlan(plan: SparkPlan, directJoin: CassandraDirectJoinExec): SparkPlan = {
     val reordered = plan match {
       //This may be the only node in the Plan
-      case dataSourceScan: DataSourceScanExec
-        if dataSourceScan.relation.isInstanceOf[CassandraSourceRelation] =>
-        directJoin
+      case BatchScanExec(_, _: CassandraScan) => directJoin
       // Plan has children
       case normalPlan => normalPlan.transform{
         case penultimate if hasCassandraChild(penultimate) =>
@@ -258,20 +244,26 @@ object CassandraDirectJoinStrategy extends Logging {
     }
 
     /*
-    Projections that lived on the Cassandra Branch will be missing column references to
-    columns which are added by the join. We know these columns will either be added to the
-    right or to the left of the current set of projection, so determine the missing side
-    and add them.
-     */
+    The output of our new join node may be missing some aliases which were
+    previously applied to columns coming out of cassandra. Take the directJoin output and
+    make sure all aliases are correctly applied to the new attributes. Nullability is a
+    concern here as columns which may have been non-nullable previously, become nullable in
+    a left/right join
+    */
     reordered.transform{
-       case p @ ProjectExec(projectList, child) =>
-         val children = projectList.collect {
-           case Alias(child: AttributeReference, _) => child.toAttribute
-           case ref: AttributeReference => ref
+       case ProjectExec(projectList, child) =>
+         val aliases = projectList.collect {
+           case a@Alias(child: AttributeReference, _) => (child.toAttribute.exprId, a)
+         }.toMap
+
+         val aliasedOutput = directJoin.output.map{
+           case attr if aliases.contains(attr.exprId) =>
+             val oldAlias = aliases(attr.exprId)
+             oldAlias.copy(child = attr)(oldAlias.exprId, oldAlias.qualifier, oldAlias.explicitMetadata)
+           case other => other
          }
-         val prefix = directJoin.output.takeWhile(attribute => !children.contains(attribute))
-         val suffix = directJoin.output.reverse.takeWhile(attribute => !children.contains(attribute)).reverse
-        ProjectExec (prefix ++ projectList ++ suffix, child)
+
+        ProjectExec (aliasedOutput, child)
     }
   }
 
@@ -299,12 +291,14 @@ object CassandraDirectJoinStrategy extends Logging {
     plan match {
       case PhysicalOperation(
         attributes, _,
-        LogicalRelation(cassandraSource: CassandraSourceRelation, _, _, _)) =>
+        DataSourceV2ScanRelation(cassandraTable: CassandraTable, _, _)) =>
+
+        val joinKeysExprId = joinKeys.collect{ case attributeReference: AttributeReference => attributeReference.exprId }
 
         val joinKeyAliases =
           aliasMap(attributes)
-            .filter{ case (_, value) => joinKeys.contains(value) }
-        val partitionKeyNames = cassandraSource.tableDef.partitionKey.map(_.columnName)
+            .filter{ case (_, value) => joinKeysExprId.contains(value) }
+        val partitionKeyNames = cassandraTable.tableDef.partitionKey.map(_.columnName)
         val allKeysPresent = partitionKeyNames.forall(joinKeyAliases.contains)
 
         if (!allKeysPresent) {
@@ -316,11 +310,11 @@ object CassandraDirectJoinStrategy extends Logging {
   }
 
   /**
-    * Map Source Names to Attributes
+    * Map Source Cassandra Column Names to ExpressionIds referring to them
     */
   def aliasMap(aliases: Seq[NamedExpression]) = aliases.map {
-    case a @ Alias(child: AttributeReference, _) => child.name -> a.toAttribute
-    case namedExpression: NamedExpression => namedExpression.name -> namedExpression.toAttribute
+    case a @ Alias(child: AttributeReference, _) => child.name -> a.exprId
+    case attributeReference: AttributeReference => attributeReference.name -> attributeReference.exprId
   }.toMap
 
   /**
@@ -329,12 +323,9 @@ object CassandraDirectJoinStrategy extends Logging {
   */
   def containsSafePlans(plan: LogicalPlan): Boolean = {
     plan match {
-      case PhysicalOperation(_, _, LogicalRelation(relation: CassandraSourceRelation, _, _, _))
-        if relation.directJoinSetting != AlwaysOff => true
+      case PhysicalOperation(_, _, DataSourceV2ScanRelation(_: CassandraTable, scan: CassandraScan, _))
+        if getDirectJoinSetting(scan.consolidatedConf) != AlwaysOff => true
       case _ => false
     }
   }
-
-
-
 }

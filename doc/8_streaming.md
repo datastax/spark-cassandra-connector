@@ -1,4 +1,6 @@
 # Documentation
+If you have the option we recommend using [DataFrames and Structured Streaming](14_data_frames.md) instead of DStreams
+
 ## Spark Streaming with Cassandra
 Spark Streaming extends the core API to allow high-throughput, fault-tolerant stream processing of live data streams.
 Data can be ingested from many sources such as Akka, Kafka, Flume, ZeroMQ, TCP sockets, etc. Results can be stored in Cassandra.

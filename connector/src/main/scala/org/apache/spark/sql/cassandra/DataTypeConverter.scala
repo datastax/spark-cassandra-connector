@@ -78,7 +78,7 @@ object DataTypeConverter extends Logging {
     val nullable = !column.isPrimaryKeyColumn
     catalystTypes.StructField(
       column.columnName,
-      catalystDataType(column.columnType, nullable = true),
+      catalystDataType(column.columnType, nullable),
       nullable
     )
   }

@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.util
 
+import java.util.Locale
+
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
@@ -36,6 +38,27 @@ object NameTools {
   case class TableSuggestions(tables: Seq[(String)]) extends Suggestions
   case class KeyspaceSuggestions(keyspaces: Seq[String]) extends Suggestions
   case class KeyspaceAndTableSuggestions(keyspaceTablePairs: Seq[(String, String)]) extends Suggestions
+  case class KeyspaceOnlySuggestions(keyspaces: Seq[String]) extends Suggestions
+
+
+  def getSuggestions(clusterMetadata: Metadata, keyspace: String): Option[Suggestions] = {
+    val keyspaceScores = clusterMetadata
+      .getKeyspaces
+      .values()
+      .toSeq
+      .map(ks =>
+        (toName(ks.getName), StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
+
+    val keyspaceSuggestions = keyspaceScores.filter( _._2 > MinJWScore)
+      .sorted
+      .map(_._1)
+
+    if (keyspaceSuggestions.nonEmpty) {
+      Some(KeyspaceOnlySuggestions(keyspaceSuggestions))
+    } else {
+      None
+    }
+  }
 
 
   /**
@@ -54,10 +77,10 @@ object NameTools {
       .values()
       .toSeq
       .map(ks =>
-      (ks, StringUtils.getJaroWinklerDistance(toName(ks.getName), keyspace)))
+      (ks, StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
 
     val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables ++ ks.getViews)) yield {
-      val tScore = StringUtils.getJaroWinklerDistance(toName(t.getName), table)
+      val tScore = StringUtils.getJaroWinklerDistance(toName(t.getName).toLowerCase(Locale.ROOT), table.toLowerCase(Locale.ROOT))
       (toName(ks.getName), toName(t.getName), ksScore, tScore)
     }
 
@@ -84,10 +107,12 @@ object NameTools {
     else None
   }
 
-  def getErrorString(keyspace: String, table: String, suggestion: Option[Suggestions]): String = suggestion match {
-    case None => s"Couldn't find $keyspace.$table or any similarly named keyspace and table pairs"
-    case Some(TableSuggestions(tables)) => s"Couldn't find table $table in $keyspace - Found similar tables in that keyspace:\n${tables.map(t => s"$keyspace.$t").mkString("\n")}"
-    case Some(KeyspaceSuggestions(keyspaces)) => s"Couldn't find table $table in $keyspace - Found similar keyspaces with that table:\n${keyspaces.map(k => s"$k.$table").mkString("\n")}"
-    case Some(KeyspaceAndTableSuggestions(kt)) => s"Couldn't find table $table or keyspace $keyspace - Found similar keyspaces and tables:\n${kt.map { case (k, t) => s"$k.$t"}.mkString("\n")}"
+  def getErrorString(keyspace: String, table: Option[String], suggestion: Option[Suggestions]): String = suggestion match {
+    case None if table.isDefined => s"Couldn't find $keyspace.${table.get} or any similarly named keyspace and table pairs"
+    case None if table.isEmpty => s"Couldn't find $keyspace or any similarly named keyspaces"
+    case Some(TableSuggestions(tables)) => s"Couldn't find table ${table.get} in $keyspace - Found similar tables in that keyspace:\n${tables.map(t => s"$keyspace.$t").mkString("\n")}"
+    case Some(KeyspaceSuggestions(keyspaces)) => s"Couldn't find table ${table.get} in $keyspace - Found similar keyspaces with that table:\n${keyspaces.map(k => s"$k.$table").mkString("\n")}"
+    case Some(KeyspaceAndTableSuggestions(kt)) => s"Couldn't find table ${table.get} or keyspace $keyspace - Found similar keyspaces and tables:\n${kt.map { case (k, t) => s"$k.$t"}.mkString("\n")}"
+    case Some(KeyspaceOnlySuggestions(keyspaces)) => s"Couldn't find keyspace $keyspace - Found similar keyspaces: ${keyspaces.mkString("\n", "\n", "\n")}"
   }
 }

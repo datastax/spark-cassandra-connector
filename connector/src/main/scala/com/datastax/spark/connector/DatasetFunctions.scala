@@ -22,6 +22,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
    *  the first column will be used as the partition key and there will be no clustering
    *  keys.
    */
+  @deprecated("Use DatasourceV2 Catalog Api", "3.0.0")
   def createCassandraTable(
     keyspaceName: String,
     tableName: String,
@@ -43,6 +44,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
     *  Creates a C* table based on the Dataset Struct provided.
     *  Takes in a list of partition columns, clustering columns names, and optionally, the table options.
     */
+  @deprecated("Use DatasourceV2 Catalog Api", "3.0.0")
   def createCassandraTableEx(
     keyspaceName: String,
     tableName: String,

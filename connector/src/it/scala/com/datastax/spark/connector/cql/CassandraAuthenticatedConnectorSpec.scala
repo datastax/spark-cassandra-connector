@@ -48,12 +48,12 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
 
   "A DataFrame" should "read and write data with valid auth" in {
 
-    sparkSession.conf.set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
-    sparkSession.conf.set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
+    spark.conf.set(DefaultAuthConfFactory.UserNameParam.name, "cassandra")
+    spark.conf.set(DefaultAuthConfFactory.PasswordParam.name, "cassandra")
 
     val conn = CassandraConnector(authConf)
 
-    val personDF1 = sparkSession.createDataFrame(Seq(
+    val personDF1 = spark.createDataFrame(Seq(
       ("Andy", 28, "America"),
       ("Kaushal", 25, "India"),
       ("Desanth", 27, "India"),
@@ -66,8 +66,8 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
       "spark.cassandra.auth.password" -> "cassandra",
       "keyspace" -> ks, "table" -> "authtest")
 
-    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).save()
-    val personDF2 = sparkSession.read.format("org.apache.spark.sql.cassandra").options(options).load()
+    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).mode("append")save()
+    val personDF2 = spark.read.format("org.apache.spark.sql.cassandra").options(options).load()
 
     personDF2.count should be(4)
   }

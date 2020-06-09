@@ -12,13 +12,13 @@ for VERSION in $@ ;do
         continue
     fi
     sbt clean
-    sbt -Dscala-2.11=true doc
+    sbt -Dscala-2.12=true doc
     mkdir $OUTPUT/$VERSION
-    
+
     for MODULE in spark-cassandra-connector spark-cassandra-connector-embedded; do
         FOLDER=$SCC_HOME/$MODULE
         echo "COPYING $FOLDER to $OUTPUT/$VERSION/$MODULE"
-        cp -vr $FOLDER/target/scala-2.11/api $OUTPUT/$VERSION/$MODULE
+        cp -vr $FOLDER/target/scala-2.12/api $OUTPUT/$VERSION/$MODULE
     done
 done
 git checkout gh-pages

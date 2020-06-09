@@ -1,4 +1,6 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs
+
 ## Server-side data selection, filtering and grouping
 
 In this section, you'll learn how to reduce the amount of data 

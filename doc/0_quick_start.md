@@ -35,59 +35,65 @@ This driver does not depend on the Cassandra server code.
 ### Building
 See [Building And Artifacts](12_building_and_artifacts.md)
 
-### Preparing example Cassandra schema
-Create a simple keyspace and table in Cassandra. Run the following statements in `cqlsh`:
-
-```sql
-CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
-CREATE TABLE test.kv(key text PRIMARY KEY, value int);
-```
-      
-Then insert some example data:
-
-```sql
-INSERT INTO test.kv(key, value) VALUES ('key1', 1);
-INSERT INTO test.kv(key, value) VALUES ('key2', 2);
-```
- 
-Now you're ready to write your first Spark program using Cassandra.
-
 ### Loading up the Spark-Shell
 
-Run the `spark-shell` with the packages line for your version. To configure
+Run the `spark-shell` with the packages line for your version. This will include the connector
+and *all* of its dependencies on the Spark Class PathTo configure
 the default Spark Configuration pass key value pairs with `--conf`
 
     $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
                                 --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+                                --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
 
 This command would set the Spark Cassandra Connector parameter 
 `spark.cassandra.connection.host` to `127.0.0.1`. Change this
 to the address of one of the nodes in your Cassandra cluster.
+
+The extensions configuration option enables Cassandra Specific Catalyst
+optimizations and functions.
  
-Enable Cassandra-specific functions on the `SparkContext`, `SparkSession`, `RDD`, and `DataFrame`:
+Create a Catalog Reference to your Cassandra Cluster
 
 ```scala
-import com.datastax.spark.connector._
-import org.apache.spark.sql.cassandra._
+spark.conf.set(s"spark.sql.catalog.mycatalog", "com.datastax.spark.connector.datasource.CassandraCatalog")
+```
+
+### Create a keyspace and table in Cassandra
+These lines will create an actual Keyspace and Table in Cassandra.
+```scala
+spark.sql("CREATE DATABASE IF NOT EXISTS mycatalog.testks WITH DBPROPERTIES (class='SimpleStrategy',replication_factor='1')")
+spark.sql("CREATE TABLE mycatalog.testks.testtab (key Int, value STRING) USING cassandra PARTITIONED BY (key)")
+
+//List their contents
+spark.sql("SHOW NAMESPACES FROM mycatalog").show
+spark.sql("SHOW TABLES FROM mycatalog.testks").show
 ```
 
 ### Loading and analyzing data from Cassandra
-Use the `sc.cassandraTable` method to view this table as a Spark `RDD`:
+Use the SparkSQL or a DataframeReader to Load a table
 
 ```scala
-val rdd = sc.cassandraTable("test", "kv")
-println(rdd.count)
-println(rdd.first)
-println(rdd.map(_.getInt("value")).sum)        
+val df = spark.read.table("mycatalog.testks.testtab")
+println(df.count)
+df.show
+
+//or
+
+spark.sql("SELECT * FROM mycatalog.testks.testtab").show
 ```
 
-### Saving data from RDD to Cassandra  
-Add two more rows to the table:
+### Saving data from a dataframe to Cassandra  
+Add 10 more rows to the table:
 
 ```scala
-val collection = sc.parallelize(Seq(("key3", 3), ("key4", 4)))
-collection.saveToCassandra("test", "kv", SomeColumns("key", "value"))       
+spark
+  .range(1, 10)
+  .withColumnRenamed("id", "key")
+  .withColumn("value", col("key").cast("string"))
+  .writeTo("mycatalog.testks.testtab")
+  .append
 ```
 
-[Next - Connecting to Cassandra](1_connecting.md)
-[Jump to - Accessing data with DataFrames](14_data_frames.md)
+[Accessing data with DataFrames](14_data_frames.md)
+[More details on Connecting to Cassandra](1_connecting.md)
+

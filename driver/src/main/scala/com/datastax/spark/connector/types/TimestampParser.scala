@@ -49,7 +49,7 @@ object TimestampParser {
     val result = for (addT <- booleans; addZone <- booleans) yield {
       val patterns = formatsWithoutZoneByLength
         .mapValues(p => if (addT) p.replace(" ", "'T'") else p)
-        .mapValues(p => if (addZone) p + "[XXX][XX][X]" else p)
+        .mapValues(p => if (addZone) p + "[XXXXX][XXXX][XXX][XX][X]" else p)
         .mapValues(DateTimeFormatter.ofPattern)
       (addT, addZone) -> patterns
     }

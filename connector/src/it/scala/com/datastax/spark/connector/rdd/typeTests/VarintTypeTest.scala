@@ -24,7 +24,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with Defau
   "A LongType DataFrame" should "write to VarInt C* tables" in {
     val LongValue = 11111111
     val longRDD = sc.parallelize(Seq(LongRow(LongValue, LongValue, LongValue, LongValue)))
-    val longDf = sparkSession.createDataFrame(longRDD)
+    val longDf = spark.createDataFrame(longRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     longDf.write
@@ -43,7 +43,7 @@ class VarintTypeTest extends AbstractTypeTest[BigInteger, BigInteger] with Defau
     val BigDecimalValue = new BigDecimal(22222)
 
     val bigDecimalRDD = sc.parallelize(Seq(BigDecimalRow(BigDecimalValue, BigDecimalValue, BigDecimalValue, BigDecimalValue)))
-    val bigDecimalDf = sparkSession.createDataFrame(bigDecimalRDD)
+    val bigDecimalDf = spark.createDataFrame(bigDecimalRDD)
 
     val normOptions = Map("keyspace" -> keyspaceName, "table" -> typeNormalTable)
     bigDecimalDf

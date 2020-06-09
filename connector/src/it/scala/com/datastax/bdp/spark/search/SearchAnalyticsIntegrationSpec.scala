@@ -5,11 +5,12 @@ import java.lang.{Integer => JInt}
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cluster.DseSearchAnalyticsCluster
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.rdd.{CassandraTableScanRDD, CqlWhereClause}
+import com.datastax.spark.connector.datasource.{CassandraCatalog, CassandraScan}
+import com.datastax.spark.connector.rdd.{CqlWhereClause}
 import org.apache.spark.SparkConf
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.SearchPredicateOptimizationParam
 import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 import org.apache.spark.sql.{DataFrame, _}
 
 import scala.concurrent.Future
@@ -125,42 +126,25 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
     options: Map[String, String] = Map.empty,
     tableName: String = table): Unit = {
 
-    val fullOptions = options ++ Map("table" -> tableName, "keyspace" -> ks)
-    val optionString = fullOptions.map { case (key, value) => s"""$key "$value"""" }.mkString(",")
+    spark.conf.set(s"spark.sql.catalog.$registerName", classOf[CassandraCatalog].getCanonicalName)
+    options.foreach { case (key, value) => spark.conf.set(s"spark.sql.catalog.$registerName.$key", value) }
 
-    val createDDL =
-      s"""CREATE TABLE IF NOT EXISTS $registerName
-         |USING org.apache.spark.sql.cassandra
-         |OPTIONS (
-         | $optionString
-         |)""".stripMargin
-
-    spark.sql(createDDL)
   }
 
   implicit class DFFunctions(df: DataFrame) {
-
     /**
       * Attempt to walk back dependency tree for the RDD and find
       * the CassandraTableScanRDD. This should only work correctly if
       * we are in a series of 1 to 1 mappings back to the source.
       */
     def getUnderlyingCqlWhereClause(): CqlWhereClause = {
-      def getUnderlyingCqlWhereClause(rdd: RDD[_]): CqlWhereClause = {
-        if (rdd.dependencies.nonEmpty) {
-          getUnderlyingCqlWhereClause(rdd.dependencies.head.rdd)
-        } else {
-          rdd.asInstanceOf[CassandraTableScanRDD[_]].where
-        }
-      }
-
-      getUnderlyingCqlWhereClause(df.rdd)
+      getCassandraScan(df.queryExecution.sparkPlan).cqlQueryParts.whereClause
     }
   }
 
 
   "SearchAnalytics" should "be able to use solr_query" in skipIfNotDSE(conn) {
-    val df = spark.sql(s"""SELECT key,a,b,c FROM $table WHERE solr_query = '{"q": "*:*", "fq":["key:[500 TO *]", "a:1"]}' """)
+    val df = spark.sql(s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE solr_query = '{"q": "*:*", "fq":["key:[500 TO *]", "a:1"]}' """)
 
     //Check that the correct data got through
     val expected = generatedRows
@@ -175,7 +159,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "be able to use solr optimizations " in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT key,a,b,c FROM $table WHERE key >= 500 AND a == 1")
+    val df = spark.sql(s"SELECT key,a,b,c FROM $table.$ks.$table WHERE key >= 500 AND a == 1")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
@@ -197,7 +181,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "not use solr optimizations if there is a manual optimization" in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT key,a,b,c FROM $table WHERE solr_query='key:[500 TO *]' AND a == 1")
+    val df = spark.sql(s"SELECT key,a,b,c FROM $table.$ks.$table WHERE solr_query='key:[500 TO *]' AND a == 1")
     val whereClause = df.getUnderlyingCqlWhereClause()
     whereClause.predicates.head should include("solr_query")
     val solrClause = whereClause.values.head.toString
@@ -218,7 +202,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "should choose solr clauses over clustering key clauses " in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT key,a,b,c FROM $table WHERE a > 2")
+    val df = spark.sql(s"SELECT key,a,b,c FROM $table.$ks.$table WHERE a > 2")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
@@ -237,7 +221,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "should be able to turn off solr optimization " in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT key,a,b,c FROM $tableNoSolr WHERE a > 2")
+    val df = spark.sql(s"SELECT key,a,b,c FROM $tableNoSolr.$ks.$table WHERE a > 2")
 
     //Check that solr pushdown didn't happened
     val whereClause = df.getUnderlyingCqlWhereClause()
@@ -249,7 +233,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "should correctly do negation filters " in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE
          |key > 998 AND
          |c NOT LIKE '%999%'""".stripMargin)
 
@@ -272,7 +256,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle OR conjunctions when possible" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table
+      s"""SELECT key,a,b,c FROM $table.$ks.$table
          |WHERE key < 10
          |OR key > 990""".stripMargin)
 
@@ -297,7 +281,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle conjunctions with LIKE clauses" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table
+      s"""SELECT key,a,b,c FROM $table.$ks.$table
          |WHERE c LIKE '%100%'
          |AND c LIKE '%101'
          |AND c LIKE '%1%'""".stripMargin)
@@ -324,7 +308,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle IN clauses" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table
+      s"""SELECT key,a,b,c FROM $table.$ks.$table
          |WHERE key IN (4, 8, 15, 16, 23, 42)""".stripMargin)
 
     //Check that pushdown happened
@@ -344,7 +328,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle IsNotNull on a partition key" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE key IS NOT NULL""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE key IS NOT NULL""")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
@@ -360,15 +344,12 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle mixed partition key and solr restrictions" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE key = 4 AND b = 5""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE key = 4 AND b = 5""")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
-    whereClause.predicates.headOption should contain(""""solr_query" = ? AND "key" = ?""")
-    whereClause.values should contain theSameElementsAs (
-      Seq("""{"q":"*:*", "fq":["b:5"]}""",
-        4)
-      )
+    whereClause.predicates should contain theSameElementsAs (Seq(""""solr_query" = ?""", """"key" = ?"""))
+    whereClause.values should contain theSameElementsAs (Seq("""{"q":"*:*", "fq":["b:5"]}""", 4))
 
     //Check that the correct data got through
     val expected = generatedRows.filter { row => row.getInt(_key) == 4 && row.getInt(_b) == 5 }
@@ -380,7 +361,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle isNotNull all by itself" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE c IS NOT NULL""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE c IS NOT NULL""")
 
     //Check that the correct data got through
     val expected = generatedRows.filter { row => row.getString(_c) != null }
@@ -392,7 +373,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle only partition key restrictions" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE key = 4""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE key = 4""")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
@@ -409,11 +390,11 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle primary key restrictions" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE key = 4 AND a > 2""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE key = 4 AND a > 2""")
 
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
-    val predicates = whereClause.predicates.head
+    val predicates = whereClause.predicates.mkString(" AND ")
     predicates should include(""""key" = ?""")
     predicates should include(""""a" > ?""")
     whereClause.values should contain theSameElementsAs (Seq(4, 2))
@@ -427,10 +408,10 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
 
   it should "handle Primary key restrictions and solr queries at the same time" in skipIfNotDSE(conn) {
     val df = spark.sql(
-      s"""SELECT key,a,b,c FROM $table WHERE key = 4 AND a > 2 AND b < 25""")
+      s"""SELECT key,a,b,c FROM $table.$ks.$table WHERE key = 4 AND a > 2 AND b < 25""")
     //Check that pushdown happened
     val whereClause = df.getUnderlyingCqlWhereClause()
-    val predicates = whereClause.predicates.head
+    val predicates = whereClause.predicates.mkString(" AND ")
     predicates should include(""""solr_query" = ?""")
     predicates should include(""""key" = ?""")
     whereClause.values should contain theSameElementsAs
@@ -444,7 +425,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   it should "optimize a count(*) without any predicates in " in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT COUNT(*) from $table")
+    val df = spark.sql(s"SELECT COUNT(*) from $table.$ks.$table")
     val whereClause = df.getUnderlyingCqlWhereClause()
     val predicates = whereClause.predicates.head
     predicates should include("""solr_query = '*:*'""")
@@ -453,7 +434,7 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   def testType(queryPredicate: String, expectedPredicate: String) = {
-    val df = spark.sql(s"""SELECT * FROM $typesTable WHERE $queryPredicate""")
+    val df = spark.sql(s"""SELECT * FROM $typesTable.$ks.$typesTable WHERE $queryPredicate""")
     val whereClause = df.getUnderlyingCqlWhereClause()
     whereClause.predicates.headOption should contain(""""solr_query" = ?""")
     val generatedWhereQuery: String = whereClause.values.head.toString
@@ -539,14 +520,14 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
   }
 
   "Automatic Solr Optimization" should "occur when the selected amount of data is less than the threshold" in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT COUNT(*) from $tableAutoSolr where key < 5")
+    val df = spark.sql(s"SELECT COUNT(*) from $tableAutoSolr.$ks.$table where key < 5")
     val whereClause = df.getUnderlyingCqlWhereClause()
     val predicates = whereClause.predicates.head
     predicates should include("""solr_query""")
   }
 
   it should "not occur if the selected amount of data is greater than the threshold" in skipIfNotDSE(conn) {
-    val df = spark.sql(s"SELECT COUNT(*) from $tableAutoSolr where key < 500")
+    val df = spark.sql(s"SELECT COUNT(*) from $tableAutoSolr.$ks.$table where key < 500")
     val whereClause = df.getUnderlyingCqlWhereClause()
     val predicates = whereClause.predicates
     predicates shouldBe empty

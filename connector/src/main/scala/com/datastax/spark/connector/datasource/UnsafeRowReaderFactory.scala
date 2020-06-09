@@ -1,14 +1,14 @@
-package org.apache.spark.sql.cassandra.execution.unsafe
+package com.datastax.spark.connector.datasource
 
 import com.datastax.oss.driver.api.core.cql.Row
-import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
 import org.apache.spark.sql.cassandra.CassandraSQLRow.toUnsafeSqlType
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.expressions.{UnsafeProjection, UnsafeRow}
-import org.apache.spark.sql.{Row => SparkRow}
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{Row => SparkRow}
 
 class UnsafeRowReaderFactory(schema: StructType) extends RowReaderFactory[UnsafeRow] {
 
@@ -19,10 +19,10 @@ class UnsafeRowReaderFactory(schema: StructType) extends RowReaderFactory[Unsafe
 }
 
 class UnsafeRowReader(schema: StructType)
-  extends RowReader[UnsafeRow]{
+  extends RowReader[UnsafeRow] {
 
-  @transient lazy val projection = UnsafeProjection.create(schema)
-  val converter = CatalystTypeConverters.createToCatalystConverter(schema)
+  @transient private lazy val projection = UnsafeProjection.create(schema)
+  private val converter = CatalystTypeConverters.createToCatalystConverter(schema)
 
   /** Reads column values from low-level `Row` and turns them into higher level representation.
     *

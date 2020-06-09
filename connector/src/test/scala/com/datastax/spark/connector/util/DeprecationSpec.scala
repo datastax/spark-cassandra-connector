@@ -2,6 +2,7 @@ package com.datastax.spark.connector.util
 
 import com.datastax.spark.connector.TableRef
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
+import com.datastax.spark.connector.datasource.CassandraSourceUtil
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.types.ColumnTypeConf
 import com.datastax.spark.connector.writer.WriteConf
@@ -55,7 +56,7 @@ class DeprecationSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "deprecate SoureConf" in {
-    val consolidateConf = CassandraSourceRelation.consolidateConfs(conf, Map.empty, TableRef("tab", "ks"), Map.empty)
+    val consolidateConf = CassandraSourceUtil.consolidateConfs(conf, Map.empty, "default", "ks")
     consolidateConf.get(CassandraSourceRelation.SolrPredciateOptimizationParam.replacementParameter.get.name) should be ("true")
   }
 

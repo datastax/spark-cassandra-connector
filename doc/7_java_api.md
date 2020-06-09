@@ -1,4 +1,5 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs, they are also accessible from Java
 
 ## Using Connector in Java
 This section describes how to access the functionality of Connector when 
