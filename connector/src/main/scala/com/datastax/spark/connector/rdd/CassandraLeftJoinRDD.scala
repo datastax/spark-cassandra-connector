@@ -6,6 +6,7 @@ import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.util.maybeExecutingAs
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.datasource.JoinHelper
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.writer._
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
@@ -178,6 +179,6 @@ class CassandraLeftJoinRDD[L, R] (
       requestsPerSecondRateLimiter.maybeSleep(1)
       pairWithRight(left)
     })
-    slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
+    JoinHelper.slidingPrefetchIterator(queryFutures, readConf.parallelismLevel).flatten
   }
 }

@@ -5,6 +5,7 @@ import java.io.IOException
 import com.datastax.oss.driver.api.core.ConsistencyLevel
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.datasource.ScanHelper
 import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.util.tableFromCassandra
 
@@ -49,48 +50,22 @@ trait CassandraTableRowReaderProvider[R] {
 
   lazy val tableDef: TableDef = tableFromCassandra(connector, keyspaceName, tableName)
 
-  protected def checkColumnsExistence(columns: Seq[ColumnRef]): Seq[ColumnRef] = {
-    val allColumnNames = tableDef.columns.map(_.columnName).toSet
-    val regularColumnNames = tableDef.regularColumns.map(_.columnName).toSet
-
-    def checkSingleColumn(column: ColumnRef) = {
-      column match {
-        case ColumnName(columnName, _) =>
-          if (!allColumnNames.contains(column.columnName))
-            throw new IOException(s"Column $column not found in table $keyspaceName.$tableName")
-        case TTL(columnName, _) =>
-          if (!regularColumnNames.contains(columnName))
-            throw new IOException(s"TTL can be obtained only for regular columns, " +
-              s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
-        case WriteTime(columnName, _) =>
-          if (!regularColumnNames.contains(columnName))
-            throw new IOException(s"TTL can be obtained only for regular columns, " +
-              s"but column $columnName is not a regular column in table $keyspaceName.$tableName.")
-        case _ =>
-      }
-
-      column
-    }
-
-    columns.map(checkSingleColumn)
-  }
-
   /** Returns the columns to be selected from the table.*/
-  lazy val selectedColumnRefs: Seq[ColumnRef] = {
+  lazy val selectedColumnRefs: IndexedSeq[ColumnRef] = {
     val providedColumns =
       columnNames match {
         case AllColumns => tableDef.columns.map(col => col.columnName: ColumnRef)
         case PrimaryKeyColumns => tableDef.primaryKey.map(col => col.columnName: ColumnRef)
         case PartitionKeyColumns => tableDef.partitionKey.map(col => col.columnName: ColumnRef)
-        case SomeColumns(cs@_*) => checkColumnsExistence(cs)
+        case SomeColumns(cs@_*) => ScanHelper.checkColumnsExistence(cs, tableDef)
       }
 
     // Let's leave only the columns needed by the rowReader.
     // E.g. even if the user selects AllColumns,
     // this will make sure only the columns needed by the RowReader are actually fetched.
     rowReader.neededColumns match {
-      case Some(neededColumns) => providedColumns.filter(neededColumns.toSet)
-      case None => providedColumns
+      case Some(neededColumns) => providedColumns.filter(neededColumns.toSet).toIndexedSeq
+      case None => providedColumns.toIndexedSeq
     }
   }
 

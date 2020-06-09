@@ -3,7 +3,6 @@ package com.datastax.spark.connector.cluster
 import java.io.IOException
 import java.net.{InetAddress, InetSocketAddress, Socket}
 
-import com.datastax.bdp.hadoop.hive.metastore.CassandraClientConfiguration
 import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.cql.CassandraConnectorConf._
 import com.datastax.spark.connector.cql.DefaultAuthConfFactory
@@ -81,8 +80,6 @@ object DefaultCluster {
     Map(
       ConnectionHostParam.name -> host,
       ConnectionPortParam.name -> port,
-      s"spark.hadoop.${CassandraClientConfiguration.CONF_PARAM_HOST}" -> host,
-      s"spark.hadoop.${CassandraClientConfiguration.CONF_PARAM_NATIVE_PORT}" -> port
     )
   }
 }

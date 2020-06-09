@@ -1,19 +1,24 @@
 package org.apache.spark.sql.cassandra
 
 import com.datastax.spark.connector.TableRef
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
+import com.datastax.spark.connector.datasource.{CassandraCatalog, CassandraTable}
 import org.apache.spark.sql.SaveMode._
-import org.apache.spark.sql.cassandra.DefaultSource._
-import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider, StreamSinkProvider}
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, DataSourceRegister, RelationProvider, SchemaRelationProvider, StreamSinkProvider}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
+import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode, SparkSession}
 import com.datastax.spark.connector.util.Logging
+import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableProvider}
+import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.streaming.OutputMode
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import scala.collection.JavaConverters._
 
 /**
- * Cassandra data source extends [[RelationProvider]], [[SchemaRelationProvider]] and [[CreatableRelationProvider]].
- * It's used internally by Spark SQL to create Relation for a table which specifies the Cassandra data source
- * e.g.
+ *  A Pointer to the DatasourceV2 Implementation of The Cassandra Source
  *
  *      CREATE TEMPORARY TABLE tmpTable
  *      USING org.apache.spark.sql.cassandra
@@ -27,93 +32,46 @@ import org.apache.spark.sql.streaming.OutputMode
  *       spark.cassandra.connection.timeoutMS "1000"
  *      )
  */
-class DefaultSource
-  extends RelationProvider
-  with SchemaRelationProvider
-  with CreatableRelationProvider
-  with StreamSinkProvider
-  with Logging {
+class DefaultSource() extends TableProvider with DataSourceRegister {
 
-  /**
-   * Creates a new relation for a cassandra table.
-   * The parameters map stores table level data. User can specify vale for following keys
-   *
-   *    table        -- table name, required
-   *    keyspace     -- keyspace name, required
-   *    cluster      -- cluster name, optional, default name is "default"
-   *    pushdown     -- true/false, optional, default is true
-   *    Cassandra connection settings  -- optional, e.g. spark.cassandra.connection.timeoutMS
-   *    Cassandra Read Settings        -- optional, e.g. spark.cassandra.input.fetch.sizeInRows
-   *    Cassandra Write settings       -- optional, e.g. spark.cassandra.output.consistency.level
-   *
-   * When push_down is true, some filters are pushed down to CQL.
-   *
-   */
-  override def createRelation(
-    sqlContext: SQLContext,
-    parameters: Map[String, String]): BaseRelation = {
-
-    val (tableRef, options) = TableRefAndOptions(parameters)
-    CassandraSourceRelation(tableRef, sqlContext, options, None)
+  override def getTable(schema: StructType, partitioning: Array[Transform], properties:java.util.Map[String,String]): Table = {
+    getTable(new CaseInsensitiveStringMap(properties))
   }
 
-  /**
-   * Creates a new relation for a cassandra table given table, keyspace, cluster and push_down
-   * as parameters and explicitly pass schema [[StructType]] as a parameter
-   */
-  override def createRelation(
-    sqlContext: SQLContext,
-    parameters: Map[String, String],
-    schema: StructType): BaseRelation = {
+  override def shortName(): String = "cassandra"
 
-    val (tableRef, options) = TableRefAndOptions(parameters)
-    CassandraSourceRelation(tableRef, sqlContext, options, Some(schema))
+  def getTable(options: CaseInsensitiveStringMap): CassandraTable = {
+    val session = SparkSession.active
+    val sparkConf = session.sparkContext.getConf
+    val scalaOptions = options.asScala
+
+    val keyspace = scalaOptions.getOrElse("keyspace",
+      throw new IllegalArgumentException("No keyspace specified in options of Cassandra Source"))
+
+    val table = scalaOptions.getOrElse("table",
+      throw new IllegalArgumentException("No table specified in options of Cassandra Source"))
+
+    val cluster = scalaOptions.getOrElse("cluster", "default")
+    val connectorConf =  consolidateConfs(
+      sparkConf,
+      session.conf.getAll,
+      cluster,
+      keyspace,
+      scalaOptions.toMap)
+    val connector = CassandraConnector(connectorConf)
+
+    CassandraTable(
+      session,
+      options,
+      connector,
+      cluster,
+      CassandraCatalog.getTableMetaData(connector, Identifier.of(Array(keyspace), table)))
   }
 
-  /**
-   * Creates a new relation for a cassandra table given table, keyspace, cluster, push_down and schema
-   * as parameters. It saves the data to the Cassandra table depends on [[SaveMode]]
-   */
-  override def createRelation(
-    sqlContext: SQLContext,
-    mode: SaveMode,
-    parameters: Map[String, String],
-    data: DataFrame): BaseRelation = {
-
-    val (tableRef, options) = TableRefAndOptions(parameters)
-    val table = CassandraSourceRelation(tableRef, sqlContext, options, None)
-
-    mode match {
-      case Append => table.insert(data, overwrite = false)
-      case Overwrite => table.insert(data, overwrite = true)
-      case ErrorIfExists =>
-        if (table.buildScan().isEmpty()) {
-          table.insert(data, overwrite = false)
-        } else {
-          throw new UnsupportedOperationException(
-            s"""'SaveMode is set to ErrorIfExists and Table
-               |${tableRef.keyspace + "." + tableRef.table} already exists and contains data.
-               |Perhaps you meant to set the DataFrame write mode to Append?
-               |Example: df.write.format.options.mode(SaveMode.Append).save()" '""".stripMargin)
-        }
-      case Ignore =>
-        if (table.buildScan().isEmpty()) {
-          table.insert(data, overwrite = false)
-        }
-    }
-
-    CassandraSourceRelation(tableRef, sqlContext, options, None)
+  override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
+    getTable(options).schema()
   }
 
-  override def createSink(
-    sqlContext: SQLContext,
-    parameters: Map[String, String],
-    partitionColumns: Seq[String],
-    outputMode: OutputMode): Sink = {
-
-    val (tableRef, options) = TableRefAndOptions(parameters)
-    CassandraStreamingSinkRelation(tableRef, sqlContext, options, outputMode)
-  }
 }
 
 /** Store data source options */
@@ -147,4 +105,3 @@ object DefaultSource {
     provider == CassandraDataSourceProviderPackageName || provider == CassandraDataSourceProviderClassName
   }
 }
-

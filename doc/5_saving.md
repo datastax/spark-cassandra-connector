@@ -1,4 +1,5 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs
 
 ## Saving and deleting to/from Cassandra
 

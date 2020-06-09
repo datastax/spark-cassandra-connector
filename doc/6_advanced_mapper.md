@@ -1,4 +1,6 @@
 # Documentation
+If you have the option we recommend using [DataFrames](14_data_frames.md) instead of RDDs
+
 ## Customizing the mapping between Scala and Cassandra
 
 While mapping rows to tuples and case classes work out-of-the box, 

@@ -2,17 +2,18 @@ package org.apache.spark.sql.cassandra.execution
 
 import java.sql.Timestamp
 import java.time.Instant
-import java.util.concurrent.CompletableFuture
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.apache.spark.sql._
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.execution.streaming.StreamingQueryWrapper
 import org.scalatest.concurrent.Eventually
+
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -27,7 +28,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   override lazy val conn = CassandraConnector(defaultConf)
 
   override def beforeClass {
-    sparkSession.conf.set(DirectJoinSettingParam.name, "auto")
+    spark.conf.set(DirectJoinSettingParam.name, "auto")
+    setupCassandraCatalog
 
     conn.withSessionDo { session =>
       val executor = getExecutor(session)
@@ -162,15 +164,15 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
 
   private object testImplicits extends SQLImplicits {
-    protected override def _sqlContext: SQLContext = sparkSession.sqlContext
+    protected override def _sqlContext: SQLContext = spark.sqlContext
   }
 
   import testImplicits._
 
   "Cassandra Direct Joins Strategy" should "be extracted from logical plans" in {
 
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -181,8 +183,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "be extracted from a plan with a rename" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load().withColumnRenamed("k", "x")
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load().withColumnRenamed("k", "x")
 
     val join = left.join(right, left("k") === right("x"))
 
@@ -192,8 +194,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "be extracted from a plan with many renames" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
       .withColumnRenamed("k", "x")
       .withColumnRenamed("x","b")
       .filter('b < 5)
@@ -207,8 +209,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "be extracted from a plan with many renames and multiple partition keys" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("multikey", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("multikey", ks).load()
       .withColumnRenamed("ka", "a")
       .withColumnRenamed("kb","b")
       .filter('b < 5)
@@ -226,8 +228,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "be extracted from a left outer Join" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"), "leftouter")
 
@@ -238,8 +240,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
 
   it should "not be extracted from a plan with a aggregation" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks)
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks)
       .load()
       .withColumnRenamed("k", "x")
       .groupBy('x)
@@ -253,8 +255,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "not be extracted from a plan where not all partition keys are joined" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("multikey", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("multikey", ks).load()
 
     val join = left.join(right, left("k") === right("ka"))
 
@@ -265,8 +267,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
 
   it should "not mess up non-Cassandra Joins" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.createDataset(Seq(DirectJoinRow(1,1)))
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -275,11 +277,9 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     }
   }
 
-  it should "not do a join if the ratio fails" in {
-    val tempSession = sparkSession.cloneSession()
-    tempSession.conf.set(DirectJoinSizeRatioParam.name, "-1")
-    val left = tempSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = tempSession.read.cassandraFormat("kv", ks).load()
+  it should "not do a join if the ratio fails" in withConfig(DirectJoinSizeRatioParam.name, "-1"){
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -288,11 +288,9 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     }
   }
 
-  it should "do a join if the ratio fails but is hinted" in {
-    val tempSession = sparkSession.cloneSession()
-    tempSession.conf.set(DirectJoinSizeRatioParam.name, "-1")
-    val left = tempSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = tempSession.read.cassandraFormat("kv", ks).load().directJoin()
+  it should "do a join if the ratio fails but is hinted" in withConfig(DirectJoinSizeRatioParam.name, "-1"){
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load().directJoin()
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -302,14 +300,14 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   "Structured Streaming" should "allow a direct join" in {
-    val rateStream = sparkSession
+    val rateStream = spark
       .readStream
       .format("rate")
       .option("rowsPerSecond", "1000")
       .load()
       .withColumn("value", 'value.cast("Int"))
 
-    val cassandraTable = sparkSession
+    val cassandraTable = spark
       .read
       .cassandraFormat("kv", ks)
       .load
@@ -336,8 +334,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   "Cassandra Data Source Execution" should " do a simple left join" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -349,8 +347,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should " do a join with a cassandra branch filter" in {
-    val left = sparkSession.createDataset((1 to 10).map(x => DirectJoinRow(x,x)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load().filter('v < 5)
+    val left = spark.createDataset((1 to 10).map(x => DirectJoinRow(x,x)))
+    val right = spark.read.cassandraFormat("kv", ks).load().filter('v < 5)
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -364,8 +362,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "evaluate non-cassandra join clauses and conditions" in {
-    val left = sparkSession.createDataset((1 to 10).map(x => DirectJoinRow(x, x)))
-    val right = sparkSession.read.cassandraFormat("abcd", ks).load()
+    val left = spark.createDataset((1 to 10).map(x => DirectJoinRow(x, x)))
+    val right = spark.read.cassandraFormat("abcd", ks).load()
 
     val join = left.join(right,
       left("k") === right("a")
@@ -383,8 +381,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "do a join with cassandra pushdowns" in {
-    val left = sparkSession.createDataset((1 to 10).map(x => DirectJoinRow(x,x)))
-    val right = sparkSession.read.cassandraFormat("multikey", ks).load().filter('c  < 3)
+    val left = spark.createDataset((1 to 10).map(x => DirectJoinRow(x,x)))
+    val right = spark.read.cassandraFormat("multikey", ks).load().filter('c  < 3)
 
     val join = left.join(right,
       left("k") === right("ka")
@@ -402,8 +400,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "join with a table with all types" in skipIfProtocolVersionLT(V4){
-    val left = sparkSession.createDataset(Seq("ascii"))
-    val right = sparkSession.read.cassandraFormat("test_data_type", ks).load()
+    val left = spark.createDataset(Seq("ascii"))
+    val right = spark.read.cassandraFormat("test_data_type", ks).load()
     val join = left.join(right, left("value") === right("a"))
     val expected =
       Row(
@@ -441,8 +439,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "join a plan with many renames and multiple partition keys" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(1,1)))
-    val right = sparkSession.read.cassandraFormat("multikey", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(1,1)))
+    val right = spark.read.cassandraFormat("multikey", ks).load()
       .withColumnRenamed("ka", "a")
       .withColumnRenamed("kb","b")
       .filter('b < 5)
@@ -469,8 +467,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "handle left outer joins" in {
-    val left = sparkSession.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
-    val right = sparkSession.read.cassandraFormat("kv", ks).load()
+    val left = spark.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
+    val right = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"), "leftouter")
 
@@ -491,8 +489,8 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "handle right outer joins" in {
-    val right = sparkSession.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
-    val left = sparkSession.read.cassandraFormat("kv", ks).load()
+    val right = spark.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
+    val left = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"), "right")
 
@@ -512,9 +510,10 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     }
   }
 
+
   it should "handle inner join with cassandra on the left side" in {
-    val right = sparkSession.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
-    val left = sparkSession.read.cassandraFormat("kv", ks).load()
+    val right = spark.createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
+    val left = spark.read.cassandraFormat("kv", ks).load()
 
     val join = left.join(right, left("k") === right("k"))
 
@@ -555,6 +554,23 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
         .select('v as "pops", 'k as "k")
 
     val cassandra = spark.read.cassandraFormat("kv", ks).load
+
+    val firstJoin = cassandra.join(right, cassandra("k") === right("k"))
+
+    firstJoin
+      .filter(cassandra("v").isNotNull)
+      .groupBy(right("pops")).avg("v")
+  }
+
+  it should " work with a join tree with literals and other expressions" in compareDirectOnDirectOff{ spark =>
+
+    val right =
+      spark
+        .createDataset(Seq(DirectJoinRow(-1,-1),DirectJoinRow(1,1), DirectJoinRow(-5,-5)))
+        .select('v as "pops", 'k as "k", lit(5) as "five")
+
+    val cassandra = spark.read.cassandraFormat("kv", ks).load
+      .withColumn("3k", 'k * 3)
 
     val firstJoin = cassandra.join(right, cassandra("k") === right("k"))
 
@@ -615,7 +631,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   it should "handle a joins whose projected output columns differ after remodeling" in {
-    val moduleByCoverage = sparkSession.read.cassandraFormat(keyspace = ks, table = "module_by_coverage").load
+    val moduleByCoverage = spark.read.cassandraFormat(keyspace = ks, table = "module_by_coverage").load
 
     def getKeys() : List[(String,String)] = {
       for {
@@ -634,17 +650,24 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     quotes.count should be (1)
   }
 
+  it should "handle joins between two datasource v2 tables in sparksql" in compareDirectOnDirectOff { spark =>
+    spark.sql(s"SELECT l.k, l.v, r.v1, r.v2 from $ks.kv as l LEFT JOIN $ks.kv2 as r on l.k == r.k")
+  }
+
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {
-    val sparkJoinOn = sparkSession.cloneSession()
+    val sparkJoinOn = spark.cloneSession()
     sparkJoinOn.conf.set(DirectJoinSettingParam.name, "on")
-    val sparkJoinOff = sparkSession.cloneSession()
+    val sparkJoinOff = spark.cloneSession()
     sparkJoinOff.conf.set(DirectJoinSettingParam.name, "off")
 
     withClue(s"ON\n${planDetails(test(sparkJoinOn))} \nvs\n Off\n${planDetails(test(sparkJoinOff))}") {
+      SparkSession.setActiveSession(sparkJoinOn)
       getDirectJoin(test(sparkJoinOn)) shouldBe defined
+      val results = test(sparkJoinOn).collect
+
+      SparkSession.setActiveSession(sparkJoinOff)
       getDirectJoin(test(sparkJoinOff)) shouldBe empty
       val expected = test(sparkJoinOff).collect
-      val results = test(sparkJoinOn).collect
       expected should not be empty
       results should contain theSameElementsAs expected
     }

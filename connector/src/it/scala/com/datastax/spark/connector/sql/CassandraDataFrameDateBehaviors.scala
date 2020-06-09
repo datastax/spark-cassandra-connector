@@ -31,7 +31,7 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
     }
 
     it should s"read C* LocalDate columns in ${timeZone.getID} timezone" in {
-      val df = sparkSession
+      val df = spark
         .read
         .format("org.apache.spark.sql.cassandra")
         .options(Map("table" -> readTable, "keyspace" -> ks, "cluster" -> "ClusterOne"))
@@ -59,11 +59,12 @@ trait CassandraDataFrameDateBehaviors extends SparkCassandraITSpecBase {
         Row(1, Date.valueOf("1987-01-02"))
       ))
 
-      val dataFrame = sparkSession.createDataFrame(rows, schema)
+      val dataFrame = spark.createDataFrame(rows, schema)
 
       dataFrame.write
         .format("org.apache.spark.sql.cassandra")
         .options(Map("table" -> writeTable, "keyspace" -> ks, "cluster" -> "ClusterOne"))
+        .mode("append")
         .save
 
       conn.withSessionDo { session =>

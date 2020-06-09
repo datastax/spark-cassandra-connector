@@ -13,7 +13,7 @@ import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
 
-case class ReplicaPartition(index: Int, endpoints: Set[InetAddress]) extends EndpointPartition
+case class ReplicaPartition(index: Int, endpoints: Array[String]) extends EndpointPartition
 
 /**
  * The replica partitioner will work on an RDD which is keyed on sets of InetAddresses representing Cassandra
@@ -91,10 +91,12 @@ implicit
 
   override def numPartitions: Int = partitionsPerReplicaSet * numHosts
 
+  val nodeAddresses = new NodeAddresses(connector)
+
   def getEndpointPartition(partition: Partition): ReplicaPartition = {
     val endpoints = indexMap.getOrElse(partition.index,
       throw new RuntimeException(s"$indexMap : Can't get an endpoint for Partition $partition.index"))
-    new ReplicaPartition(index = partition.index, endpoints = Set(endpoints))
+    ReplicaPartition(index = partition.index, endpoints = nodeAddresses.hostNames(endpoints).toArray)
   }
 
 }

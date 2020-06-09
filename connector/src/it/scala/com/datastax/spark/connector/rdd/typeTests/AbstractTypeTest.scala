@@ -313,7 +313,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       "table" -> s"${typeName}_dataframe"
     )
 
-    val readDF = sparkSession
+    val readDF = spark
       .read
       .format(cassandraFormat)
       .options(readTableOptions)
@@ -323,6 +323,7 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
       .write
       .format(cassandraFormat)
       .options(writeTableOptions)
+      .mode("append")
       .save()
 
     val dataCopied = sc.cassandraTable[(TestType, TestType, TestType, TestType)](keyspaceName,s"${typeName}_dataframe").collect

@@ -9,8 +9,8 @@ object ByteBufferUtil {
     * The buffer's position remains untouched. */
   def copyBuffer(src: ByteBuffer, dest: Array[Byte]): Array[Byte] = {
     if (src.hasArray) {
-      val length = src.remaining
-      val offset =  src.arrayOffset + src.position
+      val length: Int = src.remaining
+      val offset: Int =  src.arrayOffset + src.position()
       System.arraycopy(src.array, offset, dest, 0, length)
     } else {
       src.duplicate.get(dest)
@@ -22,7 +22,7 @@ object ByteBufferUtil {
     * The buffer's position remains untouched. */
   def toArray(buffer: ByteBuffer): Array[Byte] = {
     if (buffer.hasArray && 
-          buffer.arrayOffset + buffer.position == 0 && 
+          buffer.arrayOffset + buffer.position() == 0 &&
           buffer.remaining == buffer.array.length) {
       buffer.array
     } else {

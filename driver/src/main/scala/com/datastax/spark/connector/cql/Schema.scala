@@ -427,7 +427,7 @@ object Schema extends StrictLogging {
       case None =>
         val metadata: Metadata = session.getMetadata
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)
-        val errorMessage = NameTools.getErrorString(keyspaceName, tableName, suggestions)
+        val errorMessage = NameTools.getErrorString(keyspaceName, Some(tableName), suggestions)
         throw new IOException(errorMessage)
     }
   }

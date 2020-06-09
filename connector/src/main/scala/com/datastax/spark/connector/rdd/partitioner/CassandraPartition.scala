@@ -4,6 +4,7 @@ import java.net.InetAddress
 
 import org.apache.spark.Partition
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory, TokenRange}
+import org.apache.spark.sql.connector.read.InputPartition
 
 /** Stores a CQL `WHERE` predicate matching a range of tokens. */
 case class CqlTokenRange[V, T <: Token[V]](range: TokenRange[V, T])(implicit tf: TokenFactory[V, T]) {
@@ -22,7 +23,7 @@ case class CqlTokenRange[V, T <: Token[V]](range: TokenRange[V, T])(implicit tf:
 }
 
 trait EndpointPartition extends Partition {
-  def endpoints: Iterable[InetAddress]
+  def endpoints: Array[String]
 }
 
 /** Metadata describing Cassandra table partition processed by a single Spark task.
@@ -36,9 +37,12 @@ trait EndpointPartition extends Partition {
   * @param tokenRanges token ranges determining the row set to be fetched
   * @param dataSize estimated amount of data in the partition
   */
-case class CassandraPartition[V, T <: Token[V]](
+case class CassandraPartition[V, T <: Token[V]] (
   index: Int,
-  endpoints: Iterable[InetAddress],
+  endpoints: Array[String],
   tokenRanges: Iterable[CqlTokenRange[V, T]],
-  dataSize: Long) extends EndpointPartition
+  dataSize: Long) extends EndpointPartition with InputPartition {
+
+  override def preferredLocations(): Array[String] = endpoints
+}
 

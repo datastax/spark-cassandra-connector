@@ -1,12 +1,12 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.spark.connector.datasource.CassandraTable
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, UnaryExpression, Unevaluable}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, ExpressionInfo, UnaryExpression, Unevaluable}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.sources.BaseRelation
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{AnalysisException, SparkSession, functions}
 
@@ -55,6 +55,11 @@ object CassandraMetadataFunction {
       CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
   }
 
+  val cassandraTTLFunctionDescriptor  = (
+    FunctionIdentifier("ttl"),
+    new ExpressionInfo(getClass.getSimpleName, "ttl"),
+    (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input))
+
   def cassandraTTLFunctionBuilder(args: Seq[Expression]) = {
     if (args.length != 1) {
       throw new AnalysisException(s"Unable to call Cassandra ttl with more than 1 argument, given" +
@@ -62,6 +67,11 @@ object CassandraMetadataFunction {
     }
     CassandraTTL(args.head)
   }
+
+  val cassandraWriteTimeFunctionDescriptor  = (
+    FunctionIdentifier("writetime"),
+    new ExpressionInfo(getClass.getSimpleName, "writetime"),
+    (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input))
 
   def cassandraWriteTimeFunctionBuilder(args: Seq[Expression]) = {
     if (args.length != 1) {
@@ -86,28 +96,32 @@ object CassandraMetaDataRule extends Rule[LogicalPlan] {
          |found a ${metaDataExpression.child.getClass}""".stripMargin)
 
     val cassandraColumnName = metaDataExpression.child.asInstanceOf[AttributeReference].name
-    val cassandraParameter = s"${metaDataExpression.confParam}.$cassandraColumnName"
     val cassandraCql = s"${metaDataExpression.cql}($cassandraColumnName)"
 
-    val cassandraRelation = plan.collectFirst {
-      case plan@LogicalRelation(relation: CassandraTableDefProvider, _, _, _)
-        if relation.tableDef.columnByName.contains(cassandraColumnName) => relation }
+    val (cassandraTable) = plan.collectFirst {
+      case DataSourceV2Relation(table: CassandraTable, _, _, _, _)
+        if table.tableDef.columnByName.contains(cassandraColumnName) => table }
       .getOrElse(throw new IllegalArgumentException(
         s"Unable to find Cassandra Source Relation for TTL/Writetime for column $cassandraColumnName"))
 
-    val columnDef = cassandraRelation.tableDef.columnByName(cassandraColumnName)
+    val columnDef = cassandraTable.tableDef.columnByName(cassandraColumnName)
 
-    //Used for CassandraRelation Leaves, giving them a reference to the underlying TTL
-    val cassandraAttributeReference = if (columnDef.isMultiCell) {
-        AttributeReference(cassandraCql, ArrayType(metaDataExpression.dataType), nullable = true)()
+    if (columnDef.isPrimaryKeyColumn)
+      throw new AnalysisException(s"Unable to use ${metaDataExpression.cql} function on non-normal column ${columnDef.columnName}")
+
+    //Used for CassandraRelation Leaves, giving them a reference to the underlying Metadata
+    val (cassandraAttributeReference, cassandraField) = if (columnDef.isMultiCell) {
+      (AttributeReference(cassandraCql, ArrayType(metaDataExpression.dataType), nullable = true)(),
+        StructField(cassandraCql, ArrayType(metaDataExpression.dataType), true))
       } else {
-        AttributeReference(cassandraCql, metaDataExpression.dataType, nullable = true)()
+      (AttributeReference(cassandraCql, metaDataExpression.dataType, nullable = true)(),
+        StructField(cassandraCql, metaDataExpression.dataType, true))
       }
 
     //Used as a placeholder for everywhere except leaf nodes, to be resolved by the Catalyst Analyzer
     val unResolvedAttributeReference =  new NullableUnresolvedAttribute(cassandraCql)
 
-    //Used for any leaf nodes that do not have the ability to produce a true TTL Value
+    //Used for any leaf nodes that do not have the ability to produce a true Metadata Value
     val nullAttributeReference = Alias(functions.lit(null).cast(metaDataExpression.dataType).expr, cassandraCql)()
 
     // Remove Metadata Expressions
@@ -117,10 +131,13 @@ object CassandraMetaDataRule extends Rule[LogicalPlan] {
 
     // Add Metadata to CassandraSource
     val cassandraSourceModifiedPlan = metadataFunctionRemovedPlan.transform {
-      case plan@LogicalRelation(relation: CassandraTableDefProvider, _, _, _)
-        if relation.tableDef.columnByName.contains(cassandraColumnName) =>
-        val modifiedCassandraRelation = relation.withSparkConfOption(cassandraParameter, cassandraCql)
-        plan.copy(relation = modifiedCassandraRelation, output = plan.output :+ cassandraAttributeReference)
+      case cassandraRelation@DataSourceV2Relation(table: CassandraTable, _, _, _, _)
+        if table.tableDef.columnByName.contains(cassandraColumnName) =>
+        val modifiedCassandraTable = table.copy(optionalSchema = Some(table.schema().add(cassandraField)))
+        cassandraRelation.copy(
+          modifiedCassandraTable,
+          cassandraRelation.output :+ cassandraAttributeReference,
+        )
     }
 
     def containsAnyReferenceToTTL(logicalPlan: LogicalPlan): Boolean ={
@@ -129,7 +146,7 @@ object CassandraMetaDataRule extends Rule[LogicalPlan] {
       references.exists(input.contains)
     }
 
-    /* Find the leaves of unstatisfied TTL references. Replace them either with a Cassandra TTL attribute
+    /* Find the leaves of unsatisfied TTL references. Replace them either with a Cassandra TTL attribute
     * or a null if no CassandraTTL is possible for that leaf. All other locations are marked as unresolved
     * for the next pass of the Analyzer */
     val fixedPlan = cassandraSourceModifiedPlan.transformDown{

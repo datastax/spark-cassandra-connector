@@ -2,19 +2,15 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core._
-import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.datasource.ScanHelper
+import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
 import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token => ConnectorToken}
-import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CassandraPartitionGenerator, CqlTokenRange, NodeAddresses, _}
+import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, _}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.types.ColumnType
-import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, Predicate, RangePredicate}
-import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, ReflectionUtil}
+import com.datastax.spark.connector.util.{CountingIterator}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.{PartitionCoalescer, RDD}
@@ -76,8 +72,7 @@ class CassandraTableScanRDD[R] private[connector](
     val classTag: ClassTag[R],
     @transient val rowReaderFactory: RowReaderFactory[R])
   extends CassandraRDD[R](sc, Seq.empty)
-  with CassandraTableRowReaderProvider[R]
-  with SplitSizeEstimator[R] {
+  with CassandraTableRowReaderProvider[R] {
 
   override type Self = CassandraTableScanRDD[R]
 
@@ -221,14 +216,17 @@ class CassandraTableScanRDD[R] private[connector](
     rwf: RowWriterFactory[K]): CassandraTableScanRDD[(K, R)] =
     keyBy(AllColumns)
 
-  @transient lazy val partitionGenerator = {
-    if (containsPartitionKey(where)) {
-      CassandraPartitionGenerator(connector, tableDef, 1)
-    } else {
-      val reevaluatedSplitCount = splitCount.getOrElse(estimateSplitCount(splitSize))
-      CassandraPartitionGenerator(connector, tableDef, reevaluatedSplitCount)
-    }
+  def minimalSplitCount: Int = {
+    context.defaultParallelism * 2 + 1
   }
+
+  @transient lazy val partitionGenerator = ScanHelper.getPartitionGenerator(
+    connector,
+    tableDef,
+    where,
+    minimalSplitCount,
+    readConf.splitCount,
+    splitSize)
 
   /**
     * This method overrides the default spark behavior and will not create a CoalesceRDD. Instead it will reduce
@@ -278,80 +276,8 @@ class CassandraTableScanRDD[R] private[connector](
     partitions
   }
 
-  private lazy val nodeAddresses = new NodeAddresses(connector)
-
-  private lazy val partitionKeyStr =
-    tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
-
   override def getPreferredLocations(split: Partition): Seq[String] =
-    split.asInstanceOf[CassandraPartition[_, _]].endpoints.flatMap(nodeAddresses.hostNames).toSeq
-
-  private def tokenRangeToCqlQuery(range: CqlTokenRange[_, _]): (String, Seq[Any]) = {
-    val columns = selectedColumnRefs.map(_.cql).mkString(", ")
-    val (cql, values) = if (containsPartitionKey(where)) {
-      ("", Seq.empty)
-    } else {
-      range.cql(partitionKeyStr)
-    }
-    val filter = (cql +: where.predicates).filter(_.nonEmpty).mkString(" AND ")
-    val limitClause = limitToClause(limit)
-    val orderBy = clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
-    val quotedKeyspaceName = quote(keyspaceName)
-    val quotedTableName = quote(tableName)
-    val queryTemplate =
-      s"SELECT $columns " +
-        s"FROM $quotedKeyspaceName.$quotedTableName " +
-        s"WHERE $filter $orderBy $limitClause ALLOW FILTERING"
-    val queryParamValues = values ++ where.values
-    (queryTemplate, queryParamValues)
-  }
-
-  private def createStatement(session: CqlSession, cql: String, values: Any*): BoundStatement = {
-    try {
-      val stmt = session.prepare(cql)
-      val converters = stmt.getVariableDefinitions
-        .map(v => ColumnType.converterToCassandra(v.getType))
-        .toArray
-      val convertedValues =
-        for ((value, converter) <- values zip converters)
-        yield converter.convert(value)
-      stmt.bind(convertedValues: _*)
-        .setIdempotent(true)
-        .setConsistencyLevel(consistencyLevel)
-        .setPageSize(fetchSize)
-    }
-    catch {
-      case t: Throwable =>
-        throw new IOException(s"Exception during preparation of $cql: ${t.getMessage}", t)
-    }
-  }
-
-  private def fetchTokenRange(
-    scanner: Scanner,
-    range: CqlTokenRange[_, _],
-    inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
-
-    val session = scanner.getSession()
-
-    val (cql, values) = tokenRangeToCqlQuery(range)
-    logDebug(
-      s"Fetching data for range ${range.cql(partitionKeyStr)} " +
-        s"with $cql " +
-        s"with params ${values.mkString("[", ",", "]")}")
-    val stmt = createStatement(session, cql, values: _*)
-      .setRoutingToken(range.range.startNativeToken())
-
-    try {
-      val scanResult = scanner.scan(stmt)
-      val iteratorWithMetrics = scanResult.rows.map(inputMetricsUpdater.updateMetrics)
-      val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
-      logDebug(s"Row iterator for range ${range.cql(partitionKeyStr)} obtained successfully.")
-      result
-    } catch {
-      case t: Throwable =>
-        throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
-    }
-  }
+    split.asInstanceOf[CassandraPartition[_, _]].endpoints
 
   override def compute(split: Partition, context: TaskContext): Iterator[R] = {
     val partition = split.asInstanceOf[CassandraPartition[Any, _ <: ConnectorToken[Any]]]
@@ -361,11 +287,22 @@ class CassandraTableScanRDD[R] private[connector](
     val columnNames = selectedColumnRefs.map(_.selectedAs).toIndexedSeq
 
     val scanner = connector.connectionFactory.getScanner(readConf, connector.conf, columnNames)
+    val queryParts = CqlQueryParts(selectedColumnRefs, where, limit, clusteringOrder)
 
     // Iterator flatMap trick flattens the iterator-of-iterator structure into a single iterator.
     // flatMap on iterator is lazy, therefore a query for the next token range is executed not earlier
     // than all of the rows returned by the previous query have been consumed
-    val rowIterator = tokenRanges.iterator.flatMap(fetchTokenRange(scanner, _, metricsUpdater))
+    val rowIterator = tokenRanges.iterator.flatMap { range =>
+      try {
+        val scanResult = ScanHelper.fetchTokenRange(scanner, tableDef, queryParts, range, consistencyLevel, fetchSize)
+        val iteratorWithMetrics = scanResult.rows.map(metricsUpdater.updateMetrics)
+        val result = iteratorWithMetrics.map(rowReader.read(_, scanResult.metadata))
+        result
+      } catch {
+        case t: Throwable =>
+          throw new IOException(s"Exception during scan execution for $range : ${t.getMessage}", t)
+      }
+    }
     val countingIterator = new CountingIterator(rowIterator, limitForIterator(limit))
 
     context.addTaskCompletionListener { context =>
@@ -401,33 +338,6 @@ class CassandraTableScanRDD[R] private[connector](
     counts.reduce(_ + _)
   }
 
-
-  private def containsPartitionKey(clause: CqlWhereClause): Boolean = {
-    val pk = tableDef.partitionKey.map(_.columnName).toSet
-    val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
-
-    val whereColumns: Set[String] = wherePredicates.collect {
-      case EqPredicate(c, _) if pk.contains(c) => c
-      case InPredicate(c) if pk.contains(c) => c
-      case InListPredicate(c, _) if pk.contains(c) => c
-      case RangePredicate(c, _, _) if pk.contains(c) =>
-        throw new UnsupportedOperationException(
-          s"Range predicates on partition key columns (here: $c) are " +
-            s"not supported in where. Use filter instead.")
-    }.toSet
-
-    val primaryKeyComplete = whereColumns.nonEmpty && whereColumns.size == pk.size
-    val whereColumnsAllIndexed = whereColumns.forall(tableDef.isIndexed)
-
-    if (!primaryKeyComplete && !whereColumnsAllIndexed) {
-      val missing = pk -- whereColumns
-      throw new UnsupportedOperationException(
-        s"Partition key predicate must include all partition key columns or partition key columns need" +
-          s" to be indexed. Missing columns: ${missing.mkString(",")}"
-      )
-    }
-    primaryKeyComplete
-  }
 }
 
 object CassandraTableScanRDD {

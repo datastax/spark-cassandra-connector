@@ -24,7 +24,7 @@ object Versions {
   // and install in a local Maven repository. This is all done automatically, however it will work
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
-  val ApacheSpark     = "2.4.3"
+  val ApacheSpark     = "3.0.0"
   val SparkJetty      = "9.3.24.v20180605"
   val SolrJ           = "8.3.0"
 
