@@ -106,6 +106,29 @@ case class ColumnDescriptor(name:String,
   }
 }
 
+object ColumnDescriptor {
+
+  val ASC = Option(ClusteringOrder.ASC)
+  val DESC = Option(ClusteringOrder.DESC)
+
+  def regularColumn(name:String, colType: ColumnType[_]) = new ColumnDescriptor(name, colType, false)
+
+  def partitionKey(name:String, colType: ColumnType[_]) = new ColumnDescriptor(name, colType, true)
+
+  def clusteringColumn(name:String,
+                       colType: ColumnType[_],
+                       clusteringKey:Option[ClusteringOrder] = ASC) =
+    new ColumnDescriptor(name, colType, false, clusteringKey)
+
+  def clusteringColumnAsc(name: String,
+                          colType: ColumnType[_]) =
+    clusteringColumn(name, colType, ASC)
+
+  def clusteringColumnDesc(name: String,
+                          colType: ColumnType[_]) =
+    clusteringColumn(name, colType, DESC)
+}
+
 /** Provides implicit [[ColumnMapper]] used for mapping all non-tuple classes. */
 trait LowPriorityColumnMapper {
   implicit def defaultColumnMapper[T : TypeTag]: ColumnMapper[T] =

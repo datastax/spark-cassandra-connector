@@ -15,13 +15,13 @@ case class ClassWithWeirdProps(devil: String, cat: Int, eye: Double)
 
 class DefaultColumnMapperTest {
 
-  private val c1 = ColumnDef("property_1", PartitionKeyColumn, IntType)
-  private val c2 = ColumnDef("camel_case_property", ClusteringColumn(0), IntType)
-  private val c3 = ColumnDef("UpperCaseColumn", RegularColumn, IntType)
-  private val table1 = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
+  private val c1 = ColumnDescriptor.partitionKey("property_1", IntType)
+  private val c2 = ColumnDescriptor.clusteringColumn("camel_case_property", IntType)
+  private val c3 = ColumnDescriptor.regularColumn("UpperCaseColumn", IntType)
+  private val table1 = TableDescriptor("test", "table", Seq(c1, c2, c3))
 
-  private val c4 = ColumnDef("column", PartitionKeyColumn, IntType)
-  private val table2 = TableDef("test", "table", Seq(c4), Seq(c2), Seq(c3))
+  private val c4 = ColumnDescriptor.partitionKey("column", IntType)
+  private val table2 = TableDescriptor("test", "table", Seq(c4, c2, c3))
 
   @Test
   def testGetters1() {
