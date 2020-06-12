@@ -2,7 +2,6 @@ package com.datastax.spark.connector.mapper
 
 
 import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{IntType, VarCharType}
 import org.junit.Assert._
 import org.junit.Test
@@ -127,8 +126,8 @@ class DefaultColumnMapperTest {
     val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass1]]
     val table = mapper.newTable("keyspace", "table")
 
-    assertEquals("keyspace", table.keyspaceName)
-    assertEquals("table", table.tableName)
+    assertEquals("keyspace", table.keyspace)
+    assertEquals("table", table.name)
     assertEquals(3, table.columns.size)
     assertEquals(1, table.partitionKey.size)
     assertEquals("property_1", table.columns(0).columnName)
@@ -144,8 +143,8 @@ class DefaultColumnMapperTest {
     val mapper = implicitly[ColumnMapper[DefaultColumnMapperTestClass2]]
     val table = mapper.newTable("keyspace", "table")
 
-    assertEquals("keyspace", table.keyspaceName)
-    assertEquals("table", table.tableName)
+    assertEquals("keyspace", table.keyspace)
+    assertEquals("table", table.name)
     assertEquals(3, table.columns.size)
     assertEquals(1, table.partitionKey.size)
     assertEquals("property_1", table.columns(0).columnName)
@@ -164,8 +163,8 @@ class DefaultColumnMapperTest {
     val mapper = implicitly[ColumnMapper[ClassWithUnsupportedPropertyType]]
     val table = mapper.newTable("keyspace", "table")
 
-    assertEquals("keyspace", table.keyspaceName)
-    assertEquals("table", table.tableName)
+    assertEquals("keyspace", table.keyspace)
+    assertEquals("table", table.name)
     assertEquals(1, table.columns.size)
     assertEquals(1, table.partitionKey.size)
     assertEquals("property_2", table.columns(0).columnName)

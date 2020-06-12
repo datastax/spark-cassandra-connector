@@ -2,8 +2,8 @@ package com.datastax.spark.connector.mapper
 
 import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.oss.driver.api.core.ProtocolVersion
-import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.StructDef
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnName, ColumnRef}
+import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Quote._
 
@@ -53,11 +53,23 @@ case class TableDescriptor(keyspace:String,
                            name: String,
                            cols:Seq[ColumnDescriptor],
                            ifNotExists:Boolean = false,
-                           options: Map[String, String] = Map()) {
+                           options: Map[String, String] = Map()) extends StructDef {
+
+  override type Column = ColumnDescriptor
+
+  override type ValueRepr = CassandraRow
+
+  override lazy val columns: IndexedSeq[ColumnDescriptor] = cols.toIndexedSeq
 
   def partitionKey:Seq[ColumnDescriptor] = { cols.filter(_.isParitionKey) }
 
   def clusteringColumns:Seq[ColumnDescriptor] = { cols.filter(_.clusteringKey.isDefined) }
+
+  lazy val rowMetadata = CassandraRowMetadata.fromColumnNames(columnNames)
+
+  def newInstance(columnValues: Any*): CassandraRow = {
+    new CassandraRow(rowMetadata, columnValues.asInstanceOf[IndexedSeq[AnyRef]])
+  }
 
   def cql():String = {
 
@@ -99,7 +111,14 @@ object TableDescriptor {
 case class ColumnDescriptor(name:String,
                             colType: ColumnType[_],
                             isParitionKey:Boolean,
-                            clusteringKey:Option[ClusteringOrder] = Option.empty) {
+                            clusteringKey:Option[ClusteringOrder] = Option.empty) extends FieldDef {
+  val colRef = ColumnName(name)
+
+  def ref: ColumnRef = colRef
+
+  def columnName: String = name
+
+  def columnType: ColumnType[_] = colType
 
   def cql():String = {
     s"${quote(name)} ${colType.cqlTypeName}"
