@@ -9,7 +9,7 @@ import scala.concurrent.Future
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, _}
 import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.mapper.DefaultColumnMapper
+import com.datastax.spark.connector.mapper.{ColumnDescriptor, DefaultColumnMapper, TableDescriptor}
 import com.datastax.spark.connector.types._
 import org.apache.spark.SparkException
 
@@ -131,10 +131,10 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   }
 
   it should "write RDD of tuples to a new table" in {
-    val pkey = ColumnDef("key", PartitionKeyColumn, IntType)
-    val group = ColumnDef("group", ClusteringColumn(0), BigIntType)
-    val value = ColumnDef("value", RegularColumn, TextType)
-    val table = TableDef(ks, "new_kv_table", Seq(pkey), Seq(group), Seq(value))
+    val pkey = ColumnDescriptor.partitionKey("key", IntType)
+    val group = ColumnDescriptor.clusteringColumn("group", BigIntType)
+    val value = ColumnDescriptor.regularColumn("value", TextType)
+    val table = TableDescriptor(ks, "new_kv_table", Seq(pkey, group, value))
     val rows = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     sc.parallelize(rows).saveAsCassandraTableEx(table, SomeColumns("key", "group", "value"))
     verifyKeyValueTable("new_kv_table")

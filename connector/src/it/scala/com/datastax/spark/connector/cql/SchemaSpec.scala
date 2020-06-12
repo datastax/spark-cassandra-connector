@@ -1,12 +1,21 @@
 package com.datastax.spark.connector.cql
 
+import java.util.Optional
+
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.`type`.{DataTypes, ListType, MapType, SetType, UserDefinedType}
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
-import com.datastax.spark.connector.types._
-import com.datastax.spark.connector.util.schemaFromCassandra
-import org.scalatest.Inspectors._
+import com.datastax.spark.connector.util.{DriverUtil, schemaFromCassandra}
+import org.scalatest.OptionValues._
+
+import scala.collection.JavaConverters._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
+
+  implicit def toCqlIdent(name:String): CqlIdentifier = CqlIdentifier.fromInternal(name)
+  implicit def extractOption[T](joption:Optional[T]):T = DriverUtil.toOption(joption).value
+
   override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -51,97 +60,104 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
   "A Schema" should {
     "allow to get a list of keyspaces" in {
-      schema.keyspaces.map(_.keyspaceName) should contain(ks)
+      schema.keyspaces.map(_.getName) should contain(ks)
     }
     "allow to look up a keyspace by name" in {
       val keyspace = schema.keyspaceByName(ks)
-      keyspace.keyspaceName shouldBe ks
+      keyspace.getName shouldBe ks
     }
   }
 
-  "A KeyspaceDef" should {
+  "A keyspace object backed by Java driver metadata" should {
     "allow to get a list of tables in the given keyspace" in {
       val keyspace = schema.keyspaceByName(ks)
-      keyspace.tables.map(_.tableName) shouldBe Set("test")
+      val tableMap = keyspace.getTables.asScala
+      tableMap.keys shouldBe Set("test")
+      tableMap.values.map(_.getName) shouldBe Set("test")
     }
     "allow to look up a table by name" in {
       val keyspace = schema.keyspaceByName(ks)
-      val table = keyspace.tableByName("test")
-      table.tableName shouldBe "test"
+      val table = keyspace.getTable("test")
+      table.getName shouldBe "test"
     }
     "allow to look up user type by name" in {
       val keyspace = schema.keyspaceByName(ks)
-      val userType = keyspace.userTypeByName("address")
-      userType.name shouldBe "address"
+      val userType = keyspace.getUserDefinedType("address")
+      userType.getName shouldBe "address"
     }
   }
 
-  "A TableDef" should {
+  "A keyspace object backed by Java driver metadata" should {
     val keyspace = schema.keyspaceByName(ks)
-    val table = keyspace.tableByName("test")
+    val table = keyspace.getTable("test")
 
     "allow to read column definitions by name" in {
-      table.columnByName("k1").columnName shouldBe "k1"
+      table.getColumn("k1").getName shouldBe "k1"
     }
 
     "allow to read primary key column definitions" in {
-      table.primaryKey.size shouldBe 6
-      table.primaryKey.map(_.columnName) shouldBe Seq(
+      val primaryKey = table.getPrimaryKey.asScala
+      primaryKey.size shouldBe 6
+      primaryKey.map(_.getName) shouldBe Seq(
         "k1", "k2", "k3", "c1", "c2", "c3")
-      table.primaryKey.map(_.columnType) shouldBe Seq(
-        IntType, VarCharType, TimestampType, BigIntType, VarCharType, UUIDType)
-      forAll(table.primaryKey) { c => c.isPrimaryKeyColumn shouldBe true }
+      primaryKey.map(_.getType) shouldBe Seq(
+        DataTypes.INT, DataTypes.TEXT, DataTypes.TIMESTAMP, DataTypes.BIGINT, DataTypes.TEXT, DataTypes.UUID)
     }
 
     "allow to read partitioning key column definitions" in {
-      table.partitionKey.size shouldBe 3
-      table.partitionKey.map(_.columnName) shouldBe Seq("k1", "k2", "k3")
-      forAll(table.partitionKey) { c => c.isPartitionKeyColumn shouldBe true }
-      forAll(table.partitionKey) { c => c.isPrimaryKeyColumn shouldBe true }
+      val partitionKey = table.getPartitionKey.asScala
+      partitionKey.size shouldBe 3
+      partitionKey.map(_.getName) shouldBe Seq("k1", "k2", "k3")
     }
 
     "allow to read regular column definitions" in {
-      val columns = table.regularColumns
-      columns.size shouldBe 16
-      columns.map(_.columnName).toSet shouldBe Set(
+      val columns = table.getColumns.asScala
+      val expected = Set(
         "d1_blob", "d2_boolean", "d3_decimal", "d4_double", "d5_float",
         "d6_inet", "d7_int", "d8_list", "d9_map", "d10_set",
         "d11_timestamp", "d12_uuid", "d13_timeuuid", "d14_varchar",
         "d15_varint", "d16_address")
+      columns.size shouldBe 16
+      columns.keys.toSet shouldBe expected
+      columns.values.map(_.getName).toSet shouldBe expected
     }
 
     "allow to read proper types of columns" in {
-      table.columnByName("d1_blob").columnType shouldBe BlobType
-      table.columnByName("d2_boolean").columnType shouldBe BooleanType
-      table.columnByName("d3_decimal").columnType shouldBe DecimalType
-      table.columnByName("d4_double").columnType shouldBe DoubleType
-      table.columnByName("d5_float").columnType shouldBe FloatType
-      table.columnByName("d6_inet").columnType shouldBe InetType
-      table.columnByName("d7_int").columnType shouldBe IntType
-      table.columnByName("d8_list").columnType shouldBe ListType(IntType)
-      table.columnByName("d9_map").columnType shouldBe MapType(IntType, VarCharType)
-      table.columnByName("d10_set").columnType shouldBe SetType(IntType)
-      table.columnByName("d11_timestamp").columnType shouldBe TimestampType
-      table.columnByName("d12_uuid").columnType shouldBe UUIDType
-      table.columnByName("d13_timeuuid").columnType shouldBe TimeUUIDType
-      table.columnByName("d14_varchar").columnType shouldBe VarCharType
-      table.columnByName("d15_varint").columnType shouldBe VarIntType
-      table.columnByName("d16_address").columnType shouldBe a [UserDefinedType]
+      table.getColumn("d1_blob").getType shouldBe DataTypes.BLOB
+      table.getColumn("d1_blob").getType shouldBe DataTypes.BLOB
+      table.getColumn("d2_boolean").getType shouldBe DataTypes.BOOLEAN
+      table.getColumn("d3_decimal").getType shouldBe DataTypes.DECIMAL
+      table.getColumn("d4_double").getType shouldBe DataTypes.DOUBLE
+      table.getColumn("d5_float").getType shouldBe DataTypes.FLOAT
+      table.getColumn("d6_inet").getType shouldBe DataTypes.INET
+      table.getColumn("d7_int").getType shouldBe DataTypes.INT
+      table.getColumn("d8_list").getType shouldBe a [ListType]
+      table.getColumn("d9_map").getType shouldBe a [MapType]
+      table.getColumn("d10_set").getType shouldBe a [SetType]
+      table.getColumn("d11_timestamp").getType shouldBe DataTypes.TIMESTAMP
+      table.getColumn("d12_uuid").getType shouldBe DataTypes.UUID
+      table.getColumn("d13_timeuuid").getType shouldBe DataTypes.TIMEUUID
+      table.getColumn("d14_varchar").getType shouldBe DataTypes.TEXT
+      table.getColumn("d15_varint").getType shouldBe DataTypes.VARINT
+      table.getColumn("d16_address").getType shouldBe a [UserDefinedType]
     }
 
     "allow to list fields of a user defined type" in {
-      val udt = table.columnByName("d16_address").columnType.asInstanceOf[UserDefinedType]
-      udt.columnNames shouldBe Seq("street", "city", "zip")
-      udt.columnTypes shouldBe Seq(VarCharType, VarCharType, IntType)
+      val udt = table.getColumn("d16_address").getType.asInstanceOf[UserDefinedType]
+      udt.getFieldNames shouldBe Seq("street", "city", "zip")
+      udt.getFieldTypes shouldBe Seq(DataTypes.TEXT, DataTypes.TEXT, DataTypes.INT)
     }
 
     "should not recognize column with collection index as indexed" in {
-      table.indexedColumns.size shouldBe 1
-      table.indexedColumns.head.columnName shouldBe "d7_int"
+      val indexes = table.getIndexes.asScala
+      val expected = "d7_int"
+      indexes.size shouldBe 1
+      indexes.keys.head shouldBe expected
+      indexes.values.head.getName shouldBe expected
     }
 
     "should hold all indices retrieved from cassandra" in {
-      table.indexes.size shouldBe 2
+      table.getIndexes.asScala.size shouldBe 2
     }
   }
 

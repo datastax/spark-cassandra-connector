@@ -1,14 +1,13 @@
 package com.datastax.spark.connector.sql
 
 import java.io.IOException
-import java.util.concurrent.CompletableFuture
 
 import com.datastax.oss.driver.api.core.{CqlIdentifier, DefaultProtocolVersion}
 import com.datastax.oss.driver.api.core.`type`.DataTypes
 import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import com.datastax.spark.connector.cql.{CassandraConnector, ClusteringColumn}
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.cassandra._
@@ -160,13 +159,15 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       )
       .load()
 
-    df.createCassandraTable(ks, "kv_auto", Some(Seq("v")), Some(Seq("k")))
-
+    df.createCassandraTable(
+      ks,
+      "kv_auto",
+      Some(Seq("v")),
+      Some(Seq(("k", ClusteringOrder.ASC))))
     val meta = conn.withSessionDo(_.getMetadata)
     val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto").get()
     autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
     autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
-
   }
 
   it should " be able to create a customized C* schema from a table" in {
@@ -181,7 +182,11 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       )
       .load()
 
-    df.createCassandraTableEx(ks, "kv_auto2", Seq("v"), Seq(("k", ClusteringColumn.Descending)),
+    df.createCassandraTable(
+      ks,
+      "kv_auto2",
+      Some(Seq("v")),
+      Some(Seq(("k", ClusteringOrder.DESC))),
       tableOptions = Map("gc_grace_seconds" -> "1000"))
 
     val meta = conn.withSessionDo(_.getMetadata)
@@ -205,12 +210,19 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       .load()
 
     val pkError = intercept[IllegalArgumentException] {
-      df.createCassandraTable(ks, "kv_auto", Some(Seq("cara")))
+      df.createCassandraTable(
+        ks,
+        "kv_auto",
+        Some(Seq("cara")))
     }
     pkError.getMessage should include ("\"cara\" not Found.")
 
     val ccError = intercept[IllegalArgumentException] {
-      df.createCassandraTable(ks, "kv_auto", Some(Seq("k")), Some(Seq("sundance")))
+      df.createCassandraTable(
+        ks,
+        "kv_auto",
+        Some(Seq("k")),
+        Some(Seq(("sundance", ClusteringOrder.ASC))))
     }
     ccError.getMessage should include ("\"sundance\" not Found.")
 

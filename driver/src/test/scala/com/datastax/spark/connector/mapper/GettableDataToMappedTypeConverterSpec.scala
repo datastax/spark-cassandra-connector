@@ -4,7 +4,6 @@ import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.{CassandraRow, UDTValue}
-import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, TableDef}
 import com.datastax.spark.connector.types._
 
 
@@ -14,17 +13,15 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   val numberColumn = UDTFieldDef("number", IntType)
   val addressType = UserDefinedType("address", IndexedSeq(streetColumn, numberColumn))
 
-  val loginColumn = ColumnDef("login", PartitionKeyColumn, VarCharType)
-  val passwordColumn = ColumnDef("password", RegularColumn, VarCharType)
-  val addressColumn = ColumnDef("address", RegularColumn, addressType)
-  val addressesColumn = ColumnDef("addresses", RegularColumn, addressType)
+  val loginColumn = ColumnDescriptor.partitionKey("login", VarCharType)
+  val passwordColumn = ColumnDescriptor.regularColumn("password", VarCharType)
+  val addressColumn = ColumnDescriptor.regularColumn("address", addressType)
+  val addressesColumn = ColumnDescriptor.regularColumn("addresses", addressType)
 
-  val userTable = new TableDef(
-    keyspaceName = "test",
-    tableName = "test",
-    partitionKey = Seq(loginColumn),
-    clusteringColumns = Seq.empty,
-    regularColumns = Seq(passwordColumn, addressColumn))
+  val userTable = TableDescriptor(
+    keyspace = "test",
+    name = "test",
+    cols = Seq(loginColumn, passwordColumn, addressColumn))
 
   "GettableDataToMappedTypeConverter" should "be Serializable" in {
     val converter = new GettableDataToMappedTypeConverter[User](userTable, userTable.columnRefs)
@@ -214,13 +211,11 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   case class UserWithMultipleAddresses(login: String, addresses: Vector[Address])
 
   def testUserWithMultipleAddresses(addressesType: ColumnType[_]) {
-    val addressesColumn = ColumnDef("addresses", RegularColumn, addressesType)
-    val userTable = new TableDef(
-      keyspaceName = "test",
-      tableName = "test",
-      partitionKey = Seq(loginColumn),
-      clusteringColumns = Seq.empty,
-      regularColumns = Seq(addressesColumn))
+    val addressesColumn = ColumnDescriptor.regularColumn("addresses", addressesType)
+    val userTable = TableDescriptor(
+      keyspace = "test",
+      name = "test",
+      cols = Seq(loginColumn, addressesColumn))
 
     val address1 = UDTValue.fromMap(Map("street" -> "A street", "number" -> 4))
     val address2 = UDTValue.fromMap(Map("street" -> "B street", "number" -> 7))
@@ -246,13 +241,11 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   case class UserWithMultipleAddressesAsMap(login: String, addresses: Map[Int, Address])
 
   it should "convert a CassandraRow with a collection of UDTValues" in {
-    val addressesColumn = ColumnDef("addresses", RegularColumn, MapType(IntType, addressType))
-    val userTable = new TableDef(
-      keyspaceName = "test",
-      tableName = "test",
-      partitionKey = Seq(loginColumn),
-      clusteringColumns = Seq.empty,
-      regularColumns = Seq(addressesColumn))
+    val addressesColumn = ColumnDescriptor.regularColumn("addresses", MapType(IntType, addressType))
+    val userTable = TableDescriptor(
+      keyspace = "test",
+      name = "test",
+      cols = Seq(loginColumn, addressColumn))
 
     val address1 = UDTValue.fromMap(Map("street" -> "A street", "number" -> 4))
     val address2 = UDTValue.fromMap(Map("street" -> "B street", "number" -> 7))
@@ -272,13 +265,11 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
 
   it should "convert a CassandraRow with a collection of tuples" in {
     val tupleType = TupleType(TupleFieldDef(0, VarCharType), TupleFieldDef(1, IntType))
-    val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(tupleType))
-    val userTable = new TableDef(
-      keyspaceName = "test",
-      tableName = "test",
-      partitionKey = Seq(loginColumn),
-      clusteringColumns = Seq.empty,
-      regularColumns = Seq(addressesColumn))
+    val addressesColumn = ColumnDescriptor.regularColumn("addresses", ListType(tupleType))
+    val userTable = TableDescriptor(
+      keyspace = "test",
+      name = "test",
+      cols = Seq(loginColumn, addressesColumn))
 
     val address1 = TupleValue("A street", 4)
     val address2 = TupleValue("B street", 7)

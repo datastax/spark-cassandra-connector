@@ -4,6 +4,7 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.AllNodesFailedException
 import com.datastax.oss.driver.api.core.auth.AuthenticationException
+import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.spark.connector.cluster.AuthCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
@@ -60,7 +61,11 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
       ("Mahendra", 26, "Rajasthan"))).toDF("name", "age", "address")
 
     createKeyspace(conn.openSession())
-    personDF1.createCassandraTable(ks, "authtest", Some(Array("address")), Some(Array("age")))(conn)
+    personDF1.createCassandraTable(
+      ks,
+      "authtest",
+      Some(Array("address")),
+      Some(Array(("age", ClusteringOrder.ASC))))(conn)
 
     val options = Map("spark.cassandra.auth.username" -> "cassandra",
       "spark.cassandra.auth.password" -> "cassandra",

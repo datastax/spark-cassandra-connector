@@ -1,20 +1,20 @@
 package com.datastax.spark.connector
 
 import org.scalatest.{Matchers, WordSpec}
+import com.datastax.spark.connector.mapper.{ColumnDescriptor, TableDescriptor}
+import com.datastax.spark.connector.types.{IntType, TimestampType, VarCharType}
 
-import com.datastax.spark.connector.cql._
-import com.datastax.spark.connector.types.{TimestampType, VarCharType, IntType}
-
+/* TODO: This spec is now only testing the TableDescriptor side of the house... need to add IT for TableDef side */
 class ColumnSelectorSpec extends WordSpec with Matchers {
   "A ColumnSelector#selectFrom method" should {
-    val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
-    val column2 = ColumnDef("c2", PartitionKeyColumn, VarCharType)
-    val column3 = ColumnDef("c3", ClusteringColumn(0), VarCharType)
-    val column4 = ColumnDef("c4", ClusteringColumn(1), VarCharType)
-    val column5 = ColumnDef("c5", RegularColumn, VarCharType)
-    val column6 = ColumnDef("c6", RegularColumn, TimestampType)
+    val column1 = ColumnDescriptor.partitionKey("c1", IntType)
+    val column2 = ColumnDescriptor.partitionKey("c2", VarCharType)
+    val column3 = ColumnDescriptor.clusteringColumn("c3", VarCharType)
+    val column4 = ColumnDescriptor.clusteringColumn("c4", VarCharType)
+    val column5 = ColumnDescriptor.regularColumn("c5", VarCharType)
+    val column6 = ColumnDescriptor.regularColumn("c6", TimestampType)
 
-    val tableDef = TableDef("keyspace", "table", Seq(column1, column2), Seq(column3, column4), Seq(column5, column6))
+    val tableDef = TableDescriptor("keyspace", "table", Seq(column1, column2, column3, column4, column5, column6))
 
     "return all columns" in {
       val columns = AllColumns.selectFrom(tableDef)
@@ -50,7 +50,5 @@ class ColumnSelectorSpec extends WordSpec with Matchers {
         SomeColumns("c1", FunctionCallRef("f", Left(ColumnName("unknown_column"))::Nil)).selectFrom(tableDef)
       }
     }
-
   }
-
 }

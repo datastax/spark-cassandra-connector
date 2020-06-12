@@ -18,6 +18,7 @@ import scala.util.Try
 /** Abstract column / field definition.
   * Common to tables and user-defined types */
 trait FieldDef extends Serializable {
+
   def ref: ColumnRef
 
   def columnName: String

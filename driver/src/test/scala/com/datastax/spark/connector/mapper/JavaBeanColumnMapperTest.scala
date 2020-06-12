@@ -1,11 +1,10 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.ColumnName
-import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.types.{IntType, UDTFieldDef, UserDefinedType}
 import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
-import org.junit.{Ignore, Test}
+import org.junit.Test
 
 class JavaBeanColumnMapperTestClass {
   def getCassandraProperty1: String = ???
@@ -42,15 +41,15 @@ class JavaBeanColumnMapperTest {
   private val uf2 = UDTFieldDef("cassandra_another_field", IntType)
   private val uf3 = UDTFieldDef("cassandra_yet_another_field", IntType)
   private val u1 = UserDefinedType("udt", IndexedSeq(uf1,uf2,uf3))
-  private val c1 = ColumnDef("cassandra_property_1", PartitionKeyColumn, IntType)
-  private val c2 = ColumnDef("cassandra_camel_case_property", ClusteringColumn(0), IntType)
-  private val c3 = ColumnDef("flagged", RegularColumn, IntType)
-  private val c4 = ColumnDef("marked", RegularColumn, IntType)
-  private val c5 = ColumnDef("column", RegularColumn, IntType)
-  private val c6 = ColumnDef("nested", RegularColumn, u1)
-  private val table1 = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
-  private val table2 = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3, c4, c5))
-  private val table3 = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c6))
+  private val c1 = ColumnDescriptor.partitionKey("cassandra_property_1", IntType)
+  private val c2 = ColumnDescriptor.clusteringColumn("cassandra_camel_case_property", IntType)
+  private val c3 = ColumnDescriptor.regularColumn("flagged", IntType)
+  private val c4 = ColumnDescriptor.regularColumn("marked", IntType)
+  private val c5 = ColumnDescriptor.regularColumn("column", IntType)
+  private val c6 = ColumnDescriptor.regularColumn("nested", u1)
+  private val table1 = TableDescriptor("test", "table", Seq(c1, c2, c3))
+  private val table2 = TableDescriptor("test", "table", Seq(c1, c2, c3, c4, c5))
+  private val table3 = TableDescriptor("test", "table", Seq(c1, c2, c6))
 
   @Test
   def testGetters() {

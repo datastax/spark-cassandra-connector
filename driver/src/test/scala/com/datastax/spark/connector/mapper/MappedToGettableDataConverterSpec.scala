@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.{ColumnName, UDTValue}
-import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, TableDef}
 import com.datastax.spark.connector.types._
 import org.apache.commons.lang3.{SerializationUtils, tuple}
 import org.scalatest.{FlatSpec, Matchers}
@@ -12,15 +11,13 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
   val numberColumn = UDTFieldDef("number", IntType)
   val addressType = UserDefinedType("address", IndexedSeq(streetColumn, numberColumn))
 
-  val loginColumn = ColumnDef("login", PartitionKeyColumn, VarCharType)
-  val passwordColumn = ColumnDef("password", RegularColumn, VarCharType)
-  val addressColumn = ColumnDef("address", RegularColumn, addressType)
-  val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(addressType, isFrozen = false))
+  val loginColumn = ColumnDescriptor.partitionKey("login", VarCharType)
+  val passwordColumn = ColumnDescriptor.regularColumn("password", VarCharType)
+  val addressColumn = ColumnDescriptor.regularColumn("address", addressType)
+  val addressesColumn = ColumnDescriptor.regularColumn("addresses", ListType(addressType, isFrozen = false))
 
-  private def newTable(columns: ColumnDef*): TableDef = {
-    val (partitionKeyColumns, other) = columns.partition(_.isPartitionKeyColumn)
-    val (clusteringColumns, regularColumns) = other.partition(_.isClusteringColumn)
-    new TableDef("test", "test", partitionKeyColumns, clusteringColumns, regularColumns)
+  private def newTable(columns: ColumnDescriptor*): TableDescriptor = {
+    TableDescriptor("test", "test", columns)
   }
 
 
@@ -244,7 +241,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
     val pairType = TupleType(
       TupleFieldDef(0, addressType),
       TupleFieldDef(1, addressType))
-    val table = newTable(loginColumn, ColumnDef("addresses", RegularColumn, pairType))
+    val table = newTable(loginColumn, ColumnDescriptor.regularColumn("addresses", pairType))
     val converter = MappedToGettableDataConverter[UserWithTwoAddresses](table, table.columnRefs)
     val user = UserWithTwoAddresses("foo", tuple.Pair.of(Address("street1", 1), Address("street2", 2)))
     val row = converter.convert(user)
@@ -261,7 +258,7 @@ class MappedToGettableDataConverterSpec extends FlatSpec with Matchers {
       TupleFieldDef(0, addressType),
       TupleFieldDef(1, addressType),
       TupleFieldDef(2, addressType))
-    val table = newTable(loginColumn, ColumnDef("addresses", RegularColumn, tripleType))
+    val table = newTable(loginColumn, ColumnDescriptor.regularColumn("addresses", tripleType))
     val converter = MappedToGettableDataConverter[UserWithThreeAddresses](table, table.columnRefs)
     val addresses = tuple.Triple.of(Address("street1", 1), Address("street2", 2), Address("street3", 3))
     val user = UserWithThreeAddresses("foo", addresses)

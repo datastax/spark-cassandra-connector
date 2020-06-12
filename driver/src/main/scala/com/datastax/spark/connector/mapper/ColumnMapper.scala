@@ -61,9 +61,12 @@ case class TableDescriptor(keyspace:String,
 
   override lazy val columns: IndexedSeq[ColumnDescriptor] = cols.toIndexedSeq
 
-  def partitionKey:Seq[ColumnDescriptor] = { cols.filter(_.isParitionKey) }
+  def partitionKey:Seq[ColumnDescriptor] = { cols.filter(_.isPartitionKey) }
 
   def clusteringColumns:Seq[ColumnDescriptor] = { cols.filter(_.clusteringKey.isDefined) }
+
+  lazy val primaryKey: IndexedSeq[ColumnDescriptor] =
+    (partitionKey ++ clusteringColumns).toIndexedSeq
 
   lazy val rowMetadata = CassandraRowMetadata.fromColumnNames(columnNames)
 
@@ -110,8 +113,9 @@ object TableDescriptor {
 
 case class ColumnDescriptor(name:String,
                             colType: ColumnType[_],
-                            isParitionKey:Boolean,
+                            isPartitionKey:Boolean,
                             clusteringKey:Option[ClusteringOrder] = Option.empty) extends FieldDef {
+
   val colRef = ColumnName(name)
 
   def ref: ColumnRef = colRef
