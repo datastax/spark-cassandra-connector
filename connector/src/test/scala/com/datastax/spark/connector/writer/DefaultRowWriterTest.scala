@@ -8,7 +8,7 @@ import org.apache.commons.lang3.SerializationUtils
 import org.junit.Assert._
 import org.junit.Test
 import com.datastax.spark.connector.UDTValue
-import com.datastax.spark.connector.cql._
+import com.datastax.spark.connector.mapper.{ColumnDescriptor, TableDescriptor}
 import com.datastax.spark.connector.types._
 
 case class StringWrapper(str: String)
@@ -24,8 +24,8 @@ class DefaultRowWriterTest {
 
   @Test
   def testSerializability(): Unit = {
-    val table = TableDef("test", "table", Nil, Nil, Nil)
-    val rowWriter = new DefaultRowWriter[DefaultRowWriterTest](table, IndexedSeq.empty)
+    val table = TableDescriptor("test", "table", Seq())
+    val rowWriter = new DefaultRowWriter[DefaultRowWriterTest](Right(table), IndexedSeq.empty)
     SerializationUtils.roundtrip(rowWriter)
   }
 
@@ -33,12 +33,12 @@ class DefaultRowWriterTest {
 
   @Test
   def testTypeConversionsAreApplied(): Unit = {
-    val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
-    val column2 = ColumnDef("c2", ClusteringColumn(0), DecimalType)
-    val column3 = ColumnDef("c3", RegularColumn, TimestampType)
-    val table = TableDef("test", "table", Seq(column1), Seq(column2), Seq(column3))
+    val column1 = ColumnDescriptor.partitionKey("c1", IntType)
+    val column2 = ColumnDescriptor.clusteringColumn("c2", DecimalType)
+    val column3 = ColumnDescriptor.regularColumn("c3", TimestampType)
+    val table = TableDescriptor("test", "table", Seq(column1, column2, column3))
     val rowWriter = new DefaultRowWriter[RowOfStrings](
-      table, table.columnRefs)
+      Right(table), table.columnRefs)
 
     val obj = RowOfStrings("1", "1.11", "2015-01-01 12:11:34")
     val buf = Array.ofDim[Any](3)
@@ -59,9 +59,9 @@ class DefaultRowWriterTest {
     val udtColumn = UDTFieldDef("field", IntType)
     val udt = UserDefinedType("udt", IndexedSeq(udtColumn))
 
-    val column = ColumnDef("c1", PartitionKeyColumn, udt)
-    val table = TableDef("test", "table", Seq(column), Nil, Nil)
-    val rowWriter = new DefaultRowWriter[RowWithUDT](table, table.columnRefs)
+    val column = ColumnDescriptor.partitionKey("c1", udt)
+    val table = TableDescriptor("test", "table", Seq(column))
+    val rowWriter = new DefaultRowWriter[RowWithUDT](Right(table), table.columnRefs)
 
     // we deliberately put a String 12345 here:
     val udtValue = UDTValue.fromMap(Map("field" -> "12345"))
@@ -84,9 +84,9 @@ class DefaultRowWriterTest {
   def testCustomTypeConvertersAreUsed(): Unit = {
     TypeConverter.registerConverter(StringWrapperConverter)
     try {
-      val column = ColumnDef("c1", PartitionKeyColumn, TextType)
-      val table = TableDef("test", "table", Seq(column), Nil, Nil)
-      val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, table.columnRefs)
+      val column = ColumnDescriptor.partitionKey("c1", TextType)
+      val table = TableDescriptor("test", "table", Seq(column))
+      val rowWriter = new DefaultRowWriter[RowWithStringWrapper](Right(table), table.columnRefs)
 
       val obj = RowWithStringWrapper(StringWrapper("some text"))
       val buf = Array.ofDim[Any](1)

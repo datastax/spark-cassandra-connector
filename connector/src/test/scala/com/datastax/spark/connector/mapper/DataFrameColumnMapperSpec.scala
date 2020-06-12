@@ -71,8 +71,8 @@ class DataFrameColumnMapperSpec extends WordSpec with Matchers with GivenWhenThe
 
         val columnMapper = new DataFrameColumnMapper[DataFrameColumnMapperSpec](structType)
         val table = columnMapper.newTable("keyspace", "table")
-        assertEquals("keyspace", table.keyspaceName)
-        assertEquals("table", table.tableName)
+        assertEquals("keyspace", table.keyspace)
+        assertEquals("table", table.name)
         assertEquals(3, table.columns.size)
         assertEquals(1, table.partitionKey.size)
         assertEquals(IntType, table.partitionKey(0).columnType)

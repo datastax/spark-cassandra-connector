@@ -2,7 +2,7 @@ package com.datastax.spark.connector.rdd.reader
 
 import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.{StructDef, TableDef}
 import com.datastax.spark.connector.mapper._
 import com.datastax.spark.connector.util.JavaApiHelper
 
@@ -12,7 +12,7 @@ import scala.reflect.runtime.universe._
 /** Transforms a Cassandra Java driver `Row` into an object of a user provided class,
   * calling the class constructor */
 final class ClassBasedRowReader[R : TypeTag : ColumnMapper](
-    table: TableDef,
+    table: StructDef,
     selectedColumns: IndexedSeq[ColumnRef])
   extends RowReader[R] {
 
