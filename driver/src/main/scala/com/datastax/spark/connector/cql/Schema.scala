@@ -295,6 +295,18 @@ case class DriverIndexDef(index:IndexMetadata,
 
 trait TableDef {
 
+  val keyspaceName:String
+  val tableName:String
+  val partitionKey: Seq[ColumnDef]
+  val clusteringColumns: Seq[ColumnDef]
+  val regularColumns: Seq[ColumnDef]
+  val isView:Boolean
+
+  val indexedColumns: Seq[ColumnDef]
+  val primaryKey: IndexedSeq[ColumnDef]
+  val columns: IndexedSeq[ColumnDef]
+  val columnByName: Map[String, ColumnDef]
+
   def isIndexed(column: String): Boolean
 
   def isIndexed(column: ColumnDef): Boolean
@@ -318,6 +330,9 @@ case class DefaultTableDef(
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
+
+  override type Column = DefaultColumnDef
+  type ValueRepr = CassandraRow
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
@@ -344,8 +359,6 @@ case class DefaultTableDef(
   val indexedColumns: Seq[ColumnDef] = {
     indexesForColumnDef.keys.toSeq
   }
-
-  override type Column = DefaultColumnDef
 
   override val name: String = s"$keyspaceName.$tableName"
 
@@ -389,8 +402,6 @@ case class DefaultTableDef(
        |)$allOptionsStr""".stripMargin
   }
 
-  type ValueRepr = CassandraRow
-
   lazy val rowMetadata = CassandraRowMetadata.fromColumnNames(columnNames)
 
   def newInstance(columnValues: Any*): CassandraRow = {
@@ -405,14 +416,20 @@ case class DriverTableDef(relation:RelationMetadata,
     with KeyspaceMetadataAware
     with RelationMetadataAware {
 
-  val keyspaceName = keyspace.getName.toString
-  val tableName = relation.getName.toString
-  val cols: Seq[DriverColumnDef] = relation.getColumns.asScala.values.map(c => DriverColumnDef(c, relation, keyspace)).toSeq
-  val partitionKey: Seq[DriverColumnDef] = cols.filter(c => relation.getPartitionKey.contains(c.column))
-  val clusteringColumns: Seq[DriverColumnDef] = cols.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
-  val regularColumns: Seq[DriverColumnDef] = cols.filterNot(partitionKey.toSet)
+  override type Column = DriverColumnDef
+  type ValueRepr = CassandraRow
+
+  override val keyspaceName = keyspace.getName.toString
+  override val tableName = relation.getName.toString
+  val cols: Seq[DriverColumnDef] =
+    relation.getColumns.asScala.values.map(c => DriverColumnDef(c, relation, keyspace)).toSeq
+  override val partitionKey: Seq[DriverColumnDef] =
+    cols.filter(c => relation.getPartitionKey.contains(c.column))
+  override val clusteringColumns: Seq[DriverColumnDef] =
+    cols.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
+  override val regularColumns: Seq[DriverColumnDef] = cols.filterNot(partitionKey.toSet)
   val isTable = relation.isInstanceOf[TableMetadata]
-  val isView = relation.isInstanceOf[ViewMetadata]
+  override val isView = relation.isInstanceOf[ViewMetadata]
   val asTable = if (isTable) Some(relation.asInstanceOf[TableMetadata]) else Option.empty
   val asView = if (isView) Some(relation.asInstanceOf[ViewMetadata]) else Option.empty
 
@@ -447,8 +464,6 @@ case class DriverTableDef(relation:RelationMetadata,
     indexesForColumnDef.keys.toSeq
   }
 
-  override type Column = DriverColumnDef
-
   override val name: String = s"${keyspace.getName}.${relation.getName}"
 
   lazy val primaryKey: IndexedSeq[DriverColumnDef] =
@@ -467,8 +482,6 @@ case class DriverTableDef(relation:RelationMetadata,
   }
 
   def cql = relation.describe(true)
-
-  type ValueRepr = CassandraRow
 
   lazy val rowMetadata = CassandraRowMetadata.fromColumnNames(columnNames)
 

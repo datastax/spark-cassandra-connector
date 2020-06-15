@@ -11,10 +11,10 @@ import org.junit.Test
 
 class TupleColumnMapperTest {
 
-  private val c1 = ColumnDef("column1", PartitionKeyColumn, IntType)
-  private val c2 = ColumnDef("column2", ClusteringColumn(0), IntType)
-  private val c3 = ColumnDef("column3", RegularColumn, IntType)
-  private val tableDef = TableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
+  private val c1 = DefaultColumnDef("column1", PartitionKeyColumn, IntType)
+  private val c2 = DefaultColumnDef("column2", ClusteringColumn(0), IntType)
+  private val c3 = DefaultColumnDef("column3", RegularColumn, IntType)
+  private val tableDef = DefaultTableDef("test", "table", Seq(c1), Seq(c2), Seq(c3))
   private val selectedColumns = IndexedSeq(c1, c2, c3).map(_.ref)
 
   @Test
