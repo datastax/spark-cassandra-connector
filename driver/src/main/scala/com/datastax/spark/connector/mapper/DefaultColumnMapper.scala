@@ -148,9 +148,9 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
         val columnType = property._2
         val columnName = ColumnMapperConvention.camelCaseToUnderscore(propertyName)
         val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn
-        ColumnDef(columnName, columnRole, columnType)
+        DefaultColumnDef(columnName, columnRole, columnType)
       }
-    TableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
+    DefaultTableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
   }
 
 }
