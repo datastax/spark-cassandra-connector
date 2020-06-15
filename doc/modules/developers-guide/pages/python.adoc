@@ -1,12 +1,10 @@
-== Documentation
-
-=== PySpark with Data Frames
+= PySpark with DataFrames
 
 With the inclusion of the Cassandra Data Source, PySpark can now be used
 with the Connector to access Cassandra data. This does not require
 DataStax Enterprise but you are limited to DataFrame only operations.
 
-==== Setup
+== Setup
 
 To enable Cassandra access the Spark Cassandra Connector assembly jar
 must be included on both the driver and executor classpath for the
@@ -20,17 +18,17 @@ to use the maven artifact.
   --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
 ----
 
-==== Catalogs and DatasourceV2
+== Catalogs and DatasourceV2
 
 //TODO
 
-==== Loading a DataFrame in Python
+== Loading a DataFrame in Python
 
 A DataFrame can be created which links to Cassandra by using the the
 `+org.apache.spark.sql.cassandra+` source and by specifying keyword
 arguments for `+keyspace+` and `+table+`.
 
-===== Example Loading a Cassandra Table as a Pyspark DataFrame
+=== Example loading a Cassandra table as a Pyspark DataFrame
 
 [source,python]
 ----
@@ -52,7 +50,7 @@ arguments for `+keyspace+` and `+table+`.
 +-+-+
 ....
 
-==== Saving a DataFrame in Python to Cassandra
+== Saving a DataFrame in Python to Cassandra
 
 A DataFrame can be saved to an _existing_ Cassandra table by using the
 the `+org.apache.spark.sql.cassandra+` source and by specifying keyword
@@ -61,7 +59,7 @@ arguments for `+keyspace+` and `+table+` and saving mode (`+append+`,
 https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#save-modes[Data
 Sources API doc]).
 
-===== Example Saving to a Cassanra Table as a Pyspark DataFrame
+=== Example Saving to a Cassanra Table as a Pyspark DataFrame
 
 [source,python]
 ----
@@ -73,9 +71,9 @@ Sources API doc]).
 ----
 
 The options and parameters are identical to the Scala Data Frames Api so
-please see link:14_data_frames.md[Data Frames] for more information.
+please see link:data_frames[Data Frames] for more information.
 
-==== Passing options with periods to the DataFrameReader
+== Passing options with periods to the DataFrameReader
 
 Python does not support using periods(".") in variable names. This makes
 it slightly more difficult to pass SCC options to the DataFrameReader.
@@ -84,11 +82,9 @@ directly pass in keys. There is a workaround though. Python allows you
 to pass a dictionary as a representation of kwargs and dictionaries can
 have keys with periods.
 
-===== Example of using a dictionary as kwargs
+=== Example of using a dictionary as kwargs
 
 ....
 load_options = { "table": "kv", "keyspace": "test", "spark.cassandra.input.split.size_in_mb": "10"}
 spark.read.format("org.apache.spark.sql.cassandra").options(**load_options).load().show()
 ....
-
-link:16_partitioning.md[Next - Spark Partitioners]

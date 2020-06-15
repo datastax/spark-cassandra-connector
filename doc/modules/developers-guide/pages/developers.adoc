@@ -1,8 +1,6 @@
-== Documentation
+= Developers Tips
 
-=== Developers Tips
-
-==== Getting Started
+== Getting started
 
 The Spark Cassandra Connector is built using sbt. There is a premade
 launching script for sbt so it is unneccessary to download it. To invoke
@@ -30,31 +28,31 @@ the first place to look for anyone considering adding code. There are
 many examples of executing a feature of the connector with the embedded
 Cassandra and Spark nodes and are the core of our test coverage.
 
-==== Merge Path
+== Merge path
 
 b2.5 => b3.0 => Master
 
 New features can be considered for 2.5 as long as they do not break apis
 In general 3.0 should be the target for new features
 
-==== Sub-Projects
+== Sub-projects
 
 The connector currently contains several sub-projects
 
-===== connector
+=== connector
 
 This sub-project contains all of the actual connector code and is where
 any new features or tests should go. This Scala project also contains
 the Java API and related code. Anything related to the actual connecting
 or modification of Java Driver code belongs in the next module
 
-===== driver
+=== driver
 
 All of the code relating to the Java Driver. Connection factories, row
 transformers anything which could be used for any application even if
 Spark is not involved.
 
-===== test-support
+=== test-support
 
 CCM Wrapper code. Much of this code is based on the Datastax Java
 Driver's test code. Includes code for spawning CCM as well as several
@@ -62,13 +60,13 @@ modes for launching clusters while testing. Together this also defines
 which tests require seperate clusters to run and the parallelization
 used while running tests.
 
-==== Test Parallelization
+== Test parallelization
 
 In order to limit the number of test groups running simultaneously use
 the `+TEST_PARALLEL_TASKS+` environment variable. Only applies to sbt
 test tasks.
 
-==== Set Cassandra Test Target
+== Set Cassandra test target
 
 Our CI Build runs through the Datastax Infrastructure and tests on all
 the builds listed in build.yaml. In addition the test-support module
@@ -81,7 +79,7 @@ If you are running tests through IntelliJ or through an alternative
 framework (jUnit) set the system property `+ccm.version+` to the version
 you like.
 
-==== CCM Modes
+== CCM modes
 
 The integration tests have a variety of modes which can be set with
 `+CCM_CLUSTER_MODE+`
@@ -93,7 +91,7 @@ the test run
 * Developer - Does not clean up cluster on test completion, can be used
 when running a test multiple times for faster iteration
 
-==== Continuous Testing
+== Continuous testing
 
 It's often useful when implementing new features to have the tests run
 in a loop on code change. Sbt provides a method for this by using the
@@ -106,7 +104,7 @@ interested in on a loop while you are modifying the connector code. Use
 this in conjunction with "Developer" CCM Mode for the fastest test
 iteration.
 
-==== Packaging
+== Packaging
 
 The `+spark-shell+` and `+spark-submit+` are able to use local caches to
 load libraries and this can be taken advantage of by the SCC. For
@@ -126,7 +124,7 @@ output of your publish command.
 This same method should work with `+publishLocal+` after the merging of
 https://issues.apache.org/jira/browse/SPARK-12666[SPARK-12666]
 
-==== Publishing ScalaDocs
+== Publishing ScalaDocs
 
 Run the generateDocs script with all the versions to generate docs for
 

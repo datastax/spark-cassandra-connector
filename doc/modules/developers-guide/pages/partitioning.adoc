@@ -1,8 +1,6 @@
-== Documentation
+= Spark Cassandra Connector and Spark partitioners
 
-=== Spark Cassandra Connector and Spark Partitioners
-
-==== What are Spark Partitioners
+== What are Spark partitioners?
 
 Spark RDDs may have an element known as a
 https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/Partitioner.scala[Partitioner];
@@ -13,7 +11,7 @@ isn't specified Spark will usually repartition using a
 moving it to the partition specified by the given partitioner. This is
 the reason that many keyed operations are such expensive operations.
 
-==== What is a Cassandra Partitioner
+== What is a Cassandra partitioner?
 
 Cassandra also has a notion of a partitioner. The Cassandra partitioner
 takes the partition key of a CQL Row and uses it to determine what node
@@ -26,7 +24,7 @@ For more information on Cassandra Data Modeling check out the resources
 on https://academy.datastax.com/courses/ds220-data-modeling[DataStax
 Academy].
 
-==== How to take advantage of Cassandra Partitioning in Spark
+== How to take advantage of Cassandra partitioning in Spark
 
 The Spark Cassandra Connector now implements a `+CassandraPartitioner+`
 for specific RDDs when they have been keyed using `+keyBy+`. This can
@@ -38,11 +36,11 @@ build a `+CassandraPartitioner+`
 _All of these examples are run with Spark in Local Mode and
 --driver-memory 4g_
 
-===== Example Schema
+=== Example schema
 
 [source,sql]
 ----
-CREATE KEYSPACE doc_example WITH replication = 
+CREATE KEYSPACE doc_example WITH replication =
     {'class': 'SimpleStrategy', 'replication_factor': '1'}  AND durable_writes = true;
 
 CREATE TABLE doc_example.purchases (
@@ -62,7 +60,7 @@ CREATE TABLE doc_example.users (
 
 For a data generation sample, jump see link:#data-generator[here].
 
-===== Keying a Table with the Partition Key Produces an RDD with a Partitioner
+=== Keying a table with the partition key produces an RDD with a partitioner
 
 [source,scala]
 ----
@@ -84,7 +82,7 @@ rdd.partitioner
 //res3: Option[org.apache.spark.Partitioner] = Some(com.datastax.spark.connector.rdd.partitioner.CassandraPartitioner@94515d3e)
 ----
 
-===== Reading a table into a (K,V) type or Not Including the Partition Key will not Create a Partitioner
+=== Reading a table into a (K,V) type or not including the partition key will not create a partitioner
 
 [source,scala]
 ----
@@ -104,7 +102,7 @@ rdd2.partitioner
 //res11: Option[org.apache.spark.Partitioner] = None
 ----
 
-==== Capabilities and limitations of CassandraPartitioner
+== Capabilities and limitations of CassandraPartitioner
 
 Having a partitioner allow for groupByKey operations to no longer
 require a shuffle. Previously `+spanByKey+` allowed Spark to take
@@ -112,7 +110,7 @@ advantage of the natural ordering of Cassandra tables. The new
 partitioner allows this to go a step further and group on any
 combination of the primary key which also contains the partition key.
 
-===== Grouping/Reducing on out of order Clustering keys
+=== Grouping/reducing on out of order clustering keys
 
 [source,scala]
 ----
@@ -172,7 +170,7 @@ key, so it can not be used to group or reduce on a generic Cassandra
 column. As long as you are grouping/reducing within a Cassandra
 partition this approach should save significant time.
 
-===== Joining to Cassandra RDDs from non Cassandra RDDs
+=== Joining to Cassandra RDDs from non-Cassandra RDDs
 
 When joining two RDDs they are both required to be partitioned before
 the join can occur. Previously this meant that when joining against a
@@ -231,7 +229,7 @@ _Limitations_
 Again it is important to note that this is only possible when using the
 Partition key as the key of the RDD.
 
-===== Joining to Cassandra RDDs on Common Partition Keys
+=== Joining to Cassandra RDDs on common partition keys
 
 One area that can benefit greatly from the Partitioner is joins between
 Cassandra tables on a common partition key. This previously would
@@ -294,7 +292,7 @@ joinnopart.count
 Again we can save a significant portion of time by eliminating the need
 for a shuffle.
 
-==== Caveats
+== Caveats
 
 The partitioning mechanism is very sensitive to the underlying Cassandra
 tables partitioning so this is not a generic solution to all joins and
@@ -322,7 +320,7 @@ frequently.
 
 This functionality does not currently function in DataFrames.
 
-==== Data Generator
+== Data generator
 
 [source,scala]
 ----
@@ -341,13 +339,13 @@ case class RandomListSelector[T](list: Seq[T]) {
 val randomObject = RandomListSelector(objects)
 val randomZipCode = RandomListSelector(zipcodes)
 
-//About 25 Seconds on my MBP 
-sc.parallelize(1 to 1000000).map(x => 
+//About 25 Seconds on my MBP
+sc.parallelize(1 to 1000000).map(x =>
     (x, s"User $x", randomZipCode.next)
   ).saveToCassandra(ks, "users")
- 
+
 //About 60 Seconds on my MBP
-sc.parallelize(1 to 1000000).flatMap(x => 
+sc.parallelize(1 to 1000000).flatMap(x =>
     (1 to 10).map( p => (x, p, randomObject.next, p))
   ).saveToCassandra(ks, "purchases")
 

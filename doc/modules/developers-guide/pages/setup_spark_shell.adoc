@@ -1,14 +1,14 @@
-== Documentation
+= Setting up the Spark Shell
 
-=== Setting up Cassandra
+== Setting up Cassandra
 
 To install and set up open-source Cassandra, refer to the instructions
 provided by the https://cassandra.apache.org/doc/latest/[Apache
 Cassandra project].
 
-=== Setting up spark
+== Setting up Spark
 
-==== Download Spark
+=== Download Spark
 
 Download a pre-built Spark from
 https://spark.apache.org/downloads.html[https://spark.apache.org/downloads.html]
@@ -18,7 +18,7 @@ Untar the tar.gz downloaded with
 tar -xvf spark-*-.tgz
 ....
 
-==== Start Spark in Stand Alone Mode (Optional)
+=== Start Spark in stand alone mode (optional)
 
 https://spark.apache.org/docs/latest/spark-standalone.html[Official
 Spark Instructions]

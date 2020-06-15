@@ -1,19 +1,17 @@
-== Documentation
+= Spark Streaming with Cassandra
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames and Structured Streaming] instead of
-DStreams
-
-=== Spark Streaming with Cassandra
+NOTE: If you have the option we recommend using
+link:data_frames.adoc[DataFrames and Structured Streaming] instead of
+DStreams.
 
 Spark Streaming extends the core API to allow high-throughput,
 fault-tolerant stream processing of live data streams. Data can be
 ingested from many sources such as Akka, Kafka, Flume, ZeroMQ, TCP
 sockets, etc. Results can be stored in Cassandra.
 
-==== The Basic Idea
+== Overview of streaming data with Spark
 
-===== Spark Streaming
+=== Spark Streaming
 
 Here is a basic Spark Streaming sample which writes to the console with
 `+wordCounts.print()+`:
@@ -46,11 +44,11 @@ Print a few of the counts to the console. Start the computation.
 [source,scala]
 ----
     wordCounts.print()
-    ssc.start()  
+    ssc.start()
     ssc.awaitTermination() // Wait for the computation to terminate
 ----
 
-===== Spark Streaming With Cassandra
+=== Spark Streaming with Cassandra
 
 Now let's add the Cassandra-specific functions on the
 `+StreamingContext+` and `+RDD+` into scope, and we simply replace the
@@ -62,12 +60,12 @@ print to console with pipe the output to Cassandra:
     wordCounts.saveToCassandra("streaming_test", "words")
 ----
 
-==== Setting up Streaming
+== Setting up Streaming
 
-Follow the directions for link:0_quick_start.md[creating a
+Follow the directions for link:quick_start[creating a
 `+SparkConf+`]
 
-===== Create A `+StreamingContext+`
+=== Create a `+StreamingContext+`
 
 The second required parameter is the `+batchDuration+` which sets the
 interval streaming data will be divided into batches: Note the Spark API
@@ -80,7 +78,7 @@ https://www.scala-lang.org/api/current/index.html#scala.concurrent.duration.Dura
     val ssc = new StreamingContext(conf, Seconds(n))
 ----
 
-===== Creating A Stream
+=== Creating a stream
 
 Create any of the available or custom Spark streams. The connector
 supports Akka Actor streams so far, but will be supporting many more in
@@ -103,7 +101,7 @@ Actor Stream
     val stream = ssc.actorStream[String](Props[TypedStreamingActor[String]], "stream", StorageLevel.MEMORY_AND_DISK)
 ----
 
-===== Enable Spark Streaming With Cassandra
+=== Enable Spark Streaming with Cassandra
 
 Enable Cassandra-specific functions on the `+StreamingContext+`,
 `+DStream+` and `+RDD+`:
@@ -113,7 +111,7 @@ Enable Cassandra-specific functions on the `+StreamingContext+`,
     import com.datastax.spark.connector.streaming._
 ----
 
-====== Writing to Cassandra From A Stream
+==== Writing to Cassandra from a stream
 
 Where `+streaming_test+` is the keyspace name and `+words+` is the table
 name:
@@ -125,7 +123,7 @@ Saving data:
     val wc = stream.flatMap(_.split("\\s+"))
         .map(x => (x, 1))
         .reduceByKey(_ + _)
-        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count")) 
+        .saveToCassandra("streaming_test", "words", SomeColumns("word", "count"))
 ----
 
 Start the computation:
@@ -135,7 +133,7 @@ Start the computation:
     ssc.start()
 ----
 
-====== Reading From Cassandra From The `+StreamingContext+`
+==== Reading from Cassandra from the `+StreamingContext+`
 
 [source,scala]
 ----
@@ -143,11 +141,8 @@ Start the computation:
 ----
 
 For a more detailed description as well as tuning writes, see
-link:5_saving.md[Saving Data to Cassandra].
+link:saving[Saving Data to Cassandra].
 
-==== Find out more
+== Find out more
 
 https://spark.apache.org/docs/latest/streaming-programming-guide.html[https://spark.apache.org/docs/latest/streaming-programming-guide.html]
-
-link:10_embedded.md[Next - The spark-cassandra-connector-embedded
-Artifact]

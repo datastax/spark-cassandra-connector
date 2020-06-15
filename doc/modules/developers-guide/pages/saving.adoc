@@ -1,9 +1,6 @@
-== Documentation
+= Saving and deleting to/from Cassandra
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames] instead of RDDs
-
-=== Saving and deleting to/from Cassandra
+NOTE: If you have the option we recommend using link:data_frames.adoc[DataFrames] instead of RDDs.
 
 It is possible to save any `+RDD+` to Cassandra, not just
 `+CassandraRDD+`. The only requirement is that the object class of
@@ -25,9 +22,9 @@ the table you want to create.
 `+deleteFromCassandra+` can be used to delete columns or full rows from
 Cassandra table based on `+RDD+` with primary keys
 
-=== Saving a collection of tuples
+= Saving a collection of tuples
 
-==== Example Saving an RDD of Tuples with Default Mapping
+== Example saving an RDD of tuples with default mapping
 
 Assume the following table definition:
 
@@ -58,7 +55,7 @@ cqlsh:test> select * from words;
 By default, Tuple fields will be paired in order with Cassandra Columns
 but using a custom mapper is also supported with tuples
 
-==== Example Saving an RDD of Tuples with Custom Mapping
+== Example saving an RDD of tuples with custom mapping
 
 [source,sql]
 ----
@@ -82,15 +79,15 @@ cqlsh:test> select * from words;
 (2 rows)
 ....
 
-=== Saving a collection of Scala Objects
+= Saving a collection of Scala objects
 
 When saving a collection of objects of a user-defined class, the items
 to be saved must provide appropriately named public property accessors
 for getting every column to be saved. This example provides more
 information on property-column naming conventions as described
-link:4_mapper.md[here].
+link:mapper[here].
 
-==== Example Saving an RDD of Scala Objects
+== Example saving an RDD of Scala objects
 
 [source,scala]
 ----
@@ -122,7 +119,7 @@ correspond to the column names in the destination table, use the `+as+`
 method on the column names you want to override. The parameter order is
 table column name first, then object property name.
 
-==== Example Saving an RDD of Scala Objects with Custom Mapping
+== Example saving an RDD of Scala objects with custom mapping
 
 Say you want to save `+WordCount+` objects to the table which has
 columns `+word TEXT+` and `+num INT+`.
@@ -134,7 +131,7 @@ val collection = sc.parallelize(Seq(WordCount("dog", 50), WordCount("cow", 60)))
 collection.saveToCassandra("test", "words2", SomeColumns("word", "num" as "count"))
 ----
 
-=== Modifying CQL Collections
+= Modifying CQL collections
 
 The default behavior of the Spark Cassandra Connector is to overwrite
 collections when inserted into a cassandra table. To override this
@@ -152,7 +149,7 @@ Remove is not supported for Maps.
 
 These are applied by adding the desired behavior to the ColumnSelector
 
-==== Example Column Selector using Custom Collection Behaviors
+== Example column selector using custom collection behaviors
 
 ....
 ("key", "a_set" as "rddSetField" remove , "a_map" as "rddMapField" append)
@@ -163,7 +160,7 @@ corrosponding Cassandra Set "a_set". It also takes elements from
 "rddMapField" and adds them to the cassandra map "a_map" where the
 Cassandra column key quals the key field in the RDD elements.
 
-==== Example Appending/Prepending To Cassandra Lists
+== Example appending/prepending to Cassandra lists
 
 [source,sql]
 ----
@@ -203,10 +200,10 @@ cqlsh> Select * from ks.collections_mod where key = 1
 (1 rows)
 ----
 
-=== Saving objects of Cassandra User Defined Types
+= Saving objects of Cassandra User Defined Types
 
 To save structures consisting of many fields, use a
-link:4_mapper.md#Mapping-User-Defined-Types[Case Class] or a
+link:mapper.md#Mapping-User-Defined-Types[Case Class] or a
 `+com.datastax.spark.connector.UDTValue+` class. An instance of this
 class can be easily obtained from a Scala `+Map+` by calling `+fromMap+`
 factory method.
@@ -219,7 +216,7 @@ CREATE TYPE test.address (city text, street text, number int);
 CREATE TABLE test.companies (name text PRIMARY KEY, address FROZEN<address>);
 ----
 
-==== Example Using Case Classes to Insert into a Cassandra Row With UDTs
+== Example using case classes to insert into a Cassandra row with UDTs
 
 [source,scala]
 ----
@@ -231,7 +228,7 @@ sc.parallelize(Seq(CompanyRow("Paul", address))).saveToCassandra("test", "compan
 ----
 
 [[example-using-udtvaluefrommap-to-insert-into-a-cassandra-row-with-udts]]
-==== Example Using UDTValue.fromMap to Insert into a Cassandra Row With UDTs
+== Example using UDTValue.fromMap to insert into a Cassandra row with UDTs
 
 [source,scala]
 ----
@@ -244,7 +241,9 @@ sc.parallelize(Seq(company)).saveToCassandra("test", "companies")
 ----
 
 [[skipping-columns-and-avoiding-tombstones-on-writes-connector-version-16-and-cassandra-22]]
-=== Skipping Columns and Avoiding Tombstones on Writes (Connector Version 1.6+ and Cassandra 2.2+)
+= Skipping columns and avoiding tombstones on Writes
+
+NOTE: Connector Version 1.6 and later and Cassandra 2.2 and later.
 
 Prior to Cassandra 2.2 there was no way to execute a prepared statement
 with unbound elements. This meant every executed statement via the Spark
@@ -262,7 +261,7 @@ The trait has three implementations
 [source,scala]
 ----
 sealed trait CassandraOption[+A] extends Product with Serializable
-  
+
   object CassandraOption {
     case class Value[+A](value: A) extends CassandraOption[A]
     case object Unset extends CassandraOption[Nothing]
@@ -276,7 +275,7 @@ unbound. This means a table loaded via `+CassandraOption+` can be
 written to a second table without any missing column values being
 treated as deletes.
 
-==== Example Copying a table without deletes
+== Example copying a table without deletes
 
 [source,sql]
 ----
@@ -294,7 +293,7 @@ val ks = "doc_example"
 //Copy the data from tab1 to tab2 but don't delete when we see a null in tab1
 sc.cassandraTable[(Int, CassandraOption[Int], CassandraOption[Int])](ks, "tab1")
   .saveToCassandra(ks, "tab2")
-  
+
 sc.cassandraTable[(Int,Int,Int)](ks, "tab2").collect
 //(1, 5, 1)
 ----
@@ -303,7 +302,7 @@ For more complicated use cases the `+CassandraOption+` can be set to
 delete on a per row (and per column) basis. This is done by using either
 the `+Unset+` or `+Null+` case objects.
 
-==== Example of using different None behaviors
+== Example of using different None behaviors
 
 [source,scala]
 ----
@@ -319,7 +318,7 @@ sc.parallelize(1 to 6).map(x => x match {
 }).saveToCassandra(ks, "tab1")
 
 val results = sc.cassandraTable[(Int, Option[Int], Option[Int])](ks, "tab1").collect
-results 
+results
 /*
   (1, Some(1), None),
   (2, Some(2), None),
@@ -337,7 +336,7 @@ Option into a CassandraOption, you need to define the None behavior.
 This is done via `+CassandraOption.deleteIfNone+` and
 `+CassandraOption.unsetIfNone+`
 
-==== Example of converting Scala Options to Cassandra Options
+== Example of converting Scala Options to Cassandra Options
 
 [source,scala]
 ----
@@ -348,7 +347,7 @@ sc.parallelize(1 to 6).map(x => (x,x,x)).saveToCassandra(ks, "tab1")
 //Setup options Rdd (1, None, None) (2, None, None) ... (6, None, None)
 val optRdd = sc.parallelize(1 to 6)
   .map(x => (x, None, None))
-   
+
 //Delete the second column, but ignore the third column
 optRdd
   .map{ case (x: Int, y: Option[Int], z: Option[Int]) =>
@@ -367,7 +366,7 @@ results
 */
 ----
 
-==== Globally treating all nulls as Unset
+== Globally treating all nulls as unset
 
 WriteConf also now contains a parameter `+ignoreNulls+` which can be set
 via using a `+SparkConf+` key `+spark.cassandra.output.ignoreNulls+`.
@@ -376,7 +375,7 @@ previous versions (being inserted into Cassandra as is). When set to
 `+true+` all `+null+`s will be treated as `+unset+`. This can be used
 with DataFrames to skip null records and avoid tombstones.
 
-===== Example of using ignoreNulls to treat all nulls as Unset
+=== Example of using ignoreNulls to treat all nulls as unset
 
 [source,scala]
 ----
@@ -402,7 +401,7 @@ results
 **/
 ----
 
-=== Specifying TTL and WRITETIME
+= Specifying TTL and WRITETIME
 
 By default Spark Cassandra Connector saves the data without explicitly
 specifying TTL or WRITETIME. But for users who require more flexibility,
@@ -412,12 +411,12 @@ TTL and WRITETIME options are specified as properties of `+WriteConf+`
 object, which can be optionally passed to `+saveToCassandra+` method.
 TTL and WRITETIME options are specified independently from one another.
 
-==== Using a constant value for all rows
+== Using a constant value for all rows
 
 When the same value should be used for all the rows, one can use the
 following syntax:
 
-===== Example Setting a Single Value as the TTL of All Rows
+=== Example setting a single value as the TTL of all rows
 
 [source,scala]
 ----
@@ -439,12 +438,12 @@ rdd.saveToCassandra("test", "tab", writeConf = WriteConf(timestamp = TimestampOp
 * `+java.util.Date+`
 * `+org.joda.time.DateTime+`
 
-==== Using a different value for each row
+== Using a different value for each row
 
 When a different value of TTL or WRITETIME has to be used for each row,
 one can use the following syntax:
 
-===== Example Setting the TTL Value based on the value of an RDD Column
+=== Example setting the TTL value based on the value of an RDD column
 
 [source,scala]
 ----
@@ -464,8 +463,8 @@ Say we have an RDD with `+KeyValueWithTTL+` objects, defined as follows:
 case class KeyValueWithTTL(key: Int, group: Long, value: String, ttl: Int)
 
 val rdd = sc.makeRDD(Seq(
-  KeyValueWithTTL(1, 1L, "value1", 100), 
-  KeyValueWithTTL(2, 2L, "value2", 200), 
+  KeyValueWithTTL(1, 1L, "value1", 100),
+  KeyValueWithTTL(2, 2L, "value2", 200),
   KeyValueWithTTL(3, 3L, "value3", 300)))
 ----
 
@@ -474,9 +473,9 @@ and a CQL table:
 [source,sql]
 ----
 CREATE TABLE IF NOT EXISTS test.tab (
-    key INT, 
-    group BIGINT, 
-    value TEXT, 
+    key INT,
+    group BIGINT,
+    value TEXT,
     PRIMARY KEY (key, group)
 )
 ----
@@ -493,7 +492,7 @@ rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ttl = TTLOption.perRow(
 the TTL for the 1st row will be 100, TTL for the 2nd row will be 200 and
 TTL for the 3rd row will be 300.
 
-=== Saving rows only if they does not already exist
+= Saving rows only if they does not already exist
 
 Spark Cassandra Connector always writes or updates data without checking
 if they already exist. It is possible to change this behaviour in
@@ -502,7 +501,7 @@ exchange for performance penalty by the API.
 IF NOT EXISTS can be added as a boolean property of `+WriteConf+`
 object, which can be optionally passed to `+saveToCassandra+` method:
 
-==== Example using Cassandra Check and Set (CAS) to only write Rows if they do not already exist
+== Example using Cassandra check and set (CAS) to only write rows if they do not already exist
 
 [source,scala]
 ----
@@ -511,7 +510,7 @@ import com.datastax.spark.connector.writer._
 rdd.saveToCassandra("test", "tab", writeConf = WriteConf(ifNotExists = true))
 ----
 
-=== Saving RDDs as new tables
+= Saving RDDs as new tables
 
 Use `+saveAsCassandraTable+` method to automatically create a new table
 with given name and save the `+RDD+` into it. The keyspace you're saving
@@ -519,7 +518,7 @@ to must exist. The following code will create a new table `+words_new+`
 in keyspace `+test+` with columns `+word+` and `+count+`, where `+word+`
 becomes a primary key:
 
-==== Example Creating a New Table and Saving an RDD to it at the Same Time
+== Example creating a new table and saving an RDD to it at the same time
 
 [source,scala]
 ----
@@ -532,7 +531,7 @@ To customize the table definition, call `+saveAsCassandraTableEx+`. The
 following example demonstrates how to add another column of int type to
 the table definition, creating new table `+words_new_2+`:
 
-==== Example Creating a New Table Using the Definition of another Table
+== Example creating a new table using the definition of another table
 
 [source,scala]
 ----
@@ -550,7 +549,7 @@ To create a table with a custom definition, and define which columns are
 to be partition and clustering column keys with non-default sorting,
 plus additional table options:
 
-==== Example Creating a New Table Using a Completely Custom Definition
+== Example creating a new table using a completely custom definition
 
 [source,scala]
 ----
@@ -575,7 +574,7 @@ val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
 ----
 
-=== Deleting Rows and Columns
+= Deleting rows and columns
 
 `+RDD.deleteFromCassandra(keyspaceName, tableName)+` deletes specific
 rows from the specified Cassandra table. The values in the RDD are
@@ -595,7 +594,7 @@ Cassandra does not support range deletes of specific columns
 options as `+saveToCassandra+`, for example the timestamp can be passed
 as WriteConf parameter to delete only records older then the timestamp
 
-==== Example Deleting All Rows in a Table Based on a Condition
+== Example deleting all rows in a table based on a condition
 
 Assume the following table definition:
 
@@ -614,7 +613,7 @@ sc.cassandraTable("test", "word_groups")
   .deleteFromCassandra("test", "word_groups")
 ----
 
-==== Example Deleting Rows Specified in an RDD
+== Example deleting rows specified in an RDD
 
 [source,scala]
 ----
@@ -622,7 +621,7 @@ sc.parallelize(Seq(("animal", "trex"), ("animal", "mammoth")))
   .deleteFromCassandra("test", "word_groups")
 ----
 
-==== Example Deleting only a Specific Column
+== Example deleting only a specific column
 
 [source,scala]
 ----
@@ -642,7 +641,7 @@ cqlsh:t> select * from test.word_groups;
  animal | terex  |  0
 ----
 
-==== Example Deleting a Range from a Partition
+== Example deleting a range from a partition
 
 [source,scala]
 ----
@@ -661,7 +660,7 @@ cqlsh:t> select * from test.word_groups;
 --------+--------+-------
 ----
 
-==== Example Deleting Rows older than a Specified Timestamp
+== Example deleting rows older than a specified timestamp
 
 [source,scala]
 ----
@@ -673,9 +672,7 @@ rdd.deleteFromCassandra(
   writeConf = WriteConf(timestamp = TimestampOption.constant(ts)))
 ----
 
-=== Tuning
+= Tuning
 
 For a full listing of Write Tuning Parameters see the reference section
-link:reference.md#write-tuning-parameters[Write Tuning Parameters]
-
-link:6_advanced_mapper.md[Next - Customizing the object mapping]
+link:reference.adoc#write-tuning-parameters[Write Tuning Parameters]

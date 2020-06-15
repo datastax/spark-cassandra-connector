@@ -1,0 +1,34 @@
+.Spark Cassandra Connector basics
+* xref:connecting.adoc[Connecting to Cassandra clusters]
+** xref:reference.adoc[Configuration options]
+
+.Building and running
+* xref:spark_shell.adoc[Using the Connector in the Spark shell]
+** xref:setup_spark_shell.adoc[Setting up the Spark shell with the Connector]
+
+.Developing applications with the Connector
+* xref:data_frames.adoc[Using Datasets]
+* xref:streaming.adoc[Using Spark Streaming with Cassandra]
+* xref:java_api.adoc[Using the Connector in Java applications]
+* xref:python.adoc[Using PySpark with Datasets]
+* https://TODO[Connector API scaladocs]
+* https://github.com/datastax/SparkBuildExamples[Spark build examples]
+
+.Spark examples
+* TODO
+
+.Using legacy RDDs with the Connector
+* xref:loading.adoc[Loading data into RDDs]
+* xref:selection.adoc[Selecting, filtering, and grouping data]
+* xref:mapper.adoc[Mapping data to Scala tuples and objects]
+* xref:advanced_mapper.adoc[Customizing the mapping between Cassandra data and Scala tuples and objects]
+* xref:saving.adoc[Saving data to Cassandra]
+* xref:partitioning.adoc[Spark partitioners]
+* xref:data_source_v1.adoc[Using the v1 Data Source API]
+
+.Connector operations
+* xref:metrics.adoc[Performance monitoring]
+
+.Building and contributing to the Connector
+* xref:developers.adoc[Overview of the Connector project]
+* xref:build_and_artifacts.adoc[Building the Connector]

@@ -52,7 +52,7 @@ object ConfigCheck {
         .filter( property => property.contains("_"))
 
     if (invalidProperties.nonEmpty) throw new IllegalArgumentException(
-      s"Developer Error: These properties will not work in SparkSql/DataSets " +
+      s"Developer Error: These properties will not work in SparkSql/Datasets " +
         s"because of capitals: ${invalidProperties.mkString(",")}")
 
     val unknownProps = unknownProperties(conf, extraProps)

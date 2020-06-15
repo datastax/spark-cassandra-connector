@@ -1,9 +1,6 @@
-== Documentation
+= Customizing the mapping between Scala and Cassandra
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames] instead of RDDs
-
-=== Customizing the mapping between Scala and Cassandra
+NOTE: If you have the option we recommend using xref:data_frames.adoc[DataFrames] instead of RDDs.
 
 While mapping rows to tuples and case classes work out-of-the box, in
 some cases you might need more control over Cassandra-Scala mapping. For
@@ -16,18 +13,18 @@ object in a companion object of the class being mapped. A
 `+ColumnMapper+` affects both loading and saving data. A few special
 `+ColumnMapper+` implementations are included.
 
-==== Working with JavaBeans
+== Working with JavaBeans
 
 To work with Java classes, use `+JavaBeanColumnMapper+`. Make sure your
 objects are `+Serializable+`, otherwise Spark won't be able to send them
 over the network.
 
-===== Example of using a new implicit Column Mapper to map a JavaBean Like Class
+=== Example of using a new implicit column mapper to map a JavaBean-like class
 
 [source,scala]
 ----
 import com.datastax.spark.connector.mapper.JavaBeanColumnMapper
-class WordCount extends Serializable { 
+class WordCount extends Serializable {
     private var _word: String = ""
     private var _count: Int = 0
     def setWord(word: String) { _word = word }
@@ -36,7 +33,7 @@ class WordCount extends Serializable {
 }
 
 object WordCount {
-    implicit object Mapper extends JavaBeanColumnMapper[WordCount] 
+    implicit object Mapper extends JavaBeanColumnMapper[WordCount]
 }
 
 sc.cassandraTable[WordCount]("test", "words").toArray
@@ -45,21 +42,21 @@ sc.cassandraTable[WordCount]("test", "words").toArray
 
 To save objects of class `+WordCount+`, you'll need to define getters.
 
-==== Manually specifying the property-name to column-name relationship
+== Manually specifying the property-name to column-name relationship
 
 If for some reason you wish to associate a column of a different name
 than the property, you may pass a column translation `+Map+` to a
 `+DefaultColumnMapper+` or `+JavaBeanColumnMapper+`:
 
-===== Example of Using a Custom DefaultColumnMapper
+=== Example of using a custom DefaultColumnMapper
 
 [source,scala]
 ----
 case class WordCount(w: String, c: Int)
 
-object WordCount { 
+object WordCount {
     implicit object Mapper extends DefaultColumnMapper[WordCount](
-        Map("w" -> "word", "c" -> "count")) 
+        Map("w" -> "word", "c" -> "count"))
 }
 
 sc.cassandraTable[WordCount]("test", "words").toArray
@@ -69,13 +66,13 @@ sc.parallelize(Seq(WordCount("baz", 30), WordCount("foobar", 40)))
   .saveToCassandra("test", "words", SomeColumns("word", "count"))
 ----
 
-==== Writing custom `+ColumnMapper+` implementations
+== Writing custom `+ColumnMapper+` implementations
 
 To define column mappings for your classes, create an appropriate
 implicit object implementing `+ColumnMapper[YourClass]+` trait. This API
 is subject to future changes, so please refer to the current ScalaDoc.
 
-==== Using custom field types
+== Using custom field types
 
 To map a Cassandra column to a field of user-defined type, register
 custom `+TypeConverter+` implementations. For example, imagine you want
@@ -104,9 +101,9 @@ object EMailToStringConverter extends TypeConverter[String] {
   def targetTypeTag = typeTag[String]
   def convertPF = { case EMail(str) => str }
 }
-    
+
 TypeConverter.registerConverter(StringToEMailConverter)
-TypeConverter.registerConverter(EMailToStringConverter)            
+TypeConverter.registerConverter(EMailToStringConverter)
 ----
 
 Now you can map any Cassandra text or ascii column to `+EMail+`
@@ -154,7 +151,9 @@ connector's UDTValue class, not Java Driver's UDTValue. This is because
 many Java Driver's classes are not Serializable and would not be
 possible for such converter to be properly serialized/deserialized.
 
-==== Low-level control over mapping (Very Advanced Usage)
+== Low-level control over mapping
+
+WARNING: This is an advanced technique.
 
 The `+ColumnMapper+` API cannot be used to express every possible
 mapping, e.g., for classes that do not expose separate accessors for
@@ -173,6 +172,4 @@ appropriate implicit `+RowWriterFactory+` and `+RowWriter+` are used to
 extract column values from every RDD item and bind them to an INSERT
 `+PreparedStatement+`.
 
-Please refer to the ScalaDoc for more details.
-
-link:7_java_api.md[Next - Using Connector in Java]
+Please refer to the htts://TODO[ScalaDoc] for more details.

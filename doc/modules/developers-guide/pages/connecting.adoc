@@ -1,6 +1,4 @@
-== Documentation
-
-=== Connecting to Cassandra
+= Connecting to Cassandra
 
 This section describes how Spark connects to Cassandra and how to
 execute CQL statements from Spark applications.
@@ -9,7 +7,7 @@ See the reference section for
 link:reference.md#cassandra-connection-parameters[Cassandra Connection
 Parameters].
 
-==== Configuring Catalogs to Cassandra
+== Configuring catalogs to Cassandra
 
 DatasourceV2 makes connecting to Cassandra now easier than ever.
 Parameters for configuring your connection can be done in the SparkConf,
@@ -39,7 +37,7 @@ Once this is set, we can access the catalog by using the triple part
 identifier of `+catalog.keyspace.table+` which in this case would be
 `+cass100.ks.tab+`
 
-===== Example of reading from one cluster and writing to another
+=== Example of reading from one cluster and writing to another
 
 Using multiple clusters can be done by setting up one catalog per
 underlying cluster.
@@ -60,7 +58,7 @@ spark.read.table("cass100.ks.tab").writeTo("cass200.ks.tab").append
 ----
 
 [[connecting-using-an-astra-cloud-bundle-or-driver-profile-file-since-scc-25]]
-==== Connecting using an Astra Cloud Bundle or Driver Profile File (Since SCC 2.5)
+ Connecting using an Astra Cloud Bundle or Driver Profile File (Since SCC 2.5)
 
 Using a separate DSE Java Driver configuration file can also be used for
 your Catalog as long as
@@ -92,13 +90,13 @@ When using a profile file all other configuration will be ignored. We
 are working on improving this behavior but at the moment, using a
 profile supersedes all other config.
 
-==== Connection management
+== Connection management
 
 Whenever you call a method requiring access to Cassandra, the options in
 the `+SparkConf+` object will be used to create a new connection or to
 borrow one already open from the global connection cache.
 
-===== Initial Contact
+=== Initial contact
 
 The initial contact node given in`+spark.cassandra.connection.host+` can
 be any node of the cluster. The driver will fetch the cluster topology
@@ -108,7 +106,7 @@ same node the task is running on. Consequently, good locality of data
 can be achieved and the amount of data sent across the network is
 minimized.
 
-===== Inter-DataCenter Communication is forbidden by default
+=== Inter-datacenter communication is forbidden by default
 
 Connections are never made to data centers other than the data center of
 `+spark.cassandra.connection.host+`. If some nodes in the local data
@@ -117,7 +115,7 @@ be retried on nodes in a different data center. This technique
 guarantees proper workload isolation so that a huge analytics job won't
 disturb the realtime part of the system.
 
-===== Connection Pooling
+== Connection Pooling
 
 Connections are cached internally. If you call two methods needing
 access to the same Cassandra cluster quickly, one after another, or in
@@ -152,7 +150,7 @@ system property, see
 link:reference.md#cassandra-connection-parameters[Cassandra Connection
 Parameters].
 
-==== Connecting manually to Cassandra
+== Connecting manually to Cassandra
 
 If you ever need to manually connect to Cassandra in order to issue some
 CQL statements, this driver offers a handy `+CassandraConnector+` class
@@ -175,6 +173,3 @@ CassandraConnector(conf).withSessionDo { session =>
   session.execute("CREATE TABLE test2.words (word text PRIMARY KEY, count int)")
 }
 ----
-
-link:14_data_frames.md[(Recommended) Accessing data with DataFrames]
-link:2_loading.md[(Legacy) Accessing data with RDDs]

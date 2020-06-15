@@ -1,12 +1,10 @@
-== Documentation
+= Datasets
 
-=== Datasets (Previously DataFrames)
+NOTE: These documents are relevant to Spark 3.0 and the SCC 3.0 and later.
+Please see link:data_source_v1.adoc[Datasource V1] for documentation of
+older versions.
 
-These documents are relevant to Spark 3.0 and the SCC 3.0 and Greater
-Please See link:data_source_v1.md[Datasource V1] for documentation of
-Older Versions
-
-Datasets provide a new API for manipulating data within Spark. These
+Datasets (previously DataFrames) provide a new API for manipulating data within Spark. These
 provide a more user friendly experience than pure Scala for common
 queries. The Spark Cassandra Connector provides an integrated Data
 Source Version 2 to make creating Cassandra Datasets and DataFrames
@@ -21,8 +19,9 @@ Sources]
 * https://spark.apache.org/docs/latest/sql-programming-guide.html#datasets-and-dataframes[Datasets
 and DataFrames]
 
-[[extensions-spark-25-and-greater]]
-==== Extensions (Spark 2.5 and Greater)
+== Extensions
+
+NOTE: Spark 2.5 and later
 
 The Spark Cassandra Connector includes a variety of catalyst rules which
 rewrite internal Spark plans and provide unique C* specific
@@ -49,7 +48,7 @@ SparkSession.builder()
 It is equivalent to set the configuration parameter or programmatically
 add the extensions.
 
-==== Catalogs
+== Catalogs
 
 Spark 3.0 provides an API for connecting an external catalog directly to
 Spark Catalyst ecosystem. Setting up a catalog this way provides a
@@ -70,7 +69,7 @@ Object)
 
 This will set up an identifier of "casscatalog" to point to the catalog
 for the default Cassandra Cluster For information on configuring
-Cassandra Catalogs see link:1_connecting.md[documentation on Connecting]
+Cassandra Catalogs see link:connecting[documentation on Connecting]
 
 Because the Catalog connects directly to the Cluster's underlying schema
 it will allow access to all underlying keyspaces and tables without any
@@ -81,11 +80,12 @@ DataFrame method.
 A Spark Session can have as many catalogs as a user would like to
 configure.
 
-==== Supported Schema Commands
+== Supported schema commands
 
-===== Creating Keyspaces (Called namespaces or databases in SparkSQL)
+=== Creating keyspaces
 
-Creating a keyspace in a Cassandra Catalog can be done via SparkSQL. The
+Creating a keyspace (called namespaces or databases in SparkSQL) in a Cassandra
+Catalog can be done via SparkSQL. The
 only requirements are that you provide valid options for the replication
 of the Keyspace. As with CQL you must specify both the class and it's
 associated parameters. If no default catalog is set, be sure to set one
@@ -98,7 +98,7 @@ SimpleStrategy
 
 [source,sql]
 ----
-CREATE DATABASE IF NOT EXISTS casscatalog.ksname 
+CREATE DATABASE IF NOT EXISTS casscatalog.ksname
   WITH DBPROPERTIES (class='SimpleStrategy', replication_factor='5')
 ----
 
@@ -106,11 +106,11 @@ NetworkTopologyStrategy
 
 [source,sql]
 ----
-CREATE DATABASE IF NOT EXISTS casscatalog.ntsname 
+CREATE DATABASE IF NOT EXISTS casscatalog.ntsname
   WITH DBPROPERTIES (class='NetworkTopologyStrategy', cassandra='1')
 ----
 
-===== Altering Keyspaces
+=== Altering keyspaces
 
 Altering the replication factor of a keyspace is also allowed but the
 new replication class must be valid.
@@ -123,7 +123,7 @@ ALTER NAMESPACE casscatalog.ksname SET DBPROPERTIES (replication_factor='2')
 Similarly replication within NetworkTopologyStrategies can also be
 altered.
 
-===== Dropping Keyspaces
+=== Dropping keyspaces
 
 Dropping a keyspace from the catalog will also drop the keyspace in
 Cassandra. The default command will not allow for dropping a non empty
@@ -134,7 +134,7 @@ keyspace unless the keyword `+CASCADE+` is added
 DROP DATABASE casscatalog.ksname
 ----
 
-===== Creating Tables
+=== Creating tables
 
 All standard create table syntax can be used with the Cassandra Catalog
 and will create tables in the connected Cassandra Cluster. The only
@@ -150,7 +150,7 @@ formatted as `+'{key=value, key2=value2}'+`
 
 [source,sql]
 ----
-CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 STRING, cc2 String, cc3 String, value String) 
+CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 STRING, cc2 String, cc3 String, value String)
   USING cassandra
   PARTITIONED BY (key_1, key_2, key_3)
   TBLPROPERTIES (
@@ -162,7 +162,7 @@ CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 
 Any statements that involve creating a Table are also supported like
 `+CREATE TABLE AS SELECT+`
 
-===== Altering Tables
+=== Altering tables
 
 All table properties can be changed and normal columns can be added and
 removed using alter statements
@@ -172,7 +172,7 @@ removed using alter statements
 ALTER TABLE casscatalog.ksname.testTable ADD COLUMNS (newCol INT)
 ----
 
-===== Dropping Tables
+=== Dropping tables
 
 Similarly to keyspaces, tables can be dropped directly from Spark. This
 will drop the underlying Cassandra Table as well.
@@ -182,14 +182,14 @@ will drop the underlying Cassandra Table as well.
 DROP TABLE casscatalog.ksname.testTable
 ----
 
-==== Reading and Writing
+== Reading and writing
 
 All normal SparkSQL can be used on a Cassandra Catalog for reading and
 writing and there is also a programmatic interface. All properties
 assigned to the parent catalog will be inherited by all tables in that
 catalog.
 
-===== Reading Examples
+=== Reading examples
 
 Reading with SQL
 
@@ -205,7 +205,7 @@ Reading with Scala
 spark.read.table("casscatalog.ksname.testTable")
 ----
 
-===== Writing Examples
+=== Writing examples
 
 Writing with Sql
 
@@ -221,7 +221,7 @@ Writing with Scala
 df.writeTo("casscatalog.ksname.testTable")
 ----
 
-===== Predicate Pushdown and Column Pruning
+=== Predicate pushdown and column pruning
 
 The connector will automatically pushdown all valid predicates to
 Cassandra. The Datasource will also automatically only select columns
@@ -234,12 +234,12 @@ and the where clause is automatically pushed down
 [source,scala]
 ----
 spark.sql("SELECT value FROM mycatalog.ks.tab WHERE key = 1").explain
-== Physical Plan ==
+Physical Plan ==
 *(1) Project [value#54]
 +- BatchScan[value#54] Cassandra Scan: ks.tab - Cassandra Filters: [["key" = ?, 1]] - Requested Columns: [value]
 ----
 
-===== Count Pushdown
+=== Count pushdown
 
 Requests for Cassandra table information that do not require actual
 column values will be automatically convereted into Cassandra count
@@ -252,14 +252,14 @@ Cassandra Request, signifying the count pushdown.
 [source,scala]
 ----
 spark.sql("SELECT Count(*) FROM mycatalog.ks.tab WHERE key = 1").explain
-   == Physical Plan ==
+   Physical Plan ==
    *(1) HashAggregate(keys=[], functions=[count(1)])
    +- *(1) HashAggregate(keys=[], functions=[partial_count(1)])
       +- *(1) Project
          +- BatchScan[] Cassandra Scan: ks.tab - Cassandra Filters: [["key" = ?, 1]] - Requested Columns: [RowCountRef]
 ----
 
-===== Direct Join
+=== Direct join
 
 Joins with a Cassandra Table using a Partition Key as an equals will be
 automatically converted into a `+joinWithCassandraTable+` style join if
@@ -267,7 +267,7 @@ it is more efficent to query Cassandra that way.
 
 //TODO add full docs on configuration
 
-===== TTL and WRITETIME
+=== TTL and WRITETIME
 
 Through Cassandra Spark Extensions special functions are added to
 SparkSQL.
@@ -277,11 +277,11 @@ will be replaced with the writetime of that column as in cql.
 * ttl(col) - Similar to writetime, this will replace a valid C* column
 reference with a ttl value instead.
 
-Read Example
+Read example
 
 [source,sql]
 ----
-SELECT TTL(v) as t, WRITETIME(t) FROM casscatalog.ksname.testTable WHERE k = -1"
+SELECT TTL(v) as t, WRITETIME(t) FROM casscatalog.ksname.testTable WHERE k = "-1"
 ----
 
 There are specific write options which can be used to assign WriteTime
@@ -320,7 +320,7 @@ spark
   .save()
 ----
 
-==== Reading and Writing without a Catalog
+== Reading and writing without a catalog
 
 The DatasourceV2 still supports almost all of the same usages that the
 original api served. There are a few exceptions but the old pattern of
@@ -334,7 +334,7 @@ only for a specific read or write, and not for the entire catalog.
 When using these methods you are required to set an option for `+table+`
 and `+keyspace+`
 
-Example Read
+Example read
 
 [source,scala]
 ----
@@ -346,7 +346,5 @@ spark.read
 ----
 
 For More information on configuration and settings using this api check
-the older link:data_source_v1.md[Datasource V1] which is all still valid
+the older link:data_source_v1.adoc[Datasource V1] which is all still valid
 for configuration.
-
-link:15_python.md[Next - Python DataFrames]

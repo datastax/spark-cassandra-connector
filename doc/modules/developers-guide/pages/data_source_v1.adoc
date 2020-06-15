@@ -1,8 +1,8 @@
-== Datasource V1 Documentation
+= Datasource V1 documentation
 
-For Spark < 3.0 and SCC less than 3.0
+NOTE: For Spark versions earlier than 3.0 and SCC versions earlier than 3.0.
 
-=== Datasets (Previously DataFrames)
+== Datasets
 
 DataSources in Spark take a map of Options which define how the source
 should act. The Connector provides a CassandraSource which recognizes
@@ -26,7 +26,7 @@ required, all others are optional.
 mode |(true,false) |false
 |===
 
-==== General Read, Write and Connection Options
+== General read, write, and connection options
 
 Any normal Spark Connector configuration options for Connecting, Reading
 or Writing can be passed through as Dataset options as well. When using
@@ -35,7 +35,7 @@ as when set in the SparkConf. See
 link:#example-using-typesafe-parameter-configuration-options[Config
 Helpers] for typed helpers for setting these options.
 
-==== Setting Cluster and Keyspace Level Options
+== Setting cluster and keyspace level options
 
 The connector also provides a way to describe the options which should
 be applied to all Datasets within a cluster or within a keyspace. When a
@@ -49,7 +49,7 @@ explained in the next section or by manually entering them in the format
 clusterName:keyspaceName/propertyName
 ....
 
-==== Example Using TypeSafe Parameter Configuration Options
+== Example using typesafe parameter configuration options
 
 There are also some helper methods which simplify setting Spark
 Cassandra Connector related parameters. This makes it easier to set
@@ -69,13 +69,13 @@ spark.setCassandraConf(CassandraConnectorConf.KeepAliveMillisParam.option(10000)
 spark.setCassandraConf("Cluster1", CassandraConnectorConf.ConnectionHostParam.option("127.0.0.1") ++ CassandraConnectorConf.ConnectionPortParam.option(12345))
 spark.setCassandraConf("Cluster2", CassandraConnectorConf.ConnectionHostParam.option("127.0.0.2"))
 
-// set params for the particular keyspace 
+// set params for the particular keyspace
 spark.setCassandraConf("Cluster1", "ks1", ReadConf.SplitSizeInMBParam.option(128))
 spark.setCassandraConf("Cluster1", "ks2", ReadConf.SplitSizeInMBParam.option(64))
 spark.setCassandraConf("Cluster2", "ks3", ReadConf.SplitSizeInMBParam.option(80))
 ----
 
-==== Example Changing Cluster/Keyspace Level Properties
+== Example changing cluster/keyspace level properties
 
 [source,scala]
 ----
@@ -106,7 +106,7 @@ val lastdf = spark
   ).load() // This Dataset will use a spark.cassandra.input.split.size of 48
 ----
 
-==== Creating Datasets using Read Commands
+== Creating datasets using read commands
 
 The most programmatic way to create a Dataset is to invoke a `+read+`
 command on the SparkSession. This will build a `+DataFrameReader+`.
@@ -120,7 +120,7 @@ As well as specifying all these parameters manually, we offer a set of
 link:#example-using-format-helper-functions[helper functions] to make
 this easier as well.
 
-===== Example Creating a Dataset using a Read Command
+=== Example creating a Dataset using a read command
 
 [source,scala]
 ----
@@ -129,7 +129,7 @@ val df = spark
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words", "keyspace" -> "test" ))
   .load()
-  
+
 df.show
 ----
 
@@ -144,7 +144,7 @@ easier. They can be accessed after importing
 `+org.apache.spark.sql.cassandra+` package. In the following example,
 all the commands used to create the Dataset are equivalent:
 
-===== Example Using Format Helper Functions
+=== Example using format helper functions
 
 [source,scala]
 ----
@@ -154,24 +154,24 @@ val df = spark
   .read
   .cassandraFormat("words", "test")
   .load()
- 
+
 //Loading an Dataset using a format helper and a option helper
 val df = spark
   .read
   .cassandraFormat("words", "test")
   .options(ReadConf.SplitSizeInMBParam.option(32))
   .load()
-  
+
 ----
 
-==== Creating Datasets using Spark SQL
+== Creating Datasets using Spark SQL
 
 Accessing Datasets using Spark SQL involves creating temporary views
 with the format as `+org.apache.spark.sql.cassandra+`. The `+OPTIONS+`
 passed to this table are used to establish a relation between the
 CassandraTable and the Spark catalog reference.
 
-===== Example Creating a Source Using Spark SQL:
+=== Example creating a source using Spark SQL:
 
 Create Relation with the Cassandra table test.words
 
@@ -189,7 +189,7 @@ spark.sql("SELECT * FROM words").show
 spark.sql("SELECT * FROM words WHERE word = 'fox'").show
 ----
 
-==== Persisting a Dataset to Cassandra Using the Save Command
+== Persisting a Dataset to Cassandra using the save command
 
 Datasets provide a save function which allows them to persist their data
 to another DataSource. The connector supports using this feature to
@@ -198,7 +198,7 @@ persist a Dataset to a Cassandra table.
 Spark Cassandra Connector also fully supports writing of data generated
 by Spark Structured Streaming operations.
 
-===== Example Copying Between Two Tables Using Datasets
+=== Example copying between two tables using Datasets
 
 [source,scala]
 ----
@@ -218,7 +218,7 @@ methods for the write path which are provided by
 `+org.apache.spark.sql.cassandra+` package. In the following example,
 all the commands are equivalent:
 
-===== Example Using Helper Commands to Write Datasets
+=== Example using helper commands to write datasets
 
 [source,scala]
 ----
@@ -238,7 +238,9 @@ df.write
 ----
 
 [[using-with-spark-structured-streaming-since-scc-25]]
-===== Using with Spark Structured Streaming (Since SCC 2.5)
+=== Using with Spark Structured Streaming
+
+NOTE: (Since SCC 2.5)
 
 Similarly to ordinary `+save+` operation, connector supports writing
 data generated by Spark Structured Streaming, allowing to explicitly
@@ -270,7 +272,7 @@ val query = streamingDF.writeStream
 query.awaitTermination()
 ----
 
-==== Setting Connector Specific Options on Datasets
+== Setting connector-specific options on Datasets
 
 Connector specific options can be set by invoking `+options+` method on
 either `+DataFrameReader+` or `+DataFrameWriter+`. There are several
@@ -306,7 +308,7 @@ of `+option+`) so setting multiple parameters can be chained:
 options(CassandraConnectorConf.ReadTimeoutParam.sqlOption("7000") ++ ReadConf.TaskMetricParam.sqlOption(true))
 ----
 
-==== Creating a New Cassandra Table From a Dataset Schema
+== Creating a new Cassandra table from a Dataset schema
 
 Spark Cassandra Connector adds methods to `+Dataset+` that allows it to
 create a new Cassandra table from the `+StructType+` schema of the
@@ -322,7 +324,7 @@ partition key and clustering key. The `+createCassandraTableEx+` method
 allows further customize table structure by specifying sorting direction
 for clustering columns, and additional table options.
 
-===== Example Creating a Cassandra Table from a Dataset
+=== Example creating a Cassandra table from a Dataset
 
 [source,scala]
 ----
@@ -336,9 +338,9 @@ val df = spark
 
 val renamed = df.withColumnRenamed("col1", "newcolumnname")
 renamed.createCassandraTable(
-    "test", 
-    "renamed", 
-    partitionKeyColumns = Some(Seq("user")), 
+    "test",
+    "renamed",
+    partitionKeyColumns = Some(Seq("user")),
     clusteringKeyColumns = Some(Seq("newcolumnname")))
 
 renamed.write
@@ -347,7 +349,7 @@ renamed.write
   .save()
 ----
 
-==== Automatic Predicate Pushdown and Column Pruning
+== Automatic predicate pushdown and column pruning
 
 The Dataset API will automatically pushdown valid "where" clauses to
 Cassandra as long as the pushdown option is enabled (default is
@@ -362,9 +364,9 @@ Example Table
 CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };
 USE test;
 CREATE table words (
-    user  TEXT, 
-    word  TEXT, 
-    count INT, 
+    user  TEXT,
+    word  TEXT,
+    count INT,
     PRIMARY KEY (user, word));
 
 INSERT INTO words (user, word, count ) VALUES ( 'Russ', 'dino', 10 );
@@ -379,7 +381,9 @@ directly to Cassandra and we will require reading all of the data to
 `+show+` this Dataset.
 
 [[special-cassandra-catalyst-rules-since-scc-25]]
-==== Special Cassandra Catalyst Rules (Since SCC 2.5)
+== Special Cassandra catalyst rules
+
+NOTE: Since SCC 2.5
 
 The Spark Cassandra Connector includes a variety of catalyst rules which
 rewrite internal Spark plans and provide unique C* specific
@@ -414,7 +418,7 @@ spark.sessionState.functionRegistry.registerFunction(FunctionIdentifier("writeti
         (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input))
 ----
 
-===== Example Catalyst Optimization with Cassandra Server Side Pushdowns
+=== Example catalyst optimization with Cassandra server side pushdowns
 
 [source,scala]
 ----
@@ -428,7 +432,7 @@ df.explain
 ....
 15/07/06 09:21:21 INFO CassandraSourceRelation: filters:
 15/07/06 09:21:21 INFO CassandraSourceRelation: pushdown filters: //ArrayBuffer()
-== Physical Plan ==
+ Physical Plan ==
 PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[2] at explain //at <console>:22
 ....
 
@@ -469,7 +473,7 @@ dfWithPushdown.explain
 ....
 15/07/06 09:29:10 INFO CassandraSourceRelation: filters: GreaterThan(word,ham)
 15/07/06 09:29:10 INFO CassandraSourceRelation: pushdown filters: ArrayBuffer(GreaterThan(word,ham))
-== Physical Plan ==
+ Physical Plan ==
 Filter (word#1 > ham)
  PhysicalRDD [user#0,word#1,count#2], MapPartitionsRDD[18] at explain at <console>:24
 ....
@@ -489,7 +493,7 @@ dfWithPushdown.show
 +-----+----+-----+
 ....
 
-===== Example Pushdown Filters
+=== Example pushdown filters
 
 Example table
 
@@ -593,7 +597,7 @@ INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation
 INFO  2015-08-26 00:56:37 org.apache.spark.sql.cassandra.CassandraSourceRelation: pushdown filters: ArrayBuffer(EqualTo(clusterkey1,1), EqualTo(clusterkey2,1))
 ....
 
-==== Data Types
+== Data types
 
 Cassandra data types are mapped to Spark data types as follows:
 
@@ -632,7 +636,7 @@ CQL queries, like `+"192.168.1.1"+`,
 `+"2001:0db8:85a3:0000:0000:8a2e:0370:7334"+`,
 `+"6ba7b810-9dad-11d1-80b4-00c04fd430c8"+`.
 
-===== What Happened to DataFrames?
+=== What happened to DataFrames?
 
 In Spark 2.0 DataFrames are now just a specific case of the Dataset API.
 In particular a DataFrame is just an alias for Dataset[Row]. This means
@@ -640,20 +644,12 @@ everything you know about DataFrames is also applicable to Datasets. A
 DataFrame is just a special Dataset that is made up of Row objects. Many
 texts and resources still use the two terms interchangeably.
 
-===== Full List of Predicate Pushdown Restrictions
+=== Full list of predicate pushdown restrictions
 
-....
-  1. Only push down no-partition key column predicates with =, >, <, >=, <= predicate
-  2. Only push down primary key column predicates with = or IN predicate.
-  3. If there are regular columns in the pushdown predicates, they should have
-     at least one EQ expression on an indexed column and no IN predicates.
-  4. All partition column predicates must be included in the predicates to be pushed down,
-     any part of the partition key can be an EQ or IN predicate. For each partition column,
-     only one predicate is allowed.
-  5. For cluster column predicates, only last predicate can be RANGE predicate
-     and preceding column predicates must be EQ or IN predicates.
-     If there is only one cluster column predicate, the predicates could be EQ or IN or RANGE predicate.
-  6. There is no pushdown predicates if there is any OR condition or NOT IN condition.
-  7. We're not allowed to push down multiple predicates for the same column if any of them
-     is equality or IN predicate.
-....
+* Only push down no-partition key column predicates with =, >, <, >=, <= predicate
+* Only push down primary key column predicates with = or IN predicate.
+* If there are regular columns in the pushdown predicates, they should have at least one EQ expression on an indexed column and no IN predicates.
+* All partition column predicates must be included in the predicates to be pushed down, any part of the partition key can be an EQ or IN predicate. For each partition column, only one predicate is allowed.
+* For cluster column predicates, only last predicate can be RANGE predicate and preceding column predicates must be EQ or IN predicates. If there is only one cluster column predicate, the predicates could be EQ or IN or RANGE predicate.
+* There is no pushdown predicates if there is any OR condition or NOT IN condition.
+* We're not allowed to push down multiple predicates for the same column if any of them is equality or IN predicate.

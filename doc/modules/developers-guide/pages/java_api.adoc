@@ -1,10 +1,8 @@
-== Documentation
+= Using the Connector in Java
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames] instead of RDDs, they are also
-accessible from Java
-
-=== Using Connector in Java
+NOTE: If you have the option we recommend using
+link:data_frames.adoc[DataFrames] instead of RDDs, they are also
+accessible from Java.
 
 This section describes how to access the functionality of Connector when
 you write your program in Java. It is assumed that you already
@@ -12,26 +10,26 @@ familiarized yourself with the previous sections and you understand how
 Connector works. The Java API is included in the standard
 `+spark-cassandra-connector+` artifact.
 
-==== Prerequisites
+== Prerequisites
 
 [[spark-cassandra-connector--20]]
-===== Spark Cassandra Connector < 2.0
+=== Spark Cassandra Connector versions earlier than 2.0
 
 In order to use Java API, you need to add the spark-cassandra-connector
 to the list of dependencies:
 
 [source,scala]
 ----
-libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0" 
+libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0"
 ----
 
 [[spark-cassandra-connector--20-1]]
-===== Spark Cassandra Connector >= 2.0
+=== Spark Cassandra Connector versions 2.0 and later
 
 The Java API is now included in the standard Spark Cassandra Connector
 module, no additional dependencies are required.
 
-==== Basic Usage
+== Basic usage
 
 The best way to use Connector Java API is to import statically all the
 methods in `+CassandraJavaUtil+`. This utility class is the main entry
@@ -62,7 +60,7 @@ insert into ks.people (id, name, birth_date) values (11, 'Isadora', '2004-09-08'
 insert into ks.people (id, name, birth_date) values (12, 'Anna', '1970-10-02');
 ....
 
-==== Accessing Cassandra tables in Java
+== Accessing Cassandra tables in Java
 
 `+CassandraJavaRDD+` is a `+CassandraRDD+` counterpart in Java. It
 allows to invoke easily Connector specific methods in order to enforce
@@ -75,7 +73,7 @@ In order to create `+CassandraJavaRDD+` you need to invoke one of the
 The wrapper can be easily obtained with use of one of the overloaded
 `+javaFunctions+` method in `+CassandraJavaUtil+`.
 
-===== Example Reading a Cassandra Table In Java and Extracting a String Column into an RDD of Strings
+=== Example Reading a Cassandra Table In Java and Extracting a String Column into an RDD of Strings
 
 [source,java]
 ----
@@ -93,10 +91,10 @@ In the above example, `+cassandraTable+` method has been used to create
 `+CassandraJavaRDD+` view of the data in `+ks.people+`. The elements of
 the returned _RDD_ are of `+CassandraRow+` type. If you want to produce
 an _RDD_ of custom beans, you may use `+cassandraTable+` method, which
-accepts a custom `+RowReaderFactory+` - (see link:4_mapper.md[Working
+accepts a custom `+RowReaderFactory+` - (see link:mapper[Working
 with user-defined case classes and tuples] for more details).
 
-===== Obtaining CassandraJavaRDD
+=== Obtaining CassandraJavaRDD
 
 Since version 1.1.x, Java API comes with several useful factory methods
 which can be used to create factories of row readers of the two major
@@ -110,7 +108,7 @@ from a table and map it directly to an _RDD_ of values of such types as
 _String_, _Integer_, etc. For example, we may want to get an _RDD_ of
 prices in order to calculate the average:
 
-===== Example Reading column from a Cassandra Table into an RDD of Doubles using mapColumnTo
+=== Example reading column from a Cassandra table into an RDD of Doubles using mapColumnTo
 
 [source,java]
 ----
@@ -129,7 +127,7 @@ maps them to some object with use of a given `+ColumnMapper+`. The
 corresponding factories can be easily obtained by series of `+mapRowTo+`
 overloaded methods.
 
-===== Example Reading rows from a Cassandra Table into an RDD of Bean Classes using mapRowTo
+=== Example reading rows from a Cassandra table into an RDD of bean classes using mapRowTo
 
 [source,java]
 ----
@@ -176,14 +174,14 @@ default column name mapping logic. The column name translation can be
 customised by providing pairs for column name and attribute name which
 have to be overridden. There is also one overloaded `+mapRowTo+` methods
 which allows to specify a custom `+ColumnMapper+`. More details about
-column mapper can be found in link:4_mapper.md[Working with user-defined
-case classes and tuples] and link:6_advanced_mapper.md[Customizing the
+column mapper can be found in link:mapper[Working with user-defined
+case classes and tuples] and link:advanced_mapper[Customizing the
 mapping between Scala and Cassandra].
 
 Since 1.2, it is possible to easily provide custom column name to
 property name translation by `+select+` method.
 
-===== Example Reading a Cassandra Table with into a Bean Class with Differently Named Fields
+=== Example reading a Cassandra table with into a bean class with differently named fields
 
 Say we have a table `+people2+` with columns `+id INT+`,
 `+last_name TEXT+`, `+date_of_birth TIMESTAMP+` and we want to map the
@@ -209,7 +207,7 @@ javaFunctions(sc).cassandraTable("test", "table", mapRowTo(SomeClass.class)).sel
         writeTime("simple").as("simpleWriteTime"))
 ----
 
-===== Obtaining CassandraJavaPairRDD
+=== Obtaining CassandraJavaPairRDD
 
 Since 1.1.0 one can directly obtain a _CassandraJavaPairRDD_, which is
 an extension of _JavaPairRDD_. This can be done easily by specifying two
@@ -234,7 +232,7 @@ value
 |mapRowTo |mapRowTo |whole row mapped to key, whole row mapped to value
 |===
 
-===== Example Reading a Cassandra Table into a JavaPairRDD
+=== Example reading a Cassandra table into a JavaPairRDD
 
 [source,java]
 ----
@@ -247,17 +245,17 @@ CassandraJavaPairRDD<Integer, Person> rdd2 = javaFunctions(sc)
     .select("id", "name", "birth_date");
 ----
 
-==== Using selection and projection on the database side
+== Using selection and projection on the database side
 
 Once `+CassandraJavaRDD+` is created, you may apply selection and
 projection on that RDD by invoking `+where+` and `+select+` methods on
 it respectively. Their semantic is the same as the semantic of their
 counterparts in `+CassandraRDD+`.
 
-Note: See the link:3_selection.md[description of filtering] to
+Note: See the link:selection[description of filtering] to
 understand the limitations of the `+where+` method.
 
-===== Example Using select to perform Server Side Column Pruning
+=== Example using select to perform server-side column pruning
 
 [source,java]
 ----
@@ -271,7 +269,7 @@ JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "people")
 System.out.println("Data with only 'id' column fetched: \n" + StringUtils.join(rdd.toArray(), "\n"));
 ----
 
-===== Example Using where to perform Server Side Filtering
+=== Example using where to perform server-side filtering
 
 [source,java]
 ----
@@ -285,7 +283,7 @@ JavaRDD<String> rdd = javaFunctions(sc).cassandraTable("ks", "people")
 System.out.println("Data filtered by the where clause (name='Anna'): \n" + StringUtils.join(rdd.toArray(), "\n"));
 ----
 
-==== Saving data to Cassandra
+== Saving data to Cassandra
 
 `+javaFunctions+` method can be also applied to any _RDD_ in order to
 provide `+writerBuilder+` factory method. In Spark Cassandra Connector
@@ -297,7 +295,7 @@ which can be obtained by invoking `+writerBuilder+` method on the _RDD_
 wrapper. When the builder is eventually configured, one needs to call
 `+saveToCassandra+` method on it to run writing job.
 
-===== Example of Saving an RDD of Person objects to a Cassandra Table
+=== Example of saving an RDD of Person objects to a Cassandra table
 
 In the following example, a `+JavaRDD+` of `+Person+` elements is saved
 to Cassandra table `+ks.people+` with a default mapping and
@@ -323,7 +321,7 @@ column name to attribute translations can be specified in order to
 override the default logic. If `+JavaBeanColumnMapper+` is not an
 option, a custom column mapper can be specified as well.
 
-===== Example of Saving and RDD of Person object with Differently Named Fields
+=== Example of saving an RDD of Person objects with differently named fields
 
 Say we have a table `+people2+` with columns `+id INT+`,
 `+last_name TEXT+`, `+date_of_birth TIMESTAMP+` and we want to save RDD
@@ -350,7 +348,7 @@ javaFunctions(rdd).writerBuilder("ks", "people2", mapToRow(
         .saveToCassandra();
 ----
 
-==== Working with tuples
+== Working with tuples
 
 Since 1.3 there new methods to work with Scala tuples.
 
@@ -359,7 +357,7 @@ To read a Cassandra table as an RDD of tuples, just use one of
 instance. The arity of the tuple is determined by the number of
 parameters which are provided to the mentioned method.
 
-===== Example Saving a JavaRDD of Tuples to a Cassandra Table
+=== Example saving a JavaRDD of tuples to a Cassandra table
 
 [source,java]
 ----
@@ -377,7 +375,7 @@ There are also new methods `+mapTupleToRow+` to create
 tuple arguments types to be provided. The number of them determines the
 arity of tuples.
 
-===== Example Saving a JavaRDD of Tuples with Custom Mapping to a Cassandra Table
+=== Example saving a JavaRDD of tuples with custom mapping to a Cassandra table
 
 [source,java]
 ----
@@ -393,7 +391,7 @@ CassandraJavaUtil.javaFunctions(sc.makeRDD(Arrays.asList(tuple)))
 Similarly to reading data as tuples, it is highly recommended to
 explicitly specify the columns which are to be populated.
 
-==== Extensions for Spark Streaming
+== Extensions for Spark Streaming
 
 The main entry point for Spark Streaming in Java is
 `+JavaStreamingContext+` object. Like for `+JavaSparkContext+`, we can
@@ -415,7 +413,7 @@ Cassandra all the _RDDs_ in that _DStream_.
 provided in `+CassandraStreamingJavaUtil+`.
 
 [[summary-of-changes-between-versions-10-and-11]]
-==== Summary of changes between versions 1.0 and 1.1
+== Summary of changes between versions 1.0 and 1.1
 
 * added the new functionality of the connector which has been introduced
 in v1.1
@@ -436,11 +434,9 @@ preferred way to save data to Cassandra is to use `+writerBuilder+`
 method, which returns `+RDDAndDStreamCommonJavaFunctions.WriterBuilder+`
 instance, which in turn has `+saveToCassandra+` method
 
-==== Further Examples
+== Further examples
 
 A longer example (with source code) of the Connector Java API is on the
 DataStax tech blog:
 https://www.datastax.com/dev/blog/accessing-cassandra-from-spark-in-java[Accessing
 Cassandra from Spark in Java].
-
-link:8_streaming.md[Next - Spark Streaming with Cassandra]

@@ -1,10 +1,8 @@
-== Documentation
+= Frequently asked questions
 
-=== Frequently Asked Questions
+== Why am I seeing (Scala Version Mismatch Error)?
 
-==== Why am I seeing (Scala Version Mismatch Error)
-
-===== Non Exclusive List of Scala Version Mismatch Errors
+=== Non-exclusive list of Scala version mismatch errors
 
 * `+NoClassDefFoundError: scala/collection/GenTraversableOnce$class?+`
 * `+NoSuchMethodError: scala.reflect.api.JavaUniverse.runtimeMirror(Ljava/lang/ClassLoader;)+`
@@ -19,7 +17,7 @@ that the name has the correct Scala version suffix to match your Scala
 version.
 
 [[spark-cassandra-connector-built-against-scala-210]]
-====== Spark Cassandra Connector built Against Scala 2.10
+==== Spark Cassandra Connector built Against Scala 2.10
 
 [source,xml]
 ----
@@ -28,7 +26,7 @@ version.
 
 2.10 needs to match the Scala version of Spark and all other Scala libs.
 
-====== Spark Cassandra Connector dependency in SBT
+==== Spark Cassandra Connector dependency in SBT
 
 In sbt `+%%+` means append the suffix of Scala version in use for
 compilation.
@@ -49,7 +47,7 @@ Website are
 
 * Deprecated
 
-==== How do I Fix Guava Classpath Errors
+== How do I fix Guava classpath errors?
 
 Guava errors come from a conflict between Guava brought in by some
 dependency (like Hadoop 2.7) and the Cassandra Java Driver. The
@@ -74,7 +72,7 @@ included.
 If you are using these artifacts you must remove any other dependencies
 on the Cassandra Java Driver from build files.
 
-==== Why is the Cassandra Java Driver embedded in Spark Cassandra Connector artifacts?
+== Why is the Cassandra Java Driver embedded in Spark Cassandra Connector artifacts?
 
 To avoid Guava errors we must make sure that the Cassandra Java Driver
 can only possibly reference our chosen Guava. We force this by shading
@@ -83,7 +81,7 @@ so there is no possible ambiguity. Since these references are within the
 Java Driver, the Java Driver must be included for these changes to take
 effective.
 
-==== How do I use libraries which depend on the Cassandra Java Driver?
+== How do I use libraries which depend on the Cassandra Java Driver?
 
 Since the default artifacts have the Java Driver included with shaded
 references, it will be very difficult to use other libraries which
@@ -98,7 +96,7 @@ the
 https://github.com/datastax/spark-cassandra-connector/blob/v2.0.0/project/Settings.scala#L329-L347[settings
 file.]
 
-==== Why is my job running on a single executor? Why am I not seeing any parallelism?
+== Why is my job running on a single executor? Why am I not seeing any parallelism?
 
 The first thing to check when you see that a Spark job is not being
 parallelized is to determine how many tasks have been generated. To
@@ -136,7 +134,7 @@ ensures a single Cassandra partition request will always create a single
 Spark task. `+where+` clauses with an `+in+` will also generate a single
 Spark Partition.
 
-==== Why can't the spark job find Spark Cassandra Connector Classes? (ClassNotFound Exceptions for SCC Classes)
+== Why can't the spark job find Spark Cassandra Connector classes? (ClassNotFound Exceptions for SCC Classes)
 
 * java.lang.NoClassDefFoundError: com/twitter/jsr166e/LongAdder
 * java.lang.ClassNotFoundException:
@@ -147,11 +145,11 @@ its dependencies are not on the runtime classpath of the Spark
 Application. This is usually caused by not using the prescribed
 `+--packages+` method of adding the Spark Cassandra Connector and its
 dependencies to the runtime classpath. Fix this by following the launch
-guidelines as shown in the link:0_quick_start.md[quick start guide]. Not
+guidelines as shown in the link:quick_start[quick start guide]. Not
 using this method means it is up to the user to manually ensure that the
 SCC and all of its dependencies wind up on the execution classpath.
 
-==== Where should I set configuration options for the connector?
+== Where should I set configuration options for the connector?
 
 The suggested location is to use the `+spark-defaults.conf+` file in
 your spark/conf directory but this file is ONLY used by spark-submit.
@@ -165,14 +163,14 @@ this will take the form of a series of statements that look like
 
 [source,scala]
 ----
-val conf = SparkConf()
+val conf  SparkConf()
   .set("Option","Value")
   ...
-  
-val sc = SparkContext(conf)
+
+val sc  SparkContext(conf)
 ----
 
-==== Why are my write tasks timing out/ failing?
+== Why are my write tasks timing out/failing?
 
 The most common cause of this is that Spark is able to issue write
 requests much more quickly than Cassandra can handle them. This can lead
@@ -191,7 +189,7 @@ spark.cassandra.output.throughput_mb_per_sec
 which will allow you to control the amount of data written to Cassandra
 per Spark core per second.
 
-==== Why are my executors throwing `+OutOfMemoryException+`s while Reading from Cassandra?
+== Why are my executors throwing `+OutOfMemoryException+`s while reading from Cassandra?
 
 This usually means that the size of the partitions you are attempting to
 create are larger than the executor's heap can handle. Remember that all
@@ -203,7 +201,7 @@ To fix this either increase the heap size of the executors
 decreasing `+spark.cassandra.input.split.size_in_mb+`
 
 [[why-cant-my-spark-job-find-my-application-classes--anonymous-functions]]
-==== Why can't my spark job find My Application Classes / Anonymous Functions?
+== Why can't my Spark job find my application classes or anonymous functions?
 
 This occurs when your application code hasn't been placed on the
 classpath of the Spark Executor. When using Spark Submit make sure that
@@ -216,13 +214,13 @@ sure that your dependencies have been set in the `+SparkConf+` using
 `+setJars+` or by distributing the jars yourself and modifying the
 executor classpath.
 
-==== Why don't my case classes work?
+== Why don't my case classes work?
 
 Usually this is because they have been defined within another
 object/class. Try moving the definition outside of the scope of other
 classes.
 
-==== Why can't my spark job connect to Cassandra?
+== Why can't my Spark job connect to Cassandra?
 
 Check that your Cassandra instance is on and responds to cqlsh. Make
 sure that the rpc address also accepts incoming connections on the
@@ -234,7 +232,7 @@ When troubleshooting Cassandra connections it is sometimes useful to set
 the rpc_address in the cassandra.yaml file to `+0.0.0.0+` so any
 incoming connection will work.
 
-==== How does the connector evaluate number of Spark partitions?
+== How does the Connector evaluate the number of Spark partitions?
 
 The Connector evaluates the number of Spark partitions by dividing table
 size estimate by `+input.split.size_in_mb+` value. The resulting number
@@ -242,14 +240,14 @@ of partitions in never smaller than
 `+1 + 2 * SparkContext.defaultParallelism+`.
 
 [[what-does-inputsplitsize_in_mb-use-to-determine-size]]
-==== What does input.split.size_in_mb use to determine size?
+== What does input.split.size_in_mb use to determine size?
 
 Input.split.size_in_mb uses a internal system table in Cassandra ( >=
 2.1.5) to determine the size of the data in Cassandra. The table is
 called system.size_estimates is not meant to be absolutely accurate so
 there will be some inaccuracy with smaller tables and split sizes.
 
-==== Can I contribute to the Spark Cassandra Connector?
+== Can I contribute to the Spark Cassandra Connector?
 
 YES! Feel free to start a JIRA and detail the changes you would like to
 make or the feature you would like to add. We would be happy to discuss
@@ -259,12 +257,12 @@ have a branch that you are satisfied with and passes all the tests
 (`+/dev/run_tests.sh+`) make a GitHub PR against your target Connector
 Version and set your JIRA to Reviewing.
 
-==== Is there a CassandraRDDMock I can use in my tests?
+== Is there a CassandraRDDMock I can use in my tests?
 
 Yes. Please see CassandraRDDMock.scala for the class and
 CassandraRDDMockSpec.scala for example usage.
 
-==== What should I do if I find a bug?
+== What should I do if I find a bug?
 
 Feel free to post a repo on the Mailing List or if you are feeling
 ambitious file a Jira with steps for reproduction and we'll get to it as

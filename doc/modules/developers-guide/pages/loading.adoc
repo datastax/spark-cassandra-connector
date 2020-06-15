@@ -1,14 +1,12 @@
-== Documentation
+= Accessing Cassandra data with CassandraRDD
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames] instead of RDDs
-
-=== Accessing Cassandra data with CassandraRDD
+NOTE: If you have the option we recommend using
+link:data_frames.adoc[DataFrames] instead of RDDs.
 
 This section describes how to access data from Cassandra table with
 Spark.
 
-==== Obtaining a Cassandra table as an `+RDD+`
+== Obtaining a Cassandra table as an `+RDD+`
 
 To get a Spark RDD that represents a Cassandra table, call the
 `+cassandraTable+` method on the `+SparkContext+` object.
@@ -22,10 +20,10 @@ sc.cassandraTable("keyspace name", "table name")
 If no explicit type is given to `+cassandraTable+`, the result of this
 expression is `+CassandraRDD[CassandraRow]+`. This can be thought of as
 a container of `+CassandraRow+` objects. For information on mapping to
-other objects please see the documentation's link:4_mapper.md[Mapping
+other objects please see the documentation's link:mapper[Mapping
 section]
 
-===== Example of loading an RDD from Cassandra
+=== Example of loading an RDD from Cassandra
 
 Create this keyspace and table in Cassandra using cqlsh:
 
@@ -52,10 +50,10 @@ val rdd = sc.cassandraTable("test", "words")
 
 rdd.toArray.foreach(println)
 // CassandraRow{word: bar, count: 20}
-// CassandraRow{word: foo, count: 20}   
+// CassandraRow{word: foo, count: 20}
 ----
 
-==== Using emptyCassandraRDD implementation
+== Using emptyCassandraRDD implementation
 
 To create an instance of `+CassandraRDD+` for a table which does *not*
 exist use the emptyCassandraRDD method. `+emptyCassandraRDD+`s do not
@@ -64,7 +62,7 @@ absent tables. To create one, either initialize a `+CassandraRDD+` as
 usual and then call `+toEmptyCassandraRDD+` method on it or call
 `+emptyCassandraTable+` method on Spark context.
 
-===== Example of using an EmptyCassandraRDD
+=== Example of using an EmptyCassandraRDD
 
 [source,scala]
 ----
@@ -75,7 +73,7 @@ val emptyRDD = rdd.toEmptyCassandraRDD
 val emptyRDD2 = sc.emptyCassandraTable[SomeType]("ks", "not_existing_table"))
 ----
 
-==== Reading primitive column values
+== Reading primitive column values
 
 You can read columns in a Cassandra table using the get methods of the
 `+CassandraRow+` object. The get methods access individual column values
@@ -86,7 +84,7 @@ values.
 Continuing with the previous example, follow these steps to access
 individual column values.
 
-===== Example Accessing the values within a CassandraRow
+=== Example accessing the values within a CassandraRow
 
 Store the first item of the rdd in the firstRow value.
 
@@ -100,8 +98,8 @@ Get the number of columns and column names:
 
 [source,scala]
 ----
-firstRow.columnNames    // Stream(word, count) 
-firstRow.size           // 2 
+firstRow.columnNames    // Stream(word, count)
+firstRow.size           // 2
 ----
 
 Use one of `+getXXX+` getters to obtain a column value converted to
@@ -109,8 +107,8 @@ desired type:
 
 [source,scala]
 ----
-firstRow.getInt("count")       // 20       
-firstRow.getLong("count")      // 20L  
+firstRow.getInt("count")       // 20
+firstRow.getLong("count")      // 20L
 ----
 
 Or use a generic get to query the table by passing the return type
@@ -118,26 +116,26 @@ directly:
 
 [source,scala]
 ----
-firstRow.get[Int]("count")                   // 20       
+firstRow.get[Int]("count")                   // 20
 firstRow.get[Long]("count")                  // 20L
 firstRow.get[BigInt]("count")                // BigInt(20)
 firstRow.get[java.math.BigInteger]("count")  // BigInteger(20)
 ----
 
-==== Working with nullable data
+== Working with nullable data
 
 When reading potentially `+null+` data, use the `+Option+` type on the
 Scala side to prevent getting a `+NullPointerException+`.
 
-===== Example accessing values in a CassandraRow that may be null
+=== Example accessing values in a CassandraRow that may be null
 
 [source,scala]
 ----
 firstRow.getIntOption("count")        // Some(20)
-firstRow.get[Option[Int]]("count")    // Some(20)    
+firstRow.get[Option[Int]]("count")    // Some(20)
 ----
 
-==== Reading collections
+== Reading collections
 
 You can read collection columns in a Cassandra table using the
 `+getList+`, `+getSet+`, `+getMap+` or generic `+get+` methods of the
@@ -153,7 +151,7 @@ In the test keyspace, set up a collection set using cqlsh:
 [source,sql]
 ----
 CREATE TABLE test.users (username text PRIMARY KEY, emails SET<text>);
-INSERT INTO test.users (username, emails) 
+INSERT INTO test.users (username, emails)
      VALUES ('someone', {'someone@email.com', 's@email.com'});
 ----
 
@@ -170,7 +168,7 @@ Query the collection set in Cassandra from Spark:
 [source,scala]
 ----
 row.getList[String]("emails")            // Vector(someone@email.com, s@email.com)
-row.get[List[String]]("emails")          // List(someone@email.com, s@email.com)    
+row.get[List[String]]("emails")          // List(someone@email.com, s@email.com)
 row.get[Seq[String]]("emails")           // List(someone@email.com, s@email.com)   :Seq[String]
 row.get[IndexedSeq[String]]("emails")    // Vector(someone@email.com, s@email.com) :IndexedSeq[String]
 row.get[Set[String]]("emails")           // Set(someone@email.com, s@email.com)
@@ -187,12 +185,12 @@ row.get[String]("emails")               // "[someone@email.com, s@email.com]"
 A `+null+` collection is equivalent to an empty collection, therefore
 you don't need to use `+get[Option[...]]+` with collections.
 
-==== Reading columns of Cassandra User Defined Types from a CassandraRow
+== Reading columns of Cassandra user defined types from a CassandraRow
 
-UDT column values are represented by
+User defined type (UDT) column values are represented by
 `+com.datastax.spark.connector.UDTValue+` type. The same set of getters
 is available on `+UDTValue+` as on `+CassandraRow+`. UDT's can also be
-mapped to Scala classes see link:4_mapper.md[Mapping section]
+mapped to Scala classes see link:mapper[Mapping section]
 
 Assume the following table definition:
 
@@ -212,7 +210,7 @@ val street = address.getString("street")
 val number = address.getInt("number")
 ----
 
-==== Data type conversions
+== Data type conversions
 
 The following table shows recommended Scala types corresponding to
 Cassandra column types.
@@ -287,9 +285,11 @@ string has proper contents, defined by the CQL3 standard. Maps can be
 implicitly converted to/from sequences of key-value tuples.
 
 [[performing-efficient-joins-with-cassandra-tables-since-12]]
-=== Performing Efficient Joins With Cassandra Tables (since 1.2)
+== Performing efficient joins With Cassandra tables
 
-==== Repartitioning RDDs based on a Cassandra Table's Replication
+NOTE: since SCC 1.2
+
+=== Repartitioning RDDs based on a Cassandra table's replication
 
 The method `+repartitionByCassandraReplica+` can be used to relocate
 data in an RDD to match the replication strategy of a given table and
@@ -312,7 +312,7 @@ scala> repartitioned
 //res2: com.datastax.spark.connector.rdd.partitioner.CassandraPartitionedRDD[CustomerID] = CassandraPartitionedRDD[5] at RDD at CassandraPartitionedRDD.scala:12
 ----
 
-==== Using joinWithCassandraTable
+== Using joinWithCassandraTable
 
 The connector supports using any RDD as a source of a direct join with a
 Cassandra Table through `+joinWithCassandraTable+`. Any RDD which is
@@ -333,7 +333,7 @@ placement for data locality.
 inherited from the source RDD. The other input properties have their
 normal effects.
 
-===== Example Join between two Cassandra Tables Sharing a Partition Key
+=== Example join between two Cassandra tables sharing a partition key
 
 [source,scala]
 ----
@@ -348,7 +348,7 @@ internalJoin.collect.foreach(println)
 //(CassandraRow{cust_id: 0, address: West Coast, name: Russ},CassandraRow{cust_id: 0, date: 2015-03-09 13:59:04-0700, product: Candy, quantity: 3})
 ----
 
-===== Example Join with Generic RDD
+=== Example join with generic RDD
 
 [source,scala]
 ----
@@ -364,7 +364,7 @@ spark partition will only require queries to their local node. This
 method can also be used with two Cassandra Tables which have partitioned
 with different partition keys.
 
-===== Example Join with a generic RDD after repartitioning
+=== Example join with a generic RDD after repartitioning
 
 [source,scala]
 ----
@@ -375,7 +375,7 @@ repartitionRDD.collect.foreach(println)
 //(CustomerID(3),CassandraRow{cust_id: 3, address: Poland, name: Jacek})
 ----
 
-==== Compatibility of joinWithCassandraTable and other CassandraRDD APIs
+== Compatibility of joinWithCassandraTable and other CassandraRDD APIs
 
 The result of a joinWithCassandraRDD is compatible with all of the
 standard CassandraRDD api options with one additional function, `+.on+`.
@@ -388,7 +388,7 @@ as it can be made into a valid CQL query. This means the entire
 partition key must be specified and if any clustering key is specified
 all previous clustering keys must be supplied as well.
 
-===== Cassandra Operations on a CassandraJoinRDD
+=== Cassandra operations on a CassandraJoinRDD
 
 [source,scala]
 ----
@@ -400,7 +400,7 @@ val specifiedJoin = internalJoin.on(SomeColumns("cust_id")) // Joins on the cust
 val emptyJoin = internalJoin.toEmptyCassandraRDD // Makes an EmptyRDD
 ----
 
-=== Configuration Options for Adjusting Reads
+= Configuration options for adjusting reads
 
 The following options can be specified in the SparkConf object or as
 `+--conf+` flag to spark-submit to adjust the read parameters of a
@@ -408,7 +408,7 @@ Cassandra table.
 
 See link:reference.md#read-tuning-parameters[Reference Section]
 
-==== Using Implicits for Configuration
+== Using implicits for configuration
 
 In addition you are able to set these parameters on a per table basis by
 using `+implicit vals+`. This allows a user to define a set of
@@ -417,7 +417,7 @@ rather than repeatedly passing the same
 https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18[`+ReadConf+`
 object].
 
-===== Example Using Implicits for Read Configuration
+=== Example using implicits for read configuration
 
 [source,scala]
 ----
@@ -440,5 +440,3 @@ val rddWithADifferentConf = sc.cassandraTable("write_test","collections")
 rddWithADifferentConf.readConf
 //com.datastax.spark.connector.rdd.ReadConf = ReadConf(200,200,LOCAL_ONE,true)
 ----
-
-link:3_selection.md[Next - Server-side data selection and filtering]

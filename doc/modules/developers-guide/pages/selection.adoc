@@ -1,25 +1,22 @@
-== Documentation
+= Server-side data selection, filtering and grouping
 
-If you have the option we recommend using
-link:14_data_frames.md[DataFrames] instead of RDDs
-
-=== Server-side data selection, filtering and grouping
+NOTE: If you have the option we recommend using link:data_frames.adoc[DataFrames] instead of RDDs.
 
 In this section, you'll learn how to reduce the amount of data
 transferred from Cassandra to Spark to speed up processing.
 
-[[selecting-columns---select]]
-==== Selecting columns - .select()
+[[selecting-columns-using-select]]
+== Selecting columns using .select()
 
 For performance reasons, you should not fetch columns you don't need.
 You can achieve this with the `+select+` method.
 
-===== Example Using Select to Prune Cassandra Columns
+=== Example using select to prune Cassandra columns
 
 [source,scala]
 ----
 sc.cassandraTable("test", "users").select("username").toArray.foreach(println)
-// CassandraRow{username: noemail} 
+// CassandraRow{username: noemail}
 // CassandraRow{username: someone}
 ----
 
@@ -30,29 +27,29 @@ column would result in throwing an exception.
 The `+select+` method allows querying for TTL and timestamp of the table
 cell.
 
-===== Example Using Select to Retreive TTL and Timestamp
+=== Example using select to retreive TTL and timestamp
 
 [source,scala]
 ----
 val row = rdd.select("column", "column".ttl, "column".writeTime).first
 val ttl = row.getLong("ttl(column)")
-val timestamp = row.getLong("writetime(column)")         
+val timestamp = row.getLong("writetime(column)")
 ----
 
 The selected columns can be given aliases by calling `+as+` on the
 column selector, which is particularly handy when fetching TTLs and
 timestamps.
 
-===== Example Using "as" to Rename a Column
+=== Example using "as" to rename a column
 
 [source,scala]
 ----
 rdd.select("column".ttl as "column_ttl").first
-val ttl = row.getLong("column_ttl")         
+val ttl = row.getLong("column_ttl")
 ----
 
-[[filtering-rows---where]]
-==== Filtering rows - .where()
+[[filtering-rows-using-where]]
+== Filtering rows using .where()
 
 To filter rows, you can use the filter transformation provided by Spark.
 However, this approach causes all rows to be fetched from Cassandra and
@@ -61,7 +58,7 @@ deserializing objects that wouldn't be included in the result. To avoid
 this overhead, `+CassandraRDD+` offers the `+where+` method, which lets
 you pass arbitrary CQL condition(s) to filter the row set on the server.
 
-===== Example Using Where to Filter Cassandra Data Server Side
+=== Example using where to filter Cassandra data server side
 
 [source,scala]
 ----
@@ -79,7 +76,7 @@ Cassandra engine. This limitation is going to be addressed in the future
 Cassandra releases. Currently, `+ALLOW FILTERING+` works well with
 columns indexed by clustering columns.
 
-==== Ordering rows
+== Ordering rows
 
 CQL allows for requesting ascending or descending order of rows within a
 single Cassandra partition. It is allowed to pass the ordering direction
@@ -88,7 +85,7 @@ Note that it will work only if there is at least one clustering column
 in the table and a partition key predicate is specified by `+where+`
 clause.
 
-==== Limiting rows
+== Limiting rows
 
 When a table is designed so that it include clustering keys and the use
 case is that only the first `+n+` rows from an explicitly specified
@@ -107,7 +104,7 @@ clause to all CQL executed by the RDD. The `+PARTITION+` here is a
 Cassandra Partition so it will only retrieve `+rowsNumber+` CQL Rows for
 each partition key in the result.
 
-==== Grouping rows by partition key
+== Grouping rows by partition key
 
 Physically, Cassandra stores data already grouped by partition key and
 ordered by clustering column(s) within each partition. As a single
@@ -144,7 +141,7 @@ locally and put every RDD item into the same group as long as the key
 doesn't change. Whenever the key changes, a new group is started. You
 need enough memory to store the biggest group.
 
-==== Counting rows
+== Counting rows
 
 Although Spark provides `+count()+` method, it requires all the rows to
 be fetched from Cassandra, which adds significant memory and network
@@ -155,6 +152,3 @@ the number of rows directly.
 Note: Until release 1.2.4, Spark count was overridden by native
 Cassandra count in all Cassandra based RDDs. Since 1.2.4, `+count()+` is
 for Spark count and `+cassandraCount()+` is for Cassandra native count.
-
-link:4_mapper.md[Next - Working with user-defined case classes and
-tuples]

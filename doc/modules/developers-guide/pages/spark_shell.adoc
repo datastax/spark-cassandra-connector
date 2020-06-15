@@ -1,6 +1,4 @@
-== Documentation
-
-=== Using the Spark Cassandra Connector with the Spark Shell
+= Using the Spark Cassandra Connector with the Spark shell
 
 These instructions were last confirmed with Cassandra 3.0.9, Spark 2.0.2
 and Connector 2.0.6.
@@ -8,14 +6,14 @@ and Connector 2.0.6.
 For this guide, we assume an existing Cassandra deployment, running
 either locally or on a cluster, a local installation of Spark and an
 optional Spark cluster. For detail setup instructions see
-link:13_1_setup_spark_shell.md[setup spark-shell]
+link:setup_spark_shell.adoc[setup spark-shell]
 
 To use the Spark Cassandra Connector from within the Spark Shell, we
 need to load the Connector and all its dependencies in the shell
 context. The easiest way to achieve that is to build an assembly (also
 known as _"fat jar"_) that packages all dependencies.
 
-==== Starting the Spark Shell
+== Starting the Spark shell
 
 If you don't include the master address below the spark shell will run
 in Local mode. For the package be sure to pick the version of Scala that
@@ -45,9 +43,9 @@ cp conf/log4j.properties.template conf/log4j.properties
 Changing the root logger at the top from INFO to WARN will significantly
 reduce the verbosity.
 
-=== Example
+== Example
 
-==== Import connector classes
+=== Import connector classes
 
 [source,scala]
 ----
@@ -55,7 +53,7 @@ import com.datastax.spark.connector._ //Imports basic rdd functions
 import com.datastax.spark.connector.cql._ //(Optional) Imports java driver helper functions
 ----
 
-==== Test it out
+=== Test it out
 
 [source,scala]
 ----
@@ -64,17 +62,17 @@ c.withSessionDo ( session => session.execute("CREATE KEYSPACE test WITH replicat
 c.withSessionDo ( session => session.execute("CREATE TABLE test.fun (k int PRIMARY KEY, v int)"))
 
 
-// Your results may differ 
+// Your results may differ
 //res1: Array[com.datastax.spark.connector.CassandraRow] = Array(CassandraRow{k: 60, v: 60}, CassandraRow{k: 67, v: 67}, CassandraRow{k: 10, v: 10})
 ----
 
-=== Creating a playground with Docker
+== Creating a playground with Docker
 
 We can use Docker to quickly create a working setup without the need to
 install and configure Cassandra.
 
 For this guide we will use the Cassandra docker image maintained by
-https://github.com/tobert/cassandra-docker/blob/master/README.md[Al
+https://github.com/tobert/cassandra-docker/blob/master/README[Al
 Tobert on GitHub]
 
 First, let's pull the docker image:
@@ -130,5 +128,3 @@ cd spark/install/dir
 #Include the --master if you want to run against a spark cluster and not local mode
 ./bin/spark-shell [--master sparkMasterAddress] --jars yourAssemblyJar --conf spark.cassandra.connection.host=$CASSANDRA_CONTAINER_IP
 ----
-
-link:14_data_frames.md[Next - DataFrames]
