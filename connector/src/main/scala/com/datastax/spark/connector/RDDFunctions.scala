@@ -53,7 +53,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
    *            from items of the [[org.apache.spark.rdd.RDD RDD]]
    */
   def saveAsCassandraTableEx(
-    table: TableDef,
+    table: DefaultTableDef,
     columns: ColumnSelector = AllColumns,
     writeConf: WriteConf = WriteConf.fromSparkConf(sparkContext.getConf))(
   implicit
@@ -92,7 +92,7 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
 
     val protocolVersion = connector.withSessionDo(_.getContext.getProtocolVersion)
 
-    val table = TableDef.fromType[T](keyspaceName, tableName, protocolVersion)
+    val table = DefaultTableDef.fromType[T](keyspaceName, tableName, protocolVersion)
     saveAsCassandraTableEx(table, columns, writeConf)
   }
 

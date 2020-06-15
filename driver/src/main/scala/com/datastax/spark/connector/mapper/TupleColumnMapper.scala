@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.ProtocolVersion
 
 import scala.reflect.runtime.universe._
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.{DefaultColumnDef, DefaultTableDef, PartitionKeyColumn, RegularColumn, StructDef, TableDef}
+import com.datastax.spark.connector.cql.{DefaultColumnDef, DefaultTableDef, PartitionKeyColumn, RegularColumn, StructDef}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Reflect
 
@@ -71,7 +71,7 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef = {
 
     val tpe = implicitly[TypeTag[T]].tpe
     val ctorSymbol = Reflect.constructor(tpe).asMethod

@@ -19,13 +19,13 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef = {
 
     val columns = structType.zipWithIndex.map { case (field, i) => {
       val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn
-      ColumnDef(field.name, columnRole, ColumnType.fromDriverType(CassandraSourceUtil.sparkSqlToJavaDriverType(field.dataType, protocolVersion)))
+      DefaultColumnDef(field.name, columnRole, ColumnType.fromDriverType(CassandraSourceUtil.sparkSqlToJavaDriverType(field.dataType, protocolVersion)))
     }}
 
-    TableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
+    DefaultTableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
   }
 }

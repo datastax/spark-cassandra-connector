@@ -2,14 +2,13 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
-import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
+import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{DriverUtil, NameTools}
 import com.typesafe.scalalogging.StrictLogging
@@ -125,7 +124,7 @@ trait IndexMetadataAware {
   def indexMetadata:IndexMetadata
 }
 
-trait ColumnDef {
+trait ColumnDef extends FieldDef {
 
   def columnName:String
 
@@ -158,8 +157,7 @@ case class DefaultColumnDef(
     columnName: String,
     columnRole: ColumnRole,
     columnType: ColumnType[_])
-  extends FieldDef
-    with ColumnDef {
+  extends ColumnDef {
 
   override def ref: ColumnRef = ColumnName(columnName)
 
@@ -197,8 +195,7 @@ case class DefaultColumnDef(
 case class DriverColumnDef(column:ColumnMetadata,
                      relation:RelationMetadata,
                      keyspace:KeyspaceMetadata)
-  extends FieldDef
-    with ColumnDef
+  extends ColumnDef
     with KeyspaceMetadataAware
     with RelationMetadataAware
     with ColumnMetadataAware {
@@ -237,7 +234,7 @@ case class DriverColumnDef(column:ColumnMetadata,
   override def keyspaceMetadata:KeyspaceMetadata = keyspace
 }
 
-object ColumnDef {
+object DefaultColumnDef {
 
   def apply(column: ColumnMetadata,
             columnRole: ColumnRole): ColumnDef = {
@@ -247,7 +244,7 @@ object ColumnDef {
   }
 }
 
-trait IndexDef {
+trait IndexDef extends Serializable {
 
   def className: Option[String]
 
@@ -266,14 +263,12 @@ case class DefaultIndexDef(
     target: String,
     indexName: String,
     options: Map[String, String])
-  extends Serializable
-    with IndexDef
+  extends IndexDef
 
 case class DriverIndexDef(index:IndexMetadata,
                          relation:RelationMetadata,
                          keyspace:KeyspaceMetadata)
-  extends Serializable
-    with IndexDef
+  extends IndexDef
     with KeyspaceMetadataAware
     with RelationMetadataAware
     with IndexMetadataAware {
@@ -293,19 +288,18 @@ case class DriverIndexDef(index:IndexMetadata,
   override def keyspaceMetadata:KeyspaceMetadata = keyspace
 }
 
-trait TableDef {
+trait TableDef extends StructDef {
 
   val keyspaceName:String
   val tableName:String
   val partitionKey: Seq[ColumnDef]
   val clusteringColumns: Seq[ColumnDef]
   val regularColumns: Seq[ColumnDef]
+  val indexes: Seq[IndexDef]
   val isView:Boolean
 
   val indexedColumns: Seq[ColumnDef]
   val primaryKey: IndexedSeq[ColumnDef]
-  val columns: IndexedSeq[ColumnDef]
-  val columnByName: Map[String, ColumnDef]
 
   def isIndexed(column: String): Boolean
 
@@ -320,12 +314,11 @@ case class DefaultTableDef(
     partitionKey: Seq[DefaultColumnDef],
     clusteringColumns: Seq[DefaultColumnDef],
     regularColumns: Seq[DefaultColumnDef],
-    indexes: Seq[IndexDef] = Seq.empty,
+    indexes: Seq[DefaultIndexDef] = Seq.empty,
     isView: Boolean = false,
     ifNotExists: Boolean = false,
     tableOptions: Map[String, String] = Map())
-  extends StructDef
-    with TableDef {
+  extends TableDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
   require(clusteringColumns.forall(_.isClusteringColumn), "All clustering columns must have role ClusteringColumn")
@@ -368,9 +361,6 @@ case class DefaultTableDef(
   override lazy val columns: IndexedSeq[DefaultColumnDef] =
     (primaryKey ++ regularColumns).toIndexedSeq
 
-  override lazy val columnByName: Map[String, DefaultColumnDef] =
-    super.columnByName
-
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 
   def columnByNameIgnoreCase(columnName: String) = {
@@ -411,8 +401,7 @@ case class DefaultTableDef(
 
 case class DriverTableDef(relation:RelationMetadata,
                           keyspace:KeyspaceMetadata)
-  extends StructDef
-    with TableDef
+  extends TableDef
     with KeyspaceMetadataAware
     with RelationMetadataAware {
 
@@ -433,14 +422,14 @@ case class DriverTableDef(relation:RelationMetadata,
   val asTable = if (isTable) Some(relation.asInstanceOf[TableMetadata]) else Option.empty
   val asView = if (isView) Some(relation.asInstanceOf[ViewMetadata]) else Option.empty
 
-  val indexes =
+  val indexes:Seq[DriverIndexDef] =
     asTable match {
       case Some(table: TableMetadata) =>
         table.getIndexes.values().asScala.map(i => DriverIndexDef(i, table, keyspace)).toSeq
       case None => Seq.empty
     }
 
-  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.index.getTarget)
+  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
 
   /**
    * Contains indices that can be directly mapped to single column, namely indices with a handled column
@@ -472,9 +461,6 @@ case class DriverTableDef(relation:RelationMetadata,
   override lazy val columns: IndexedSeq[DriverColumnDef] =
     (primaryKey ++ regularColumns).toIndexedSeq
 
-  override lazy val columnByName: Map[String, DriverColumnDef] =
-    super.columnByName
-
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 
   def columnByNameIgnoreCase(columnName: String) = {
@@ -494,14 +480,14 @@ case class DriverTableDef(relation:RelationMetadata,
   override def keyspaceMetadata:KeyspaceMetadata = keyspace
 }
 
-object TableDef {
+object DefaultTableDef {
 
   /** Constructs a table definition based on the mapping provided by
     * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T: ColumnMapper](
       keyspaceName: String,
       tableName: String,
-      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
+      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 }
 

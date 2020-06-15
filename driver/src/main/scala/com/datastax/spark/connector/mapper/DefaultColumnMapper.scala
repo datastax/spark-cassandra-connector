@@ -119,7 +119,7 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = {
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef = {
 
     // filter out inherited scala getters, because they are very likely
     // not the properties users want to map
