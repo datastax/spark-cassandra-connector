@@ -1,0 +1,12 @@
+site:
+  title: Spark Cassandra Connector documentation
+  start_page: doc::quickstart::quick_start.adoc
+
+content:
+  sources:
+    - url: .
+      branches: HEAD
+
+ui:
+  bundle:
+    url: https://github.com/ianjevans/antora-ui-datastax/releases/download/v0.1/ui-bundle.zip
