@@ -93,7 +93,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
       ,
       ifNotExists = ifNotExists
       ,
-      tableOptions = tableOptions
+      options = tableOptions
     )
 
     connector.withSessionDo(session => session.execute(table.cql))

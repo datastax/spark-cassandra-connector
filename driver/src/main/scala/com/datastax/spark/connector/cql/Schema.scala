@@ -150,7 +150,7 @@ trait ColumnDef extends FieldDef {
 
   def componentIndex: Option[Int]
 
-  def sortingDirection: Any
+  def sortingDirection: Option[ClusteringColumn.SortingOrder]
 }
 
 case class DefaultColumnDef(
@@ -177,14 +177,14 @@ case class DefaultColumnDef(
 
   override def isCounterColumn = columnType == CounterType
 
-  override def componentIndex = columnRole match {
+  override def componentIndex: Option[Int] = columnRole match {
     case ClusteringColumn(i, _) => Some(i)
     case _ => None
   }
 
-  override def sortingDirection = columnRole match {
-    case ClusteringColumn(_, v) => v
-    case _ => true
+  override def sortingDirection: Option[ClusteringColumn.SortingOrder] = columnRole match {
+    case ClusteringColumn(_, v) => Some(v)
+    case _ => None
   }
 
   def cql = {
@@ -204,7 +204,7 @@ case class DriverColumnDef(column:ColumnMetadata,
 
   override def columnName = column.getName.toString
 
-  override def columnType = ColumnType.fromDriverType(column.getType)
+  override def columnType: ColumnType[_] = ColumnType.fromDriverType(column.getType)
 
   override def isStatic = column.isStatic
 
@@ -222,7 +222,13 @@ case class DriverColumnDef(column:ColumnMetadata,
 
   override def isCounterColumn = columnType == CounterType
 
-  override def sortingDirection = relation.getClusteringColumns.asScala.get(column)
+  override def sortingDirection: Option[ClusteringColumn.SortingOrder] =
+    relation.getClusteringColumns.asScala.get(column).map {
+      _ match {
+        case ClusteringOrder.ASC => ClusteringColumn.Ascending
+        case ClusteringOrder.DESC => ClusteringColumn.Descending
+      }
+    }
 
   /* TODO */
   override def componentIndex = ???
@@ -242,6 +248,25 @@ object DefaultColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     DefaultColumnDef(toName(column.getName), columnRole, columnType)
   }
+
+  def computeColumnRole(colDef:ColumnDef, clusteringCols:Seq[String]):ColumnRole = {
+    if (colDef.isPartitionKeyColumn)
+      PartitionKeyColumn
+    else if (colDef.isClusteringColumn) {
+      val idx = clusteringCols.indexOf(colDef.columnName)
+      ClusteringColumn(idx, colDef.sortingDirection.get)
+    }
+    else if (colDef.isStatic)
+      StaticColumn
+    else
+      RegularColumn
+  }
+
+  def fromDriverDef(clusteringCols:Seq[String])(driverDef:DriverColumnDef):DefaultColumnDef =
+    DefaultColumnDef(
+      driverDef.columnName,
+      computeColumnRole(driverDef, clusteringCols),
+      driverDef.columnType)
 }
 
 trait IndexDef extends Serializable {
@@ -288,15 +313,29 @@ case class DriverIndexDef(index:IndexMetadata,
   override def keyspaceMetadata:KeyspaceMetadata = keyspace
 }
 
+object DefaultIndexDef {
+  def fromDriverDef(driverDef:DriverIndexDef):DefaultIndexDef =
+    DefaultIndexDef(
+      driverDef.className,
+      driverDef.target,
+      driverDef.indexName,
+      driverDef.options)
+}
+
 trait TableDef extends StructDef {
+
+  type ValueRepr = CassandraRow
+  type Column <: ColumnDef
 
   val keyspaceName:String
   val tableName:String
   val partitionKey: Seq[ColumnDef]
+  val allColumns: Seq[ColumnDef]
   val clusteringColumns: Seq[ColumnDef]
   val regularColumns: Seq[ColumnDef]
   val indexes: Seq[IndexDef]
   val isView:Boolean
+  val options:Map[String,String]
 
   val indexedColumns: Seq[ColumnDef]
   val primaryKey: IndexedSeq[ColumnDef]
@@ -308,16 +347,15 @@ trait TableDef extends StructDef {
   def columnByNameIgnoreCase(columnName: String):ColumnDef
 }
 
-case class DefaultTableDef(
-    keyspaceName: String,
-    tableName: String,
-    partitionKey: Seq[DefaultColumnDef],
-    clusteringColumns: Seq[DefaultColumnDef],
-    regularColumns: Seq[DefaultColumnDef],
-    indexes: Seq[DefaultIndexDef] = Seq.empty,
-    isView: Boolean = false,
-    ifNotExists: Boolean = false,
-    tableOptions: Map[String, String] = Map())
+case class DefaultTableDef(keyspaceName: String,
+                           tableName: String,
+                           partitionKey: Seq[DefaultColumnDef],
+                           clusteringColumns: Seq[DefaultColumnDef],
+                           regularColumns: Seq[DefaultColumnDef],
+                           indexes: Seq[DefaultIndexDef] = Seq.empty,
+                           isView: Boolean = false,
+                           options: Map[String, String] = Map(),
+                           ifNotExists: Boolean = false)
   extends TableDef {
 
   require(partitionKey.forall(_.isPartitionKeyColumn), "All partition key columns must have role PartitionKeyColumn")
@@ -325,7 +363,6 @@ case class DefaultTableDef(
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
 
   override type Column = DefaultColumnDef
-  type ValueRepr = CassandraRow
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
@@ -380,7 +417,7 @@ case class DefaultTableDef(
       Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.columnName) +
           " " + x.sortingDirection).mkString(", ") + ")")
     }
-    val allOptions = clusterOrder ++ tableOptions.map(x => x._1 + " = " + x._2)
+    val allOptions = clusterOrder ++ options.map(x => x._1 + " = " + x._2)
     val allOptionsStr = if (allOptions.isEmpty)
       ""
     else
@@ -406,19 +443,22 @@ case class DriverTableDef(relation:RelationMetadata,
     with RelationMetadataAware {
 
   override type Column = DriverColumnDef
-  type ValueRepr = CassandraRow
 
   override val keyspaceName = keyspace.getName.toString
   override val tableName = relation.getName.toString
-  val cols: Seq[DriverColumnDef] =
+  val allColumns: Seq[DriverColumnDef] =
     relation.getColumns.asScala.values.map(c => DriverColumnDef(c, relation, keyspace)).toSeq
   override val partitionKey: Seq[DriverColumnDef] =
-    cols.filter(c => relation.getPartitionKey.contains(c.column))
+    allColumns.filter(c => relation.getPartitionKey.contains(c.column))
   override val clusteringColumns: Seq[DriverColumnDef] =
-    cols.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
-  override val regularColumns: Seq[DriverColumnDef] = cols.filterNot(partitionKey.toSet)
+    allColumns.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
+  override val regularColumns: Seq[DriverColumnDef] = allColumns.filterNot(partitionKey.toSet)
   val isTable = relation.isInstanceOf[TableMetadata]
   override val isView = relation.isInstanceOf[ViewMetadata]
+  val options:Map[String,String] = relation.getOptions.asScala.toMap.map {
+    (kv) => (DriverUtil.toName(kv._1), kv._2.toString)
+  }
+
   val asTable = if (isTable) Some(relation.asInstanceOf[TableMetadata]) else Option.empty
   val asView = if (isView) Some(relation.asInstanceOf[ViewMetadata]) else Option.empty
 
@@ -483,12 +523,26 @@ case class DriverTableDef(relation:RelationMetadata,
 object DefaultTableDef {
 
   /** Constructs a table definition based on the mapping provided by
-    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
+   * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T: ColumnMapper](
-      keyspaceName: String,
-      tableName: String,
-      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef =
+                                 keyspaceName: String,
+                                 tableName: String,
+                                 protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
+
+  def fromDriverDef(driverDef: DriverTableDef): DefaultTableDef = {
+
+    val mapFn = DefaultColumnDef.fromDriverDef(driverDef.clusteringColumns.map(_.columnName))(_)
+    DefaultTableDef(
+      driverDef.keyspaceName,
+      driverDef.tableName,
+      driverDef.partitionKey.map(mapFn),
+      driverDef.clusteringColumns.map(mapFn),
+      driverDef.regularColumns.map(mapFn),
+      driverDef.indexes.map(DefaultIndexDef.fromDriverDef(_)),
+      driverDef.isView,
+      driverDef.options)
+  }
 }
 
 case class Schema(keyspaces: Set[KeyspaceMetadata]) {
@@ -537,10 +591,10 @@ object Schema extends StrictLogging {
    */
   def tableFromCassandra(session: CqlSession,
                          keyspaceName: String,
-                         tableName: String): TableDef = {
+                         tableName: String): DriverTableDef = {
 
     fromCassandra(session, Some(keyspaceName), Some(tableName)).tables.headOption match {
-      case Some(t) => t
+      case Some(t:DriverTableDef) => t
       case None =>
         val metadata: Metadata = session.getMetadata
         val suggestions = NameTools.getSuggestions(metadata, keyspaceName, tableName)

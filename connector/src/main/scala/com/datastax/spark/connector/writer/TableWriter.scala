@@ -33,7 +33,7 @@ class TableWriter[T] private (
   val keyspaceName = tableDef.keyspaceName
   val tableName = tableDef.tableName
   val columnNames = rowWriter.columnNames diff writeConf.optionPlaceholders
-  val columns = columnNames.map(tableDef.columnByName)
+  val columns = columnNames.map(tableDef.columnByName.asInstanceOf[Map[String,ColumnDef]])
 
   private[connector] lazy val queryTemplateUsingInsert: String = {
     val quotedColumnNames: Seq[String] = columnNames.map(quote)
@@ -320,7 +320,7 @@ object TableWriter {
     val nonPartitionKeyColumnRefs = table
       .allColumns
       .filter(columnDef => nonPartitionKeyColumnNames.contains(columnDef.columnName))
-    nonPartitionKeyColumnRefs.forall( columnDef => columnDef.columnRole == StaticColumn)
+    nonPartitionKeyColumnRefs.forall( columnDef => columnDef.isStatic)
   }
 
   /**
@@ -413,9 +413,9 @@ object TableWriter {
       writeConf: WriteConf,
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
-    val tableDef = tableFromCassandra(connector, keyspaceName, tableName)
+    val tableDef = DefaultTableDef.fromDriverDef(tableFromCassandra(connector, keyspaceName, tableName))
     val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
-    val tablDefWithMeta = tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns)
+    val tablDefWithMeta = tableDef.copy(regularColumns = (tableDef.regularColumns ++ optionColumns))
 
     val selectedColumns = columnNames
       .selectFrom(tablDefWithMeta)

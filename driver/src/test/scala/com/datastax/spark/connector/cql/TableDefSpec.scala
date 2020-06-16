@@ -89,7 +89,7 @@ class TableDefSpec extends WordSpec with Matchers {
         //
         val tableDefSortAndOptions = DefaultTableDef("keyspace", "table", Seq(column1, column2),
           Seq(column3, column4), Seq(column5), ifNotExists = true,
-          tableOptions = Map("dclocal_read_repair_chance"-> "0.1" ))
+          options = Map("dclocal_read_repair_chance"-> "0.1" ))
         tableDefSortAndOptions.cql should be(
           """CREATE TABLE IF NOT EXISTS "keyspace"."table" (
             |  "c1" int,
@@ -104,7 +104,7 @@ class TableDefSpec extends WordSpec with Matchers {
         //
         val tableDefOptionsOnly = DefaultTableDef("keyspace", "table", Seq(column1, column2),
           Seq(column3), Seq(column5), ifNotExists = true,
-          tableOptions = Map("dclocal_read_repair_chance"-> "0.1"))
+          options = Map("dclocal_read_repair_chance"-> "0.1"))
         tableDefOptionsOnly.cql should be(
           """CREATE TABLE IF NOT EXISTS "keyspace"."table" (
             |  "c1" int,
