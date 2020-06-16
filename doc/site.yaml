@@ -4,8 +4,7 @@ site:
 
 content:
   sources:
-    - url: .
-      branches: HEAD
+    - url: ./doc
 
 ui:
   bundle:
