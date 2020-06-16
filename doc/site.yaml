@@ -4,7 +4,8 @@ site:
 
 content:
   sources:
-    - url: ./
+    - url: .
+      start_path: doc
 
 ui:
   bundle:
