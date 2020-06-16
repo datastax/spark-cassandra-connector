@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: "List folder"
+        run: |
+          ls -ltr $GITHUB_WORKSPACE
       - name: "Generate site using antora site action"
         uses: kameshsampath/antora-site-action@master
         with:
