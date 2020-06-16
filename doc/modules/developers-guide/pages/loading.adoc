@@ -1,7 +1,7 @@
 = Accessing Cassandra data with CassandraRDD
 
 NOTE: If you have the option we recommend using
-link:data_frames.adoc[DataFrames] instead of RDDs.
+xref:data_frames.adoc[DataFrames] instead of RDDs.
 
 This section describes how to access data from Cassandra table with
 Spark.
@@ -400,13 +400,13 @@ val specifiedJoin = internalJoin.on(SomeColumns("cust_id")) // Joins on the cust
 val emptyJoin = internalJoin.toEmptyCassandraRDD // Makes an EmptyRDD
 ----
 
-= Configuration options for adjusting reads
+== Configuration options for adjusting reads
 
 The following options can be specified in the SparkConf object or as
 `+--conf+` flag to spark-submit to adjust the read parameters of a
 Cassandra table.
 
-See link:reference.md#read-tuning-parameters[Reference Section]
+See xref:reference.adoc#read-tuning-parameters[Reference Section]
 
 == Using implicits for configuration
 

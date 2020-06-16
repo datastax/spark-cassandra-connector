@@ -1,7 +1,7 @@
 = Datasets
 
 NOTE: These documents are relevant to Spark 3.0 and the SCC 3.0 and later.
-Please see link:data_source_v1.adoc[Datasource V1] for documentation of
+Please see xref:data_source_v1.adoc[Datasource V1] for documentation of
 older versions.
 
 Datasets (previously DataFrames) provide a new API for manipulating data within Spark. These
@@ -346,5 +346,5 @@ spark.read
 ----
 
 For More information on configuration and settings using this api check
-the older link:data_source_v1.adoc[Datasource V1] which is all still valid
+the older xref:data_source_v1.adoc[Datasource V1] which is all still valid
 for configuration.

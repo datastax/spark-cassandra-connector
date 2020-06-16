@@ -1,6 +1,6 @@
 = Server-side data selection, filtering and grouping
 
-NOTE: If you have the option we recommend using link:data_frames.adoc[DataFrames] instead of RDDs.
+NOTE: If you have the option we recommend using xref:$1.adoc[DataFrames] instead of RDDs.
 
 In this section, you'll learn how to reduce the amount of data
 transferred from Cassandra to Spark to speed up processing.

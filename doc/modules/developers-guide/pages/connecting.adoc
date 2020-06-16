@@ -4,10 +4,10 @@ This section describes how Spark connects to Cassandra and how to
 execute CQL statements from Spark applications.
 
 See the reference section for
-link:reference.md#cassandra-connection-parameters[Cassandra Connection
+xref:reference.adoc#cassandra-connection-parameters[Cassandra Connection
 Parameters].
 
-== Configuring catalogs to Cassandra
+== Configuring Catalogs to Cassandra
 
 DatasourceV2 makes connecting to Cassandra now easier than ever.
 Parameters for configuring your connection can be done in the SparkConf,
@@ -147,7 +147,7 @@ the connection to the Cassandra cluster will be closed shortly
 thereafter. The period of time for keeping unused connections open is
 controlled by the global `+spark.cassandra.connection.keep_alive_ms+`
 system property, see
-link:reference.md#cassandra-connection-parameters[Cassandra Connection
+xref:reference.adoc#cassandra-connection-parameters[Cassandra Connection
 Parameters].
 
 == Connecting manually to Cassandra

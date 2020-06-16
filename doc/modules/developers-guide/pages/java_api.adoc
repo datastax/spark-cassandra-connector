@@ -1,7 +1,7 @@
 = Using the Connector in Java
 
 NOTE: If you have the option we recommend using
-link:data_frames.adoc[DataFrames] instead of RDDs, they are also
+xref:data_frames.adoc[DataFrames] instead of RDDs, they are also
 accessible from Java.
 
 This section describes how to access the functionality of Connector when

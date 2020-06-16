@@ -6,7 +6,7 @@ and Connector 2.0.6.
 For this guide, we assume an existing Cassandra deployment, running
 either locally or on a cluster, a local installation of Spark and an
 optional Spark cluster. For detail setup instructions see
-link:setup_spark_shell.adoc[setup spark-shell]
+xref:setup_spark_shell.adoc[setup spark-shell]
 
 To use the Spark Cassandra Connector from within the Spark Shell, we
 need to load the Connector and all its dependencies in the shell

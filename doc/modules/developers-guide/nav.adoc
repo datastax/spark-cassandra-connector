@@ -31,4 +31,4 @@
 
 .Building and contributing to the Connector
 * xref:developers.adoc[Overview of the Connector project]
-* xref:build_and_artifacts.adoc[Building the Connector]
+* xref:building_and_artifacts.adoc[Building the Connector]

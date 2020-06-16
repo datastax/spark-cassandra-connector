@@ -1,7 +1,7 @@
 = Spark Streaming with Cassandra
 
 NOTE: If you have the option we recommend using
-link:data_frames.adoc[DataFrames and Structured Streaming] instead of
+xref:data_frames.adoc[DataFrames and Structured Streaming] instead of
 DStreams.
 
 Spark Streaming extends the core API to allow high-throughput,

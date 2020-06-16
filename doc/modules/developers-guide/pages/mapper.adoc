@@ -1,6 +1,6 @@
 = Working with user-defined case classes and tuples
 
-NOTE: If you have the option we recommend using link:data_frames.adoc[DataFrames] instead of RDDs.
+NOTE: If you have the option we recommend using xref:data_frames.adoc[DataFrames] instead of RDDs.
 
 This section describes how to store Cassandra rows in Scala tuples or
 objects of your own classes.
