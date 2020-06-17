@@ -5,7 +5,6 @@ import java.io.IOException
 import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}

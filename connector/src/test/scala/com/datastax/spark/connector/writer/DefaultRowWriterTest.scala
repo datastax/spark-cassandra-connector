@@ -24,7 +24,7 @@ class DefaultRowWriterTest {
 
   @Test
   def testSerializability(): Unit = {
-    val table = TableDef("test", "table", Nil, Nil, Nil)
+    val table = DefaultTableDef("test", "table", Nil, Nil, Nil)
     val rowWriter = new DefaultRowWriter[DefaultRowWriterTest](table, IndexedSeq.empty)
     SerializationUtils.roundtrip(rowWriter)
   }
@@ -33,10 +33,10 @@ class DefaultRowWriterTest {
 
   @Test
   def testTypeConversionsAreApplied(): Unit = {
-    val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
-    val column2 = ColumnDef("c2", ClusteringColumn(0), DecimalType)
-    val column3 = ColumnDef("c3", RegularColumn, TimestampType)
-    val table = TableDef("test", "table", Seq(column1), Seq(column2), Seq(column3))
+    val column1 = DefaultColumnDef("c1", PartitionKeyColumn, IntType)
+    val column2 = DefaultColumnDef("c2", ClusteringColumn(0), DecimalType)
+    val column3 = DefaultColumnDef("c3", RegularColumn, TimestampType)
+    val table = DefaultTableDef("test", "table", Seq(column1), Seq(column2), Seq(column3))
     val rowWriter = new DefaultRowWriter[RowOfStrings](
       table, table.columnRefs)
 
@@ -59,8 +59,8 @@ class DefaultRowWriterTest {
     val udtColumn = UDTFieldDef("field", IntType)
     val udt = UserDefinedType("udt", IndexedSeq(udtColumn))
 
-    val column = ColumnDef("c1", PartitionKeyColumn, udt)
-    val table = TableDef("test", "table", Seq(column), Nil, Nil)
+    val column = DefaultColumnDef("c1", PartitionKeyColumn, udt)
+    val table = DefaultTableDef("test", "table", Seq(column), Nil, Nil)
     val rowWriter = new DefaultRowWriter[RowWithUDT](table, table.columnRefs)
 
     // we deliberately put a String 12345 here:
@@ -84,8 +84,8 @@ class DefaultRowWriterTest {
   def testCustomTypeConvertersAreUsed(): Unit = {
     TypeConverter.registerConverter(StringWrapperConverter)
     try {
-      val column = ColumnDef("c1", PartitionKeyColumn, TextType)
-      val table = TableDef("test", "table", Seq(column), Nil, Nil)
+      val column = DefaultColumnDef("c1", PartitionKeyColumn, TextType)
+      val table = DefaultTableDef("test", "table", Seq(column), Nil, Nil)
       val rowWriter = new DefaultRowWriter[RowWithStringWrapper](table, table.columnRefs)
 
       val obj = RowWithStringWrapper(StringWrapper("some text"))
