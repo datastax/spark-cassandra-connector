@@ -42,7 +42,7 @@ link:../project/Versions.scala[project/Versions.scala]
 
 == Building
 
-See xref:$1.adoc[Building And Artifacts]
+See xref:developers-guide:building_and_artifacts.adoc[Building And Artifacts]
 
 == Loading up the Spark-Shell
 
@@ -110,5 +110,5 @@ spark
   .append
 ----
 
-xref:$1.adoc[Accessing data with DataFrames]
-xref:$1.adoc[More details on Connecting to Cassandra]
+xref:developers-guide:data_frames.adoc[Accessing data with Datasets]
+xref:developers-guide:connecting.adoc[More details on Connecting to Cassandra]

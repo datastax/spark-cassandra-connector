@@ -99,18 +99,15 @@ Version |Supported Scala Versions
 API documentation for the Scala and Java interfaces are available
 online:
 
-[[250]]
 === 2.5.0
 
 * https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.0/#package[Spark-Cassandra-Connector]
 
-[[242]]
 === 2.4.2
 
 * http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/[Spark-Cassandra-Connector]
 * http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/[Embedded-Cassandra]
 
-[[232]]
 === 2.3.2
 
 * http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.3.2/spark-cassandra-connector/[Spark-Cassandra-Connector]
@@ -131,17 +128,17 @@ libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.
 ....
 
 * The default Scala version for Spark 2.0+ is 2.11 please choose the
-appropriate build. See the link:doc/FAQ.md[FAQ] for more information
+appropriate build. See the xref:FAQ.adoc[FAQ] for more information
 
 == Building
 
-See xref:building_and_artifacts.adoc[Building And Artifacts]
+See xref:developers-guide:building_and_artifacts.adoc[Building And Artifacts]
 
 == Documentation
 
-* xref:quick_start.adoc[Quick-start guide]
-* xref:connecting.adoc[Developer's Guide]
-* xref:faq.adoc[FAQ]
+* xref:quickstart:quick_start.adoc[Quick-start guide]
+* xref:developers-guide:connecting.adoc[Developer's Guide]
+* xref:FAQ.adoc[FAQ]
 
 == Online Training
 
@@ -192,7 +189,7 @@ have installed and enabled the Scala Plugin. Open the project with
 IntelliJ IDEA and it will automatically create the project structure
 from the provided SBT configuration.
 
-xref:developers.adoc[Tips for Developing the Spark Cassandra
+xref:developers-guide:developers.adoc[Tips for Developing the Spark Cassandra
 Connector]
 
 Checklist for contributing changes to the project:
