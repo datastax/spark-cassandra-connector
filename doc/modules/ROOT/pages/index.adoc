@@ -1,4 +1,6 @@
-= Spark Cassandra Connector https://travis-ci.org/datastax/spark-cassandra-connector[image:https://travis-ci.org/datastax/spark-cassandra-connector.svg[Build Status]]
+= Spark Cassandra Connector
+
+https://travis-ci.org/datastax/spark-cassandra-connector[image:https://travis-ci.org/datastax/spark-cassandra-connector.svg[Build Status]]
 
 == Quick Links
 
