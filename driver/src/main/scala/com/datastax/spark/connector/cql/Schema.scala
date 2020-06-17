@@ -410,13 +410,15 @@ case class DefaultTableDef(keyspaceName: String,
     val clusteringColumnNames = clusteringColumns.map(_.columnName).map(quote)
     val primaryKeyClause = (partitionKeyClause +: clusteringColumnNames).mkString(", ")
     val addIfNotExists = if (ifNotExists) "IF NOT EXISTS " else ""
-    val clusterOrder = if (clusteringColumns.isEmpty ||
-      clusteringColumns.forall(x => x.sortingDirection == ClusteringColumn.Ascending)) {
-      Seq()
-    } else {
-      Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.columnName) +
-          " " + x.sortingDirection).mkString(", ") + ")")
-    }
+    val clusterOrder =
+      if (clusteringColumns.isEmpty ||
+        clusteringColumns.forall(
+          x => x.sortingDirection.getOrElse(() => "") == ClusteringColumn.Ascending))
+        Seq()
+      else
+        Seq("CLUSTERING ORDER BY (" + clusteringColumns.map(x=> quote(x.columnName) +
+          " " + x.sortingDirection.getOrElse(() => "")).mkString(", ") + ")")
+
     val allOptions = clusterOrder ++ options.map(x => x._1 + " = " + x._2)
     val allOptionsStr = if (allOptions.isEmpty)
       ""
