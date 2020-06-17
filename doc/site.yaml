@@ -5,10 +5,11 @@ site:
 
 content:
   sources:
-    - url: ../
+    - url: ../workspace
       start_path: doc
       branches: HEAD
 
 ui:
   bundle:
     url: https://github.com/ianjevans/antora-ui-datastax/releases/download/v0.1/ui-bundle.zip
+    supplemental_files: ./supplemental-ui
