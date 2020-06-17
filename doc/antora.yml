@@ -1,4 +1,5 @@
-name: Spark Cassandra connector
+name: spark-cassandra-connector
+title: Spark Cassandra Connector
 version: '3.0'
 display_version: 3.0 Beta
 prerelease: -beta.1

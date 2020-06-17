@@ -25,3 +25,6 @@ metastore_db
 *.iml
 
 checkpoint
+
+# Antora
+doc/build

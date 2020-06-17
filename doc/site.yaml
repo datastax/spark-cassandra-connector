@@ -1,10 +1,11 @@
 site:
   title: Spark Cassandra Connector documentation
-  start_page: doc::quickstart::quick_start.adoc
+  url: /docs
+  start_page: index.adoc
 
 content:
   sources:
-    - url: ../workspace/
+    - url: ../
       start_path: doc
       branches: HEAD
 
