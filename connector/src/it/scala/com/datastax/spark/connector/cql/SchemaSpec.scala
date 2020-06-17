@@ -7,6 +7,7 @@ import com.datastax.spark.connector.util.schemaFromCassandra
 import org.scalatest.Inspectors._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
+
   override lazy val conn = CassandraConnector(defaultConf)
 
   conn.withSessionDo { session =>
@@ -62,7 +63,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
   "A KeyspaceDef" should {
     "allow to get a list of tables in the given keyspace" in {
       val keyspace = schema.keyspaceByName(ks)
-      keyspace.tables.map(_.tableName) shouldBe Set("test")
+      keyspace.tableByName.values.map(_.tableName).toSet shouldBe Set("test")
     }
     "allow to look up a table by name" in {
       val keyspace = schema.keyspaceByName(ks)
@@ -88,9 +89,9 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       table.primaryKey.size shouldBe 6
       table.primaryKey.map(_.columnName) shouldBe Seq(
         "k1", "k2", "k3", "c1", "c2", "c3")
-      table.primaryKey.map(_.columnType) shouldBe Seq(
-        IntType, VarCharType, TimestampType, BigIntType, VarCharType, UUIDType)
-      forAll(table.primaryKey) { c => c.isPrimaryKeyColumn shouldBe true }
+      table.primaryKey.map(_.columnType) shouldBe
+        Seq(IntType, VarCharType, TimestampType, BigIntType, VarCharType, UUIDType)
+      table.primaryKey.forall(_.isPrimaryKeyColumn)
     }
 
     "allow to read partitioning key column definitions" in {

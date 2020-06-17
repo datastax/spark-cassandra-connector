@@ -2,12 +2,13 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
+import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.types.{ColumnType, CounterType}
+import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
 import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{DriverUtil, NameTools}
@@ -447,7 +448,7 @@ case class DriverTableDef(relation:RelationMetadata,
   override val keyspaceName = keyspace.getName.toString
   override val tableName = relation.getName.toString
   val allColumns: Seq[DriverColumnDef] =
-    relation.getColumns.asScala.values.map(c => DriverColumnDef(c, relation, keyspace)).toSeq
+    relation.getColumns.asScala.values.map(DriverColumnDef(_, relation, keyspace)).toSeq
   override val partitionKey: Seq[DriverColumnDef] =
     allColumns.filter(c => relation.getPartitionKey.contains(c.column))
   override val clusteringColumns: Seq[DriverColumnDef] =
@@ -545,17 +546,36 @@ object DefaultTableDef {
   }
 }
 
-case class Schema(keyspaces: Set[KeyspaceMetadata]) {
+/* KeyspaceDef is only created at schema load time so we don't bother with the trait + default + driver distinction */
+case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata) extends KeyspaceMetadataAware {
+
+  def keyspaceName = keyspaceMetadata.getName.asCql(false)
+
+  lazy val tableByName: Map[String, TableDef] =
+    keyspaceMetadata.getTables.asScala
+      .map(idAndTable => (idAndTable._1.asCql(false), DriverTableDef(idAndTable._2, keyspaceMetadata)))
+      .toMap
+
+  lazy val userTypeByName: Map[String, UserDefinedType] =
+    keyspaceMetadata.getUserDefinedTypes.asScala
+      .map(idAndUdt => (idAndUdt._1.asCql(false), UserDefinedType(idAndUdt._2)))
+      .toMap
+
+  lazy val tablesAndViews: Seq[RelationMetadata] =
+    keyspaceMetadata.getTables.asScala.values.toSeq ++ keyspaceMetadata.getViews.asScala.values.toSeq
+}
+
+case class Schema(keyspaces: Set[KeyspaceDef]) {
 
   /** Returns a map from keyspace name to keyspace metadata */
-  lazy val keyspaceByName: Map[CqlIdentifier, KeyspaceMetadata] =
-    keyspaces.map(k => (k.getName, k)).toMap
+  lazy val keyspaceByName: Map[String, KeyspaceDef] =
+    keyspaces.map(keyspaceDef => (keyspaceDef.keyspaceName, keyspaceDef)).toMap
 
   /** All tables from all keyspaces */
   lazy val tables: Set[TableDef] =
-    keyspaces.flatMap(k =>
-      (k.getTables.asScala.values ++ k.getViews.asScala.values).map(t => DriverTableDef(t,k))
-    )
+    keyspaces.flatMap(keyspaceDef =>
+      keyspaceDef.tablesAndViews
+        .map(relation => DriverTableDef(relation,keyspaceDef.keyspaceMetadata)))
 }
 
 object Schema extends StrictLogging {
@@ -575,13 +595,16 @@ object Schema extends StrictLogging {
         case Some(name) => toName(keyspace.getName) == name
       }
 
-    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceMetadata] =
-      metadata.getKeyspaces.values().asScala.filter(isKeyspaceSelected(_)).toSet
+    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
+      metadata.getKeyspaces.values().asScala
+        .filter(isKeyspaceSelected(_))
+        .map(KeyspaceDef(_))
+        .toSet
 
     logger.debug(s"Retrieving database schema")
     val schema = Schema(fetchKeyspaces(session.refreshSchema()))
     logger.debug(s"${schema.keyspaces.size} keyspaces fetched: " +
-      s"${schema.keyspaces.map(_.getName).mkString("{", ",", "}")}")
+      s"${schema.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
     schema
   }
 
