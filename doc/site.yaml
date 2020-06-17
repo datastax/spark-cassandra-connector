@@ -5,7 +5,7 @@ site:
 
 content:
   sources:
-    - url: ../workspace
+    - url: ../
       start_path: doc
       branches: HEAD
 
