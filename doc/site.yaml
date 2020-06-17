@@ -1,6 +1,6 @@
 site:
   title: Spark Cassandra Connector documentation
-  url: /docs
+  url: /
   # start_page: index.adoc
 
 content:
