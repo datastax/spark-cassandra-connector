@@ -21,9 +21,6 @@ jobs:
         with:
          antora_playbook: site.yaml
          site_sources_path: doc
-      - name: "List folder"
-        run: |
-           ls -ltr $GITHUB_WORKSPACE/build/site
       - name: "Upload generated site"
         uses: actions/upload-artifact@v1.0.0
         with:
