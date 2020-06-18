@@ -16,7 +16,7 @@ class DocCheck extends FlatSpec with Matchers {
       |*******.
     """.stripMargin
 
-  val refFile = scala.io.Source.fromFile(new File(s"doc/reference.md")).mkString
+  val refFile = scala.io.Source.fromFile(new File(s"doc/modules/developers-guide/reference.adoc")).mkString
 
   "The Reference Parameters File" should "contain all of the current properties" in withClue(reRunMessage){
     val missingProperties =
@@ -29,7 +29,8 @@ class DocCheck extends FlatSpec with Matchers {
   }
 
   it should "match a freshly created reference file" in withClue(reRunMessage){
-    RefBuilder.getMarkDown() should be(refFile)
+    // RefBuilder.getMarkDown() should be(refFile)
+    RefBuilder.getAsciidoc() should be (refFile)
 
   }
 

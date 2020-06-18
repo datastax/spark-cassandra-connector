@@ -4,23 +4,26 @@ import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFac
 
 object RefBuilder {
 
-  val Header =
-    """# Configuration Reference
+  val AsciidocHeader =
+    """= Configuration reference
       |
       |
     """.stripMargin
-  val Footer = "\n"
 
-  val HtmlTableHeader =
-    """<table class="table">
-      |<tr><th>Property Name</th><th>Default</th><th>Description</th></tr>""".stripMargin
+  val AsciidocFooter = "\n"
+
+  val AsciidocTableHeader =
+    """[cols=",,",options="header",]
+    #|===
+    #|Property Name |Default |Description""".stripMargin('#')
+
 
   val allConfigs = ConfigCheck.validStaticProperties
 
-  def getMarkDown(): String = {
+  def getAsciidoc(): String = {
     val configBySection = allConfigs.groupBy(x => x.section)
     val sections = configBySection.keys.toSeq.sorted
-    val markdown = for (section <- sections) yield {
+    val asciidoc = for (section <- sections) yield {
       val parameters = configBySection(section)
       val paramTable = parameters.toList.sortBy(_.name).map { case parameter: ConfigParameter[_] =>
         val default = parameter.default match {
@@ -31,20 +34,18 @@ object RefBuilder {
           case None => None
           case value => value
         }
-        s"""<tr>
-            |  <td><code>${parameter.name}</code></td>
-            |  <td>$default</td>
-            |  <td>${parameter.description}</td>
-            |</tr>""".stripMargin
+        s"""
+            #|`+${parameter.name}+` | $default | ${parameter.description} """.stripMargin('#')
       }.mkString("\n")
 
       s"""
-         |## $section
-         |$HtmlTableHeader
-         |$paramTable
-         |</table>""".stripMargin
+         #== $section
+         #
+         #$AsciidocTableHeader
+         #$paramTable
+         #|===""".stripMargin('#')
     }
-    Header + markdown.mkString("\n\n") + Footer
+    AsciidocHeader + asciidoc.mkString("\n\n") + AsciidocFooter
   }
 
 }

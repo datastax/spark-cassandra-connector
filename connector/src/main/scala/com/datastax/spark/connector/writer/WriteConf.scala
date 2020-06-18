@@ -95,12 +95,13 @@ object WriteConf {
     name = "spark.cassandra.output.batch.grouping.key",
     section = ReferenceSection,
     default  = BatchGroupingKey.Partition,
-    description = """Determines how insert statements are grouped into batches. Available values are
-    |<ul>
-    |  <li> <code> none </code> : a batch may contain any statements </li>
-    |  <li> <code> replica_set </code> : a batch may contain only statements to be written to the same replica set </li>
-    |  <li> <code> partition </code> : a batch may contain only statements for rows sharing the same partition key value </li>
-    |</ul>
+    description = """Determines how insert statements are grouped into batches. Available values are:
+    |
+    | `none` : a batch may contain any statements
+    |
+    | `replica_set`: a batch may contain only statements to be written to the same replica set
+    |
+    | `partition`: a batch may contain only statements for rows sharing the same partition key value
     |""".stripMargin)
 
   val IfNotExistsParam = ConfigParameter[Boolean](
@@ -126,13 +127,16 @@ object WriteConf {
     default = 5,
     description = """Maximum number of batches executed in parallel by a
       | single Spark task""".stripMargin)
-  
+
   val ThroughputMiBPSParam = ConfigParameter[Option[Double]] (
     name = "spark.cassandra.output.throughputMBPerSec",
     section = ReferenceSection,
     default = None,
-    description = """*(Floating points allowed)* <br> Maximum write throughput allowed
-      | per single core in MB/s. <br> Limit this on long (+8 hour) runs to 70% of your max throughput
+    description = """*(Floating points allowed)*
+      |
+      | Maximum write throughput allowed per single core in MB/s.
+      |
+      | Limit this on long (+8 hour) runs to 70% of your max throughput
       | as seen on a smaller job for stability""".stripMargin)
 
   val DeprecatedThroughputMiBPSParam = DeprecatedConfigParameter(
@@ -208,7 +212,7 @@ object WriteConf {
         TTLOption.defaultValue
       else
         TTLOption.constant(ttlSeconds)
-    
+
     val timestampMicros = conf.getLong(TimestampParam.name, TimestampParam.default)
 
     val timestampOption =

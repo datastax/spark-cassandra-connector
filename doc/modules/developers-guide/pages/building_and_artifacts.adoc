@@ -54,7 +54,7 @@ The library package jars will be generated to:
 * `+spark-cassandra-connector/target/scala-{binary.version}/+`
 * `+spark-cassandra-connector-java/target/scala-{binary.version}/+`
 
-The documentation will be generated to:
+The API documentation will be generated to:
 
 * `+spark-cassandra-connector/target/scala-{binary.version}/api/+`
 * `+spark-cassandra-connector-java/target/scala-{binary.version}/api/+`

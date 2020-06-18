@@ -237,10 +237,10 @@ export IT_TEST_SPARK_MASTER=<Spark Master URL>
 To generate the reference document use
 
 ....
-./sbt/sbt spark-cassandra-connector-unshaded/run (outputLocation)
+./sbt/sbt connector/run (outputLocation)
 ....
 
-outputLocation defaults to doc/reference.md
+outputLocation defaults to doc/modules/developers-guide/pages/reference.adoc
 
 == License
 

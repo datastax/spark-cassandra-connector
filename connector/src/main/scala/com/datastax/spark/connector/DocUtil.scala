@@ -8,16 +8,21 @@ object DocUtil {
 
   def main(args: Array[String]) {
 
-    val DefaultReferenceFile = Paths.get("..").resolve("doc").resolve("reference.md")
+    val DefaultReferenceFile = Paths.get("..")
+      .resolve("doc")
+      .resolve("modules")
+      .resolve("developers-guide")
+      .resolve("pages")
+      .resolve("reference.adoc")
 
     println("Generating Reference Documentation for Spark Cassandra Conenctor")
     println(s"Found ${ConfigCheck.validStaticProperties.size} Parameters")
 
-    val markdown = RefBuilder.getMarkDown()
+    val asciidoc = RefBuilder.getAsciidoc()
 
     println(s"Generating Reference Documentation for Spark Cassandra Conenctor to ${DefaultReferenceFile.toAbsolutePath}")
 
-    Files.write(DefaultReferenceFile, markdown.getBytes)
+    Files.write(DefaultReferenceFile, asciidoc.getBytes)
 
   }
 }
