@@ -392,10 +392,10 @@ case class DefaultTableDef(keyspaceName: String,
 
   override val name: String = s"$keyspaceName.$tableName"
 
-  lazy val primaryKey: IndexedSeq[DefaultColumnDef] =
+  override lazy val primaryKey: IndexedSeq[DefaultColumnDef] =
     (partitionKey ++ clusteringColumns).toIndexedSeq
 
-  override lazy val columns: IndexedSeq[DefaultColumnDef] =
+  override val columns: IndexedSeq[Column] =
     (primaryKey ++ regularColumns).toIndexedSeq
 
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
@@ -450,11 +450,23 @@ case class DriverTableDef(relation:RelationMetadata,
   override val tableName = relation.getName.toString
   val allColumns: Seq[DriverColumnDef] =
     relation.getColumns.asScala.values.map(DriverColumnDef(_, relation, keyspace)).toSeq
-  override val partitionKey: Seq[DriverColumnDef] =
-    allColumns.filter(c => relation.getPartitionKey.contains(c.column))
-  override val clusteringColumns: Seq[DriverColumnDef] =
-    allColumns.filter(c => relation.getClusteringColumns.asScala.keys.toSet.contains(c.column))
-  override val regularColumns: Seq[DriverColumnDef] = allColumns.filterNot(partitionKey.toSet)
+  override val partitionKey: Seq[DriverColumnDef] = {
+    val partitionKeyNames =
+      relation.getPartitionKey.asScala.map(c => DriverUtil.toName(c.getName)).toSet
+    allColumns.filter(c => partitionKeyNames(c.columnName))
+  }
+  override val clusteringColumns: Seq[DriverColumnDef] = {
+    val clusteringColumnNames =
+      relation.getClusteringColumns.keySet.asScala.map(c => DriverUtil.toName(c.getName)).toSet
+    allColumns.filter(c => clusteringColumnNames(c.columnName))
+  }
+  override lazy val primaryKey: IndexedSeq[DriverColumnDef] =
+    (partitionKey ++ clusteringColumns).toIndexedSeq
+  override val regularColumns: Seq[DriverColumnDef] = allColumns.filterNot(primaryKey.toSet)
+
+  override val columns: IndexedSeq[Column] =
+    (primaryKey ++ regularColumns).toIndexedSeq
+
   val isTable = relation.isInstanceOf[TableMetadata]
   override val isView = relation.isInstanceOf[ViewMetadata]
   val options:Map[String,String] = relation.getOptions.asScala.toMap.map {
@@ -496,12 +508,6 @@ case class DriverTableDef(relation:RelationMetadata,
   }
 
   override val name: String = s"${keyspace.getName}.${relation.getName}"
-
-  lazy val primaryKey: IndexedSeq[DriverColumnDef] =
-    (partitionKey ++ clusteringColumns).toIndexedSeq
-
-  override lazy val columns: IndexedSeq[DriverColumnDef] =
-    (primaryKey ++ regularColumns).toIndexedSeq
 
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 

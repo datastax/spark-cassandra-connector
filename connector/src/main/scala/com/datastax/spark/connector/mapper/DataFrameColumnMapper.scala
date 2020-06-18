@@ -23,7 +23,10 @@ class DataFrameColumnMapper[T](structType: StructType) extends ColumnMapper[T] {
 
     val columns = structType.zipWithIndex.map { case (field, i) => {
       val columnRole = if (i == 0) PartitionKeyColumn else RegularColumn
-      DefaultColumnDef(field.name, columnRole, ColumnType.fromDriverType(CassandraSourceUtil.sparkSqlToJavaDriverType(field.dataType, protocolVersion)))
+      DefaultColumnDef(
+        field.name,
+        columnRole,
+        ColumnType.fromDriverType(CassandraSourceUtil.sparkSqlToJavaDriverType(field.dataType, protocolVersion)))
     }}
 
     DefaultTableDef(keyspaceName, tableName, Seq(columns.head), Seq.empty, columns.tail)
