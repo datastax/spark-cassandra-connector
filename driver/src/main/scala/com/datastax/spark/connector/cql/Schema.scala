@@ -77,7 +77,7 @@ trait StructDef extends Serializable {
 
   /** Returns the columns that are not present in the structure. */
   def missingColumns(columnsToCheck: Seq[ColumnRef]): Seq[ColumnRef] =
-    for (c <- columnsToCheck if !columnByName.contains(c.columnName)) yield c
+    columnsToCheck.filterNot(c => columnByName.contains(c.columnName))
 
   /** Type of the data described by this struct */
   type ValueRepr <: AnyRef
@@ -330,7 +330,6 @@ trait TableDef extends StructDef {
   val keyspaceName:String
   val tableName:String
   val partitionKey: Seq[ColumnDef]
-  val allColumns: Seq[ColumnDef]
   val clusteringColumns: Seq[ColumnDef]
   val regularColumns: Seq[ColumnDef]
   val indexes: Seq[IndexDef]
@@ -363,8 +362,6 @@ case class DefaultTableDef(keyspaceName: String,
   require(regularColumns.forall(!_.isPrimaryKeyColumn), "Regular columns cannot have role PrimaryKeyColumn")
 
   override type Column = DefaultColumnDef
-
-  val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
   private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
 
@@ -448,24 +445,21 @@ case class DriverTableDef(relation:RelationMetadata,
 
   override val keyspaceName = keyspace.getName.toString
   override val tableName = relation.getName.toString
-  val allColumns: Seq[DriverColumnDef] =
-    relation.getColumns.asScala.values.map(DriverColumnDef(_, relation, keyspace)).toSeq
+  override val columns: IndexedSeq[Column] =
+    relation.getColumns.asScala.values.map(DriverColumnDef(_, relation, keyspace)).toIndexedSeq
   override val partitionKey: Seq[DriverColumnDef] = {
     val partitionKeyNames =
       relation.getPartitionKey.asScala.map(c => DriverUtil.toName(c.getName)).toSet
-    allColumns.filter(c => partitionKeyNames(c.columnName))
+    columns.filter(c => partitionKeyNames(c.columnName))
   }
   override val clusteringColumns: Seq[DriverColumnDef] = {
     val clusteringColumnNames =
       relation.getClusteringColumns.keySet.asScala.map(c => DriverUtil.toName(c.getName)).toSet
-    allColumns.filter(c => clusteringColumnNames(c.columnName))
+    columns.filter(c => clusteringColumnNames(c.columnName))
   }
   override lazy val primaryKey: IndexedSeq[DriverColumnDef] =
     (partitionKey ++ clusteringColumns).toIndexedSeq
-  override val regularColumns: Seq[DriverColumnDef] = allColumns.filterNot(primaryKey.toSet)
-
-  override val columns: IndexedSeq[Column] =
-    (primaryKey ++ regularColumns).toIndexedSeq
+  override val regularColumns: Seq[DriverColumnDef] = columns.filterNot(primaryKey.toSet)
 
   val isTable = relation.isInstanceOf[TableMetadata]
   override val isView = relation.isInstanceOf[ViewMetadata]
