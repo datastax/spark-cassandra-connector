@@ -2,7 +2,7 @@ package com.datastax.spark.connector.cql
 
 import java.io.IOException
 
-import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
@@ -548,12 +548,22 @@ object DefaultTableDef {
 }
 
 /* KeyspaceDef is only created at schema load time so we don't bother with the trait + default + driver distinction */
-case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata) extends KeyspaceMetadataAware {
+case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata, tableName: Option[String] = None)
+  extends KeyspaceMetadataAware {
 
   def keyspaceName:String = DriverUtil.toName(keyspaceMetadata.getName)
 
+  def isTableSelected(kv:(CqlIdentifier, TableMetadata)): Boolean =
+    tableName match {
+      case None => true
+      case Some(name) => toName(kv._2.getName) == name
+    }
+
+  def filteredTables():Map[CqlIdentifier,TableMetadata] =
+    keyspaceMetadata.getTables.asScala.filter(isTableSelected(_)).toMap
+
   lazy val tableByName: Map[String, TableDef] =
-    keyspaceMetadata.getTables.asScala
+    filteredTables
       .map(idAndTable => (DriverUtil.toName(idAndTable._1), DriverTableDef(idAndTable._2, keyspaceMetadata)))
       .toMap
 
@@ -563,7 +573,7 @@ case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata) extends KeyspaceMetad
       .toMap
 
   lazy val tablesAndViews: Seq[RelationMetadata] =
-    keyspaceMetadata.getTables.asScala.values.toSeq ++ keyspaceMetadata.getViews.asScala.values.toSeq
+    filteredTables.values.toSeq ++ keyspaceMetadata.getViews.asScala.values.toSeq
 }
 
 case class Schema(keyspaces: Set[KeyspaceDef]) {
@@ -599,7 +609,7 @@ object Schema extends StrictLogging {
     def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
       metadata.getKeyspaces.values().asScala
         .filter(isKeyspaceSelected(_))
-        .map(KeyspaceDef(_))
+        .map(KeyspaceDef(_, tableName))
         .toSet
 
     logger.debug(s"Retrieving database schema")

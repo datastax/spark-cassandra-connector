@@ -11,8 +11,11 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
   override lazy val conn = CassandraConnector(defaultConf)
 
+  val altKeyspaceName = "another_keyspace"
+
   conn.withSessionDo { session =>
     createKeyspace(session)
+    createKeyspace(session, altKeyspaceName)
 
     session.execute(
       s"""CREATE TYPE $ks.address (street varchar, city varchar, zip int)""")
@@ -47,6 +50,10 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       s"""CREATE INDEX test_d9_map_idx ON $ks.test (keys(d9_map))""")
     session.execute(
       s"""CREATE INDEX test_d7_int_idx ON $ks.test (d7_int)""")
+    session.execute(
+      s"""CREATE TABLE $ks.another_test(k1 int, PRIMARY KEY (k1))""")
+    session.execute(
+      s"""CREATE TABLE $ks.yet_another_test(k1 int, PRIMARY KEY (k1))""")
   }
 
   val schema = schemaFromCassandra(conn)
@@ -55,9 +62,34 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
     "allow to get a list of keyspaces" in {
       schema.keyspaces.map(_.keyspaceName) should contain(ks)
     }
+
     "allow to look up a keyspace by name" in {
       val keyspace = schema.keyspaceByName(ks)
       keyspace.keyspaceName shouldBe ks
+    }
+
+    "find the correct table using Schema.tableFromCassandra" in {
+      conn.withSessionDo(s => {
+        Schema.tableFromCassandra(s, ks, "test").tableName shouldBe "test"
+        Schema.tableFromCassandra(s, ks, "another_test").tableName shouldBe "another_test"
+        Schema.tableFromCassandra(s, ks, "yet_another_test").tableName shouldBe "yet_another_test"
+      })
+    }
+
+    "enforce constraints in fromCassandra" in {
+      conn.withSessionDo(s => {
+        val selectedTableName = "yet_another_test"
+        Schema.fromCassandra(s, None, None).keyspaceByName(ks).keyspaceName shouldBe ks
+        Schema.fromCassandra(s, None, None).keyspaceByName(altKeyspaceName).keyspaceName shouldBe altKeyspaceName
+        val schema1 = Schema.fromCassandra(s, Some(altKeyspaceName), None)
+        schema1.keyspaces.size shouldBe 1
+        schema1.keyspaces.head.keyspaceName shouldBe altKeyspaceName
+        val schema2 = Schema.fromCassandra(s, Some(ks), Some(selectedTableName))
+        schema2.keyspaces.size shouldBe 1
+        schema2.keyspaces.head.keyspaceName shouldBe ks
+        schema2.keyspaceByName(ks).tableByName.size shouldBe 1
+        schema2.keyspaceByName(ks).tableByName(selectedTableName).tableName shouldBe selectedTableName
+      })
     }
   }
 
@@ -69,13 +101,14 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
     "allow to get a list of tables in the given keyspace" in {
       val keyspace = schema.keyspaceByName(ks)
-      keyspace.tableByName.values.map(_.tableName).toSet shouldBe Set("test")
+      keyspace.tableByName.values.map(_.tableName).toSet shouldBe Set("another_test", "yet_another_test", "test")
     }
 
     "allow to look up a table by name" in {
       val keyspace = schema.keyspaceByName(ks)
-      val table = keyspace.tableByName("test")
-      table.tableName shouldBe "test"
+      keyspace.tableByName("test").tableName shouldBe "test"
+      keyspace.tableByName("another_test").tableName shouldBe "another_test"
+      keyspace.tableByName("yet_another_test").tableName shouldBe "yet_another_test"
     }
 
     "allow to look up user type by name" in {
