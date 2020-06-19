@@ -4,6 +4,7 @@ import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
 import com.datastax.spark.connector.util.schemaFromCassandra
+import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.Inspectors._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
@@ -61,15 +62,22 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
   }
 
   "A KeyspaceDef" should {
+
+    "be serializable" in {
+      SerializationUtils.roundtrip(schema.keyspaceByName(ks))
+    }
+
     "allow to get a list of tables in the given keyspace" in {
       val keyspace = schema.keyspaceByName(ks)
       keyspace.tableByName.values.map(_.tableName).toSet shouldBe Set("test")
     }
+
     "allow to look up a table by name" in {
       val keyspace = schema.keyspaceByName(ks)
       val table = keyspace.tableByName("test")
       table.tableName shouldBe "test"
     }
+
     "allow to look up user type by name" in {
       val keyspace = schema.keyspaceByName(ks)
       val userType = keyspace.userTypeByName("address")
@@ -81,8 +89,39 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
     val keyspace = schema.keyspaceByName(ks)
     val table = keyspace.tableByName("test")
 
+    "be serializable" in {
+      SerializationUtils.roundtrip(table)
+    }
+
+    "list all columns" in {
+      val colNames = table.columns.map(_.columnName)
+      colNames.size shouldBe 22
+
+      // Spot checks of a few column values only here
+      colNames should contain("k2")
+      colNames should contain("c3")
+      colNames should contain("d12_uuid")
+    }
+
     "allow to read column definitions by name" in {
       table.columnByName("k1").columnName shouldBe "k1"
+    }
+
+    "allow to read column definitions by index" in {
+      table.columnByIndex(0).columnName shouldBe "k1"
+      table.columnByIndex(4).columnName shouldBe "c2"
+    }
+
+    "have a sane check for missing columns" in {
+      val missing1 = table.missingColumns(Seq("k1", "c2", "d12_uuid"))
+      missing1.size shouldBe 0
+      val missing2 = table.missingColumns(Seq("k1", "c2", "d12_uuid", "made_up_column_name"))
+      missing2.size shouldBe 1
+      missing2.head.columnName shouldBe "made_up_column_name"
+      val missing3 = table.missingColumns(Seq("k1", "another_made_up_column_name", "c2", "d12_uuid", "made_up_column_name"))
+      missing3.size shouldBe 2
+      missing3.head.columnName shouldBe "another_made_up_column_name"
+      missing3.tail.head.columnName shouldBe "made_up_column_name"
     }
 
     "allow to read primary key column definitions" in {
@@ -102,9 +141,9 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
     }
 
     "allow to read regular column definitions" in {
-      val columns = table.regularColumns
-      columns.size shouldBe 16
-      columns.map(_.columnName).toSet shouldBe Set(
+      val regularColumns = table.regularColumns
+      regularColumns.size shouldBe 16
+      regularColumns.map(_.columnName).toSet shouldBe Set(
         "d1_blob", "d2_boolean", "d3_decimal", "d4_double", "d5_float",
         "d6_inet", "d7_int", "d8_list", "d9_map", "d10_set",
         "d11_timestamp", "d12_uuid", "d13_timeuuid", "d14_varchar",
@@ -146,4 +185,14 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
     }
   }
 
+  "A ColumnDef" should {
+
+    val keyspace = schema.keyspaceByName(ks)
+    val table = keyspace.tableByName("test")
+    val column = table.columnByName("c2")
+
+    "be serializable" in {
+      SerializationUtils.roundtrip(column)
+    }
+  }
 }

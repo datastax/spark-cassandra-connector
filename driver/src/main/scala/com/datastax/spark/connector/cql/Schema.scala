@@ -202,7 +202,7 @@ case class DriverColumnDef(column:ColumnMetadata,
 
   override def ref: ColumnRef = ColumnName(columnName)
 
-  override def columnName = column.getName.toString
+  override def columnName = DriverUtil.toName(column.getName)
 
   override def columnType: ColumnType[_] = ColumnType.fromDriverType(column.getType)
 
@@ -443,8 +443,8 @@ case class DriverTableDef(relation:RelationMetadata,
 
   override type Column = DriverColumnDef
 
-  override val keyspaceName = keyspace.getName.toString
-  override val tableName = relation.getName.toString
+  override val keyspaceName = DriverUtil.toName(keyspace.getName)
+  override val tableName = DriverUtil.toName(relation.getName)
   override val columns: IndexedSeq[Column] =
     relation.getColumns.asScala.values.map(DriverColumnDef(_, relation, keyspace)).toIndexedSeq
   override val partitionKey: Seq[DriverColumnDef] = {
@@ -550,16 +550,16 @@ object DefaultTableDef {
 /* KeyspaceDef is only created at schema load time so we don't bother with the trait + default + driver distinction */
 case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata) extends KeyspaceMetadataAware {
 
-  def keyspaceName = keyspaceMetadata.getName.asCql(false)
+  def keyspaceName:String = DriverUtil.toName(keyspaceMetadata.getName)
 
   lazy val tableByName: Map[String, TableDef] =
     keyspaceMetadata.getTables.asScala
-      .map(idAndTable => (idAndTable._1.asCql(false), DriverTableDef(idAndTable._2, keyspaceMetadata)))
+      .map(idAndTable => (DriverUtil.toName(idAndTable._1), DriverTableDef(idAndTable._2, keyspaceMetadata)))
       .toMap
 
   lazy val userTypeByName: Map[String, UserDefinedType] =
     keyspaceMetadata.getUserDefinedTypes.asScala
-      .map(idAndUdt => (idAndUdt._1.asCql(false), UserDefinedType(idAndUdt._2)))
+      .map(idAndUdt => (DriverUtil.toName(idAndUdt._1), UserDefinedType(idAndUdt._2)))
       .toMap
 
   lazy val tablesAndViews: Seq[RelationMetadata] =
