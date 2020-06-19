@@ -112,18 +112,6 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       table.columnByIndex(4).columnName shouldBe "c2"
     }
 
-    "have a sane check for missing columns" in {
-      val missing1 = table.missingColumns(Seq("k1", "c2", "d12_uuid"))
-      missing1.size shouldBe 0
-      val missing2 = table.missingColumns(Seq("k1", "c2", "d12_uuid", "made_up_column_name"))
-      missing2.size shouldBe 1
-      missing2.head.columnName shouldBe "made_up_column_name"
-      val missing3 = table.missingColumns(Seq("k1", "another_made_up_column_name", "c2", "d12_uuid", "made_up_column_name"))
-      missing3.size shouldBe 2
-      missing3.head.columnName shouldBe "another_made_up_column_name"
-      missing3.tail.head.columnName shouldBe "made_up_column_name"
-    }
-
     "allow to read primary key column definitions" in {
       table.primaryKey.size shouldBe 6
       table.primaryKey.map(_.columnName) shouldBe Seq(
@@ -182,6 +170,30 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
     "should hold all indices retrieved from cassandra" in {
       table.indexes.size shouldBe 2
+    }
+
+    "have a sane check for missing columns" in {
+      val missing1 = table.missingColumns(Seq("k1", "c2", "d12_uuid"))
+      missing1.size shouldBe 0
+      val missing2 = table.missingColumns(Seq("k1", "c2", "d12_uuid", "made_up_column_name"))
+      missing2.size shouldBe 1
+      missing2.head.columnName shouldBe "made_up_column_name"
+      val missing3 = table.missingColumns(Seq("k1", "another_made_up_column_name", "c2", "d12_uuid", "made_up_column_name"))
+      missing3.size shouldBe 2
+      missing3.head.columnName shouldBe "another_made_up_column_name"
+      missing3.tail.head.columnName shouldBe "made_up_column_name"
+    }
+
+    "support generating a DefaultTableDef" in {
+      val defaultDef = DefaultTableDef.fromDriverDef(table.asInstanceOf[DriverTableDef])
+      defaultDef.keyspaceName shouldBe table.keyspaceName
+      defaultDef.tableName shouldBe table.tableName
+
+      defaultDef.partitionKey.map(_.columnName) shouldBe table.partitionKey.map(_.columnName)
+      defaultDef.clusteringColumns.map(_.columnName) shouldBe table.clusteringColumns.map(_.columnName)
+      defaultDef.regularColumns.map(_.columnName) shouldBe table.regularColumns.map(_.columnName)
+      defaultDef.primaryKey.map(_.columnName) shouldBe table.primaryKey.map(_.columnName)
+      defaultDef.indexes.map(_.indexName) shouldBe table.indexes.map(_.indexName)
     }
   }
 

@@ -501,7 +501,7 @@ case class DriverTableDef(relation:RelationMetadata,
     indexesForColumnDef.keys.toSeq
   }
 
-  override val name: String = s"${keyspace.getName}.${relation.getName}"
+  override val name: String = s"${DriverUtil.toName(keyspace.getName)}.${DriverUtil.toName(relation.getName)}"
 
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 
