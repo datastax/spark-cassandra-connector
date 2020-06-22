@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.cql
 
+import java.io.IOException
+
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
@@ -91,6 +93,14 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
         schema2.keyspaceByName(ks).tableByName.size shouldBe 1
         schema2.keyspaceByName(ks).tableByName(selectedTableName).tableName shouldBe selectedTableName
       })
+    }
+
+    "throw IOException for tableFromCassandra call with unknown table" in {
+      assertThrows[IOException] {
+        conn.withSessionDo(s => {
+          Schema.tableFromCassandra(s, ks, "unknown_table")
+        })
+      }
     }
   }
 
