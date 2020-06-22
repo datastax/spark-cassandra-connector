@@ -230,8 +230,16 @@ case class DriverColumnDef(column:ColumnMetadata,
       }
     }
 
-  /* TODO */
-  override def componentIndex = ???
+  override def componentIndex =
+    if (!isClusteringColumn)
+      None
+    else {
+      val idx = relation.getClusteringColumns.asScala.keys
+        .map(metadata => DriverUtil.toName(metadata.getName))
+        .toIndexedSeq
+        .indexOf(columnName)
+      Some(idx)
+    }
 
   override def columnMetadata = column
 

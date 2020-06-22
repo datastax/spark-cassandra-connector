@@ -6,6 +6,7 @@ import com.datastax.spark.connector.types._
 import com.datastax.spark.connector.util.schemaFromCassandra
 import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.Inspectors._
+import org.scalatest.OptionValues._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
@@ -238,6 +239,14 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
     "be serializable" in {
       SerializationUtils.roundtrip(column)
+    }
+
+    "correctly find it's index if it's a clustering column" in {
+      column.componentIndex.value shouldBe 1
+    }
+
+    "return None if it's not a clustering column" in {
+      table.columnByName("k1").componentIndex shouldBe None
     }
   }
 }
