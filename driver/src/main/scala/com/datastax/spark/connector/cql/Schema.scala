@@ -556,19 +556,22 @@ object DefaultTableDef {
 }
 
 /* KeyspaceDef is only created at schema load time so we don't bother with the trait + default + driver distinction */
-case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata, tableName: Option[String] = None)
+case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata, relationName: Option[String] = None)
   extends KeyspaceMetadataAware {
 
   def keyspaceName:String = DriverUtil.toName(keyspaceMetadata.getName)
 
-  def isTableSelected(kv:(CqlIdentifier, TableMetadata)): Boolean =
-    tableName match {
+  def isRelationSelected(kv:(CqlIdentifier, RelationMetadata)): Boolean =
+    relationName match {
       case None => true
       case Some(name) => toName(kv._2.getName) == name
     }
 
   def filteredTables():Map[CqlIdentifier,TableMetadata] =
-    keyspaceMetadata.getTables.asScala.filter(isTableSelected(_)).toMap
+    keyspaceMetadata.getTables.asScala.filter(isRelationSelected(_)).toMap
+
+  def filteredViews():Map[CqlIdentifier,ViewMetadata] =
+    keyspaceMetadata.getViews.asScala.filter(isRelationSelected(_)).toMap
 
   lazy val tableByName: Map[String, TableDef] =
     filteredTables
@@ -581,7 +584,7 @@ case class KeyspaceDef(keyspaceMetadata: KeyspaceMetadata, tableName: Option[Str
       .toMap
 
   lazy val tablesAndViews: Seq[RelationMetadata] =
-    filteredTables.values.toSeq ++ keyspaceMetadata.getViews.asScala.values.toSeq
+    filteredTables.values.toSeq ++ filteredViews.values.toSeq
 }
 
 case class Schema(keyspaces: Set[KeyspaceDef]) {
