@@ -208,10 +208,29 @@ https://datastax-oss.atlassian.net/projects/SPARKC/issues[SPARKC JIRA]
 
 == Testing
 
-To run unit and integration tests:
+There are two test suites in the Connector: unit tests and integration tests.
+
+To run the unit tests:
 
 ....
 ./sbt/sbt test
+....
+
+To run the integration tests, first install https://github.com/riptano/ccm[CCM]:
+
+....
+pip install ccm
+....
+
+Make sure you don't have the `DSE_HOME` environment variable set. If you are on OS X, you must run the following script to create the local interface aliases used by CCM before running the integration tests:
+
+....
+./testing/scripts/mac-localhost-aliases.sh
+....
+
+To run the integration tests:
+
+....
 ./sbt/sbt it:test
 ....
 

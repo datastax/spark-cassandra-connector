@@ -37,7 +37,7 @@ A fat jar will be generated to both of these directories:
 
 * `+spark-cassandra-connector/target/scala-{binary.version}/+`
 
-=+ Building general artifacts
+== Building general artifacts
 
 All artifacts are generated to the standard output directories based on
 the Scala binary version you use.
