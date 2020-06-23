@@ -371,6 +371,12 @@ case class DefaultTableDef(keyspaceName: String,
 
   override type Column = DefaultColumnDef
 
+  override lazy val primaryKey: IndexedSeq[DefaultColumnDef] =
+    (partitionKey ++ clusteringColumns).toIndexedSeq
+
+  override val columns: IndexedSeq[Column] =
+    (primaryKey ++ regularColumns).toIndexedSeq
+
   private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
 
   /**
@@ -396,12 +402,6 @@ case class DefaultTableDef(keyspaceName: String,
   }
 
   override val name: String = s"$keyspaceName.$tableName"
-
-  override lazy val primaryKey: IndexedSeq[DefaultColumnDef] =
-    (partitionKey ++ clusteringColumns).toIndexedSeq
-
-  override val columns: IndexedSeq[Column] =
-    (primaryKey ++ regularColumns).toIndexedSeq
 
   private lazy val columnBylowerCaseName: Map[String, ColumnDef] = columnByName.map(e => (e._1.toLowerCase, e._2))
 
@@ -481,7 +481,7 @@ case class DriverTableDef(relation:RelationMetadata,
   val indexes:Seq[DriverIndexDef] =
     asTable match {
       case Some(table: TableMetadata) =>
-        table.getIndexes.values().asScala.map(i => DriverIndexDef(i, table, keyspace)).toSeq
+        table.getIndexes.asScala.values.map(i => DriverIndexDef(i, table, keyspace)).toSeq
       case None => Seq.empty
     }
 
