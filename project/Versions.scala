@@ -6,14 +6,12 @@ object Versions {
   val Paranamer       = "2.8"
 
   val DataStaxJavaDriver = "4.7.2"
-  val ReactiveStreams = "1.0.2"
 
   val ScalaCheck      = "1.14.0"
   val ScalaTest       = "3.0.8"
   val JUnit           = "4.12"
   val JUnitInterface  = "0.11"
   val Mockito         = "1.10.19"
-  val Slf4j           = "1.6.1"//1.7.7"
 
   // Spark version can be specified as:
   // - regular version which is present in some public Maven repository
@@ -23,8 +21,8 @@ object Versions {
   // and install in a local Maven repository. This is all done automatically, however it will work
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
-  val ApacheSpark     = "2.4.3"
-  val SparkJetty      = "9.3.24.v20180605"
+  val ApacheSpark     = "2.4.6"
+  val SparkJetty      = "9.3.27.v20190418"
   val SolrJ           = "8.3.0"
 
   /*
