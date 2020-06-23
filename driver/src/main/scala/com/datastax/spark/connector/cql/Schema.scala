@@ -1,18 +1,17 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.`type`.{UserDefinedType => DriverUserDefinedType}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.NameTools
-import com.typesafe.scalalogging.StrictLogging
+import com.datastax.spark.connector.util.{Logging, NameTools}
 
 import scala.collection.JavaConverters._
 import scala.language.existentials
@@ -293,7 +292,7 @@ case class Schema(keyspaces: Set[KeyspaceDef]) {
     for (keyspace <- keyspaces; table <- keyspace.tables) yield table
 }
 
-object Schema extends StrictLogging {
+object Schema extends Logging {
 
   private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
     for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
@@ -401,13 +400,13 @@ object Schema extends StrictLogging {
       for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
         fetchKeyspace(keyspace, tableName)
 
-    logger.debug(s"Retrieving database schema")
+    logDebug(s"Retrieving database schema")
     def fetchSchema(metadata: => Metadata): Schema =
       Schema(fetchKeyspaces(metadata))
 
     val scheme = fetchSchema(session.refreshSchema())
 
-    logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
+    logDebug(s"${scheme.keyspaces.size} keyspaces fetched: " +
       s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
     scheme
   }

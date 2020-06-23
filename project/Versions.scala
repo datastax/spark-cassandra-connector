@@ -4,7 +4,6 @@ object Versions {
   val CommonsIO       = "2.6"
   val CommonsLang3    = "3.5"
   val Paranamer       = "2.8"
-  val ScalaLogging    = "3.5.0"
 
   val DataStaxJavaDriver = "4.7.2"
   val ReactiveStreams = "1.0.2"

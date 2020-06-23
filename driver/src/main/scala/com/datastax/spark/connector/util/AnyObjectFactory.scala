@@ -9,7 +9,6 @@ import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import org.apache.commons.lang3.reflect.ConstructorUtils
 import com.thoughtworks.paranamer.AdaptiveParanamer
-import com.typesafe.scalalogging.StrictLogging
 
 /** Factory for creating objects of any type by invoking their primary constructor.
   * Unlike Java reflection Methods or Scala reflection Mirrors, this factory is serializable
@@ -103,7 +102,7 @@ class AnyObjectFactory[T: TypeTag] extends Serializable {
   def newInstance(args: AnyRef*): T = javaConstructor.newInstance(outerInstanceArg ++ args: _*)
 }
 
-object AnyObjectFactory extends StrictLogging {
+object AnyObjectFactory extends Logging {
   private[connector] type ParamType = Either[Class[_], String]
 
   private[connector] val paranamer = new AdaptiveParanamer
@@ -121,13 +120,13 @@ object AnyObjectFactory extends StrictLogging {
   private[connector] def resolveConstructor[T](clazz: Class[T]): Constructor[T] = {
     lazy val defaultCtor = Try {
       val ctor = getDefaultConstructor(clazz)
-      logger.debug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getName)} for ${clazz.getName}")
+      logDebug(s"Using a default constructor ${ctor.getParameterTypes.map(_.getName)} for ${clazz.getName}")
       ctor
     }
 
     lazy val noArgsCtor = Try {
       val ctor = getNoArgsConstructor(clazz)
-      logger.debug(s"Using a no-args constructor for ${clazz.getName}")
+      logDebug(s"Using a no-args constructor for ${clazz.getName}")
       ctor
     }
 

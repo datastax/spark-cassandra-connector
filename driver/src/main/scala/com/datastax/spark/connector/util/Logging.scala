@@ -76,5 +76,3 @@ trait Logging {
     log.isTraceEnabled
   }
 }
-
-
