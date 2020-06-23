@@ -32,6 +32,8 @@ object Dependencies
     def driverCoreExclude(): ModuleID = module
       .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
       .exclude("org.apache.tinkerpop", "*")
+      // until SPARK-20075 is fixed we fallback to java workarounds for native calls
+      .exclude("com.github.jnr", "jnr-posix")
   }
 
   object TestCommon {
