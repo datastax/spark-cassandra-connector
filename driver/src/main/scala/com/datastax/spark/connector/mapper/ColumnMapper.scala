@@ -2,7 +2,7 @@ package com.datastax.spark.connector.mapper
 
 import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.{StructDef, TableDef}
+import com.datastax.spark.connector.cql.{DefaultTableDef, StructDef, TableDef}
 
 import scala.reflect.runtime.universe._
 
@@ -41,7 +41,7 @@ trait ColumnMapper[T] {
   def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef
 
 }
 

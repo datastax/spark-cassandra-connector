@@ -30,31 +30,31 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     override def isInPredicate(p: Filter) = p.isInstanceOf[InFilter]
   }
 
-  val pk1 = ColumnDef("pk1", PartitionKeyColumn, IntType)
-  val pk2 = ColumnDef("pk2", PartitionKeyColumn, IntType)
-  val c1 = ColumnDef("c1", ClusteringColumn(0), IntType)
-  val c2 = ColumnDef("c2", ClusteringColumn(1), IntType)
-  val c3 = ColumnDef("c3", ClusteringColumn(2), IntType)
-  val i1 = ColumnDef("i1", RegularColumn, IntType)
-  val i2 = ColumnDef("i2", RegularColumn, IntType)
-  val r1 = ColumnDef("r1", RegularColumn, IntType)
-  val r2 = ColumnDef("r2", RegularColumn, IntType)
-  val t1 = ColumnDef("t1", RegularColumn, TimeUUIDType)
+  val pk1 = DefaultColumnDef("pk1", PartitionKeyColumn, IntType)
+  val pk2 = DefaultColumnDef("pk2", PartitionKeyColumn, IntType)
+  val c1 = DefaultColumnDef("c1", ClusteringColumn(0), IntType)
+  val c2 = DefaultColumnDef("c2", ClusteringColumn(1), IntType)
+  val c3 = DefaultColumnDef("c3", ClusteringColumn(2), IntType)
+  val i1 = DefaultColumnDef("i1", RegularColumn, IntType)
+  val i2 = DefaultColumnDef("i2", RegularColumn, IntType)
+  val r1 = DefaultColumnDef("r1", RegularColumn, IntType)
+  val r2 = DefaultColumnDef("r2", RegularColumn, IntType)
+  val t1 = DefaultColumnDef("t1", RegularColumn, TimeUUIDType)
 
-  val timeUUIDc1 = ColumnDef("c1", ClusteringColumn(0), TimeUUIDType)
+  val timeUUIDc1 = DefaultColumnDef("c1", ClusteringColumn(0), TimeUUIDType)
 
-  val table = TableDef(
+  val table = DefaultTableDef(
     keyspaceName = "test",
     tableName = "test",
     partitionKey = Seq(pk1, pk2),
     clusteringColumns = Seq(c1, c2, c3),
     regularColumns = Seq(i1, i2, r1, r2),
     indexes = Seq(
-      IndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
-      IndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty))
+      DefaultIndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
+      DefaultIndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty))
   )
 
-  val timeUUIDTable = TableDef(
+  val timeUUIDTable = DefaultTableDef(
     keyspaceName = "test",
     tableName = "uuidtab",
     partitionKey = Seq(pk1, pk2),
@@ -62,16 +62,16 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     regularColumns = Seq(i1, i2, r1, r2, t1)
   )
 
-  val table2 = TableDef(
+  val table2 = DefaultTableDef(
     keyspaceName = "test",
     tableName = "test",
     partitionKey = Seq(pk1, pk2),
     clusteringColumns = Seq(c1, c2, c3),
     regularColumns = Seq(i1, i2, r1, r2),
     indexes = Seq(
-      IndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
-      IndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty),
-      IndexDef(Some("DummyIndex"), "pk1", "IndexThree", Map.empty))
+      DefaultIndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
+      DefaultIndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty),
+      DefaultIndexDef(Some("DummyIndex"), "pk1", "IndexThree", Map.empty))
   )
 
   "BasicCassandraPredicatePushDown" should "push down all equality predicates restricting partition key columns" in {

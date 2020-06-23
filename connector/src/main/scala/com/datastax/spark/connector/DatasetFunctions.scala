@@ -1,6 +1,5 @@
 package com.datastax.spark.connector
 
-import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.mapper.DataFrameColumnMapper
 import org.apache.spark.SparkContext
@@ -94,7 +93,7 @@ class DatasetFunctions[K: Encoder](dataset: Dataset[K]) extends Serializable {
       ,
       ifNotExists = ifNotExists
       ,
-      tableOptions = tableOptions
+      options = tableOptions
     )
 
     connector.withSessionDo(session => session.execute(table.cql))

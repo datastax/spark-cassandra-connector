@@ -4,7 +4,7 @@ import org.apache.commons.lang3.SerializationUtils
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.{CassandraRow, UDTValue}
-import com.datastax.spark.connector.cql.{ColumnDef, PartitionKeyColumn, RegularColumn, TableDef}
+import com.datastax.spark.connector.cql.{DefaultColumnDef, DefaultTableDef, PartitionKeyColumn, RegularColumn}
 import com.datastax.spark.connector.types._
 
 
@@ -14,12 +14,12 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   val numberColumn = UDTFieldDef("number", IntType)
   val addressType = UserDefinedType("address", IndexedSeq(streetColumn, numberColumn))
 
-  val loginColumn = ColumnDef("login", PartitionKeyColumn, VarCharType)
-  val passwordColumn = ColumnDef("password", RegularColumn, VarCharType)
-  val addressColumn = ColumnDef("address", RegularColumn, addressType)
-  val addressesColumn = ColumnDef("addresses", RegularColumn, addressType)
+  val loginColumn = DefaultColumnDef("login", PartitionKeyColumn, VarCharType)
+  val passwordColumn = DefaultColumnDef("password", RegularColumn, VarCharType)
+  val addressColumn = DefaultColumnDef("address", RegularColumn, addressType)
+  val addressesColumn = DefaultColumnDef("addresses", RegularColumn, addressType)
 
-  val userTable = new TableDef(
+  val userTable = new DefaultTableDef(
     keyspaceName = "test",
     tableName = "test",
     partitionKey = Seq(loginColumn),
@@ -214,8 +214,8 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   case class UserWithMultipleAddresses(login: String, addresses: Vector[Address])
 
   def testUserWithMultipleAddresses(addressesType: ColumnType[_]) {
-    val addressesColumn = ColumnDef("addresses", RegularColumn, addressesType)
-    val userTable = new TableDef(
+    val addressesColumn = DefaultColumnDef("addresses", RegularColumn, addressesType)
+    val userTable = new DefaultTableDef(
       keyspaceName = "test",
       tableName = "test",
       partitionKey = Seq(loginColumn),
@@ -246,8 +246,8 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
   case class UserWithMultipleAddressesAsMap(login: String, addresses: Map[Int, Address])
 
   it should "convert a CassandraRow with a collection of UDTValues" in {
-    val addressesColumn = ColumnDef("addresses", RegularColumn, MapType(IntType, addressType))
-    val userTable = new TableDef(
+    val addressesColumn = DefaultColumnDef("addresses", RegularColumn, MapType(IntType, addressType))
+    val userTable = new DefaultTableDef(
       keyspaceName = "test",
       tableName = "test",
       partitionKey = Seq(loginColumn),
@@ -272,8 +272,8 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
 
   it should "convert a CassandraRow with a collection of tuples" in {
     val tupleType = TupleType(TupleFieldDef(0, VarCharType), TupleFieldDef(1, IntType))
-    val addressesColumn = ColumnDef("addresses", RegularColumn, ListType(tupleType))
-    val userTable = new TableDef(
+    val addressesColumn = DefaultColumnDef("addresses", RegularColumn, ListType(tupleType))
+    val userTable = new DefaultTableDef(
       keyspaceName = "test",
       tableName = "test",
       partitionKey = Seq(loginColumn),

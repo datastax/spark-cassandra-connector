@@ -16,18 +16,18 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class InClausePredicateRulesSpec extends FlatSpec with Matchers {
 
-  val fakeTableDef = TableDef(
+  val fakeTableDef = DefaultTableDef(
     "fake",
     "fake",
     partitionKey = Seq(
-      ColumnDef("p1", PartitionKeyColumn, IntType),
-      ColumnDef("p2", PartitionKeyColumn, IntType)),
+      DefaultColumnDef("p1", PartitionKeyColumn, IntType),
+      DefaultColumnDef("p2", PartitionKeyColumn, IntType)),
     clusteringColumns = Seq(
-      ColumnDef("c1", ClusteringColumn(0), IntType),
-      ColumnDef("c2", ClusteringColumn(1), IntType)),
+      DefaultColumnDef("c1", ClusteringColumn(0), IntType),
+      DefaultColumnDef("c2", ClusteringColumn(1), IntType)),
     regularColumns = Seq(
-      ColumnDef("a", RegularColumn, IntType),
-      ColumnDef("b", RegularColumn, TextType))
+      DefaultColumnDef("a", RegularColumn, IntType),
+      DefaultColumnDef("b", RegularColumn, TextType))
   )
 
   val conf = new SparkConf()

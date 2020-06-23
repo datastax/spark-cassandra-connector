@@ -7,14 +7,14 @@ import com.datastax.spark.connector.types.{TimestampType, VarCharType, IntType}
 
 class ColumnSelectorSpec extends WordSpec with Matchers {
   "A ColumnSelector#selectFrom method" should {
-    val column1 = ColumnDef("c1", PartitionKeyColumn, IntType)
-    val column2 = ColumnDef("c2", PartitionKeyColumn, VarCharType)
-    val column3 = ColumnDef("c3", ClusteringColumn(0), VarCharType)
-    val column4 = ColumnDef("c4", ClusteringColumn(1), VarCharType)
-    val column5 = ColumnDef("c5", RegularColumn, VarCharType)
-    val column6 = ColumnDef("c6", RegularColumn, TimestampType)
+    val column1 = DefaultColumnDef("c1", PartitionKeyColumn, IntType)
+    val column2 = DefaultColumnDef("c2", PartitionKeyColumn, VarCharType)
+    val column3 = DefaultColumnDef("c3", ClusteringColumn(0), VarCharType)
+    val column4 = DefaultColumnDef("c4", ClusteringColumn(1), VarCharType)
+    val column5 = DefaultColumnDef("c5", RegularColumn, VarCharType)
+    val column6 = DefaultColumnDef("c6", RegularColumn, TimestampType)
 
-    val tableDef = TableDef("keyspace", "table", Seq(column1, column2), Seq(column3, column4), Seq(column5, column6))
+    val tableDef = DefaultTableDef("keyspace", "table", Seq(column1, column2), Seq(column3, column4), Seq(column5, column6))
 
     "return all columns" in {
       val columns = AllColumns.selectFrom(tableDef)

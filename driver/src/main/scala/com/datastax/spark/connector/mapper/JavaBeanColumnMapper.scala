@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.spark.connector.ColumnRef
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.DefaultTableDef
 
 import scala.reflect.ClassTag
 
@@ -59,7 +59,7 @@ class JavaBeanColumnMapper[T : ClassTag](columnNameOverride: Map[String, String]
   override def newTable(
     keyspaceName: String,
     tableName: String,
-    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef = ???
+    protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): DefaultTableDef = ???
 }
 
 object JavaBeanColumnMapper {

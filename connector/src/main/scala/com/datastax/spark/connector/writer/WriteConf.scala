@@ -2,7 +2,7 @@ package com.datastax.spark.connector.writer
 
 import com.datastax.oss.driver.api.core.{ConsistencyLevel, DefaultConsistencyLevel}
 import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes}
-import com.datastax.spark.connector.cql.{ColumnDef, RegularColumn}
+import com.datastax.spark.connector.cql.{ColumnDef, DefaultColumnDef, RegularColumn}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.{ConfigCheck, ConfigParameter, DeprecatedConfigParameter}
@@ -42,10 +42,10 @@ case class WriteConf(
     case WriteOption(PerRowWriteOptionValue(placeholder)) => placeholder
   }
 
-  private[writer] val optionsAsColumns: (String, String) => Seq[ColumnDef] = { (keyspace, table) =>
+  private[writer] val optionsAsColumns: (String, String) => Seq[DefaultColumnDef] = { (keyspace, table) =>
     def toRegularColDef(opt: WriteOption[_], dataType: DataType) = opt match {
       case WriteOption(PerRowWriteOptionValue(placeholder)) =>
-        Some(ColumnDef(placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
+        Some(DefaultColumnDef(placeholder, RegularColumn, ColumnType.fromDriverType(dataType)))
       case _ => None
     }
 

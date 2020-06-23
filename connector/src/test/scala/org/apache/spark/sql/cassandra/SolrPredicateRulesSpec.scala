@@ -9,17 +9,17 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class SolrPredicateRulesSpec extends FlatSpec with Matchers {
 
-  val fullyIndexedTableDef = TableDef(
+  val fullyIndexedTableDef = DefaultTableDef(
     "fake",
     "fake",
-    Seq(ColumnDef("a", PartitionKeyColumn, IntType)),
-    Seq(ColumnDef("b", ClusteringColumn(0), IntType)),
-    Seq(ColumnDef("c", RegularColumn, IntType), ColumnDef("d", RegularColumn, TextType)),
+    Seq(DefaultColumnDef("a", PartitionKeyColumn, IntType)),
+    Seq(DefaultColumnDef("b", ClusteringColumn(0), IntType)),
+    Seq(DefaultColumnDef("c", RegularColumn, IntType), DefaultColumnDef("d", RegularColumn, TextType)),
     Seq(
-      IndexDef(Some(DseSolrIndexClassName), "a", "some_a", Map.empty),
-      IndexDef(Some(DseSolrIndexClassName), "b", "some_a", Map.empty),
-      IndexDef(Some(DseSolrIndexClassName), "c", "some_a", Map.empty),
-      IndexDef(Some(DseSolrIndexClassName), "d", "some_a", Map.empty)
+      DefaultIndexDef(Some(DseSolrIndexClassName), "a", "some_a", Map.empty),
+      DefaultIndexDef(Some(DseSolrIndexClassName), "b", "some_a", Map.empty),
+      DefaultIndexDef(Some(DseSolrIndexClassName), "c", "some_a", Map.empty),
+      DefaultIndexDef(Some(DseSolrIndexClassName), "d", "some_a", Map.empty)
     )
   )
 
