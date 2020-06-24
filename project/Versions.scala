@@ -6,7 +6,7 @@ object Versions {
   val Paranamer       = "2.8"
   val ScalaLogging    = "3.5.0"
 
-  val DataStaxJavaDriver = "4.5.0"
+  val DataStaxJavaDriver = "4.7.2"
   val ReactiveStreams = "1.0.2"
 
   val ScalaCheck      = "1.14.0"
