@@ -32,6 +32,9 @@ object Dependencies
 
     def driverCoreExclude(): ModuleID = module
       .exclude("com.datastax.oss", "java-driver-core") // doesn't shade guava
+      .exclude("org.apache.tinkerpop", "*")
+      // until SPARK-20075 is fixed we fallback to java workarounds for native calls
+      .exclude("com.github.jnr", "jnr-posix")
   }
 
   object TestCommon {
@@ -70,7 +73,7 @@ object Dependencies
   }
 
   object Driver {
-    val driverCore = "com.datastax.oss" % "java-driver-core-shaded" % DataStaxJavaDriver
+    val driverCore = "com.datastax.oss" % "java-driver-core-shaded" % DataStaxJavaDriver driverCoreExclude()
     val driverMapper = "com.datastax.oss" % "java-driver-mapper-runtime" % DataStaxJavaDriver driverCoreExclude()
 
     val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
