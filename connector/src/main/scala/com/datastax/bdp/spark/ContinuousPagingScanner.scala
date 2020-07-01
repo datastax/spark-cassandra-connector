@@ -5,11 +5,14 @@
  */
 package com.datastax.bdp.spark
 
+import java.io.IOException
+
 import scala.collection.JavaConverters._
 import com.datastax.dse.driver.api.core.cql.continuous.{ContinuousResultSet, ContinuousSession}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, Statement}
+import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException
 import com.datastax.spark.connector.CassandraRowMetadata
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, _}
 import com.datastax.spark.connector.rdd.ReadConf
@@ -102,9 +105,18 @@ case class ContinuousPagingScanner(
       ScanResult(regularIterator, CassandraRowMetadata.fromResultSet(columnNames, regularResult, codecRegistry))
 
     } else {
-      val cpResult = cpSession.executeContinuously(authStatement)
-      val cpIterator = cpResult.iterator().asScala
-      ScanResult(cpIterator, getMetaData(cpResult))
+      try {
+        val cpResult = cpSession.executeContinuously(authStatement)
+        val cpIterator = cpResult.iterator().asScala
+        ScanResult(cpIterator, getMetaData(cpResult))
+      } catch {
+        case e: InvalidQueryException if e.getMessage.contains("too many continuous paging sessions are already running") =>
+          throw new IOException(s"${e.getMessage}. This error may be intermittent, if there are other applications " +
+            s"using continuous paging wait for them to finish and re-execute. If the error persists adjust your DSE " +
+            s"server setting `continuous_paging.max_concurrent_sessions` or lower the parallelism level of this job " +
+            s"(reduce the number of executors and/or assigned cores) or disable continuous paging for this app " +
+            s"with ${CassandraConnectionFactory.continuousPagingParam.name}.", e)
+      }
     }
   }
 

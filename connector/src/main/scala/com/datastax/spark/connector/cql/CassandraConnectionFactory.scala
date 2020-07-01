@@ -51,6 +51,8 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
         .withInt(CONNECTION_POOL_LOCAL_SIZE, conf.localConnectionsPerExecutor.getOrElse(localCoreThreadCount)) // moved from CassandraConnector
         .withInt(CONNECTION_POOL_REMOTE_SIZE, conf.remoteConnectionsPerExecutor.getOrElse(1)) // moved from CassandraConnector
         .withInt(CONNECTION_INIT_QUERY_TIMEOUT, conf.connectTimeoutMillis)
+        .withDuration(CONTROL_CONNECTION_TIMEOUT, Duration.ofMillis(conf.connectTimeoutMillis))
+        .withDuration(METADATA_SCHEMA_REQUEST_TIMEOUT, Duration.ofMillis(conf.connectTimeoutMillis))
         .withInt(REQUEST_TIMEOUT, conf.readTimeoutMillis)
         .withClass(RETRY_POLICY_CLASS, classOf[MultipleRetryPolicy])
         .withClass(RECONNECTION_POLICY_CLASS, classOf[ExponentialReconnectionPolicy])
