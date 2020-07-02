@@ -2,15 +2,14 @@ package com.datastax.spark.connector.mapper
 
 import com.datastax.spark.connector.cql.StructDef
 import com.datastax.spark.connector.types._
-import com.datastax.spark.connector.util.{ReflectionUtil, Symbols}
+import com.datastax.spark.connector.util.{Logging, ReflectionUtil, Symbols}
 import com.datastax.spark.connector.{ColumnRef, GettableByIndexData}
-import com.typesafe.scalalogging.StrictLogging
 
 import scala.language.existentials
 import scala.reflect.runtime.universe._
 import scala.util.control.NonFatal
 
-object MappedToGettableDataConverter extends StrictLogging {
+object MappedToGettableDataConverter extends Logging {
 
   /**
     * When the Spark Cassandra Connector is running on a separate
@@ -43,7 +42,7 @@ object MappedToGettableDataConverter extends StrictLogging {
         * and for everything else uses
         * [[com.datastax.spark.connector.mapper.DefaultColumnMapper DefaultColumnMapper]] */
       private def columnMapper[U: TypeTag]: ColumnMapper[U] = {
-        logger.debug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
+        logDebug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
         val tpe = typeTag[U].tpe
         if (ReflectionUtil.isScalaTuple(tpe))
           new TupleColumnMapper[U]
@@ -64,7 +63,7 @@ object MappedToGettableDataConverter extends StrictLogging {
         {
           val scalaType = typeTag[U].tpe
 
-          logger.debug(s"Getting converter for $columnType to $scalaType")
+          logDebug(s"Getting converter for $columnType to $scalaType")
 
           (columnType, scalaType) match {
             // Collections need recursive call to get the converter for the collection elements
@@ -151,7 +150,7 @@ object MappedToGettableDataConverter extends StrictLogging {
       @transient
       private val childClassloader = mirror.classLoader
 
-      logger.debug(s"Finding a class for $tpe in ${mirror.classLoader}")
+      logDebug(s"Finding a class for $tpe in ${mirror.classLoader}")
       private val cls = mirror.runtimeClass(typeTag[T].tpe).asInstanceOf[Class[T]]
       private val typeName = tpe.toString
 

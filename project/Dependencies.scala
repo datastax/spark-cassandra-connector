@@ -75,11 +75,10 @@ object Dependencies
     val driverCore = "com.datastax.oss" % "java-driver-core-shaded" % DataStaxJavaDriver driverCoreExclude()
     val driverMapper = "com.datastax.oss" % "java-driver-mapper-runtime" % DataStaxJavaDriver driverCoreExclude()
 
-    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Versions.ScalaLogging
     val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
     val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
 
-    val dependencies = Seq(driverCore, driverMapper, commonsLang3, paranamer, scalaLogging)
+    val dependencies = Seq(driverCore, driverMapper, commonsLang3, paranamer)
   }
 
   object TestDriver {
