@@ -7,7 +7,7 @@
 | Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
 | Scala Docs | Most Recent Release (2.5.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.0/#package)|
 | Latest Production Release | [2.5.0](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.11/2.5.0) |
-| Latest Preview Release | [3.0.0-alpha2](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0-alpha2) | 
+| Latest Preview Release | [3.0.0-beta](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0-beta) | 
 ## Features
 
 *Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
