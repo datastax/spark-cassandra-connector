@@ -150,7 +150,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   def maybeGetLocalFile(path: String): URL = {
     val localPath = Paths.get(SparkFiles.get(path))
     if (Files.exists(localPath)) {
-      logger.info(s"Found the $path locally at $localPath, using this file local file")
+      logger.info(s"Found the $path locally at $localPath, using this local file")
       localPath.toUri.toURL
     } else {
       new URL(path)
