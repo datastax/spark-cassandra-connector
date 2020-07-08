@@ -16,7 +16,7 @@ class DocCheck extends FlatSpec with Matchers {
       |*******.
     """.stripMargin
 
-  val refFile = scala.io.Source.fromFile(new File(s"doc/reference.md")).mkString
+  val refFile = scala.io.Source.fromFile(new File(s"doc/modules/developers-guide/pages/reference.adoc")).mkString
 
   "The Reference Parameters File" should "contain all of the current properties" in withClue(reRunMessage){
     val missingProperties =
@@ -29,13 +29,21 @@ class DocCheck extends FlatSpec with Matchers {
   }
 
   it should "match a freshly created reference file" in withClue(reRunMessage){
-    RefBuilder.getMarkDown() should be(refFile)
+    // RefBuilder.getMarkDown() should be(refFile)
+    RefBuilder.getAsciidoc() should be (refFile)
 
   }
 
   case class ParameterFound (parameter: String, fileName : String)
   it should "only reference current parameters" in {
-    val docFiles = new java.io.File(s"doc").listFiles()
+    // Only find the asciidoc files within the doc subdir tree
+    def getListOfFiles(dir: java.io.File): Array[File] = {
+      val filesList= dir.listFiles
+      val res = filesList ++ filesList.filter(_.isDirectory).flatMap(getListOfFiles)
+      res.filter(_.getName.endsWith(".adoc"))
+    }
+
+    val docFiles = getListOfFiles(new java.io.File(s"doc"))
     val allDocs = docFiles.map( file => (file, scala.io.Source.fromFile(file).mkString))
 
     val SparkParamRegex = """spark\.cassandra\.\w+""".r.unanchored

@@ -1,0 +1,52 @@
+name: Generate Antora site
+
+on:
+  push:
+    branches:
+      - asciidoc
+env:
+  SITE_DIR: 'site'
+jobs:
+  build_site:
+    name: "Build site with Antora"
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: "Generate site using antora site action"
+        uses: kameshsampath/antora-site-action@master
+        with:
+         antora_playbook: site.yaml
+         site_sources_path: doc
+      - name: "List folder"
+        run: |
+          ls -ltra $GITHUB_WORKSPACE
+      - name: "Upload generated site"
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: site
+          path: "${{ github.workspace }}/doc/build/${{ env.SITE_DIR }}"
+  deploy_site:
+    runs-on: [ubuntu-latest]
+    needs: [build_site]
+    name: "Deploy GitHub Pages"
+    steps:
+     - name: Setup Node.js for use with actions
+       uses: actions/setup-node@v1.1.0
+       with:
+         version: 12.x
+     - name: Checkout
+       uses: actions/checkout@v2
+     - name: Download generated site
+       uses: actions/download-artifact@v1
+       with:
+         name: site
+         path: "${{ github.workspace }}/${{ env.SITE_DIR }}"
+     - name: Deploy to GitHub Pages
+       uses: JamesIves/github-pages-deploy-action@3.2.1
+       with:
+        # ACCESS_TOKEN: # optional
+        GITHUB_TOKEN: "${{ github.token}}"
+        FOLDER: "${{ env.SITE_DIR }}"
+        BRANCH: 'gh-pages'
+        COMMIT_MESSAGE: "[CI] Publish documentation for ${{ github.sha }}"

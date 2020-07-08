@@ -8,7 +8,7 @@ import org.apache.spark.SparkConf
 /** Read settings for RDD
   *
   * @param splitCount number of partitions to divide the data into; unset by default
-  * @param splitSizeInMB size of Cassandra data to be read in a single Spark task; 
+  * @param splitSizeInMB size of Cassandra data to be read in a single Spark task;
   *                      determines the number of partitions, but ignored if `splitCount` is set
   * @param fetchSizeInRows number of CQL rows to fetch in a single round-trip to Cassandra
   * @param consistencyLevel consistency level for reads, default LOCAL_ONE;
@@ -36,7 +36,9 @@ object ReadConf extends Logging {
     name = "spark.cassandra.input.throughputMBPerSec",
     section = ReferenceSection,
     default = None,
-    description = """*(Floating points allowed)* <br> Maximum read throughput allowed
+    description = """*(Floating points allowed)*
+                    | 
+                    | Maximum read throughput allowed
                     | per single core in MB/s. Effects point lookups as well as full
                     | scans.""".stripMargin)
 
@@ -46,7 +48,7 @@ object ReadConf extends Logging {
     default = 512,
     description =
       """Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark
-        | partitions is <code>1 + 2 * SparkContext.defaultParallelism</code>
+        | partitions is `1 + 2 * SparkContext.defaultParallelism`
         |""".stripMargin.filter(_ >= ' '))
 
   val DeprecatedSplitSizeInMBParam = DeprecatedConfigParameter(
@@ -125,4 +127,3 @@ object ReadConf extends Logging {
   }
 
 }
-

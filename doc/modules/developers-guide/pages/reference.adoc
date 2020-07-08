@@ -1,0 +1,278 @@
+= Configuration reference
+
+
+    
+== Alternative Connection Configuration Options
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.connection.config.cloud.path+` | None | Specifies a default CloudConnectionBundle file to be for this connection. Accepts URLs (including HDFS Compatible URI's) as
+and references to files passed in via --files 
+
+|`+spark.cassandra.connection.config.profile.path+` | None | Specifies a default Java Driver 4.0 Profile file to be used for this connection. Accepts URLs (including HDFS Compatible URI's) as
+and references to files passed in via --files 
+|===
+
+
+== Cassandra Authentication Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.auth.conf.factory+` | DefaultAuthConfFactory | Name of a Scala module or class implementing AuthConfFactory providing custom authentication configuration 
+|===
+
+
+== Cassandra Connection Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.connection.compression+` | NONE | Compression to use (LZ4, SNAPPY or NONE) 
+
+|`+spark.cassandra.connection.factory+` | DefaultConnectionFactory | Name of a Scala module or class implementing
+CassandraConnectionFactory providing connections to the Cassandra cluster 
+
+|`+spark.cassandra.connection.host+` | localhost | Contact point to connect to the Cassandra cluster. A comma separated list
+may also be used. Ports may be provided but are optional. If Ports are missing spark.cassandra.connection.port will
+ be used ("127.0.0.1:9042,192.168.0.1:9051")
+       
+
+|`+spark.cassandra.connection.keepAliveMS+` | 3600000 | Period of time to keep unused connections open 
+
+|`+spark.cassandra.connection.localConnectionsPerExecutor+` | None | Number of local connections set on each Executor JVM. Defaults to the number
+ of available CPU cores on the local node if not specified and not in a Spark Env 
+
+|`+spark.cassandra.connection.localDC+` | None | The local DC to connect to (other nodes will be ignored) 
+
+|`+spark.cassandra.connection.port+` | 9042 | Cassandra native connection port, will be set to all hosts if no individual ports are given 
+
+|`+spark.cassandra.connection.quietPeriodBeforeCloseMS+` | 0 | The time in seconds that must pass without any additional request after requesting connection close (see Netty quiet period) 
+
+|`+spark.cassandra.connection.reconnectionDelayMS.max+` | 60000 | Maximum period of time to wait before reconnecting to a dead node 
+
+|`+spark.cassandra.connection.reconnectionDelayMS.min+` | 1000 | Minimum period of time to wait before reconnecting to a dead node 
+
+|`+spark.cassandra.connection.remoteConnectionsPerExecutor+` | None | Minimum number of remote connections per Host set on each Executor JVM. Default value is
+ estimated automatically based on the total number of executors in the cluster 
+
+|`+spark.cassandra.connection.resolveContactPoints+` | true | Controls, if we need to resolve contact points at start (true), or at reconnection (false).
+Helpful for usage with Kubernetes or other systems with dynamic endpoints which may change
+while the application is running. 
+
+|`+spark.cassandra.connection.timeoutBeforeCloseMS+` | 15000 | The time in seconds for all in-flight connections to finish after requesting connection close 
+
+|`+spark.cassandra.connection.timeoutMS+` | 5000 | Maximum period of time to attempt connecting to a node 
+
+|`+spark.cassandra.query.retry.count+` | 60 | Number of times to retry a timed-out query
+Setting this to -1 means unlimited retries
+       
+
+|`+spark.cassandra.read.timeoutMS+` | 120000 | Maximum period of time to wait for a read to return  
+|===
+
+
+== Cassandra Datasource Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.sql.inClauseToFullScanConversionThreshold+` | 20000000 | Queries with `IN` clause(s) are not converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. It is meant to stop conversion for huge `IN` values sets
+that may cause memory problems. If this limit is exceeded full table scan is performed.
+This setting takes precedence over spark.cassandra.sql.inClauseToJoinConversionThreshold.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+          
+
+|`+spark.cassandra.sql.inClauseToJoinConversionThreshold+` | 2500 | Queries with `IN` clause(s) are converted to JoinWithCassandraTable operation if the size of cross
+product of all `IN` value sets exceeds this value. To disable `IN` clause conversion, set this setting to 0.
+Query `select * from t where k1 in (1,2,3) and k2 in (1,2) and k3 in (1,2,3,4)` has 3 sets of `IN` values.
+Cross product of these values has size of 24.
+          
+
+|`+spark.cassandra.sql.pushdown.additionalClasses+` |  | A comma separated list of classes to be used (in order) to apply additional
+ pushdown rules for Cassandra Dataframes. Classes must implement CassandraPredicateRules
+       
+
+|`+spark.cassandra.table.size.in.bytes+` | None | Used by DataFrames Internally, will be updated in a future release to
+retrieve size from Cassandra. Can be set manually now 
+
+|`+spark.sql.dse.search.autoRatio+` | 0.03 | When Search Predicate Optimization is set to auto, Search optimizations will be preformed if this parameter * the total number of rows is greater than the number of rows to be returned by the solr query 
+
+|`+spark.sql.dse.search.enableOptimization+` | auto | Enables SparkSQL to automatically replace Cassandra Pushdowns with DSE Search
+Pushdowns utilizing lucene indexes. Valid options are On, Off, and Auto. Auto enables
+optimizations when the solr query will pull less than spark.sql.dse.search.autoRatio * the
+total table record count 
+|===
+
+
+== Cassandra Datasource Table Options
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+directJoinSetting+` | auto | Acceptable values, "on", "off", "auto"
+"on" causes a direct join to happen if possible regardless of size ratio.
+"off" disables direct join even when possible
+"auto" only does a direct join when the size ratio is satisfied see directJoinSizeRatio
+       
+
+|`+directJoinSizeRatio+` | 0.9 | 
+ Sets the threshold on when to perform a DirectJoin in place of a full table scan. When
+ the size of the (CassandraSource * thisParameter) > The other side of the join, A direct
+ join will be performed if possible.
+       
+
+|`+ignoreMissingMetaColumns+` | false | Acceptable values, "true", "false"
+"true" ignore missing meta properties
+"false" throw error if missing property is requested
+       
+
+|`+ttl+` | None | Surfaces the Cassandra Row TTL as a Column
+with the named specified. When reading use ttl.columnName=aliasForTTL. This
+can be done for every column with a TTL. When writing use writetime=columnName and the
+columname will be used to set the TTL for that row. 
+
+|`+writetime+` | None | Surfaces the Cassandra Row Writetime as a Column
+with the named specified. When reading use writetime.columnName=aliasForWritetime. This
+can be done for every column with a writetime. When Writing use writetime=columnName and the
+columname will be used to set the writetime for that row. 
+|===
+
+
+== Cassandra SSL Connection Options
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.connection.ssl.clientAuth.enabled+` | false | Enable 2-way secure connection to Cassandra cluster 
+
+|`+spark.cassandra.connection.ssl.enabled+` | false | Enable secure connection to Cassandra cluster 
+
+|`+spark.cassandra.connection.ssl.enabledAlgorithms+` | Set(TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA) | SSL cipher suites 
+
+|`+spark.cassandra.connection.ssl.keyStore.password+` | None | Key store password 
+
+|`+spark.cassandra.connection.ssl.keyStore.path+` | None | Path for the key store being used 
+
+|`+spark.cassandra.connection.ssl.keyStore.type+` | JKS | Key store type 
+
+|`+spark.cassandra.connection.ssl.protocol+` | TLS | SSL protocol 
+
+|`+spark.cassandra.connection.ssl.trustStore.password+` | None | Trust store password 
+
+|`+spark.cassandra.connection.ssl.trustStore.path+` | None | Path for the trust store being used 
+
+|`+spark.cassandra.connection.ssl.trustStore.type+` | JKS | Trust store type 
+|===
+
+
+== Continuous Paging
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.dse.continuousPagingEnabled+` | true | Enables DSE Continuous Paging which improves scanning performance 
+|===
+
+
+== Default Authentication Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.auth.password+` | None | password for password authentication 
+
+|`+spark.cassandra.auth.username+` | None | Login name for password authentication 
+|===
+
+
+== Read Tuning Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.concurrent.reads+` | 512 | Sets read parallelism for joinWithCassandra tables 
+
+|`+spark.cassandra.input.consistency.level+` | LOCAL_ONE | Consistency level to use when reading	 
+
+|`+spark.cassandra.input.fetch.sizeInRows+` | 1000 | Number of CQL rows fetched per driver request 
+
+|`+spark.cassandra.input.metrics+` | true | Sets whether to record connector specific metrics on write 
+
+|`+spark.cassandra.input.readsPerSec+` | None | Sets max requests or pages per core per second, unlimited by default. 
+
+|`+spark.cassandra.input.split.sizeInMB+` | 512 | Approx amount of data to be fetched into a Spark partition. Minimum number of resulting Spark partitions is `1 + 2 * SparkContext.defaultParallelism` 
+
+|`+spark.cassandra.input.throughputMBPerSec+` | None | *(Floating points allowed)*
+ 
+ Maximum read throughput allowed
+ per single core in MB/s. Effects point lookups as well as full
+ scans. 
+|===
+
+
+== Write Tuning Parameters
+
+[cols=",,",options="header",]
+|===
+|Property Name |Default |Description
+
+|`+spark.cassandra.output.batch.grouping.buffer.size+` | 1000 |  How many batches per single Spark task can be stored in
+memory before sending to Cassandra 
+
+|`+spark.cassandra.output.batch.grouping.key+` | Partition | Determines how insert statements are grouped into batches. Available values are:
+
+ `none` : a batch may contain any statements
+
+ `replica_set`: a batch may contain only statements to be written to the same replica set
+
+ `partition`: a batch may contain only statements for rows sharing the same partition key value
+ 
+
+|`+spark.cassandra.output.batch.size.bytes+` | 1024 | Maximum total size of the batch in bytes. Overridden by
+spark.cassandra.output.batch.size.rows
+     
+
+|`+spark.cassandra.output.batch.size.rows+` | None | Number of rows per single batch. The default is 'auto'
+which means the connector will adjust the number
+of rows based on the amount of data
+in each row 
+
+|`+spark.cassandra.output.concurrent.writes+` | 5 | Maximum number of batches executed in parallel by a
+ single Spark task 
+
+|`+spark.cassandra.output.consistency.level+` | LOCAL_QUORUM | Consistency level for writing 
+
+|`+spark.cassandra.output.ifNotExists+` | false | Determines that the INSERT operation is not performed if a row with the same primary
+key already exists. Using the feature incurs a performance hit. 
+
+|`+spark.cassandra.output.ignoreNulls+` | false |  In Cassandra >= 2.2 null values can be left as unset in bound statements. Setting
+this to true will cause all null values to be left as unset rather than bound. For
+finer control see the CassandraOption class 
+
+|`+spark.cassandra.output.metrics+` | true | Sets whether to record connector specific metrics on write 
+
+|`+spark.cassandra.output.throughputMBPerSec+` | None | *(Floating points allowed)*
+
+ Maximum write throughput allowed per single core in MB/s.
+
+ Limit this on long (+8 hour) runs to 70% of your max throughput
+ as seen on a smaller job for stability 
+
+|`+spark.cassandra.output.timestamp+` | 0 | Timestamp (microseconds since epoch) of the write. If not specified, the time that the
+ write occurred is used. A value of 0 means time of write. 
+
+|`+spark.cassandra.output.ttl+` | 0 | Time To Live(TTL) assigned to writes to Cassandra. A value of 0 means no TTL 
+|===

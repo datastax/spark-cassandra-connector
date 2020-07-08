@@ -1,0 +1,50 @@
+= Building
+
+== Scala versions
+
+You can choose to build, assemble and run both Spark and the Spark
+Cassandra Connector against Scala 2.11 or 2.12.
+
+As of Spark Cassandra Connector 2.5.0 the build defaults to Scala 2.12. To build 2.11 artifacts, use the `++2.11.12` switch in your `sbt` commands. For example:
+
+....
+sbt/sbt ++2.11.12 package
+....
+
+== Building the main artifacts
+
+All artifacts are generated to the standard output directories based on
+the Scala binary version you use.
+
+In the root directory run:
+
+....
+sbt/sbt package
+....
+
+The library package jars will be generated to:
+
+* `spark-cassandra-connector/connector/target/scala-{binary.version}/`
+* `spark-cassandra-connector/driver/target/scala-{binary.version}/`
+
+The command also generates the assembly JAR discussed below.
+
+== Building the assembly JAR
+
+The assembly JAR is built by the `sbt/sbt package` command and by the dedicated command `sbt/sbt assembly`.
+
+In the root directory run:
+
+....
+ sbt/sbt assembly
+....
+
+A fat JAR with an `assembly` suffix will be generated in:
+
+....
+spark-cassandra-connector/connector/target/scala-{binary.version}/
+....
+
+The JAR contains the Spark Cassandra Connector and its dependencies. Some of the dependencies are shaded to avoid classpath conflicts.
+
+IMPORTANT: Use the main artifacts whenever possible. 
