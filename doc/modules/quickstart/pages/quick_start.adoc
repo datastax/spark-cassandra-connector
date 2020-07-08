@@ -1,4 +1,4 @@
-= 5-minute quick start guide
+= 5-minute quick start guide for Spark 3.0
 
 In this tutorial, you'll learn how to setup a very simple Spark
 application for reading and writing data from/to Cassandra. Before you
@@ -17,7 +17,7 @@ Configure a new Scala project with the Apache Spark and dependency.
 The dependencies are easily retrieved via Maven Central
 
 ----
-libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.11" % "2.5.0"
+libraryDependencies += "com.datastax.spark" % "spark-cassandra-connector_2.12" % "3.0.0-beta"
 ----
 
 The spark-packages libraries can also be used with spark-submit and
@@ -25,8 +25,8 @@ spark shell, these commands will place the connector and all of its
 dependencies on the path of the Spark Driver and all Spark Executors.
 
 ----
-$SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
-$SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+$SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.12:3.0.0-beta
+$SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.0.0-beta
 ----
 
 For the list of available versions, see:
@@ -53,7 +53,7 @@ pairs with `+--conf+`
 
 ----
 $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
-  --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.0
+  --packages com.datastax.spark:spark-cassandra-connector_2.12:3.0.0-beta
   --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
 ----
 

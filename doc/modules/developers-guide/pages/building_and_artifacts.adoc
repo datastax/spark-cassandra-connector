@@ -3,41 +3,15 @@
 == Scala versions
 
 You can choose to build, assemble and run both Spark and the Spark
-Cassandra Connector against Scala 2.12
+Cassandra Connector against Scala 2.11 or 2.12.
 
-=== Version cross build
-
-This produces artifacts for both versions: Start SBT:
+As of Spark Cassandra Connector 2.5.0 the build defaults to Scala 2.12. To build 2.11 artifacts, use the `++2.11.12` switch in your `sbt` commands. For example:
 
 ....
- sbt
+sbt/sbt ++2.11.12 package
 ....
 
-Run in the SBT shell:
-
-....
- + package
-....
-
-== Building the assembly JAR
-
-In the root directory run
-
-....
-sbt assembly
-....
-
-To build the assembly jar against Scala 2.11:
-
-....
- sbt -Dscala-2.11=true assembly
-....
-
-A fat jar will be generated to both of these directories:
-
-* `+spark-cassandra-connector/target/scala-{binary.version}/+`
-
-== Building general artifacts
+== Building the main artifacts
 
 All artifacts are generated to the standard output directories based on
 the Scala binary version you use.
@@ -45,34 +19,32 @@ the Scala binary version you use.
 In the root directory run:
 
 ....
-sbt package
-sbt doc
+sbt/sbt package
 ....
 
 The library package jars will be generated to:
 
-* `+spark-cassandra-connector/target/scala-{binary.version}/+`
-* `+spark-cassandra-connector-java/target/scala-{binary.version}/+`
+* `spark-cassandra-connector/connector/target/scala-{binary.version}/`
+* `spark-cassandra-connector/driver/target/scala-{binary.version}/`
 
-The API documentation will be generated to:
+The command also generates the assembly JAR discussed below.
 
-* `+spark-cassandra-connector/target/scala-{binary.version}/api/+`
-* `+spark-cassandra-connector-java/target/scala-{binary.version}/api/+`
+== Building the assembly JAR
 
-== Using the assembly JAR With spark-submit
+The assembly JAR is built by the `sbt/sbt package` command and by the dedicated command `sbt/sbt assembly`.
 
-The easiest way to do this is to make the assembled connector jar using
-
-....
- sbt assembly
-....
-
-This jar can be used with spark submit with `+--jars+`
+In the root directory run:
 
 ....
-spark-submit --jars spark-cassandra-connector-assembly.jar
+ sbt/sbt assembly
 ....
 
-This driver is also compatible with Spark distribution provided in
-https://www.datastax.com/products/datastax-enterprise[DataStax
-Enterprise].
+A fat JAR with an `assembly` suffix will be generated in:
+
+....
+spark-cassandra-connector/connector/target/scala-{binary.version}/
+....
+
+The JAR contains the Spark Cassandra Connector and its dependencies. Some of the dependencies are shaded to avoid classpath conflicts.
+
+IMPORTANT: Use the main artifacts whenever possible. 

@@ -17,7 +17,7 @@ https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.0/#package[Spar
 |https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.11/2.5.0[2.5.0]
 
 |Latest Preview Release
-|https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0-alpha2[3.0.0-alpha2]
+|https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0-beta[3.0.0-beta]
 |===
 
 == Features
@@ -67,9 +67,9 @@ connector release in progress.
 |===
 |Connector |Spark |Cassandra |Cassandra Java Driver |Minimum Java
 Version |Supported Scala Versions
-|3.0 |3.0 |2.1.5*, 2.2, 3.x, 4.0 |4.5 |8 |2.12
+|3.0 |3.0 |2.1.5*, 2.2, 3.x, 4.0 |4.7 |8 |2.12
 
-|2.5 |2.4 |2.1.5*, 2.2, 3.x, 4.0 |4.5 |8 |2.11, 2.12
+|2.5 |2.4 |2.1.5*, 2.2, 3.x, 4.0 |4.7 |8 |2.11, 2.12
 
 |2.4.2 |2.4 |2.1.5*, 2.2, 3.x |3.0 |8 |2.11, 2.12
 
