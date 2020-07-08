@@ -1,6 +1,13 @@
 
 
 ***************************************************************************
+3.0.0-beta
+ * Data Source v2 support
+ * Secondary artifact with shaded typesafe.config
+
+2.5.1
+ * Introduce shaded version of the main artifact
+
 2.5.0
  * LTS Release for Spark 2.4
 
