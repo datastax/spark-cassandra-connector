@@ -295,134 +295,38 @@ case class Schema(keyspaces: Set[KeyspaceDef]) {
 
 object Schema extends StrictLogging {
 
-  private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
-    for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
-  }
+  /**
+   * Fetches a KeyspaceMetadata, throwing an exception with name options if the keyspace is not found.
+   */
+  def keyspaceFromCassandra(session: CqlSession,
+                            keyspaceName: String): KeyspaceMetadata = {
 
-  private def fetchClusteringColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    for ((column, index) <- table.getClusteringColumns.asScala.toSeq.zipWithIndex) yield {
-      ColumnDef(column._1, ClusteringColumn(index))
+    val tableOption = session
+      .getMetadata()
+      .getKeyspace(keyspaceName)
+    toOption(tableOption) match {
+      case Some(t) => t
+      case None =>
+        val metadata: Metadata = session.getMetadata
+        val suggestions = NameTools.getSuggestions(metadata, keyspaceName)
+        val errorMessage = NameTools.getErrorString(keyspaceName, None, suggestions)
+        throw new IOException(errorMessage)
     }
   }
-
-  private def fetchRegularColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    val primaryKey = table.getPrimaryKey.asScala.toSet
-    val regularColumns = table.getColumns.asScala.values.toSeq.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield {
-      if (column.isStatic)
-        ColumnDef(column, StaticColumn)
-      else
-        ColumnDef(column, RegularColumn)
-    }
-  }
-
-  private def handleId(table: TableMetadata, columnName: String): String =
-    Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
-      .flatMap(toOption)
-      .map(c => toName(c.getName))
-      .getOrElse(columnName)
-
-  private def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
-    case table: TableMetadata =>
-      for (index <- table.getIndexes.asScala.values.toSeq) yield {
-        val className = toOption(index.getClassName)
-        val target = handleId(table, index.getTarget)
-        IndexDef(className, target, toName(index.getName), Map.empty)
-      }
-    case _: ViewMetadata => Seq.empty
-  }
-
-  def fetchTable(keyspace: CqlIdentifier, table: RelationMetadata): TableDef = {
-    val partitionKey = fetchPartitionKey(table)
-    val clusteringColumns = fetchClusteringColumns(table)
-    val regularColumns = fetchRegularColumns(table)
-    val indexDefs = getIndexDefs(table)
-
-    val isView = table match {
-      case _: ViewMetadata => true
-      case _ => false
-    }
-
-    TableDef(
-      toName(keyspace),
-      toName(table.getName),
-      partitionKey,
-      clusteringColumns,
-      regularColumns,
-      indexDefs,
-      isView)
-  }
-
-  private def isTableSelected(table: RelationMetadata, selected: Option[String]): Boolean = selected match {
-    case None => true
-    case Some(name) => toName(table.getName) == name
-  }
-
-  private def fetchTables(keyspace: KeyspaceMetadata, selected: Option[String] = None): Set[TableDef] =
-    for ((_, table) <- (keyspace.getTables.asScala.toSet ++ keyspace.getViews.asScala.toSet)
-         if isTableSelected(table, selected)) yield {
-      fetchTable(keyspace.getName, table)
-    }
-
-  def fetchUserType(driverUserType: DriverUserDefinedType): UserDefinedType = {
-    UserDefinedType(driverUserType)
-  }
-
-  private def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
-    metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) => fetchUserType(driverUserType) }.toSet
-  }
-
-  private def systemKeyspaces = Set.empty[String] // TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
-
-  def fetchKeyspace(keyspace: KeyspaceMetadata, selectedTable: Option[String] = None): KeyspaceDef =
-    KeyspaceDef(
-      toName(keyspace.getName),
-      fetchTables(keyspace, selectedTable),
-      fetchUserTypes(keyspace),
-      systemKeyspaces.contains(toName(keyspace.getName)))
-
-  /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
-    *
-    * @param keyspaceName if defined, fetches only metadata of the given keyspace
-    * @param tableName    if defined, fetches only metadata of the given table
-    */
-  def fromCassandra(
-      session: CqlSession,
-      keyspaceName: Option[String] = None,
-      tableName: Option[String] = None): Schema = {
-
-    def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
-      keyspaceName match {
-        case None => true
-        case Some(name) => toName(keyspace.getName) == name
-      }
-
-    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
-      for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        fetchKeyspace(keyspace, tableName)
-
-    logger.debug(s"Retrieving database schema")
-    def fetchSchema(metadata: => Metadata): Schema =
-      Schema(fetchKeyspaces(metadata))
-
-    val scheme = fetchSchema(session.refreshSchema())
-
-    logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
-      s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-    scheme
-  }
-
 
   /**
-    * Fetches a TableDef for a particular Cassandra Table throws an
+    * Fetches a TableMetadata for a particular Cassandra Table, throwing an
     * exception with name options if the table is not found.
     */
-  def tableFromCassandra(
-      session: CqlSession,
-      keyspaceName: String,
-      tableName: String): TableDef = {
+  def tableFromCassandra(session: CqlSession,
+                         keyspaceName: String,
+                         tableName: String): TableMetadata = {
 
-    fromCassandra(session, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    val tableOption = session
+      .getMetadata()
+      .getKeyspace(keyspaceName)
+      .flatMap(keyMeta => keyMeta.getTable(tableName))
+    toOption(tableOption) match {
       case Some(t) => t
       case None =>
         val metadata: Metadata = session.getMetadata

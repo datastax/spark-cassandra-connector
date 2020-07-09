@@ -2,6 +2,7 @@ package com.datastax.spark.connector
 
 import com.datastax.dse.driver.api.core.auth.ProxyAuthentication
 import com.datastax.oss.driver.api.core.cql.Statement
+import com.datastax.oss.driver.api.core.metadata.schema.{KeyspaceMetadata, TableMetadata}
 import com.datastax.spark.connector.cql.{CassandraConnector, Schema, TableDef}
 
 /** Useful stuff that didn't fit elsewhere. */
@@ -16,17 +17,16 @@ package object util {
     }
   }
 
-  def schemaFromCassandra(
+  def keyspaceFromCassandra(
       connector: CassandraConnector,
-      keyspaceName: Option[String] = None,
-      tableName: Option[String] = None): Schema = {
-    connector.withSessionDo(Schema.fromCassandra(_, keyspaceName, tableName))
+      keyspaceName: String): KeyspaceMetadata = {
+    connector.withSessionDo(Schema.keyspaceFromCassandra(_, keyspaceName))
   }
 
   def tableFromCassandra(
       connector: CassandraConnector,
       keyspaceName: String,
-      tableName: String): TableDef = {
+      tableName: String): TableMetadata = {
     connector.withSessionDo(Schema.tableFromCassandra(_, keyspaceName, tableName))
   }
 
