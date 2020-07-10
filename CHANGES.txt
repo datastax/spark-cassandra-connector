@@ -2,7 +2,9 @@
 
 ***************************************************************************
 2.5.1
- * Introduce shaded version of the main artifact
+ * Introduce shaded version of the main artifact to fix integration with Databricks Cloud
+ * Exclude com.github.jnr and org.apache.tinkerpop dependencies to fix --packages
+ * Improve Astra connection properties
 
 2.5.0
  * LTS Release for Spark 2.4
