@@ -68,6 +68,11 @@ val annotationProcessor = Seq(
   "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
 )
 
+def scalacVersionDependantOptions(scalaBinary: String): Seq[String] = scalaBinary match {
+  case "2.11" => Seq()
+  case "2.12" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
+}
+
 lazy val root = (project in file("."))
   .disablePlugins(AssemblyPlugin)
   .aggregate(connector, testSupport, driver, publishableAssembly)
@@ -104,7 +109,7 @@ lazy val connector = (project in file("connector"))
       ++ Dependencies.TestConnector.dependencies
       ++ Dependencies.Jetty.dependencies,
 
-    scalacOptions in (Compile, doc) ++= Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
+    scalacOptions in (Compile, doc) ++= scalacVersionDependantOptions(scalaBinaryVersion.value)
   )
   .dependsOn(
     testSupport % "test",

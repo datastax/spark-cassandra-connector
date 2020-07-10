@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
-import java.net.URL
+import java.io.IOException
+import java.net.{MalformedURLException, URL}
 import java.nio.file.{Files, Paths}
 import java.time.Duration
 
@@ -150,10 +151,17 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
   def maybeGetLocalFile(path: String): URL = {
     val localPath = Paths.get(SparkFiles.get(path))
     if (Files.exists(localPath)) {
-      logger.info(s"Found the $path locally at $localPath, using this file local file")
+      logger.info(s"Found the $path locally at $localPath, using this local file.")
       localPath.toUri.toURL
     } else {
-      new URL(path)
+      try {
+        new URL(path)
+      } catch {
+        case e: MalformedURLException =>
+          throw new IOException(s"The provided path $path is not a valid URL nor an existing locally path. Provide an " +
+            s"URL accessible to all executors or a path existing on all executors (you may use `spark.files` to " +
+            s"distribute a file to each executor).", e)
+      }
     }
   }
 

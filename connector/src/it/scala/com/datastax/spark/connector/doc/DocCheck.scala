@@ -1,10 +1,8 @@
 package com.datastax.spark.connector.doc
 
-import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.util.{ConfigCheck, RefBuilder}
 import java.io.File
 
-import com.datastax.spark.connector.cluster.DefaultCluster
+import com.datastax.spark.connector.util.{ConfigCheck, RefBuilder}
 import org.scalatest.{FlatSpec, Matchers}
 
 class DocCheck extends FlatSpec with Matchers {
