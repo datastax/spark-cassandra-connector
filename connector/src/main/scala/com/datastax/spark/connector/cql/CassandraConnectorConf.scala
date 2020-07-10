@@ -246,16 +246,27 @@ object CassandraConnectorConf extends Logging {
     section = ReferenceSectionAlternativeConnection,
     default = None,
     description =
-      """Specifies a default CloudConnectionBundle file to be for this connection. Accepts URLs (including HDFS Compatible URI's) as
-        |and references to files passed in via --files""".stripMargin
+      """Path to Secure Connect Bundle to be used for this connection. Accepts URLs and references to files
+        |distributed via spark.files (--files) setting.<br/>
+        |Provided URL must by accessible from each executor.<br/>
+        |Using spark.files is recommended as it relies on Spark to distribute the bundle to every executor and
+        |leverages Spark capabilities to access files located in distributed file systems like HDFS, S3, etc.
+        |For example, to use a bundle located in HDFS in spark-shell:
+        |
+        |    spark-shell --conf spark.files=hdfs:///some_dir/bundle.zip \
+        |       --conf spark.cassandra.connection.config.cloud.path=bundle.zip \
+        |       --conf spark.cassandra.auth.username=<name> \
+        |       --conf spark.cassandra.auth.password=<pass> ...
+        |
+        |""".stripMargin
   )
 
   val ProfileFileBasedConfigurationParam = ConfigParameter[Option[String]](
     name = "spark.cassandra.connection.config.profile.path",
     section = ReferenceSectionAlternativeConnection,
     default = None,
-    description = """Specifies a default Java Driver 4.0 Profile file to be used for this connection. Accepts URLs (including HDFS Compatible URI's) as
-      |and references to files passed in via --files""".stripMargin
+    description = """Specifies a default Java Driver 4.0 Profile file to be used for this connection. Accepts
+                    |URLs and references to files distributed via spark.files (--files) setting.""".stripMargin
   )
 
   val ReferenceSectionSSL = "Cassandra SSL Connection Options"
