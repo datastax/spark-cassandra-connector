@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
@@ -11,7 +10,7 @@ import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.NameTools
+import com.datastax.spark.connector.util.{DriverUtil, NameTools}
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
@@ -148,16 +147,6 @@ case class ColumnDef(
   }
 }
 
-/** Cassandra Index Metadata that can be serialized
-  *
-  * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
-  */
-case class IndexDef(
-    className: Option[String],
-    target: String,
-    indexName: String,
-    options: Map[String, String]) extends Serializable
-
 object ColumnDef {
 
   def apply(
@@ -167,6 +156,23 @@ object ColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(toName(column.getName), columnRole, columnType)
   }
+
+  def columnName(implicit arg:ColumnMetadata) = DriverUtil.toName(arg.getName)
+}
+
+/** Cassandra Index Metadata that can be serialized
+ *
+ * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
+ */
+case class IndexDef(
+                     className: Option[String],
+                     target: String,
+                     indexName: String,
+                     options: Map[String, String]) extends Serializable
+
+object IndexDef {
+
+  def indexName(implicit arg:IndexMetadata) = DriverUtil.toName(arg.getName)
 }
 
 /** A Cassandra table metadata that can be serialized. */
@@ -267,19 +273,69 @@ case class TableDef(
 object TableDef {
 
   /** Constructs a table definition based on the mapping provided by
-    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
+   * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T: ColumnMapper](
-      keyspaceName: String,
-      tableName: String,
-      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
+                                 keyspaceName: String,
+                                 tableName: String,
+                                 protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
+  def tableName(implicit arg:TableMetadata) = DriverUtil.toName(arg.getName)
+
+  def name(implicit arg: TableMetadata): String =
+    s"${DriverUtil.toName(arg.getKeyspace)}.${TableDef.tableName(arg)}"
+
+  def keyspaceName(implicit arg: TableMetadata) = DriverUtil.toName(arg.getKeyspace)
+
+  def columns(implicit arg: TableMetadata): IndexedSeq[ColumnMetadata] =
+    arg.getColumns.asScala.values.toIndexedSeq
+
+  def columnByName(colName:String)(implicit arg: TableMetadata): ColumnMetadata =
+    arg.getColumn(colName)
+      .orElseThrow(() => new NoSuchElementException(s"Column $colName not found in $name"))
+
+  def partitionKey(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    val partitionKeyNames = arg.getPartitionKey.asScala.map(_.getName).toSet
+    columns(arg).filter(c => partitionKeyNames(c.getName))
+  }
+  def clusteringColumns(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    val clusteringColumnNames = arg.getClusteringColumns.keySet.asScala.map(_.getName).toSet
+    columns(arg).filter(c => clusteringColumnNames(c.getName))
+  }
+
+  def primaryKey(implicit arg: TableMetadata): IndexedSeq[ColumnMetadata] =
+    (partitionKey(arg) ++ clusteringColumns(arg)).toIndexedSeq
+
+  def regularColumns(implicit arg: TableMetadata):Seq[ColumnMetadata] = columns(arg).filterNot(primaryKey(arg).toSet)
+
+  def indexes(implicit arg: TableMetadata): Seq[IndexMetadata] = arg.getIndexes.asScala.values.toSeq
+
+  def indexesForTarget(implicit arg: TableMetadata): Map[String, Seq[IndexMetadata]] = indexes.groupBy(_.getTarget)
+
+  /**
+   * Contains indices that can be directly mapped to single column, namely indices with a handled column
+   * name as a target. Indices that can not be mapped to a single column are dropped.
+   */
+  def indexesForColumnDef(implicit arg: TableMetadata): Map[ColumnMetadata, Seq[IndexMetadata]] = {
+    indexesForTarget.flatMap {
+      case (target, indexes) => Try(arg.getColumn(target).get() -> indexes).toOption
+    }
+  }
+
+  def indexedColumns(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    indexesForColumnDef.keys.toSeq
+  }
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
 case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef], userTypes: Set[UserDefinedType], isSystem: Boolean) {
   lazy val tableByName: Map[String, TableDef] = tables.map(t => (t.tableName, t)).toMap
   lazy val userTypeByName: Map[String, UserDefinedType] = userTypes.map(t => (t.name, t)).toMap
+}
+
+object KeyspaceDef {
+
+  def keyspaceName(implicit arg:KeyspaceMetadata) = DriverUtil.toName(arg.getName)
 }
 
 case class Schema(keyspaces: Set[KeyspaceDef]) {

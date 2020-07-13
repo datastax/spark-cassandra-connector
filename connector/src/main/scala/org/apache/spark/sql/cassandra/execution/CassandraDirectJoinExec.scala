@@ -36,13 +36,13 @@ case class CassandraDirectJoinExec(
 
   val keySource = child
   val connector = cassandraScan.connector
-  val keyspace = cassandraScan.tableDef.keyspaceName
-  val table = cassandraScan.tableDef.tableName
+  val keyspace = cassandraScan.tableMetadata.keyspaceName
+  val table = cassandraScan.tableMetadata.tableName
   val cqlQueryParts = cassandraScan.cqlQueryParts
   val whereClause = cqlQueryParts.whereClause
   val readConf = cassandraScan.readConf
   val selectedColumns = cqlQueryParts.selectedColumnRefs
-  val primaryKeys = cassandraScan.tableDef.primaryKey.map(_.columnName)
+  val primaryKeys = cassandraScan.tableMetadata.primaryKey.map(_.columnName)
   val cassandraSchema = cassandraPlan.schema
 
   val exprIdToCassandra = aliasMap.map(_.swap)

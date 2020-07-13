@@ -3,58 +3,62 @@ package com.datastax.spark.connector.datasource
 import java.net.InetAddress
 import java.util.UUID
 
+import com.datastax.oss.driver.api.core.`type`.DataTypes
+
+import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, TableDef}
 import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
 import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
 import com.datastax.spark.connector.rdd.{CqlWhereClause, ReadConf}
-import com.datastax.spark.connector.types.{InetType, UUIDType, VarIntType}
 import com.datastax.spark.connector.util.Quote.quote
-import com.datastax.spark.connector.util.{Logging, ReflectionUtil}
-import com.datastax.spark.connector.{ColumnRef, RowCountRef, TTL, WriteTime}
+import com.datastax.spark.connector.util.{DriverUtil, Logging, ReflectionUtil}
+import com.datastax.spark.connector.{ColumnName, ColumnRef, RowCountRef, TTL, WriteTime}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.{AdditionalCassandraPushDownRulesParam, InClauseToJoinWithTableConversionThreshold}
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules}
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.connector.read.partitioning.{ClusteredDistribution, Distribution, Partitioning}
 import org.apache.spark.sql.sources.{EqualTo, Filter, In}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{DataTypes => _, _}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, sources}
 import org.apache.spark.unsafe.types.UTF8String
 
 import scala.collection.JavaConverters._
 
-case class CassandraScanBuilder(
-  session: SparkSession,
-  tableDef: TableDef,
-  catalogName: String,
-  options: CaseInsensitiveStringMap)
+case class CassandraScanBuilder(session: SparkSession,
+                                tableMetadata: TableMetadata,
+                                catalogName: String,
+                                options: CaseInsensitiveStringMap)
 
   extends ScanBuilder
     with SupportsPushDownFilters
     with SupportsPushDownRequiredColumns
     with Logging {
 
-  val consolidatedConf = consolidateConfs(session.sparkContext.getConf, session.conf.getAll, catalogName, tableDef.keyspaceName, options.asScala.toMap)
+  implicit val tableMetadataArg = tableMetadata
+
+  val consolidatedConf = consolidateConfs(session.sparkContext.getConf, session.conf.getAll, catalogName, TableDef.keyspaceName, options.asScala.toMap)
   val readConf = ReadConf.fromSparkConf(consolidatedConf)
 
   private val connector = CassandraConnector(consolidatedConf)
   private val tableIsSolrIndexed =
-    tableDef
-      .indexes
-      .exists(index => index.className.contains(SolrConstants.DseSolrIndexClassName))
+    TableDef.indexes
+      .exists(index => DriverUtil.toOption(index.getClassName).contains(SolrConstants.DseSolrIndexClassName))
 
   //Metadata Read Fields
   // ignore case
-  private val regularColumnNames = tableDef.regularColumns.map(_.columnName.toLowerCase())
-  private val nonRegularColumnNames = (tableDef.clusteringColumns ++ tableDef.partitionKey).map(_.columnName.toLowerCase)
+  private val regularColumnNames = TableDef.regularColumns.map(ColumnDef.columnName(_).toLowerCase())
+  private val nonRegularColumnNames = (TableDef.clusteringColumns ++ TableDef.partitionKey)
+    .map(ColumnDef.columnName(_).toLowerCase)
   private val ignoreMissingMetadataColumns: Boolean = consolidatedConf.getBoolean(CassandraSourceRelation.IgnoreMissingMetaColumns.name,
     CassandraSourceRelation.IgnoreMissingMetaColumns.default)
 
   private val pushdownEnabled = consolidatedConf.getOption("pushdown").getOrElse("true").toBoolean
   private var filtersForCassandra = Array.empty[Filter]
   private var filtersForSpark = Array.empty[Filter]
-  private var selectedColumns: IndexedSeq[ColumnRef] = tableDef.columns.map(_.ref)
+  private var selectedColumns: IndexedSeq[ColumnRef] =
+    TableDef.columns.map(col => ColumnName(ColumnDef.columnName(col)))
   private var readSchema: StructType = _
 
   override def pushFilters(filters: Array[Filter]): Array[Filter] = if (!pushdownEnabled) {
@@ -65,7 +69,7 @@ case class CassandraScanBuilder(
     val pv = connector.withSessionDo(_.getContext.getProtocolVersion)
 
     /** Apply built in rules **/
-    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableDef, pv)
+    val bcpp = new BasicCassandraPredicatePushDown(filters.toSet, tableMetadata, pv)
     val basicPushdown = AnalyzedPredicates(bcpp.predicatesToPushDown, bcpp.predicatesToPreserve)
 
     logDebug(s"Basic Rules Applied:\n$basicPushdown")
@@ -79,7 +83,7 @@ case class CassandraScanBuilder(
     /** Apply non-basic rules **/
     val finalPushdown = predicatePushDownRules.foldLeft(basicPushdown)(
       (pushdowns, rules) => {
-        val pd = rules(pushdowns, tableDef, consolidatedConf)
+        val pd = rules(pushdowns, tableMetadata, consolidatedConf)
         logDebug(s"Applied ${rules.getClass.getSimpleName} Pushdown Filters:\n$pd")
         pd
       }
@@ -138,7 +142,9 @@ case class CassandraScanBuilder(
     selectedColumns = requiredSchema.fieldNames.collect {
       case name@TTLCapture(column) => TTL(column, Some(name))
       case name@WriteTimeCapture(column) => WriteTime(column, Some(name))
-      case column => tableDef.columnByName(column).ref
+      case column => ColumnName(
+        ColumnDef.columnName(
+          TableDef.columnByName(column)))
     }
     readSchema = requiredSchema
   }
@@ -150,7 +156,7 @@ case class CassandraScanBuilder(
         s"""Number of keys in 'IN' clauses exceeds ${InClauseToJoinWithTableConversionThreshold.name},
            |converting to joinWithCassandraTable.""".stripMargin)
       //Remove all Primary Join Restricted Filters
-      val primaryKeyFilters = eqAndInColumnFilters(tableDef.primaryKey, currentPushdown)
+      val primaryKeyFilters = eqAndInColumnFilters(TableDef.primaryKey, currentPushdown)
       filtersForCassandra = (filtersForCassandra.toSet -- primaryKeyFilters).toArray
 
       //Reframe all primary key restrictions as IN
@@ -163,9 +169,9 @@ case class CassandraScanBuilder(
                |Illegal predicate on primary key $other""".stripMargin)
       }
 
-      CassandraInJoin(session, connector, tableDef, inClauses, getQueryParts(), readSchema, readConf, consolidatedConf)
+      CassandraInJoin(session, connector, tableMetadata, inClauses, getQueryParts(), readSchema, readConf, consolidatedConf)
     } else {
-      CassandraScan(session, connector, tableDef, getQueryParts(), readSchema, readConf, consolidatedConf)
+      CassandraScan(session, connector, tableMetadata, getQueryParts(), readSchema, readConf, consolidatedConf)
     }
   }
 
@@ -223,13 +229,13 @@ case class CassandraScanBuilder(
   private def toCqlValue(columnName: String, value: Any): Any = {
     value match {
       case decimal: Decimal =>
-        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
+        val isVarIntColumn = TableDef.columnByName(columnName).getType == DataTypes.VARINT
         if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
       case utf8String: UTF8String =>
-        val columnType = tableDef.columnByName(columnName).columnType
-        if (columnType == InetType) {
+        val columnType = TableDef.columnByName(columnName).getType
+        if (columnType == DataTypes.INET) {
           InetAddress.getByName(utf8String.toString)
-        } else if (columnType == UUIDType) {
+        } else if (columnType == DataTypes.UUID) {
           UUID.fromString(utf8String.toString)
         } else {
           utf8String
@@ -249,36 +255,35 @@ case class CassandraScanBuilder(
     if (inClauseConversionThreshold == 0L || !pushdownEnabled) {
       false
     } else {
-      val partitionFilters = eqAndInColumnFilters(tableDef.partitionKey, predicates)
-      val clusteringFilters = eqAndInColumnFilters(tableDef.clusteringColumns, predicates)
+      val partitionFilters = eqAndInColumnFilters(TableDef.partitionKey, predicates)
+      val clusteringFilters = eqAndInColumnFilters(TableDef.clusteringColumns, predicates)
       val inClauseValuesCartesianSize = (partitionFilters ++ clusteringFilters).foldLeft(1L) {
         case (cartSize, In(_, values)) => cartSize * values.length
         case (cartSize, _) => cartSize
       }
       partitionFilters.exists(_.isInstanceOf[In]) &&
-        tableDef.partitionKey.length == partitionFilters.length &&
+        TableDef.partitionKey.length == partitionFilters.length &&
         inClauseValuesCartesianSize >= inClauseConversionThreshold
     }
   }
 
   /** Preserves `columns` order */
-  private def eqAndInColumnFilters(columns: Seq[ColumnDef], predicates: AnalyzedPredicates): Seq[Filter] = {
+  private def eqAndInColumnFilters(columns: Seq[ColumnMetadata], predicates: AnalyzedPredicates): Seq[Filter] = {
     val predicatesByColumnName = (predicates.handledByCassandra ++ predicates.handledBySpark).collect {
       case eq@EqualTo(column, _) => (column, eq)
       case in@In(column, _) => (column, in)
     }.toMap
-    columns.flatMap(column => predicatesByColumnName.get(column.columnName))
+    columns.flatMap(column => predicatesByColumnName.get(ColumnDef.columnName(column)))
   }
 }
 
-case class CassandraScan(
-  session: SparkSession,
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  cqlQueryParts: CqlQueryParts,
-  readSchema: StructType,
-  readConf: ReadConf,
-  consolidatedConf: SparkConf) extends Scan
+case class CassandraScan(session: SparkSession,
+                         connector: CassandraConnector,
+                         tableMetadata: TableMetadata,
+                         cqlQueryParts: CqlQueryParts,
+                         readSchema: StructType,
+                         readConf: ReadConf,
+                         consolidatedConf: SparkConf) extends Scan
   with Batch
   with SupportsReportPartitioning {
 
@@ -286,7 +291,7 @@ case class CassandraScan(
   private lazy val inputPartitions = partitionGenerator.getInputPartitions()
   private val partitionGenerator = ScanHelper.getPartitionGenerator(
     connector,
-    tableDef,
+    tableMetadata,
     cqlQueryParts.whereClause,
     session.sparkContext.defaultParallelism * 2 + 1,
     readConf.splitCount,
@@ -299,15 +304,15 @@ case class CassandraScan(
   }
 
   override def createReaderFactory(): PartitionReaderFactory = {
-    CassandraScanPartitionReaderFactory(connector, tableDef, readSchema, readConf, cqlQueryParts)
+    CassandraScanPartitionReaderFactory(connector, tableMetadata, readSchema, readConf, cqlQueryParts)
   }
 
   override def outputPartitioning(): Partitioning = {
-    CassandraPartitioning(tableDef.partitionKey.map(_.columnName).toArray, inputPartitions.length)
+    CassandraPartitioning(TableDef.partitionKey.map(ColumnDef.columnName(_)).toArray, inputPartitions.length)
   }
 
   override def description(): String = {
-    s"""Cassandra Scan: ${tableDef.keyspaceName}.${tableDef.tableName}
+    s"""Cassandra Scan: ${DriverUtil.toName(tableMetadata.getKeyspace)}.${TableDef.tableName}
        | - Cassandra Filters: ${cqlQueryParts.whereClause}
        | - Requested Columns: ${cqlQueryParts.selectedColumnRefs.mkString("[", ",", "]")}""".stripMargin
   }
@@ -326,15 +331,14 @@ case class CassandraPartitioning(partitionKeys: Array[String], numPartitions: In
   }
 }
 
-case class CassandraInJoin(
-  session: SparkSession,
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  inClauses: Seq[In],
-  cqlQueryParts: CqlQueryParts,
-  readSchema: StructType,
-  readConf: ReadConf,
-  consolidatedConf: SparkConf) extends Scan
+case class CassandraInJoin(session: SparkSession,
+                           connector: CassandraConnector,
+                           tableMetadata: TableMetadata,
+                           inClauses: Seq[In],
+                           cqlQueryParts: CqlQueryParts,
+                           readSchema: StructType,
+                           readConf: ReadConf,
+                           consolidatedConf: SparkConf) extends Scan
   with Batch
   with SupportsReportPartitioning {
 
@@ -350,12 +354,12 @@ case class CassandraInJoin(
   }
 
   override def createReaderFactory(): PartitionReaderFactory = {
-    CassandraInJoinReaderFactory(connector, tableDef, inClauses, readConf, readSchema, cqlQueryParts)
+    CassandraInJoinReaderFactory(connector, tableMetadata, inClauses, readConf, readSchema, cqlQueryParts)
 
   }
 
   override def outputPartitioning(): Partitioning = {
-    CassandraPartitioning(tableDef.partitionKey.map(_.columnName).toArray, numPartitions)
+    CassandraPartitioning(TableDef.partitionKey(tableMetadata).map(ColumnDef.columnName(_)).toArray, numPartitions)
   }
 }
 
