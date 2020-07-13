@@ -1,0 +1,475 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>cql - com.datastax.spark.connector.cql</title>
+          <meta name="description" content="cql - com.datastax.spark.connector.cql" />
+          <meta name="keywords" content="cql com.datastax.spark.connector.cql" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'com.datastax.spark.connector.cql.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="com">com</a>.<a href="../../../package.html" class="extype" name="com.datastax">datastax</a>.<a href="../../package.html" class="extype" name="com.datastax.spark">spark</a>.<a href="../package.html" class="extype" name="com.datastax.spark.connector">connector</a></p>
+        <h1>cql</h1><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cql</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.datastax.spark.connector.cql.ClusteringColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ClusteringColumnextendsColumnRolewithProductwithSerializable"></a>
+      <a id="ClusteringColumn:ClusteringColumn"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ClusteringColumn.html"><span class="name">ClusteringColumn</span></a><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>, <span name="sortDirection">sortDirection: <a href="ClusteringColumn$$SortingOrder.html" class="extype" name="com.datastax.spark.connector.cql.ClusteringColumn.SortingOrder">SortingOrder</a> = <span class="symbol"><span class="name"><a href="ClusteringColumn$.html">ClusteringColumn.Ascending</a></span></span></span>)</span><span class="result"> extends <a href="ColumnRole.html" class="extype" name="com.datastax.spark.connector.cql.ColumnRole">ColumnRole</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@ClusteringColumnextendsColumnRolewithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.ColumnDef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ColumnDefextendsFieldDefwithProductwithSerializable"></a>
+      <a id="ColumnDef:ColumnDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnDef.html"><span class="name">ColumnDef</span></a><span class="params">(<span name="columnName">columnName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="columnRole">columnRole: <a href="ColumnRole.html" class="extype" name="com.datastax.spark.connector.cql.ColumnRole">ColumnRole</a></span>, <span name="columnType">columnType: <a href="../types/ColumnType.html" class="extype" name="com.datastax.spark.connector.types.ColumnType">ColumnType</a>[_]</span>)</span><span class="result"> extends <a href="FieldDef.html" class="extype" name="com.datastax.spark.connector.cql.FieldDef">FieldDef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@ColumnDefextendsFieldDefwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A Cassandra column metadata that can be serialized.</p>
+    </li><li name="com.datastax.spark.connector.cql.ColumnRole" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ColumnRoleextendsAnyRef"></a>
+      <a id="ColumnRole:ColumnRole"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnRole.html"><span class="name">ColumnRole</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@ColumnRoleextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.FieldDef" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="FieldDefextendsSerializable"></a>
+      <a id="FieldDef:FieldDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="FieldDef.html"><span class="name">FieldDef</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@FieldDefextendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Abstract column / field definition.</p><div class="fullcomment"><div class="comment cmt"><p>Abstract column / field definition.
+Common to tables and user-defined types</p></div></div>
+    </li><li name="com.datastax.spark.connector.cql.IndexDef" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="IndexDefextendsSerializablewithProduct"></a>
+      <a id="IndexDef:IndexDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="IndexDef.html"><span class="name">IndexDef</span></a><span class="params">(<span name="className">className: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="target">target: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="indexName">indexName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="options">options: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span> with <span class="extype" name="scala.Product">Product</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@IndexDefextendsSerializablewithProduct" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Cassandra Index Metadata that can be serialized
+</p><div class="fullcomment"><div class="comment cmt"><p>Cassandra Index Metadata that can be serialized
+</p></div><dl class="paramcmts block"><dt class="param">className</dt><dd class="cmt"><p>If this index is custom, the name of the server-side implementation. Otherwise, empty.</p></dd></dl></div>
+    </li><li name="com.datastax.spark.connector.cql.KeyspaceDef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="KeyspaceDefextendsProductwithSerializable"></a>
+      <a id="KeyspaceDef:KeyspaceDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="KeyspaceDef.html"><span class="name">KeyspaceDef</span></a><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tables">tables: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="TableDef.html" class="extype" name="com.datastax.spark.connector.cql.TableDef">TableDef</a>]</span>, <span name="userTypes">userTypes: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="../types/UserDefinedType.html" class="extype" name="com.datastax.spark.connector.types.UserDefinedType">UserDefinedType</a>]</span>, <span name="isSystem">isSystem: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@KeyspaceDefextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A Cassandra keyspace metadata that can be serialized.</p>
+    </li><li name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="LocalNodeFirstLoadBalancingPolicyextendsLoadBalancingPolicy"></a>
+      <a id="LocalNodeFirstLoadBalancingPolicy:LocalNodeFirstLoadBalancingPolicy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LocalNodeFirstLoadBalancingPolicy.html"><span class="name">LocalNodeFirstLoadBalancingPolicy</span></a><span class="result"> extends <span class="extype" name="com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy">LoadBalancingPolicy</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@LocalNodeFirstLoadBalancingPolicyextendsLoadBalancingPolicy" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Selects local node first and then nodes in local DC in random order.</p><div class="fullcomment"><div class="comment cmt"><p>Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.
+For writes, if a statement has a routing key set, this LBP is token aware - it prefers the nodes which
+are replicas of the computed token to the other nodes.</p></div></div>
+    </li><li name="com.datastax.spark.connector.cql.MultipleRetryPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="MultipleRetryPolicyextendsRetryPolicy"></a>
+      <a id="MultipleRetryPolicy:MultipleRetryPolicy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MultipleRetryPolicy.html"><span class="name">MultipleRetryPolicy</span></a><span class="result"> extends <span class="extype" name="com.datastax.oss.driver.api.core.retry.RetryPolicy">RetryPolicy</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@MultipleRetryPolicyextendsRetryPolicy" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Always retries with the same CL (null forces the original statement CL see SPARKC-494),
+ constant number of times, regardless of circumstances</p><div class="fullcomment"><div class="comment cmt"><p>Always retries with the same CL (null forces the original statement CL see SPARKC-494),
+ constant number of times, regardless of circumstances</p><p> Retries indefinitely if maxRetryCount is -1
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.cql.MultiplexingSchemaListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="MultiplexingSchemaListenerextendsSchemaChangeListener"></a>
+      <a id="MultiplexingSchemaListener:MultiplexingSchemaListener"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MultiplexingSchemaListener.html"><span class="name">MultiplexingSchemaListener</span></a><span class="result"> extends <span class="extype" name="com.datastax.oss.driver.api.core.metadata.schema.SchemaChangeListener">SchemaChangeListener</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@MultiplexingSchemaListenerextendsSchemaChangeListener" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Uses an internal TrieMap to collect incoming listeners based on their hashCodes.</p><div class="fullcomment"><div class="comment cmt"><p>Uses an internal TrieMap to collect incoming listeners based on their hashCodes. This means that identical
+objects cannot be added, if you need to add the same SchemaListener more than once be sure that it is not
+the identical object.
+</p></div></div>
+    </li><li name="com.datastax.spark.connector.cql.Schema" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SchemaextendsProductwithSerializable"></a>
+      <a id="Schema:Schema"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Schema.html"><span class="name">Schema</span></a><span class="params">(<span name="keyspaces">keyspaces: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="KeyspaceDef.html" class="extype" name="com.datastax.spark.connector.cql.KeyspaceDef">KeyspaceDef</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@SchemaextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.StructDef" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="StructDefextendsSerializable"></a>
+      <a id="StructDef:StructDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="StructDef.html"><span class="name">StructDef</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@StructDefextendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Cassandra structure that contains columnar information, e.g.</p><div class="fullcomment"><div class="comment cmt"><p>Cassandra structure that contains columnar information, e.g. a table or a user defined type.
+This trait allows <code>ColumnMapper</code> to work on tables and user defined types.
+Cassandra tables and user defined types are similar in a way data are extracted from them,
+therefore a common interface to describe their metadata is handy.</p></div></div>
+    </li><li name="com.datastax.spark.connector.cql.TableDef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TableDefextendsStructDefwithProductwithSerializable"></a>
+      <a id="TableDef:TableDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TableDef.html"><span class="name">TableDef</span></a><span class="params">(<span name="keyspaceName">keyspaceName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tableName">tableName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="partitionKey">partitionKey: <span class="extype" name="scala.Seq">Seq</span>[<a href="ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a>]</span>, <span name="clusteringColumns">clusteringColumns: <span class="extype" name="scala.Seq">Seq</span>[<a href="ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a>]</span>, <span name="regularColumns">regularColumns: <span class="extype" name="scala.Seq">Seq</span>[<a href="ColumnDef.html" class="extype" name="com.datastax.spark.connector.cql.ColumnDef">ColumnDef</a>]</span>, <span name="indexes">indexes: <span class="extype" name="scala.Seq">Seq</span>[<a href="IndexDef.html" class="extype" name="com.datastax.spark.connector.cql.IndexDef">IndexDef</a>] = <span class="symbol">Seq.empty</span></span>, <span name="isView">isView: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="ifNotExists">ifNotExists: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="tableOptions">tableOptions: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Map()</span></span>)</span><span class="result"> extends <a href="StructDef.html" class="extype" name="com.datastax.spark.connector.cql.StructDef">StructDef</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@TableDefextendsStructDefwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A Cassandra table metadata that can be serialized.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector.cql.ClusteringColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ClusteringColumn"></a>
+      <a id="ClusteringColumn:ClusteringColumn"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ClusteringColumn$.html"><span class="name">ClusteringColumn</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@ClusteringColumn" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.ColumnDef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ColumnDef"></a>
+      <a id="ColumnDef:ColumnDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ColumnDef$.html"><span class="name">ColumnDef</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@ColumnDef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LocalNodeFirstLoadBalancingPolicy"></a>
+      <a id="LocalNodeFirstLoadBalancingPolicy:LocalNodeFirstLoadBalancingPolicy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="LocalNodeFirstLoadBalancingPolicy$.html"><span class="name">LocalNodeFirstLoadBalancingPolicy</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@LocalNodeFirstLoadBalancingPolicy" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.MultipleRetryPolicy" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MultipleRetryPolicy"></a>
+      <a id="MultipleRetryPolicy:MultipleRetryPolicy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MultipleRetryPolicy$.html"><span class="name">MultipleRetryPolicy</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@MultipleRetryPolicy" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.PartitionKeyColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PartitionKeyColumn"></a>
+      <a id="PartitionKeyColumn:PartitionKeyColumn"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PartitionKeyColumn$.html"><span class="name">PartitionKeyColumn</span></a><span class="result"> extends <a href="ColumnRole.html" class="extype" name="com.datastax.spark.connector.cql.ColumnRole">ColumnRole</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@PartitionKeyColumn" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.RegularColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RegularColumn"></a>
+      <a id="RegularColumn:RegularColumn"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RegularColumn$.html"><span class="name">RegularColumn</span></a><span class="result"> extends <a href="ColumnRole.html" class="extype" name="com.datastax.spark.connector.cql.ColumnRole">ColumnRole</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@RegularColumn" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.Schema" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Schema"></a>
+      <a id="Schema:Schema"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Schema$.html"><span class="name">Schema</span></a><span class="result"> extends <a href="../util/Logging.html" class="extype" name="com.datastax.spark.connector.util.Logging">Logging</a> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@Schema" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.StaticColumn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StaticColumn"></a>
+      <a id="StaticColumn:StaticColumn"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="StaticColumn$.html"><span class="name">StaticColumn</span></a><span class="result"> extends <a href="ColumnRole.html" class="extype" name="com.datastax.spark.connector.cql.ColumnRole">ColumnRole</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@StaticColumn" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.datastax.spark.connector.cql.TableDef" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TableDef"></a>
+      <a id="TableDef:TableDef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TableDef$.html"><span class="name">TableDef</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#com.datastax.spark.connector.cql.package@TableDef" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

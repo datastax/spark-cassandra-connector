@@ -1,0 +1,147 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>spark - com.datastax.spark</title>
+          <meta name="description" content="spark - com.datastax.spark" />
+          <meta name="keywords" content="spark com.datastax.spark" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'com.datastax.spark.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../lib/package_big.png" />
+        <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.datastax">datastax</a></p>
+        <h1>spark</h1><span class="permalink">
+      <a href="../../../index.html#com.datastax.spark.package" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">spark</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.datastax.spark.connector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="connector"></a>
+      <a id="connector:connector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="connector/package.html"><span class="name">connector</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#com.datastax.spark.package@connector" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">The root package of Cassandra connector for Apache Spark.</p><div class="fullcomment"><div class="comment cmt"><p>The root package of Cassandra connector for Apache Spark.
+Offers handy implicit conversions that add Cassandra-specific methods to
+<span class="extype" name="org.apache.spark.SparkContext">SparkContext</span> and <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>.</p><p>Call <a href="connector/SparkContextFunctions.html#cassandraTable[T](keyspace:String,table:String)(implicitconnector:com.datastax.spark.connector.cql.CassandraConnector,implicitreadConf:com.datastax.spark.connector.rdd.ReadConf,implicitct:scala.reflect.ClassTag[T],implicitrrf:com.datastax.spark.connector.rdd.reader.RowReaderFactory[T],implicitev:com.datastax.spark.connector.rdd.ValidRDDType[T]):com.datastax.spark.connector.rdd.CassandraTableScanRDD[T]" class="extmbr" name="com.datastax.spark.connector.SparkContextFunctions#cassandraTable">cassandraTable</a> method on
+the <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span> object
+to create a <a href="connector/rdd/CassandraTableScanRDD.html" class="extype" name="com.datastax.spark.connector.rdd.CassandraTableScanRDD">CassandraRDD</a> exposing
+Cassandra tables as Spark RDDs.</p><p>Call <a href="connector/RDDFunctions.html" class="extype" name="com.datastax.spark.connector.RDDFunctions">RDDFunctions</a> <code>saveToCassandra</code>
+function on any <code>RDD</code> to save distributed collection to a Cassandra table.</p><p>Example:</p><pre>CREATE KEYSPACE test WITH replication = {<span class="lit">'class'</span>: 'SimpleStrategy<span class="lit">', '</span>replication_factor': <span class="num">1</span> };
+CREATE TABLE test.words (word text PRIMARY KEY, count int);
+INSERT INTO test.words(word, count) VALUES (<span class="lit">"and"</span>, <span class="num">50</span>);</pre><pre><span class="kw">import</span> com.datastax.spark.connector._
+
+<span class="kw">val</span> sparkMasterHost = <span class="lit">"127.0.0.1"</span>
+<span class="kw">val</span> cassandraHost = <span class="lit">"127.0.0.1"</span>
+<span class="kw">val</span> keyspace = <span class="lit">"test"</span>
+<span class="kw">val</span> table = <span class="lit">"words"</span>
+
+<span class="cmt">// Tell Spark the address of one Cassandra node:</span>
+<span class="kw">val</span> conf = <span class="kw">new</span> SparkConf(<span class="kw">true</span>).set(<span class="lit">"spark.cassandra.connection.host"</span>, cassandraHost)
+
+<span class="cmt">// Connect to the Spark cluster:</span>
+<span class="kw">val</span> sc = <span class="kw">new</span> SparkContext(<span class="lit">"spark://"</span> + sparkMasterHost + <span class="lit">":7077"</span>, <span class="lit">"example"</span>, conf)
+
+<span class="cmt">// Read the table and print its contents:</span>
+<span class="kw">val</span> rdd = sc.cassandraTable(keyspace, table)
+rdd.toArray().foreach(println)
+
+<span class="cmt">// Write two rows to the table:</span>
+<span class="kw">val</span> col = sc.parallelize(<span class="std">Seq</span>((<span class="lit">"of"</span>, <span class="num">1200</span>), (<span class="lit">"the"</span>, <span class="lit">"863"</span>)))
+col.saveToCassandra(keyspace, table)
+
+sc.stop()</pre></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
