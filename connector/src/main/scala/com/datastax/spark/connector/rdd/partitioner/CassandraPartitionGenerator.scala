@@ -2,6 +2,7 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.metadata.TokenMap
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.core.metadata.token.{TokenRange => DriverTokenRange}
 
 import scala.collection.JavaConversions._
@@ -16,19 +17,18 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.sql.connector.read.InputPartition
 
-
 /** Creates CassandraPartitions for given Cassandra table */
-private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
-    connector: CassandraConnector,
-    tableDef: TableDef,
-    splitCount: Int)(
+private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](connector: CassandraConnector,
+                                                                       tableMetadata: TableMetadata,
+                                                                       splitCount: Int)(
   implicit
     tokenFactory: TokenFactory[V, T]) extends Logging{
 
   type Token = com.datastax.spark.connector.rdd.partitioner.dht.Token[T]
   type TokenRange = com.datastax.spark.connector.rdd.partitioner.dht.TokenRange[V, T]
 
-  private val keyspaceName = CqlIdentifier.fromInternal(tableDef.keyspaceName) // TODO Lets fix all this later
+  implicit val table = tableMetadata
+  private val keyspaceName = CqlIdentifier.fromInternal(TableDef.keyspaceName) // TODO Lets fix all this later
 
 
   private def tokenRange(range: DriverTokenRange, metadata: TokenMap): TokenRange = {
@@ -131,7 +131,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
       keyMapper: ColumnSelector): Option[CassandraPartitioner[Key, V, T]] = {
 
     val part = Try {
-      val newPartitioner = new CassandraPartitioner(connector, tableDef, partitions, keyMapper)
+      val newPartitioner = new CassandraPartitioner(connector, tableMetadata, partitions, keyMapper)
       // This is guaranteed to succeed so we don't want to send out an ERROR message if it breaks
       newPartitioner.verify(log = false)
       newPartitioner
@@ -154,12 +154,11 @@ object CassandraPartitionGenerator {
     * Unlike the class constructor, this method does not take the generic `V` and `T` parameters,
     * and therefore you don't need to specify the ones proper for the partitioner used in the
     * Cassandra cluster. */
-  def apply(
-    conn: CassandraConnector,
-    tableDef: TableDef,
-    splitCount: Int)(
+  def apply(conn: CassandraConnector,
+            tableMetadata: TableMetadata,
+            splitCount: Int)(
     implicit tokenFactory: TokenFactory[V, T]): CassandraPartitionGenerator[V, T] = {
 
-    new CassandraPartitionGenerator(conn, tableDef, splitCount)(tokenFactory)
+    new CassandraPartitionGenerator(conn, tableMetadata, splitCount)(tokenFactory)
   }
 }

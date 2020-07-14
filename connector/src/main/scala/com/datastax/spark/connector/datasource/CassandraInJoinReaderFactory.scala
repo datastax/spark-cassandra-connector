@@ -1,7 +1,8 @@
 package com.datastax.spark.connector.datasource
 
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.internal.core.cql.ResultSets
-import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
 import com.datastax.spark.connector.util.Logging
@@ -18,7 +19,7 @@ import scala.util.{Failure, Success}
 
 case class CassandraInJoinReaderFactory(
   connector: CassandraConnector,
-  tableDef: TableDef,
+  tableMetadata: TableMetadata,
   inClauses: Seq[In],
   readConf: ReadConf,
   schema: StructType,
@@ -27,33 +28,32 @@ case class CassandraInJoinReaderFactory(
 
   override def createReader(partition: InputPartition): PartitionReader[InternalRow] =
     if (cqlQueryParts.selectedColumnRefs.contains(RowCountRef)) {
-      CassandraInJoinCountReader(connector, tableDef, inClauses, readConf, schema, cqlQueryParts, partition)
+      CassandraInJoinCountReader(connector, tableMetadata, inClauses, readConf, schema, cqlQueryParts, partition)
     } else {
-      CassandraInJoinReader(connector, tableDef, inClauses, readConf, schema, cqlQueryParts, partition)
+      CassandraInJoinReader(connector, tableMetadata, inClauses, readConf, schema, cqlQueryParts, partition)
     }
 }
 
 
-abstract class CassandraBaseInJoinReader(
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  inClauses: Seq[In],
-  readConf: ReadConf,
-  schema: StructType,
-  cqlQueryParts: ScanHelper.CqlQueryParts,
-  partition: InputPartition)
+abstract class CassandraBaseInJoinReader(connector: CassandraConnector,
+                                         tableMetadata: TableMetadata,
+                                         inClauses: Seq[In],
+                                         readConf: ReadConf,
+                                         schema: StructType,
+                                         cqlQueryParts: ScanHelper.CqlQueryParts,
+                                         partition: InputPartition)
   extends PartitionReader[InternalRow]
     with Logging {
 
   protected val numberedInputPartition = partition.asInstanceOf[NumberedInputPartition]
   protected val joinColumnNames = inClauses.map(in => ColumnName(in.attribute)).toIndexedSeq
   protected val session = connector.openSession()
-  protected val rowWriter = CassandraRowWriter.Factory.rowWriter(tableDef, joinColumnNames)
-  protected val rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableDef, cqlQueryParts.selectedColumnRefs)
+  protected val rowWriter = CassandraRowWriter.Factory.rowWriter(tableMetadata, joinColumnNames)
+  protected val rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableMetadata, cqlQueryParts.selectedColumnRefs)
 
   protected val keyIterator: Iterator[CassandraRow] = InClauseKeyGenerator.getIterator(numberedInputPartition.index, numberedInputPartition.total, inClauses) //Generate Iterators for this partition here
 
-  protected val stmt = JoinHelper.getJoinQueryString(tableDef, joinColumnNames, cqlQueryParts)
+  protected val stmt = JoinHelper.getJoinQueryString(tableMetadata, joinColumnNames, cqlQueryParts)
   protected val preparedStatement = JoinHelper.getJoinPreparedStatement(session, stmt, readConf.consistencyLevel)
   protected val bsb = JoinHelper.getKeyBuilderStatementBuilder(session, rowWriter, preparedStatement, cqlQueryParts.whereClause)
   protected val rowMetadata = JoinHelper.getCassandraRowMetadata(session, preparedStatement, cqlQueryParts.selectedColumnRefs)
@@ -109,28 +109,27 @@ abstract class CassandraBaseInJoinReader(
 
 case class CassandraInJoinReader(
   connector: CassandraConnector,
-  tableDef: TableDef,
+  tableMetadata: TableMetadata,
   inClauses: Seq[In],
   readConf: ReadConf,
   schema: StructType,
   cqlQueryParts: ScanHelper.CqlQueryParts,
   partition: InputPartition)
-  extends CassandraBaseInJoinReader(connector, tableDef, inClauses, readConf, schema, cqlQueryParts, partition)
+  extends CassandraBaseInJoinReader(connector, tableMetadata, inClauses, readConf, schema, cqlQueryParts, partition)
 
-case class CassandraInJoinCountReader(
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  inClauses: Seq[In],
-  readConf: ReadConf,
-  schema: StructType,
-  cqlQueryParts: ScanHelper.CqlQueryParts,
-  partition: InputPartition)
-  extends CassandraBaseInJoinReader(connector, tableDef, inClauses, readConf, schema, cqlQueryParts, partition) {
+case class CassandraInJoinCountReader(connector: CassandraConnector,
+                                      tableMetadata: TableMetadata,
+                                      inClauses: Seq[In],
+                                      readConf: ReadConf,
+                                      schema: StructType,
+                                      cqlQueryParts: ScanHelper.CqlQueryParts,
+                                      partition: InputPartition)
+  extends CassandraBaseInJoinReader(connector, tableMetadata, inClauses, readConf, schema, cqlQueryParts, partition) {
 
   //Our read is not based on the structure of the table we are reading from
   override val rowReader =
     new UnsafeRowReaderFactory(StructType(Seq(StructField("count", LongType, false))))
-      .rowReader(tableDef, cqlQueryParts.selectedColumnRefs)
+      .rowReader(tableMetadata, cqlQueryParts.selectedColumnRefs)
 
   /*
   Casting issue here for extremely large C* partitions,

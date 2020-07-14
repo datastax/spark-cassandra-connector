@@ -287,6 +287,7 @@ case class CassandraScan(session: SparkSession,
   with Batch
   with SupportsReportPartitioning {
 
+  implicit val tableMetadataArg = tableMetadata
 
   private lazy val inputPartitions = partitionGenerator.getInputPartitions()
   private val partitionGenerator = ScanHelper.getPartitionGenerator(

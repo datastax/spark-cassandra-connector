@@ -1,5 +1,7 @@
 package com.datastax.spark.connector.writer
 
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
+
 import scala.reflect.runtime.universe._
 import com.datastax.spark.connector.ColumnRef
 import com.datastax.spark.connector.cql.TableDef
@@ -15,7 +17,7 @@ trait RowWriterFactory[T] {
     * @param table target table the user wants to write into
     * @param selectedColumns columns selected by the user; the user might wish to write only a
     *                        subset of columns */
-  def rowWriter(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]): RowWriter[T]
+  def rowWriter(table: TableMetadata, selectedColumns: IndexedSeq[ColumnRef]): RowWriter[T]
 }
 
 /** Provides a low-priority implicit `RowWriterFactory` able to write objects of any class for which

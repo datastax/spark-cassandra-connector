@@ -75,10 +75,6 @@ trait StructDef extends Serializable {
     columns(index)
   }
 
-  /** Returns the columns that are not present in the structure. */
-  def missingColumns(columnsToCheck: Seq[ColumnRef]): Seq[ColumnRef] =
-    for (c <- columnsToCheck if !columnByName.contains(c.columnName)) yield c
-
   /** Type of the data described by this struct */
   type ValueRepr <: AnyRef
 
@@ -158,6 +154,8 @@ object ColumnDef {
   }
 
   def columnName(implicit arg:ColumnMetadata) = DriverUtil.toName(arg.getName)
+
+  def toRef(implicit arg:ColumnMetadata) = ColumnName(columnName)
 }
 
 /** Cassandra Index Metadata that can be serialized
@@ -280,19 +278,22 @@ object TableDef {
                                  protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
-  def tableName(implicit arg:TableMetadata) = DriverUtil.toName(arg.getName)
+  def tableName(implicit arg:TableMetadata):String = DriverUtil.toName(arg.getName)
 
-  def name(implicit arg: TableMetadata): String =
-    s"${DriverUtil.toName(arg.getKeyspace)}.${TableDef.tableName(arg)}"
+  def keyspaceName(implicit arg: TableMetadata):String = DriverUtil.toName(arg.getKeyspace)
 
-  def keyspaceName(implicit arg: TableMetadata) = DriverUtil.toName(arg.getKeyspace)
+  def fullyQualifiedName(implicit arg: TableMetadata): String =
+    s"${TableDef.keyspaceName}.${TableDef.tableName(arg)}"
 
   def columns(implicit arg: TableMetadata): IndexedSeq[ColumnMetadata] =
     arg.getColumns.asScala.values.toIndexedSeq
 
   def columnByName(colName:String)(implicit arg: TableMetadata): ColumnMetadata =
     arg.getColumn(colName)
-      .orElseThrow(() => new NoSuchElementException(s"Column $colName not found in $name"))
+      .orElseThrow(() => new NoSuchElementException(s"Column $colName not found in $fullyQualifiedName"))
+
+  def containsColumn(colName:String)(implicit arg: TableMetadata):Boolean =
+    arg.getColumn(colName).isPresent
 
   def partitionKey(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
     val partitionKeyNames = arg.getPartitionKey.asScala.map(_.getName).toSet
@@ -311,6 +312,9 @@ object TableDef {
   def indexes(implicit arg: TableMetadata): Seq[IndexMetadata] = arg.getIndexes.asScala.values.toSeq
 
   def indexesForTarget(implicit arg: TableMetadata): Map[String, Seq[IndexMetadata]] = indexes.groupBy(_.getTarget)
+
+  def isIndexed(column: String)(implicit arg: TableMetadata): Boolean =
+    indexesForTarget.contains(column)
 
   /**
    * Contains indices that can be directly mapped to single column, namely indices with a handled column

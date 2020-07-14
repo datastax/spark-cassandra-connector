@@ -3,8 +3,8 @@ package com.datastax.spark.connector.rdd.reader
 import java.io.Serializable
 
 import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
-import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.util.MagicalTypeTricks.{DoesntHaveImplicit, IsNotSubclassOf}
@@ -16,14 +16,14 @@ import scala.reflect.runtime.universe._
 /** Creates [[RowReader]] objects prepared for reading rows from the given Cassandra table. */
 @implicitNotFound("No RowReaderFactory can be found for this type")
 trait RowReaderFactory[T] {
-  def rowReader(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]): RowReader[T]
+  def rowReader(table: TableMetadata, selectedColumns: IndexedSeq[ColumnRef]): RowReader[T]
   def targetClass: Class[T]
 }
 
 /** Helper for implementing `RowReader` objects that can be used as `RowReaderFactory` objects. */
 trait ThisRowReaderAsFactory[T] extends RowReaderFactory[T] {
   this: RowReader[T] =>
-  def rowReader(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]): RowReader[T] = this
+  def rowReader(table: TableMetadata, selectedColumns: IndexedSeq[ColumnRef]): RowReader[T] = this
 }
 
 trait LowPriorityRowReaderFactoryImplicits {

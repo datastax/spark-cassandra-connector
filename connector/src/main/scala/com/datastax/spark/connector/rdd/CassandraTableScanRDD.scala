@@ -138,11 +138,11 @@ class CassandraTableScanRDD[R] private[connector](
                  |${currentPartitioner.keyMapping}""".stripMargin)
             Some(
               newPartitioner
-                .withTableDef(tableDef)
+                .withTableMetadata(tableDef)
                 .withKeyMapping(currentPartitioner.keyMapping))
           case _ =>
             logDebug(s"Assigning new Partitioner $newPartitioner")
-            Some(newPartitioner.withTableDef(tableDef))
+            Some(newPartitioner.withTableMetadata(tableDef))
         }
       }
       case Some(other: Partitioner) => throw new IllegalArgumentException(
