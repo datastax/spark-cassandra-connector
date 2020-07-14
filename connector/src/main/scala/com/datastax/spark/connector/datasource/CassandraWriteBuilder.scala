@@ -1,9 +1,11 @@
 package com.datastax.spark.connector.datasource
 
 import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
+import com.datastax.spark.connector.util.DriverUtil
 import com.datastax.spark.connector.writer.{TTLOption, TimestampOption, WriteConf}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -16,24 +18,23 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-case class CassandraWriteBuilder(
-  session: SparkSession,
-  tableDef: TableDef,
-  catalogName: String,
-  options: CaseInsensitiveStringMap,
-  inputSchema: StructType)
+case class CassandraWriteBuilder(session: SparkSession,
+                                 tableMetadata: TableMetadata,
+                                 catalogName: String,
+                                 options: CaseInsensitiveStringMap,
+                                 inputSchema: StructType)
   extends WriteBuilder with SupportsTruncate {
 
   private val consolidatedConf = consolidateConfs(
     session.sparkContext.getConf,
     session.conf.getAll,
     catalogName,
-    tableDef.keyspaceName,
+    DriverUtil.toName(tableMetadata.getKeyspace),
     options.asScala.toMap)
 
   private val initialWriteConf = WriteConf.fromSparkConf(consolidatedConf)
 
-  private val primaryKeyNames = tableDef.primaryKey.map(_.columnName).toSet
+  private val primaryKeyNames = tableMetadata.primaryKey.map(_.columnName).toSet
   private val inputColumnNames = inputSchema.map(_.name).toSet
 
   private val missingPrimaryKeyColumns = primaryKeyNames -- inputColumnNames
@@ -66,7 +67,7 @@ case class CassandraWriteBuilder(
   override def buildForBatch(): BatchWrite = getWrite()
 
   private def getWrite(): CassandraBulkWrite = {
-    CassandraBulkWrite(session, connector, tableDef, writeConf, inputSchema, consolidatedConf)
+    CassandraBulkWrite(session, connector, tableMetadata, writeConf, inputSchema, consolidatedConf)
   }
 
   override def buildForStreaming(): StreamingWrite = getWrite()
@@ -80,7 +81,7 @@ case class CassandraWriteBuilder(
     if (consolidatedConf.getOption("confirm.truncate").getOrElse("false").toBoolean) {
       connector.withSessionDo(session =>
         session.execute(
-          QueryBuilder.truncate(CqlIdentifier.fromInternal(tableDef.keyspaceName), CqlIdentifier.fromInternal(tableDef.tableName)).asCql()))
+          QueryBuilder.truncate(CqlIdentifier.fromInternal(tableMetadata.keyspaceName), CqlIdentifier.fromInternal(tableMetadata.tableName)).asCql()))
       this
     } else {
       throw new UnsupportedOperationException(

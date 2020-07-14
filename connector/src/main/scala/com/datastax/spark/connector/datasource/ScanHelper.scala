@@ -4,8 +4,9 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.CqlIdentifier._
 import com.datastax.oss.driver.api.core.cql.BoundStatement
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.core.{ConsistencyLevel, CqlSession}
-import com.datastax.spark.connector.cql.{CassandraConnector, ScanResult, Scanner, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, ScanResult, Scanner, TableDef}
 import com.datastax.spark.connector.rdd.CassandraLimit.limitToClause
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartitionGenerator, CqlTokenRange, DataSizeEstimates}
@@ -54,20 +55,19 @@ object ScanHelper extends Logging {
   type V = t forSome {type t}
   type T = t forSome {type t <: Token[V]}
 
-  def fetchTokenRange(
-    scanner: Scanner,
-    tableDef: TableDef,
-    queryParts: CqlQueryParts,
-    range: CqlTokenRange[_, _],
-    consistencyLevel: ConsistencyLevel,
-    fetchSize: Int): ScanResult = {
+  def fetchTokenRange(scanner: Scanner,
+                      tableMetadata: TableMetadata,
+                      queryParts: CqlQueryParts,
+                      range: CqlTokenRange[_, _],
+                      consistencyLevel: ConsistencyLevel,
+                      fetchSize: Int): ScanResult = {
 
     val session = scanner.getSession()
 
-    val (cql, values) = tokenRangeToCqlQuery(range, tableDef, queryParts)
+    val (cql, values) = tokenRangeToCqlQuery(range, tableMetadata, queryParts)
 
     logDebug(
-      s"Fetching data for range ${range.cql(partitionKeyStr(tableDef))} " +
+      s"Fetching data for range ${range.cql(partitionKeyStr(tableMetadata))} " +
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
 
@@ -77,32 +77,31 @@ object ScanHelper extends Logging {
       .setRoutingToken(range.range.startNativeToken())
 
     val scanResult = scanner.scan(stmt)
-    logDebug(s"Row iterator for range ${range.cql(partitionKeyStr(tableDef))} obtained successfully.")
+    logDebug(s"Row iterator for range ${range.cql(partitionKeyStr(tableMetadata))} obtained successfully.")
 
     scanResult
   }
 
-  def partitionKeyStr(tableDef: TableDef) = {
-    tableDef.partitionKey.map(_.columnName).map(quote).mkString(", ")
+  def partitionKeyStr(tableMetadata: TableMetadata) = {
+    TableDef.partitionKey(tableMetadata).map(ColumnDef.columnName(_)).map(quote).mkString(", ")
   }
 
-  def tokenRangeToCqlQuery(
-    range: CqlTokenRange[_, _],
-    tableDef: TableDef,
-    cqlQueryParts: CqlQueryParts): (String, Seq[Any]) = {
+  def tokenRangeToCqlQuery(range: CqlTokenRange[_, _],
+                           tableMetadata: TableMetadata,
+                           cqlQueryParts: CqlQueryParts): (String, Seq[Any]) = {
 
     val columns = cqlQueryParts.selectedColumnRefs.map(_.cql).mkString(", ")
 
-    val (cql, values) = if (containsPartitionKey(tableDef, cqlQueryParts.whereClause)) {
+    val (cql, values) = if (containsPartitionKey(tableMetadata, cqlQueryParts.whereClause)) {
       ("", Seq.empty)
     } else {
-      range.cql(partitionKeyStr(tableDef))
+      range.cql(partitionKeyStr(tableMetadata))
     }
     val filter = (cql +: cqlQueryParts.whereClause.predicates).filter(_.nonEmpty).mkString(" AND ")
     val limitClause = limitToClause(cqlQueryParts.limitClause)
-    val orderBy = cqlQueryParts.clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
-    val keyspaceName = fromInternal(tableDef.keyspaceName)
-    val tableName = fromInternal(tableDef.tableName)
+    val orderBy = cqlQueryParts.clusteringOrder.map(_.toCql(tableMetadata)).getOrElse("")
+    val keyspaceName = fromInternal(TableDef.keyspaceName(tableMetadata))
+    val tableName = fromInternal(TableDef.tableName(tableMetadata))
     val queryTemplate =
       s"SELECT $columns " +
         s"FROM ${keyspaceName.asCql(true)}.${tableName.asCql(true)} " +
@@ -111,8 +110,8 @@ object ScanHelper extends Logging {
     (queryTemplate, queryParamValues)
   }
 
-  def containsPartitionKey(tableDef: TableDef, clause: CqlWhereClause): Boolean = {
-    val pk = tableDef.partitionKey.map(_.columnName).toSet
+  def containsPartitionKey(tableMetadata: TableMetadata, clause: CqlWhereClause): Boolean = {
+    val pk = TableDef.partitionKey(tableMetadata).map(ColumnDef.columnName(_)).toSet
     val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
 
     val whereColumns: Set[String] = wherePredicates.collect {
@@ -126,7 +125,7 @@ object ScanHelper extends Logging {
     }.toSet
 
     val primaryKeyComplete = whereColumns.nonEmpty && whereColumns.size == pk.size
-    val whereColumnsAllIndexed = whereColumns.forall(tableDef.isIndexed)
+    val whereColumnsAllIndexed = whereColumns.forall(TableDef.isIndexed(_)(tableMetadata))
 
     if (!primaryKeyComplete && !whereColumnsAllIndexed) {
       val missing = pk -- whereColumns
@@ -156,25 +155,25 @@ object ScanHelper extends Logging {
     }
   }
 
-  def getPartitionGenerator(
-    connector: CassandraConnector,
-    tableDef: TableDef,
-    whereClause: CqlWhereClause,
-    minSplitCount: Int,
-    partitionCount: Option[Int],
-    splitSize: Long): CassandraPartitionGenerator[V, T] = {
+  def getPartitionGenerator(connector: CassandraConnector,
+                            tableMetadata: TableMetadata,
+                            whereClause: CqlWhereClause,
+                            minSplitCount: Int,
+                            partitionCount: Option[Int],
+                            splitSize: Long): CassandraPartitionGenerator[V, T] = {
 
     implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(connector)
+    implicit val table = tableMetadata
 
-    if (containsPartitionKey(tableDef, whereClause)) {
-      CassandraPartitionGenerator(connector, tableDef, 1)
+    if (containsPartitionKey(tableMetadata, whereClause)) {
+      CassandraPartitionGenerator(connector, tableMetadata, 1)
     } else {
       partitionCount match {
         case Some(splitCount) => {
-          CassandraPartitionGenerator(connector, tableDef, splitCount)
+          CassandraPartitionGenerator(connector, tableMetadata, splitCount)
         }
         case None => {
-          val estimateDataSize = new DataSizeEstimates(connector, tableDef.keyspaceName, tableDef.tableName).dataSizeInBytes
+          val estimateDataSize = new DataSizeEstimates(connector, TableDef.keyspaceName, TableDef.tableName).dataSizeInBytes
           val splitCount = if (estimateDataSize == Long.MaxValue || estimateDataSize < 0) {
             logWarning(
               s"""Size Estimates has overflowed and calculated that the data size is Infinite.
@@ -187,7 +186,7 @@ object ScanHelper extends Logging {
             val splitCountEstimate = estimateDataSize / splitSize
             Math.max(splitCountEstimate.toInt, Math.max(minSplitCount, 1))
           }
-          CassandraPartitionGenerator(connector, tableDef, splitCount)
+          CassandraPartitionGenerator(connector, tableMetadata, splitCount)
         }
       }
     }

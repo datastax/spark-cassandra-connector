@@ -3,6 +3,7 @@ package com.datastax.spark.connector.datasource
 import java.util.concurrent.Future
 
 import com.datastax.oss.driver.api.core.cql.{PreparedStatement, Row, SimpleStatement}
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.core.{ConsistencyLevel, CqlIdentifier, CqlSession}
 import com.datastax.spark.connector.cql.{TableDef, getRowBinarySize}
 import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
@@ -32,10 +33,9 @@ object JoinHelper extends Logging {
       }
   }
 
-  def getJoinQueryString(
-    tableDef: TableDef,
-    joinColumns: Seq[ColumnRef],
-    queryParts: CqlQueryParts) = {
+  def getJoinQueryString(tableMetadata: TableMetadata,
+                         joinColumns: Seq[ColumnRef],
+                         queryParts: CqlQueryParts) = {
 
     val whereClauses = queryParts.whereClause.predicates.flatMap(CqlWhereParser.parse)
     val joinColumnNames = joinColumns.map(_.columnName)
@@ -60,10 +60,10 @@ object JoinHelper extends Logging {
     val columns = queryParts.selectedColumnRefs.map(_.cql).mkString(", ")
     val joinWhere = joinColumnNames.map(name => s"${CqlIdentifier.fromInternal(name)} = :$name")
     val limitClause = CassandraLimit.limitToClause(queryParts.limitClause)
-    val orderBy = queryParts.clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
+    val orderBy = queryParts.clusteringOrder.map(_.toCql(tableMetadata)).getOrElse("")
     val filter = (queryParts.whereClause.predicates ++ joinWhere).mkString(" AND ")
-    val quotedKeyspaceName = CqlIdentifier.fromInternal(tableDef.keyspaceName)
-    val quotedTableName = CqlIdentifier.fromInternal(tableDef.tableName)
+    val quotedKeyspaceName = CqlIdentifier.fromInternal(TableDef.keyspaceName(tableMetadata))
+    val quotedTableName = CqlIdentifier.fromInternal(TableDef.tableName(tableMetadata))
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +

@@ -1,7 +1,8 @@
 package org.apache.spark.sql.cassandra
 
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.core.{DefaultProtocolVersion, ProtocolVersion}
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 import com.datastax.spark.connector.types.TimeUUIDType
 
 /**
@@ -29,19 +30,21 @@ import com.datastax.spark.connector.types.TimeUUIDType
  */
 class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   predicates: Set[Predicate],
-  table: TableDef,
+  table: TableMetadata,
   pv: ProtocolVersion = ProtocolVersion.DEFAULT) {
+
+  implicit val tableMetadataArg = table
 
   val pvOrdering = Ordering.fromLessThan[ProtocolVersion]((a,b) => a.getCode < b.getCode)
   import pvOrdering._
 
   private val Predicates = implicitly[PredicateOps[Predicate]]
 
-  private val partitionKeyColumns = table.partitionKey.map(_.columnName)
-  private val clusteringColumns = table.clusteringColumns.map(_.columnName)
-  private val regularColumns = table.regularColumns.map(_.columnName)
+  private val partitionKeyColumns = TableDef.partitionKey.map(ColumnDef.columnName(_))
+  private val clusteringColumns = TableDef.clusteringColumns.map(ColumnDef.columnName(_))
+  private val regularColumns = TableDef.regularColumns.map(ColumnDef.columnName(_))
   private val allColumns = partitionKeyColumns ++ clusteringColumns ++ regularColumns
-  private val indexedColumns = table.indexedColumns.map(_.columnName)
+  private val indexedColumns = TableDef.indexedColumns.map(ColumnDef.columnName(_))
 
   private val singleColumnPredicates = predicates.filter(Predicates.isSingleColumnPredicate)
 
@@ -79,8 +82,8 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
     * will be obtained.
     */
   val timeUUIDNonEqual = {
-    val timeUUIDCols = table.columns.filter(x => x.columnType == TimeUUIDType)
-    timeUUIDCols.flatMap(col => rangePredicatesByName.get(col.columnName)).flatten
+    val timeUUIDCols = TableDef.columns(table).filter(x => x.getType == TimeUUIDType)
+    timeUUIDCols.flatMap(col => rangePredicatesByName.get(ColumnDef.columnName(col))).flatten
   }
 
   /** Evaluates set of columns used in equality predicates and set of columns use in 'in' predicates.

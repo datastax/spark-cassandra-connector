@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.cql
 
 import java.io.IOException
-import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
 
-import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, ProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlSession, ProtocolVersion}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.schema._
 import com.datastax.spark.connector._
@@ -11,7 +10,7 @@ import com.datastax.spark.connector.mapper.ColumnMapper
 import com.datastax.spark.connector.types.{ColumnType, CounterType, UserDefinedType}
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.NameTools
+import com.datastax.spark.connector.util.{DriverUtil, NameTools}
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
@@ -75,10 +74,6 @@ trait StructDef extends Serializable {
     require(index >= 0 && index < columns.length, s"Column index $index out of bounds for $name")
     columns(index)
   }
-
-  /** Returns the columns that are not present in the structure. */
-  def missingColumns(columnsToCheck: Seq[ColumnRef]): Seq[ColumnRef] =
-    for (c <- columnsToCheck if !columnByName.contains(c.columnName)) yield c
 
   /** Type of the data described by this struct */
   type ValueRepr <: AnyRef
@@ -148,16 +143,6 @@ case class ColumnDef(
   }
 }
 
-/** Cassandra Index Metadata that can be serialized
-  *
-  * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
-  */
-case class IndexDef(
-    className: Option[String],
-    target: String,
-    indexName: String,
-    options: Map[String, String]) extends Serializable
-
 object ColumnDef {
 
   def apply(
@@ -167,6 +152,25 @@ object ColumnDef {
     val columnType = ColumnType.fromDriverType(column.getType)
     ColumnDef(toName(column.getName), columnRole, columnType)
   }
+
+  def columnName(implicit arg:ColumnMetadata) = DriverUtil.toName(arg.getName)
+
+  def toRef(implicit arg:ColumnMetadata) = ColumnName(columnName)
+}
+
+/** Cassandra Index Metadata that can be serialized
+ *
+ * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
+ */
+case class IndexDef(
+                     className: Option[String],
+                     target: String,
+                     indexName: String,
+                     options: Map[String, String]) extends Serializable
+
+object IndexDef {
+
+  def indexName(implicit arg:IndexMetadata) = DriverUtil.toName(arg.getName)
 }
 
 /** A Cassandra table metadata that can be serialized. */
@@ -267,19 +271,75 @@ case class TableDef(
 object TableDef {
 
   /** Constructs a table definition based on the mapping provided by
-    * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
+   * appropriate [[com.datastax.spark.connector.mapper.ColumnMapper]] for the given type. */
   def fromType[T: ColumnMapper](
-      keyspaceName: String,
-      tableName: String,
-      protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
+                                 keyspaceName: String,
+                                 tableName: String,
+                                 protocolVersion: ProtocolVersion = ProtocolVersion.DEFAULT): TableDef =
     implicitly[ColumnMapper[T]].newTable(keyspaceName, tableName, protocolVersion)
 
+  def tableName(implicit arg:TableMetadata):String = DriverUtil.toName(arg.getName)
+
+  def keyspaceName(implicit arg: TableMetadata):String = DriverUtil.toName(arg.getKeyspace)
+
+  def fullyQualifiedName(implicit arg: TableMetadata): String =
+    s"${TableDef.keyspaceName}.${TableDef.tableName(arg)}"
+
+  def columns(implicit arg: TableMetadata): IndexedSeq[ColumnMetadata] =
+    arg.getColumns.asScala.values.toIndexedSeq
+
+  def columnByName(colName:String)(implicit arg: TableMetadata): ColumnMetadata =
+    arg.getColumn(colName)
+      .orElseThrow(() => new NoSuchElementException(s"Column $colName not found in $fullyQualifiedName"))
+
+  def containsColumn(colName:String)(implicit arg: TableMetadata):Boolean =
+    arg.getColumn(colName).isPresent
+
+  def partitionKey(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    val partitionKeyNames = arg.getPartitionKey.asScala.map(_.getName).toSet
+    columns(arg).filter(c => partitionKeyNames(c.getName))
+  }
+  def clusteringColumns(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    val clusteringColumnNames = arg.getClusteringColumns.keySet.asScala.map(_.getName).toSet
+    columns(arg).filter(c => clusteringColumnNames(c.getName))
+  }
+
+  def primaryKey(implicit arg: TableMetadata): IndexedSeq[ColumnMetadata] =
+    (partitionKey(arg) ++ clusteringColumns(arg)).toIndexedSeq
+
+  def regularColumns(implicit arg: TableMetadata):Seq[ColumnMetadata] = columns(arg).filterNot(primaryKey(arg).toSet)
+
+  def indexes(implicit arg: TableMetadata): Seq[IndexMetadata] = arg.getIndexes.asScala.values.toSeq
+
+  def indexesForTarget(implicit arg: TableMetadata): Map[String, Seq[IndexMetadata]] = indexes.groupBy(_.getTarget)
+
+  def isIndexed(column: String)(implicit arg: TableMetadata): Boolean =
+    indexesForTarget.contains(column)
+
+  /**
+   * Contains indices that can be directly mapped to single column, namely indices with a handled column
+   * name as a target. Indices that can not be mapped to a single column are dropped.
+   */
+  def indexesForColumnDef(implicit arg: TableMetadata): Map[ColumnMetadata, Seq[IndexMetadata]] = {
+    indexesForTarget.flatMap {
+      case (target, indexes) => Try(arg.getColumn(target).get() -> indexes).toOption
+    }
+  }
+
+  def indexedColumns(implicit arg: TableMetadata): Seq[ColumnMetadata] = {
+    indexesForColumnDef.keys.toSeq
+  }
 }
 
 /** A Cassandra keyspace metadata that can be serialized. */
 case class KeyspaceDef(keyspaceName: String, tables: Set[TableDef], userTypes: Set[UserDefinedType], isSystem: Boolean) {
   lazy val tableByName: Map[String, TableDef] = tables.map(t => (t.tableName, t)).toMap
   lazy val userTypeByName: Map[String, UserDefinedType] = userTypes.map(t => (t.name, t)).toMap
+}
+
+object KeyspaceDef {
+
+  def keyspaceName(implicit arg:KeyspaceMetadata) = DriverUtil.toName(arg.getName)
 }
 
 case class Schema(keyspaces: Set[KeyspaceDef]) {
@@ -295,134 +355,38 @@ case class Schema(keyspaces: Set[KeyspaceDef]) {
 
 object Schema extends StrictLogging {
 
-  private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
-    for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
-  }
+  /**
+   * Fetches a KeyspaceMetadata, throwing an exception with name options if the keyspace is not found.
+   */
+  def keyspaceFromCassandra(session: CqlSession,
+                            keyspaceName: String): KeyspaceMetadata = {
 
-  private def fetchClusteringColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    for ((column, index) <- table.getClusteringColumns.asScala.toSeq.zipWithIndex) yield {
-      ColumnDef(column._1, ClusteringColumn(index))
+    val tableOption = session
+      .getMetadata()
+      .getKeyspace(keyspaceName)
+    toOption(tableOption) match {
+      case Some(t) => t
+      case None =>
+        val metadata: Metadata = session.getMetadata
+        val suggestions = NameTools.getSuggestions(metadata, keyspaceName)
+        val errorMessage = NameTools.getErrorString(keyspaceName, None, suggestions)
+        throw new IOException(errorMessage)
     }
   }
-
-  private def fetchRegularColumns(table: RelationMetadata): Seq[ColumnDef] = {
-    val primaryKey = table.getPrimaryKey.asScala.toSet
-    val regularColumns = table.getColumns.asScala.values.toSeq.filterNot(primaryKey.contains)
-    for (column <- regularColumns) yield {
-      if (column.isStatic)
-        ColumnDef(column, StaticColumn)
-      else
-        ColumnDef(column, RegularColumn)
-    }
-  }
-
-  private def handleId(table: TableMetadata, columnName: String): String =
-    Option(table.getColumn(CqlIdentifier.fromInternal(columnName)))
-      .flatMap(toOption)
-      .map(c => toName(c.getName))
-      .getOrElse(columnName)
-
-  private def getIndexDefs(tableOrView: RelationMetadata): Seq[IndexDef] = tableOrView match {
-    case table: TableMetadata =>
-      for (index <- table.getIndexes.asScala.values.toSeq) yield {
-        val className = toOption(index.getClassName)
-        val target = handleId(table, index.getTarget)
-        IndexDef(className, target, toName(index.getName), Map.empty)
-      }
-    case _: ViewMetadata => Seq.empty
-  }
-
-  def fetchTable(keyspace: CqlIdentifier, table: RelationMetadata): TableDef = {
-    val partitionKey = fetchPartitionKey(table)
-    val clusteringColumns = fetchClusteringColumns(table)
-    val regularColumns = fetchRegularColumns(table)
-    val indexDefs = getIndexDefs(table)
-
-    val isView = table match {
-      case _: ViewMetadata => true
-      case _ => false
-    }
-
-    TableDef(
-      toName(keyspace),
-      toName(table.getName),
-      partitionKey,
-      clusteringColumns,
-      regularColumns,
-      indexDefs,
-      isView)
-  }
-
-  private def isTableSelected(table: RelationMetadata, selected: Option[String]): Boolean = selected match {
-    case None => true
-    case Some(name) => toName(table.getName) == name
-  }
-
-  private def fetchTables(keyspace: KeyspaceMetadata, selected: Option[String] = None): Set[TableDef] =
-    for ((_, table) <- (keyspace.getTables.asScala.toSet ++ keyspace.getViews.asScala.toSet)
-         if isTableSelected(table, selected)) yield {
-      fetchTable(keyspace.getName, table)
-    }
-
-  def fetchUserType(driverUserType: DriverUserDefinedType): UserDefinedType = {
-    UserDefinedType(driverUserType)
-  }
-
-  private def fetchUserTypes(metadata: KeyspaceMetadata): Set[UserDefinedType] = {
-    metadata.getUserDefinedTypes.asScala.map { case (_, driverUserType) => fetchUserType(driverUserType) }.toSet
-  }
-
-  private def systemKeyspaces = Set.empty[String] // TODO FIX THIS DriverUtil.getSystemKeyspaces(session)
-
-  def fetchKeyspace(keyspace: KeyspaceMetadata, selectedTable: Option[String] = None): KeyspaceDef =
-    KeyspaceDef(
-      toName(keyspace.getName),
-      fetchTables(keyspace, selectedTable),
-      fetchUserTypes(keyspace),
-      systemKeyspaces.contains(toName(keyspace.getName)))
-
-  /** Fetches database schema from Cassandra. Provides access to keyspace, table and column metadata.
-    *
-    * @param keyspaceName if defined, fetches only metadata of the given keyspace
-    * @param tableName    if defined, fetches only metadata of the given table
-    */
-  def fromCassandra(
-      session: CqlSession,
-      keyspaceName: Option[String] = None,
-      tableName: Option[String] = None): Schema = {
-
-    def isKeyspaceSelected(keyspace: KeyspaceMetadata): Boolean =
-      keyspaceName match {
-        case None => true
-        case Some(name) => toName(keyspace.getName) == name
-      }
-
-    def fetchKeyspaces(metadata: Metadata): Set[KeyspaceDef] =
-      for ((_, keyspace) <- metadata.getKeyspaces.asScala.toSet if isKeyspaceSelected(keyspace)) yield
-        fetchKeyspace(keyspace, tableName)
-
-    logger.debug(s"Retrieving database schema")
-    def fetchSchema(metadata: => Metadata): Schema =
-      Schema(fetchKeyspaces(metadata))
-
-    val scheme = fetchSchema(session.refreshSchema())
-
-    logger.debug(s"${scheme.keyspaces.size} keyspaces fetched: " +
-      s"${scheme.keyspaces.map(_.keyspaceName).mkString("{", ",", "}")}")
-    scheme
-  }
-
 
   /**
-    * Fetches a TableDef for a particular Cassandra Table throws an
+    * Fetches a TableMetadata for a particular Cassandra Table, throwing an
     * exception with name options if the table is not found.
     */
-  def tableFromCassandra(
-      session: CqlSession,
-      keyspaceName: String,
-      tableName: String): TableDef = {
+  def tableFromCassandra(session: CqlSession,
+                         keyspaceName: String,
+                         tableName: String): TableMetadata = {
 
-    fromCassandra(session, Some(keyspaceName), Some(tableName)).tables.headOption match {
+    val tableOption = session
+      .getMetadata()
+      .getKeyspace(keyspaceName)
+      .flatMap(keyMeta => keyMeta.getTable(tableName))
+    toOption(tableOption) match {
       case Some(t) => t
       case None =>
         val metadata: Metadata = session.getMetadata

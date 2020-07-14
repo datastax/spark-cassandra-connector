@@ -2,6 +2,7 @@ package com.datastax.spark.connector.datasource
 
 import java.util.OptionalLong
 
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector.RowCountRef
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
@@ -13,12 +14,11 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
 
-case class CassandraScanPartitionReaderFactory(
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  schema: StructType,
-  readConf: ReadConf,
-  queryParts: CqlQueryParts) extends PartitionReaderFactory {
+case class CassandraScanPartitionReaderFactory(connector: CassandraConnector,
+                                               tableMetadata: TableMetadata,
+                                               schema: StructType,
+                                               readConf: ReadConf,
+                                               queryParts: CqlQueryParts) extends PartitionReaderFactory {
 
   override def createReader(partition: InputPartition): PartitionReader[InternalRow] = {
 
@@ -27,7 +27,7 @@ case class CassandraScanPartitionReaderFactory(
       //Count Pushdown
       CassandraCountPartitionReader(
         connector,
-        tableDef,
+        tableMetadata,
         schema,
         readConf,
         queryParts,
@@ -35,7 +35,7 @@ case class CassandraScanPartitionReaderFactory(
     } else {
       CassandraScanPartitionReader(
         connector,
-        tableDef,
+        tableMetadata,
         schema,
         readConf,
         queryParts,
@@ -51,7 +51,7 @@ abstract class CassandraPartitionReaderBase
     with Logging {
 
   protected val connector: CassandraConnector
-  protected val tableDef: TableDef
+  protected val tableMetadata: TableMetadata
   protected val schema: StructType
   protected val readConf: ReadConf
   protected val queryParts: CqlQueryParts
@@ -88,7 +88,11 @@ abstract class CassandraPartitionReaderBase
 
     override def sizeInBytes(): OptionalLong = {
       implicit val tokenFactory = TokenFactory.forSystemLocalPartitioner(connector)
-      val sizeInBytes = new DataSizeEstimates[V, T](connector, tableDef.keyspaceName, tableDef.keyspaceName).dataSizeInBytes
+      val sizeInBytes =
+        new DataSizeEstimates[V, T](
+          connector,
+          TableDef.keyspaceName(tableMetadata),
+          TableDef.keyspaceName(tableMetadata)).dataSizeInBytes
       OptionalLong.of(sizeInBytes)
     }
 
@@ -105,48 +109,48 @@ abstract class CassandraPartitionReaderBase
   */
   protected def getIterator(): Iterator[InternalRow] = {
     tokenRanges.iterator.flatMap { range =>
-      val scanResult = ScanHelper.fetchTokenRange(scanner, tableDef, queryParts, range, readConf.consistencyLevel, readConf.fetchSizeInRows)
+      val scanResult = ScanHelper.fetchTokenRange(scanner, tableMetadata, queryParts, range, readConf.consistencyLevel, readConf.fetchSizeInRows)
       val meta = scanResult.metadata
       scanResult.rows.map(rowReader.read(_, meta))
     }
   }
 
-  protected def rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableDef, queryParts.selectedColumnRefs)
+  protected def rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableMetadata, queryParts.selectedColumnRefs)
 }
 
 /**
   * Physical Scan Reader of Cassandra
   *
   * @param connector  Connection to Cassandra to use for Reading
-  * @param tableDef   Table Definition Information for the table being scanned
+  * @param tableMetadata   Table Definition Information for the table being scanned
   * @param schema     Output Schema to be produced from this read
   * @param readConf   Options relating to how the read should be performed
   * @param queryParts Additional query elements to add to the TokenRange Scan query
   * @param partition  The Token Range to Query with Localization Info
   */
-case class CassandraScanPartitionReader(
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  schema: StructType,
-  readConf: ReadConf,
-  queryParts: CqlQueryParts,
-  partition: CassandraPartition[Any, _ <: Token[Any]]) extends CassandraPartitionReaderBase
+case class CassandraScanPartitionReader(connector: CassandraConnector,
+                                        tableMetadata: TableMetadata,
+                                        schema: StructType,
+                                        readConf: ReadConf,
+                                        queryParts: CqlQueryParts,
+                                        partition: CassandraPartition[Any, _ <: Token[Any]])
+  extends CassandraPartitionReaderBase
 
 /**
   * Runs a COUNT(*) query instead of a request for actual rows
   * Takes the results and returns that many empty internal rows
   */
-case class CassandraCountPartitionReader(
-  connector: CassandraConnector,
-  tableDef: TableDef,
-  schema: StructType,
-  readConf: ReadConf,
-  queryParts: CqlQueryParts,
-  partition: CassandraPartition[Any, _ <: Token[Any]]) extends CassandraPartitionReaderBase {
+case class CassandraCountPartitionReader(connector: CassandraConnector,
+                                         tableMetadata: TableMetadata,
+                                         schema: StructType,
+                                         readConf: ReadConf,
+                                         queryParts: CqlQueryParts,
+                                         partition: CassandraPartition[Any, _ <: Token[Any]])
+  extends CassandraPartitionReaderBase {
 
   //Our read is not based on the structure of the table we are reading from
   override val rowReader = new UnsafeRowReaderFactory(StructType(Seq(StructField("count", LongType, false))))
-    .rowReader(tableDef, queryParts.selectedColumnRefs)
+    .rowReader(tableMetadata, queryParts.selectedColumnRefs)
 
   /*
   Casting issue here for extremely large C* partitions,

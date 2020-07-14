@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.datasource
 
 import com.datastax.oss.driver.api.core.cql.Row
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef}
@@ -12,7 +13,7 @@ import org.apache.spark.sql.{Row => SparkRow}
 
 class UnsafeRowReaderFactory(schema: StructType) extends RowReaderFactory[UnsafeRow] {
 
-  override def rowReader(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]):
+  override def rowReader(table: TableMetadata, selectedColumns: IndexedSeq[ColumnRef]):
   RowReader[UnsafeRow] = new UnsafeRowReader(schema)
 
   override def targetClass: Class[UnsafeRow] = classOf[UnsafeRow]

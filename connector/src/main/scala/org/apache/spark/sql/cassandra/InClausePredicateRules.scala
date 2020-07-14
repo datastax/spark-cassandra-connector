@@ -6,6 +6,7 @@
 
 package org.apache.spark.sql.cassandra
 
+import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
 import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
 import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
@@ -23,12 +24,12 @@ object InClausePredicateRules extends CassandraPredicateRules with Logging {
       handledBySpark = predicates.handledBySpark ++ filters,
       handledByCassandra = predicates.handledByCassandra -- filters)
 
-  private def columnsFilters(filters: Set[Filter], columns: Seq[ColumnDef]): Set[Filter] =
-    filters.filter(f => columns.exists(_.columnName == columnName(f)))
+  private def columnsFilters(filters: Set[Filter], columns: Seq[ColumnMetadata]): Set[Filter] =
+    filters.filter(f => columns.exists(ColumnDef.columnName(_) == columnName(f)))
 
   private def filterOutHugeInClausePredicates(
     predicates: AnalyzedPredicates,
-    tableDef: TableDef,
+    table: TableMetadata,
     sparkConf: SparkConf): AnalyzedPredicates = {
     val fullTableScanConversionThreshold = sparkConf.getLong(
       InClauseToFullTableScanConversionThreshold.name,
@@ -36,8 +37,8 @@ object InClausePredicateRules extends CassandraPredicateRules with Logging {
 
     val inFilters = predicates.handledByCassandra.filter(isInPredicate)
 
-    val partitionColumnsFilters = columnsFilters(inFilters, tableDef.partitionKey)
-    val clusteringColumnsFilters = columnsFilters(inFilters, tableDef.clusteringColumns)
+    val partitionColumnsFilters = columnsFilters(inFilters, TableDef.partitionKey(table))
+    val clusteringColumnsFilters = columnsFilters(inFilters, TableDef.clusteringColumns(table))
 
     val partitionCartesianSize = inCrossProductSize(partitionColumnsFilters)
     val clusteringCartesianSize = inCrossProductSize(clusteringColumnsFilters)
@@ -56,7 +57,7 @@ object InClausePredicateRules extends CassandraPredicateRules with Logging {
     }
   }
 
-  override def apply(predicates: AnalyzedPredicates, tableDef: TableDef, conf: SparkConf): AnalyzedPredicates = {
-    filterOutHugeInClausePredicates(predicates, tableDef, conf)
+  override def apply(predicates: AnalyzedPredicates, table: TableMetadata, conf: SparkConf): AnalyzedPredicates = {
+    filterOutHugeInClausePredicates(predicates, table, conf)
   }
 }
