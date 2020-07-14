@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.cql.TableDef
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.SparkConf
 
@@ -14,5 +14,5 @@ case class AnalyzedPredicates(
 }
 
 trait CassandraPredicateRules{
-  def apply(predicates: AnalyzedPredicates, tableDef: TableDef, conf: SparkConf): AnalyzedPredicates
+  def apply(predicates: AnalyzedPredicates, table: TableMetadata, conf: SparkConf): AnalyzedPredicates
 }

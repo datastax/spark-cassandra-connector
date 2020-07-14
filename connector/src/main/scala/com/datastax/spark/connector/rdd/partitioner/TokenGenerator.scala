@@ -3,14 +3,12 @@ package com.datastax.spark.connector.rdd.partitioner
 import java.nio.ByteBuffer
 
 import com.datastax.driver.core.MetadataHook
-import com.datastax.oss.driver.api.core.cql.BoundStatement
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import com.datastax.oss.driver.api.core.metadata.token.Token
-import com.datastax.spark.connector.cql.{CassandraConnector, QueryUtils, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnector, QueryUtils}
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
-import com.datastax.spark.connector.writer.{BoundStatementBuilder, NullKeyColumnException, RowWriter}
-
-import scala.collection.JavaConverters._
+import com.datastax.spark.connector.writer.{BoundStatementBuilder, RowWriter}
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine
@@ -18,7 +16,7 @@ import scala.collection.JavaConverters._
   */
 private[connector] class TokenGenerator[T] (
   connector: CassandraConnector,
-  tableDef: TableDef,
+  table: TableMetadata,
   rowWriter: RowWriter[T]) extends Serializable with Logging {
 
   val protocolVersion = connector.withSessionDo { session =>
@@ -26,7 +24,7 @@ private[connector] class TokenGenerator[T] (
   }
 
   //Makes a PreparedStatement which we use only to generate routing keys on the client
-  val stmt = connector.withSessionDo { session => prepareDummyStatement(session, tableDef) }
+  val stmt = connector.withSessionDo { session => prepareDummyStatement(session, table) }
   val metadata = connector.withSessionDo(_.getMetadata)
 
   val boundStmtBuilder = new BoundStatementBuilder(

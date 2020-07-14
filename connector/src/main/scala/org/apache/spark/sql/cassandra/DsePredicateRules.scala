@@ -5,7 +5,7 @@
  */
 package org.apache.spark.sql.cassandra
 
-import com.datastax.spark.connector.cql.{ColumnDef, TableDef}
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.sources.{EqualTo, Filter, In, IsNotNull}
 
@@ -17,10 +17,10 @@ object DsePredicateRules extends CassandraPredicateRules {
 
   override def apply(
     predicates: AnalyzedPredicates,
-    tableDef: TableDef,
+    tableMetadata: TableMetadata,
     sparkConf: SparkConf): AnalyzedPredicates = {
-    
-    pushOnlySolrQuery(predicates, tableDef)
+
+    pushOnlySolrQuery(predicates, tableMetadata)
   }
 
   /**
@@ -33,7 +33,7 @@ object DsePredicateRules extends CassandraPredicateRules {
     */
   def pushOnlySolrQuery(
     predicates: AnalyzedPredicates,
-    tableDef: TableDef): AnalyzedPredicates = {
+    table: TableMetadata): AnalyzedPredicates = {
 
     val allPredicates = predicates.handledByCassandra ++ predicates.handledBySpark
 
