@@ -108,6 +108,11 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
         if (config.dseWorkloads.nonEmpty) {
           execute("setworkload", config.dseWorkloads.mkString(","))
         }
+      } else {
+        // C* 4.0.0 has materialized views disabled by default
+        if (config.getCassandraVersion.compareTo(Version.parse("4.0-beta1")) >= 0) {
+          execute("updateconf", "enable_materialized_views:true")
+        }
       }
     }
   }

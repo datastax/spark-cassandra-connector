@@ -163,9 +163,9 @@ object CcmConfig {
   /** Stores the given resource in `/tmp/ccm_resources` directory. Stored file name is prefixed with the given prefix */
   def storeResource(prefix: String, resource: String): String = {
     val resourceName = Paths.get(resource).getFileName.toString
-    var file = Paths.get("/tmp/ccm_resources").resolve(s"${prefix}_${resourceName}").toFile
+    val file = Paths.get("/tmp/ccm_resources").resolve(s"${prefix}_${resourceName}").toFile
     file.getParentFile.mkdirs()
 
-    store(resource, file).getAbsolutePath.toString
+    store(resource, file).getAbsolutePath
   }
 }
