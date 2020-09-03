@@ -87,7 +87,7 @@ class CassandraCatalog extends CatalogPlugin
     nameIdentifier = connector.conf.contactInfo.endPointStr()
   }
 
-  override def name(): String = s"Catalog $catalogName For Cassandra Cluster At $nameIdentifier " //TODO add identifier here
+  override def name(): String = catalogName
 
   override def listNamespaces(): Array[Array[String]] = {
     getMetadata(connector)
@@ -440,7 +440,7 @@ object CassandraCatalog {
     * is used to quickly bail out if the namespace is not compatible with Cassandra
     */
   def checkNamespace(namespace: Array[String]): Unit = {
-    if (namespace.length != 1) throw new NoSuchNamespaceException(s"$OnlyOneNamespace : $namespace")
+    if (namespace.length != 1) throw new NoSuchNamespaceException(s"""$OnlyOneNamespace: ${namespace.mkString(".")}""")
   }
 
   //Currently these exceptions are not always propagated to the user so Suggestions will not appear for all executions
