@@ -1,5 +1,6 @@
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport.dependencyUpdatesFilter
-import sbt.Keys.parallelExecution
+import pl.project13.scala.sbt.JmhPlugin.JmhKeys.Jmh
+import sbt.Keys.{libraryDependencies, parallelExecution}
 import sbt.{Compile, moduleFilter, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
@@ -75,7 +76,7 @@ def scalacVersionDependantOptions(scalaBinary: String): Seq[String] = scalaBinar
 
 lazy val root = (project in file("."))
   .disablePlugins(AssemblyPlugin)
-  .aggregate(connector, testSupport, driver, publishableAssembly)
+  .aggregate(connector, testSupport, driver, performance, publishableAssembly)
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
     crossScalaVersions := Nil,
@@ -137,7 +138,29 @@ lazy val driver = (project in file("driver"))
       :+ ("org.scala-lang" % "scala-reflect" % scalaVersion.value)
   )
 
-/** The following project defines an extra artifact published alongside main 'spark-cassandra-connector'.
+lazy val performance = (project in file("performance"))
+  .configs(IntegrationTest)
+  .enablePlugins(JmhPlugin)
+  .disablePlugins(AssemblyPlugin)
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    publish / skip := true,
+    name := "spark-cassandra-connector-performance",
+    Jmh / sourceDirectory := (sourceDirectory in Test).value,
+    Jmh / classDirectory := (classDirectory in Test).value,
+    Jmh / dependencyClasspath := (dependencyClasspath in Test).value,
+    Jmh / compile := (compile in Jmh).dependsOn(compile in Test).value,
+    Jmh / run := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated,
+
+    libraryDependencies ++= Dependencies.Spark.dependencies
+      ++ Dependencies.TestConnector.dependencies
+  )
+  .dependsOn(
+    connector % "test->it",
+    testSupport % "test"
+  )
+
+/** Defines an extra artifact published alongside main 'spark-cassandra-connector'.
   * It's an assembled version of the main artifact. It contains all of the dependent classes, some of them
   * are shaded. */
 lazy val publishableAssembly = project
