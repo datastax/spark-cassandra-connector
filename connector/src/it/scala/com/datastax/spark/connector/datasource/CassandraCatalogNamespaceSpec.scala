@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
 
   "A Cassandra Catalog Namespace Support" should "initialize successfully" in {
-    spark.sessionState.catalogManager.currentCatalog.name() should include("Catalog cassandra")
+    spark.sessionState.catalogManager.currentCatalog.name() should be(defaultCatalog)
   }
 
   it should "list available keyspaces" in {
@@ -21,13 +21,13 @@ class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
     spark.sql(s"CREATE DATABASE IF NOT EXISTS $defaultKs WITH DBPROPERTIES (class='SimpleStrategy',replication_factor='5')")
     waitForKeyspaceToExist(defaultKs)
     //Using Catalog and DefaultKS triggers listNamespaces(namespace) pathway
-    val result = spark.sql(s"SHOW NAMESPACES FROM $catalogName.$defaultKs").collect
+    val result = spark.sql(s"SHOW NAMESPACES FROM $defaultCatalog.$defaultKs").collect
     result shouldBe empty
   }
 
   it should "give no keyspace found when looking up a keyspace which doesn't exist" in {
     intercept[NoSuchNamespaceException]{
-      spark.sql(s"SHOW NAMESPACES FROM $catalogName.fakenotreal").collect
+      spark.sql(s"SHOW NAMESPACES FROM $defaultCatalog.fakenotreal").collect
     }
   }
 
@@ -111,5 +111,11 @@ class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
     waitForKeyspaceToExist(defaultKs)
     spark.sql(s"DROP DATABASE $defaultKs")
     waitForKeyspaceToExist(defaultKs, false)
+  }
+
+  it should "allow to switch a catalog" in {
+    val otherCatalog = "itsatrap"
+    spark.conf.set(s"spark.sql.catalog.$otherCatalog", classOf[CassandraCatalog].getCanonicalName)
+    spark.sql(s"USE $otherCatalog")
   }
 }

@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
 
   "A Cassandra Catalog Table Support" should "initialize successfully" in {
-    spark.sessionState.catalogManager.currentCatalog.name() should include("Catalog cassandra")
+    spark.sessionState.catalogManager.currentCatalog.name() should be(defaultCatalog)
   }
 
   val testTable = "testTable"

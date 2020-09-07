@@ -19,7 +19,7 @@ class CassandraCatalogTableReadSpec extends CassandraCatalogSpecBase {
   }
 
   "A Cassandra Catalog Table Read Support" should "initialize successfully" in {
-    spark.sessionState.catalogManager.currentCatalog.name() should include("Catalog cassandra")
+    spark.sessionState.catalogManager.currentCatalog.name() should be(defaultCatalog)
   }
 
   it should "read from an empty table" in {

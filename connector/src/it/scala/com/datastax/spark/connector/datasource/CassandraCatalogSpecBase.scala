@@ -19,6 +19,7 @@ class CassandraCatalogSpecBase
   override def conn: CassandraConnector = CassandraConnector(sparkConf)
 
   val defaultKs = "catalogtestks"
+  val defaultCatalog = "cassandra"
 
   val EmptyInputPartition = CassandraPartition(0, Array.empty, Iterable.empty, 0)
 
@@ -48,11 +49,9 @@ class CassandraCatalogSpecBase
 
   implicit val patienceConfig = PatienceConfig(scaled(5 seconds), scaled(200 millis))
 
-  val catalogName = "cassandra"
-
   override def beforeClass: Unit = {
     super.beforeClass
-    spark.conf.set(s"spark.sql.catalog.$catalogName", classOf[CassandraCatalog].getCanonicalName)
+    spark.conf.set(s"spark.sql.catalog.$defaultCatalog", classOf[CassandraCatalog].getCanonicalName)
     spark.conf.set(SQLConf.DEFAULT_CATALOG.key, "cassandra")
   }
 
