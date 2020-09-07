@@ -18,7 +18,7 @@ class CassandraCatalogTableWriteSpec extends CassandraCatalogSpecBase {
   }
 
   "A Cassandra Catalog Table Write Support" should "initialize successfully" in {
-    spark.sessionState.catalogManager.currentCatalog.name() should include("Catalog cassandra")
+    spark.sessionState.catalogManager.currentCatalog.name() should be(defaultCatalog)
   }
 
   it should "support CTAS" in {
