@@ -44,8 +44,9 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
     * 4.0-beta1 which breaks versioning convention used in integration tests.
     */
   private def adjustCassandraBetaVersion(version: String): String = {
+    val beta = "4.0.0-beta(\\d+)".r
     version match {
-      case "4.0.0-beta1" => "4.0-beta1"
+      case beta(betaNo) => s"4.0-beta$betaNo"
       case other => other
     }
   }
