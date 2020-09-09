@@ -187,7 +187,7 @@ object DefaultConnectionFactory extends CassandraConnectionFactory {
 
     if (isContinuousPagingEnabled) {
       logger.debug("Using ContinousPagingScanner")
-      new ContinuousPagingScanner(readConf, connConf, columnNames)
+      ContinuousPagingScanner(readConf, connConf, columnNames)
     } else {
       logger.debug("Not Connected to DSE 5.1 or Greater Falling back to Non-Continuous Paging")
       new DefaultScanner(readConf, connConf, columnNames)
