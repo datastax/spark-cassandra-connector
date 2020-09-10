@@ -10,7 +10,7 @@ import com.datastax.spark.connector.types.TypeAdapters.{ValueByNameAdapter, Valu
 import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.DriverUtil.toAddress
-import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
+import com.datastax.spark.connector.util.{DriverUtil, Logging, SerialShutdownHooks}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.{SparkConf, SparkContext, SparkFiles}
 
@@ -71,7 +71,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
         .values
         .asScala
         .filter(_.getDistance == NodeDistance.LOCAL)
-        .flatMap(node => Option(node.getBroadcastAddress.orElse(null)))
+        .flatMap(DriverUtil.toAddress)
         .toSet
     }
 
