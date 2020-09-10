@@ -1,11 +1,8 @@
 package com.datastax.spark.connector.rdd.reader
 
-import java.util.concurrent.TimeUnit
-
 import com.codahale.metrics.Timer
-import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ResultSet, Row}
-import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet
-import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
+import com.datastax.oss.driver.internal.core.cql.ResultSets
 
 /** Allows to efficiently iterate over a large, paged ResultSet,
   * asynchronously prefetching the next page.
@@ -15,10 +12,10 @@ import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFut
   *                           initiates fetching the next page
   * @param timer a Codahale timer to optionally gather the metrics of fetching time
   */
-class PrefetchingResultSetIterator(resultSet: ResultSet, prefetchWindowSize: Int, timer: Option[Timer] = None)
+class PrefetchingResultSetIterator(resultSet: AsyncResultSet, prefetchWindowSize: Int, timer: Option[Timer] = None)
   extends Iterator[Row] {
 
-  private[this] val iterator = resultSet.iterator()
+  private val iterator = ResultSets.newInstance(resultSet).iterator() //TODO
 
   override def hasNext = iterator.hasNext
 
