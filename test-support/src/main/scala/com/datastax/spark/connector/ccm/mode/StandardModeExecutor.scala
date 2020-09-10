@@ -37,12 +37,26 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
     throw new IllegalStateException(s"Unable to complete function in $timeoutInSeconds: $hint")
   }
 
+  /**
+    * Remove this once C* 4.0.0 is released.
+    *
+    * This is a workaround that allows running it:test against 4.0.0-beta1. This version of C* is published as
+    * 4.0-beta1 which breaks versioning convention used in integration tests.
+    */
+  private def adjustCassandraBetaVersion(version: String): String = {
+    val beta = "4.0.0-beta(\\d+)".r
+    version match {
+      case beta(betaNo) => s"4.0-beta$betaNo"
+      case other => other
+    }
+  }
+
   override def create(clusterName: String): Unit = {
     if (created.compareAndSet(false, true)) {
       val options = config.installDirectory
         .map(dir => config.createOptions :+ s"--install-dir=${new File(dir).getAbsolutePath}")
         .orElse(config.installBranch.map(branch => config.createOptions :+ s"-v git:${branch.trim().replaceAll("\"", "")}"))
-        .getOrElse(config.createOptions :+ s"-v ${config.version}")
+        .getOrElse(config.createOptions :+ s"-v ${adjustCassandraBetaVersion(config.version.toString)}")
 
       val dseFlag = if (config.dseEnabled) Some("--dse") else None
 
@@ -53,7 +67,7 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
         sys.props.get("user.home").get,
         ".ccm",
         "repository",
-        config.getDseVersion.getOrElse(config.getCassandraVersion).toString)
+        adjustCassandraBetaVersion(config.getDseVersion.getOrElse(config.getCassandraVersion).toString))
 
       if (Files.exists(repositoryDir)) {
         logger.info(s"Found cached repository dir: $repositoryDir")
@@ -94,6 +108,11 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
         }
         if (config.dseWorkloads.nonEmpty) {
           execute("setworkload", config.dseWorkloads.mkString(","))
+        }
+      } else {
+        // C* 4.0.0 has materialized views disabled by default
+        if (config.getCassandraVersion.compareTo(Version.parse("4.0-beta1")) >= 0) {
+          execute("updateconf", "enable_materialized_views:true")
         }
       }
     }
