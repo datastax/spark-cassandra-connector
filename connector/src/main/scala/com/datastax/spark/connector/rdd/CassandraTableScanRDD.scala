@@ -331,14 +331,12 @@ class CassandraTableScanRDD[R] private[connector](
     range: CqlTokenRange[_, _],
     inputMetricsUpdater: InputMetricsUpdater): Iterator[R] = {
 
-    val session = scanner.getSession()
-
     val (cql, values) = tokenRangeToCqlQuery(range)
     logDebug(
       s"Fetching data for range ${range.cql(partitionKeyStr)} " +
         s"with $cql " +
         s"with params ${values.mkString("[", ",", "]")}")
-    val stmt = createStatement(session, cql, values: _*)
+    val stmt = createStatement(scanner.getSession(), cql, values: _*)
       .setRoutingToken(range.range.startNativeToken())
 
     try {
