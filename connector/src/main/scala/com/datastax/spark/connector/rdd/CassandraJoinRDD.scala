@@ -124,7 +124,6 @@ class CassandraJoinRDD[L, R] (
     metricsUpdater: InputMetricsUpdater
   ): Iterator[(L, R)] = {
 
-
     val queryExecutor = QueryExecutor(session, readConf.parallelismLevel, None, None)
 
     def pairWithRight(left: L): SettableFuture[Iterator[(L, R)]] = {
@@ -133,9 +132,12 @@ class CassandraJoinRDD[L, R] (
 
       import com.datastax.spark.connector.util.Threads.BlockingIOExecutionContext
 
-      queryExecutor.executeAsync(bsb.bind(left).executeAs(readConf.executeAs)).onComplete {
+      val stmt = bsb.bind(left)
+        .update(_.setPageSize(readConf.fetchSizeInRows))
+        .executeAs(readConf.executeAs)
+      queryExecutor.executeAsync(stmt).onComplete {
         case Success(rs) =>
-          val resultSet = new PrefetchingResultSetIterator(rs, fetchSize)
+          val resultSet = new PrefetchingResultSetIterator(rs)
           val iteratorWithMetrics = resultSet.map(metricsUpdater.updateMetrics)
           /* This is a much less than ideal place to actually rate limit, we are buffering
           these futures this means we will most likely exceed our threshold*/

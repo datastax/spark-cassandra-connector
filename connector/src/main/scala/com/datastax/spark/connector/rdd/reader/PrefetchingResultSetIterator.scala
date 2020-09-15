@@ -1,45 +1,55 @@
 package com.datastax.spark.connector.rdd.reader
 
+import java.util.concurrent.TimeUnit
+
 import com.codahale.metrics.Timer
+import com.datastax.bdp.util.ScalaJavaUtil
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
-import com.datastax.oss.driver.internal.core.cql.ResultSets
+import com.datastax.spark.connector.util.Threads.BlockingIOExecutionContext
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /** Allows to efficiently iterate over a large, paged ResultSet,
   * asynchronously prefetching the next page.
-  * 
+  *
+  * This iterator is NOT thread safe. Attempting to retrieve elements from many threads without synchronization
+  * may yield unspecified results.
+  *
   * @param resultSet result set obtained from the Java driver
-  * @param prefetchWindowSize if there are less than this rows available without blocking,
-  *                           initiates fetching the next page
-  * @param timer a Codahale timer to optionally gather the metrics of fetching time
+  * @param timer     a Codahale timer to optionally gather the metrics of fetching time
   */
-class PrefetchingResultSetIterator(resultSet: AsyncResultSet, prefetchWindowSize: Int, timer: Option[Timer] = None)
-  extends Iterator[Row] {
+class PrefetchingResultSetIterator(resultSet: AsyncResultSet, timer: Option[Timer] = None) extends Iterator[Row] {
+  private var currentIterator = resultSet.currentPage().iterator()
+  private var currentResultSet = resultSet
+  private var nextResultSet = fetchNextPage()
 
-  private val iterator = ResultSets.newInstance(resultSet).iterator() //TODO
+  private def fetchNextPage(): Option[Future[AsyncResultSet]] = {
+    if (currentResultSet.hasMorePages) {
+      val t0 = System.nanoTime();
+      val next = ScalaJavaUtil.asScalaFuture(currentResultSet.fetchNextPage())
+      timer.foreach { t =>
+        next.foreach(_ => t.update(System.nanoTime() - t0, TimeUnit.NANOSECONDS))
+      }
+      Option(next)
+    } else
+      None
+  }
 
-  override def hasNext = iterator.hasNext
+  private def maybePrefetch(): Unit = {
+    if (!currentIterator.hasNext && currentResultSet.hasMorePages) {
+      currentResultSet = Await.result(nextResultSet.get, Duration.Inf)
+      currentIterator = currentResultSet.currentPage().iterator()
+      nextResultSet = fetchNextPage()
+    }
+  }
 
-// TODO: implement async page fetching. Following implementation might call fetchMoreResults up to prefetchWindowSize
-//       times to fetch the same page. Is this behaviour still valid in the new driver?
-//       This class should take AsyncResultSet as constructor param (not ResultSet)
+  override def hasNext: Boolean =
+    currentIterator.hasNext || currentResultSet.hasMorePages
 
-//  private[this] def maybePrefetch(): Unit = {
-//    if (!resultSet.isFullyFetched && resultSet.getAvailableWithoutFetching < prefetchWindowSize) {
-//      val t0 = System.nanoTime()
-//      val future: ListenableFuture[ResultSet] = resultSet.fetchMoreResults()
-//      if (timer.isDefined)
-//        Futures.addCallback(future, new FutureCallback[ResultSet] {
-//          override def onSuccess(ignored: ResultSet): Unit = {
-//            timer.get.update(System.nanoTime() - t0, TimeUnit.NANOSECONDS)
-//          }
-//
-//          override def onFailure(ignored: Throwable): Unit = { }
-//        })
-//    }
-//  }
-
-  override def next() = {
-//    maybePrefetch()
-    iterator.next()
+  override def next(): Row = {
+    val row = currentIterator.next() // let's try to exhaust the current iterator first
+    maybePrefetch()
+    row
   }
 }

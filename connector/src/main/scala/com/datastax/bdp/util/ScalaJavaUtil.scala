@@ -11,7 +11,7 @@ import java.util.concurrent.{Callable, CompletionStage}
 import java.util.function
 import java.util.function.{BiConsumer, Consumer, Predicate, Supplier}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
 import scala.concurrent.duration.{Duration => ScalaDuration}
 import scala.language.implicitConversions
 
@@ -48,7 +48,7 @@ object ScalaJavaUtil {
   def asScalaFunction[T, R](f: java.util.function.Function[T, R]): T => R = x => f(x)
 
   def asScalaFuture[T](completionStage: CompletionStage[T])
-                      (implicit context: ExecutionContext): Future[T] = {
+                      (implicit context: ExecutionContextExecutor): Future[T] = {
     val promise = Promise[T]()
     completionStage.whenCompleteAsync(new BiConsumer[T, java.lang.Throwable] {
       override def accept(t: T, throwable: Throwable): Unit = {
@@ -58,7 +58,7 @@ object ScalaJavaUtil {
           promise.failure(throwable)
 
       }
-    })
+    }, context)
     promise.future
   }
 }

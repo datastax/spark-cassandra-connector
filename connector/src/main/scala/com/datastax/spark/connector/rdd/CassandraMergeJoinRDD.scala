@@ -160,7 +160,7 @@ class CassandraMergeJoinRDD[L,R](
     val fetchResult = asScalaFuture(session.executeAsync(stmt)).map { rs =>
       val columnNames = fromRDD.selectedColumnRefs.map(_.selectedAs).toIndexedSeq ++ Seq(TokenColumn)
       val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, session)
-      val iterator = new PrefetchingResultSetIterator(rs, fromRDD.readConf.fetchSizeInRows)
+      val iterator = new PrefetchingResultSetIterator(rs)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       logDebug(s"Row iterator for range $range obtained successfully.")
       (columnMetaData, iteratorWithMetrics)

@@ -44,7 +44,7 @@ class DefaultScanner (
     val rs = session.executeAsync(maybeExecutingAs(statement, readConf.executeAs))
     val scanResult = asScalaFuture(rs).map { rs =>
       val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, codecRegistry)
-      val prefetchingIterator = new PrefetchingResultSetIterator(rs, readConf.fetchSizeInRows)
+      val prefetchingIterator = new PrefetchingResultSetIterator(rs)
       val rateLimitingIterator = readConf.throughputMiBPS match {
         case Some(throughput) =>
           val rateLimiter = new RateLimiter((throughput * 1024 * 1024).toLong, 1024 * 1024)
