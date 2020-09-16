@@ -20,15 +20,34 @@ object Testing {
     }.toMap
   }
 
+  private def splitGroupsBiggerThanThreshold(
+      groupName: String,
+      groupTests: Iterable[TestDefinition]): TraversableOnce[(String, Iterable[TestDefinition])] = {
+    val groupSize = sys.env.get("TEST_MAX_GROUP_SIZE").map(_.toInt).getOrElse(MaxGroupSize)
+    if (groupTests.size > groupSize) {
+      groupTests.sliding(groupSize, groupSize)
+        .zipWithIndex
+        .map { case (ts, index) => (s"${groupName}_splitted_$index", ts) }
+    } else {
+      Seq((groupName, groupTests))
+    }
+  }
+
   def makeTestGroups(testsWithFixtures: Map[TestDefinition, Seq[String]]): Seq[Group] = {
     val (separateJVMTests, groupedTests) = testsWithFixtures
       .partition { case (_, fixtures) => fixtures.contains("SeparateJVM") }
 
-    val testsByGroupName = groupedTests.groupBy(_._2).map { case (fixtures, tests) => (fixtures.mkString("-"), tests.keys) } ++
-      separateJVMTests.zipWithIndex.map { case ((test, fixtures), i) => ((fixtures ++ i.toString).mkString("-"), Seq(test)) }
+    val testsByName = groupedTests.groupBy(_._2)
+      .map { case (fixtures, tests) => (fixtures.mkString("-"), tests.keys) }
+      .flatMap { case (name, tests) => splitGroupsBiggerThanThreshold(name, tests) }
 
-    println(s"All existing tests divided into ${testsByGroupName.size} groups:")
-    testsByGroupName.toSeq
+    val separateJVMTestsByName = separateJVMTests.zipWithIndex
+      .map { case ((test, fixtures), i) => ((fixtures ++ i.toString).mkString("-"), Seq(test)) }
+
+    val allTestsByName = testsByName ++ separateJVMTestsByName
+    println(s"All existing tests divided into ${allTestsByName.size} groups:")
+
+    allTestsByName.toSeq
       .sortBy(-_._2.size) // biggest groups are executed first
       .zipWithIndex
       .map { case ((groupName, tests), i) =>
@@ -56,6 +75,7 @@ object Testing {
   }
 
   val MaxParallel = 10
+  val MaxGroupSize = 20
 
   lazy val parallelTasks: Int = {
     val parallelTasks = sys.env.get("TEST_PARALLEL_TASKS").map(_.toInt).getOrElse {
