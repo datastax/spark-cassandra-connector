@@ -7,9 +7,11 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import com.datastax.bdp.util.ScalaJavaUtil._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row}
 import com.datastax.spark.connector.util._
+
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
@@ -27,6 +29,9 @@ import com.datastax.spark.connector.rdd.reader.{PrefetchingResultSetIterator, Ro
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, MultiMergeJoinIterator, NameTools}
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
   * A RDD which pulls from provided separate CassandraTableScanRDDs which share partition keys type and
@@ -158,20 +163,20 @@ class CassandraCoGroupedRDD[T](
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, fromRDD.readConf, cql, values: _*)
 
-    try {
-      val rs = session.execute(stmt)
+    import com.datastax.spark.connector.util.Threads.BlockingIOExecutionContext
+
+    val fetchResult = asScalaFuture(session.executeAsync(stmt)).map { rs =>
       val columnNames = fromRDD.selectedColumnRefs.map(_.selectedAs).toIndexedSeq ++ Seq(TokenColumn)
-      val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames,rs, session)
-      val iterator = new PrefetchingResultSetIterator(rs, fromRDD.readConf.fetchSizeInRows)
+      val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, session.getContext.getCodecRegistry)
+      val iterator = new PrefetchingResultSetIterator(rs)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       logDebug(s"Row iterator for range $range obtained successfully.")
       (columnMetaData, iteratorWithMetrics)
-    } catch {
-      case t: Throwable =>
-        throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
+    }.recover {
+      case t: Throwable => throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
     }
+    Await.result(fetchResult, Duration.Inf)
   }
-
 
   @DeveloperApi
   override def compute(split: Partition, context: TaskContext): Iterator[Seq[Seq[T]]] = {

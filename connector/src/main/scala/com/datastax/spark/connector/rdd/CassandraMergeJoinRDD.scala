@@ -7,6 +7,8 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
+import com.datastax.bdp.util.ScalaJavaUtil.asScalaFuture
+
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
@@ -14,18 +16,20 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import com.datastax.driver.core._
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row, Statement}
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row}
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.oss.driver.api.core.metadata.token.Token
 import com.datastax.spark.connector.CassandraRowMetadata
-import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, CqlTokenRange, NodeAddresses}
 import com.datastax.spark.connector.rdd.reader.{PrefetchingResultSetIterator, RowReader}
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{CountingIterator, MergeJoinIterator, NameTools, schemaFromCassandra}
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
   * A RDD which pulls from two separate CassandraTableScanRDDs which share partition keys and
@@ -151,20 +155,20 @@ class CassandraMergeJoinRDD[L,R](
         s"with params ${values.mkString("[", ",", "]")}")
     val stmt = createStatement(session, fromRDD.readConf, cql, values: _*)
 
-    try {
-      val rs = session.execute(stmt)
+    import com.datastax.spark.connector.util.Threads.BlockingIOExecutionContext
+
+    val fetchResult = asScalaFuture(session.executeAsync(stmt)).map { rs =>
       val columnNames = fromRDD.selectedColumnRefs.map(_.selectedAs).toIndexedSeq ++ Seq(TokenColumn)
       val columnMetaData = CassandraRowMetadata.fromResultSet(columnNames, rs, session)
-      val iterator = new PrefetchingResultSetIterator(rs, fromRDD.readConf.fetchSizeInRows)
+      val iterator = new PrefetchingResultSetIterator(rs)
       val iteratorWithMetrics = iterator.map(inputMetricsUpdater.updateMetrics)
       logDebug(s"Row iterator for range $range obtained successfully.")
       (columnMetaData, iteratorWithMetrics)
-    } catch {
-      case t: Throwable =>
-        throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
+    }.recover {
+      case t: Throwable => throw new IOException(s"Exception during execution of $cql: ${t.getMessage}", t)
     }
+    Await.result(fetchResult, Duration.Inf)
   }
-
 
   @DeveloperApi
   override def compute(split: Partition, context: TaskContext): Iterator[(Seq[L], Seq[R])] = {

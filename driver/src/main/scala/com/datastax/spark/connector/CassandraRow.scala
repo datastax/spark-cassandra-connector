@@ -3,7 +3,7 @@ package com.datastax.spark.connector
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
-import com.datastax.oss.driver.api.core.cql.{ColumnDefinitions, PreparedStatement, ResultSet, Row}
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ColumnDefinitions, PreparedStatement, ResultSet, Row}
 import com.datastax.spark.connector.util.DriverUtil.toName
 
 /** Represents a single row fetched from Cassandra.
@@ -129,22 +129,25 @@ case class CassandraRowMetadata(columnNames: IndexedSeq[String],
 
 object CassandraRowMetadata {
 
-
-  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session: CqlSession) :CassandraRowMetadata = {
-    fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, session.getContext.getCodecRegistry)
+  def fromResultSet(columnNames: IndexedSeq[String], rs: AsyncResultSet, session: CqlSession): CassandraRowMetadata = {
+    fromResultSet(columnNames: IndexedSeq[String], rs, session.getContext.getCodecRegistry)
   }
 
-  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, registry: CodecRegistry) :CassandraRowMetadata = {
+  def fromResultSet(columnNames: IndexedSeq[String], rs: AsyncResultSet, registry: CodecRegistry): CassandraRowMetadata = {
     fromColumnDefs(columnNames, rs.getColumnDefinitions, registry)
   }
 
-  def fromPreparedStatement(columnNames: IndexedSeq[String], statement: PreparedStatement, registry: CodecRegistry) :CassandraRowMetadata = {
+  def fromResultSet(columnNames: IndexedSeq[String], rs: ResultSet, registry: CodecRegistry): CassandraRowMetadata = {
+    fromColumnDefs(columnNames, rs.getColumnDefinitions, registry)
+  }
+
+  def fromPreparedStatement(columnNames: IndexedSeq[String], statement: PreparedStatement, registry: CodecRegistry): CassandraRowMetadata = {
     fromColumnDefs(columnNames, statement.getResultSetDefinitions, registry)
   }
 
-  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: ColumnDefinitions, registry: CodecRegistry) = {
-    import scala.collection.JavaConversions._
-    val scalaColumnDefs = columnDefs.toList
+  private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: ColumnDefinitions, registry: CodecRegistry): CassandraRowMetadata = {
+    import scala.collection.JavaConverters._
+    val scalaColumnDefs = columnDefs.asScala.toList
     val rsColumnNames = scalaColumnDefs.map(c => toName(c.getName))
     val codecs = scalaColumnDefs.map(col => registry.codecFor(col.getType))
       .asInstanceOf[List[TypeCodec[AnyRef]]]
