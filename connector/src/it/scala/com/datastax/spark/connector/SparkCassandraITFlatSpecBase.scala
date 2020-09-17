@@ -161,6 +161,10 @@ trait SparkCassandraITSpecBase
 
   implicit val ec = SparkCassandraITSpecBase.ec
 
+  def await[T](unit: Future[T]): T = {
+    Await.result(unit, Duration.Inf)
+  }
+
   def awaitAll[T](units: Future[T]*): Seq[T] = {
     Await.result(Future.sequence(units), Duration.Inf)
   }

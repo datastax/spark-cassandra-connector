@@ -21,8 +21,9 @@ object RichStatement {
 private[connector] class RichBoundStatementWrapper(initStatement: BoundStatement)
   extends RichStatement {
 
-  def update(updateFunction: BoundStatement => BoundStatement): Unit = {
+  def update(updateFunction: BoundStatement => BoundStatement): RichBoundStatementWrapper = {
     _stmt = updateFunction(_stmt)
+    this
   }
 
   private var _stmt = initStatement

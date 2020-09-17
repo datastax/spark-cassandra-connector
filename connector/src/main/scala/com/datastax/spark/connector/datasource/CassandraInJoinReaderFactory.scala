@@ -1,10 +1,10 @@
 package com.datastax.spark.connector.datasource
 
-import com.datastax.oss.driver.internal.core.cql.ResultSets
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.rdd.reader.PrefetchingResultSetIterator
 import com.datastax.spark.connector.util.Logging
+import com.datastax.spark.connector.util.Threads.BlockingIOExecutionContext
 import com.datastax.spark.connector.writer.{CassandraRowWriter, QueryExecutor}
 import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnName, RowCountRef}
 import com.google.common.util.concurrent.SettableFuture
@@ -13,8 +13,8 @@ import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, Par
 import org.apache.spark.sql.sources.In
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
 
-import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
+
 
 case class CassandraInJoinReaderFactory(
   connector: CassandraConnector,
@@ -68,7 +68,7 @@ abstract class CassandraBaseInJoinReader(
 
     queryExecutor.executeAsync(bsb.bind(left).executeAs(readConf.executeAs)).onComplete {
       case Success(rs) =>
-        val resultSet = new PrefetchingResultSetIterator(ResultSets.newInstance(rs), readConf.fetchSizeInRows)
+        val resultSet = new PrefetchingResultSetIterator(rs)
         /* This is a much less than ideal place to actually rate limit, we are buffering
         these futures this means we will most likely exceed our threshold*/
         val throttledIterator = resultSet.map(maybeRateLimit)
@@ -76,7 +76,7 @@ abstract class CassandraBaseInJoinReader(
         resultFuture.set(leftSide.zip(rightSide))
       case Failure(throwable) =>
         resultFuture.setException(throwable)
-    }(ExecutionContext.Implicits.global) // TODO: use dedicated context, use Future down the road, remove SettableFuture
+    }
     resultFuture
   }
 
