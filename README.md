@@ -64,7 +64,7 @@ development for the next connector release in progress.
 API documentation for the Scala and Java interfaces are available online:
 
 ### 2.5.1
-* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/#package)
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/connector/#package)
 
 ### 2.4.2
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/)
