@@ -10,6 +10,7 @@ import com.datastax.spark.connector.types.TypeAdapters.{ValueByNameAdapter, Valu
 import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.DriverUtil.toAddress
+import com.datastax.spark.connector.util.SerialShutdownHooks.logDebug
 import com.datastax.spark.connector.util.{DriverUtil, Logging, SerialShutdownHooks}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.{SparkConf, SparkContext, SparkFiles}
@@ -211,7 +212,17 @@ object CassandraConnector extends Logging {
   }
 
   SerialShutdownHooks.add("Clearing session cache for C* connector", 200)(() => {
-    sessionCache.shutdown()
+    val classLoaderCheckName = "com.datastax.spark.connector.util.ClassLoaderCheck"
+    try {
+      val check = sessionCache.getClass.getClassLoader.loadClass(classLoaderCheckName).getSimpleName
+      logDebug("Class loader check: " + check)
+
+      sessionCache.shutdown()
+    } catch {
+      case exc: ClassNotFoundException if exc.getMessage.contains(classLoaderCheckName) =>
+        // a temp workaround for spark-sql classloader problem, see SPARKC-620 PR for details
+        logDebug(s"Couldn't shutdown the session cache.")
+    }
   })
 
   def apply(conf: CassandraConnectorConf) = {
