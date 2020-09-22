@@ -111,7 +111,7 @@ abstract class CassandraPartitionReaderBase
     }
   }
 
-  protected def rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableDef, queryParts.selectedColumnRefs)
+  protected val rowReader = new UnsafeRowReaderFactory(schema).rowReader(tableDef, queryParts.selectedColumnRefs)
 }
 
 /**
