@@ -25,11 +25,11 @@ Spark Driver and all Spark Executors.
     $SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.0.0-beta
    
 For the list of available versions, see:
-- https://spark-packages.org/package/datastax/spark-cassandra-connector
+- https://repo1.maven.org/maven2/com/datastax/spark/spark-cassandra-connector_2.12/
  
-This driver does not depend on the Cassandra server code.
+This Connector does not depend on the Cassandra server code.
 
- - For a detailed dependency list, see [project/SparkCassandraConnectorBuild.scala](../project/SparkCassandraConnectorBuild.scala)
+ - For a detailed dependency list, see [project/Dependencies.scala](../project/Dependencies.scala)
  - For dependency versions, see [project/Versions.scala](../project/Versions.scala)
 
 ### Building

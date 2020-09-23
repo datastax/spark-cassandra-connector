@@ -2,7 +2,7 @@
 
 ## Datasets (Previously DataFrames)
 These documents are relevant to Spark 3.0 and the SCC 3.0 and Greater Please See [Datasource V1](data_source_v1.md) for
-documentation of Older Versions
+documentation of older versions.
 
 Datasets provide a new API for manipulating data within Spark. These provide a more user
 friendly experience than pure Scala for common queries. The Spark Cassandra Connector provides
@@ -204,11 +204,52 @@ spark.sql("SELECT Count(*) FROM mycatalog.ks.tab WHERE key = 1").explain
 
 #### Direct Join
 
-Joins with a Cassandra Table using a Partition Key as an equals will be automatically
-converted into a `joinWithCassandraTable` style join if it is more efficent to 
-query Cassandra that way.
+Joins with a Cassandra Table using a Partition Key may be automatically
+converted into a `joinWithCassandraTable` style join if it is more efficient to 
+query Cassandra that way. 
 
-//TODO add full docs on configuration
+By default (`directJoinSetting=auto`) the Spark Cassandra Connector converts a 
+join to a Direct Join when the following formula is true:
+
+    (table size * directJoinSizeRatio) > size of keys
+
+`directJoinSizeRatio` is a setting thay my be adjusted just like any other
+Spark Cassandra Setting. See [Parameters section](reference.md#cassandra-connection-parameters)
+for details.
+
+Automatic Direct Join conversion may be permanently disabled or enabled with 
+`directJoinSetting=off` and `directJoinSetting=on` settings.
+
+For example to disregard the `directJoinSizeRatio` parameter and convert all the 
+suitable joins to Direct Joins start `spark-sql` with:
+
+    spark-sql --conf directJoinSetting=on
+    
+Note that not all joins are suitable for Direct Join conversion. The following 
+conditions must be met for the conversion to happen:
+ - At least one side of the join is a CassandraSourceRelation
+ - The join condition fully restricts the partition key
+ - The join keys types must match
+
+Direct Join example with the following table:
+
+```sql
+CREATE TABLE ks.kv (
+    k int PRIMARY KEY,
+    v int) 
+```
+
+```scala
+val range = spark.range(1, 1000).selectExpr("cast(id as int) key") // note the key type must match PRIMARY KEY type
+val joinTarget = spark.read.table("myCatalog.ks.kv")
+
+range.join(joinTarget, joinTarget("k") === range("key")).explain()
+== Physical Plan ==
+*(2) Project [key#2, k#8, v#9]
++- Cassandra Direct Join [k = key#2] ks.kv - Reading (k, v) Pushed {} 
+   +- *(1) Project [cast(id#0L as int) AS key#2]
+      +- *(1) Range (1, 1000, step=1, splits=12)
+```
 
 #### TTL and WRITETIME
 

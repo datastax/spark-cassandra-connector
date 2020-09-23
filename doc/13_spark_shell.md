@@ -13,7 +13,7 @@ If you don't include the master address below the spark shell will run in Local 
 of Scala that your Spark build uses (The "2.1X" portion of the package. If you aren't sure for Spark < 2.0 use 2.10).
 
 
-Find additional versions at [Spark Packages](https://spark-packages.org/package/datastax/spark-cassandra-connector)
+Find additional versions at [Spark Packages](https://repo1.maven.org/maven2/com/datastax/spark/spark-cassandra-connector_2.12/)
   
 ```bash
 cd spark/install/dir

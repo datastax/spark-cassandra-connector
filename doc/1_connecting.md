@@ -8,7 +8,7 @@ See the reference section for [Cassandra Connection Parameters](reference.md#cas
 
 ### Configuring Catalogs to Cassandra
 
-DatasourceV2 makes connecting to Cassandra now easier than ever. Parameters for configuring your connection
+DatasourceV2 introduced in Spark 3.0 makes connecting to Cassandra now easier than ever. Parameters for configuring your connection
 can be done in the SparkConf, SparkSession, spark-defaults file or individually for the Catalog.  Once a catalog is configured it can 
 be accessed through both SparkSql and DataFrames to read from, write to, create, and drop Cassandra tables.
 
@@ -122,8 +122,8 @@ see [Cassandra Connection Parameters](reference.md#cassandra-connection-paramete
 
 If you ever need to manually connect to Cassandra in order to issue some CQL statements, 
 this driver offers a handy `CassandraConnector` class which can be initialized 
-from the `SparkConf` object and provides access to the `Cluster` and 
-`Session` objects. `CassandraConnector` instances are serializable
+from the `SparkConf` object and provides access to the `Session` objects. 
+`CassandraConnector` instances are serializable
 and therefore can be safely used in lambdas passed to Spark transformations
 as seen in the examples above.
 

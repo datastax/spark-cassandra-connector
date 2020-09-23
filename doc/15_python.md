@@ -14,13 +14,42 @@ shell similarly to how the spark shell is started. The preferred method is now t
 
 ```bash
 ./bin/pyspark \
-  --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.1
+  --packages com.datastax.spark:spark-cassandra-connector_2.11:2.5.1 \
+  --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
 ```
 
-### Catalogs and DatasourceV2
-//TODO
+### Catalogs
 
-### Loading a DataFrame in Python
+Spark allows you to manipulate external data with and without a Catalog.
+For a short intro and more details about Catalogs see [Quick Start](0_quick_start.md) and 
+[Data Frames](14_data_frames.md).
+
+#### Loading a DataFrame
+
+Loading a data set with DatasourceV2 requires creating a Catalog Reference to your Cassandra Cluster.
+
+```python
+spark.conf.set("spark.sql.catalog.myCatalog", "com.datastax.spark.connector.datasource.CassandraCatalog")
+spark.read.table("myCatalog.myKs.myTab").show()
+```
+
+#### Saving a DataFrame to Cassandra
+
+A DataFrame can be saved to an *existing* Cassandra table by using the the `saveAsTable` method with a catalog, keyspace 
+and a table name specified.
+
+```python
+spark.range(1, 10)\
+    .selectExpr("id as k")\
+    .write\
+    .mode("append")\
+    .partitionBy("k")\
+    .saveAsTable("myCatalog.myKs.myTab")
+```
+
+### Manipulating data without a Catalog
+
+#### Loading a DataFrame
 
 A DataFrame can be created which links to Cassandra by using the the `org.apache.spark.sql.cassandra` 
 source and by specifying keyword arguments for `keyspace` and `table`.
@@ -45,11 +74,11 @@ source and by specifying keyword arguments for `keyspace` and `table`.
 +-+-+
 ```
 
-### Saving a DataFrame in Python to Cassandra
+#### Saving a DataFrame to Cassandra
 
 A DataFrame can be saved to an *existing* Cassandra table by using the the `org.apache.spark.sql.cassandra` source and by specifying keyword arguments for `keyspace` and `table` and saving mode (`append`, `overwrite`, `error` or `ignore`, see [Data Sources API doc](https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#save-modes)).
 
-#### Example Saving to a Cassanra Table as a Pyspark DataFrame
+##### Example Saving to a Cassandra Table as a Pyspark DataFrame
 ```python
  df.write\
     .format("org.apache.spark.sql.cassandra")\
