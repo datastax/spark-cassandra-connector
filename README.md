@@ -6,7 +6,7 @@
 | ---------- | ----- |
 | Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
 | Scala Docs | Most Recent Release (3.0.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/driver/com/datastax/spark/connector/index.html)|
-| Latest Production Release | [3.0.0](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0) |
+| Latest Production Release | [3.0.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0/jar) |
  
 ## Features
 
