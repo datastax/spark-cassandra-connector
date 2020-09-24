@@ -5,9 +5,9 @@
 | What       | Where |
 | ---------- | ----- |
 | Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
-| Scala Docs | Most Recent Release (2.5.1): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/connector/index.html#com.datastax.spark.connector.package), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/driver/#package)|
-| Latest Production Release | [2.5.1](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.11/2.5.1) |
-| Latest Preview Release | [3.0.0-beta](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0-beta) | 
+| Scala Docs | Most Recent Release (3.0.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/driver/com/datastax/spark/connector/index.html)|
+| Latest Production Release | [3.0.0](https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.0) |
+ 
 ## Features
 
 *Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
@@ -63,6 +63,9 @@ development for the next connector release in progress.
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
+### 3.0.0
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/connector/com/datastax/spark/connector/index.html)
+
 ### 2.5.1
 * [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/connector/#package)
 
@@ -80,10 +83,10 @@ This project is available on the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.5.1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.0.0"
 
-* The default Scala version for Spark 2.0+ is 2.11 please choose the appropriate build. See the
-[FAQ](doc/FAQ.md) for more information
+* The default Scala version for Spark 3.0+ is 2.12 please choose the appropriate build. See the
+[FAQ](doc/FAQ.md) for more information.
 
 ## Building
 See [Building And Artifacts](doc/12_building_and_artifacts.md)

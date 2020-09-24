@@ -1,6 +1,11 @@
+3.0.0
+ * Update Spark to 3.0.1 and commons-lang to 3.9
+ * Remove full table scans performance regression (SPARKC-614)
+ * Restore PrefetchingResultSetIterator (SPARKC-619)
+ * Restore ContinuousPaging properties (SPARKC-606)
+ * Integration tests work with C* 4.0.0-beta (SPARKC-615)
+ * Fix USE <catalog> command (SPARKC-615)
 
-
-***************************************************************************
 3.0.0-beta
  * Data Source v2 support
  * Secondary artifact with shaded typesafe.config

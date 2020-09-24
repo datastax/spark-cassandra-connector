@@ -32,7 +32,7 @@ import com.datastax.spark.connector.types.TypeConverter;
 public class CassandraJavaUtilTest {
 
     /**
-     * Scala refelection type tags change the string reprsentation of some types, in scala 2.11 java.lang
+     * Scala reflection type tags change the string reprsentation of some types, in scala 2.11 java.lang
      * is included, in scala 2.12 it is removed. To remove this conflict we just always remove the java.lang
      * portion
      */
