@@ -13,25 +13,25 @@ Help](https://help.github.com/articles/cloning-a-repository/).
 
 Once in the sbt shell you will be able to build and run tests for the
 connector without any Spark or Cassandra nodes running. The integration tests 
-require [CCM](https://github.com/riptano/ccm) installed on your machine. 
-This can be accomplished with `pip install ccm`
+require a valid path to java home set in the `JAVA_HOME` env variable and 
+[CCM](https://github.com/riptano/ccm) to be installed on your machine. 
+This can be accomplished with `pip install ccm`.
  
 The most common commands to use when developing the connector are
 
 1. `test` - Runs the the unit tests for the project.
-2. `it:test` - Runs the integration tests with embedded Cassandra and Spark
+2. `it:test` - Runs the integration tests with Cassandra (started by CCM) and Spark
 3. `package` - Builds the project and produces a runtime jar
 4. `publishM2` - Publishes a snapshot of the project to your local maven repository allowing for usage with --packages in the spark-shell
 
 The integration tests located in `connector/src/it` should
 probably be the first place to look for anyone considering adding code.
 There are many examples of executing a feature of the connector with
-the embedded Cassandra and Spark nodes and are the core of our test 
-coverage.
+Cassandra and Spark nodes and are the core of our test coverage.
 
 ### Merge Path
 
-b2.5 => b3.0 => Master
+b2.5 => Master
 
 New features can be considered for 2.5 as long as they do not break apis
 In general 3.0 should be the target for new features
@@ -68,7 +68,7 @@ listed in build.yaml. In addition the test-support module supports Cassandra
 or other CCM Compatible installations.
 
 If using SBT you can set
-`CCM_CASSANDRA_VERSION` to propagate a version for CCM to use during tests
+`CCM_CASSANDRA_VERSION` to propagate a version for CCM to use during tests.
 
 If you are running tests through IntelliJ or through an alternative framework (jUnit)
 set the system property `ccm.version` to the version you like.

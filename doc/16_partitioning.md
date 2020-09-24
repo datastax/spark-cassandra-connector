@@ -26,7 +26,7 @@ For more information on Cassandra Data Modeling check out the resources on
 The Spark Cassandra Connector now implements a `CassandraPartitioner` for specific RDDs when they
 have been keyed using `keyBy`. This can only be done when a `CassandraTableScanRDD` has `keyBy` 
 called and is keyed by the partition keys of the underlying table. The key may contain other
-elements of the table but the partition key is required to build a `CassandraPartitioner`
+elements of the table but the partition key is required to build a `CassandraPartitioner`.
 
 *All of these examples are run with Spark in Local Mode and --driver-memory 4g*
 
@@ -42,7 +42,7 @@ CREATE TABLE doc_example.purchases (
     purchaseid int,
     objectid text,
     amount int,
-    PRIMARY KEY (userid, purchaseid, objectid) //Partition Key "userid"
+    PRIMARY KEY (userid, purchaseid, objectid) // Partition Key "userid"
 );
 
 CREATE TABLE doc_example.users (

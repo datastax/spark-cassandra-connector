@@ -1,6 +1,6 @@
 # Datasource V1 Documentation 
 
-For Spark < 3.0 and SCC less than 3.0
+For Spark < 3.0 and SCC < 3.0
 
 ## Datasets (Previously DataFrames)
 

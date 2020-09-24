@@ -36,7 +36,7 @@ A fat jar with `assembly` suffix will be generated to:
 
     spark-cassandra-connector/connector/target/scala-{binary.version}/
 
-The jar contains Spark Cassandra Connector and its dependencies. Some of the dependencies are shaded to avoid 
+The jar contains the Spark Cassandra Connector and its dependencies. Some of the dependencies are shaded to avoid 
 classpath conflicts.  
 It is recommended to use the main artifact when possible.
 

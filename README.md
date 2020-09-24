@@ -64,7 +64,7 @@ development for the next connector release in progress.
 API documentation for the Scala and Java interfaces are available online:
 
 ### 2.5.1
-* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/#package)
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/connector/#package)
 
 ### 2.4.2
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/)
@@ -75,10 +75,8 @@ API documentation for the Scala and Java interfaces are available online:
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.3.2/spark-cassandra-connector-embedded/)
 
 ## Download
-This project is available on Spark Packages; this is the easiest way to start using the connector:
-https://spark-packages.org/package/datastax/spark-cassandra-connector
 
-This project has also been published to the Maven Central Repository.
+This project is available on the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
@@ -161,6 +159,9 @@ To run unit and integration tests:
 
     ./sbt/sbt test
     ./sbt/sbt it:test
+
+Note that the integration tests require [CCM](https://github.com/riptano/ccm) to be installed on your machine.
+See [Tips for Developing the Spark Cassandra Connector](doc/developers.md) for details.
 
 By default, integration tests start up a separate, single Cassandra instance and run Spark in local mode.
 It is possible to run integration tests with your own Cassandra and/or Spark cluster.
