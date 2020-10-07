@@ -5,7 +5,7 @@ import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraLeftJoinRDD,
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.execution.unsafe.{UnsafeRowReaderFactory, UnsafeRowWriterFactory}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, Expression, GenericInternalRow, JoinedRow, UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences, EqualTo, ExprId, Expression, GenericInternalRow, JoinedRow, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.execution.{DataSourceScanExec, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildSide}
@@ -21,7 +21,7 @@ case class CassandraDirectJoinExec(
   cassandraSide: BuildSide,
   condition: Option[Expression],
   child: SparkPlan,
-  aliasMap: Map[String, Attribute],
+  aliasMap: Map[String, ExprId],
   cassandraScan: CassandraTableScanRDD[_],
   cassandraPlan: DataSourceScanExec) extends UnaryExecNode {
 
@@ -41,7 +41,7 @@ case class CassandraDirectJoinExec(
   val primaryKeys = cassandraScan.tableDef.primaryKey.map(_.columnName)
   val cassandraSchema = cassandraPlan.schema
 
-  val attributeToCassandra = aliasMap.map(_.swap)
+  val exprIdToCassandra = aliasMap.map(_.swap)
 
   val leftJoinCouplets =
     if (cassandraSide == BuildLeft) leftKeys.zip(rightKeys) else rightKeys.zip(leftKeys)
@@ -54,15 +54,15 @@ case class CassandraDirectJoinExec(
     */
   val (pkJoinCoulplets, otherJoinCouplets) = leftJoinCouplets.partition {
     case (cassandraAttribute: Attribute, _) =>
-      attributeToCassandra.get(cassandraAttribute) match {
+      exprIdToCassandra.get(cassandraAttribute.exprId) match {
         case Some(name) if primaryKeys.contains(name) => true
         case _ => false
-    }
+      }
     case _ => false
   }
 
   val (joinColumns, joinExpressions) = pkJoinCoulplets.map { case (cAttr: Attribute, otherCol: Expression) =>
-    (ColumnName(attributeToCassandra(cAttr)), BindReferences.bindReference(otherCol, keySource.output))
+    (ColumnName(exprIdToCassandra(cAttr.exprId)), BindReferences.bindReference(otherCol, keySource.output))
   }.unzip
 
   /**
@@ -210,7 +210,7 @@ case class CassandraDirectJoinExec(
     val selectString = selectedColumns.mkString("Reading (", ", ", ")")
 
     val joinString = pkJoinCoulplets
-      .map{ case (colref: Attribute, exp) => s"${attributeToCassandra(colref)} = ${exp}"}
+      .map{ case (colref: Attribute, exp) => s"${exprIdToCassandra(colref.exprId)} = ${exp}"}
       .mkString(", ")
 
     s"Cassandra Direct Join [${joinString}] $keyspace.$table - $selectString${pushedWhere} "
