@@ -654,6 +654,18 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     spark.sql(s"SELECT l.k, l.v, r.v1, r.v2 from $ks.kv as l LEFT JOIN $ks.kv2 as r on l.k == r.k")
   }
 
+  /** SPARKC-613 */
+  it should "use direct join for sql join" in compareDirectOnDirectOff { spark =>
+    import spark.implicits._
+
+    val toJoin = spark.range(1, 5).map(_.intValue).withColumnRenamed("value", "id")
+
+    toJoin.createOrReplaceTempView("tojoin")
+    spark.read.cassandraFormat("kv", ks).load().createOrReplaceTempView(s"cassdata")
+
+    spark.sql("select * from tojoin tj inner join cassdata cd on tj.id = cd.k")
+  }
+
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {
     val sparkJoinOn = spark.cloneSession()
     sparkJoinOn.conf.set(DirectJoinSettingParam.name, "on")
