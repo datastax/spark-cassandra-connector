@@ -2,7 +2,6 @@ package org.apache.spark.sql.cassandra.execution
 
 import java.sql.Timestamp
 import java.time.Instant
-import java.util.concurrent.CompletableFuture
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.spark.connector.cluster.DefaultCluster
@@ -632,6 +631,18 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     val quotes = joined.where($"xmlid" rlike "^.*?Q_.*$")
 
     quotes.count should be (1)
+  }
+
+  /** SPARKC-613 */
+  it should "use direct join for sql join" in compareDirectOnDirectOff { spark =>
+    import spark.implicits._
+
+    val toJoin = spark.range(1, 5).map(_.intValue).withColumnRenamed("value", "id")
+
+    toJoin.createOrReplaceTempView("tojoin")
+    spark.read.cassandraFormat("kv", ks).load().createOrReplaceTempView(s"cassdata")
+
+    spark.sql("select * from tojoin tj inner join cassdata cd on tj.id = cd.k")
   }
 
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {

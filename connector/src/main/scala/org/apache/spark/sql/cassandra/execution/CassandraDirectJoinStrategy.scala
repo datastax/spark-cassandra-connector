@@ -298,12 +298,14 @@ object CassandraDirectJoinStrategy extends Logging {
   def allPartitionKeysAreJoined(plan: LogicalPlan, joinKeys: Seq[Expression]): Boolean =
     plan match {
       case PhysicalOperation(
-        attributes, _,
-        LogicalRelation(cassandraSource: CassandraSourceRelation, _, _, _)) =>
+      attributes, _,
+      LogicalRelation(cassandraSource: CassandraSourceRelation, _, _, _)) =>
+
+        val joinKeysExprId = joinKeys.collect { case attributeReference: AttributeReference => attributeReference.exprId }
 
         val joinKeyAliases =
           aliasMap(attributes)
-            .filter{ case (_, value) => joinKeys.contains(value) }
+            .filter { case (_, value) => joinKeysExprId.contains(value) }
         val partitionKeyNames = cassandraSource.tableDef.partitionKey.map(_.columnName)
         val allKeysPresent = partitionKeyNames.forall(joinKeyAliases.contains)
 
@@ -312,15 +314,15 @@ object CassandraDirectJoinStrategy extends Logging {
         }
 
         allKeysPresent
-    case _ => false
-  }
+      case _ => false
+    }
 
   /**
     * Map Source Names to Attributes
     */
   def aliasMap(aliases: Seq[NamedExpression]) = aliases.map {
-    case a @ Alias(child: AttributeReference, _) => child.name -> a.toAttribute
-    case namedExpression: NamedExpression => namedExpression.name -> namedExpression.toAttribute
+    case a @ Alias(child: AttributeReference, _) => child.name -> a.exprId
+    case attributeReference: AttributeReference => attributeReference.name -> attributeReference.exprId
   }.toMap
 
   /**
@@ -334,7 +336,5 @@ object CassandraDirectJoinStrategy extends Logging {
       case _ => false
     }
   }
-
-
 
 }
