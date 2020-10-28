@@ -153,7 +153,7 @@ class CassandraJoinRDD[L, R] (
     }
 
     val queryFutures = leftIterator.map(left => {
-      JoinHelper.requestsPerSecondRateLimiter(readConf).maybeSleep(1)
+      requestsPerSecondRateLimiter.maybeSleep(1)
       pairWithRight(left)
     })
 

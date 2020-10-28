@@ -7,6 +7,8 @@ import org.apache.spark.SparkConf
 
 object SparkTemplate {
 
+  val DefaultParallelism = 2
+
   /** Default configuration for [[org.apache.spark.SparkContext SparkContext]]. */
   private val _defaultConf = new SparkConf(true)
     .set("spark.cassandra.connection.keepAliveMS", "5000")
@@ -15,7 +17,7 @@ object SparkTemplate {
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
     .set("spark.sql.extensions","com.datastax.spark.connector.CassandraSparkExtensions")
-    .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[2]"))
+    .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", s"local[$DefaultParallelism]"))
     .setAppName("Test")
 
 
