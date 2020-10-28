@@ -7,6 +7,8 @@ import org.apache.spark.SparkConf
 
 object SparkTemplate {
 
+  val DefaultParallelism = 2
+
   val HiveMetastoreConfig: Map[String, String] = Map (
     "spark.hadoop.hive.metastore.rawstore.impl" -> "com.datastax.bdp.hadoop.hive.metastore.CassandraHiveMetaStore",
     "spark.hadoop.cassandra.autoCreateHiveSchema" -> "true",
@@ -25,7 +27,7 @@ object SparkTemplate {
     .set("spark.ui.enabled", "false")
     .set("spark.cleaner.ttl", "3600")
     .set("spark.sql.extensions","com.datastax.spark.connector.CassandraSparkExtensions")
-    .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", "local[2]"))
+    .setMaster(sys.env.getOrElse("IT_TEST_SPARK_MASTER", s"local[$DefaultParallelism]"))
     .setAppName("Test")
     .setAll(HiveMetastoreConfig)
 
