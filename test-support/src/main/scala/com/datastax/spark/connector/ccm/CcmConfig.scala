@@ -116,6 +116,8 @@ object CcmConfig {
   val DEFAULT_SERVER_LOCALHOST_KEYSTORE_PATH: String = "/server_localhost.keystore"
 
   // major DSE versions
+  val V6_8_0: Version = Version.parse("6.8.0")
+  val V6_7_0: Version = Version.parse("6.7.0")
   val V6_0_0: Version = Version.parse("6.0.0")
   val V5_1_0: Version = Version.parse("5.1.0")
   val V5_0_0: Version = Version.parse("5.0.0")
