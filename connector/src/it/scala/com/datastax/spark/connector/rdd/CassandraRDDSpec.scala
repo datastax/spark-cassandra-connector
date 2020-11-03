@@ -6,9 +6,10 @@ import java.util.Date
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
-import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.spark.connector._
+import com.datastax.spark.connector.ccm.CcmConfig.{V4_0_0, V6_7_0}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
@@ -1105,6 +1106,16 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
       ("US", 1, "John", "DOE", "jdoe"),
       ("US", 2, "Helen", "SUE", "hsue")
     )
+  }
+
+  it should "throw a meaningful exception when reading a table view" in skipIfLT(cassandra = V4_0_0, dse = V6_7_0) {
+    import org.apache.spark.sql.cassandra._
+
+    val ex = intercept[IllegalArgumentException] {
+      val data = spark.read.cassandraFormat("sstable_tasks", "system_views").load()
+      data.show()
+    }
+    ex.getMessage should contain("Table views are not supported")
   }
 
   it should "throw an exception when trying to write to a Materialized View" in skipIfProtocolVersionLT(V4){

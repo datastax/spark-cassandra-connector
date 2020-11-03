@@ -81,6 +81,10 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     val hostAddresses = new NodeAddresses(connector)
     val tokenRanges = describeRing
     val endpointCount = tokenRanges.map(_.replicas).reduce(_ ++ _).size
+    if (endpointCount == 0)
+      throw new IllegalArgumentException(s"Could not retrieve endpoints for the given table " +
+        s"(${keyspaceName}.${tableDef.name}), are you trying to read a table view? Table views are not supported, " +
+        s"see SPARKC-612.")
     val maxGroupSize = tokenRanges.size / endpointCount
 
     val splitter = createTokenRangeSplitter
