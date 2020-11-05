@@ -28,7 +28,6 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
 
 trait SparkCassandraITFlatSpecBase extends FlatSpec with SparkCassandraITSpecBase {
-  override def report(message: String): Unit = info
 }
 
 trait SparkCassandraITWordSpecBase extends WordSpec with SparkCassandraITSpecBase {
@@ -42,7 +41,8 @@ trait SparkCassandraITSpecBase
   with Matchers
   with BeforeAndAfterAll
   with ClusterProvider
-  with Logging {
+  with Logging
+  with Alerting {
 
   final def defaultConf: SparkConf = {
     SparkTemplate.defaultConf
@@ -150,9 +150,9 @@ trait SparkCassandraITSpecBase
     }
   }
 
-  def pv = conn.withSessionDo(_.getContext.getProtocolVersion)
+  def pv: ProtocolVersion = conn.withSessionDo(_.getContext.getProtocolVersion)
 
-  def report(message: String): Unit = {}
+  def report(message: String): Unit = alert(message)
 
   val ks = getKsName
 
@@ -161,33 +161,44 @@ trait SparkCassandraITSpecBase
     else report(s"Skipped Because ProtocolVersion $pv >= $protocolVersion")
   }
 
-  /** Skips the given test if the Cluster Version is lower or equal to the given `cassandra` Version or `dse` Version
-    * (if this is a DSE cluster) */
-  def skipIfLT(cassandra: Version, dse: Version)(f: => Unit): Unit = {
-    if (isDse(conn)) {
-      skipIfCassandraLT(dse)(f)
-    } else {
-      skipIfCassandraLT(cassandra)(f)
-    }
-  }
-
-  val Cass36: Version = Version.parse("3.6.0")
-
-  def skipIfCassandraLT(cassandraVersion: Version)(f: => Unit): Unit = {
-    val verOrd = implicitly[Ordering[Version]]
-    import verOrd._
-    if (cluster.getCassandraVersion >= cassandraVersion) f
-    else report(s"Skipped because cluster Version ${cluster.getCassandraVersion} < $cassandraVersion")
-  }
-
   def skipIfProtocolVersionLT(protocolVersion: ProtocolVersion)(f: => Unit): Unit = {
     if (!(pv.getCode < protocolVersion.getCode)) f
     else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
   }
 
-  def skipIfNotDSE(connector: CassandraConnector)(f: => Unit): Unit = {
-    if (isDse(connector)) f
+  /** Skips the given test if the Cluster Version is lower or equal to the given `cassandra` Version or `dse` Version
+    * (if this is a DSE cluster) */
+  def from(cassandra: Version, dse: Version)(f: => Unit): Unit = {
+    if (isDse(conn)) {
+      from(dse)(f)
+    } else {
+      from(cassandra)(f)
+    }
+  }
+
+  /** Skips the given test if the Cluster Version is lower or equal to the given version */
+  def from(version: Version)(f: => Unit): Unit = {
+    skip(cluster.getCassandraVersion, version) { f }
+  }
+
+  /** Skips the given test if the cluster is not DSE */
+  def dseOnly(f: => Unit): Unit = {
+    if (isDse(conn)) f
     else report(s"Skipped because not DSE")
+  }
+
+  /** Skips the given test if the Cluster Version is lower or equal to the given version or the cluster is not DSE */
+  def dseFrom(version: Version)(f: => Any): Unit = {
+    dseOnly {
+      skip(cluster.getDseVersion.get, version) { f }
+    }
+  }
+
+  private def skip(clusterVersion: Version, minVersion: Version)(f: => Unit): Unit = {
+    val verOrd = implicitly[Ordering[Version]]
+    import verOrd._
+    if (clusterVersion >= minVersion) f
+    else report(s"Skipped because cluster Version ${cluster.getCassandraVersion} < $minVersion")
   }
 
   private def isDse(connector: CassandraConnector): Boolean = {
