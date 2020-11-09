@@ -53,6 +53,7 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
       IndexDef(Some("DummyIndex"), "i1", "IndexOne", Map.empty),
       IndexDef(Some("DummyIndex"), "i2", "IndexTwo", Map.empty))
   )
+  val defaultPkPredicate = Set[Filter](EqFilter("pk1"), EqFilter("pk2"))
 
   val timeUUIDTable = TableDef(
     keyspaceName = "test",
@@ -92,15 +93,15 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
 
   it should " work if the user tries to use a TimeUUID on a fully handled predicate" in {
     val f1 = GtFilter("c1")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
-    ppd.predicatesToPushDown should contain (f1)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1), timeUUIDTable)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain (f1)
     ppd.predicatesToPreserve shouldBe empty
   }
 
   it should " work if the user tries to use a TimeUUID column in a eq predicate" in {
     val f1 = EqFilter("c1")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
-    ppd.predicatesToPushDown should contain (f1)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1), timeUUIDTable)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain (f1)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -158,16 +159,16 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
 
   it should "push down the first clustering column predicate" in {
     val f1 = EqFilter("c1")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table)
-    ppd.predicatesToPushDown should contain only f1
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only f1
     ppd.predicatesToPreserve shouldBe empty
   }
 
   it should "push down the first and the second clustering column predicate" in {
     val f1 = EqFilter("c1")
     val f2 = LtFilter("c2")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
-    ppd.predicatesToPushDown should contain only(f1, f2)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only(f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -175,12 +176,12 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c3")
 
-    val ppd1 = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
-    ppd1.predicatesToPushDown should contain only f1
+    val ppd1 = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2), table)
+    ppd1.predicatesToPushDown -- defaultPkPredicate should contain only f1
     ppd1.predicatesToPreserve should contain only f2
 
-    val ppd2 = new BasicCassandraPredicatePushDown(Set[Filter](f2), table)
-    ppd2.predicatesToPushDown shouldBe empty
+    val ppd2 = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f2), table)
+    ppd2.predicatesToPushDown -- defaultPkPredicate shouldBe empty
     ppd2.predicatesToPreserve should contain only f2
   }
 
@@ -188,16 +189,16 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
       "if there are more range predicates on different clustering columns" in {
     val f1 = LtFilter("c1")
     val f2 = LtFilter("c2")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
-    ppd.predicatesToPushDown should contain only f1
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only f1
     ppd.predicatesToPreserve should contain only f2
   }
 
   it should "push down multiple range predicates for the same clustering column" in {
     val f1 = LtFilter("c1")
     val f2 = GtFilter("c1")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2), table)
-    ppd.predicatesToPushDown should contain allOf (f1, f2)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain allOf (f1, f2)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -205,8 +206,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c2")
     val f3 = InFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only(f1, f2, f3)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only(f1, f2, f3)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -214,8 +215,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = LtFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only(f1, f2)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only(f1, f2)
     ppd.predicatesToPreserve should contain only f3
   }
 
@@ -223,8 +224,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = InFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table, DefaultProtocolVersion.V3)
-    ppd.predicatesToPushDown should contain only f1
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table, DefaultProtocolVersion.V3)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only f1
     ppd.predicatesToPreserve should contain only (f2, f3)
   }
 
@@ -232,8 +233,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = InFilter("c2")
     val f3 = EqFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only (f1, f2, f3)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only (f1, f2, f3)
     ppd.predicatesToPreserve shouldBe empty
   }
 
@@ -241,15 +242,22 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = InFilter("c1")
     val f2 = InFilter("c2")
     val f3 = InFilter("c3")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only (f1, f2, f3)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only (f1, f2, f3)
     ppd.predicatesToPreserve shouldBe empty
+  }
+
+  it should "not push down any clustering column predicates, if the pk part is missing" in {
+    val f1 = LtFilter("c1")
+    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table)
+    ppd.predicatesToPushDown shouldBe empty
+    ppd.predicatesToPreserve should contain only f1
   }
 
   it should "not push down any clustering column predicates, if the first clustering column is missing" in {
     val f1 = EqFilter("c2")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), table)
-    ppd.predicatesToPushDown shouldBe empty
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate shouldBe empty
     ppd.predicatesToPreserve should contain only f1
   }
 
@@ -309,8 +317,8 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     val f1 = EqFilter("c1")
     val f2 = EqFilter("c2")
     val f3 = LtFilter("c2")
-    val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1, f2, f3), table)
-    ppd.predicatesToPushDown should contain only(f1, f2)
+    val ppd = new BasicCassandraPredicatePushDown(defaultPkPredicate ++ Set(f1, f2, f3), table)
+    ppd.predicatesToPushDown -- defaultPkPredicate should contain only(f1, f2)
     ppd.predicatesToPreserve should contain only f3
   }
 

@@ -146,12 +146,17 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
     eqOrInPredicates ++ optionalNonEqPredicate
   }
 
-  /** Selects clustering key predicates for pushdown based on protocol version */
+  /** Selects clustering key predicates for pushdown based on protocol version.
+    * Clustering key predicates are pushed down only if the partition key predicates are defined. */
   private val clusteringColumnPredicatesToPushDown: Set[Predicate] = {
-    if (pv < DefaultProtocolVersion.V4) {
-      clusteringColumnPredicatesToPushDownPriorV4()
+    if (partitionKeyPredicatesToPushDown.isEmpty) {
+      Set()
     } else {
-      clusteringColumnPredicatesToPushDownFromV4()
+      if (pv < DefaultProtocolVersion.V4) {
+        clusteringColumnPredicatesToPushDownPriorV4()
+      } else {
+        clusteringColumnPredicatesToPushDownFromV4()
+      }
     }
   }
 
