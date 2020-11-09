@@ -2,7 +2,6 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 
-import com.datastax.driver.core._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, SimpleStatement}
 import com.datastax.spark.connector._
@@ -14,10 +13,11 @@ import com.datastax.spark.connector.rdd.reader._
 import com.datastax.spark.connector.types.ColumnType
 import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPredicate, InPredicate, Predicate, RangePredicate}
 import com.datastax.spark.connector.util.Quote._
-import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser, ReflectionUtil}
+import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.{PartitionCoalescer, RDD}
+import org.apache.spark.sql.cassandra.DsePredicateRules.StorageAttachedIndex
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 
 import scala.collection.JavaConversions._
@@ -403,12 +403,13 @@ class CassandraTableScanRDD[R] private[connector](
   private def containsPartitionKey(clause: CqlWhereClause): Boolean = {
     val pk = tableDef.partitionKey.map(_.columnName).toSet
     val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
+    val saiColumns = tableDef.indexes.filter(_.className.contains(StorageAttachedIndex)).map(_.target)
 
     val whereColumns: Set[String] = wherePredicates.collect {
       case EqPredicate(c, _) if pk.contains(c) => c
       case InPredicate(c) if pk.contains(c) => c
       case InListPredicate(c, _) if pk.contains(c) => c
-      case RangePredicate(c, _, _) if pk.contains(c) =>
+      case RangePredicate(c, _, _) if pk.contains(c) && !saiColumns.contains(c) =>
         throw new UnsupportedOperationException(
           s"Range predicates on partition key columns (here: $c) are " +
             s"not supported in where. Use filter instead.")
