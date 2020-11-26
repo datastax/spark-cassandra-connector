@@ -3,7 +3,7 @@ package org.apache.spark.sql.cassandra
 import java.net.InetAddress
 import java.util.{Locale, UUID}
 
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, Schema}
+import com.datastax.spark.connector.cql.{CassandraConnectionFactory, CassandraConnector, CassandraConnectorConf, Schema}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.{CassandraRDD, CassandraTableScanRDD, ReadConf}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
@@ -309,25 +309,37 @@ object CassandraSourceRelation {
     tableRef: TableRef,
     tableConf: Map[String, String]) : SparkConf = {
 
-    //Default settings
+    // Default settings
     val conf = sparkConf.clone()
     val cluster = tableRef.cluster.getOrElse(defaultClusterName)
     val ks = tableRef.keyspace
-    //Keyspace/Cluster level settings
-    for (prop <- DefaultSource.confProperties) {
+
+    // Determines the final value of the given property
+    def consolidate(prop: String): Option[String] = {
       val lowerCasedProp = prop.toLowerCase(Locale.ROOT)
-      val value = Seq(
+      Seq(
         tableConf.get(lowerCasedProp),
         tableConf.get(prop),
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
         sqlConf.get(s"default/$prop"),
         sqlConf.get(prop)).flatten.headOption
+    }
+
+    // Custom connection factories may have a set of custom supported properties
+    val factoryName = consolidate(CassandraConnectionFactory.FactoryParam.name)
+    val customConnectionFactoryProperties = CassandraConnectionFactory.fromNameOrDefault(factoryName).properties
+
+    // Keyspace/Cluster level settings
+    val defaultSourceProperties = DefaultSource
+      .confProperties ++ customConnectionFactoryProperties
+
+    for (prop <- defaultSourceProperties) {
+      val value = consolidate(prop)
       value.foreach(conf.set(prop, _))
     }
-    //Set all user properties not yet set
-    val SCCProps = DefaultSource
-      .confProperties
+    // Set all user properties not yet set
+    val SCCProps = defaultSourceProperties
       .flatMap(prop => Seq(prop, prop.toLowerCase(Locale.ROOT)))
     conf.setAll(tableConf -- SCCProps)
     conf
