@@ -187,6 +187,12 @@ trait SparkCassandraITSpecBase
     else report(s"Skipped because not DSE")
   }
 
+  /** Skips the given test if the cluster is not Cassandra */
+  def cassandraOnly(f: => Unit): Unit = {
+    if (isDse(conn)) report(s"Skipped because not Cassandra")
+    else f
+  }
+
   /** Skips the given test if the Cluster Version is lower or equal to the given version or the cluster is not DSE */
   def dseFrom(version: Version)(f: => Any): Unit = {
     dseOnly {

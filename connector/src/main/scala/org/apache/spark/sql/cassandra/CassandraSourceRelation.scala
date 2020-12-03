@@ -279,7 +279,8 @@ case class CassandraSourceRelation(
       DsePredicateRules,
       InClausePredicateRules) ++
       solrPredicateRules ++
-      additionalRules
+      additionalRules :+
+      TimeUUIDPredicateRules
 
     /** Apply non-basic rules **/
     val finalPushdown = predicatePushDownRules.foldLeft(basicPushdown)(
