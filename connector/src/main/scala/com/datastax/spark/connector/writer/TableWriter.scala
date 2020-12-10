@@ -229,26 +229,31 @@ class TableWriter[T] private (
       for (stmtToWrite <- batchBuilder) {
         queryExecutor.executeAsync(stmtToWrite.executeAs(writeConf.executeAs))
         maybeRateLimit(stmtToWrite)
+        assertExecutorException(queryExecutor)
       }
 
       queryExecutor.waitForCurrentlyExecutingTasks()
-
-      queryExecutor.getLatestException().map {
-        case exception =>
-          throw new IOException(
-            s"""Failed to write statements to $keyspaceName.$tableName. The
-               |latest exception was
-               |  ${exception.getMessage}
-               |
-               |Please check the executor logs for more exceptions and information
-             """.stripMargin)
-      }
+      assertExecutorException(queryExecutor)
 
       val duration = updater.finish() / 1000000000d
       logInfo(f"Wrote ${rowIterator.count} rows to $keyspaceName.$tableName in $duration%.3f s.")
       if (boundStmtBuilder.logUnsetToNullWarning){ logWarning(boundStmtBuilder.UnsetToNullWarning) }
     }
   }
+
+  private def assertExecutorException(queryExecutor: QueryExecutor): Unit = {
+    queryExecutor.getLatestException().map {
+      case exception =>
+        throw new IOException(
+          s"""Failed to write statements to $keyspaceName.$tableName. The
+             |latest exception was
+             |  ${exception.getMessage}
+             |
+             |Please check the executor logs for more exceptions and information
+             """.stripMargin)
+    }
+  }
+
 }
 
 object TableWriter {
