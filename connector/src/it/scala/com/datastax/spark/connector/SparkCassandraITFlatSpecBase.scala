@@ -129,7 +129,7 @@ trait SparkCassandraITSpecBase
       */
     //For Auth Clusters we have to wait for the default User before a connection will work
     if (sparkConf.contains(DefaultAuthConfFactory.PasswordParam.name)) {
-      eventually(timeout(Span(60, Seconds))) {
+      eventually(timeout(Span(120, Seconds))) {
         CassandraConnector(sparkConf).withSessionDo(session => assert(session != null))
       }
     }
