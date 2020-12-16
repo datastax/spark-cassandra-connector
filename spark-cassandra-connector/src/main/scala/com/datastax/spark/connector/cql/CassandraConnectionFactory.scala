@@ -151,8 +151,11 @@ object CassandraConnectionFactory {
   val Properties = Set(FactoryParam)
 
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
-    conf.getOption(FactoryParam.name)
-      .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
+    fromNameOrDefault(conf.getOption(FactoryParam.name))
+  }
+
+  def fromNameOrDefault(factoryName: Option[String]): CassandraConnectionFactory = {
+    factoryName.map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
       .getOrElse(FactoryParam.default)
   }
 }

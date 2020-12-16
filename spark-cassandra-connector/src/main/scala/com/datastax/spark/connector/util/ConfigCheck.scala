@@ -32,7 +32,6 @@ object ConfigCheck {
 
   val validStaticPropertyNames = validStaticProperties.map(_.name)
 
-
   /**
    * Checks the SparkConf Object for any unknown spark.cassandra.* properties and throws an exception
    * with suggestions if an unknown property is found.

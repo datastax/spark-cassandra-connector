@@ -154,8 +154,7 @@ object CassandraConnector extends Logging {
     createSession, destroySession, alternativeConnectionConfigs)
 
   private def createSession(conf: CassandraConnectorConf): Session = {
-    lazy val endpointsStr = conf.hosts.map(_.getHostAddress).mkString("{", ", ", "}") + ":" + conf.port
-    logDebug(s"Attempting to open native connection to Cassandra at $endpointsStr")
+    logDebug(s"Attempting to open native connection to Cassandra")
     val cluster = conf.connectionFactory.createCluster(conf)
     try {
       val clusterName = cluster.getMetadata.getClusterName
@@ -165,7 +164,7 @@ object CassandraConnector extends Logging {
     catch {
       case e: Throwable =>
         cluster.close()
-        throw new IOException(s"Failed to open native connection to Cassandra at $endpointsStr", e)
+        throw new IOException(s"Failed to open native connection to Cassandra", e)
     }
   }
 

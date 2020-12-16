@@ -1,15 +1,11 @@
 package org.apache.spark.sql.cassandra
 
-import java.util.Locale
-
-import scala.collection.mutable
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.DefaultSource._
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
-import com.datastax.spark.connector.util.Logging
-import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectorConf, DefaultAuthConfFactory}
+import com.datastax.spark.connector.cql.{AuthConfFactory, CassandraConnectionFactory, CassandraConnectorConf, DefaultAuthConfFactory}
 import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.writer.WriteConf
@@ -136,7 +132,8 @@ object DefaultSource {
     CassandraConnectorConf.Properties.map(_.name) ++
     CassandraSourceRelation.Properties.map(_.name) ++
     AuthConfFactory.Properties.map(_.name) ++
-    DefaultAuthConfFactory.properties
+    DefaultAuthConfFactory.properties ++
+    CassandraConnectionFactory.Properties.map(_.name)
 
   /** Check whether the provider is Cassandra datasource or not */
   def cassandraSource(provider: String) : Boolean = {
