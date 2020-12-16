@@ -1,3 +1,9 @@
+2.0.13
+ * Fix per cluster settings with factory custom props (DSP-21510)
+
+2.0.12
+ * Upgrade Java Driver Dependency to 3.7.2 (SPARKC-565)
+
 2.0.11
  * Added case in StringConverter to properly output InetAddress (SPARKC-559)
  * Added java.time.Instant -> java.util.Data conversion (SPARKC-560)
