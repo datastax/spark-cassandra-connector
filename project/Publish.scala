@@ -16,7 +16,6 @@
 
 import sbt._
 import sbt.Keys._
-import sbtrelease.ReleasePlugin._
 
 object Publish extends Build {
 

@@ -19,8 +19,6 @@ import java.io.File
 import scala.language.postfixOps
 
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
-import com.typesafe.tools.mima.plugin.MimaKeys._
-import com.typesafe.tools.mima.plugin.MimaPlugin._
 import sbt.Keys._
 import sbt._
 import sbtassembly.AssemblyKeys._
@@ -152,12 +150,7 @@ object Settings extends Build {
     update <<= (installSparkTask, update) map {(_, out) => out}
   )
 
-  lazy val mimaSettings = mimaDefaultSettings ++ Seq(
-    previousArtifact := None, //Some("a" % "b_2.10.4" % "1.2"),
-    binaryIssueFilters ++= Seq.empty
-  )
-
-  lazy val defaultSettings = projectSettings ++ mimaSettings ++ releaseSettings ++ Testing.testSettings
+  lazy val defaultSettings = projectSettings ++ releaseSettings ++ Testing.testSettings
 
   lazy val rootSettings = Seq(
     cleanKeepFiles ++= Seq("resolution-cache", "streams", "spark-archives").map(target.value / _),
