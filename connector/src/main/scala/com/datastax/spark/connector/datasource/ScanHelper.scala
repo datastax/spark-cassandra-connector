@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.datasource
 
 import java.io.IOException
-
 import com.datastax.oss.driver.api.core.CqlIdentifier._
 import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.oss.driver.api.core.{ConsistencyLevel, CqlSession}
@@ -15,6 +14,7 @@ import com.datastax.spark.connector.util.CqlWhereParser.{EqPredicate, InListPred
 import com.datastax.spark.connector.util.Quote.quote
 import com.datastax.spark.connector.util.{CqlWhereParser, Logging}
 import com.datastax.spark.connector.{ColumnName, ColumnRef, TTL, WriteTime}
+import org.apache.spark.sql.cassandra.DsePredicateRules.StorageAttachedIndex
 
 import scala.collection.JavaConverters._
 
@@ -114,12 +114,13 @@ object ScanHelper extends Logging {
   def containsPartitionKey(tableDef: TableDef, clause: CqlWhereClause): Boolean = {
     val pk = tableDef.partitionKey.map(_.columnName).toSet
     val wherePredicates: Seq[Predicate] = clause.predicates.flatMap(CqlWhereParser.parse)
+    val saiColumns = tableDef.indexes.filter(_.className.contains(StorageAttachedIndex)).map(_.target)
 
     val whereColumns: Set[String] = wherePredicates.collect {
       case EqPredicate(c, _) if pk.contains(c) => c
       case InPredicate(c) if pk.contains(c) => c
       case InListPredicate(c, _) if pk.contains(c) => c
-      case RangePredicate(c, _, _) if pk.contains(c) =>
+      case RangePredicate(c, _, _) if pk.contains(c) && !saiColumns.contains(c) =>
         throw new UnsupportedOperationException(
           s"Range predicates on partition key columns (here: $c) are " +
             s"not supported in where. Use filter instead.")

@@ -76,7 +76,14 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
             session.execute(s"create table $ks.date_test2 (key int primary key, dd date)")
             session.execute(s"insert into $ks.date_test (key, dd) values (1, '1930-05-31')")
           }
-        }
+        },
+
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.timeuuidtable (k INT, v TIMEUUID, PRIMARY KEY (k))
+               |""".stripMargin)
+        },
       )
       executor.waitForCurrentlyExecutingTasks()
     }
@@ -361,5 +368,23 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
   }
 
+  it should "complain when non-equality predicate on timeuuid is detected" in cassandraOnly {
+    val df = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(
+        Map(
+          "table" -> "timeuuidtable",
+          "keyspace" -> ks
+        )
+      )
+      .load()
+      .where(col("v") < "61129592-FBE4-11E3-A3AC-0800200C9A66")
+
+
+    intercept[IllegalArgumentException] {
+      df.count()
+    }
+  }
 
 }

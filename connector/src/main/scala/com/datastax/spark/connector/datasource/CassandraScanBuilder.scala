@@ -2,7 +2,6 @@ package com.datastax.spark.connector.datasource
 
 import java.net.InetAddress
 import java.util.UUID
-
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, TableDef}
 import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
 import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
@@ -13,7 +12,7 @@ import com.datastax.spark.connector.util.{Logging, ReflectionUtil}
 import com.datastax.spark.connector.{ColumnRef, RowCountRef, TTL, WriteTime}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.{AdditionalCassandraPushDownRulesParam, InClauseToJoinWithTableConversionThreshold}
-import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules}
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules, TimeUUIDPredicateRules}
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.connector.read.partitioning.{ClusteredDistribution, Distribution, Partitioning}
 import org.apache.spark.sql.sources.{EqualTo, Filter, In}
@@ -74,7 +73,8 @@ case class CassandraScanBuilder(
       DsePredicateRules,
       InClausePredicateRules) ++
       solrPredicateRules ++
-      additionalRules
+      additionalRules  :+
+      TimeUUIDPredicateRules
 
     /** Apply non-basic rules **/
     val finalPushdown = predicatePushDownRules.foldLeft(basicPushdown)(

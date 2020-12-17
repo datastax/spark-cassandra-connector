@@ -100,7 +100,7 @@ class ContinuousPagingScannerSpec extends SparkCassandraITFlatSpecBase with Defa
     withClue(sessions.map(_.toString).mkString("\n"))(sessions.size should be(1))
   }
 
-  it should "apply MB/s throughput limit" in skipIfNotDSE(conn) {
+  it should "apply MB/s throughput limit" in dseOnly {
     val readConf = ReadConf(throughputMiBPS = Some(32.0))
     val executedStmt = executeContinuousPagingScan(readConf)
 
@@ -109,7 +109,7 @@ class ContinuousPagingScannerSpec extends SparkCassandraITFlatSpecBase with Defa
     executedStmt.getExecutionProfile.getInt(DseDriverOption.CONTINUOUS_PAGING_PAGE_SIZE) should be(33554) // 32MB/s
   }
 
-  it should "apply reads/s throughput limit" in skipIfNotDSE(conn) {
+  it should "apply reads/s throughput limit" in dseOnly {
     val readConf = ReadConf(fetchSizeInRows = 999, readsPerSec = Some(5))
     val executedStmt = executeContinuousPagingScan(readConf)
 
@@ -118,7 +118,7 @@ class ContinuousPagingScannerSpec extends SparkCassandraITFlatSpecBase with Defa
     executedStmt.getExecutionProfile.getInt(DseDriverOption.CONTINUOUS_PAGING_PAGE_SIZE) should be(999)
   }
 
-  it should "throw a meaningful exception when pages per second does not fall int (0, Int.MaxValue)" in skipIfNotDSE(conn) {
+  it should "throw a meaningful exception when pages per second does not fall int (0, Int.MaxValue)" in dseOnly {
     val readConfs = Seq(
       ReadConf(throughputMiBPS = Some(1.0 + Int.MaxValue), readsPerSec = Some(1)),
       ReadConf(throughputMiBPS = Some(-1)),

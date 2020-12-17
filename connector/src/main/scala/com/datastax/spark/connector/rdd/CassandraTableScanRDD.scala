@@ -1,7 +1,5 @@
 package com.datastax.spark.connector.rdd
 
-import java.io.IOException
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.datasource.ScanHelper
@@ -10,12 +8,13 @@ import com.datastax.spark.connector.rdd.CassandraLimit._
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token => ConnectorToken}
 import com.datastax.spark.connector.rdd.partitioner.{CassandraPartition, _}
 import com.datastax.spark.connector.rdd.reader._
-import com.datastax.spark.connector.util.{CountingIterator}
+import com.datastax.spark.connector.util.CountingIterator
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.{PartitionCoalescer, RDD}
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 
+import java.io.IOException
 import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
