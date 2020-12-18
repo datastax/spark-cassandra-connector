@@ -3,7 +3,8 @@ package com.datastax.spark.connector.cql.sai
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.spark.connector.SparkCassandraITSpecBase
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.datasource.CassandraScan
+import com.datastax.spark.connector.datasource.{CassandraScan, CassandraScanBuilder}
+import com.datastax.spark.connector.rdd.CqlWhereClause
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
@@ -87,24 +88,17 @@ trait SaiBaseSpec extends Matchers with SparkCassandraITSpecBase {
 
   def assertPushedPredicate(dataFrame: DataFrame, pushedPredicate: Filter*): DataFrame = debug(dataFrame) {
     val plan = dataFrame.queryExecution.sparkPlan
-    val source = findCassandraScan(plan)
+    val scan = findCassandraScan(plan)
 
-    val handled = source.cqlQueryParts.whereClause.predicates.zip(source.cqlQueryParts.whereClause.values).toSet
-    val expected = pushedPredicate.map(toCql).toSet
+    val handled = scan.cqlQueryParts.whereClause
+    val expected = CassandraScanBuilder.filterToCqlWhereClause(scan.tableDef, pushedPredicate.toArray)
+
+    def comparablePredicates(where: CqlWhereClause): Set[String] = {
+      where.toString.drop(2).dropRight(2).split("],\\[").toSet
+    }
 
     withClue("The given df contains unexpected set of push down filters") {
-      handled should be (expected)
-    }
-  }
-
-  private def toCql(filter: Filter): (String, Any) = {
-    filter match {
-      case e: EqualTo => (s""""${e.attribute}" = ?""", e.value)
-      case e: LessThan => (s""""${e.attribute}" < ?""", e.value)
-      case e: LessThanOrEqual => (s""""${e.attribute}" <= ?""", e.value)
-      case e: GreaterThan => (s""""${e.attribute}" > ?""", e.value)
-      case e: GreaterThanOrEqual => (s""""${e.attribute}" >= ?""", e.value)
-      case e: In => (s""""${e.attribute}" IN ?""", e.values)
+      comparablePredicates(handled) shouldBe comparablePredicates(expected)
     }
   }
 }
