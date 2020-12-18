@@ -102,11 +102,16 @@ class DefaultColumnMapper[T : TypeTag](columnNameOverride: Map[String, String] =
       } yield (getterName, columnRef)
     }.toMap
 
-    // Check if we have all the required columns:
+    /** if this is a column mapper for the top level row, then handle gracefully a set of unmapped columns at the end of
+      * the table columns.  Otherwise, if this is a nested type, then require that there are be no unmapped columns.
+      */
     val mappedColumns = getterMap.values.toSet
     val unmappedColumns = selectedColumns.filterNot(mappedColumns)
-    require(unmappedColumns.isEmpty, s"Columns not found in $tpe: [${unmappedColumns.mkString(", ")}]")
 
+    if (!isTopLevel)
+      require(unmappedColumns.isEmpty, s"Columns not found in nested $tpe: [${unmappedColumns.mkString(", ")}]")
+    else
+      require( selectedColumns.endsWith(unmappedColumns), s"Unmapped columns nust be at end of table definition: [${unmappedColumns.mkString(", ")}]")
     SimpleColumnMapForWriting(getterMap)
   }
   

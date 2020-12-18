@@ -43,7 +43,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         * [[com.datastax.spark.connector.mapper.JavaBeanColumnMapper JavaBeanColumnMapper]],
         * and for everything else uses
         * [[com.datastax.spark.connector.mapper.DefaultColumnMapper DefaultColumnMapper]] */
-      private def columnMapper[U: TypeTag]: ColumnMapper[U] = {
+      private def columnMapper[U: TypeTag](topLevel: Boolean = true): ColumnMapper[U] = {
         logDebug(s"Finding a UDT ColumnMapper for typeTag ${typeTag[U]}")
         val tpe = SparkReflectionLock.synchronized(typeTag[U].tpe)
         if (ReflectionUtil.isScalaTuple(tpe))
@@ -51,7 +51,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         else if (isJavaBean)
           new JavaBeanColumnMapper[U]()(ReflectionUtil.classTag[U])
         else
-          new DefaultColumnMapper[U]
+          new DefaultColumnMapper[U] { override val isTopLevel = topLevel }
       }
 
       /** Returns true for tuple types that provide full type information of their components */
@@ -112,13 +112,13 @@ private[connector] object MappedToGettableDataConverter extends Logging{
             case (t: StructDef, TypeRef(_, _, List(argScalaType))) if scalaType <:< typeOf[Option[Any]] =>
               type U2 = u2 forSome {type u2}
               implicit val tt = ReflectionUtil.typeToTypeTag[U2](argScalaType)
-              implicit val cm: ColumnMapper[U2] = columnMapper[U2]
+              implicit val cm: ColumnMapper[U2] = columnMapper[U2]()
               apply[U2](t, t.columnRefs, Some(childClassloader))
 
             // UDTs mapped to case classes and tuples mapped to Scala tuples.
             // ColumnMappers support mapping Scala tuples, so we don't need a special case for them.
             case (t: StructDef, _) =>
-              implicit val cm: ColumnMapper[U] = columnMapper[U]
+              implicit val cm: ColumnMapper[U] = columnMapper[U](false)
               apply[U](t, t.columnRefs, Some(childClassloader))
 
             // Primitive types
@@ -166,7 +166,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       }
 
       private val getters =
-        columnNames.map(getterByColumnName)
+        columnNames.flatMap(col => getterByColumnName.get(col))
 
       @transient
       private val scalaTypes: IndexedSeq[Type] =
@@ -179,7 +179,7 @@ private[connector] object MappedToGettableDataConverter extends Logging{
         new PropertyExtractor(cls, getters)
 
       private val converters = {
-        for (i <- columnNames.indices) yield {
+        for (i <- getters.indices) yield {
           try {
             val ct = columnTypes(i)
             val st = scalaTypes(i)
@@ -196,7 +196,8 @@ private[connector] object MappedToGettableDataConverter extends Logging{
       }
 
       override def targetTypeTag = typeTag[struct.ValueRepr]
-
+      override def filteredColumns =
+        columnNames.toSet.intersect(columnMap.getters.values.map(_.toString).toSet)
 
       override def convertPF = {
         case obj if cls.isInstance(obj) =>

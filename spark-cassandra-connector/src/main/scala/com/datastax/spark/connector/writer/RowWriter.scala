@@ -14,4 +14,6 @@ trait RowWriter[T] extends Serializable {
     * in the same order as they are listed in the columnNames sequence. */
   def readColumnValues(data: T, buffer: Array[Any])
 
+  def isValidRowWriter(): Unit = {}
+
 }

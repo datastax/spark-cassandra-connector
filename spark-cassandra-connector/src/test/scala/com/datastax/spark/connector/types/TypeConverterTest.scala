@@ -307,6 +307,13 @@ class TypeConverterTest {
   }
 
   @Test
+  def testYearLocalDate(): Unit = {
+    val c = TypeConverter.forType[LocalDate]
+    val testDate = LocalDate.fromYearMonthDay(1985, 1, 1)
+    assertEquals(testDate, c.convert("1985"))
+  }
+
+  @Test
   def testTimeType(): Unit = {
     val c = TypeConverter.TimeTypeConverter
     val targetTime = 1482000000L

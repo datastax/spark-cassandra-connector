@@ -2,12 +2,12 @@ package com.datastax.spark.connector.sql
 
 import scala.concurrent.Future
 
-import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation, TableRef}
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.BeforeAndAfterEach
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.embedded.YamlTransformations
@@ -33,6 +33,10 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
         session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 1, 2, 2, 1, 2)""")
         session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 1, 2, 2, 1)""")
         session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 2, 1, 2, 2, 2, 2, 2)""")
+      },
+
+      Future {
+        session.execute(s"CREATE TABLE $ks.test_rowwriter (a INT PRIMARY KEY, b INT)")
       },
 
       Future {
@@ -87,7 +91,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
   }
 
   override def afterEach(): Unit ={
-     sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
+    sc.setLocalProperty(CassandraSourceRelation.AdditionalCassandraPushDownRulesParam.name, null)
   }
 
   def createTempTable(keyspace: String, table: String, tmpTable: String) = {
@@ -166,6 +170,11 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
     sparkSession.sql("DROP VIEW insertTable2")
   }
 
+  // This test is just to make sure at runtime the implicit for RDD[Row] can be found
+  it should "implicitly generate a rowWriter from it's RDD form" in {
+    sparkSession.sql("SELECT a, b from tmpTable").rdd.saveToCassandra(ks, "test_rowwriter")
+  }
+
   it should "allow to filter a table" in {
     sparkSession.sql("SELECT a, b FROM tmpTable WHERE a=1 and b=2 and c=1 and e=1").collect() should have length 2
   }
@@ -212,9 +221,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with Logging 
 
   it should "throws exception during overwriting a table when confirm.truncate is false" in {
     val test_df = TestPartialColumns(1400820884, "Firefox", 123242)
-
     val ss = sparkSession
     import ss.implicits._
+
     val df = sc.parallelize(Seq(test_df)).toDF
 
     val message = intercept[UnsupportedOperationException] {

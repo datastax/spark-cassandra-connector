@@ -1196,11 +1196,12 @@ public class CassandraJavaUtil {
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
      * be used, see {@link #mapToRow(Class, ColumnMapper)} method.
+     * @param fieldToColumnNameMap mapping of field name to column name.
      */
     public static <T> RowWriterFactory<T> mapToRow(
-            Class<T> sourceClass, Map<String, String> columnNameMappings
+            Class<T> sourceClass, Map<String, String> fieldToColumnNameMap
     ) {
-        ColumnMapper<T> mapper = javaBeanColumnMapper(safeClassTag(sourceClass), columnNameMappings);
+        ColumnMapper<T> mapper = javaBeanColumnMapper(safeClassTag(sourceClass), fieldToColumnNameMap);
         return mapToRow(sourceClass, mapper);
     }
 
@@ -1216,9 +1217,10 @@ public class CassandraJavaUtil {
      * <p/>
      * The method uses {@link JavaBeanColumnMapper} as the column mapper. If another column mapper has to
      * be used, see {@link #mapToRow(Class, ColumnMapper)} method.
+     * @param fieldToColumnNameMappings mapping of field name to column name.
      */
-    public static <T> RowWriterFactory<T> mapToRow(Class<T> sourceClass, Pair... columnNameMappings) {
-        return mapToRow(sourceClass, convertToMap(columnNameMappings));
+    public static <T> RowWriterFactory<T> mapToRow(Class<T> sourceClass, Pair... fieldToColumnNameMappings) {
+        return mapToRow(sourceClass, convertToMap(fieldToColumnNameMappings));
     }
 
     // -------------------------------------------------------------------------
