@@ -4,6 +4,8 @@ import com.datastax.spark.connector.SparkCassandraITWordSpecBase
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
 import com.datastax.spark.connector.util.schemaFromCassandra
+import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.functions.col
 import org.scalatest.Inspectors._
 
 class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
@@ -31,7 +33,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
          |  d7_int int,
          |  d8_list list<int>,
          |  d9_map map<int, varchar>,
-         |  d10_set set<int>,
+         |  d10_set frozen<set<int>>,
          |  d11_timestamp timestamp,
          |  d12_uuid uuid,
          |  d13_timeuuid timeuuid,
@@ -44,7 +46,14 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
     session.execute(
       s"""CREATE INDEX test_d9_map_idx ON $ks.test (keys(d9_map))""")
     session.execute(
+      s"""CREATE INDEX test_d9_m23423ap_idx ON $ks.test (full(d10_set))""")
+    session.execute(
       s"""CREATE INDEX test_d7_int_idx ON $ks.test (d7_int)""")
+
+    for (i <- 0 to 9) {
+      session.execute(s"insert into $ks.test (k1,k2,k3,c1,c2,c3,d10_set) " +
+        s"values ($i, 'text$i', $i, $i, 'text$i', 123e4567-e89b-12d3-a456-42661417400$i, {$i, ${i*10}})")
+    }
   }
 
   val schema = schemaFromCassandra(conn)
@@ -120,7 +129,7 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       table.columnByName("d7_int").columnType shouldBe IntType
       table.columnByName("d8_list").columnType shouldBe ListType(IntType)
       table.columnByName("d9_map").columnType shouldBe MapType(IntType, VarCharType)
-      table.columnByName("d10_set").columnType shouldBe SetType(IntType)
+      table.columnByName("d10_set").columnType shouldBe SetType(IntType, true)
       table.columnByName("d11_timestamp").columnType shouldBe TimestampType
       table.columnByName("d12_uuid").columnType shouldBe UUIDType
       table.columnByName("d13_timeuuid").columnType shouldBe TimeUUIDType
@@ -135,13 +144,19 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       udt.columnTypes shouldBe Seq(VarCharType, VarCharType, IntType)
     }
 
-    "should not recognize column with collection index as indexed" in {
-      table.indexedColumns.size shouldBe 1
-      table.indexedColumns.head.columnName shouldBe "d7_int"
+    "should recognize column with collection index as indexed" in {
+      table.indexedColumns.size shouldBe 3
+      table.indexedColumns.map(_.columnName).toSet shouldBe Set("d7_int", "d9_map", "d10_set")
+    }
+
+    "allow for pushdown on frozen indexed collection" in {
+      val value1 = spark.read.cassandraFormat(table.tableName, ks).load().where(col("d10_set").equalTo(Array(3, 30)))
+      value1.explain()
+      value1.collect().size shouldBe 1
     }
 
     "should hold all indices retrieved from cassandra" in {
-      table.indexes.size shouldBe 2
+      table.indexes.size shouldBe 3
     }
   }
 
