@@ -81,7 +81,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
             s"""
                |CREATE TABLE $ks.timeuuidtable (k INT, v TIMEUUID, PRIMARY KEY (k))
                |""".stripMargin)
-        },
+        }
       )
       executor.waitForCurrentlyExecutingTasks()
     }
