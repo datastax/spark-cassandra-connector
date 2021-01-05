@@ -1,7 +1,6 @@
 language: scala
 jdk:
   - oraclejdk8
-  - oraclejdk11
 
 branches:
   only:
@@ -29,15 +28,11 @@ env:
     - TEST_PARALLEL_TASKS=1 #Times out on 2
 
   jobs:
-    - CCM_CASSANDRA_VERSION=3.11.6
-    - CCM_CASSANDRA_VERSION=3.0.20
-    - CCM_CASSANDRA_VERSION=2.1.21
-    - CCM_CASSANDRA_VERSION=6.0.11 CCM_IS_DSE=true DSE_VERSION=6.0.11 CCM_SERVER_TYPE=dse
-    - CCM_CASSANDRA_VERSION=6.8.5  CCM_IS_DSE=true DSE_VERSION=6.8.5 CCM_SERVER_TYPE=dse
+    - CCM_CASSANDRA_VERSION=6.8.5 CCM_IS_DSE=true DSE_VERSION=6.8.5 CCM_SERVER_TYPE=dse
 
 install:
   - pip install --user ccm
 
 script:
   - "unset JVM_OPTS" # The Travis JVM Opts break CCM
-  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true test it:test"  #Unit tests and Integration Suite
+  - "sbt ++$TRAVIS_SCALA_VERSION -Dtravis=true it:testOnly com.datastax.spark.connector.sql.CassandraDataFrameSpec"  #Unit tests and Integration Suite

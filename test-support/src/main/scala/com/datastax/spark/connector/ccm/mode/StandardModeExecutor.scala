@@ -3,9 +3,9 @@ package com.datastax.spark.connector.ccm.mode
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
-
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig
+import com.datastax.spark.connector.ccm.CcmConfig.V6_8_5
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
@@ -75,7 +75,7 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
         eventually(f = Files.exists(repositoryDir.resolve("bin")))
       }
 
-      execute( createArgs: _*)
+      execute(createArgs: _*)
 
       eventually("Checking to make sure repository was correctly expanded", {
         Files.exists(repositoryDir.resolve("bin"))
@@ -91,6 +91,10 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
           s"node$i"
 
         execute(addArgs: _*)
+
+        if (config.dseEnabled && config.getDseVersion.exists(_.compareTo(V6_8_5) >= 0)) {
+          execute("updateconf", s"metadata_directory:${dir.toFile.getAbsolutePath}/metadata$i")
+        }
       }
 
       config.cassandraConfiguration.foreach { case (key, value) =>
