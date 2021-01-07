@@ -6,9 +6,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig
+import com.datastax.spark.connector.ccm.CcmConfig.V6_8_5
 import org.slf4j.{Logger, LoggerFactory}
-
-import scala.collection.JavaConverters._
 
 private[mode] trait DefaultExecutor extends ClusterModeExecutor {
   private val logger: Logger = LoggerFactory.getLogger(classOf[StandardModeExecutor])
@@ -91,6 +90,10 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
           s"node$i"
 
         execute(addArgs: _*)
+
+        if (config.dseEnabled && config.getDseVersion.exists(_.compareTo(V6_8_5) >= 0)) {
+          execute("updateconf", s"metadata_directory:${dir.toFile.getAbsolutePath}/metadata$i")
+        }
       }
 
       config.cassandraConfiguration.foreach { case (key, value) =>

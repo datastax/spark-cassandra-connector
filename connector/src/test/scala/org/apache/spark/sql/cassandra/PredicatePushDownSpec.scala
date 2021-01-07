@@ -82,14 +82,6 @@ class PredicatePushDownSpec extends FlatSpec with Matchers {
     ppd.predicatesToPreserve shouldBe empty
   }
 
-  it should " break if the user tries to use a TimeUUID on a fully unhandled predicate" in {
-    val f1 = GtFilter("t1")
-
-    val ex = intercept[IllegalArgumentException] {
-      val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
-    }
-  }
-
   it should " work if the user tries to use a TimeUUID on a fully handled predicate" in {
     val f1 = GtFilter("c1")
     val ppd = new BasicCassandraPredicatePushDown(Set[Filter](f1), timeUUIDTable)
