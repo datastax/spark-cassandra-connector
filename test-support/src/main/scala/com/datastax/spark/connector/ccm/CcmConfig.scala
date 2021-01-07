@@ -115,15 +115,18 @@ object CcmConfig {
   // validation testing.
   val DEFAULT_SERVER_LOCALHOST_KEYSTORE_PATH: String = "/server_localhost.keystore"
 
-  // major DSE versions
+  // DSE versions
+  val V6_8_5: Version = Version.parse("6.8.5")
+  val V6_8_3: Version = Version.parse("6.8.3")
   val V6_8_0: Version = Version.parse("6.8.0")
   val V6_7_0: Version = Version.parse("6.7.0")
   val V6_0_0: Version = Version.parse("6.0.0")
   val V5_1_0: Version = Version.parse("5.1.0")
   val V5_0_0: Version = Version.parse("5.0.0")
 
-  // mapped C* versions from DSE versions
+  // C* versions
   val V4_0_0: Version = Version.parse("4.0.0")
+  val V3_6_0: Version = Version.parse("3.6.0")
   val V3_10: Version = Version.parse("3.10")
   val V3_0_15: Version = Version.parse("3.0.15")
   val V2_1_19: Version = Version.parse("2.1.19")

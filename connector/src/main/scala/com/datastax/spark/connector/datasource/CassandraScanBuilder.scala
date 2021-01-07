@@ -2,7 +2,6 @@ package com.datastax.spark.connector.datasource
 
 import java.net.InetAddress
 import java.util.UUID
-
 import com.datastax.spark.connector.cql.{CassandraConnector, ColumnDef, TableDef}
 import com.datastax.spark.connector.datasource.CassandraSourceUtil.consolidateConfs
 import com.datastax.spark.connector.datasource.ScanHelper.CqlQueryParts
@@ -13,7 +12,7 @@ import com.datastax.spark.connector.util.{Logging, ReflectionUtil}
 import com.datastax.spark.connector.{ColumnRef, RowCountRef, TTL, WriteTime}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.{AdditionalCassandraPushDownRulesParam, InClauseToJoinWithTableConversionThreshold}
-import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules}
+import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules, TimeUUIDPredicateRules}
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.connector.read.partitioning.{ClusteredDistribution, Distribution, Partitioning}
 import org.apache.spark.sql.sources.{EqualTo, Filter, In}
@@ -74,7 +73,8 @@ case class CassandraScanBuilder(
       DsePredicateRules,
       InClausePredicateRules) ++
       solrPredicateRules ++
-      additionalRules
+      additionalRules  :+
+      TimeUUIDPredicateRules
 
     /** Apply non-basic rules **/
     val finalPushdown = predicatePushDownRules.foldLeft(basicPushdown)(
@@ -189,55 +189,10 @@ case class CassandraScanBuilder(
     }
   }
 
-  /** Construct where clause from pushdown filters */
-  private def cqlWhereClause = filtersForCassandra.foldLeft(CqlWhereClause.empty) { case (where, filter) => {
-    val (predicate, values) = filterToCqlAndValue(filter)
-    val newClause = CqlWhereClause(Seq(predicate), values)
-    where and newClause
-  }
-  }
-
   override def pushedFilters(): Array[Filter] = filtersForCassandra
 
-  /** Construct Cql clause and retrieve the values from filter */
-  private def filterToCqlAndValue(filter: Any): (String, Seq[Any]) = {
-    filter match {
-      case sources.EqualTo(attribute, value) => (s"${quote(attribute)} = ?", Seq(toCqlValue(attribute, value)))
-      case sources.LessThan(attribute, value) => (s"${quote(attribute)} < ?", Seq(toCqlValue(attribute, value)))
-      case sources.LessThanOrEqual(attribute, value) => (s"${quote(attribute)} <= ?", Seq(toCqlValue(attribute, value)))
-      case sources.GreaterThan(attribute, value) => (s"${quote(attribute)} > ?", Seq(toCqlValue(attribute, value)))
-      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(toCqlValue(attribute, value)))
-      case sources.In(attribute, values) =>
-        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), toCqlValues(attribute, values))
-      case _ =>
-        throw new UnsupportedOperationException(
-          s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
-    }
-  }
-
-  private def toCqlValues(columnName: String, values: Array[Any]): Seq[Any] = {
-    values.map(toCqlValue(columnName, _)).toSeq
-  }
-
-  /** If column is VarInt column, convert data to BigInteger */
-  private def toCqlValue(columnName: String, value: Any): Any = {
-    value match {
-      case decimal: Decimal =>
-        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
-        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
-      case utf8String: UTF8String =>
-        val columnType = tableDef.columnByName(columnName).columnType
-        if (columnType == InetType) {
-          InetAddress.getByName(utf8String.toString)
-        } else if (columnType == UUIDType) {
-          UUID.fromString(utf8String.toString)
-        } else {
-          utf8String
-        }
-      case other => other
-    }
-  }
-
+  /** Construct where clause from pushdown filters */
+  private def cqlWhereClause = CassandraScanBuilder.filterToCqlWhereClause(tableDef, filtersForCassandra)
 
   /** Is convertable to joinWithCassandraTable if query
     * - uses all partition key columns
@@ -268,6 +223,55 @@ case class CassandraScanBuilder(
       case in@In(column, _) => (column, in)
     }.toMap
     columns.flatMap(column => predicatesByColumnName.get(column.columnName))
+  }
+}
+
+object CassandraScanBuilder {
+  private[connector] def filterToCqlWhereClause(tableDef: TableDef, filters: Array[Filter]): CqlWhereClause = {
+    filters.foldLeft(CqlWhereClause.empty) { case (where, filter) =>
+      val (predicate, values) = filterToCqlAndValue(tableDef, filter)
+      val newClause = CqlWhereClause(Seq(predicate), values)
+      where and newClause
+    }
+  }
+
+  /** Construct Cql clause and retrieve the values from filter */
+  private def filterToCqlAndValue(tableDef: TableDef, filter: Any): (String, Seq[Any]) = {
+    filter match {
+      case sources.EqualTo(attribute, value) => (s"${quote(attribute)} = ?", Seq(toCqlValue(tableDef, attribute, value)))
+      case sources.LessThan(attribute, value) => (s"${quote(attribute)} < ?", Seq(toCqlValue(tableDef, attribute, value)))
+      case sources.LessThanOrEqual(attribute, value) => (s"${quote(attribute)} <= ?", Seq(toCqlValue(tableDef, attribute, value)))
+      case sources.GreaterThan(attribute, value) => (s"${quote(attribute)} > ?", Seq(toCqlValue(tableDef, attribute, value)))
+      case sources.GreaterThanOrEqual(attribute, value) => (s"${quote(attribute)} >= ?", Seq(toCqlValue(tableDef, attribute, value)))
+      case sources.In(attribute, values) =>
+        (quote(attribute) + " IN " + values.map(_ => "?").mkString("(", ", ", ")"), toCqlValues(tableDef, attribute, values))
+      case _ =>
+        throw new UnsupportedOperationException(
+          s"It's not a valid filter $filter to be pushed down, only >, <, >=, <= and In are allowed.")
+    }
+  }
+
+  private def toCqlValues(tableDef: TableDef, columnName: String, values: Array[Any]): Seq[Any] = {
+    values.map(toCqlValue(tableDef, columnName, _)).toSeq
+  }
+
+  /** If column is VarInt column, convert data to BigInteger */
+  private def toCqlValue(tableDef: TableDef, columnName: String, value: Any): Any = {
+    value match {
+      case decimal: Decimal =>
+        val isVarIntColumn = tableDef.columnByName(columnName).columnType == VarIntType
+        if (isVarIntColumn) decimal.toJavaBigDecimal.toBigInteger else decimal
+      case utf8String: UTF8String =>
+        val columnType = tableDef.columnByName(columnName).columnType
+        if (columnType == InetType) {
+          InetAddress.getByName(utf8String.toString)
+        } else if (columnType == UUIDType) {
+          UUID.fromString(utf8String.toString)
+        } else {
+          utf8String
+        }
+      case other => other
+    }
   }
 }
 

@@ -5,14 +5,24 @@ package com.datastax.spark.connector.rdd
   * The number of placeholders must match the size of the `values` array. */
 case class CqlWhereClause(predicates: Seq[String], values: Seq[Any]) {
 
+  assert(predicates.map(_.count(ch => ch == '?')).sum == values.size, "The number of placeholders is different than " +
+    s"the number of values, this should never happen: $predicates, $values")
+
   /** Returns a conjunction of this clause and the given predicate. */
   def and(other: CqlWhereClause) =
     CqlWhereClause(predicates ++ other.predicates, values ++ other.values)
 
   override def toString: String = {
-    predicates.zip(values).map{ case (pred, value) =>  s"[$pred, $value]"}.mkString("[", ",", "]")
+    val valuesIterator = values.iterator
+    val predicatesWithValues = predicates.map { predicate =>
+      val valuesCount = predicate.count(_ == '?')
+      (predicate, (0 until valuesCount).map(_ => valuesIterator.next()))
+    }
+    predicatesWithValues.map { case (pred, values) =>
+      val valuesString = if (values.size == 1) values.head else values.mkString("(", ", ", ")")
+      s"[$pred, $valuesString]"
+    }.mkString("[", ",", "]")
   }
-
 }
 
 object CqlWhereClause {

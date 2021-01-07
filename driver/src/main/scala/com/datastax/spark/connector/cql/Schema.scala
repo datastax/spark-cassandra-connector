@@ -152,10 +152,22 @@ case class ColumnDef(
   * @param className If this index is custom, the name of the server-side implementation. Otherwise, empty.
   */
 case class IndexDef(
-    className: Option[String],
-    target: String,
-    indexName: String,
-    options: Map[String, String]) extends Serializable
+  className: Option[String],
+  target: String,
+  indexName: String,
+  options: Map[String, String]) extends Serializable {
+
+  /** SAI introduced non trivial targets: `full(<column>), values(<column>), key(<column>), entries(<column>)`.
+    * `targetColumn` returns `<column>` for SAI targets or original target for other indexes. */
+  val targetColumn: String = target match {
+    case IndexDef.saiTargetColumnPattern(_, column) => column
+    case t => t
+  }
+}
+
+object IndexDef {
+  private val saiTargetColumnPattern = "(\\w+\\()?(\\w+)\\)?".r
+}
 
 object ColumnDef {
 
@@ -186,20 +198,20 @@ case class TableDef(
 
   val allColumns = regularColumns ++ clusteringColumns ++ partitionKey
 
-  private val indexesForTarget: Map[String, Seq[IndexDef]] = indexes.groupBy(_.target)
+  private val indexesForColumn: Map[String, Seq[IndexDef]] = indexes.groupBy(_.targetColumn)
 
   /**
     * Contains indices that can be directly mapped to single column, namely indices with a handled column
     * name as a target. Indices that can not be mapped to a single column are dropped.
     */
   private val indexesForColumnDef: Map[ColumnDef, Seq[IndexDef]] = {
-    indexesForTarget.flatMap {
+    indexesForColumn.flatMap {
       case (target, indexes) => Try(columnByName(target) -> indexes).toOption
     }
   }
 
   def isIndexed(column: String): Boolean = {
-    indexesForTarget.contains(column)
+    indexesForColumn.contains(column)
   }
 
   def isIndexed(column: ColumnDef): Boolean = {

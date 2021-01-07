@@ -9,7 +9,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.ccm.CcmConfig.{V4_0_0, V6_7_0}
+import com.datastax.spark.connector.ccm.CcmConfig.{V3_6_0, V4_0_0, V6_7_0}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
@@ -792,7 +792,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
   }
 
-  it should "allow the use of PER PARTITION LIMITs " in skipIfCassandraLT(Cass36) {
+  it should "allow the use of PER PARTITION LIMITs " in from(V3_6_0) {
     val result = sc.cassandraTable(ks, "clustering_time").perPartitionLimit(1).collect
     result.length should be (1)
   }
@@ -1108,7 +1108,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     )
   }
 
-  it should "throw a meaningful exception when reading a table view" in skipIfLT(cassandra = V4_0_0, dse = V6_7_0) {
+  it should "throw a meaningful exception when reading a table view" in from(cassandra = V4_0_0, dse = V6_7_0) {
     import org.apache.spark.sql.cassandra._
 
     val ex = intercept[IllegalArgumentException] {

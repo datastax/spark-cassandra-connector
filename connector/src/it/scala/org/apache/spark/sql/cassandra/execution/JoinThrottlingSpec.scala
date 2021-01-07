@@ -61,7 +61,7 @@ class JoinThrottlingSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
     }
 
     val durationSeconds = durationMillis.toInt / 1000
-    val minimalDurationSeconds = rowsCount / rowsPerSecondPerCore / SparkTemplate.DefaultParallelism
+    val minimalDurationSeconds = rowsCount / rowsPerSecondPerCore / SparkTemplate.DefaultParallelism - 1
     withClue(s"The expected duration of this join operation should not be shorter then $minimalDurationSeconds " +
       s"for rowsPerSecondPerCore=$rowsPerSecondPerCore.") {
       durationSeconds should be >= minimalDurationSeconds

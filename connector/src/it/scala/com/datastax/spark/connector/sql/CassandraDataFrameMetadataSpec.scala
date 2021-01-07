@@ -1,21 +1,20 @@
 package com.datastax.spark.connector.sql
 
-import java.util.concurrent.CompletableFuture
-
 import com.datastax.oss.driver.api.core.Version
-
-import scala.concurrent.Future
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
+import com.datastax.spark.connector.ccm.CcmConfig.V3_6_0
 import com.datastax.spark.connector.cluster.DefaultCluster
-import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.types.UserDefinedType
 import com.datastax.spark.connector.util.schemaFromCassandra
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.catalyst.FunctionIdentifier
+import org.apache.spark.sql.functions._
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
+
+import scala.concurrent.Future
 
 class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with Eventually with Matchers {
   override lazy val conn = CassandraConnector(defaultConf)
@@ -28,7 +27,7 @@ class CassandraDataFrameMetadataSpec extends SparkCassandraITFlatSpecBase with D
     def typesToCheck = {
       val ord = implicitly[Ordering[Version]]
       import ord._
-      if (cluster.getCassandraVersion > Cass36) {
+      if (cluster.getCassandraVersion > V3_6_0) {
         session.execute(
           s"""
              |CREATE TABLE $ks.test_reading_types (
