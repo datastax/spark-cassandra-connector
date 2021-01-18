@@ -1,9 +1,8 @@
 package com.datastax.spark.connector.datasource
 
 import java.util
-
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{SupportsRead, SupportsWrite, Table, TableCapability}
@@ -27,7 +26,8 @@ case class CassandraTable(
     with SupportsRead
     with SupportsWrite {
 
-  val tableDef = tableFromCassandra(connector, metadata.getKeyspace.asInternal(), name())
+  /* Retrieving table def from cassandra may be slow (it implies C* metadata refresh) */
+  lazy val tableDef: TableDef = tableFromCassandra(connector, metadata.getKeyspace.asInternal(), name())
 
   override def schema(): StructType = optionalSchema
     .getOrElse(CassandraSourceUtil.toStructType(metadata))

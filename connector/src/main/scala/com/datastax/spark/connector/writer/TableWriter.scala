@@ -414,7 +414,17 @@ object TableWriter {
       checkPartitionKey: Boolean = false): TableWriter[T] = {
 
     val tableDef = tableFromCassandra(connector, keyspaceName, tableName)
-    val optionColumns = writeConf.optionsAsColumns(keyspaceName, tableName)
+    TableWriter(connector, tableDef, columnNames, writeConf, checkPartitionKey)
+  }
+
+  def apply[T : RowWriterFactory](
+       connector: CassandraConnector,
+       tableDef: TableDef,
+       columnNames: ColumnSelector,
+       writeConf: WriteConf,
+       checkPartitionKey: Boolean): TableWriter[T] = {
+
+    val optionColumns = writeConf.optionsAsColumns(tableDef.keyspaceName, tableDef.tableName)
     val tablDefWithMeta = tableDef.copy(regularColumns = tableDef.regularColumns ++ optionColumns)
 
     val selectedColumns = columnNames
