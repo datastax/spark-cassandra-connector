@@ -15,7 +15,7 @@ import com.datastax.oss.driver.api.core.session.{Request, Session}
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext
 import com.datastax.oss.driver.internal.core.metadata.MetadataManager
 import com.datastax.oss.driver.internal.core.util.Reflection
-import com.datastax.oss.driver.internal.core.util.collection.QueryPlan
+import com.datastax.oss.driver.internal.core.util.collection.SimpleQueryPlan
 import com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy.{LoadBalancingShuffleNodes, _}
 import com.datastax.spark.connector.util.DriverUtil.{toAddress, toOption}
 
@@ -119,7 +119,7 @@ class LocalNodeFirstLoadBalancingPolicy(context: DriverContext, profileName: Str
     } else {
       tokenUnawareQueryPlan(request)
     }
-    new QueryPlan(nodes: _*)
+    new SimpleQueryPlan(nodes: _*)
   }
 
   override def onAdd(node: Node) {
