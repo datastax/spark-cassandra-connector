@@ -5,14 +5,13 @@ import java.net.{InetAddress, InetSocketAddress}
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.loadbalancing.NodeDistance
-import com.datastax.spark.connector.cql.CassandraConnectorConf.CassandraSSLConf
 import com.datastax.spark.connector.types.TypeAdapters.{ValueByNameAdapter, ValuesSeqAdapter}
 import com.datastax.spark.connector.types.{NullableTypeConverter, TypeConverter}
 import com.datastax.spark.connector.util.ConfigCheck.ConnectorConfigurationException
 import com.datastax.spark.connector.util.DriverUtil.toAddress
-import com.datastax.spark.connector.util.{DriverUtil, Logging, SerialShutdownHooks}
+import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.{SparkConf, SparkContext, SparkFiles}
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConverters._
 import scala.language.reflectiveCalls
@@ -65,14 +64,8 @@ class CassandraConnector(val conf: CassandraConnectorConf)
   def hosts: Set[InetSocketAddress] =
     // wrapped in a session, so we get full lists of hosts,
     // not only those explicitly passed in the conf
-    withSessionDo {
-      _.getMetadata
-        .getNodes
-        .values
-        .asScala
-        .filter(_.getDistance == NodeDistance.LOCAL)
-        .flatMap(DriverUtil.toAddress)
-        .toSet
+    withSessionDo { session =>
+      dataCenterNodes(_config, session)
     }
 
   private[connector] def hostAddresses: Set[InetAddress] = hosts.map(_.getAddress)
@@ -187,14 +180,14 @@ object CassandraConnector extends Logging {
     logInfo(s"Disconnected from Cassandra cluster.")
   }
 
-  private def dataCenterNodes(conf: CassandraConnectorConf, ipConf: IpBasedContactInfo, session: CqlSession): Set[InetSocketAddress] = {
+  // LocalNodeFirstLoadBalancingPolicy assigns LOCAL or REMOTE (i.e. non-IGNORED) distance to local DC nodes
+  private def dataCenterNodes(conf: CassandraConnectorConf, session: CqlSession): Set[InetSocketAddress] = {
     val allNodes = session.getMetadata.getNodes.asScala.values.toSet
-    val dcToUse = conf.localDC.getOrElse(LocalNodeFirstLoadBalancingPolicy.determineDataCenter(ipConf.hosts, allNodes))
     val nodes = allNodes
-      .collect { case n if n.getDatacenter == dcToUse => toAddress(n) }
-      .flatten
+      .filter(_.getDistance != NodeDistance.IGNORED)
+      .flatMap(toAddress)
     if (nodes.isEmpty) {
-      throw new ConnectorConfigurationException(s"Could not determine suitable nodes for DC: $dcToUse and known nodes: " +
+      throw new ConnectorConfigurationException(s"Could not determine suitable nodes in local DC for known nodes: " +
         s"${allNodes.map(n => (n.getHostId, toAddress(n))).mkString(", ")}")
     }
     nodes
@@ -204,7 +197,7 @@ object CassandraConnector extends Logging {
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: CqlSession): Set[CassandraConnectorConf] = {
     conf.contactInfo match {
       case ipConf: IpBasedContactInfo =>
-        val nodes = dataCenterNodes(conf, ipConf, session)
+        val nodes = dataCenterNodes(conf, session)
         nodes.map(n => conf.copy(contactInfo = ipConf.copy(hosts = Set(n)))) + conf.copy(contactInfo = ipConf.copy(hosts = nodes))
       case _ => Set.empty
     }
