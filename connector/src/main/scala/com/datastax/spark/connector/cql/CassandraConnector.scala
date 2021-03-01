@@ -220,7 +220,7 @@ object CassandraConnector extends Logging {
 
   /** Returns a CassandraConnector created from properties found in the [[org.apache.spark.SparkConf SparkConf]] object */
   def apply(conf: SparkConf): CassandraConnector = {
-    CassandraConnector(CassandraConnectorConf.fromSparkConf(conf))
+    CassandraConnector(CassandraConnectorConf(conf))
   }
 
   /** Returns a CassandraConnector with runtime Cluster Environment information. This can set remoteConnectionsPerExecutor
