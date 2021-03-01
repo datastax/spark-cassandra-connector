@@ -65,7 +65,7 @@ class CassandraConnector(val conf: CassandraConnectorConf)
     // wrapped in a session, so we get full lists of hosts,
     // not only those explicitly passed in the conf
     withSessionDo { session =>
-      dataCenterNodes(_config, session)
+      dataCenterNodes(session)
     }
 
   private[connector] def hostAddresses: Set[InetAddress] = hosts.map(_.getAddress)
@@ -181,7 +181,7 @@ object CassandraConnector extends Logging {
   }
 
   // LocalNodeFirstLoadBalancingPolicy assigns LOCAL or REMOTE (i.e. non-IGNORED) distance to local DC nodes
-  private def dataCenterNodes(conf: CassandraConnectorConf, session: CqlSession): Set[InetSocketAddress] = {
+  private def dataCenterNodes(session: CqlSession): Set[InetSocketAddress] = {
     val allNodes = session.getMetadata.getNodes.asScala.values.toSet
     val nodes = allNodes
       .filter(_.getDistance != NodeDistance.IGNORED)
@@ -197,7 +197,7 @@ object CassandraConnector extends Logging {
   private def alternativeConnectionConfigs(conf: CassandraConnectorConf, session: CqlSession): Set[CassandraConnectorConf] = {
     conf.contactInfo match {
       case ipConf: IpBasedContactInfo =>
-        val nodes = dataCenterNodes(conf, session)
+        val nodes = dataCenterNodes(session)
         nodes.map(n => conf.copy(contactInfo = ipConf.copy(hosts = Set(n)))) + conf.copy(contactInfo = ipConf.copy(hosts = nodes))
       case _ => Set.empty
     }
