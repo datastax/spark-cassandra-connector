@@ -355,7 +355,6 @@ object CassandraConnectorConf extends Logging {
   }
 
   def apply(conf: SparkConf): CassandraConnectorConf = {
-    ConfigCheck.checkConfig(conf)
     fromSparkConf(conf)
   }
 
@@ -410,6 +409,9 @@ object CassandraConnectorConf extends Logging {
   }
 
   def fromSparkConf(conf: SparkConf) = {
+
+    ConfigCheck.checkConfig(conf)
+
     val localDC = conf.getOption(LocalDCParam.name)
     val keepAlive = conf.getInt(KeepAliveMillisParam.name, KeepAliveMillisParam.default)
     val minReconnectionDelay = conf.getInt(MinReconnectionDelayParam.name, MinReconnectionDelayParam.default)
