@@ -10,7 +10,7 @@ import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOper
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.execution.datasources.v2.{BatchScanExec, DataSourceV2ScanRelation, DataSourceV2Strategy}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
+import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, BuildSide}
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan}
 
 
@@ -259,7 +259,8 @@ object CassandraDirectJoinStrategy extends Logging {
          val aliasedOutput = directJoin.output.map{
            case attr if aliases.contains(attr.exprId) =>
              val oldAlias = aliases(attr.exprId)
-             oldAlias.copy(child = attr)(oldAlias.exprId, oldAlias.qualifier, oldAlias.explicitMetadata)
+             oldAlias.copy(child = attr)(oldAlias.exprId, oldAlias.qualifier,
+               oldAlias.explicitMetadata, oldAlias.nonInheritableMetadataKeys)
            case other => other
          }
 
