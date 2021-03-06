@@ -9,7 +9,7 @@ import org.apache.spark.sql.catalyst.expressions.{And, Attribute, BindReferences
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 import org.apache.spark.sql.execution.{DataSourceScanExec, SparkPlan, UnaryExecNode}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildSide}
+import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildSide}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 
 /**
