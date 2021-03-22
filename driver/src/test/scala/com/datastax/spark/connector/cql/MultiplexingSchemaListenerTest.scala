@@ -7,6 +7,7 @@ package com.datastax.spark.connector.cql
 
 import com.datastax.oss.driver.api.core.`type`.UserDefinedType
 import com.datastax.oss.driver.api.core.metadata.schema.{AggregateMetadata, FunctionMetadata, KeyspaceMetadata, SchemaChangeListener, TableMetadata, ViewMetadata}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 
@@ -14,7 +15,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Random
 
-class MultiplexingSchemaListenerTest extends FlatSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
+class MultiplexingSchemaListenerTest extends FlatSpec with Matchers with MockitoSugar with BeforeAndAfterEach with Eventually {
   val r = new Random()
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -194,7 +195,6 @@ class MultiplexingSchemaListenerTest extends FlatSpec with Matchers with Mockito
   }
 
   it should "allow listeners to be added while triggering events" in {
-    var listeners = 0
     for (it <- 1 to 200) {
       Future (listener.addListener(new IncrementingSchemaListener()))
       Future (triggerAllEvents(5))
@@ -203,7 +203,9 @@ class MultiplexingSchemaListenerTest extends FlatSpec with Matchers with Mockito
       if (it % 10 == 0)
         Future (listener.clearListeners())
     }
-    actionsDone.values.sum should be > 0
+    eventually {
+      actionsDone.values.sum should be > 0
+    }
   }
 
 }

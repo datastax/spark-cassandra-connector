@@ -1,15 +1,14 @@
 package com.datastax.spark.connector.sql
 
 import java.io.IOException
-import java.util.concurrent.CompletableFuture
-
-import com.datastax.oss.driver.api.core.{CqlIdentifier, DefaultProtocolVersion}
+import com.datastax.oss.driver.api.core.{CqlIdentifier, CqlSession, DefaultProtocolVersion}
 import com.datastax.oss.driver.api.core.`type`.DataTypes
 import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
-import com.datastax.spark.connector.cql.{CassandraConnector, ClusteringColumn}
+import com.datastax.spark.connector.cql.{AuthConf, AuthConfFactory, CassandraConnectionFactory, CassandraConnector, CassandraConnectorConf, ClusteringColumn, DefaultConnectionFactory, NoAuthConf}
 import com.datastax.spark.connector.util.DriverUtil.toName
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
@@ -382,4 +381,39 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     }
   }
 
+  it should "allow to specify custom per-cluster settings" in {
+    sparkSession.conf.set("myCluster/spark.cassandra.connection.factory",
+      TestConnectionFactory.getClass.getName.split("\\$").last)
+    sparkSession.conf.set("myCluster/spark.cassandra.auth.conf.factory",
+      TestAuthFactory.getClass.getName.split("\\$").last)
+    sparkSession.conf.set("myCluster/spark.cassandra.test.custom.property", "specialValue")
+
+    sparkSession
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "tuple_test1", "keyspace" -> ks, "cluster" -> "myCluster"))
+      .load
+      .count()
+
+    withClue("Test auth factory was not used during the test") {
+      TestAuthFactory.used shouldBe true
+    }
+  }
+}
+
+object TestConnectionFactory extends CassandraConnectionFactory {
+  override def createSession(conf: CassandraConnectorConf): CqlSession =
+    DefaultConnectionFactory.createSession(conf)
+
+  override def properties: Set[String] = Set("spark.cassandra.test.custom.property")
+}
+
+object TestAuthFactory extends AuthConfFactory {
+  var used: Boolean = false
+
+  override def authConf(conf: SparkConf): AuthConf = {
+    used = true
+    assert(conf.get("spark.cassandra.test.custom.property") == "specialValue")
+    NoAuthConf
+  }
 }

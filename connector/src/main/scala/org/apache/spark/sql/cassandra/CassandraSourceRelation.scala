@@ -2,7 +2,6 @@ package org.apache.spark.sql.cassandra
 
 import java.net.InetAddress
 import java.util.{Locale, UUID}
-
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.apache.hadoop.hive.conf.HiveConf
@@ -17,7 +16,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf, ColumnDef, Schema, TableDef}
+import com.datastax.spark.connector.cql.{CassandraConnectionFactory, CassandraConnector, CassandraConnectorConf, ColumnDef, Schema, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.DataSizeEstimates
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory.forSystemLocalPartitioner
 import com.datastax.spark.connector.rdd.{CassandraJoinRDD, CassandraRDD, CassandraTableScanRDD, ReadConf}
@@ -741,19 +740,31 @@ object CassandraSourceRelation extends Logging {
     tableRef: TableRef,
     tableConf: Map[String, String]) : SparkConf = {
 
-    //Default settings
+    // Default settings
     val conf = sparkConf.clone()
     val cluster = tableRef.cluster.getOrElse(defaultClusterName)
     val ks = tableRef.keyspace
-    val AllSCCConfNames = (ConfigParameter.names ++ DeprecatedConfigParameter.names)
-    //Keyspace/Cluster level settings
-    for (prop <- AllSCCConfNames) {
-      val value = Seq(
+
+    def consolidate(prop: String): Option[String] = {
+      Seq(
         tableConf.get(prop.toLowerCase(Locale.ROOT)), //tableConf is actually a caseInsensitive map so lower case keys must be used
         sqlConf.get(s"$cluster:$ks/$prop"),
         sqlConf.get(s"$cluster/$prop"),
         sqlConf.get(s"default/$prop"),
         sqlConf.get(prop)).flatten.headOption
+    }
+
+    // Custom connection factories may have a set of custom supported properties
+    val factoryName = consolidate(CassandraConnectionFactory.FactoryParam.name)
+    val customConnectionFactoryProperties = CassandraConnectionFactory.fromNameOrDefault(factoryName).properties
+
+    val AllSCCConfNames = ConfigParameter.names ++
+      DeprecatedConfigParameter.names ++
+      customConnectionFactoryProperties
+
+    //Keyspace/Cluster level settings
+    for (prop <- AllSCCConfNames) {
+      val value = consolidate(prop)
       value.foreach(conf.set(prop, _))
     }
     //Set all user properties
