@@ -1,12 +1,12 @@
 package com.datastax.spark.connector.datasource
 
 import java.util.Locale
-
 import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes, ListType, MapType, SetType, TupleType, UserDefinedType}
 import com.datastax.oss.driver.api.core.`type`.DataTypes._
 import com.datastax.dse.driver.api.core.`type`.DseDataTypes._
 import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
+import com.datastax.spark.connector.cql.CassandraConnectionFactory
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter, Logging}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{DataType => CatalystType}
@@ -67,7 +67,25 @@ object CassandraSourceUtil extends Logging {
 
     //Default settings
     val conf = sparkConf.clone()
-    val AllSCCConfNames = ConfigParameter.names ++ DeprecatedConfigParameter.names
+
+    def consolidate(prop: String): Option[String] = {
+      Seq(
+        //userOptions is actually a caseInsensitive map so lower case keys must be used
+        userOptions.get(prop.toLowerCase(Locale.ROOT)),
+        sqlConf.get(s"$cluster:$keyspace/$prop"),
+        sqlConf.get(s"$cluster/$prop"),
+        sqlConf.get(s"default/$prop"),
+        sqlConf.get(prop)).flatten.headOption
+    }
+
+    // Custom connection factories may have a set of custom supported properties
+    val factoryName = consolidate(CassandraConnectionFactory.FactoryParam.name)
+    val customConnectionFactoryProperties =
+      CassandraConnectionFactory.fromNameOrDefault(factoryName).properties
+
+    val AllSCCConfNames = ConfigParameter.names ++ DeprecatedConfigParameter.names ++
+      customConnectionFactoryProperties
+
     val SqlPropertyKeys = AllSCCConfNames.flatMap(prop => Seq(
       s"$cluster:$keyspace/$prop",
       s"$cluster/$prop",
@@ -76,12 +94,7 @@ object CassandraSourceUtil extends Logging {
 
     //Keyspace/Cluster level settings
     for (prop <- AllSCCConfNames) {
-      val value = Seq(
-        userOptions.get(prop.toLowerCase(Locale.ROOT)), //userOptions is actually a caseInsensitive map so lower case keys must be used
-        sqlConf.get(s"$cluster:$keyspace/$prop"),
-        sqlConf.get(s"$cluster/$prop"),
-        sqlConf.get(s"default/$prop"),
-        sqlConf.get(prop)).flatten.headOption
+      val value = consolidate(prop)
       value.foreach(conf.set(prop, _))
     }
     conf.setAll(sqlConf -- SqlPropertyKeys)

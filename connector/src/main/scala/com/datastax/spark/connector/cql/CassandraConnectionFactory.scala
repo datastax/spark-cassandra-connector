@@ -224,11 +224,12 @@ object CassandraConnectionFactory {
     deprecatedSince = "DSE 6.0.0"
   )
 
-
   def fromSparkConf(conf: SparkConf): CassandraConnectionFactory = {
-    conf.getOption(FactoryParam.name)
-      .map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
-      .getOrElse(FactoryParam.default)
+    fromNameOrDefault(conf.getOption(FactoryParam.name))
   }
 
+  def fromNameOrDefault(factoryName: Option[String]): CassandraConnectionFactory = {
+    factoryName.map(ReflectionUtil.findGlobalObject[CassandraConnectionFactory])
+      .getOrElse(FactoryParam.default)
+  }
 }

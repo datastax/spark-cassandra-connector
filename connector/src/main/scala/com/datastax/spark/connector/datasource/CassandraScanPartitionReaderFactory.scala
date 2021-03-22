@@ -76,7 +76,7 @@ abstract class CassandraPartitionReaderBase
     scanner.close()
   }
 
-  protected def scanner = connector.connectionFactory.getScanner(readConf, connector.conf, columnNames)
+  protected val scanner = connector.connectionFactory.getScanner(readConf, connector.conf, columnNames)
 
   protected def columnNames = queryParts.selectedColumnRefs.map(_.selectedAs).toIndexedSeq
 
