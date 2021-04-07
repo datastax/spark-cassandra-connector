@@ -1,6 +1,17 @@
 
 
 ***************************************************************************
+2.5.2
+ * C* 4.0-beta compatibility (SPARKC-615)
+ * Storage Attached Index (SAI) support (SPARKC-621)
+ * Java Driver upgraded to 4.10 (SPARKC-637)
+ * Asynchronous page fetching (SPARKC-619)
+ * Cassandra Direct Join in the Spark SQL (SPARKC-613)
+ * Fix: ContinuousPaging settings are ignored (SPARKC-606)
+ * Fix: spark.cassandra.input.readsPerSec doesn't work for CassandraJoinRDD (SPARKC-627)
+ * Fix: repartitionByCassandraReplica relocates data to the local node only (SPARKC-642)
+ * Fix: Custom ConnectionFactory properties are ignored in per-cluster setups (SPARKC-635)
+
 2.5.1
  * Introduce shaded version of the main artifact to fix integration with Databricks Cloud
  * Exclude com.github.jnr and org.apache.tinkerpop dependencies to fix --packages
