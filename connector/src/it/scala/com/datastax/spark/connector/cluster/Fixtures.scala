@@ -187,6 +187,15 @@ trait TwoClustersWithOneNode extends Fixture {
   override def cluster(c: Int): Cluster = ClusterHolder.get(this)(c)
 }
 
+/** A fixture that bootstraps on single cluster with two nodes. */
+trait TwoNodeCluster extends SingleClusterFixture {
+
+  private[cluster] final override val configs: Seq[CcmConfig] = Seq(defaultConfig.copy(nodes = Seq(1, 2)))
+
+  private[cluster] override def connectionParameters(address: InetSocketAddress): Map[String, String] =
+    DefaultCluster.defaultConnectionParameters(address)
+}
+
 trait CETCluster extends DefaultCluster
 
 trait CSTCluster extends DefaultCluster
