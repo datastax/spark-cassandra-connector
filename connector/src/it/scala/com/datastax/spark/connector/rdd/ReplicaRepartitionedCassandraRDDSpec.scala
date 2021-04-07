@@ -64,7 +64,7 @@ class ReplicaRepartitionedCassandraRDDSpec extends SparkCassandraITFlatSpecBase 
     val someCass = repart.joinWithCassandraTable(ks, tableName)
     someCass.partitions.foreach {
       case e: EndpointPartition =>
-        conn.hostAddresses should contain(e.endpoints.head)
+        conn.hostAddresses.map(_.getHostAddress) should contain(e.endpoints.head)
       case _ =>
         fail("Unable to get endpoints on repartitioned RDD, This means preferred locations will be broken")
     }
