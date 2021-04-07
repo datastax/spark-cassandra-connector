@@ -237,31 +237,6 @@ class RDDFunctions[T](rdd: RDD[T]) extends WritableToCassandra[T] with Serializa
     currentType: ClassTag[T],
     rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
 
-    val replicaLocator = ReplicaLocator[T](connector, keyspaceName, tableName, partitionKeyMapper)
-    rdd.repartitionByCassandraReplica(
-      replicaLocator,
-      keyspaceName,
-      tableName,
-      partitionsPerHost,
-      partitionKeyMapper)
-  }
-
-
-  /**
-   * A Serializable version of repartitionByCassandraReplica which removes
-   * the implicit RowWriterFactory Dependency
-   */
-  private[connector] def repartitionByCassandraReplica(
-    replicaLocator: ReplicaLocator[T],
-    keyspaceName: String,
-    tableName: String,
-    partitionsPerHost: Int,
-    partitionKeyMapper: ColumnSelector)(
-  implicit
-    connector: CassandraConnector,
-    currentType: ClassTag[T],
-    rwf: RowWriterFactory[T]): CassandraPartitionedRDD[T] = {
-
     val partitioner = new ReplicaPartitioner[T](
       tableName,
       keyspaceName,
