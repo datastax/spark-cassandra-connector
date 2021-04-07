@@ -81,18 +81,20 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
       })
 
       config.nodes.foreach { i =>
+        val node = s"node$i"
         val addArgs = Seq ("add",
-          "-s",
+          "-s", // every node is a seed node
+          "-b", // autobootstrap is enabled
           "-j", config.jmxPort(i).toString,
           "-i", config.ipOfNode(i),
           "--remote-debug-port=0") ++
           dseFlag :+
-          s"node$i"
+          node
 
         execute(addArgs: _*)
 
         if (config.dseEnabled && config.getDseVersion.exists(_.compareTo(V6_8_5) >= 0)) {
-          execute("updateconf", s"metadata_directory:${dir.toFile.getAbsolutePath}/metadata$i")
+          execute(node, "updateconf", s"metadata_directory:${dir.toFile.getAbsolutePath}/metadata$i")
         }
       }
 
