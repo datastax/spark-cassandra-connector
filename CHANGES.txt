@@ -1,3 +1,14 @@
+2.5.2 (included in 3.0.1)
+ * C* 4.0-beta compatibility (SPARKC-615)
+ * Storage Attached Index (SAI) support (SPARKC-621)
+ * Java Driver upgraded to 4.10 (SPARKC-637)
+ * Asynchronous page fetching (SPARKC-619)
+ * Cassandra Direct Join in the Spark SQL (SPARKC-613)
+ * Fix: ContinuousPaging settings are ignored (SPARKC-606)
+ * Fix: spark.cassandra.input.readsPerSec doesn't work for CassandraJoinRDD (SPARKC-627)
+ * Fix: repartitionByCassandraReplica relocates data to the local node only (SPARKC-642)
+ * Fix: Custom ConnectionFactory properties are ignored in per-cluster setups (SPARKC-635)
+
 3.0.0
  * Update Spark to 3.0.1 and commons-lang to 3.9
  * Remove full table scans performance regression (SPARKC-614)
