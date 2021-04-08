@@ -66,8 +66,8 @@ API documentation for the Scala and Java interfaces are available online:
 ### 3.0.0
 * [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.0/connector/com/datastax/spark/connector/index.html)
 
-### 2.5.1
-* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.1/connector/#package)
+### 2.5.2
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/2.5.2/connector/#package)
 
 ### 2.4.2
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/)
