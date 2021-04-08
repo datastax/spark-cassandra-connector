@@ -1,6 +1,13 @@
 #!/bin/bash
 SCC_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OUTPUT="/tmp/SCC_DOC_TEMP"
+
+if [ "$#" -lt 1 ]; then
+    echo "At least one version parameter is required, e.g. 3.0.1 (no leading 'v')."
+    exit 1
+fi
+
+
 rm -r $OUTPUT
 mkdir -p $OUTPUT
 echo "SPARK CASSANDRA CONNECTOR HOME IS $SCC_HOME"
