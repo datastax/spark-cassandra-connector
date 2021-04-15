@@ -8,10 +8,9 @@ import scala.reflect.runtime.universe._
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import com.datastax.driver.core.{UDTValue => DriverUDTValue, UserType, DataType}
-import com.datastax.spark.connector.{ColumnName, UDTValue}
+import com.datastax.spark.connector.{CassandraRowMetadata, ColumnName, UDTValue}
 import com.datastax.spark.connector.cql.{StructDef, FieldDef}
 import com.datastax.spark.connector.util.CodecRegistryUtil
-import com.datastax.spark.connector.CassandraRowMetadata
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
   * The word `column` instead of `field` is used in member names because we want to treat UDT field
