@@ -7,10 +7,25 @@ import com.datastax.spark.connector.util.DriverUtil.toName
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
-final case class UDTValue(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef])
+final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData {
+
+  @volatile private var metaData_ : Option[CassandraRowMetadata] = None
+
+  def this(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef]) = {
+    this(metaData.columnNames, columnValues)
+    this.metaData_ = Some(metaData)
+  }
+
   override def productArity: Int = columnValues.size
   override def productElement(i: Int) = columnValues(i)
+
+  override def metaData: CassandraRowMetadata = {
+    metaData_ match {
+      case Some(x) => x
+      case None => val x = CassandraRowMetadata.fromColumnNames(columnNames); metaData_ = Some(x); x
+    }
+  }
 }
 
 object UDTValue {
@@ -18,11 +33,11 @@ object UDTValue {
   def fromJavaDriverUDTValue(value: DriverUDTValue): UDTValue = {
     val fields = value.getType.getFieldNames.map(f => toName(f)).toIndexedSeq
     val values = fields.map(GettableData.get(value, _))
-    UDTValue(CassandraRowMetadata.fromColumnNames(fields), values)
+    UDTValue(fields, values)
   }
 
   def fromMap(map: Map[String, Any]): UDTValue =
-    new UDTValue(CassandraRowMetadata.fromColumnNames(map.keys.toIndexedSeq), map.values.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
+    new UDTValue(map.keys.toIndexedSeq, map.values.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
 
   val TypeTag = implicitly[TypeTag[UDTValue]]
   val Symbol = typeOf[UDTValue].asInstanceOf[TypeRef].sym
@@ -33,4 +48,7 @@ object UDTValue {
       case x: UDTValue => x
     }
   }
+
+  def apply(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef]): UDTValue =
+    new UDTValue(metaData, columnValues)
 }
