@@ -9,7 +9,12 @@ import com.datastax.spark.connector.types.NullableTypeConverter
 final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData {
 
-  @volatile private var metaData_ : Option[CassandraRowMetadata] = None
+  private var metaData_ : Option[CassandraRowMetadata] = None
+
+  lazy val metaData : CassandraRowMetadata = metaData_ match {
+    case Some(x) => x
+    case None => CassandraRowMetadata.fromColumnNames(columnNames)
+  }
 
   def this(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef]) = {
     this(metaData.columnNames, columnValues)
@@ -18,13 +23,6 @@ final case class UDTValue(columnNames: IndexedSeq[String], columnValues: Indexed
 
   override def productArity: Int = columnValues.size
   override def productElement(i: Int) = columnValues(i)
-
-  override def metaData: CassandraRowMetadata = {
-    metaData_ match {
-      case Some(x) => x
-      case None => val x = CassandraRowMetadata.fromColumnNames(columnNames); metaData_ = Some(x); x
-    }
-  }
 }
 
 object UDTValue {
