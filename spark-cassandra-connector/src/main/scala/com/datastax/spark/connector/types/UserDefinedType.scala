@@ -32,7 +32,7 @@ case class UserDefinedType(name: String, columns: IndexedSeq[UDTFieldDef])
   def cqlTypeName = name
 
   val fieldConverters = columnTypes.map(_.converterToCassandra)
-  private val metadata = CassandraRowMetadata.fromColumnNames(columnNames)
+  private lazy val metadata = CassandraRowMetadata.fromColumnNames(columnNames)
 
   def converterToCassandra = new NullableTypeConverter[UDTValue] {
     override def targetTypeTag = UDTValue.TypeTag

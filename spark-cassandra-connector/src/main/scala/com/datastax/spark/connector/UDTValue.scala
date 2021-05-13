@@ -6,23 +6,19 @@ import scala.reflect.runtime.universe._
 import com.datastax.driver.core.{UDTValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 
-final case class UDTValue(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef])
+final case class UDTValue(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData {
 
-  private var metaData_ : Option[CassandraRowMetadata] = None
+  def this(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef]) =
+    this(CassandraRowMetadata.fromColumnNames(columnNames), columnValues)
 
-  lazy val metaData : CassandraRowMetadata = metaData_ match {
-    case Some(x) => x
-    case None => CassandraRowMetadata.fromColumnNames(columnNames)
-  }
-
-  def this(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef]) = {
-    this(metaData.columnNames, columnValues)
-    this.metaData_ = Some(metaData)
-  }
+  def columnNames: IndexedSeq[String] = metaData.columnNames
 
   override def productArity: Int = columnValues.size
   override def productElement(i: Int) = columnValues(i)
+
+  def unapply(t: UDTValue): Some[(IndexedSeq[String],IndexedSeq[AnyRef])] =
+    Some((t.metaData.columnNames,t.columnValues))
 }
 
 object UDTValue {
@@ -46,6 +42,6 @@ object UDTValue {
     }
   }
 
-  def apply(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef]): UDTValue =
-    new UDTValue(metaData, columnValues)
+  def apply(columnNames: IndexedSeq[String], columnValues: IndexedSeq[AnyRef]): UDTValue =
+    new UDTValue(columnNames, columnValues)
 }
