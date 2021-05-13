@@ -37,7 +37,7 @@ case class UserDefinedType(
   def cqlTypeName = name
 
   val fieldConvereters = columnTypes.map(_.converterToCassandra)
-  private val metadata = CassandraRowMetadata.fromColumnNames(columnNames)
+  private lazy val metadata = CassandraRowMetadata.fromColumnNames(columnNames)
 
   private lazy val valueByNameConverter = scala.util.Try(TypeConverter.forType[ValueByNameAdapter]).toOption
 
