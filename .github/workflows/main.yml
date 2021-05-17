@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ b2.5, b3.0, master]
+  pull_request:
+    branches: [ b2.5, b3.0, master, SPARKC-651 ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: ccm pip installation
+        uses: BSFishy/pip-action@v1
+        with:
+          packages: git+git://github.com/riptano/ccm.git@435f3210e16d0b648fbf33d6390d5ab4c9e630d4
+
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+
+      - name: sbt tests
+        env:
+          TEST_PARALLEL_TASKS: 1
+          CCM_CASSANDRA_VERSION: 4.0-beta4
+          PUBLISH_VERSION: test
+        run: sbt/sbt test it:test

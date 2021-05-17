@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.ccm.mode
 
-import java.nio.file.Path
-
+import java.nio.file.{Path, Paths}
 import com.datastax.spark.connector.ccm.{CcmBridge, CcmConfig}
 import org.apache.commons.exec.CommandLine
 
@@ -32,4 +31,14 @@ private[ccm] trait ClusterModeExecutor {
     CcmBridge.execute(cli)
   }
 
+  def getLastRepositoryLogLines(linesCount: Int): Seq[String] = synchronized {
+    val log = Paths.get(
+      sys.props.get("user.home").get,
+      ".ccm",
+      "repository",
+      "ccm-repository.log").toString
+
+    val command = s"tail -$linesCount $log"
+    CcmBridge.execute(CommandLine.parse(command))
+  }
 }

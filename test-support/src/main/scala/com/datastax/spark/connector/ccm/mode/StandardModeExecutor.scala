@@ -3,11 +3,13 @@ package com.datastax.spark.connector.ccm.mode
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
-
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.ccm.CcmConfig.V6_8_5
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.util.Try
+import scala.util.control.NonFatal
 
 private[mode] trait DefaultExecutor extends ClusterModeExecutor {
   private val logger: Logger = LoggerFactory.getLogger(classOf[StandardModeExecutor])
@@ -39,13 +41,15 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
   /**
     * Remove this once C* 4.0.0 is released.
     *
-    * This is a workaround that allows running it:test against 4.0.0-beta1. This version of C* is published as
-    * 4.0-beta1 which breaks versioning convention used in integration tests.
+    * This is a workaround that allows running it:test against 4.0.0-betaX and 4.0.0-rcX. These C* versions are
+    * published as 4.0-betaX and 4.0-rcX, lack of patch version breaks versioning convention used in integration tests.
     */
   private def adjustCassandraBetaVersion(version: String): String = {
     val beta = "4.0.0-beta(\\d+)".r
+    val rc = "4.0.0-rc(\\d+)".r
     version match {
       case beta(betaNo) => s"4.0-beta$betaNo"
+      case rc(rcNo) => s"4.0-rc$rcNo"
       case other => other
     }
   }
@@ -74,7 +78,14 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
         eventually(f = Files.exists(repositoryDir.resolve("bin")))
       }
 
-      execute( createArgs: _*)
+      try {
+        execute(createArgs: _*)
+      } catch {
+        case NonFatal(e) =>
+          Try(logger.error("Create command failed, here is the last 500 lines of ccm repository log: \n" +
+              getLastRepositoryLogLines(500).mkString("\n")))
+          throw e
+      }
 
       eventually("Checking to make sure repository was correctly expanded", {
         Files.exists(repositoryDir.resolve("bin"))
