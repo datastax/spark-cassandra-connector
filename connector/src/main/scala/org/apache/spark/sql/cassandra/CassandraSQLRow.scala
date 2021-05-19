@@ -85,7 +85,7 @@ object CassandraSQLRow {
       case set: Set[_] => set.map(toSparkSqlType).toSeq
       case list: List[_] => list.map(toSparkSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toSparkSqlType(k), toSparkSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toSparkSqlType))
+      case udt: UDTValue => UDTValue(udt.metaData, udt.columnValues.map(toSparkSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toSparkSqlType): _*)
       case dateRange: DateRange => dateRange.toString
       case _ => value.asInstanceOf[AnyRef]
@@ -106,7 +106,7 @@ object CassandraSQLRow {
       case set: Set[_] => set.map(toUnsafeSqlType).toSeq
       case list: List[_] => list.map(toUnsafeSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
+      case udt: UDTValue => UDTValue(udt.metaData, udt.columnValues.map(toUnsafeSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
       case dateRange: DateRange => UTF8String.fromString(dateRange.toString)
       case instant: Instant => java.sql.Timestamp.from(instant)
