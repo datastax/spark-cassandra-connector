@@ -49,8 +49,8 @@ object Testing {
     val ccmDse = sys.env.get("CCM_IS_DSE").orElse(dseInVersion).map(isDSE => s"-Dccm.dse=$isDSE")
     val ccmDse2 = sys.env.get("CCM_IS_DSE").orElse(dseInVersion).map(isDSE => s"-Ddse=$isDSE")
     val cassandraDirectory = sys.env.get("CCM_INSTALL_DIR").map(dir => s"-Dcassandra.directory=$dir")
-    val ccmJava = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.java.home=$dir")
-    val ccmPath = sys.env.get("CCM_JAVA_HOME").map(dir => s"-Dccm.path=$dir/bin")
+    val ccmJava = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.java.home=$dir")
+    val ccmPath = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.path=$dir/bin")
     val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, ccmDse2, cassandraDirectory, ccmJava, ccmPath)
     options
   }
