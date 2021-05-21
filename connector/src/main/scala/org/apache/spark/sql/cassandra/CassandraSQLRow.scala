@@ -105,7 +105,7 @@ object CassandraSQLRow {
       case set: Set[_] => set.map(toUnsafeSqlType).toSeq
       case list: List[_] => list.map(toUnsafeSqlType)
       case map: Map[_, _] => map map { case(k, v) => (toUnsafeSqlType(k), toUnsafeSqlType(v))}
-      case udt: UDTValue => UDTValue(udt.columnNames, udt.columnValues.map(toUnsafeSqlType))
+      case udt: UDTValue => UDTValue(udt.metaData, udt.columnValues.map(toUnsafeSqlType))
       case tupleValue: TupleValue => TupleValue(tupleValue.values.map(toUnsafeSqlType): _*)
       case dateRange: DateRange => dateRange.toString
       case time: LocalTime => time.toNanoOfDay: java.lang.Long

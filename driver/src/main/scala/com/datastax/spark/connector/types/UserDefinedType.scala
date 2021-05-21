@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType.fromDriverType
 import com.datastax.spark.connector.types.TypeAdapters.ValueByNameAdapter
-import com.datastax.spark.connector.{ColumnName, UDTValue}
+import com.datastax.spark.connector.{CassandraRowMetadata, ColumnName, UDTValue}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
@@ -37,6 +37,7 @@ case class UserDefinedType(
   def cqlTypeName = name
 
   val fieldConvereters = columnTypes.map(_.converterToCassandra)
+  private lazy val metadata = CassandraRowMetadata.fromColumnNames(columnNames)
 
   private lazy val valueByNameConverter = scala.util.Try(TypeConverter.forType[ValueByNameAdapter]).toOption
 
@@ -51,7 +52,7 @@ case class UserDefinedType(
             val columnValue = columnConverter.convert(udtValue.getRaw(columnName))
             columnValue
           }
-        new UDTValue(columnNames, columnValues)
+        new UDTValue(metadata, columnValues)
       case value if valueByNameConverter.exists(_.convertPF.isDefinedAt(value)) =>
         val valuesByName = valueByNameConverter.get.convert(value)
         val columnValues =
@@ -61,14 +62,14 @@ case class UserDefinedType(
             val columnValue = columnConverter.convert(valuesByName.getByName(columnName))
             columnValue
           }
-        new UDTValue(columnNames, columnValues)
+        new UDTValue(metadata, columnValues)
     }
   }
 
   override type ValueRepr = UDTValue
 
   override def newInstance(columnValues: Any*): UDTValue = {
-    UDTValue(columnNames, columnValues.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
+    UDTValue(metadata, columnValues.map(_.asInstanceOf[AnyRef]).toIndexedSeq)
   }
 }
 
