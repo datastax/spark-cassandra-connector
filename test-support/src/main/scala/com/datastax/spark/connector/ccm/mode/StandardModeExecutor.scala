@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.ccm.mode
 
-import java.io.File
+import java.io.{File, FileFilter}
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
 import com.datastax.oss.driver.api.core.Version
@@ -8,6 +8,7 @@ import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.ccm.CcmConfig.V6_8_5
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.concurrent.duration.DurationInt
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -16,9 +17,37 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
 
   private val created = new AtomicBoolean()
 
+  private def waitForNode(nodeNo: Int): Unit = {
+    logger.info(s"Waiting for node $nodeNo to become alive...")
+    if (!waitForNode(nodeNo, 2.minutes)) {
+      throw new IllegalStateException(s"Timeouted on waiting for node $nodeNo")
+    }
+    logger.info(s"Node $nodeNo is alive")
+  }
+
+  private def logStdErr(nodeNo: Int): Unit = {
+    Try {
+      val linesCount = 1000
+      val logsDir = new File(s"${dir}/ccm_1/node${nodeNo}/logs/")
+
+      if (logsDir.exists() && logsDir.isDirectory) {
+        val stdErrFile = logsDir.listFiles().filter(_.getName.endsWith("stderr.log")).head
+        logger.error(s"Start command failed, here is the last $linesCount lines of startup-stderr file: \n" +
+          getLastLogLines(stdErrFile.getAbsolutePath, linesCount).mkString("\n"))
+      }
+    }
+  }
+
   override def start(nodeNo: Int): Unit = {
     val formattedJvmArgs = config.jvmArgs.map(arg => s" --jvm_arg=$arg").mkString(" ")
-    execute(s"node$nodeNo", "start", formattedJvmArgs + "--wait-for-binary-proto")
+    try {
+      execute(s"node$nodeNo", "start", formattedJvmArgs + "-v")
+      waitForNode(nodeNo)
+    } catch {
+      case NonFatal(e) =>
+        logStdErr(nodeNo)
+        throw e
+    }
   }
 
   private def eventually[T](hint: String = "", f: =>T ): T = {
