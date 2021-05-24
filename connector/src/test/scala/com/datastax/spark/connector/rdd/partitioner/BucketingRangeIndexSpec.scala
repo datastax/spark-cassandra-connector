@@ -116,15 +116,16 @@ class BucketingRangeIndexSpec extends FlatSpec with ScalaCheckPropertyChecks wit
   private type LV = Long
 
   private val longTokenFactory = Murmur3TokenFactory
-
   private val LongFullRange = TokenRange[LV, LT](
       longTokenFactory.minToken,
       longTokenFactory.minToken,
       Set.empty,
       Murmur3TokenFactory)
 
+  "Murmur3Bucketing" should "map all tokens to a single wrapping range" in {
+    implicit val tokenOrdering: Ordering[LT] = longTokenFactory.tokenOrdering
+    implicit val tokenBucketing: MonotonicBucketing[LT] = longTokenFactory.tokenBucketing
 
-  "Murmur3Bucketing" should "  map all tokens to a single wrapping range" in {
     val singleRangeBucketing =
       new BucketingRangeIndex[LTR, LT](Seq(TokenRangeWithPartitionIndex(LongFullRange, 0)))
 
@@ -148,6 +149,9 @@ class BucketingRangeIndexSpec extends FlatSpec with ScalaCheckPropertyChecks wit
 
 
   "RandomBucketing" should " map all tokens to a single wrapping range" in {
+    implicit val tokenOrdering: Ordering[BT] = bigTokenFactory.tokenOrdering
+    implicit val tokenBucketing: MonotonicBucketing[BT] = bigTokenFactory.tokenBucketing
+
      val singleRangeBucketing =
       new BucketingRangeIndex[BITR, BT](Seq(TokenRangeWithPartitionIndex(bigFullRange, 0)))
 
