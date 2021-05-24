@@ -5,7 +5,7 @@ on:
   push:
     branches: [ b2.5, b3.0, master]
   pull_request:
-    branches: [ b2.5, b3.0, master, SPARKC-651 ]
+    branches: [ b2.5, b3.0, master]
 
   workflow_dispatch:
 
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        scala:  [2.11.12]
+        scala:  [2.12.10]
         db-version: [6.8.9, 3.11.9, 4.0-beta4]
 
     steps:
