@@ -41,7 +41,7 @@ private[mode] trait DefaultExecutor extends ClusterModeExecutor {
   override def start(nodeNo: Int): Unit = {
     val formattedJvmArgs = config.jvmArgs.map(arg => s" --jvm_arg=$arg").mkString(" ")
     try {
-      execute(s"node$nodeNo", "start", formattedJvmArgs + "-v")
+      execute(s"node$nodeNo", "start", formattedJvmArgs + "-v", "--skip-wait-other-notice")
       waitForNode(nodeNo)
     } catch {
       case NonFatal(e) =>
