@@ -22,7 +22,7 @@ case class CcmConfig(
     version: Version = Version.parse(System.getProperty("ccm.version", "3.11.6")),
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
-    dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).isDefined,
+    dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toLowerCase == "true"),
     mode: ClusterMode = ClusterModes.fromEnvVar) {
 
   def withSsl(keystorePath: String, keystorePassword: String): CcmConfig = {

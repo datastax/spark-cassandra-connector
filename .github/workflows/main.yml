@@ -12,8 +12,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
+    strategy:
+      matrix:
+        scala:  [2.11.12]
+        db-version: [6.8.9, 3.11.9, 4.0-beta4]
 
+    steps:
       - uses: actions/checkout@v2
 
       - name: ccm pip installation
@@ -29,6 +33,6 @@ jobs:
       - name: sbt tests
         env:
           TEST_PARALLEL_TASKS: 1
-          CCM_CASSANDRA_VERSION: 4.0-beta4
+          CCM_CASSANDRA_VERSION: ${{ matrix.db-version }}
           PUBLISH_VERSION: test
-        run: sbt/sbt test it:test
+        run: sbt/sbt ++${{ matrix.scala }} test it:test

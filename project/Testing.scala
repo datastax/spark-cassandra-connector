@@ -1,8 +1,9 @@
 import java.lang.management.ManagementFactory
-
 import com.sun.management.OperatingSystemMXBean
 import sbt.Tests._
 import sbt.{ForkOptions, TestDefinition}
+
+import scala.util.Try
 
 object Testing {
 
@@ -42,16 +43,25 @@ object Testing {
       }
   }
 
+  /**
+    * Guesses if the given version is DSE or not.
+    * Internally it checks if the major version component is ge 6 which should suffice for a long time.
+    * CCM_IS_DSE env setting takes precedence over this guess.
+    */
+  private def isDse(version: Option[String]): Boolean = {
+    version.flatMap(v => Try(v.split('.').head.toInt >= 6).toOption).getOrElse(false)
+  }
+
   def getCCMJvmOptions = {
-    val ccmCassVersion = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dccm.version=$version")
-    val ccmCassVersion2 = sys.env.get("CCM_CASSANDRA_VERSION").map(version => s"-Dcassandra.version=$version")
-    val dseInVersion = if (sys.env.get("CCM_CASSANDRA_VERSION").contains("dse")) Some(true) else None
-    val ccmDse = sys.env.get("CCM_IS_DSE").orElse(dseInVersion).map(isDSE => s"-Dccm.dse=$isDSE")
-    val ccmDse2 = sys.env.get("CCM_IS_DSE").orElse(dseInVersion).map(isDSE => s"-Ddse=$isDSE")
+    val dbVersion = sys.env.get("CCM_CASSANDRA_VERSION")
+    val ccmCassVersion = dbVersion.map(version => s"-Dccm.version=$version")
+    val ccmCassVersion2 = dbVersion.map(version => s"-Dcassandra.version=$version")
+    val ccmDse = sys.env.get("CCM_IS_DSE").map(_.toLowerCase == "true").orElse(Some(isDse(dbVersion)))
+      .map(isDSE => s"-Dccm.dse=$isDSE")
     val cassandraDirectory = sys.env.get("CCM_INSTALL_DIR").map(dir => s"-Dcassandra.directory=$dir")
     val ccmJava = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.java.home=$dir")
     val ccmPath = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.path=$dir/bin")
-    val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, ccmDse2, cassandraDirectory, ccmJava, ccmPath)
+    val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, cassandraDirectory, ccmJava, ccmPath)
     options
   }
 
