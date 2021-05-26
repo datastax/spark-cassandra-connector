@@ -1,4 +1,4 @@
-# Spark Cassandra Connector [![Build Status](https://travis-ci.org/datastax/spark-cassandra-connector.svg)](https://travis-ci.org/datastax/spark-cassandra-connector)
+# Spark Cassandra Connector ![CI badge](https://github.com/datastax/spark-cassandra-connector/actions/workflows/main.yml/badge.svg?branch=master)
 
 ## Quick Links
 
@@ -42,10 +42,15 @@ named "bX.Y" where X.Y is the major+minor version; for example the "b1.6" branch
 corresponds to the 1.6 release. The "master" branch will normally contain
 development for the next connector release in progress.
 
+Currently the following branches are actively supported: 3.1.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
+3.0.x ([b3.0](https://github.com/datastax/spark-cassandra-connector/tree/b3.0)) and 2.5.x 
+([b2.5](https://github.com/datastax/spark-cassandra-connector/tree/b2.5)).
+
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
-| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.7              | 8             | 2.12                     |
-| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.7              | 8             | 2.11, 2.12               |
+| 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.12                     |
+| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.12                     |
+| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.11, 2.12               |
 | 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11, 2.12               |
 | 2.4       | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
 | 2.3       | 2.3           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
@@ -109,6 +114,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
   - [DataFrames](doc/14_data_frames.md)
   - [Python](doc/15_python.md)
   - [Partitioner](doc/16_partitioning.md)
+  - [Submitting applications](doc/17_submitting.md)
   - [Frequently Asked Questions](doc/FAQ.md)
   - [Configuration Parameter Reference Table](doc/reference.md)
   - [Tips for Developing the Spark Cassandra Connector](doc/developers.md)
