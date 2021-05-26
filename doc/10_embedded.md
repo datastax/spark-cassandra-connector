@@ -2,6 +2,9 @@
 
 ## The `spark-cassandra-connector-embedded` Artifact
 
+_Note that this artifact was removed 2.5 and newer. Spark Cassandra Connector integration 
+tests rely on [ccm](https://github.com/riptano/ccm)._
+
 The `spark-cassandra-connector-embedded` artifact can be used as a test 
 or prototype dependency to spin up embedded servers for testing ideas, 
 quickly learning, integration, etc.
@@ -15,7 +18,7 @@ Pulling this dependency in allows you to:
   - And of course Cassandra but you currently need to spin up a local instance: [Download Cassandra latest](https://cassandra.apache.org/download/), open the tar, and run `sudo ./apache-cassandra-*/bin/cassandra`
 
 ## The Code
-See: [https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-embedded/src/main/scala/com/datastax/spark/connector/embedded](https://github.com/datastax/spark-cassandra-connector/tree/master/spark-cassandra-connector-embedded/src/main/scala/com/datastax/spark/connector/embedded)
+See: [https://github.com/datastax/spark-cassandra-connector/tree/b2.4/spark-cassandra-connector-embedded/src/main/scala/com/datastax/spark/connector/embedded](https://github.com/datastax/spark-cassandra-connector/tree/b2.4/spark-cassandra-connector-embedded/src/main/scala/com/datastax/spark/connector/embedded)
 
 ## How To Add The Dependency
 

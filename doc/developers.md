@@ -31,10 +31,45 @@ Cassandra and Spark nodes and are the core of our test coverage.
 
 ### Merge Path
 
-b2.5 => Master
+b2.5 => b3.0 => master
 
-New features can be considered for 2.5 as long as they do not break apis
-In general 3.0 should be the target for new features
+New features can be considered for 2.5 as long as they do not break apis.
+Once a feature is ready for b2.5, create a feature branch for b3.0 and merge
+b2.5 feature branch to b3.0 feature branch. Repeat for master. 
+
+Example for imaginary SPARKC-9999.
+
+Let's assume that `datastax` is git@github.com:datastax/spark-cassandra-connector.git remote 
+and origin is your personal clone.
+```shell
+$ git remote -v
+datastax	git@github.com:datastax/spark-cassandra-connector.git (fetch)
+datastax	git@github.com:datastax/spark-cassandra-connector.git (push)
+...
+```
+
+Here is how the work should look like.
+
+```shell
+git fetch datastax
+git checkout -b SPARKC-9999-b2.5 datastax/b2.5
+# do the work, commit
+git push origin SPARKC-9999-b2.5
+ 
+# Forward merge on the next version:
+git checkout -b SPARKC-9999-b3.0 datastax/b3.0
+git merge SPARKC-9999-b2.5
+# Resolve conflict, if any
+# Push the new feature branch:
+git push origin SPARKC-9999-b3.0
+ 
+# Forward merge on the next version:
+git checkout -b SPARKC-9999-master datastax/master
+git merge SPARKC-9999-b3.0
+# Resolve conflict, if any
+# Push the new feature branch:
+git push origin SPARKC-9999-master
+```
 
 ### Sub-Projects
 
