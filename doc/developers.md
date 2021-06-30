@@ -39,7 +39,7 @@ b2.5 feature branch to b3.0 feature branch. Repeat for master.
 
 Example for imaginary SPARKC-9999.
 
-Let's assume that `datastax` is git@github.com:datastax/spark-cassandra-connector.git remote 
+Let's assume that `datastax` is `git@github.com:datastax/spark-cassandra-connector.git` remote
 and origin is your personal clone.
 ```shell
 $ git remote -v
