@@ -4,6 +4,7 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.oss.driver.api.core.{ProtocolVersion, Version}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.scalatest.BeforeAndAfterEach
@@ -165,7 +166,7 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     conn2.withSessionDo { session => }
   }
 
-  it should "use compression when configured" in {
+  it should "use SNAPPY compression when configured" in skipIfProtocolVersionGTE(ProtocolVersion.V5) {
     val conf = sc.getConf
       .set(CassandraConnectorConf.CompressionParam.name, "SNAPPY")
 
@@ -174,7 +175,21 @@ class CassandraConnectorSpec extends SparkCassandraITFlatSpecBase with DefaultCl
       session
         .getContext
         .getConfig
-        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe  "snappy"
+        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe "snappy"
+    }
+  }
+
+  // https://github.com/apache/cassandra/blob/cassandra-4.0.0/doc/native_protocol_v5.spec#L194-L195
+  it should "use LZ4 compression when configured" in skipIfProtocolVersionLT(ProtocolVersion.V5) {
+    val conf = sc.getConf
+      .set(CassandraConnectorConf.CompressionParam.name, "LZ4")
+
+    val conn = CassandraConnector(conf)
+    conn.withSessionDo { session =>
+      session
+        .getContext
+        .getConfig
+        .getDefaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION) shouldBe "lz4"
     }
   }
 
