@@ -45,11 +45,11 @@ object Testing {
 
   /**
     * Guesses if the given version is DSE or not.
-    * Internally it checks if the major version component is ge 6 which should suffice for a long time.
+    * Internally it checks if the major version component is ge 5 which should suffice for a long time.
     * CCM_IS_DSE env setting takes precedence over this guess.
     */
   private def isDse(version: Option[String]): Boolean = {
-    version.flatMap(v => Try(v.split('.').head.toInt >= 6).toOption).getOrElse(false)
+    version.flatMap(v => Try(v.split('.').head.toInt >= 5).toOption).getOrElse(false)
   }
 
   def getCCMJvmOptions = {

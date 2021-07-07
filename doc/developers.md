@@ -22,7 +22,7 @@ The most common commands to use when developing the connector are
 1. `test` - Runs the the unit tests for the project.
 2. `it:test` - Runs the integration tests with Cassandra (started by CCM) and Spark
 3. `package` - Builds the project and produces a runtime jar
-4. `publishM2` - Publishes a snapshot of the project to your local maven repository allowing for usage with --packages in the spark-shell
+4. `publishM2` - Publishes a snapshot of the project to your local maven repository allowing for usage with `--packages` in the spark-shell
 
 The integration tests located in `connector/src/it` should
 probably be the first place to look for anyone considering adding code.
@@ -39,7 +39,7 @@ b2.5 feature branch to b3.0 feature branch. Repeat for master.
 
 Example for imaginary SPARKC-9999.
 
-Let's assume that `datastax` is git@github.com:datastax/spark-cassandra-connector.git remote 
+Let's assume that `datastax` is `git@github.com:datastax/spark-cassandra-connector.git` remote 
 and origin is your personal clone.
 ```shell
 $ git remote -v
@@ -95,11 +95,11 @@ run and the parallelization used while running tests.
 ### Test Parallelization
 
 In order to limit the number of test groups running simultaneously use the
-`TEST_PARALLEL_TASKS` environment variable. Only applies to sbt test tasks.
+`TEST_PARALLEL_TASKS` environment variable. Only applies to `sbt test` tasks.
 
 ### Set Cassandra Test Target
 Our CI Build runs through the Datastax Infrastructure and tests on all the builds
-listed in build.yaml. In addition the test-support module supports Cassandra
+listed in build.yaml. In addition the _test-support_ module supports Cassandra
 or other CCM Compatible installations.
 
 If using SBT you can set
