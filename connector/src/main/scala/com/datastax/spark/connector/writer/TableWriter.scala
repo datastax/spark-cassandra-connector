@@ -264,6 +264,7 @@ case class AsyncStatementWriter[T](
     groupingBatchBuilderBase.batchRecord(record).foreach{ stmt =>
       queryExecutor.executeAsync(stmt.executeAs(writeConf.executeAs))
       maybeRateLimit(stmt)
+      assertExecutorException(queryExecutor)
     }
   }
 
@@ -271,9 +272,15 @@ case class AsyncStatementWriter[T](
     for (statement <- groupingBatchBuilderBase.finish()) {
       queryExecutor.executeAsync(statement.executeAs(writeConf.executeAs))
       maybeRateLimit(statement)
+      assertExecutorException(queryExecutor)
     }
 
     queryExecutor.waitForCurrentlyExecutingTasks()
+    assertExecutorException(queryExecutor)
+    session.close()
+  }
+
+  private def assertExecutorException(queryExecutor: QueryExecutor): Unit = {
     queryExecutor.getLatestException().map {
       case exception =>
         throw new IOException(
@@ -284,9 +291,8 @@ case class AsyncStatementWriter[T](
              |Please check the executor logs for more exceptions and information
              """.stripMargin)
     }
-    queryExecutor.waitForCurrentlyExecutingTasks()
-    session.close()
   }
+
 }
 
 object TableWriter {
