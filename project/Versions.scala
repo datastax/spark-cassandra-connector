@@ -2,7 +2,7 @@ object Versions {
 
   val CommonsExec     = "1.3"
   val CommonsIO       = "2.6"
-  val CommonsLang3    = "3.9"
+  val CommonsLang3    = "3.10"
   val Paranamer       = "2.8"
 
   val DataStaxJavaDriver = "4.12.0"
@@ -21,7 +21,7 @@ object Versions {
   // and install in a local Maven repository. This is all done automatically, however it will work
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
-  val ApacheSpark     = "3.0.1"
+  val ApacheSpark     = "3.1.1"
   val SparkJetty      = "9.3.27.v20190418"
   val SolrJ           = "8.3.0"
 
