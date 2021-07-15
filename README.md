@@ -5,8 +5,8 @@
 | What       | Where |
 | ---------- | ----- |
 | Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
-| Scala Docs | Most Recent Release (3.0.1): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.1/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.1/driver/com/datastax/spark/connector/index.html)|
-| Latest Production Release | [3.0.1](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.0.1/jar) |
+| Scala Docs | Most Recent Release (3.1.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/driver/com/datastax/spark/connector/index.html)|
+| Latest Production Release | [3.1.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.1.0/jar) |
  
 ## Features
 
@@ -48,9 +48,9 @@ Currently the following branches are actively supported: 3.1.x ([master](https:/
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
-| 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.12                     |
-| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.12                     |
-| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.10             | 8             | 2.11, 2.12               |
+| 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
+| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
+| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.11, 2.12               |
 | 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11, 2.12               |
 | 2.4       | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
 | 2.3       | 2.3           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
@@ -68,6 +68,9 @@ Currently the following branches are actively supported: 3.1.x ([master](https:/
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
+### 3.1.0
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/connector/com/datastax/spark/connector/index.html)
+
 ### 3.0.1
 * [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.0.1/connector/com/datastax/spark/connector/index.html)
 
@@ -78,17 +81,13 @@ API documentation for the Scala and Java interfaces are available online:
 * [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector/)
 * [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.4.2/spark-cassandra-connector-embedded/)
 
-### 2.3.2
-* [Spark-Cassandra-Connector](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.3.2/spark-cassandra-connector/)
-* [Embedded-Cassandra](http://datastax.github.io/spark-cassandra-connector/ApiDocs/2.3.2/spark-cassandra-connector-embedded/)
-
 ## Download
 
 This project is available on the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.0.1"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.1.0"
 
 * The default Scala version for Spark 3.0+ is 2.12 please choose the appropriate build. See the
 [FAQ](doc/FAQ.md) for more information.
