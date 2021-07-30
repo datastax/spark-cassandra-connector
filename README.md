@@ -1,4 +1,6 @@
-# Spark Cassandra Connector ![CI badge](https://github.com/datastax/spark-cassandra-connector/actions/workflows/main.yml/badge.svg?branch=b3.0)
+# Spark Cassandra Connector
+
+[![CI](https://github.com/datastax/spark-cassandra-connector/actions/workflows/main.yml/badge.svg?branch=b3.0)](https://github.com/datastax/spark-cassandra-connector/actions?query=branch%3Ab3.0)
 
 ## Quick Links
 
