@@ -345,6 +345,16 @@ class GettableDataToMappedTypeConverterSpec extends FlatSpec with Matchers {
     user.getAddress.getNumber shouldBe 5
   }
 
+  it should "convert a CassandraRow with null UDTs to nested JavaBeans" in {
+    implicit val cm: ColumnMapper[UserBeanWithAddress] = new JavaBeanColumnMapper[UserBeanWithAddress]
+    val row = CassandraRow.fromMap(Map("login" -> "foo", "address" -> null))
+    val converter = new GettableDataToMappedTypeConverter[UserBeanWithAddress](
+      userTable, userTable.columnRefs)
+    val user = converter.convert(row)
+    user.getLogin shouldBe "foo"
+    user.getAddress shouldBe null
+  }  
+  
   class LongBean {
        private[this] var number: java.lang.Long = null
        def getNumber: java.lang.Long = number

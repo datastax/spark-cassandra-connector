@@ -19,7 +19,7 @@ import scala.reflect.runtime.universe._
 class GettableDataToMappedTypeConverter[T : TypeTag : ColumnMapper](
     structDef: StructDef,
     columnSelection: IndexedSeq[ColumnRef])
-  extends TypeConverter[T] {
+  extends NullableTypeConverter[T] {
 
   // can't be lazy, because TypeTags are not serializable, and if we made it lazy,
   // the right side would be stored in a hidden serialized variable anyway
