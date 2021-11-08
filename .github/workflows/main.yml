@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         scala:  [2.12.10]
-        db-version: [6.8.13, 5.1.24, 3.11.10, 4.0-rc2]
+        db-version: [6.8.17, 5.1.26, 3.11.11, 4.0.1]
 
     steps:
       - uses: actions/checkout@v2
