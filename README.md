@@ -19,7 +19,7 @@ Spark RDDs and Datasets/DataFrames to Cassandra tables, and execute arbitrary CQ
 in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.1 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 2.4 (see table below)
+ - Compatible with Apache Spark 1.0 through 3.1 ([see table below](#version-compatibility))
  - Compatible with Scala 2.11 and 2.12
  - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
