@@ -219,4 +219,6 @@ case class CassandraDirectJoinExec(
 
     s"Cassandra Direct Join [${joinString}] $keyspace.$table - $selectString${pushedWhere} "
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): CassandraDirectJoinExec = copy(child = newChild)
 }
