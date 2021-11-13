@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.oss.driver.api.core.auth.AuthProvider
-import com.datastax.oss.driver.internal.core.auth.ProgrammaticPlainTextAuthProvider
+import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider
 import com.datastax.spark.connector.util.{ConfigParameter, ReflectionUtil}
 import org.apache.spark.SparkConf
 

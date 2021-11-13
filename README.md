@@ -50,6 +50,7 @@ Currently the following branches are actively supported: 3.1.x ([master](https:/
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
+| 3.2       | 3.2           | 2.1.5*, 2.2, 3.x, 4.0 | 4.13             | 8             | 2.12                     |
 | 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
 | 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
 | 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.11, 2.12               |
