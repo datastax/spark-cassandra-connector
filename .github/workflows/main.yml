@@ -23,7 +23,7 @@ jobs:
       - name: ccm pip installation
         uses: BSFishy/pip-action@v1
         with:
-          packages: git+git://github.com/riptano/ccm.git@435f3210e16d0b648fbf33d6390d5ab4c9e630d4
+          packages: git+https://github.com/riptano/ccm.git@435f3210e16d0b648fbf33d6390d5ab4c9e630d4
 
       - name: Setup Scala
         uses: olafurpg/setup-scala@v10
