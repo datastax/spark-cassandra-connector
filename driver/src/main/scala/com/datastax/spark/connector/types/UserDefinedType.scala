@@ -3,6 +3,7 @@ package com.datastax.spark.connector.types
 import java.io.ObjectOutputStream
 
 import com.datastax.oss.driver.api.core.`type`.{DataType, UserDefinedType => DriverUserDefinedType}
+import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType.fromDriverType
@@ -96,7 +97,7 @@ object UserDefinedType {
           if (fieldValue == null) {
             toSave.setToNull(i)
           } else {
-            toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
+            toSave.set(i, fieldValue, CodecRegistry.DEFAULT.codecFor(fieldTypes(i), fieldValue))
           }
         }
         toSave
