@@ -3,7 +3,7 @@ import sbt.Keys.parallelExecution
 import sbt.{Compile, moduleFilter, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
-lazy val scala212 = "2.12.11"
+lazy val scala212 = "2.12.15"
 lazy val supportedScalaVersions = List(scala212)
 
 // factor out common settings

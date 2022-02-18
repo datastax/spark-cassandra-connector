@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        scala:  [2.12.10]
+        scala:  [2.12.15]
         db-version: [6.8.13, 5.1.24, 3.11.10, 4.0-rc2]
 
     steps:
