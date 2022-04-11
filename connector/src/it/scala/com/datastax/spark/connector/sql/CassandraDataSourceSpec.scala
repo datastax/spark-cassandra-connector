@@ -286,7 +286,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
   private def assertOnAbsenceOfCassandraInJoin(df: DataFrame): Unit =
     withClue(s"Given Dataframe plan contains CassandraInJoin in its predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
       df.queryExecution.executedPlan.collectLeaves().collectFirst{
-        case a@BatchScanExec(_, _: CassandraInJoin) => a
+        case a@BatchScanExec(_, _: CassandraInJoin, _) => a
       } shouldBe empty
     }
 
