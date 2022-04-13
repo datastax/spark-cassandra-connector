@@ -498,27 +498,6 @@ class SearchAnalyticsIntegrationSpec extends SparkCassandraITFlatSpecBase with D
     testType("m = '10000000-0000-0000-0000-000000000000'", """"m:10000000\\-0000\\-0000\\-0000\\-000000000000"""")
   }
 
-  it should "work with weird column names" in dseOnly {
-    val df: DataFrame = spark
-      .read
-      .cassandraFormat(weirdTable, ks)
-      .load()
-
-    val filtered = df.filter(df("key") === 1)
-      .filter(df("~~funcolumn") === "hello")
-      .filter(df("MixEdCol") === "world")
-
-    val whereClause = filtered.getUnderlyingCqlWhereClause()
-    val predicates = whereClause.predicates.head
-    val values: String = whereClause.values.head.toString
-    predicates should include("""solr_query""")
-    values should include("funcolumn")
-    values should include("MixEdCol")
-    val rows = filtered.collect
-    rows.head.getAs[String]("~~funcolumn") should be("hello")
-    rows.head.getAs[String]("MixEdCol") should be("world")
-  }
-
   "Automatic Solr Optimization" should "occur when the selected amount of data is less than the threshold" in dseOnly {
     val df = spark.sql(s"SELECT COUNT(*) from $tableAutoSolr.$ks.$table where key < 5")
     val whereClause = df.getUnderlyingCqlWhereClause()
