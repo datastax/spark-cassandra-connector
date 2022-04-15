@@ -325,8 +325,9 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
 
     val possibleSolrPredicates = allPredicates -- pkRestriction
 
+    val solrEscapedIndexedFields = solrIndexedFields.map(f => '`' + f + '`')
     val (solrConvertibleFilters, sparkFilters) = possibleSolrPredicates
-      .partition(isConvertibleToSolr(_, solrIndexedFields))
+      .partition(isConvertibleToSolr(_, solrIndexedFields ++ solrEscapedIndexedFields))
 
     logDebug(s"Converting $solrConvertibleFilters to Solr Predicates")
     val solrFilters = solrConvertibleFilters.map(convertToSolrFilter)
@@ -422,6 +423,3 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
   }
 
 }
-
-
-
