@@ -32,6 +32,8 @@ case class CassandraTTL(child: Expression) extends CassandraMetadataFunction {
   override def dataType: DataType = IntegerType
 
   override def confParam: String = CassandraSourceRelation.TTLParam.name
+
+  override protected def withNewChildInternal(newChild: Expression): CassandraTTL = copy(child = newChild)
 }
 
 case class CassandraWriteTime(child: Expression) extends CassandraMetadataFunction {
@@ -42,6 +44,8 @@ case class CassandraWriteTime(child: Expression) extends CassandraMetadataFuncti
   override def dataType: DataType = LongType
 
   override def confParam: String = CassandraSourceRelation.WriteTimeParam.name
+
+  override protected def withNewChildInternal(newChild: Expression): CassandraWriteTime = copy(child = newChild)
 }
 
 object CassandraMetadataFunction {
@@ -49,18 +53,23 @@ object CassandraMetadataFunction {
   def registerMetadataFunctions(session: SparkSession): Unit = {
     session.sessionState.functionRegistry.registerFunction(
       FunctionIdentifier("ttl"),
-      CassandraMetadataFunction.cassandraTTLFunctionBuilder)
+      ttlBuilder,
+    "")
     session.sessionState.functionRegistry.registerFunction(
       FunctionIdentifier("writetime"),
-      CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder)
+      writeTimeBuilder,
+    "")
   }
+
+  private val ttlBuilder: Seq[Expression] => CassandraTTL = (input: Seq[Expression]) =>
+    CassandraMetadataFunction.cassandraTTLFunctionBuilder(input)
 
   val cassandraTTLFunctionDescriptor  = (
     FunctionIdentifier("ttl"),
     new ExpressionInfo(getClass.getSimpleName, "ttl"),
-    (input: Seq[Expression]) => CassandraMetadataFunction.cassandraTTLFunctionBuilder(input))
+    ttlBuilder)
 
-  def cassandraTTLFunctionBuilder(args: Seq[Expression]) = {
+  def cassandraTTLFunctionBuilder(args: Seq[Expression]): CassandraTTL = {
     if (args.length != 1) {
       throw new AnalysisException(s"Unable to call Cassandra ttl with more than 1 argument, given" +
         s" $args")
@@ -68,12 +77,15 @@ object CassandraMetadataFunction {
     CassandraTTL(args.head)
   }
 
+  private val writeTimeBuilder: Seq[Expression] => CassandraWriteTime = (input: Seq[Expression]) =>
+    CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input)
+
   val cassandraWriteTimeFunctionDescriptor  = (
     FunctionIdentifier("writetime"),
     new ExpressionInfo(getClass.getSimpleName, "writetime"),
-    (input: Seq[Expression]) => CassandraMetadataFunction.cassandraWriteTimeFunctionBuilder(input))
+    writeTimeBuilder)
 
-  def cassandraWriteTimeFunctionBuilder(args: Seq[Expression]) = {
+  def cassandraWriteTimeFunctionBuilder(args: Seq[Expression]): CassandraWriteTime = {
     if (args.length != 1) {
       throw new AnalysisException(s"Unable to call Cassandra writetime with more than 1 argument," +
         s" given $args")

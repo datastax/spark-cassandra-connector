@@ -11,10 +11,12 @@ import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
+
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.SolrConstants._
 import org.apache.spark.sql.sources._
+
 import com.datastax.dse.driver.api.core.metadata.DseNodeProperties
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
@@ -22,17 +24,15 @@ import com.datastax.oss.driver.api.core.loadbalancing.NodeDistance
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util.Logging
 
-
-
 class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting)
   extends CassandraPredicateRules
     with Logging {
 
   /**
-  Constructor for testing, Takes solrIndexedFields as a function. This allows us
-  to avoid reading from Solr.xml in testing functions.
+    Constructor for testing, Takes solrIndexedFields as a function. This allows us
+    to avoid reading from Solr.xml in testing functions.
 
-  We assume that the basic Cassandra Rules have been applied first. Do nothing if there is a full
+    We assume that the basic Cassandra Rules have been applied first. Do nothing if there is a full
     partition_key restriction or primary key restriction. Otherwise try the solr conversion
   */
   private[cassandra] def apply(
@@ -155,19 +155,19 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
     * SolrIndexes.
     */
   def isConvertibleToSolr(filter: Filter, indexedCols: Set[String]): Boolean = filter match {
-    case EqualTo(attr: String, value: Any) => indexedCols.contains(attr)
-    case EqualNullSafe(attr: String, value: Any) => indexedCols.contains(attr)
-    case In(attr: String, values: Array[Any]) => indexedCols.contains(attr)
+    case EqualTo(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
+    case EqualNullSafe(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
+    case In(attr: String, values: Array[Any]) => indexedCols.contains(sanitizeSolrField(attr))
 
     //Range Queries
-    case GreaterThan(attr: String, value: Any) => indexedCols.contains(attr)
-    case GreaterThanOrEqual(attr: String, value: Any) => indexedCols.contains(attr)
-    case LessThan(attr: String, value: Any) => indexedCols.contains(attr)
-    case LessThanOrEqual(attr: String, value: Any) => indexedCols.contains(attr)
+    case GreaterThan(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
+    case GreaterThanOrEqual(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
+    case LessThan(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
+    case LessThanOrEqual(attr: String, value: Any) => indexedCols.contains(sanitizeSolrField(attr))
 
     //Null Checks
-    case IsNull(attr: String) => indexedCols.contains(attr)
-    case IsNotNull(attr: String) => indexedCols.contains(attr)
+    case IsNull(attr: String) => indexedCols.contains(sanitizeSolrField(attr))
+    case IsNotNull(attr: String) => indexedCols.contains(sanitizeSolrField(attr))
 
     //Conjunctions
     case And(left: Filter, right: Filter) =>
@@ -177,9 +177,9 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
     case Not(child: Filter) => isConvertibleToSolr(child, indexedCols)
 
     //StringMatching
-    case StringStartsWith(attr: String, value: String) => indexedCols.contains(attr)
-    case StringEndsWith(attr: String, value: String) => indexedCols.contains(attr)
-    case StringContains(attr: String, value: String) => indexedCols.contains(attr)
+    case StringStartsWith(attr: String, value: String) => indexedCols.contains(sanitizeSolrField(attr))
+    case StringEndsWith(attr: String, value: String) => indexedCols.contains(sanitizeSolrField(attr))
+    case StringContains(attr: String, value: String) => indexedCols.contains(sanitizeSolrField(attr))
 
     //Unknown
     case unknownFilter =>
@@ -192,8 +192,14 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
   /** Sometimes the Java String Representation of the Value is not what solr is expecting
     * so we need to do conversions. Additionally we need to encode that encoded string
     * for JSON so we can pass it through to Solr.
+    *
+    * Solr JSON query is defined as
+    * {{{
+    * ... WHERE solr_query='{ "q": "field:value"}'
+    * }}}
+    * this method converts the values.
     */
-  def toSolrString(value: Any): String  = StringEscapeUtils.escapeJson(
+  private def toSolrValue(value: Any): String = StringEscapeUtils.escapeJson(
     escapeSolrCondition(
       value match {
         case date: java.sql.Timestamp => DateTimeFormatter.ISO_INSTANT.format(date.toInstant)
@@ -202,25 +208,43 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
     )
   )
 
+  /** Similarly to [[toSolrValue]] converts Solr fields to Solr-consumable format.
+    *
+    * Solr JSON query is defined as
+    * {{{
+    * ... WHERE solr_query='{ "q": "field:value"}'
+    * }}}
+    * this method converts the fields. */
+  private def toSolrField(field: String): String = toSolrValue(sanitizeSolrField(field))
+
+  /** Spark attributes containing special characters may be enclosed with backticks (`), this could break
+    * matching with index column names. */
+  private def sanitizeSolrField(field: String) = {
+    field match {
+      case quoted: String if quoted.startsWith("`") && quoted.endsWith("`") && quoted.length > 1 => quoted.substring(1, quoted.length - 1)
+      case str => str
+    }
+  }
+
   def convertToSolrFilter(filter: Filter): SolrFilter = filter match {
     //Equivalence queries
-    case EqualTo(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}", filter.references)
-    case EqualNullSafe(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}", filter.references)
+    case EqualTo(attr: String, value: Any) => SolrFilter(s"${toSolrField(attr)}:${toSolrValue(value)}", filter.references)
+    case EqualNullSafe(attr: String, value: Any) => SolrFilter(s"${toSolrField(attr)}:${toSolrValue(value)}", filter.references)
     case In(attr: String, values: Array[Any]) =>
-      SolrFilter(s"${toSolrString(attr)}:(${values.map(toSolrString).mkString(" ")})", filter.references)
+      SolrFilter(s"${toSolrField(attr)}:(${values.map(toSolrValue).mkString(" ")})", filter.references)
 
     //Range Queries
-    case GreaterThan(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:{${toSolrString(value)} TO *]", filter.references)
+    case GreaterThan(attr: String, value: Any) => SolrFilter(s"${toSolrField(attr)}:{${toSolrValue(value)} TO *]", filter.references)
     case GreaterThanOrEqual(attr: String, value: Any) =>
-      SolrFilter(s"${toSolrString(attr)}:[${toSolrString(value)} TO *]", filter.references)
+      SolrFilter(s"${toSolrField(attr)}:[${toSolrValue(value)} TO *]", filter.references)
 
-    case LessThan(attr: String, value: Any) => SolrFilter(s"${toSolrString(attr)}:[* TO ${toSolrString(value)}}", filter.references)
+    case LessThan(attr: String, value: Any) => SolrFilter(s"${toSolrField(attr)}:[* TO ${toSolrValue(value)}}", filter.references)
     case LessThanOrEqual(attr: String, value: Any) =>
-      SolrFilter(s"${toSolrString(attr)}:[* TO ${toSolrString(value)}]", filter.references)
+      SolrFilter(s"${toSolrField(attr)}:[* TO ${toSolrValue(value)}]", filter.references)
 
     //Null Checks
-    case IsNull(attr: String) => SolrFilter(s"-${toSolrString(attr)}:[* TO *]", filter.references)
-    case IsNotNull(attr: String) => SolrFilter(s"${toSolrString(attr)}:*", filter.references)
+    case IsNull(attr: String) => SolrFilter(s"-${toSolrField(attr)}:[* TO *]", filter.references)
+    case IsNotNull(attr: String) => SolrFilter(s"${toSolrField(attr)}:*", filter.references)
 
     //Conjunctions
     case And(left: Filter, right: Filter) =>
@@ -231,9 +255,9 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
       SolrFilter(s"""-(${convertToSolrFilter(child).solrQuery})""", filter.references)
 
     //StringMatching
-    case StringStartsWith(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:${toSolrString(value)}*", filter.references)
-    case StringEndsWith(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:*${toSolrString(value)}", filter.references)
-    case StringContains(attr: String, value: String) => SolrFilter(s"${toSolrString(attr)}:*${toSolrString(value)}*", filter.references)
+    case StringStartsWith(attr: String, value: String) => SolrFilter(s"${toSolrField(attr)}:${toSolrValue(value)}*", filter.references)
+    case StringEndsWith(attr: String, value: String) => SolrFilter(s"${toSolrField(attr)}:*${toSolrValue(value)}", filter.references)
+    case StringContains(attr: String, value: String) => SolrFilter(s"${toSolrField(attr)}:*${toSolrValue(value)}*", filter.references)
 
     //Unknown
     case unknown =>
@@ -255,11 +279,6 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
       predicates
         .handledByCassandra
         .collect{ case equals: EqualTo => equals}
-
-    val equalsRestrictionsByName =
-      equalsRestrictions
-        .map(eqClause => eqClause.attribute ->  eqClause)
-        .toMap
 
     val partitionKeyColumnNames = tableDef.partitionKey.map(_.columnName).toSet
 
@@ -392,7 +411,6 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
         case Off =>
           predicates
       }
-
     }
   }
 
@@ -420,8 +438,4 @@ class SolrPredicateRules(searchOptimizationEnabled: DseSearchOptimizationSetting
     escaped.append(condition.substring(firstUnprocessedCharPosition, condition.length))
     escaped.toString
   }
-
 }
-
-
-

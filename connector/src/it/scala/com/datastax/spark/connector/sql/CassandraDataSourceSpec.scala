@@ -10,6 +10,7 @@ import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.InClauseToJoinWithTableConversionThreshold
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, CassandraPredicateRules, CassandraSourceRelation}
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.scalatest.BeforeAndAfterEach
 
@@ -125,7 +126,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   // This test is just to make sure at runtime the implicit for RDD[Row] can be found
-  it should "implicitly generate a rowWriter from it's RDD form" in {
+  it should "implicitly generate a rowWriter from its RDD form" in {
     spark.sql(s"SELECT a, b from $ks.test1").rdd.saveToCassandra(ks, "test_rowwriter")
   }
 
@@ -269,9 +270,13 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
   private def assertOnCassandraInJoinPresence(df: DataFrame): Unit = {
     if (pushDown)
-      withClue(s"Given Dataframe plan does not contain CassandraInJoin in it's predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
+      withClue(s"Given Dataframe plan does not contain CassandraInJoin in its predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
         df.queryExecution.executedPlan.collectLeaves().collectFirst{
-          case a@BatchScanExec(_, _: CassandraInJoin) => a
+          case a@BatchScanExec(_, _: CassandraInJoin, _) => a
+          case b@AdaptiveSparkPlanExec(_, _, _, _, _) =>
+            b.executedPlan.collectLeaves().collectFirst{
+              case a@BatchScanExec(_, _: CassandraInJoin, _) => a
+            }
         } shouldBe defined
      }
     else
@@ -279,9 +284,9 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
   }
 
   private def assertOnAbsenceOfCassandraInJoin(df: DataFrame): Unit =
-    withClue(s"Given Dataframe plan contains CassandraInJoin in it's predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
+    withClue(s"Given Dataframe plan contains CassandraInJoin in its predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
       df.queryExecution.executedPlan.collectLeaves().collectFirst{
-        case a@BatchScanExec(_, _: CassandraInJoin) => a
+        case a@BatchScanExec(_, _: CassandraInJoin, _) => a
       } shouldBe empty
     }
 

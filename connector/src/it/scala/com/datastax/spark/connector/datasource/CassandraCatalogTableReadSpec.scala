@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.datasource
 
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.exchange.Exchange
 
 class CassandraCatalogTableReadSpec extends CassandraCatalogSpecBase {
@@ -19,7 +20,7 @@ class CassandraCatalogTableReadSpec extends CassandraCatalogSpecBase {
   }
 
   "A Cassandra Catalog Table Read Support" should "initialize successfully" in {
-    spark.sessionState.catalogManager.currentCatalog.name() should be(defaultCatalog)
+    spark.sessionState.catalogManager.currentCatalog.name() should (be(defaultCatalog) or be ("spark_catalog"))
   }
 
   it should "read from an empty table" in {
@@ -48,7 +49,12 @@ class CassandraCatalogTableReadSpec extends CassandraCatalogSpecBase {
     spark.sql(s"SELECT DISTINCT value FROM $defaultKs.$testTable")
       .queryExecution
       .executedPlan
-      .collectFirst{ case exchange: Exchange => exchange } shouldBe defined
+      .collectFirst{
+        case exchange: Exchange => exchange
+        case adaptiveSparkPlanExec: AdaptiveSparkPlanExec => adaptiveSparkPlanExec.executedPlan.collectLeaves().collectFirst{
+          case exchange: Exchange => exchange
+        }
+      } shouldBe defined
   }
 
   it should "handle count pushdowns" in {
@@ -57,7 +63,12 @@ class CassandraCatalogTableReadSpec extends CassandraCatalogSpecBase {
     val reader = request
       .queryExecution
       .executedPlan
-      .collectFirst { case batchScanExec: BatchScanExec=> batchScanExec.readerFactory.createReader(EmptyInputPartition)}
+      .collectFirst {
+        case batchScanExec: BatchScanExec=> batchScanExec.readerFactory.createReader(EmptyInputPartition)
+        case adaptiveSparkPlanExec: AdaptiveSparkPlanExec => adaptiveSparkPlanExec.executedPlan.collectLeaves().collectFirst{
+          case batchScanExec: BatchScanExec=> batchScanExec.readerFactory.createReader(EmptyInputPartition)
+        }.get
+      }
 
     reader.get.isInstanceOf[CassandraCountPartitionReader] should be (true)
     request.collect()(0).get(0) should be (101)

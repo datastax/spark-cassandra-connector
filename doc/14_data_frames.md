@@ -255,16 +255,16 @@ range.join(joinTarget, joinTarget("k") === range("key")).explain()
 
 Through Cassandra Spark Extensions special functions are added to SparkSQL.
 
-* writetime(col) - If the column represents an actual C* column this will be replaced
-with the writetime of that column as in cql.
+* `writetime(col)` - If the column represents an actual C* column this will be replaced
+with the WriteTime of that column as in CQL.
 
-* ttl(col) - Similar to writetime, this will replace a valid C* column reference with a
-ttl value instead.
+* `ttl(col)` - Similar to writetime, this will replace a valid C* column reference with a
+TTL value instead.
 
 Read Example
 
 ```sql
-SELECT TTL(v) as t, WRITETIME(t) FROM casscatalog.ksname.testTable WHERE k = -1"
+SELECT TTL(v) as t, WRITETIME(t) FROM casscatalog.ksname.testTable WHERE k = 1
 ```
 
 There are specific write options which can be used to assign WriteTime and TTL. 
