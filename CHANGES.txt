@@ -1,5 +1,11 @@
+3.2.0
+ * Spark 3.2.x support (SPARKC-670)
+ * Fix: Cassandra Direct Join doesn't quote keyspace and table names (SPARKC-667)
+ * Fix: The connector can't find a codec for BLOB <-> java.nio.HeapByteBuffer (SPARKC-673)
+
 3.1.1
  * Fix: Cassandra Direct Join doesn't quote keyspace and table names (SPARKC-667)
+ * Fix: The connector can't find a codec for BLOB <-> java.nio.HeapByteBuffer (SPARKC-673)
 
 3.1.0
  * Updated Spark to 3.1.1 and commons-lang to 3.10 (SPARKC-626, SPARKC-646)
@@ -8,6 +14,7 @@
 
 3.0.2
  * Fix: Cassandra Direct Join doesn't quote keyspace and table names (SPARKC-667)
+ * Fix: The connector can't find a codec for BLOB <-> java.nio.HeapByteBuffer (SPARKC-673)
 
 3.0.1
  * Fix: repeated metadata refresh with the Spark connector (SPARKC-633)

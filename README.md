@@ -4,11 +4,11 @@
 
 ## Quick Links
 
-| What       | Where |
-| ---------- | ----- |
-| Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html) |
-| Scala Docs | Most Recent Release (3.1.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/driver/com/datastax/spark/connector/index.html)|
-| Latest Production Release | [3.1.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.1.0/jar) |
+| What       | Where                                                                                                                                                                                                                                                                                                                                 |
+| ---------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html)                                                                                                                                                                                                                                               |
+| Scala Docs | Most Recent Release (3.2.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.2.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.2.0/driver/com/datastax/spark/connector/index.html) |
+| Latest Production Release | [3.2.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.2.0/jar)                                                                                                                                                                                                                                |
  
 ## Features
 
@@ -19,7 +19,7 @@ Spark RDDs and Datasets/DataFrames to Cassandra tables, and execute arbitrary CQ
 in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.1 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 3.1 ([see table below](#version-compatibility))
+ - Compatible with Apache Spark 1.0 through 3.2 ([see table below](#version-compatibility))
  - Compatible with Scala 2.11 and 2.12
  - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
@@ -44,9 +44,11 @@ named "bX.Y" where X.Y is the major+minor version; for example the "b1.6" branch
 corresponds to the 1.6 release. The "master" branch will normally contain
 development for the next connector release in progress.
 
-Currently the following branches are actively supported: 3.1.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
-3.0.x ([b3.0](https://github.com/datastax/spark-cassandra-connector/tree/b3.0)) and 2.5.x 
-([b2.5](https://github.com/datastax/spark-cassandra-connector/tree/b2.5)).
+Currently, the following branches are actively supported: 
+3.2.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
+3.1.x ([b3.1](https://github.com/datastax/spark-cassandra-connector/tree/b3.1)),
+3.0.x ([b3.0](https://github.com/datastax/spark-cassandra-connector/tree/b3.0)) and 
+2.5.x ([b2.5](https://github.com/datastax/spark-cassandra-connector/tree/b2.5)).
 
 | Connector | Spark         | Cassandra | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 | --------- | ------------- | --------- | --------------------- | -------------------- | -----------------------  |
@@ -71,6 +73,9 @@ Currently the following branches are actively supported: 3.1.x ([master](https:/
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
+### 3.2.0
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.2.0/connector/com/datastax/spark/connector/index.html)
+
 ### 3.1.0
 * [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.1.0/connector/com/datastax/spark/connector/index.html)
 
@@ -90,7 +95,7 @@ This project is available on the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.1.0"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.2.0"
 
 * The default Scala version for Spark 3.0+ is 2.12 please choose the appropriate build. See the
 [FAQ](doc/FAQ.md) for more information.
