@@ -1,3 +1,6 @@
+3.0.2
+ * Fix: Cassandra Direct Join doesn't quote keyspace and table names (SPARKC-667)
+
 3.0.1
  * Fix: repeated metadata refresh with the Spark connector (SPARKC-633)
 
