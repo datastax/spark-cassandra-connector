@@ -4,6 +4,7 @@ package com.datastax.spark.connector.types
 import java.io.ObjectOutputStream
 
 import com.datastax.oss.driver.api.core.`type`.{DataType, TupleType => DriverTupleType}
+import com.datastax.oss.driver.api.core.`type`.codec.registry.CodecRegistry
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue}
 import com.datastax.spark.connector.cql.{FieldDef, StructDef}
 import com.datastax.spark.connector.types.ColumnType.fromDriverType
@@ -116,7 +117,11 @@ object TupleType {
         for (i <- 0 until fieldTypes.size) {
           val fieldConverter = fieldConverters(i)
           val fieldValue = fieldConverter.convert(tupleValue.getRaw(i))
-          toSave.set(i, fieldValue, fieldValue.getClass.asInstanceOf[Class[AnyRef]])
+          if (fieldValue == null) {
+            toSave.setToNull(i)
+          } else {
+            toSave.set(i, fieldValue, CodecRegistry.DEFAULT.codecFor(fieldTypes(i), fieldValue))
+          }
         }
         toSave
     }
