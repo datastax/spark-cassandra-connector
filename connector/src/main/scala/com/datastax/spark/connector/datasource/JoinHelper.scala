@@ -62,8 +62,8 @@ object JoinHelper extends Logging {
     val limitClause = CassandraLimit.limitToClause(queryParts.limitClause)
     val orderBy = queryParts.clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val filter = (queryParts.whereClause.predicates ++ joinWhere).mkString(" AND ")
-    val quotedKeyspaceName = CqlIdentifier.fromInternal(tableDef.keyspaceName)
-    val quotedTableName = CqlIdentifier.fromInternal(tableDef.tableName)
+    val quotedKeyspaceName = CqlIdentifier.fromInternal(tableDef.keyspaceName).asCql(true)
+    val quotedTableName = CqlIdentifier.fromInternal(tableDef.tableName).asCql(true)
     val query =
       s"SELECT $columns " +
         s"FROM $quotedKeyspaceName.$quotedTableName " +
