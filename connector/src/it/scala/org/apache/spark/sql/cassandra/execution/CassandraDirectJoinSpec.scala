@@ -666,6 +666,42 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     spark.sql("select * from tojoin tj inner join cassdata cd on tj.id = cd.k")
   }
 
+  /** SPARKC-667 */
+  it should "work with keyspace name starting with a digit" in {
+    val keyspace = s"0123_$ks"
+
+    conn.withSessionDo { session =>
+      val executor = getExecutor(session)
+      awaitAll(
+        Future {
+          createKeyspace(session, s""""$keyspace"""")
+          session.execute(s"""CREATE TABLE "$keyspace".kv (k int PRIMARY KEY, v int)""")
+          val ps = session.prepare(s"""INSERT INTO "$keyspace".kv (k,v) VALUES (?,?)""")
+          awaitAll {
+            for (id <- 1 to 100) yield {
+              executor.executeAsync(ps.bind(id: java.lang.Integer, id: java.lang.Integer))
+            }
+          }
+        }
+      )
+    }
+
+    try {
+      val left = spark.createDataset(Seq(DirectJoinRow(1, 1)))
+      val right = spark.read.cassandraFormat(keyspace = keyspace, table = "kv").load()
+      left.join(right, left("k") === right("k")).collect()
+    }
+    finally {
+      conn.withSessionDo { session =>
+        awaitAll(
+          Future {
+            session.execute(s"""DROP KEYSPACE "$keyspace"""")
+          }
+        )
+      }
+    }
+  }
+
   private def compareDirectOnDirectOff(test: ((SparkSession) => DataFrame)) = {
     val sparkJoinOn = spark.cloneSession()
     sparkJoinOn.conf.set(DirectJoinSettingParam.name, "on")
