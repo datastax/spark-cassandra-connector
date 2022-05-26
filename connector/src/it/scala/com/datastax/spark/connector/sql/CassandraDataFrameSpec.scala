@@ -82,6 +82,13 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
             s"""
                |CREATE TABLE $ks.timeuuidtable (k INT, v TIMEUUID, PRIMARY KEY (k))
                |""".stripMargin)
+        },
+
+        Future {
+          session.execute(
+            s"""
+               |CREATE TABLE $ks.camelcasecolumns (k INT, \"camelCase\" INT, PRIMARY KEY (k))
+               |""".stripMargin)
         }
       )
       executor.waitForCurrentlyExecutingTasks()
@@ -407,6 +414,25 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     withClue("Test auth factory was not used during the test") {
       TestAuthFactory.used shouldBe true
     }
+  }
+
+  it should "properly join tables with mixed case column names" in {
+    val df1 = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "camelcasecolumns", "keyspace" -> ks))
+      .option("directJoinSetting", "on")
+      .load
+
+    val df2 = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> "camelcasecolumns", "keyspace" -> ks))
+      .option("directJoinSetting", "on")
+      .load
+
+    val other = df.join(df, df1.col("camelCase").equalTo(df2.col("camelCase")))
+    other.count should be >= 0L
   }
 }
 
