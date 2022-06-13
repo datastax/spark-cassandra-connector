@@ -31,7 +31,7 @@ Cassandra and Spark nodes and are the core of our test coverage.
 
 ### Merge Path
 
-b2.5 => b3.0 => master
+b2.5 => b3.0 => b3.1 => master
 
 New features can be considered for 2.5 as long as they do not break apis.
 Once a feature is ready for b2.5, create a feature branch for b3.0 and merge
