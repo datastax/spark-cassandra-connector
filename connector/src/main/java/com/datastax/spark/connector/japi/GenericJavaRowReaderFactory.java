@@ -7,8 +7,8 @@ import com.datastax.spark.connector.cql.TableDef;
 import com.datastax.spark.connector.rdd.reader.RowReader;
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory;
 import scala.Option;
-import scala.collection.IndexedSeq;
-import scala.collection.Seq;
+import scala.collection.immutable.IndexedSeq;
+import scala.collection.immutable.Seq;
 
 public class GenericJavaRowReaderFactory {
     public final static RowReaderFactory<CassandraRow> instance = new RowReaderFactory<CassandraRow>() {

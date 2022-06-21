@@ -3,7 +3,7 @@ package com.datastax.spark.connector
 import com.datastax.spark.connector.ccm.CcmBridge
 import com.datastax.spark.connector.cluster.DefaultCluster
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import org.apache.spark.rdd.RDD
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -117,9 +117,9 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
     val rows = results.all()
     assert(rows.size() == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
 
@@ -140,9 +140,9 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
     val rows = results.all()
     assert(rows.size() == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
   it should "allow to save beans with transient fields to Cassandra" in {
@@ -162,9 +162,9 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
     val rows = results.all()
     assert(rows.size() == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
   it should "allow to save beans with inherited fields to Cassandra" in {
@@ -184,7 +184,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     val rows = results.all()
 
     rows should have size 3
-    rows.map(row => (row.getString("value"), row.getInt("key"), row.getString("sub_class_field"))).toSet shouldBe Set(
+    rows.asScala.map(row => (row.getString("value"), row.getInt("key"), row.getString("sub_class_field"))).toSet shouldBe Set(
       ("one", 1, "a"),
       ("two", 2, "b"),
       ("three", 3, "c")
@@ -210,9 +210,9 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
 
     val rows = results.all()
     assert(rows.size() == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "three" && row.getInt("key") == 3))
   }
 
   it should "allow to read rows as Tuple1" in {
@@ -222,7 +222,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple1(
       1: Integer
     )
@@ -237,7 +237,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple2(
       1: Integer,
       "2"
@@ -254,7 +254,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple3(
       1: Integer,
       "2",
@@ -273,7 +273,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple4(
       1: Integer,
       "2",
@@ -294,7 +294,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple5(
       1: Integer,
       "2",
@@ -317,7 +317,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple6(
       1: Integer,
       "2",
@@ -342,7 +342,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple7(
       1: Integer,
       "2",
@@ -369,7 +369,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple8(
       1: Integer,
       "2",
@@ -398,7 +398,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple9(
       1: Integer,
       "2",
@@ -429,7 +429,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple10(
       1: Integer,
       "2",
@@ -462,7 +462,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple11(
       1: Integer,
       "2",
@@ -497,7 +497,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple12(
       1: Integer,
       "2",
@@ -534,7 +534,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple13(
       1: Integer,
       "2",
@@ -573,7 +573,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple14(
       1: Integer,
       "2",
@@ -614,7 +614,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple15(
       1: Integer,
       "2",
@@ -657,7 +657,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple16(
       1: Integer,
       "2",
@@ -702,7 +702,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple17(
       1: Integer,
       "2",
@@ -749,7 +749,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple18(
       1: Integer,
       "2",
@@ -798,7 +798,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple19(
       1: Integer,
       "2",
@@ -849,7 +849,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple20(
       1: Integer,
       "2",
@@ -902,7 +902,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20", "c21"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple21(
       1: Integer,
       "2",
@@ -957,7 +957,7 @@ class CassandraJavaUtilSpec extends SparkCassandraITFlatSpecBase with DefaultClu
     )).select(
         "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16", "c17", "c18", "c19", "c20", "c21", "c22"
       )
-      .collect().head
+      .collect().asScala.head
     tuple shouldBe Tuple22(
       1: Integer,
       "2",

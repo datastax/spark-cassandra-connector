@@ -1,12 +1,11 @@
 package com.datastax.spark.connector.util
 
 import java.util.Locale
-
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 object NameTools {
 
@@ -45,11 +44,12 @@ object NameTools {
     val keyspaceScores = clusterMetadata
       .getKeyspaces
       .values()
-      .toSeq
+      .asScala
       .map(ks =>
         (toName(ks.getName), StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
 
     val keyspaceSuggestions = keyspaceScores.filter( _._2 > MinJWScore)
+      .toSeq
       .sorted
       .map(_._1)
 
@@ -75,11 +75,11 @@ object NameTools {
     val keyspaceScores = clusterMetadata
       .getKeyspaces
       .values()
-      .toSeq
+      .asScala
       .map(ks =>
       (ks, StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
 
-    val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables ++ ks.getViews)) yield {
+    val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables.asScala ++ ks.getViews.asScala)) yield {
       val tScore = StringUtils.getJaroWinklerDistance(toName(t.getName).toLowerCase(Locale.ROOT), table.toLowerCase(Locale.ROOT))
       (toName(ks.getName), toName(t.getName), ksScore, tScore)
     }
@@ -100,10 +100,10 @@ object NameTools {
     val suggestedTablesUnknownKeyspace = ktScores
       .collect { case (ks, t, ksScore, tScore) if tScore > MinJWScore => (ks, t)}
 
-    if (suggestedTables.nonEmpty) Some(TableSuggestions(suggestedTables))
-    else if (suggestedKeyspaces.nonEmpty) Some(KeyspaceSuggestions(suggestedKeyspaces))
-    else if (suggestedKeyspaceAndTables.nonEmpty) Some(KeyspaceAndTableSuggestions(suggestedKeyspaceAndTables))
-    else if (suggestedTablesUnknownKeyspace.nonEmpty) Some(KeyspaceAndTableSuggestions(suggestedTablesUnknownKeyspace))
+    if (suggestedTables.nonEmpty) Some(TableSuggestions(suggestedTables.toSeq))
+    else if (suggestedKeyspaces.nonEmpty) Some(KeyspaceSuggestions(suggestedKeyspaces.toSeq))
+    else if (suggestedKeyspaceAndTables.nonEmpty) Some(KeyspaceAndTableSuggestions(suggestedKeyspaceAndTables.toSeq))
+    else if (suggestedTablesUnknownKeyspace.nonEmpty) Some(KeyspaceAndTableSuggestions(suggestedTablesUnknownKeyspace.toSeq))
     else None
   }
 

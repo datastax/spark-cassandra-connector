@@ -212,7 +212,7 @@ class TableWriter[T] private (
             1024 * 1024)
           (stmt: RichStatement) => rateLimiter.maybeSleep(stmt.bytesCount)
         case None =>
-          (stmt: RichStatement) => Unit
+          (stmt: RichStatement) => ()
       }
 
       AsyncStatementWriter(connector, writeConf, tableDef, stmt, batchBuilder, maybeRateLimit)

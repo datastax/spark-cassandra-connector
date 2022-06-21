@@ -2,7 +2,7 @@ package com.datastax.spark.connector.japi.rdd;
 
 import com.datastax.spark.connector.writer.RowWriterFactory;
 import scala.Tuple2;
-import scala.collection.Seq;
+import scala.collection.immutable.Seq;
 import scala.reflect.ClassTag;
 
 import org.apache.spark.rdd.RDD;
@@ -94,7 +94,7 @@ public class CassandraTableScanJavaRDD<R> extends CassandraJavaRDD<R> {
         RowWriterFactory<K> rwf,
         ColumnRef... columns) {
 
-        Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(columns);
+        Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaImmutableSeq(columns);
         CassandraRDD<Tuple2<K, R>> resultRDD =
                 columns.length == 0
                         ? rdd().keyBy(keyClassTag, rrf, rwf)

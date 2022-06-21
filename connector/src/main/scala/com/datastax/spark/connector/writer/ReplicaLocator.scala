@@ -10,7 +10,7 @@ import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.{DriverUtil, Logging, tableFromCassandra}
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.collection._
 
 /**
@@ -43,6 +43,7 @@ class ReplicaLocator[T] private(
         data.map { row =>
           val hosts = tokenMap
             .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
+            .asScala
             .map(node => DriverUtil.toAddress(node)
               .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
             .map(_.getAddress)

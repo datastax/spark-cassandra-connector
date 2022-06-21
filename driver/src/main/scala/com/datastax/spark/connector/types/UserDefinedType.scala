@@ -10,7 +10,7 @@ import com.datastax.spark.connector.types.ColumnType.fromDriverType
 import com.datastax.spark.connector.types.TypeAdapters.ValueByNameAdapter
 import com.datastax.spark.connector.{CassandraRowMetadata, ColumnName, UDTValue}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe._
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
@@ -81,8 +81,8 @@ object UserDefinedType {
   class DriverUDTValueConverter(dataType: DriverUserDefinedType)
     extends TypeConverter[DriverUDTValue] {
 
-    val fieldNames = dataType.getFieldNames.toIndexedSeq
-    val fieldTypes = dataType.getFieldTypes.toIndexedSeq
+    val fieldNames = dataType.getFieldNames.asScala.toIndexedSeq
+    val fieldTypes = dataType.getFieldTypes.asScala.toIndexedSeq
     val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
 
     override def targetTypeTag = implicitly[TypeTag[DriverUDTValue]]
@@ -113,7 +113,8 @@ object UserDefinedType {
   }
 
   private def fields(dataType: DriverUserDefinedType): IndexedSeq[UDTFieldDef] = unlazify {
-    for ((fieldName, fieldType) <- dataType.getFieldNames.zip(dataType.getFieldTypes).toIndexedSeq) yield
+    for ((fieldName, fieldType) <-
+           dataType.getFieldNames.asScala.zip(dataType.getFieldTypes.asScala).toIndexedSeq) yield
       UDTFieldDef(fieldName.asInternal(), fromDriverType(fieldType))
   }
 

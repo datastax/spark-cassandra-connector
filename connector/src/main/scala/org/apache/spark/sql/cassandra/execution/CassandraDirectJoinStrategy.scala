@@ -103,7 +103,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
             .get(DirectJoinSizeRatioParam.name, DirectJoinSizeRatioParam.default.toString))
 
         val cassandraSize = BigDecimal(cassandraPlan.stats.sizeInBytes)
-        val keySize = BigDecimal(keyPlan.stats.sizeInBytes.doubleValue())
+        val keySize = BigDecimal(keyPlan.stats.sizeInBytes.doubleValue)
 
         logDebug(s"Checking if size ratio is good: $cassandraSize * $ratio > $keySize")
 

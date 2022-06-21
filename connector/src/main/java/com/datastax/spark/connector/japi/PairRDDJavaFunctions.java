@@ -4,6 +4,7 @@ import com.datastax.spark.connector.PairRDDFunctions;
 import com.datastax.spark.connector.util.JavaApiHelper;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
+import scala.Function1;
 import scala.Tuple2;
 import scala.collection.Seq;
 import scala.reflect.ClassTag;
@@ -32,7 +33,7 @@ public class PairRDDJavaFunctions<K, V> extends RDDJavaFunctions<Tuple2<K, V>> {
         ClassTag<Tuple2<K, Collection<V>>> tupleClassTag = classTag(Tuple2.class);
         ClassTag<Collection<V>> vClassTag = classTag(Collection.class);
         RDD<Tuple2<K, Collection<V>>> newRDD = pairRDDFunctions.spanByKey()
-                .map(JavaApiHelper.<K, V, Seq<V>>valuesAsJavaCollection(), tupleClassTag);
+                .map(JavaApiHelper.valuesAsJavaCollection(), tupleClassTag);
 
         return new JavaPairRDD<>(newRDD, keyClassTag, vClassTag);
     }

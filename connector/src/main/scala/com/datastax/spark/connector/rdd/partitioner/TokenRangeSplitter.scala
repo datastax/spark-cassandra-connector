@@ -1,10 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
 import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
-
+import java.util.concurrent.ForkJoinPool
 import com.datastax.spark.connector.rdd.partitioner.TokenRangeSplitter.WholeRing
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenRange}
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 
 /** Splits a token ranges into smaller sub-ranges,

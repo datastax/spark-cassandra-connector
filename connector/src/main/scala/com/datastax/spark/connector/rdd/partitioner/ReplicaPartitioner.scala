@@ -9,7 +9,7 @@ import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.{Partition, Partitioner}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 
@@ -74,6 +74,7 @@ implicit
         val tokenHash = Math.abs(token.hashCode())
         val replicas = tokenMap
           .getReplicas(_keyspace, token)
+          .asScala
           .map(n => DriverUtil.toAddress(n).get.getAddress)
 
         val replicaSetInDC = (hostSet & replicas).toVector

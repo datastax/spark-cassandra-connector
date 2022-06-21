@@ -12,7 +12,7 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, Row}
 import com.datastax.spark.connector.util._
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import org.apache.spark.annotation.DeveloperApi
@@ -128,6 +128,7 @@ class CassandraCoGroupedRDD[T](
     try {
       val stmt = session.prepare(cql)
       val converters = stmt.getVariableDefinitions
+        .asScala
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =

@@ -12,7 +12,7 @@ import com.datastax.spark.connector.types.TypeAdapters.ValuesSeqAdapter
 import com.datastax.spark.connector.{ColumnName, TupleValue}
 import org.apache.commons.lang3.tuple.{Pair, Triple}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe._
 
 case class TupleFieldDef(index: Int, columnType: ColumnType[_]) extends FieldDef {
@@ -107,7 +107,7 @@ object TupleType {
     extends TypeConverter[DriverTupleValue] {
 
     val fieldTypes = dataType.getComponentTypes
-    val fieldConverters = fieldTypes.map(ColumnType.converterToCassandra)
+    val fieldConverters = fieldTypes.asScala.map(ColumnType.converterToCassandra)
 
     override def targetTypeTag = typeTag[DriverTupleValue]
 
@@ -120,7 +120,7 @@ object TupleType {
           if (fieldValue == null) {
             toSave.setToNull(i)
           } else {
-            toSave.set(i, fieldValue, CodecRegistry.DEFAULT.codecFor(fieldTypes(i), fieldValue))
+            toSave.set(i, fieldValue, CodecRegistry.DEFAULT.codecFor(fieldTypes.get(i), fieldValue))
           }
         }
         toSave
@@ -143,9 +143,9 @@ object TupleType {
   }
 
   private def fields(dataType: DriverTupleType): IndexedSeq[TupleFieldDef] = unlazify {
-    for ((field, index) <- dataType.getComponentTypes.toIndexedSeq.zipWithIndex) yield
+    for ((field, index) <- dataType.getComponentTypes.asScala.zipWithIndex.toIndexedSeq) yield
       TupleFieldDef(index, fromDriverType(field))
-  }
+  }.toIndexedSeq
 
   def apply(javaTupleType: DriverTupleType): TupleType = {
     TupleType(fields(javaTupleType): _*)

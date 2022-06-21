@@ -12,7 +12,9 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{DataType => CatalystType}
 import org.apache.spark.sql.types.{BooleanType => SparkSqlBooleanType, DataType => SparkSqlDataType, DateType => SparkSqlDateType, DecimalType => SparkSqlDecimalType, DoubleType => SparkSqlDoubleType, FloatType => SparkSqlFloatType, MapType => SparkSqlMapType, TimestampType => SparkSqlTimestampType, UserDefinedType => SparkSqlUserDefinedType, _}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.collection.mutable
+import scala.language.postfixOps
 import scala.util.Try
 
 object CassandraSourceUtil extends Logging {
@@ -147,7 +149,7 @@ object CassandraSourceUtil extends Logging {
           catalystDataType(dataType, nullable = true),
           nullable = true)
       }
-      StructType(structFields)
+      StructType(structFields.asJava)
     }
 
     def fromTuple(t: TupleType): StructType = {
@@ -157,7 +159,7 @@ object CassandraSourceUtil extends Logging {
           catalystDataType(dataType, nullable = true),
           nullable = true)
       }
-      StructType(structFields)
+      StructType(structFields.asJava)
     }
 
     cassandraType match {

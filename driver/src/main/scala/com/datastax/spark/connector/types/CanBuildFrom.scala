@@ -55,7 +55,7 @@ object CanBuildFrom {
   implicit def javaArrayListCanBuildFrom[T] = new CanBuildFrom[T, java.util.ArrayList[T]] {
     override def apply() = new scala.collection.mutable.Builder[T, java.util.ArrayList[T]]() {
       val list = new java.util.ArrayList[T]()
-      override def +=(elem: T) = { list.add(elem); this }
+      override def addOne(elem: T) = { list.add(elem); this }
       override def result() = list
       override def clear() = list.clear()
     }
@@ -67,7 +67,7 @@ object CanBuildFrom {
   implicit def javaHashSetCanBuildFrom[T] = new CanBuildFrom[T, java.util.HashSet[T]] {
     override def apply() = new scala.collection.mutable.Builder[T, java.util.HashSet[T]]() {
       val set = new java.util.HashSet[T]()
-      override def +=(elem: T) = { set.add(elem); this }
+      override def addOne(elem: T) = { set.add(elem); this }
       override def result() = set
       override def clear() = set.clear()
     }
@@ -79,7 +79,7 @@ object CanBuildFrom {
   implicit def javaHashMapCanBuildFrom[K, V] = new CanBuildFrom[(K, V), java.util.HashMap[K, V]] {
     override def apply() = new scala.collection.mutable.Builder[(K, V), java.util.HashMap[K, V]]() {
       val map = new java.util.HashMap[K, V]()
-      override def +=(elem: (K, V)) = { map.put(elem._1, elem._2); this }
+      override def addOne(elem: (K, V)) = { map.put(elem._1, elem._2); this }
       override def result() = map
       override def clear() = map.clear()
     }

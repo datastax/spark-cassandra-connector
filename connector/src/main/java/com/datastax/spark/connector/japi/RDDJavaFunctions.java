@@ -83,7 +83,7 @@ public class RDDJavaFunctions<T> extends RDDAndDStreamCommonJavaFunctions<T> {
         ClassTag<Iterable<T>> iterableClassTag = CassandraJavaUtil.classTag(Iterable.class);
 
         RDD<Tuple2<U, Iterable<T>>> newRDD = rddFunctions.spanBy(toScalaFunction1(f))
-                .map(JavaApiHelper.<U, T, scala.collection.Iterable<T>>valuesAsJavaIterable(), tupleClassTag);
+                .map(JavaApiHelper.valuesAsJavaIterable(), tupleClassTag);
 
         return new JavaPairRDD<>(newRDD, keyClassTag, iterableClassTag);
     }
