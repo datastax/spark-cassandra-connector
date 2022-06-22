@@ -87,7 +87,7 @@ anything which could be used for any application even if Spark is not involved.
 
 
 #### test-support
-CCM Wrapper code. Much of this code is based on the Datastax Java Driver's test code. 
+CCM Wrapper code. Much of this code is based on the DataStax Java Driver's test code.
 Includes code for spawning CCM as well as several modes for launching clusters
 while testing. Together this also defines which tests require seperate clusters to
 run and the parallelization used while running tests.
@@ -98,7 +98,7 @@ In order to limit the number of test groups running simultaneously use the
 `TEST_PARALLEL_TASKS` environment variable. Only applies to `sbt test` tasks.
 
 ### Set Cassandra Test Target
-Our CI Build runs through the Datastax Infrastructure and tests on all the builds
+Our CI Build runs through the DataStax Infrastructure and tests on all the builds
 listed in build.yaml. In addition the _test-support_ module supports Cassandra
 or other CCM Compatible installations.
 
