@@ -207,7 +207,7 @@ object MappedToGettableDataConverter extends Logging {
           for (i <- columnValues.indices)
             columnValues(i) = converters(i).convert(columnValues(i))
           struct.newInstance(columnValues: _*)
-        case None =>
+        case _ =>
           null.asInstanceOf[struct.ValueRepr]
       }
     }
