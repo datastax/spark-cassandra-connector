@@ -408,6 +408,24 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
     df.collect() should have size 4
   }
+
+  it should "read from materialized view should have predicates pushed down" in  {
+    val df = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1_by_g", "pushdown" -> "true"))
+      .load().filter("g=1 and a=1")
+
+    val cassandraScan = getCassandraScan(df.queryExecution.executedPlan)
+
+    val pushedWhere = cassandraScan.cqlQueryParts.whereClause
+    val predicates = pushedWhere.predicates.map(_.trim)
+    val values = pushedWhere.values
+    val pushedPredicates = predicates.zip(values)
+
+    pushedPredicates should contain allOf (("\"g\" = ?", 1), ("\"a\" = ?", 1))
+
+  }
 }
 
 case class Test(epoch: Long, uri: String, browser: String, customer_id: Int)
