@@ -16,6 +16,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.Future
 
+//noinspection ScalaStyle
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach {
 
   override lazy val conn = CassandraConnector(defaultConf)
@@ -29,6 +30,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
       awaitAll(
         Future {
           session.execute(s"""CREATE TABLE $ks.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
+          session.execute(s"""CREATE MATERIALIZED VIEW $ks.test1_by_g as select g, a, b, c, d, e, f, h from $ks.test1  where g is not null and a is not null and b is not null and c is not null and d is not null and e is not null and f is not null PRIMARY KEY (g, a, b, c, d, e, f)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)""")
@@ -395,6 +397,16 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
       assertOnCassandraInJoinPresence(df)
       df.rdd.partitions.length should be (df.sparkSession.sparkContext.defaultParallelism)
     }
+  }
+
+  it should "read from materialized view by new partition key" in  {
+    val df = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1_by_g"))
+      .load().filter("g=1")
+
+    df.collect() should have size 4
   }
 }
 
