@@ -409,7 +409,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
     df.collect() should have size 4
   }
 
-  it should "read from materialized view should have predicates pushed down" in  {
+  it should "have predicates pushed down when reading from materialized view" in  {
     val df = spark
       .read
       .format("org.apache.spark.sql.cassandra")
@@ -426,11 +426,34 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
     pushedPredicates should contain allOf (("\"g\" = ?", 1), ("\"a\" = ?", 1))
 
   }
+
+  it should "update base table when writing to materialized view" in  {
+    val test_df = TestMvWrite(3, 3, 3, 3, 3, 3, 3, 3)
+
+    val ss = spark
+    import ss.implicits._
+    val df = sc.parallelize(Seq(test_df)).toDF
+
+    df.write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test1_by_g", "keyspace" -> ks))
+      .save()
+
+    spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1"))
+      .load().filter("a=3").collect() should have size 1
+
+  }
 }
 
 case class Test(epoch: Long, uri: String, browser: String, customer_id: Int)
 
 case class TestPartialColumns(epoch: Long, browser: String, customer_id: Int)
+
+case class TestMvWrite(a: Long, b: Long, c: Long, d: Long, e: Long, f: Long, g: Long, h: Long)
 
 object PushdownEverything extends CassandraPredicateRules {
   override def apply(

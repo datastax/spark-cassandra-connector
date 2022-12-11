@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.datasource
 
 import java.util
-import com.datastax.oss.driver.api.core.metadata.schema.{RelationMetadata, TableMetadata}
+import com.datastax.oss.driver.api.core.metadata.schema.{RelationMetadata, TableMetadata, ViewMetadata}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util._
 import org.apache.spark.sql.SparkSession
@@ -22,6 +22,7 @@ case class CassandraTable(session: SparkSession, catalogConf: CaseInsensitiveStr
 
   /* Retrieving table def from cassandra may be slow (it implies C* metadata refresh) */
   lazy val tableDef: TableDef = tableFromCassandra(connector, metadata.getKeyspace.asInternal(), name())
+  lazy val writeTableDef: TableDef = if (metadata.isInstanceOf[ViewMetadata]) tableFromCassandra(connector, metadata.getKeyspace.asInternal(), metadata.asInstanceOf[ViewMetadata].getBaseTable.asInternal()) else tableDef
 
   override def schema(): StructType = optionalSchema
     .getOrElse(CassandraSourceUtil.toStructType(metadata))
@@ -60,7 +61,7 @@ case class CassandraTable(session: SparkSession, catalogConf: CaseInsensitiveStr
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
     val combinedOptions = (catalogConf.asScala ++ info.options.asScala).asJava
-    CassandraWriteBuilder(session, tableDef, catalogName, new CaseInsensitiveStringMap(combinedOptions), info.schema)
+    CassandraWriteBuilder(session, writeTableDef, catalogName, new CaseInsensitiveStringMap(combinedOptions), info.schema)
   }
 }
 
