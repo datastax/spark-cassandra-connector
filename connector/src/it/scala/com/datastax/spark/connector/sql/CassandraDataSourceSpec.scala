@@ -427,25 +427,20 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
   }
 
-  it should "update base table when writing to materialized view" in  {
+  it should "throw UnsupportedOperationException when trying to write to materialized view" in  {
     val test_df = TestMvWrite(3, 3, 3, 3, 3, 3, 3, 3)
 
     val ss = spark
     import ss.implicits._
     val df = sc.parallelize(Seq(test_df)).toDF
 
-    df.write
+    val thrown = the [UnsupportedOperationException] thrownBy df.write
       .format("org.apache.spark.sql.cassandra")
       .mode(Append)
       .options(Map("table" -> "test1_by_g", "keyspace" -> ks))
       .save()
 
-    spark
-      .read
-      .format("org.apache.spark.sql.cassandra")
-      .options(Map("keyspace" -> ks, "table" -> "test1"))
-      .load().filter("a=3").collect() should have size 1
-
+    thrown.getMessage should be ("Writing to a materialized view is not supported")
   }
 }
 

@@ -22,7 +22,6 @@ case class CassandraTable(session: SparkSession, catalogConf: CaseInsensitiveStr
 
   /* Retrieving table def from cassandra may be slow (it implies C* metadata refresh) */
   lazy val tableDef: TableDef = tableFromCassandra(connector, metadata.getKeyspace.asInternal(), name())
-  lazy val writeTableDef: TableDef = if (metadata.isInstanceOf[ViewMetadata]) tableFromCassandra(connector, metadata.getKeyspace.asInternal(), metadata.asInstanceOf[ViewMetadata].getBaseTable.asInternal()) else tableDef
 
   override def schema(): StructType = optionalSchema
     .getOrElse(CassandraSourceUtil.toStructType(metadata))
@@ -61,7 +60,10 @@ case class CassandraTable(session: SparkSession, catalogConf: CaseInsensitiveStr
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
     val combinedOptions = (catalogConf.asScala ++ info.options.asScala).asJava
-    CassandraWriteBuilder(session, writeTableDef, catalogName, new CaseInsensitiveStringMap(combinedOptions), info.schema)
+    if (metadata.isInstanceOf[ViewMetadata]) {
+      throw new UnsupportedOperationException("Writing to a materialized view is not supported")
+    }
+    CassandraWriteBuilder(session, tableDef, catalogName, new CaseInsensitiveStringMap(combinedOptions), info.schema)
   }
 }
 
