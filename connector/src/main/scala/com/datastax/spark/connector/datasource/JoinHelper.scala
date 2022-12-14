@@ -58,7 +58,7 @@ object JoinHelper extends Logging {
     logDebug("Generating Single Key Query Prepared Statement String")
     logDebug(s"SelectedColumns : ${queryParts.selectedColumnRefs} -- JoinColumnNames : $joinColumnNames")
     val columns = queryParts.selectedColumnRefs.map(_.cql).mkString(", ")
-    val joinWhere = joinColumnNames.map(name => s"${CqlIdentifier.fromInternal(name).asCql(true)} = :$name")
+    val joinWhere = joinColumnNames.map(name => s"${CqlIdentifier.fromInternal(name)} = :$name")
     val limitClause = CassandraLimit.limitToClause(queryParts.limitClause)
     val orderBy = queryParts.clusteringOrder.map(_.toCql(tableDef)).getOrElse("")
     val filter = (queryParts.whereClause.predicates ++ joinWhere).mkString(" AND ")
