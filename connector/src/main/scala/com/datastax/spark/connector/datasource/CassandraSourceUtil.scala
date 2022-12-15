@@ -5,7 +5,7 @@ import com.datastax.oss.driver.api.core.ProtocolVersion
 import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes, ListType, MapType, SetType, TupleType, UserDefinedType}
 import com.datastax.oss.driver.api.core.`type`.DataTypes._
 import com.datastax.dse.driver.api.core.`type`.DseDataTypes._
-import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, TableMetadata}
+import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, RelationMetadata, TableMetadata}
 import com.datastax.spark.connector.cql.CassandraConnectionFactory
 import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParameter, Logging}
 import org.apache.spark.SparkConf
@@ -185,7 +185,7 @@ object CassandraSourceUtil extends Logging {
     )
   }
 
-  def toStructType(metadata: TableMetadata): StructType = {
+  def toStructType(metadata: RelationMetadata): StructType = {
     val partitionKeys = metadata.getPartitionKey.asScala.toSet
     val allColumns = metadata.getColumns.asScala.map(_._2).toSeq
     StructType(allColumns.map(column => toStructField(column, nullable = !partitionKeys.contains(column))))

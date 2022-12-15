@@ -2,11 +2,10 @@ package com.datastax.spark.connector.datasource
 
 import java.util
 import java.util.{Locale, Optional}
-
 import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.CqlIdentifier.fromInternal
 import com.datastax.oss.driver.api.core.metadata.Metadata
-import com.datastax.oss.driver.api.core.metadata.schema.{ClusteringOrder, KeyspaceMetadata, TableMetadata}
+import com.datastax.oss.driver.api.core.metadata.schema.{ClusteringOrder, KeyspaceMetadata, RelationMetadata, TableMetadata}
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder
 import com.datastax.oss.driver.api.querybuilder.schema._
 import com.datastax.oss.driver.internal.core.metadata.schema.parsing.RelationParser
@@ -424,6 +423,28 @@ object CassandraCatalog {
       .getTable(fromInternal(ident.name))
       .orElseThrow(() => tableMissing(getMetadata(connector), namespace, ident.name()))
     tableMeta
+  }
+
+  //Table or Materialized View Support
+  def getRelationMetaData(connector: CassandraConnector, ident: Identifier): RelationMetadata = {
+    val namespace = ident.namespace
+    checkNamespace(namespace)
+    val keyspaceMeta = getMetadata(connector)
+      .getKeyspace(fromInternal(namespace.head))
+      .orElseThrow(() => namespaceMissing(getMetadata(connector), namespace))
+    val relationMeta = getKeyspaceRelationMetadata(ident, keyspaceMeta)
+      .orElseThrow(() => tableMissing(getMetadata(connector), namespace, ident.name()))
+    relationMeta
+  }
+
+
+  def getKeyspaceRelationMetadata(ident: Identifier, keyspaceMeta: KeyspaceMetadata): Optional[RelationMetadata] = {
+    val tableMetadata = keyspaceMeta.getTable(fromInternal(ident.name))
+    if (tableMetadata.isPresent) {
+      tableMetadata.asInstanceOf[Optional[RelationMetadata]]
+    } else {
+      keyspaceMeta.getView(fromInternal(ident.name)).asInstanceOf[Optional[RelationMetadata]]
+    }
   }
 
   //Namespace Support

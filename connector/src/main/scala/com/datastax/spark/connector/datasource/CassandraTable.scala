@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.datasource
 
 import java.util
-import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata
+import com.datastax.oss.driver.api.core.metadata.schema.{RelationMetadata, TableMetadata, ViewMetadata}
 import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.util._
 import org.apache.spark.sql.SparkSession
@@ -14,13 +14,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import scala.collection.JavaConverters._
 
-case class CassandraTable(
-  session: SparkSession,
-  catalogConf: CaseInsensitiveStringMap,
-  connector: CassandraConnector,
-  catalogName: String,
-  metadata: TableMetadata,
-  optionalSchema: Option[StructType] = None) //Used for adding metadata references
+case class CassandraTable(session: SparkSession, catalogConf: CaseInsensitiveStringMap, connector: CassandraConnector, catalogName: String, metadata: RelationMetadata, optionalSchema: Option[StructType] = None) //Used for adding metadata references
 
   extends Table
     with SupportsRead
@@ -66,6 +60,9 @@ case class CassandraTable(
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
     val combinedOptions = (catalogConf.asScala ++ info.options.asScala).asJava
+    if (metadata.isInstanceOf[ViewMetadata]) {
+      throw new UnsupportedOperationException("Writing to a materialized view is not supported")
+    }
     CassandraWriteBuilder(session, tableDef, catalogName, new CaseInsensitiveStringMap(combinedOptions), info.schema)
   }
 }

@@ -60,12 +60,7 @@ class DefaultSource() extends TableProvider with DataSourceRegister {
       scalaOptions.toMap)
     val connector = CassandraConnector(connectorConf)
 
-    CassandraTable(
-      session,
-      options,
-      connector,
-      cluster,
-      CassandraCatalog.getTableMetaData(connector, Identifier.of(Array(keyspace), table)))
+    CassandraTable(session, options, connector, cluster, CassandraCatalog.getRelationMetaData(connector, Identifier.of(Array(keyspace), table)))
   }
 
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {

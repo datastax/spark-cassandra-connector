@@ -16,6 +16,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.Future
 
+//noinspection ScalaStyle
 class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultCluster with BeforeAndAfterEach {
 
   override lazy val conn = CassandraConnector(defaultConf)
@@ -29,6 +30,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
       awaitAll(
         Future {
           session.execute(s"""CREATE TABLE $ks.test1 (a INT, b INT, c INT, d INT, e INT, f INT, g INT, h INT, PRIMARY KEY ((a, b, c), d , e, f))""")
+          session.execute(s"""CREATE MATERIALIZED VIEW $ks.test1_by_g as select g, a, b, c, d, e, f, h from $ks.test1  where g is not null and a is not null and b is not null and c is not null and d is not null and e is not null and f is not null PRIMARY KEY (g, a, b, c, d, e, f)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 1, 1, 1, 1)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 1, 2, 1, 1, 2)""")
           session.execute(s"""INSERT INTO $ks.test1 (a, b, c, d, e, f, g, h) VALUES (1, 1, 1, 2, 1, 1, 2, 1)""")
@@ -396,11 +398,57 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
       df.rdd.partitions.length should be (df.sparkSession.sparkContext.defaultParallelism)
     }
   }
+
+  it should "read from materialized view by new partition key" in  {
+    val df = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1_by_g"))
+      .load().filter("g=1")
+
+    df.collect() should have size 4
+  }
+
+  it should "have predicates pushed down when reading from materialized view" in  {
+    val df = spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map("keyspace" -> ks, "table" -> "test1_by_g", "pushdown" -> "true"))
+      .load().filter("g=1 and a=1")
+
+    val cassandraScan = getCassandraScan(df.queryExecution.executedPlan)
+
+    val pushedWhere = cassandraScan.cqlQueryParts.whereClause
+    val predicates = pushedWhere.predicates.map(_.trim)
+    val values = pushedWhere.values
+    val pushedPredicates = predicates.zip(values)
+
+    pushedPredicates should contain allOf (("\"g\" = ?", 1), ("\"a\" = ?", 1))
+
+  }
+
+  it should "throw UnsupportedOperationException when trying to write to materialized view" in  {
+    val test_df = TestMvWrite(3, 3, 3, 3, 3, 3, 3, 3)
+
+    val ss = spark
+    import ss.implicits._
+    val df = sc.parallelize(Seq(test_df)).toDF
+
+    val thrown = the [UnsupportedOperationException] thrownBy df.write
+      .format("org.apache.spark.sql.cassandra")
+      .mode(Append)
+      .options(Map("table" -> "test1_by_g", "keyspace" -> ks))
+      .save()
+
+    thrown.getMessage should be ("Writing to a materialized view is not supported")
+  }
 }
 
 case class Test(epoch: Long, uri: String, browser: String, customer_id: Int)
 
 case class TestPartialColumns(epoch: Long, browser: String, customer_id: Int)
+
+case class TestMvWrite(a: Long, b: Long, c: Long, d: Long, e: Long, f: Long, g: Long, h: Long)
 
 object PushdownEverything extends CassandraPredicateRules {
   override def apply(
