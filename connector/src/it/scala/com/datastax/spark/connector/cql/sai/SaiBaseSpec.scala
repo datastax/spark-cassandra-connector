@@ -47,7 +47,7 @@ trait SaiBaseSpec extends Matchers with SparkCassandraITSpecBase {
 
   def findCassandraScan(plan: SparkPlan): CassandraScan = {
     plan match {
-      case BatchScanExec(_, scan: CassandraScan, _) => scan
+      case BatchScanExec(_, scan: CassandraScan, _, _) => scan
       case filter: FilterExec => findCassandraScan(filter.child)
       case project: ProjectExec => findCassandraScan(project.child)
       case _ => throw new NoSuchElementException("RowDataSourceScanExec was not found in the given plan")

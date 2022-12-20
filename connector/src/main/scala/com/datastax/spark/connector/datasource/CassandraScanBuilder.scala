@@ -13,8 +13,9 @@ import com.datastax.spark.connector.{ColumnRef, RowCountRef, TTL, WriteTime}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.CassandraSourceRelation.{AdditionalCassandraPushDownRulesParam, InClauseToJoinWithTableConversionThreshold}
 import org.apache.spark.sql.cassandra.{AnalyzedPredicates, Auto, BasicCassandraPredicatePushDown, CassandraPredicateRules, CassandraSourceRelation, DsePredicateRules, DseSearchOptimizationSetting, InClausePredicateRules, Off, On, SolrConstants, SolrPredicateRules, TimeUUIDPredicateRules}
+import org.apache.spark.sql.connector.expressions.{Expression, Expressions}
 import org.apache.spark.sql.connector.read._
-import org.apache.spark.sql.connector.read.partitioning.{ClusteredDistribution, Distribution, Partitioning}
+import org.apache.spark.sql.connector.read.partitioning.{KeyGroupedPartitioning, Partitioning}
 import org.apache.spark.sql.sources.{EqualTo, Filter, In}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -307,7 +308,7 @@ case class CassandraScan(
   }
 
   override def outputPartitioning(): Partitioning = {
-    CassandraPartitioning(tableDef.partitionKey.map(_.columnName).toArray, inputPartitions.length)
+   new CassandraPartitioning(tableDef.partitionKey.map(_.columnName).map(Expressions.identity).toArray, inputPartitions.length)
   }
 
   override def description(): String = {
@@ -317,17 +318,7 @@ case class CassandraScan(
   }
 }
 
-case class CassandraPartitioning(partitionKeys: Array[String], numPartitions: Int) extends Partitioning {
-
-  /*
-    Currently we only satisfy distributions which rely on all partition key values having identical
-    values. In the future we may be able to support some other distributions but Spark doesn't have
-    means to support those atm 3.0
-  */
-  override def satisfy(distribution: Distribution): Boolean = distribution match {
-    case cD: ClusteredDistribution => partitionKeys.forall(cD.clusteredColumns.contains)
-    case _ => false
-  }
+class CassandraPartitioning(keys: Array[Expression], numPartitions: Int) extends KeyGroupedPartitioning(keys, numPartitions) {
 }
 
 case class CassandraInJoin(
@@ -359,7 +350,7 @@ case class CassandraInJoin(
   }
 
   override def outputPartitioning(): Partitioning = {
-    CassandraPartitioning(tableDef.partitionKey.map(_.columnName).toArray, numPartitions)
+    new CassandraPartitioning(tableDef.partitionKey.map(_.columnName).map(Expressions.identity).toArray, numPartitions)
   }
 }
 
