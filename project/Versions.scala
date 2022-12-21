@@ -22,7 +22,7 @@ object Versions {
   // only on Unix/OSX operating system. Windows users have to build and install Spark manually if the
   // desired version is not yet published into a public Maven repository.
   val ApacheSpark     = "3.3.1"
-  val SparkJetty      = "9.3.27.v20190418"
+  val SparkJetty      = "9.4.48.v20220622"
   val SolrJ           = "8.3.0"
 
   /*
