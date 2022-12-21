@@ -153,7 +153,7 @@ engineers and community members frequent this board and answer questions.
 
 ## Contributing
 
-To protect the community, all contributors are required to sign the [DataStax Spark Cassandra Connector Contribution License Agreement](http://spark-cassandra-connector-cla.datastax.com/). The process is completely electronic and should only take a few minutes.
+To protect the community, all contributors are required to sign the [DataStax Spark Cassandra Connector Contribution License Agreement](https://cla.datastax.com/). The process is completely electronic and should only take a few minutes.
 
 To develop this project, we recommend using IntelliJ IDEA. Make sure you have
 installed and enabled the Scala Plugin. Open the project with IntelliJ IDEA and
