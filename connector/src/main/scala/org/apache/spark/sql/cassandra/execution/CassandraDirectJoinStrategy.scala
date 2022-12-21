@@ -5,7 +5,7 @@ import com.datastax.spark.connector.util.Logging
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.cassandra.{AlwaysOff, AlwaysOn, Automatic, CassandraSourceRelation}
 import org.apache.spark.sql.cassandra.CassandraSourceRelation._
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, ExprId, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, ExtractValue, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans._
@@ -59,7 +59,7 @@ case class CassandraDirectJoinStrategy(spark: SparkSession) extends Strategy wit
               cassandraScanExec
             )
 
-          val newPlan = reorderPlan(dataSourceOptimizedPlan, directJoin) :: Nil
+          val newPlan = reorderPlan(dataSourceOptimizedPlan, directJoin, plan.output) :: Nil
           val newOutput = (newPlan.head.outputSet, newPlan.head.output.map(_.name))
           val oldOutput = (plan.outputSet, plan.output.map(_.name))
           val noMissingOutput = oldOutput._1.subsetOf(newPlan.head.outputSet)
@@ -232,7 +232,10 @@ object CassandraDirectJoinStrategy extends Logging {
     *
     * This should only be called on optimized Physical Plans
     */
-  def reorderPlan(plan: SparkPlan, directJoin: CassandraDirectJoinExec): SparkPlan = {
+  def reorderPlan(
+      plan: SparkPlan,
+      directJoin: CassandraDirectJoinExec,
+      originalOutput: Seq[Attribute]): SparkPlan = {
     val reordered = plan match {
       //This may be the only node in the Plan
       case BatchScanExec(_, _: CassandraScan, _) => directJoin
@@ -252,19 +255,25 @@ object CassandraDirectJoinStrategy extends Logging {
     */
     reordered.transform {
       case ProjectExec(projectList, child) =>
-        val aliases = projectList.collect {
-          case a @ Alias(child: AttributeReference, _) => (child.toAttribute.exprId, a)
+        val attrMap = directJoin.output.map {
+          case attr => attr.exprId -> attr
         }.toMap
 
-        val aliasedOutput = directJoin.output.map {
-          case attr if aliases.contains(attr.exprId) =>
-            val oldAlias = aliases(attr.exprId)
-            oldAlias.copy(child = attr)(oldAlias.exprId, oldAlias.qualifier,
-              oldAlias.explicitMetadata, oldAlias.nonInheritableMetadataKeys)
+        val aliases = projectList.collect {
+          case a @ Alias(child, _) =>
+            val newAliasChild = child.transform {
+              case attr: Attribute => attrMap.getOrElse(attr.exprId, attr)
+            }
+            (a.exprId, a.withNewChildren(newAliasChild :: Nil).asInstanceOf[Alias])
+        }.toMap
+
+        // The original output of Join
+        val reorderedOutput = originalOutput.map {
+          case attr if aliases.contains(attr.exprId) => aliases(attr.exprId)
           case other => other
         }
 
-        ProjectExec(aliasedOutput, child)
+        ProjectExec(reorderedOutput, child)
     }
   }
 
@@ -310,13 +319,21 @@ object CassandraDirectJoinStrategy extends Logging {
     case _ => false
   }
 
+  def getAlias(expr: NamedExpression): (String, ExprId) = expr match {
+    case a @ Alias(child: AttributeReference, _) => child.name -> a.exprId
+    case a @ Alias(child, _) =>
+      val attrs = child.collect {
+        case attr: AttributeReference => attr
+      }
+      assert(attrs.length == 1)
+      attrs(0).name -> attrs(0).exprId
+    case attributeReference: AttributeReference => attributeReference.name -> attributeReference.exprId
+  }
+
   /**
     * Map Source Cassandra Column Names to ExpressionIds referring to them
     */
-  def aliasMap(aliases: Seq[NamedExpression]): Map[String, ExprId] = aliases.map {
-    case a @ Alias(child: AttributeReference, _) => child.name -> a.exprId
-    case attributeReference: AttributeReference => attributeReference.name -> attributeReference.exprId
-  }.toMap
+  def aliasMap(aliases: Seq[NamedExpression]): Map[String, ExprId] = aliases.map(getAlias).toMap
 
   /**
   * Checks whether a logical plan contains only Filters, Aliases
