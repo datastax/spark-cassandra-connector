@@ -96,8 +96,6 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
                |  city: 'New Orleans',
                |  residents:{('sundance', 'dog'), ('cara', 'dog')}
                |})""".stripMargin)
-        },
-        Future {
           session.execute(s"CREATE TYPE $ks.user (address frozen <address>) ")
           session.execute(s"CREATE TABLE $ks.members (id text, user frozen <user>, PRIMARY KEY (id))")
           session.execute(
