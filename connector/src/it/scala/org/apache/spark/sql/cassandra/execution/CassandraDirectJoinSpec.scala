@@ -96,6 +96,17 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
                |  city: 'New Orleans',
                |  residents:{('sundance', 'dog'), ('cara', 'dog')}
                |})""".stripMargin)
+          session.execute(s"CREATE TYPE $ks.user (address frozen <address>) ")
+          session.execute(s"CREATE TABLE $ks.members (id text, user frozen <user>, PRIMARY KEY (id))")
+          session.execute(
+            s"""INSERT INTO $ks.members (id, user) VALUES ('test1',
+               |{
+               |  address: {
+               |    street: 'Laurel',
+               |    city: 'New Orleans',
+               |    residents:{('sundance', 'dog'), ('cara', 'dog')}
+               |  }
+               |})""".stripMargin)
         },
         Future {
           info("Making table with all PV4 Datatypes")
@@ -620,6 +631,22 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
     val left = spark.createDataset(Seq(IdRow("test")))
     val right = spark.read.cassandraFormat("location", ks).load()
     left.join(right, left("id") === right("id"))
+  }
+
+  it should "work with field extractor after join" in compareDirectOnDirectOff{ spark =>
+    val left = spark.createDataset(Seq(IdRow("test")))
+    val right = spark.read.cassandraFormat("location", ks).load()
+    left.join(right, left("id") === right("id"))
+      .select($"address.*")
+      .select($"street", $"city")
+  }
+
+  it should "work with deeply nested field extractor after join" in compareDirectOnDirectOff{ spark =>
+    val left = spark.createDataset(Seq(IdRow("test1")))
+    val right = spark.read.cassandraFormat("members", ks).load()
+    left.join(right, left("id") === right("id"))
+      .select($"user.address.*")
+      .select($"street", $"city")
   }
 
   it should "work on a timestamp PK join" in compareDirectOnDirectOff { spark =>
