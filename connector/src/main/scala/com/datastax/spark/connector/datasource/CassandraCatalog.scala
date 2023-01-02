@@ -190,7 +190,7 @@ class CassandraCatalog extends CatalogPlugin
       .asJava
   }
 
-  override def dropNamespace(namespace: Array[String]): Boolean = {
+  override def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean = {
     checkNamespace(namespace)
     val keyspace = getKeyspaceMeta(connector, namespace)
     val dropResult = connector.withSessionDo(session => session.execute(SchemaBuilder.dropKeyspace(keyspace.getName).asCql()))

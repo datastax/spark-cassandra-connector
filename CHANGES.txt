@@ -1,3 +1,5 @@
+3.3.0
+ * Spark 3.3.x support (SPARKC-693)
 3.2.0
  * Spark 3.2.x support (SPARKC-670)
  * Fix: Cassandra Direct Join doesn't quote keyspace and table names (SPARKC-667)
