@@ -31,11 +31,11 @@ Cassandra and Spark nodes and are the core of our test coverage.
 
 ### Merge Path
 
-b2.5 => b3.0 => b3.1 => master
+b2.5 => b3.0 => b3.1 => b3.2 => master
 
 New features can be considered for 2.5 as long as they do not break apis.
 Once a feature is ready for b2.5, create a feature branch for b3.0 and merge
-b2.5 feature branch to b3.0 feature branch. Repeat for b3.1 and master. 
+b2.5 feature branch to b3.0 feature branch. Repeat for b3.1, b3.2 and master. 
 
 Example for imaginary SPARKC-9999.
 
@@ -69,10 +69,12 @@ git merge SPARKC-9999-b3.0
 # Resolve conflict, if any
 # Push the new feature branch:
 git push origin SPARKC-9999-b3.1
+
+# Repeat for b3.2
  
 # Forward merge on the next version:
 git checkout -b SPARKC-9999-master datastax/master
-git merge SPARKC-9999-b3.1
+git merge SPARKC-9999-b3.2
 # Resolve conflict, if any
 # Push the new feature branch:
 git push origin SPARKC-9999-master
