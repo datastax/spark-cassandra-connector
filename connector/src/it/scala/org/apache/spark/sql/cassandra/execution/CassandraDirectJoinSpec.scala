@@ -649,6 +649,15 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
       .select($"street", $"city")
   }
 
+  it should "work with complex field extractor after join" in compareDirectOnDirectOff { spark =>
+    val left = spark.createDataset(Seq(IdRow("test")))
+    val right = spark.read.cassandraFormat("location", ks).load()
+      .select($"id", struct("address.street", "address.city") as "struct")
+    left.join(right, left("id") === right("id"))
+      .select($"struct.*")
+      .select($"street", $"city")
+  }
+
   it should "work on a timestamp PK join" in compareDirectOnDirectOff { spark =>
     val left = spark.createDataset(
       (1 to 100).map(value => TimestampRow(new Timestamp(value.toLong)))
