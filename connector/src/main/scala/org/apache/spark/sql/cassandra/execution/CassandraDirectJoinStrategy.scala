@@ -319,21 +319,22 @@ object CassandraDirectJoinStrategy extends Logging {
     case _ => false
   }
 
-  def getAlias(expr: NamedExpression): (String, ExprId) = expr match {
-    case a @ Alias(child: AttributeReference, _) => child.name -> a.exprId
+  def getAlias(expr: NamedExpression): Seq[(String, ExprId)] = expr match {
+    case a @ Alias(child: AttributeReference, _) => Seq(child.name -> a.exprId)
     case a @ Alias(child, _) =>
       val attrs = child.collect {
         case attr: AttributeReference => attr
       }
-      assert(attrs.length == 1)
-      attrs(0).name -> attrs(0).exprId
-    case attributeReference: AttributeReference => attributeReference.name -> attributeReference.exprId
+      // There might be more than one attribute in the aliased expression.
+      // For example, `named_struct(x, y, z) AS alias1`
+      attrs.map(attr => attr.name -> a.exprId)
+    case attributeReference: AttributeReference => Seq(attributeReference.name -> attributeReference.exprId)
   }
 
   /**
     * Map Source Cassandra Column Names to ExpressionIds referring to them
     */
-  def aliasMap(aliases: Seq[NamedExpression]): Map[String, ExprId] = aliases.map(getAlias).toMap
+  def aliasMap(aliases: Seq[NamedExpression]): Map[String, ExprId] = aliases.flatMap(getAlias).toMap
 
   /**
   * Checks whether a logical plan contains only Filters, Aliases
