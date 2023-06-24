@@ -1,3 +1,6 @@
+3.4.0
+ * Spark 3.4.x support (SPARKC-???)
+
 3.3.0
  * Spark 3.3.x support (SPARKC-693)
  * Materialized View read support fix (SPARKC-653)

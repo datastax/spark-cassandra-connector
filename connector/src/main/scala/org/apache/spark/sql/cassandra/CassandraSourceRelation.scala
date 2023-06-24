@@ -211,7 +211,7 @@ object CassandraSourceRelation extends Logging {
       oldPlan.transform {
         case ds@DataSourceV2Relation(_: CassandraTable, _, _, _, options) =>
           ds.copy(options = applyDirectJoinSetting(options, directJoinSetting))
-        case ds@DataSourceV2ScanRelation(_: CassandraTable, scan: CassandraScan, _, _) =>
+        case ds@DataSourceV2ScanRelation(_: CassandraTable, scan: CassandraScan, _, _, _) =>
           ds.copy(scan = scan.copy(consolidatedConf = applyDirectJoinSetting(scan.consolidatedConf, directJoinSetting)))
       }
     )
