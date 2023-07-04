@@ -274,10 +274,10 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
     if (pushDown)
       withClue(s"Given Dataframe plan does not contain CassandraInJoin in its predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
         df.queryExecution.executedPlan.collectLeaves().collectFirst{
-          case a@BatchScanExec(_, _: CassandraInJoin, _, _) => a
+          case a@BatchScanExec(_, _: CassandraInJoin, _, _, _, _, _, _, _) => a
           case b@AdaptiveSparkPlanExec(_, _, _, _, _) =>
             b.executedPlan.collectLeaves().collectFirst{
-              case a@BatchScanExec(_, _: CassandraInJoin, _, _) => a
+              case a@BatchScanExec(_, _: CassandraInJoin, _, _, _, _, _, _, _) => a
             }
         } shouldBe defined
      }
@@ -288,7 +288,7 @@ class CassandraDataSourceSpec extends SparkCassandraITFlatSpecBase with DefaultC
   private def assertOnAbsenceOfCassandraInJoin(df: DataFrame): Unit =
     withClue(s"Given Dataframe plan contains CassandraInJoin in its predecessors.\n${df.queryExecution.sparkPlan.toString()}") {
       df.queryExecution.executedPlan.collectLeaves().collectFirst{
-        case a@BatchScanExec(_, _: CassandraInJoin, _, _) => a
+        case a@BatchScanExec(_, _: CassandraInJoin, _, _, _, _, _, _, _) => a
       } shouldBe empty
     }
 

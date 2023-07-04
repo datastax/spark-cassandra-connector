@@ -5,6 +5,7 @@ import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, TableAlreadyExistsException}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.{Map => MutableMap}
 
 class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
 
@@ -212,19 +213,45 @@ class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {
          |TBLPROPERTIES (clustering_key='cc1.asc, cc2.desc, cc3.asc')""".stripMargin)
     val rows = spark.sql(s"DESCRIBE EXTENDED $defaultKs.$testTable").collect()
 
+    val beforePartitionInformationMap = MutableMap[String, String]()
+    val afterPartitionInformationMap = MutableMap[String, String]()
+    val afterDetailedTableInformationMap = MutableMap[String, String]()
+
+    var afterPartitionInformation = false
+    var afterDetailedTableInformation = false
+
+    rows.foreach(r => {
+      if (r.getString(0) == "# Partition Information") {
+        afterPartitionInformation = true
+      } else if(r.getString(0) == "# Detailed Table Information") {
+        afterDetailedTableInformation = true
+      } else {
+        if (afterDetailedTableInformation) {
+          afterDetailedTableInformationMap.put(r.getString(0), r.getString(1))
+        } else if (afterPartitionInformation) {
+          afterPartitionInformationMap.put(r.getString(0), r.getString(1))
+        } else {
+          beforePartitionInformationMap.put(r.getString(0), r.getString(1))
+        }
+      }
+    })
+
     val expectedColumns = Seq(
       ("key_1", "int"), ("key_2", "int"), ("key_3", "int"),
       ("cc3", "string"), ("cc2", "string"), ("cc1", "string"),
       ("value", "string"),
-      ("Part 0", "key_1"), ("Part 1", "key_2"), ("Part 2", "key_3"),
-      ("Name", "testTable")
+    )
+    val expectedPartitionColumns = Seq(
+      ("key_1", "int"), ("key_2", "int"), ("key_3", "int"),
     )
 
-    val result = rows.map(r => (r.getString(0), r.getString(1))).toMap
-
     for ((key, value) <- expectedColumns) {
-      result.get(key) should be (Some(value))
+      beforePartitionInformationMap.get(key) should be (Some(value))
     }
+    for ((key, value) <- expectedPartitionColumns) {
+      afterPartitionInformationMap.get(key) should be(Some(value))
+    }
+    afterDetailedTableInformationMap.get("Name") should be(Some("testTable"))
   }
 
   it should "describe table properties" in {
